@@ -293,12 +293,6 @@ envelope key. Returns true on success and false on failure.  On success,
 opendata will hold the descypted data.
 
 
-See below for more details on usage. Also feel free to mail me at
-venaas@php.net if you have questions. The OpenSSL documentation,
-especially the EVP documentation at
-http://www.openssl.org/docs/crypto/evp.html, might also be of help.
-
-
 9. PKCS12 Function
 ------------------
 

@@ -58,10 +58,6 @@ int openssl_pkey_read(lua_State*L)
 		key = X509_get_pubkey(cert);
 	}else if(lua_isstring(L,1))
 	{
-		/* force it to be a string and check if it refers to a file */
-		/* passing non string values leaks, object uses toString, it returns NULL 
-		 * See bug38255.phpt 
-		 */
 		int len;
 		const char *str = luaL_checklstring(L,1,&len);
 		if(len>7 && memcmp(str, "file://", sizeof("file://") - 1) == 0)

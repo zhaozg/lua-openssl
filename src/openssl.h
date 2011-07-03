@@ -8,8 +8,6 @@
 #include <assert.h>
 #include "openssl.h"
 
-/* PHP Includes */
-
 /* OpenSSL includes */
 #include <openssl/evp.h>
 #include <openssl/x509.h>
@@ -46,11 +44,6 @@
 #define snprintf _snprintf
 #endif
 
-/* FIXME: Use the openssl constants instead of
- * enum. It is now impossible to match real values
- * against php constants. Also sorry to break the
- * enum principles here, BC...
- */
 enum lua_openssl_key_type {
 	OPENSSL_KEYTYPE_RSA,
 	OPENSSL_KEYTYPE_DSA,

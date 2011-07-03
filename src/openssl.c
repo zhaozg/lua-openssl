@@ -104,7 +104,7 @@ inline static int openssl_safe_mode_chk(char *filename)
 	return 0;
 }
 /* }}} */
-/* openssl -> PHP "bridging" */
+
 #endif
 
 
@@ -192,7 +192,7 @@ LUA_FUNCTION(openssl_private_encrypt)
 						padding) == cryptedlen);
 			break;
 		default:
-			luaL_error(L,"key type not supported in this PHP build!");
+			luaL_error(L,"key type not supported in this lua build!");
 	}
 
 	if (ful) {
@@ -247,7 +247,7 @@ LUA_FUNCTION(openssl_private_decrypt)
 			}
 			break;
 		default:
-			luaL_error(L,"key type not supported in this PHP build!");
+			luaL_error(L,"key type not supported in this Lua build!");
 	}
 
 	free(crypttemp);
@@ -298,7 +298,7 @@ LUA_FUNCTION(openssl_public_encrypt)
 						padding) == cryptedlen);
 			break;
 		default:
-			luaL_error(L,"key type not supported in this PHP build!");
+			luaL_error(L,"key type not supported in this Lua build!");
 
 	}
 
@@ -355,7 +355,7 @@ LUA_FUNCTION(openssl_public_decrypt)
 			break;
 			
 		default:
-			luaL_error(L,"key type not supported in this PHP build!");
+			luaL_error(L,"key type not supported in this Lua build!");
 		 
 	}
 
@@ -755,7 +755,7 @@ static int passwd_callback(char *buf, int num, int verify, void *data) /* {{{ */
     stream *stream = (stream *)data;
     zval **val = NULL;
     char *passphrase = NULL;
-    /* TODO: could expand this to make a callback into PHP user-space */
+    /* TODO: could expand this to make a callback into Lua user-space */
 
     GET_VER_OPT_STRING("passphrase", passphrase);
 
