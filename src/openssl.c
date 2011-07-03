@@ -40,7 +40,6 @@ const static luaL_Reg eay_functions[] = {
 	{"csr_get_subject",				openssl_csr_get_subject	},
 	{"csr_get_public_key",				openssl_csr_get_public_key	},
 
-	{"digest",				openssl_digest	},
 	{"encrypt",				openssl_encrypt	},
 	{"decrypt",				openssl_decrypt	},
 	{"cipher_iv_length",				openssl_cipher_iv_length	},
@@ -61,11 +60,14 @@ const static luaL_Reg eay_functions[] = {
 	{"public_encrypt",				openssl_public_encrypt	},
 	{"public_decrypt",				openssl_public_decrypt	},
 
-	{"get_md_methods",				openssl_get_md_methods	},
-	{"get_cipher_methods",				openssl_get_cipher_methods	},
 	{"dh_compute_key",				openssl_dh_compute_key	},
 	{"random_pseudo_bytes",				openssl_random_pseudo_bytes	},
 	{"error_string",				openssl_error_string	},
+
+	/* cipher/digest functions */
+
+	{"get_digest",			openssl_get_digest},
+	{"get_cipher",			openssl_get_cipher},
 
 	{NULL, NULL}
 };
@@ -959,95 +961,6 @@ SSL *SSL_new_from_context(SSL_CTX *ctx, stream *stream) /* {{{ */
 
 #endif
 
-static void openssl_add_method_or_alias(const OBJ_NAME *name, void *arg) /* {{{ */
-{
-	lua_State *L = (lua_State *)arg;
-	int i = lua_objlen(L,-1);
-	lua_pushstring(L,name->name);
-	lua_rawseti(L,-2,i+1);
-}
-/* }}} */
-
-static void openssl_add_method(const OBJ_NAME *name, void *arg) /* {{{ */
-{
-	if (name->alias == 0) {
-		openssl_add_method_or_alias(name,arg);
-	}
-}
-/* }}} */
-
-/* {{{ proto array openssl_get_md_methods([bool aliases = false])
-   Return array of available digest methods */
-LUA_FUNCTION(openssl_get_md_methods)
-{
-	int aliases = lua_isnil(L,1)?0:lua_toboolean(L,1);
-
-	lua_newtable(L);
-	OBJ_NAME_do_all_sorted(OBJ_NAME_TYPE_MD_METH, aliases ? openssl_add_method_or_alias: openssl_add_method, L);
-	return 1;
-}
-/* }}} */
-
-/* {{{ proto array openssl_get_cipher_methods([bool aliases = false])
-   Return array of available cipher methods */
-LUA_FUNCTION(openssl_get_cipher_methods)
-{
-	int aliases = lua_isnil(L,1)?0:lua_toboolean(L,1);
-
-	lua_newtable(L);
-	OBJ_NAME_do_all_sorted(OBJ_NAME_TYPE_CIPHER_METH, aliases ? openssl_add_method_or_alias: openssl_add_method, L);
-	return 1;
-}
-/* }}} */
-
-/* {{{ proto string openssl_digest(string data, string method [, bool raw_output=false])
-   Computes digest hash value for given data using given method, returns raw or binhex encoded string */
-LUA_FUNCTION(openssl_digest)
-{
-	int raw_output = 0;
-	const char *data, *method;
-	int data_len;
-	const EVP_MD *mdtype;
-	EVP_MD_CTX md_ctx;
-	int siglen;
-	unsigned char *sigbuf;
-	int ret = 0;
-
-	data = luaL_checklstring(L,1,&data_len);
-	method = luaL_checkstring(L,2);
-	raw_output = lua_isnil(L,3)?0:lua_toboolean(L,3);
-
-	mdtype = EVP_get_digestbyname(method);
-	if (!mdtype) {
-		luaL_error(L,"Unknown signature algorithm");
-	}
-
-	siglen = EVP_MD_size(mdtype);
-	sigbuf = malloc(siglen + 1);
-
-	EVP_DigestInit(&md_ctx, mdtype);
-	EVP_DigestUpdate(&md_ctx, (unsigned char *)data, data_len);
-	if (EVP_DigestFinal (&md_ctx, (unsigned char *)sigbuf, (unsigned int *)&siglen)) {
-		if (raw_output) {
-			sigbuf[siglen] = '\0';
-			lua_pushlstring(L,sigbuf, siglen);
-		} else {
-			int digest_str_len = siglen * 2;
-			char *digest_str = malloc(digest_str_len + 1);
-
-			//make_digest_ex(digest_str, sigbuf, siglen);
-
-			free(sigbuf);
-			lua_pushlstring(L,digest_str, digest_str_len);
-		}
-	} else {
-		free(sigbuf);
-		ret = 0;
-	}
-	return ret;
-}
-/* }}} */
-
 static int openssl_validate_iv(char **piv, int *piv_len, int iv_required_len)
 {
 	char *iv_new;
@@ -1374,6 +1287,7 @@ LUA_API int luaopen_openssl(lua_State*L)
 	auxiliar_newclass(L,"openssl.x509", x509_funcs);
 	auxiliar_newclass(L,"openssl.evp_pkey", x509_funcs);
 
+	openssl_register_digest(L);
 	luaL_register(L,"openssl",eay_functions);
 	
 	return 0;

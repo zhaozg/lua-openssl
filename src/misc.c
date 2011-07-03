@@ -73,6 +73,11 @@ void add_index_bool(lua_State* L, int i, int b){
 	lua_rawseti(L,-2,i);
 }
 
+void add_assoc_int(lua_State* L, const char* name, int b){
+	lua_pushinteger(L,b);
+	lua_setfield(L,-2,name);
+}
+
 void add_assoc_string(lua_State *L, const char*name, const char*val, int flag) {
 	lua_pushstring(L,val);
 	lua_setfield(L,-2,name);
@@ -507,3 +512,19 @@ int openssl_write_rand_file(const char * file, int egdsocket, int seeded) /* {{{
 	return 0;
 }
 /* }}} */
+
+
+void openssl_add_method_or_alias(const OBJ_NAME *name, void *arg) 
+{
+	lua_State *L = (lua_State *)arg;
+	int i = lua_objlen(L,-1);
+	lua_pushstring(L,name->name);
+	lua_rawseti(L,-2,i+1);
+}
+
+void openssl_add_method(const OBJ_NAME *name, void *arg) 
+{
+	if (name->alias == 0) {
+		openssl_add_method_or_alias(name,arg);
+	}
+}

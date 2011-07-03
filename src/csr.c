@@ -383,8 +383,8 @@ cleanup:
 }
 /* }}} */
 
-/* {{{ proto bool openssl_csr_new(resource privkey, array dn,  [, array configargs [, array extraattribs]])
-   Generates a privkey and CSR */
+/* {{{openssl.csr_new(resource privkey, table dn,  [, array configargs [, array extraattribs]]) = >openssl.x509_req
+   Generates CSR with gived private key, dn, configargs and extraattribs */
 LUA_FUNCTION(openssl_csr_new)
 {
 	struct x509_request req;

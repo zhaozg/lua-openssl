@@ -163,16 +163,18 @@ LUA_FUNCTION(openssl_csr_get_subject);
 LUA_FUNCTION(openssl_csr_get_public_key);
 
 
-LUA_FUNCTION(openssl_get_md_methods);
-LUA_FUNCTION(openssl_get_cipher_methods);
-
-LUA_FUNCTION(openssl_digest);
 LUA_FUNCTION(openssl_encrypt);
 LUA_FUNCTION(openssl_decrypt);
 LUA_FUNCTION(openssl_cipher_iv_length);
 
 LUA_FUNCTION(openssl_dh_compute_key);
 LUA_FUNCTION(openssl_random_pseudo_bytes);
+
+LUA_FUNCTION(openssl_get_digest);
+LUA_FUNCTION(openssl_get_cipher);
+
+void openssl_add_method_or_alias(const OBJ_NAME *name, void *arg) ;
+void openssl_add_method(const OBJ_NAME *name, void *arg);
 
 #define CHECK_OBJECT(n,type,name) *(type**)luaL_checkudata(L,n,name)
 #define PUSH_OBJECT(o, tname)  do {							\
@@ -182,6 +184,8 @@ LUA_FUNCTION(openssl_random_pseudo_bytes);
 void add_assoc_name_entry(lua_State*L, char * key, X509_NAME * name, int shortname) ;
 void add_assoc_string(lua_State *L, const char*name, const char*val, int flag);
 void add_index_bool(lua_State* L, int i, int b);
+void add_assoc_int(lua_State* L, const char* i, int b);
+
 void add_assoc_asn1_time(lua_State*L, char * key, ASN1_UTCTIME * timestr);
 STACK_OF(X509) * load_all_certs_from_file(const char *certfile);
 
@@ -189,6 +193,9 @@ int openssl_load_rand_file(const char * file, int *egdsocket, int *seeded);
 int openssl_write_rand_file(const char * file, int egdsocket, int seeded) ;
 
 const EVP_CIPHER * openssl_get_evp_cipher_from_algo(long algo) ;
+
+
+int openssl_register_digest(lua_State* L);
 
 #endif
 
