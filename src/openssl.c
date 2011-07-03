@@ -12,25 +12,23 @@ char default_ssl_conf_filename[MAX_PATH];
  */
 const static luaL_Reg eay_functions[] = {
 	/* pkey */
-	{"pkey_new",   openssl_pkey_new	},
-	{"pkey_free",   openssl_pkey_free	},
 
-	{"pkey_export",			openssl_pkey_export	},
 	{"pkey_read",			openssl_pkey_read	},
-	{"pkey_get_details",	openssl_pkey_get_details	},
-
+	{"pkey_new",			openssl_pkey_new	},
 
 	/* x.509 cert funcs */
 	{"x509_read",			openssl_x509_read	},
-	{"x509_parse",			openssl_x509_parse	},
-	{"x509_export",			openssl_x509_export	},
-	{"x509_checkpurpose",	openssl_x509_checkpurpose	},
-	{"x509_check_private_key",	openssl_x509_check_private_key	},
 
+	/* cipher/digest functions */
+	{"get_digest",			openssl_get_digest},
+	{"get_cipher",			openssl_get_cipher},
+
+	/* misc function */
+	{"error_string",		openssl_error_string	},
 
 /* PKCS12 funcs */
-	{"pkcs12_export",			openssl_pkcs12_export	},
-	{"pkcs12_read",				openssl_pkcs12_read	},
+	{"pkcs12_export",		openssl_pkcs12_export	},
+	{"pkcs12_read",			openssl_pkcs12_read	},
 
 /* CSR funcs */
 	{"csr_new",				openssl_csr_new	},
@@ -40,9 +38,6 @@ const static luaL_Reg eay_functions[] = {
 	{"csr_get_subject",				openssl_csr_get_subject	},
 	{"csr_get_public_key",				openssl_csr_get_public_key	},
 
-	{"encrypt",				openssl_encrypt	},
-	{"decrypt",				openssl_decrypt	},
-	{"cipher_iv_length",				openssl_cipher_iv_length	},
 	{"sign",				openssl_sign	},
 	{"verify",				openssl_verify	},
 	{"seal",				openssl_seal	},
@@ -62,12 +57,6 @@ const static luaL_Reg eay_functions[] = {
 
 	{"dh_compute_key",				openssl_dh_compute_key	},
 	{"random_pseudo_bytes",				openssl_random_pseudo_bytes	},
-	{"error_string",				openssl_error_string	},
-
-	/* cipher/digest functions */
-
-	{"get_digest",			openssl_get_digest},
-	{"get_cipher",			openssl_get_cipher},
 
 	{NULL, NULL}
 };
@@ -139,70 +128,6 @@ int openssl_config_check_syntax(const char * section_label, const char * config_
 	}
 	return 0;
 }
-
-
-
-static EVP_MD * openssl_get_evp_md_from_algo(long algo) { /* {{{ */
-	EVP_MD *mdtype;
-
-	switch (algo) {
-		case OPENSSL_ALGO_SHA1:
-			mdtype = (EVP_MD *) EVP_sha1();
-			break;
-		case OPENSSL_ALGO_MD5:
-			mdtype = (EVP_MD *) EVP_md5();
-			break;
-		case OPENSSL_ALGO_MD4:
-			mdtype = (EVP_MD *) EVP_md4();
-			break;
-#ifdef HAVE_OPENSSL_MD2_H
-		case OPENSSL_ALGO_MD2:
-			mdtype = (EVP_MD *) EVP_md2();
-			break;
-#endif
-		case OPENSSL_ALGO_DSS1:
-			mdtype = (EVP_MD *) EVP_dss1();
-			break;
-		default:
-			return NULL;
-			break;
-	}
-	return mdtype;
-}
-/* }}} */
-
-const EVP_CIPHER * openssl_get_evp_cipher_from_algo(long algo) { /* {{{ */
-	switch (algo) {
-#ifndef OPENSSL_NO_RC2
-		case OPENSSL_CIPHER_RC2_40:
-			return EVP_rc2_40_cbc();
-			break;
-		case OPENSSL_CIPHER_RC2_64:
-			return EVP_rc2_64_cbc();
-			break;
-		case OPENSSL_CIPHER_RC2_128:
-			return EVP_rc2_cbc();
-			break;
-#endif
-
-#ifndef OPENSSL_NO_DES
-		case OPENSSL_CIPHER_DES:
-			return EVP_des_cbc();
-			break;
-		case OPENSSL_CIPHER_3DES:
-			return EVP_des_ede3_cbc();
-			break;
-#endif
-		default:
-			return NULL;
-			break;
-	}
-}
-/* }}} */
-
-
-
-
 
 
 
@@ -457,13 +382,21 @@ LUA_FUNCTION(openssl_error_string)
 {
 	char buf[512];
 	unsigned long val;
+	int verbose = lua_toboolean(L,1);
 
 	val = ERR_get_error();
 	if (val) {
 		lua_pushinteger(L,val);
 		lua_pushstring(L, ERR_error_string(val, buf));
+
 		return 2;
-	} 
+	}
+	if(verbose)
+	{
+		ERR_print_errors_fp(stderr); 
+		ERR_clear_error();
+	}
+
 	return 0;
 }
 /* }}} */
@@ -485,13 +418,7 @@ LUA_FUNCTION(openssl_sign)
 
 	data = luaL_checklstring(L,1,&data_len);
 	pkey = CHECK_OBJECT(2,EVP_PKEY,"openssl.evp_pkey");
-	if(lua_isstring(L,3))
-	{
-		mdtype = EVP_get_digestbyname(lua_tostring(L,3));
-	}else if(lua_isnumber(L,3))
-		mdtype = openssl_get_evp_md_from_algo(lua_tointeger(L,3));
-	else
-		mdtype = openssl_get_evp_md_from_algo(signature_algo);
+	mdtype = CHECK_OBJECT(3,EVP_MD,"openssl.evp_digest");
 
 	siglen = EVP_PKEY_size(pkey);
 	sigbuf = malloc(siglen + 1);
@@ -528,14 +455,7 @@ LUA_FUNCTION(openssl_verify)
 	data = luaL_checklstring(L,1,&data_len);
 	signature = luaL_checklstring(L,2,&signature_len);
 	pkey = CHECK_OBJECT(3,EVP_PKEY,"openssl.evp_pkey");
-
-	if(lua_isstring(L,4))
-	{
-		mdtype = EVP_get_digestbyname(lua_tostring(L,4));
-	}else if(lua_isnumber(L,4))
-		mdtype = openssl_get_evp_md_from_algo(lua_tointeger(L,4));
-	else
-		mdtype = openssl_get_evp_md_from_algo(signature_algo);
+	mdtype = CHECK_OBJECT(4,EVP_MD,"openssl.evp_digest");
 
 	EVP_VerifyInit   (&md_ctx, mdtype);
 	EVP_VerifyUpdate (&md_ctx, data, data_len);
@@ -961,220 +881,6 @@ SSL *SSL_new_from_context(SSL_CTX *ctx, stream *stream) /* {{{ */
 
 #endif
 
-static int openssl_validate_iv(char **piv, int *piv_len, int iv_required_len)
-{
-	char *iv_new;
-
-	/* Best case scenario, user behaved */
-	if (*piv_len == iv_required_len) {
-		return 0;
-	}
-
-	iv_new = calloc(1, iv_required_len + 1);
-
-	if (*piv_len <= 0) {
-		/* BC behavior */
-		*piv_len = iv_required_len;
-		*piv     = iv_new;
-		return 1;
-	}
-
-	if (*piv_len < iv_required_len) {
-		memcpy(iv_new, *piv, *piv_len);
-		*piv_len = iv_required_len;
-		*piv     = iv_new;
-		return 1;
-	}
-
-	memcpy(iv_new, *piv, iv_required_len);
-	*piv_len = iv_required_len;
-	*piv     = iv_new;
-	return 1;
-
-}
-
-/* {{{ proto string openssl_encrypt(string data, string method, string password [, bool raw_output=false [, string $iv='']])
-   Encrypts given data with given method and key, returns raw or base64 encoded string */
-LUA_FUNCTION(openssl_encrypt)
-{
-	int raw_output = 0;
-	const char *data, *method, *password;
-	char *iv = "";
-	int data_len, password_len, iv_len = 0, max_iv_len;
-	const EVP_CIPHER *cipher_type;
-	EVP_CIPHER_CTX cipher_ctx;
-	int i, outlen, keylen;
-	unsigned char *outbuf, *key;
-	int top = lua_gettop(L);
-	int ret = 0;
-
-	int free_iv = 0;
-
-	data = luaL_checklstring(L,1,&data_len);
-	method = luaL_checkstring(L,2);
-	password = luaL_checklstring(L,3, &password_len);
-	if(top>3)
-		raw_output = lua_toboolean(L,4);
-	if(top>4)
-		iv = (char*)luaL_checklstring(L,5,&iv_len);
-
-	cipher_type = EVP_get_cipherbyname(method);
-	if (!cipher_type) {
-		luaL_error(L,"Unknown cipher algorithm");
-	}
-
-	keylen = EVP_CIPHER_key_length(cipher_type);
-	if (keylen > password_len) {
-		key = malloc(keylen);
-		memset(key, 0, keylen);
-		memcpy(key, password, password_len);
-	} else {
-		key = (unsigned char*)password;
-	}
-
-	max_iv_len = EVP_CIPHER_iv_length(cipher_type);
-	if (iv_len <= 0 && max_iv_len > 0) {
-		luaL_error(L,"Using an empty Initialization Vector (iv) is potentially insecure and not recommended");
-	}
-	free_iv = openssl_validate_iv(&iv, &iv_len, max_iv_len);
-
-	outlen = data_len + EVP_CIPHER_block_size(cipher_type);
-	outbuf = malloc(outlen + 1);
-
-	EVP_EncryptInit(&cipher_ctx, cipher_type, key, (unsigned char *)iv);
-	EVP_EncryptUpdate(&cipher_ctx, outbuf, &i, (unsigned char *)data, data_len);
-	outlen = i;
-	if (EVP_EncryptFinal(&cipher_ctx, (unsigned char *)outbuf + i, &i)) {
-		outlen += i;
-		if (raw_output) {
-			outbuf[outlen] = '\0';
-			lua_pushlstring(L,(char *)outbuf, outlen);
-			ret = 1;
-		} else {
-			/*
-			int base64_str_len;
-			char *base64_str;
-
-			base64_str = (char*)base64_encode(outbuf, outlen, &base64_str_len);
-			free(outbuf);
-			lua_pushlstring(L,base64_str, base64_str_len);
-			ret = 1;
-			*/
-		}
-	} else {
-		free(outbuf);
-	}
-	if (key != (unsigned char*)password) {
-		free(key);
-	}
-	if (free_iv) {
-		free(iv);
-	}
-	EVP_CIPHER_CTX_cleanup(&cipher_ctx);
-	return 1;
-}
-/* }}} */
-
-/* {{{ proto string openssl_decrypt(string data, string method, string password [, bool raw_input=false [, string $iv = '']])
-   Takes raw or base64 encoded string and dectupt it using given method and key */
-LUA_FUNCTION(openssl_decrypt)
-{
-	int raw_input = 0;
-	const char *data, *method, *password;
-	char *iv = "";
-	int data_len, password_len, iv_len = 0;
-	const EVP_CIPHER *cipher_type;
-	EVP_CIPHER_CTX cipher_ctx;
-	int i, outlen, keylen;
-	unsigned char *outbuf, *key;
-	char *base64_str = NULL;
-	int free_iv;
-	int ret = 0;
-	int top = lua_gettop(L);
-
-
-	data = luaL_checklstring(L,1,&data_len);
-	method = luaL_checkstring(L,2);
-	password = luaL_checklstring(L,3, &password_len);
-	if(top>3)
-		raw_input = lua_toboolean(L,4);
-	if(top>4)
-		iv = (char*) luaL_checklstring(L,5,&iv_len);
-
-	cipher_type = EVP_get_cipherbyname(method);
-	if (!cipher_type) {
-		luaL_error(L,"Unknown cipher algorithm");
-	}
-
-	if (!raw_input) {
-		/*
-		base64_str = (char*)base64_decode((unsigned char*)data, data_len, &base64_str_len);
-		data_len = base64_str_len;
-		data = base64_str;
-		*/
-	}
-
-	keylen = EVP_CIPHER_key_length(cipher_type);
-	if (keylen > password_len) {
-		key = malloc(keylen);
-		memset(key, 0, keylen);
-		memcpy(key, password, password_len);
-	} else {
-		key = (unsigned char*)password;
-	}
-
-	free_iv = openssl_validate_iv(&iv, &iv_len, EVP_CIPHER_iv_length(cipher_type));
-
-	outlen = data_len + EVP_CIPHER_block_size(cipher_type);
-	outbuf = malloc(outlen + 1);
-
-	EVP_DecryptInit(&cipher_ctx, cipher_type, key, (unsigned char *)iv);
-	EVP_DecryptUpdate(&cipher_ctx, outbuf, &i, (unsigned char *)data, data_len);
-	outlen = i;
-	if (EVP_DecryptFinal(&cipher_ctx, (unsigned char *)outbuf + i, &i)) {
-		outlen += i;
-		outbuf[outlen] = '\0';
-		lua_pushlstring(L,(char *)outbuf, outlen);
-		ret = 1;
-	} else {
-		free(outbuf);
-	}
-	if (key != (unsigned char*)password) {
-		free(key);
-	}
-	if (free_iv) {
-		free(iv);
-	}
-	if (base64_str) {
-		free(base64_str);
-	}
- 	EVP_CIPHER_CTX_cleanup(&cipher_ctx);
-	return 1;
-}
-/* }}} */
-
-/* {{{ proto int openssl_cipher_iv_length(string $method) */
-LUA_FUNCTION(openssl_cipher_iv_length)
-{
-	const char *method;
-	int method_len;
-	const EVP_CIPHER *cipher_type;
-	method = luaL_checklstring(L,1,&method_len);
-
-	if (!method_len) {
-		luaL_error(L,"Unknown cipher algorithm");
-	}
-
-	cipher_type = EVP_get_cipherbyname(method);
-	if (!cipher_type) {
-		luaL_error(L,"Unknown cipher algorithm");
-	}
-
-	lua_pushinteger(L,EVP_CIPHER_iv_length(cipher_type));
-	return 1;
-}
-/* }}} */
-
 
 /* {{{ proto string openssl_dh_compute_key(string pub_key, resource dh_key)
    Computes shared sicret for public value of remote DH key and local DH key */
@@ -1252,7 +958,6 @@ LUA_FUNCTION(openssl_random_pseudo_bytes)
 /* }}} */
 
 
-extern luaL_Reg x509_funcs[];
 extern luaL_Reg pkey_funcs[];
 
 LUA_API int luaopen_openssl(lua_State*L)
@@ -1284,10 +989,10 @@ LUA_API int luaopen_openssl(lua_State*L)
 		strncpy(default_ssl_conf_filename, config_filename, sizeof(default_ssl_conf_filename));
 	}
 
-	auxiliar_newclass(L,"openssl.x509", x509_funcs);
-	auxiliar_newclass(L,"openssl.evp_pkey", x509_funcs);
-
+	openssl_register_pkey(L);
+	openssl_register_x509(L);
 	openssl_register_digest(L);
+	openssl_register_cipher(L);
 	luaL_register(L,"openssl",eay_functions);
 	
 	return 0;

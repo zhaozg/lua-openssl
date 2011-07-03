@@ -152,7 +152,6 @@ LUA_FUNCTION(openssl_error_string);
 
 
 LUA_FUNCTION(openssl_pkcs12_export);
-LUA_FUNCTION(openssl_pkcs12_export_to_file);
 LUA_FUNCTION(openssl_pkcs12_read);
 
 LUA_FUNCTION(openssl_csr_new);
@@ -162,10 +161,6 @@ LUA_FUNCTION(openssl_csr_sign);
 LUA_FUNCTION(openssl_csr_get_subject);
 LUA_FUNCTION(openssl_csr_get_public_key);
 
-
-LUA_FUNCTION(openssl_encrypt);
-LUA_FUNCTION(openssl_decrypt);
-LUA_FUNCTION(openssl_cipher_iv_length);
 
 LUA_FUNCTION(openssl_dh_compute_key);
 LUA_FUNCTION(openssl_random_pseudo_bytes);
@@ -192,10 +187,11 @@ STACK_OF(X509) * load_all_certs_from_file(const char *certfile);
 int openssl_load_rand_file(const char * file, int *egdsocket, int *seeded);
 int openssl_write_rand_file(const char * file, int egdsocket, int seeded) ;
 
-const EVP_CIPHER * openssl_get_evp_cipher_from_algo(long algo) ;
-
 
 int openssl_register_digest(lua_State* L);
+int openssl_register_cipher(lua_State* L);
+int openssl_register_x509(lua_State* L);
+int openssl_register_pkey(lua_State* L);
 
 #endif
 

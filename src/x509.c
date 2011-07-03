@@ -11,7 +11,7 @@
  */ 
 
 
-luaL_Reg x509_funcs[] = {
+static luaL_Reg x509_funcs[] = {
 	{"parse",				openssl_x509_parse},
 	{"export",				openssl_x509_export},
 	{"check_private_key",	openssl_x509_check_private_key},
@@ -326,3 +326,7 @@ LUA_FUNCTION(openssl_x509_public_key)
 	return 1;
 }
 
+int openssl_register_x509(lua_State*L) {
+	auxiliar_newclass(L,"openssl.x509", x509_funcs);
+	return 0;
+}

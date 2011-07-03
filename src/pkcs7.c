@@ -113,8 +113,7 @@ LUA_FUNCTION(openssl_pkcs7_encrypt)
 	BIO * infile = NULL, * outfile = NULL;
 	long flags = 0;
 	PKCS7 * p7 = NULL;
-	const EVP_CIPHER *cipher = NULL;
-	long cipherid = OPENSSL_CIPHER_DEFAULT;
+	const EVP_CIPHER *cipher = EVP_get_cipherbynid(OPENSSL_CIPHER_DEFAULT);
 	const char * infilename = NULL;
 	const char * outfilename = NULL;
 	int ret = 0;
@@ -128,7 +127,7 @@ LUA_FUNCTION(openssl_pkcs7_encrypt)
 	if (top>4)
 		flags = luaL_checkinteger(L,5);
 	if(top>5)
-		cipherid = luaL_checkinteger(L,6);
+		cipher = CHECK_OBJECT(6,EVP_CIPHER,"openssl.evp_cipher");
 
 	infile = BIO_new_file(infilename, "r");
 	if (infile == NULL) {
@@ -143,7 +142,6 @@ LUA_FUNCTION(openssl_pkcs7_encrypt)
 	recipcerts = sk_X509_new_null();
 
 	/* sanity check the cipher */
-	cipher = openssl_get_evp_cipher_from_algo(cipherid);
 	if (cipher == NULL) {
 		/* shouldn't happen */
 		luaL_error(L, "Failed to get cipher");

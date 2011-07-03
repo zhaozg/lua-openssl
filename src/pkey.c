@@ -3,10 +3,8 @@
 
 /* {{{ EVP Public/Private key functions */
 
-
-luaL_Reg pkey_funcs[] = {
+static luaL_Reg pkey_funcs[] = {
 	{"is_private",		openssl_pkey_is_private},
-	{"read",			openssl_pkey_read},
 	{"export",			openssl_pkey_export},
 	{"get_details",		openssl_pkey_get_details},
 
@@ -253,7 +251,7 @@ static int openssl_is_private_key(EVP_PKEY* pkey)
 	lua_pop(L,1);	} while (0);
 
 
-/* {{{ proto resource openssl_pkey_new([array configargs])
+/* {{{ openssl_pkey_new([table configargs])->openssl.evp_pkey
    Generates a new private key */
 LUA_FUNCTION(openssl_pkey_new)
 {
@@ -459,7 +457,7 @@ LUA_FUNCTION(openssl_pkey_free)
 /* }}} */
 
 
-/* {{{ proto resource openssl_pkey_get_details(resource key)
+/* {{{  openssl_pkey_get_details(resource key)
 	returns an array with the key details (bits, pkey, type)*/
 LUA_FUNCTION(openssl_pkey_get_details)
 {
@@ -570,5 +568,10 @@ LUA_FUNCTION(openssl_pkey_tostring)
 	return 1;
 }
 
-
 /* }}} */
+
+
+int openssl_register_pkey(lua_State*L) {
+	auxiliar_newclass(L,"openssl.x509", pkey_funcs);
+	return 0;
+}

@@ -104,7 +104,6 @@ LUA_FUNCTION(openssl_pkcs12_export)
 /*  openssl.pkcs12_read(string pkcs12, string pass) -> table|nil{{{1
 
 	Parses a PKCS12 to an table
-
 	pkcs12 are file path or pkcs11 data
 	. if it starts with file:// then it will be interpreted as the path to that pkcs12
 	. it will be interpreted as the pkcs12 data
