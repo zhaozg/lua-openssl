@@ -1,6 +1,6 @@
 OpenSSL binding for Lua
 
-$Id: README 242949 $Time $Author $
+$Id: README 2011/7/3  zhiguo.zhao $
 
 Index
 -----
@@ -125,6 +125,61 @@ Frees the resource given by the x509 resource identifier.
 Note that this function does not accept the extended cert specification
 syntax mentioned above, as it doesn't make sense in this case!
 
+2. Certificate
+--------------
+
+openssl.x509_read(string val) -> openssl.x509
+1. As an X.509 object returned from openssl.x509_read
+2. As a string in the format file://filename, where filename is the path to the
+   certificate file (it will be opened and read automatically)
+3. As a string containing the data from the certificate file
+
+x509:export([bool notext=true [, string outfilename]]) -> string|bool
+  If outfilename gived, will save certificate encoded to file, or return as string
+x509:parse([bool shortnames=true])=>table, that contain all x509 information
+x509:check_private_key(openssl.evp_pkey pkey) -> bool
+x509:public_key()->openssl.evp_pkey
+x509:checkpurpose(int purpose, openssl.stack_of_x509 cainfo [, string untrustedfile])->boolean
+
+3. Public/Private key functions
+-------------------------------
+
+openssl.evp_read(string data|openssl.x509 x509 [,bool public_key=true [,string passphrase]]) => openssl.evp_pkey
+   Read from a file or a data, coerce it into a EVP_PKEY object.
+	It can be:
+		2. X509 object -> public key will be extracted from it
+		3. if it starts with file:// interpreted as path to key file
+		4. interpreted as the data from the cert/key file and interpreted in same way as openssl_get_privatekey()
+		6. if val is a string (possibly starting with file:///) and it is not an X509 certificate, then interpret as public key
+	NOTE: If you are requesting a private key but have not specified a passphrase, you should use an
+	empty string rather than NULL for the passphrase - NULL causes a passphrase prompt to be emitted Lua error !
+
+openssl.pkey_new([table configargs])->openssl.evp_pkey, configargs = {dsa={n=,e=,...}|dh={}|dsa={}
+
+evp_pkey:export(epv_pkey key, [, string passphrase, array config_args [string outfilename]) => data | bool
+	If outfilename gived, will save certificate encoded to file, or return as string
+evp_peky:get_detail(evp_pkey key)->table, returns an table with the key details (bits, pkey, type)
+evp_pkey:is_private()->bool,Check whether the supplied key is a private key by checking if the secret prime factors are set
+
+4. Cipher
+---------
+
+openssl.get_cipher([null|bool aliases=true]|string alg|int alg_id|openssl.asn1_obj|alg_obj) -> table|openssl.evp_cipher|nil
+openssl.get_cipher([bool aliases = true]) will return all ciphers methods default with alias, other will return a cipher method
+
+evp_cipher:info() =>table, that with name, block_size,key_length,iv_length,flags,mode keys
+evp_cipher:encrypt_init([ string key [,string iv [,openssl.engine engimp]]]) ->openssl.evp_cipher_ctx
+evp_cipher:decrypt_init([ string key [,string iv [,openssl.engine engimp]]])->openssl.evp_cipher_ctx
+evp_cipher:cipher_init(bool enc, [, string key [,string iv [,openssl.engine engimp]]])->openssl.evp_cipher_ctx
+
+evp_cipher_ctx:info() =>table, that with block_size,key_length,iv_length,flags,mode,nid,type and cipher object keys
+evp_cipher_ctx:encrypt_update(string data)->string, which may be 0 length
+evp_cipher_ctx:encrypt_final()->string
+evp_cipher_ctx:decrypt_update(string data)->string, which may be 0 length
+evp_cipher_ctx:decrypt_final()->string
+evp_cipher_ctx:update(string data)->string, which may be 0 length
+evp_cipher_ctx:final()->string
+evp_digest_ctx:cleanup() = >boolean, reset state make object resulable.
 
 5. Message Digest
 -----------------
@@ -136,9 +191,9 @@ evp_digest:info() => table, that with key nid,name, size, block_size, pkey_type,
 evp_digest:digest(string in)=> string, that will be binary digest result
 evp_digest:init() => evp_digest_ctx, that is object
 
+evp_digest_ctx:info() => table, that with key block_size, size, type and diget object
 evp_digest_ctx:update(in) => boolean, means operation result succesful or fail.
 evp_digest_ctx:final() => string, that will be binary digest result
-evp_digest_ctx:info() => table, that with key block_size, size, type and diget object
 evp_digest_ctx:cleanup() = >boolean, reset state make object resulable.
 
 PKCS7 (S/MIME) Sign/Verify/Encrypt/Decrypt Functions:
@@ -243,6 +298,27 @@ venaas@php.net if you have questions. The OpenSSL documentation,
 especially the EVP documentation at
 http://www.openssl.org/docs/crypto/evp.html, might also be of help.
 
+
+9. PKCS12 Function
+------------------
+
+
+openssl.pkcs12_read(string pkcs12, string pass) -> table|nil{{{1
+	Parses a PKCS12 to an table
+	pkcs12 are file path or pkcs11 data
+	. if it starts with file:// then it will be interpreted as the path to that pkcs12
+	. it will be interpreted as the pkcs12 data
+
+openssl.pkcs12_export(openssl.x509 x509, openssl.evp_pkey pkey, string pass [, table args | string filename | [table args , string filename]]) -> string|bool
+	Creates and exports a PKCS to file *
+
+	x509 is openssl.x509 object.
+	pkey is openssl.evp_pkey object.
+	pass is pkcs12 file password.
+	args is option table
+	   friendly_name:	frinedly_name for pkcs11
+	   extracerts:		extra certs in cert chains
+	file is option
 
 HOWTO:
 
