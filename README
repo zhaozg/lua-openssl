@@ -1,6 +1,23 @@
 OpenSSL binding for Lua
 
-$Id: README 242949 2007-09-26 15:44:16Z cvs2svn $
+$Id: README 242949 $Time $Author $
+
+Index
+-----
+1. Introduce
+2. Certificate
+3. Public/Private Key
+4. Cipher
+5. Message Digest
+6. Encrypt/Decrypt
+7. Certificate sign request
+8. Pkcs7
+9. Pkcs12
+0. Misc
+
+
+Introduction
+------------
 
 The functions implemented so far make it possible to seal and open data, and
 also create and verify signatures.
@@ -15,7 +32,7 @@ Most of the functions require a key or a certificate as a parameter; to make
 things easy for you to use openssl, this extension allows you
 to specify certificates in the following way:
 
-1. As an X.509 resource returned from openssl_x509_read
+1. As an X.509 object returned from openssl.x509_read
 2. As a string in the format file://filename, where filename is the path to the
    certificate file (it will be opened and read automatically)
 3. As a string containing the data from the certificate file
@@ -108,6 +125,21 @@ Frees the resource given by the x509 resource identifier.
 Note that this function does not accept the extended cert specification
 syntax mentioned above, as it doesn't make sense in this case!
 
+
+5. Message Digest
+-----------------
+
+openssl.get_digest([nil,bool aliases=true]|string alg|int alg_id|openssl.asn1_obj|alg_obj) -> table|openssl.evp_digest|nil
+openssl.get_digest([bool alias=true]) will return all md methods default with alias, other will return a evp_digest object
+
+evp_digest:info() => table, that with key nid,name, size, block_size, pkey_type, flags
+evp_digest:digest(string in)=> string, that will be binary digest result
+evp_digest:init() => evp_digest_ctx, that is object
+
+evp_digest_ctx:update(in) => boolean, means operation result succesful or fail.
+evp_digest_ctx:final() => string, that will be binary digest result
+evp_digest_ctx:info() => table, that with key block_size, size, type and diget object
+evp_digest_ctx:cleanup() = >boolean, reset state make object resulable.
 
 PKCS7 (S/MIME) Sign/Verify/Encrypt/Decrypt Functions:
 -----------------------------------------------------
@@ -243,78 +275,39 @@ Example usage
 These examples use keys that come with OpenSSL, you should perhaps test with
 those first.
 
+read and parse certificate
+
+		local openssl = require('openssl')
+		print(openssl)
+		for k,v in pairs(openssl) do
+				print(k,v)
+		end
+
+		function dump(t,i)
+				for k,v in pairs(t) do
+						if(type(v)=='table') then
+								print( string.rep('\t',i),k..'={')
+										dump(v,i+1)
+								print( string.rep('\t',i),k..'=}')
+						else
+								print( string.rep('\t',i),k..'='..tostring(v))
+						end
+				end
+		end
+
+		function test_x509()
+				local x = openssl.x509_read('file://b.cer')
+				print(x)
+				t = x:parse()
+				dump(t,0)
+				print(t)
+		end
+
+		test_x509()
 
 Seal and open
-
-     <?php
-     $data = "Follow the white rabbit";
-
-     // Get certificate into a string
-     // this file comes with OpenSSL 0.9.6
-     $fp = fopen("/src/openssl-0.9.6/demos/maurice/cert.pem", "r");
-     $cert = fread($fp, 8192);
-     fclose($fp);
-     // get public key from certificate
-     $pk1 = openssl_get_publickey($cert);
-     // $pk1 is an encryption key resource id if success, else false
-     // Repeat if want public keys for multiple parties
-
-     $fp = fopen("/src/openssl-0.9.6/demos/sign/cert.pem", "r");
-     $cert = fread($fp, 8192);
-     fclose($fp);
-     $pk2 = openssl_get_publickey($cert);
-
-     // seal data, only owners of $pk1 and $pk2 can decrypt $sealed with keys
-     // $ekeys[0] and $ekeys[1] respectively.
-     openssl_seal($data, $sealed, $ekeys, array($pk1,$pk2));
-     openssl_free_key($pk1);
-     openssl_free_key($pk2);
-
-     // now we try to decrypt data for one of the recipients
-     $fp = fopen("/src/openssl-0.9.6/demos/sign/key.pem", "r");
-     // Get PEM coded key into $pkey 
-     $pkey = fread($fp, 8192);
-     fclose($fp);
-     // $key will be resource id for unpacked $pkey
-     $key = openssl_get_privatekey($pkey);
-
-     openssl_open($sealed, $open, $ekeys[1], $key);
-     openssl_free_key($key);
-     echo "$open\n";
-     ?>
 
 
 Sign and verify
 
-     <?php
-     $data = "Follow the white rabbit";
 
-     // First we need to have a string containing the private key in PEM format
-     // this file comes with OpenSSL 0.9.6
-     $fp = fopen("/src/openssl-0.9.6/demos/sign/key.pem", "r");
-     $pkey = fread($fp, 8192);
-     fclose($fp);
-
-     // get private key from the PEM format
-     // $key is an encr key resource id if success, else false
-     $key = openssl_get_privatekey($pkey);
-
-     // calculate signature
-     openssl_sign($data, $signature, $key);
-     openssl_free_key($key);
-
-     // recipient verifies signature
-     // read certificate
-     $fp = fopen("/src/openssl-0.9.6/demos/sign/cert.pem", "r");
-     $cert = fread($fp, 8192);
-     fclose($fp);
-
-     // Get public key from the certificate
-     $pubkey = openssl_get_publickey($cert);
-
-     // state whether signature is okay or not
-     echo openssl_verify($data, $signature, $pubkey) == 1 ? "ok\n" : "bad\n";
-
-     // free key
-     openssl_free_key($pubkey);
-     ?>
