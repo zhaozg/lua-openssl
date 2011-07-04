@@ -16,7 +16,6 @@ static luaL_Reg pkey_funcs[] = {
 };
 
 static int openssl_is_private_key(EVP_PKEY* pkey);
-static EVP_PKEY * openssl_generate_private_key(lua_State*L,struct x509_request * req);
 
 /* {{{ openssl_evp_read(string data|openssl.x509 x509 [,bool public_key=true [,string passphrase]]) => openssl.evp_pkey
    Read from a file or a data, coerce it into a EVP_PKEY object.
@@ -106,81 +105,6 @@ int openssl_pkey_read(lua_State*L)
 }
 /* }}} */
 
-/* {{{ openssl_generate_private_key */
-static EVP_PKEY * openssl_generate_private_key(lua_State*L, struct x509_request * req)
-{
-	char * randfile = NULL;
-	int egdsocket, seeded;
-	EVP_PKEY * return_val = NULL;
-	
-	if (req->priv_key_bits < MIN_KEY_LENGTH) {
-		luaL_error(L, "private key length is too short; it needs to be at least %d bits, not %d",
-				MIN_KEY_LENGTH, req->priv_key_bits);
-	}
-
-	randfile = CONF_get_string(req->req_config, req->section_name, "RANDFILE");
-	openssl_load_rand_file(randfile, &egdsocket, &seeded);
-	
-	if ((req->priv_key = EVP_PKEY_new()) != NULL) {
-		switch(req->priv_key_type) {
-			case OPENSSL_KEYTYPE_RSA:
-				if (EVP_PKEY_assign_RSA(req->priv_key, RSA_generate_key(req->priv_key_bits, 0x10001, NULL, NULL))) {
-					return_val = req->priv_key;
-				}
-				break;
-#if !defined(NO_DSA) && defined(HAVE_DSA_DEFAULT_METHOD)
-			case OPENSSL_KEYTYPE_DSA:
-				{
-					DSA *dsapar = DSA_generate_parameters(req->priv_key_bits, NULL, 0, NULL, NULL, NULL, NULL);
-					if (dsapar) {
-						DSA_set_method(dsapar, DSA_get_default_method());
-						if (DSA_generate_key(dsapar)) {
-							if (EVP_PKEY_assign_DSA(req->priv_key, dsapar)) {
-								return_val = req->priv_key;
-							}
-						} else {
-							DSA_free(dsapar);
-						}
-					}
-				}
-				break;
-#endif
-#if !defined(NO_DH)
-			case OPENSSL_KEYTYPE_DH:
-				{
-					DH *dhpar = DH_generate_parameters(req->priv_key_bits, 2, NULL, NULL);
-					int codes = 0;
-
-					if (dhpar) {
-						DH_set_method(dhpar, DH_get_default_method());
-						if (DH_check(dhpar, &codes) && codes == 0 && DH_generate_key(dhpar)) {
-							if (EVP_PKEY_assign_DH(req->priv_key, dhpar)) {
-								return_val = req->priv_key;
-							}
-						} else {
-							DH_free(dhpar);
-						}
-					}
-				}
-				break;
-#endif
-			default:
-				luaL_error(L,"Unsupported private key type");
-		}
-	}
-
-	openssl_write_rand_file(randfile, egdsocket, seeded);
-	
-	if (return_val == NULL) {
-		EVP_PKEY_free(req->priv_key);
-		req->priv_key = NULL;
-		return NULL;
-	}
-	
-	return return_val;
-}
-/* }}} */
-
 /* {{{ openssl_is_private_key
 	Check whether the supplied key is a private key by checking if the secret prime factors are set */
 static int openssl_is_private_key(EVP_PKEY* pkey)
@@ -251,11 +175,75 @@ static int openssl_is_private_key(EVP_PKEY* pkey)
    Generates a new private key */
 LUA_FUNCTION(openssl_pkey_new)
 {
-	struct x509_request req;
 	int args = lua_gettop(L);
 	EVP_PKEY *pkey = NULL;
+	const char* alg = "rsa";
 
-	if (args && lua_istable(L,args)) {
+	if (lua_isnoneornil(L,1) || lua_isstring(L,1)) {
+		alg = luaL_optstring(L,1,alg);
+			
+		if (stricmp(alg,"rsa")==0)
+		{
+			int bits = luaL_optint(L,2,1024);
+			int e = luaL_optint(L,3,65537);
+			RSA* rsa = RSA_generate_key(bits,e,NULL,NULL);
+			pkey = EVP_PKEY_new();
+			EVP_PKEY_assign_RSA(pkey,rsa);
+
+		}else if(stricmp(alg,"dsa")==0)
+		{
+			int bits = luaL_optint(L,2,1024);
+			int seed_len = 0;
+			const char* seed = luaL_optlstring(L,3,NULL,&seed_len);
+
+			DSA *dsa = DSA_generate_parameters(bits, (char*)seed,seed_len, NULL,  NULL, NULL, NULL);
+			if( !DSA_generate_key(dsa))
+			{
+				DSA_free(dsa);
+				luaL_error(L,"DSA_generate_key failed");
+			}
+			pkey = EVP_PKEY_new();
+			EVP_PKEY_assign_DSA(pkey, dsa);
+
+		}else if(stricmp(alg,"dh")==0)
+		{
+			int bits = luaL_optint(L,2,512);
+			int generator = luaL_optint(L,3,2);
+
+			DH* dh = DH_new(); //dh = DH_generate_parameters(bits,generator,NULL,NULL);
+			if(!DH_generate_parameters_ex(dh, bits, generator, NULL))
+			{
+				DH_free(dh);
+				luaL_error(L,"DH_generate_parameters_ex failed");
+			}
+			DH_generate_key(dh);
+			pkey = EVP_PKEY_new();
+			EVP_PKEY_assign_DH(pkey,dh);
+
+		}/*
+		else if(stricmp(alg,"ec")==0)
+		{
+			int bits = luaL_optint(L,2,1024);
+
+			EC_KEY *ec = EC_KEY_new();
+			group = EC_KEY_get0_group(recip_key);
+
+			EC_KEY_set_group(ec, group);
+
+			EC_KEY_generate_key(ephemeral_key);
+			if(!EC_KEY_generate_key(ec))
+			{
+				EC_KEY_free(ec);
+				luaL_error(L,"EC_KEY_generate_key failed");
+			}
+			pkey = EVP_PKEY_new();
+			EVP_PKEY_assign_EC_KEY(pkey,ec);
+		}*/
+		else
+		{
+			luaL_error(L,"not support %s!!!!",alg);
+		}
+	}else if (args && lua_istable(L,args)) {
 		lua_getfield(L,1,"rsa");
 		if (lua_istable(L,-1))
 		{
@@ -277,7 +265,6 @@ LUA_FUNCTION(openssl_pkey_new)
 							pkey = NULL;
 						}
 					}
-					RSA_free(rsa);
 				}
 			}
 		}
@@ -304,7 +291,6 @@ LUA_FUNCTION(openssl_pkey_new)
 								pkey = NULL;
 							}
 						}
-						DSA_free(dsa);
 					}
 				}
 			}
@@ -330,7 +316,6 @@ LUA_FUNCTION(openssl_pkey_new)
 								pkey = NULL;
 							}
 						}
-						DH_free(dh);
 					}
 				}
 			}
@@ -341,20 +326,8 @@ LUA_FUNCTION(openssl_pkey_new)
 			PUSH_OBJECT(pkey,"openssl.evp_pkey");
 			return 1;
 		}
-	}else
-	{
-		SSL_REQ_INIT(&req);
-
-		if (SSL_REQ_PARSE(L, &req, args) == 0)
-		{
-			if (openssl_generate_private_key(L,&req)) {
-				/* pass back a key resource */
-				pkey = req.priv_key;
-				req.priv_key = NULL;
-			}
-		}
-		SSL_REQ_DISPOSE(&req);
 	}
+
 	if(pkey)
 	{
 		PUSH_OBJECT(pkey,"openssl.evp_pkey");
@@ -365,78 +338,116 @@ LUA_FUNCTION(openssl_pkey_new)
 }
 /* }}} */
 
-/* {{{ openssl.pkey_export(mixed key, [, string passphrase, array config_args [string outfilename]) => data | bool
+/* {{{ openssl.pkey_export(mixed key[,boolean raw_key, [, string passphrase, [string outfilename]]) => data | bool
    Gets an exportable representation of a key into a file or a var */
 
 LUA_FUNCTION(openssl_pkey_export)
 {
-	struct x509_request req;
-	int args;
-	const char * passphrase = NULL;
 	int passphrase_len = 0;
-	const char * filename = NULL;
 	BIO * bio_out = NULL;
 	int ret = 0;
 	const EVP_CIPHER * cipher;
 
 	EVP_PKEY * key = CHECK_OBJECT(1,EVP_PKEY,"openssl.evp_pkey");
-	passphrase = luaL_optlstring(L,2, NULL,&passphrase_len);
-	args = lua_gettop(L)>2 ? 3 : 0;
-	filename = luaL_optstring(L,4,NULL);
-	
-	SSL_REQ_INIT(&req);
+	int raw_key = lua_isnoneornil(L,2) ? 0 : lua_toboolean(L,2);
+	const char * passphrase = luaL_optlstring(L,4, NULL,&passphrase_len);
+	const char * filename = luaL_optstring(L,4,NULL);
 
+	int is_priv = openssl_is_private_key(key);
 	if(filename)
 	{
-		if (SSL_REQ_PARSE(L,&req, args) == 0) {
 			bio_out = BIO_new_file(filename, "w");
 
-			if (passphrase && req.priv_key_encrypt) {
+			if (passphrase) {
 				cipher = (EVP_CIPHER *) EVP_des_ede3_cbc();
 			} else {
 				cipher = NULL;
 			}
-			if (PEM_write_bio_PrivateKey(bio_out, key, cipher, (unsigned char *)passphrase, passphrase_len, NULL, NULL)) {
-				/* 0!
-				 * If returning the output as a string, do so now */
-				ret = 1;
+			if(!raw_key) {
+					ret = is_priv ? PEM_write_bio_PrivateKey(bio_out, key, cipher, (unsigned char *)passphrase, passphrase_len, NULL, NULL)
+						:PEM_write_bio_PUBKEY(bio_out,key);
+			}else
+			{
+				switch (EVP_PKEY_type(key->type)) {
+					case EVP_PKEY_RSA:
+					case EVP_PKEY_RSA2:
+						ret = is_priv ? PEM_write_bio_RSAPrivateKey(bio_out,key->pkey.rsa, cipher, (unsigned char *)passphrase, passphrase_len, NULL, NULL)
+							: PEM_write_bio_RSAPublicKey(bio_out,key->pkey.rsa);
+						break;	
+					case EVP_PKEY_DSA:
+					case EVP_PKEY_DSA2:
+					case EVP_PKEY_DSA3:
+					case EVP_PKEY_DSA4:
+						ret = is_priv ? PEM_write_bio_DSAPrivateKey(bio_out,key->pkey.dsa, cipher, (unsigned char *)passphrase, passphrase_len, NULL, NULL)
+							:PEM_write_bio_DSA_PUBKEY(bio_out,key->pkey.dsa);
+						break;
+					case EVP_PKEY_DH:
+						ret = PEM_write_bio_DHparams(bio_out,key->pkey.dh);
+						break;
+					default:
+						ret = 0;
+						break;
+				}
 			}
 			if (bio_out) {
 				BIO_free(bio_out);
 			}
-		}
-		SSL_REQ_DISPOSE(&req);
-		lua_pushboolean(L,ret);
-		return 1;
+			lua_pushboolean(L,ret);
+			return 1;
 	}else
 	{
-		if (SSL_REQ_PARSE(L, &req, args) == 0) {
 			bio_out = BIO_new(BIO_s_mem());
 
-			if (passphrase && req.priv_key_encrypt) {
+			if (passphrase) {
 				cipher = (EVP_CIPHER *) EVP_des_ede3_cbc();
 			} else {
 				cipher = NULL;
 			}
-			if (PEM_write_bio_PrivateKey(bio_out, key, cipher, (unsigned char *)passphrase, passphrase_len, NULL, NULL)) {
-				/* 0!
-				 * If returning the output as a string, do so now */
-
+			if(!raw_key) {
+				if(is_priv)
+				{
+					ret = PEM_write_bio_PrivateKey(bio_out, key, cipher, (unsigned char *)passphrase, passphrase_len, NULL, NULL);
+				}else
+				{
+					ret = PEM_write_bio_PUBKEY(bio_out,key);
+				}
+			}else
+			{
+				switch (EVP_PKEY_type(key->type)) {
+					case EVP_PKEY_RSA:
+					case EVP_PKEY_RSA2:
+						ret = is_priv ? PEM_write_bio_RSAPrivateKey(bio_out,key->pkey.rsa, cipher, (unsigned char *)passphrase, passphrase_len, NULL, NULL)
+							: PEM_write_bio_RSAPublicKey(bio_out,key->pkey.rsa);
+						break;	
+					case EVP_PKEY_DSA:
+					case EVP_PKEY_DSA2:
+					case EVP_PKEY_DSA3:
+					case EVP_PKEY_DSA4:
+						ret = is_priv ? PEM_write_bio_DSAPrivateKey(bio_out,key->pkey.dsa, cipher, (unsigned char *)passphrase, passphrase_len, NULL, NULL)
+							:PEM_write_bio_DSA_PUBKEY(bio_out,key->pkey.dsa);
+						break;
+					case EVP_PKEY_DH:
+						ret = PEM_write_bio_DHparams(bio_out,key->pkey.dh);
+						break;
+					default:
+						ret = 0;
+						break;
+				}
+			}
+			if(ret) {
 				char * bio_mem_ptr;
 				long bio_mem_len;
 
 				bio_mem_len = BIO_get_mem_data(bio_out, &bio_mem_ptr);
 
 				lua_pushlstring(L, bio_mem_ptr, bio_mem_len);
-				ret = 1;
+				ret  = 1;
 			}
 
 			if (bio_out) {
 				BIO_free(bio_out);
 			}
-		}
 	}
-	SSL_REQ_DISPOSE(&req);
 	return ret;
 }
 
@@ -458,22 +469,21 @@ LUA_FUNCTION(openssl_pkey_free)
 LUA_FUNCTION(openssl_pkey_get_details)
 {
 	EVP_PKEY *pkey = CHECK_OBJECT(1,EVP_PKEY,"openssl.evp_pkey");
-	BIO *out;
-	unsigned int pbio_len;
-	char *pbio;
+	BIO *out = NULL;
+	unsigned int pbio_len = 0;
+	char *pbio = NULL;
 	long ktype;
 
 	out = BIO_new(BIO_s_mem());
-	PEM_write_bio_PUBKEY(out, pkey);
-	pbio_len = BIO_get_mem_data(out, &pbio);
 
 	lua_newtable(L);
 
 	lua_pushinteger(L,EVP_PKEY_bits(pkey));
 	lua_setfield(L,-2,"bits");
 
-	lua_pushlstring(L,pbio, pbio_len);
-	lua_setfield(L,-2,"key");
+	PEM_write_bio_PUBKEY(out, pkey);
+	pbio_len = BIO_get_mem_data(out, &pbio);
+
 
 	/*TODO: Use the real values once the openssl constants are used 
 	 * See the enum at the top of this file
@@ -538,6 +548,11 @@ LUA_FUNCTION(openssl_pkey_get_details)
 	}
 	lua_pushinteger(L,ktype);
 	lua_setfield(L,2,"type");
+	if(pbio)
+	{
+		lua_pushlstring(L,pbio, pbio_len);
+		lua_setfield(L,-2,"key");
+	}
 
 	BIO_free(out);
 	return 1;
@@ -568,6 +583,6 @@ LUA_FUNCTION(openssl_pkey_tostring)
 
 
 int openssl_register_pkey(lua_State*L) {
-	auxiliar_newclass(L,"openssl.x509", pkey_funcs);
+	auxiliar_newclass(L,"openssl.evp_pkey", pkey_funcs);
 	return 0;
 }

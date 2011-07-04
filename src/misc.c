@@ -465,54 +465,6 @@ void openssl_dispose_config(struct x509_request * req) /* {{{ */
 }
 /* }}} */
 
-int openssl_load_rand_file(const char * file, int *egdsocket, int *seeded) /* {{{ */
-{
-	char buffer[MAX_PATH];
-
-
-	*egdsocket = 0;
-	*seeded = 0;
-
-	if (file == NULL) {
-		file = RAND_file_name(buffer, sizeof(buffer));
-	} else if (RAND_egd(file) > 0) {
-		/* if the given filename is an EGD socket, don't
-		 * write anything back to it */
-		*egdsocket = 1;
-		return 0;
-	}
-	if (file == NULL || !RAND_load_file(file, -1)) {
-		if (RAND_status() == 0) {
-			printf("unable to load random state; not enough random data!");
-			return -1;
-		}
-		return -1;
-	}
-	*seeded = 1;
-	return 0;
-}
-/* }}} */
-
-int openssl_write_rand_file(const char * file, int egdsocket, int seeded) /* {{{ */
-{
-	char buffer[MAX_PATH];
-
-	if (egdsocket || !seeded) {
-		/* if we did not manage to read the seed file, we should not write
-		 * a low-entropy seed file back */
-		return -1;
-	}
-	if (file == NULL) {
-		file = RAND_file_name(buffer, sizeof(buffer));
-	}
-	if (file == NULL || !RAND_write_file(file)) {
-		printf("unable to write random state");
-		return -1;
-	}
-	return 0;
-}
-/* }}} */
-
 
 void openssl_add_method_or_alias(const OBJ_NAME *name, void *arg) 
 {

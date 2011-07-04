@@ -177,10 +177,6 @@ void add_assoc_int(lua_State* L, const char* i, int b);
 void add_assoc_asn1_time(lua_State*L, char * key, ASN1_UTCTIME * timestr);
 STACK_OF(X509) * load_all_certs_from_file(const char *certfile);
 
-int openssl_load_rand_file(const char * file, int *egdsocket, int *seeded);
-int openssl_write_rand_file(const char * file, int egdsocket, int seeded) ;
-
-
 int openssl_register_digest(lua_State* L);
 int openssl_register_cipher(lua_State* L);
 int openssl_register_x509(lua_State* L);

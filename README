@@ -144,6 +144,14 @@ x509:checkpurpose(int purpose, openssl.stack_of_x509 cainfo [, string untrustedf
 3. Public/Private key functions
 -------------------------------
 
+openssl.evp_new([string alg='rsa' [,int bits=1024|512, [...]]])=>openssl.evp_pkey
+		default generate RSA key, bits=1024, 3rd paramater e default is 0x10001
+		dsa,with bits default 1024 ,and seed data default have no data
+		dh, with bits(prime_len) default 512, and generator default is 
+		ec, not use any paramater
+
+openssl.pkey_new([table configargs])->openssl.evp_pkey, configargs = {dsa={n=,e=,...}|dh={}|dsa={}
+
 openssl.evp_read(string data|openssl.x509 x509 [,bool public_key=true [,string passphrase]]) => openssl.evp_pkey
    Read from a file or a data, coerce it into a EVP_PKEY object.
 	It can be:
@@ -154,10 +162,10 @@ openssl.evp_read(string data|openssl.x509 x509 [,bool public_key=true [,string p
 	NOTE: If you are requesting a private key but have not specified a passphrase, you should use an
 	empty string rather than NULL for the passphrase - NULL causes a passphrase prompt to be emitted Lua error !
 
-openssl.pkey_new([table configargs])->openssl.evp_pkey, configargs = {dsa={n=,e=,...}|dh={}|dsa={}
-
-evp_pkey:export(epv_pkey key, [, string passphrase, array config_args [string outfilename]) => data | bool
+evp_pkey:export(epv_pkey key, [,boolean raw_key=false, [, string passphrase, [string outfilename]]]) => data | bool
+    If raw_key is true, export will export rsa,dsa or dh data
 	If outfilename gived, will save certificate encoded to file, or return as string
+	
 evp_peky:get_detail(evp_pkey key)->table, returns an table with the key details (bits, pkey, type)
 evp_pkey:is_private()->bool,Check whether the supplied key is a private key by checking if the secret prime factors are set
 
