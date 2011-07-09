@@ -1,5 +1,8 @@
 Finished.
 1) digest operation
-2) certificate read and parse operaion
+2) cipher operaion
+3) certificate read and parse operaion
 
 TODO:
+Add support CRL
+Write a CA system.
