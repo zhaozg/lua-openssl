@@ -1,0 +1,77 @@
+K 25
+svn:wc:ra_dav:version-url
+V 40
+/svn/!svn/ver/2/trunk/%20lua-openssl/src
+END
+auxiliar.c
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/svn/!svn/ver/3/trunk/%20lua-openssl/src/auxiliar.c
+END
+digest.c
+K 25
+svn:wc:ra_dav:version-url
+V 49
+/svn/!svn/ver/4/trunk/%20lua-openssl/src/digest.c
+END
+pkcs12.c
+K 25
+svn:wc:ra_dav:version-url
+V 49
+/svn/!svn/ver/7/trunk/%20lua-openssl/src/pkcs12.c
+END
+openssl.c
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/svn/!svn/ver/7/trunk/%20lua-openssl/src/openssl.c
+END
+auxiliar.h
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/svn/!svn/ver/3/trunk/%20lua-openssl/src/auxiliar.h
+END
+x509.c
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/svn/!svn/ver/7/trunk/%20lua-openssl/src/x509.c
+END
+pkcs7.c
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/svn/!svn/ver/7/trunk/%20lua-openssl/src/pkcs7.c
+END
+csr.c
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svn/!svn/ver/7/trunk/%20lua-openssl/src/csr.c
+END
+pkey.c
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/svn/!svn/ver/7/trunk/%20lua-openssl/src/pkey.c
+END
+openssl.h
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/svn/!svn/ver/7/trunk/%20lua-openssl/src/openssl.h
+END
+cipher.c
+K 25
+svn:wc:ra_dav:version-url
+V 49
+/svn/!svn/ver/4/trunk/%20lua-openssl/src/cipher.c
+END
+misc.c
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/svn/!svn/ver/7/trunk/%20lua-openssl/src/misc.c
+END

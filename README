@@ -15,9 +15,8 @@ Index
 9. Pkcs12
 0. Misc
 
-
-Introduction
-------------
+1. Introduction
+---------------
 
 The functions implemented so far make it possible to seal and open data, and
 also create and verify signatures.
@@ -25,121 +24,39 @@ also create and verify signatures.
 NEW: support for S/MIME encrypt/decrypt/sign/verify, as well as more
 flexibility for specifying certificates/keys.
 
-Specifying keys/certificates
-----------------------------
-
 Most of the functions require a key or a certificate as a parameter; to make
-things easy for you to use openssl, this extension allows you
-to specify certificates in the following way:
+things easy for you to use openssl, this extension allows you to specify 
+certificates or key in the following way:
 
-1. As an X.509 object returned from openssl.x509_read
-2. As a string in the format file://filename, where filename is the path to the
-   certificate file (it will be opened and read automatically)
-3. As a string containing the data from the certificate file
+1. As an openssl.x509 object returned from openssl.x509_read
+2. As an openssl.evp_pkey object return from openssl.pkey_read 
+   or openssl.pkey_new
 
 Similarly, you can use the following methods of specifying a public key:
 
-1. As a key resource returned from openssl_get_publickey
-2. An X509 resource - public key only
-3. As a string in the format file://filename
-4. As a string containing the data from the key file
+1. As a key object returned from object:get_public
 
-Additionally, for a private key, when the openssl extension function does not
-allow you to enter the passphrase as a parameter you may use the syntax
-array($key, "passphrase") where $key can be a key specified using one of the
-methods listed above.
-
-Certificate Verification
-------------------------
-When calling a function that will verify a signature/certificate, the cainfo
-parameter is an array containing file and directory names that specifiy the
-locations of trusted CA files.  If a directory is specified, then it must be a
-correctly hashed directory.
-
-Misc:
------
-
-mixed openssl_error_string()
-
-returns the message from the last error that the OpenSSL library encountered
-and moves it's internal error pointer to the next message.  If there are no
-more error messages, returns false.
-
-General Key/Cert Functions:
----------------------------
-
-resource openssl_get_privatekey(mixed key [, string passphrase])
-
-Parses the key data and returns a key resource identifier. If the key is
-encrypted a passphrase is needed. This can be supplied as second argument.
-
-
-resource openssl_get_publickey(mixed cert)
-
-Extracts the public key from the given certificate or public key and returns
-a key resource identifier.
-
-
-void openssl_free_key(resource key)
-
-Frees the resource given by the key resource identifier.
-Note that this function does not accept the extended key specification
-syntax mentioned above, as it doesn't make sense in this case!
-
-array openssl_x509_parse(mixed x509[, bool shortnames=true])
-
-Parses the certificate data and returns an array containing information
-about the certificate, it's intended purposes, subject, issuer, validity
-etc. etc.  If shortnames is true (the default) then the fields will be
-keyed by the shortname forms eg: CN as opposed to commonName (shortnames
-= false).
-
-
-bool openssl_x509_checkpurpose(mixed x509cert, int purpose,
-	array cainfo[, string untrustedfile])
-
-Verifies if the certificate can be used for a specific purpose.
-Purpose can be one of the following values:
-	X509_PURPOSE_SSL_CLIENT
-	X509_PURPOSE_SSL_SERVER
-	X509_PURPOSE_NS_SSL_SERVER
-	X509_PURPOSE_SMIME_SIGN
-	X509_PURPOSE_SMIME_ENCRYPT
-	X509_PURPOSE_CRL_SIGN
-	X509_PURPOSE_ANY
-
-cainfo is an array of CA information (as mentioned above).
-untrusted file specifies a file containing a bunch of certs that
-are not trusted but may be useful in validating the certificate.
-
-
-resource openssl_read_x509(mixed cert)
-
-Parses the cert and returns a resource that can be used with the
-other openssl functions
-
-
-void openssl_free_x509(resource x509)
-
-Frees the resource given by the x509 resource identifier.
-Note that this function does not accept the extended cert specification
-syntax mentioned above, as it doesn't make sense in this case!
+openssl.stack_of_x509 is an important object ina lua-openssl, it can be used
+as a certchaina, trusted CA files or unstrustcerts.
 
 2. Certificate
 --------------
 
 openssl.x509_read(string val) -> openssl.x509
 1. As an X.509 object returned from openssl.x509_read
-2. As a string in the format file://filename, where filename is the path to the
-   certificate file (it will be opened and read automatically)
-3. As a string containing the data from the certificate file
+2. As a string containing the data from the certificate file
 
-x509:export([bool notext=true [, string outfilename]]) -> string|bool
-  If outfilename gived, will save certificate encoded to file, or return as string
-x509:parse([bool shortnames=true])=>table, that contain all x509 information
+x509:export([bool notext=true]) -> string
+  x509:parse([bool shortnames=true])=>table, that contain all x509 information
 x509:check_private_key(openssl.evp_pkey pkey) -> bool
 x509:public_key()->openssl.evp_pkey
-x509:checkpurpose(int purpose, openssl.stack_of_x509 cainfo [, string untrustedfile])->boolean
+x509:checkpurpose(string purpose, openssl.stack_of_x509 cainfo [, openssl.stack_of_x509 untrustedcerts])->boolean
+     purpose canbe one of: ssl_client, ssl_server, ns_ssl_server, smime_sign,
+     smime_encrypt, crl_sign, any, ocsp_helper, timestamp_sign
+
+    cainfo is an openssl.stack_of_x509 object (as mentioned above).
+    untrusted is an openssl.stack_of_x509 object containing a bunch of certs
+that are not trusted but may be useful in validating the certificate.
 
 3. Public/Private key functions
 -------------------------------
@@ -155,10 +72,8 @@ openssl.pkey_new([table configargs])->openssl.evp_pkey, configargs = {dsa={n=,e=
 openssl.evp_read(string data|openssl.x509 x509 [,bool public_key=true [,string passphrase]]) => openssl.evp_pkey
    Read from a file or a data, coerce it into a EVP_PKEY object.
 	It can be:
-		2. X509 object -> public key will be extracted from it
-		3. if it starts with file:// interpreted as path to key file
-		4. interpreted as the data from the cert/key file and interpreted in same way as openssl_get_privatekey()
-		6. if val is a string (possibly starting with file:///) and it is not an X509 certificate, then interpret as public key
+		1. X509 object -> public key will be extracted from it
+		2. interpreted as the data from the cert/key file and interpreted in same way as openssl_get_privatekey()
 	NOTE: If you are requesting a private key but have not specified a passphrase, you should use an
 	empty string rather than NULL for the passphrase - NULL causes a passphrase prompt to be emitted Lua error !
 
@@ -166,8 +81,24 @@ evp_pkey:export(epv_pkey key, [,boolean raw_key=false, [, string passphrase, [st
     If raw_key is true, export will export rsa,dsa or dh data
 	If outfilename gived, will save certificate encoded to file, or return as string
 	
-evp_peky:get_detail(evp_pkey key)->table, returns an table with the key details (bits, pkey, type)
+evp_peky:parse(evp_pkey key)->table, returns an table with the key details (bits, pkey, type)
 evp_pkey:is_private()->bool,Check whether the supplied key is a private key by checking if the secret prime factors are set
+
+
+About padding
+
+    Now supporting 6 padding mode, they are:
+	pkcs1:	RSA_PKCS1_PADDING	1
+	sslv23:	RSA_SSLV23_PADDING	2
+	no:	RSA_NO_PADDING		3
+	oaep:	RSA_PKCS1_OAEP_PADDING	4
+	x931:	RSA_X931_PADDING	5
+	pss:	RSA_PKCS1_PSS_PADDING	6
+
+   If input other padding string value other(ingore capatical) than above, will raise lua error.
+
+evp_pkey:encrypt(string data [,string padding=pkcs1]) => string|nil
+evp_pkey:decrypt(string data [,string padding=pkcs1]) => string|nil
 
 4. Cipher
 ---------
@@ -301,26 +232,60 @@ envelope key. Returns true on success and false on failure.  On success,
 opendata will hold the descypted data.
 
 
+7. Certificate sign request
+---------------------------
+
+openssl.csr_new(openssl.evp_pkey privkey, table dn={} [,table args = nil])->openssl.x509_req
+openssl.csr_read(string data) -> openssl.x509_req
+
+csr:sign(openssl.x509 cert, openssl.evp_pkey privkey, table arg) -> openssl.x509
+	args must have serialNumber as hexecoded string, num_days as number
+csr:export([boolean pem=true [, boolean noext=true]])->string
+csr:get_public() -> openssl.evp_pkey
+
+
+8. PKCS7 S/MIME Function
+------------------------
+
+openssl.pkcs7_verify	(string)
+openssl.pkcs7_decrypt	
+openssl.pkcs7_sign	
+openssl.pkcs7_encrypt	
+
+
 9. PKCS12 Function
 ------------------
 
-
-openssl.pkcs12_read(string pkcs12, string pass) -> table|nil{{{1
+openssl.pkcs12_read(string pkcs12, string pass) -> table|nil
 	Parses a PKCS12 to an table
-	pkcs12 are file path or pkcs11 data
-	. if it starts with file:// then it will be interpreted as the path to that pkcs12
-	. it will be interpreted as the pkcs12 data
+	pkcs12 are pkcs12 data
 
-openssl.pkcs12_export(openssl.x509 x509, openssl.evp_pkey pkey, string pass [, table args | string filename | [table args , string filename]]) -> string|bool
-	Creates and exports a PKCS to file *
+	return a table which have cert, pkey, and extracerts three keys
+
+openssl.pkcs12_export(openssl.x509 x509, openssl.evp_pkey pkey, string pass [[, string friendname ], table extracerts])) -> string
+	Creates and exports a PKCS12 data
 
 	x509 is openssl.x509 object.
 	pkey is openssl.evp_pkey object.
 	pass is pkcs12 file password.
-	args is option table
-	   friendly_name:	frinedly_name for pkcs11
-	   extracerts:		extra certs in cert chains
-	file is option
+	friendname is options, if exist, must at 4th paramater
+	extracerts is options, it can be at 4th or 5th(if friendname exist) paramater
+
+
+0. Misc Function
+----------------
+
+openssl.object_create(string oid, string name[, string alias] | tables args ) -> boolean
+    If you want to add a lot of object, pleause use table args, args must be array index 
+    start from 1, and every node is a table have oid,name and optional alias key.
+
+openssl.random_bytes(number length [, boolean strong=false])  -> string,boolean
+    Returns a string of the length specified filled with random bytes
+
+openssl.error_string()->number value, string error
+    If found error, it will return a error number code, followd ba string description
+    Or it will return notiong and  clear error state, so you can call it twice.
+
 
 HOWTO:
 
