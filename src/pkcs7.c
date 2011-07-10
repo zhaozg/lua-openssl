@@ -2,8 +2,11 @@
 
 /* {{{ PKCS7 S/MIME functions */
 
-/* {{{ proto bool openssl_pkcs7_sign(string infile, string outfile, mixed signcert, mixed signkey, array headers [, long flags [, string extracertsfilename]])
-   Signs the MIME message in the file named infile with signcert/signkey and output the result to file name outfile. headers lists plain text headers to exclude from the signed portion of the message, and should include to, from and subject as a minimum */
+/* {{{ proto bool openssl_pkcs7_sign(openssl.bio in, openssl.bio out, x509 signcert, evp_pkey signkey, table headers 
+		[, long flags [, stack_of_x509 extracertsfilename]])
+
+   Signs the MIME message in the BIO in with signcert/signkey and output the result to BIO out. 
+   headers lists plain text headers to exclude from the signed portion of the message, and should include to, from and subject as a minimum */
 
 LUA_FUNCTION(openssl_pkcs7_sign)
 {
@@ -13,42 +16,20 @@ LUA_FUNCTION(openssl_pkcs7_sign)
 	PKCS7 * p7 = NULL;
 	BIO * infile = NULL, * outfile = NULL;
 	STACK_OF(X509) *others = NULL;
-	long  keyresource = -1;
-	const char * infilename;
-	const char * outfilename;
-	const char * extracertsfilename = NULL;
+
 	int headers = 5;
 	int top = lua_gettop(L);
 	int ret = 0;
 
-	infilename = luaL_checkstring(L,1);
-	outfilename = luaL_checkstring(L,2);
+	infile = CHECK_OBJECT(1, BIO, "openssl.bio");
+	outfile = CHECK_OBJECT(2, BIO, "openssl.bio");
 	cert = CHECK_OBJECT(3,X509,"openssl.x509");
-	privkey = CHECK_OBJECT(4,EVP_PKEY,"openssl.evp_pkey");
+	privkey = CHECK_OBJECT(4, EVP_PKEY,"openssl.evp_pkey");
 	headers = 5;
 	if(top>5)
 		flags = luaL_checkint(L,6);
 	if(top>6)
-		extracertsfilename = luaL_checkstring(L,7);
-
-	if (extracertsfilename) {
-		others = load_all_certs_from_file(extracertsfilename);
-		if (others == NULL) { 
-			goto clean_exit;
-		}
-	}
-
-	infile = BIO_new_file(infilename, "r");
-	if (infile == NULL) {
-		luaL_error(L,"error opening input file %s!", infilename);
-		goto clean_exit;
-	}
-
-	outfile = BIO_new_file(outfilename, "w");
-	if (outfile == NULL) {
-		luaL_error(L,"error opening output file %s!", outfilename);
-		goto clean_exit;
-	}
+		others = CHECK_OBJECT(7, STACK_OF(X509), "openssl.stack_of_x509");
 
 	p7 = PKCS7_sign(cert, privkey, others, infile, flags);
 	if (p7 == NULL) {
@@ -79,21 +60,14 @@ LUA_FUNCTION(openssl_pkcs7_sign)
 
 clean_exit:
 	PKCS7_free(p7);
-	BIO_free(infile);
-	BIO_free(outfile);
-	if (others) {
-		sk_X509_pop_free(others, X509_free);
-	}
-	if (privkey && keyresource == -1) {
-		EVP_PKEY_free(privkey);
-	}
 	lua_pushboolean(L,ret);
 	return 1;
 }
 /* }}} */
 
 
-/* {{{ proto bool openssl.pkcs7_verify(string filename, long flags [, string signerscerts [, array cainfo [, string extracerts [, string content]]]])
+/* {{{ proto bool openssl.pkcs7_verify(bio in, long flags 
+		[, stack_of_x509 signerscerts [, stack_of_x509 cainfo [, stack_of_x509 extracerts [, string content]]]])
    Verifys that the data block is intact, the signer is who they say they are, and returns the CERTs of the signers */
 LUA_FUNCTION(openssl_pkcs7_verify)
 {
@@ -104,30 +78,22 @@ LUA_FUNCTION(openssl_pkcs7_verify)
 	PKCS7 * p7 = NULL;
 	BIO * in = NULL, * datain = NULL, * dataout = NULL;
 	long flags = 0;
-	const char * filename;
-	const char * extracerts = NULL; int extracerts_len = 0;
-	const char * signersfilename = NULL; int signersfilename_len = 0;
-	const char * datafilename = NULL; int datafilename_len = 0;
+
 	int ret;
 	int top = lua_gettop(L);
 	
-	filename = luaL_checkstring(L,1);
+	in = CHECK_OBJECT(1,BIO,"openssl.bio");
 	flags = luaL_checkinteger(L,2);
 	if(top>2)
-		signersfilename = luaL_optstring(L,3,NULL);
+		signers = lua_isnoneornil(L,3) ? NULL : CHECK_OBJECT(3, STACK_OF(X509),"openssl.stack_of_x509");
 	if(top>3)
-		cainfo = CHECK_OBJECT(4,STACK_OF(X509),"openssl.stack_of_x509");
-	if(top>5)
-		extracerts = luaL_optstring(L,6,NULL);
-	if(top>6)
-		datafilename = luaL_optstring(L,7,NULL);
+		cainfo = CHECK_OBJECT(4, STACK_OF(X509),"openssl.stack_of_x509");
+	if(top>4)
+		others = CHECK_OBJECT(5, STACK_OF(X509),"openssl.stack_of_x509");
 
-	if (extracerts) {
-		others = load_all_certs_from_file(extracerts);
-		if (others == NULL) {
-			goto clean_exit;
-		}
-	}
+	if(top>5)
+		dataout = CHECK_OBJECT(6, BIO, "openssl.bio");
+
 
 	flags = flags & ~PKCS7_DETACHED;
 	store = setup_verify(cainfo);
@@ -136,46 +102,23 @@ LUA_FUNCTION(openssl_pkcs7_verify)
 		goto clean_exit;
 	}
 
-	in = BIO_new_file(filename, (flags & PKCS7_BINARY) ? "rb" : "r");
-	if (in == NULL) {
-		goto clean_exit;
-	}
+
 	p7 = SMIME_read_PKCS7(in, &datain);
 	if (p7 == NULL) {
-#if DEBUG_SMIME
-		zend_printf("SMIME_read_PKCS7 failed\n");
-#endif
 		goto clean_exit;
 	}
 
-	if (datafilename) {
-		dataout = BIO_new_file(datafilename, "w");
-		if (dataout == NULL) {
-			goto clean_exit;
-		}
-	}
-#if DEBUG_SMIME
-	zend_printf("Calling PKCS7 verify\n");
-#endif
 
 	if (PKCS7_verify(p7, others, store, datain, dataout, flags)) {
 		ret = 1;
-		if (signersfilename) {
-			BIO *certout;
-				
-			certout = BIO_new_file(signersfilename, "w");
-			if (certout) {
-				int i;
-				signers = PKCS7_get0_signers(p7, NULL, flags);
+		if (signers) {
+			int i;
+			STACK_OF(X509) *signers1 = PKCS7_get0_signers(p7, NULL, flags);
 
-				for(i = 0; i < sk_X509_num(signers); i++) {
-					PEM_write_bio_X509(certout, sk_X509_value(signers, i));
-				}
-				BIO_free(certout);
-				openssl_sk_X509_free(signers);
-			} else {
-				luaL_error(L,"signature OK, but cannot open %s for writing", signersfilename);
+			for(i = 0; i < sk_X509_num(signers1); i++) {
+				sk_X509_push(signers,sk_X509_value(signers1, i));
 			}
+			sk_X509_free(signers1);
 		}
 		goto clean_exit;
 	} else {
@@ -183,66 +126,13 @@ LUA_FUNCTION(openssl_pkcs7_verify)
 	}
 clean_exit:
 	X509_STORE_free(store);
-	BIO_free(datain);
-	BIO_free(in);
-	BIO_free(dataout);
 	PKCS7_free(p7);
-	openssl_sk_X509_free(others);
 	lua_pushboolean(L,ret);
 	return 1;
 }
 /* }}} */
 
-
-/* {{{ proto bool openssl_pkcs7_decrypt(string infilename, string outfilename, mixed recipcert [, mixed recipkey])
-   Decrypts the S/MIME message in the file name infilename and output the results to the file name outfilename.  recipcert is a CERT for one of the recipients. recipkey specifies the private key matching recipcert, if recipcert does not include the key */
-
-LUA_FUNCTION(openssl_pkcs7_decrypt)
-{
-	X509 * cert = NULL;
-	EVP_PKEY * key = NULL;
-
-	BIO * in = NULL, * out = NULL, * datain = NULL;
-	PKCS7 * p7 = NULL;
-	const char * infilename;
-	const char * outfilename;
-	int top = lua_gettop(L);
-	int ret = 0;
-
-	infilename = luaL_checkstring(L,1);
-	outfilename = luaL_checkstring(L,2);
-	cert = CHECK_OBJECT(3,X509,"openssl.x509");
-	key = lua_isnil(L,4)?NULL: CHECK_OBJECT(4,EVP_PKEY,"openssl.evp_pkey");
-
-	in = BIO_new_file(infilename, "r");
-	if (in == NULL) {
-		goto clean_exit;
-	}
-	out = BIO_new_file(outfilename, "w");
-	if (out == NULL) {
-		goto clean_exit;
-	}
-
-	p7 = SMIME_read_PKCS7(in, &datain);
-
-	if (p7 == NULL) {
-		goto clean_exit;
-	}
-	if (PKCS7_decrypt(p7, key, cert, out, PKCS7_DETACHED)) { 
-		ret = 1;
-	}
-clean_exit:
-	PKCS7_free(p7);
-	BIO_free(datain);
-	BIO_free(in);
-	BIO_free(out);
-
-	lua_pushboolean(L,ret);
-	return 1;
-}
-/* }}} */
-
-/* {{{ proto bool openssl.pkcs7_encrypt(string infile, string outfile, mixed recipcerts, array headers [, long flags [, long cipher]])
+/* {{{ proto bool openssl.pkcs7_encrypt(bio in, bio out, stack_of_x509 recipcerts, array headers [, long flags [, long cipher]])
    Encrypts the message in the file named infile with the certificates in recipcerts and output the result to the file named outfile */
 LUA_FUNCTION(openssl_pkcs7_encrypt)
 {
@@ -251,32 +141,18 @@ LUA_FUNCTION(openssl_pkcs7_encrypt)
 	long flags = 0;
 	PKCS7 * p7 = NULL;
 	const EVP_CIPHER *cipher = EVP_get_cipherbynid(OPENSSL_CIPHER_DEFAULT);
-	const char * infilename = NULL;
-	const char * outfilename = NULL;
 	int ret = 0;
 	int headers;
 	int top = lua_gettop(L);
 
-	infilename = luaL_checkstring(L,1);
-	outfilename = luaL_checkstring(L,1);
+	infile = CHECK_OBJECT(1, BIO,"openssl.bio");
+	outfile = CHECK_OBJECT(2, BIO,"openssl.bio");
 	recipcerts = CHECK_OBJECT(3,STACK_OF(X509),"openssl.stack_of_x509");
 	headers = 4;
 	if (top>4)
 		flags = luaL_checkinteger(L,5);
 	if(top>5)
 		cipher = CHECK_OBJECT(6,EVP_CIPHER,"openssl.evp_cipher");
-
-	infile = BIO_new_file(infilename, "r");
-	if (infile == NULL) {
-		goto clean_exit;
-	}
-
-	outfile = BIO_new_file(outfilename, "w");
-	if (outfile == NULL) { 
-		goto clean_exit;
-	}
-
-	recipcerts = sk_X509_new_null();
 
 	/* sanity check the cipher */
 	if (cipher == NULL) {
@@ -313,14 +189,48 @@ LUA_FUNCTION(openssl_pkcs7_encrypt)
 
 clean_exit:
 	PKCS7_free(p7);
-	BIO_free(infile);
-	BIO_free(outfile);
-	if (recipcerts) {
-		sk_X509_pop_free(recipcerts, X509_free);
-	}
+
 	lua_pushboolean(L,ret);
 	return 1;
 }
 /* }}} */
+
+/* {{{ proto bool openssl_pkcs7_decrypt(bio in, bio out, x509 recipcert [, evp_pkey recipkey])
+   Decrypts the S/MIME message in the file name infilename and output the results to the file name outfilename.  recipcert is a CERT for one of the recipients. recipkey specifies the private key matching recipcert, if recipcert does not include the key */
+
+LUA_FUNCTION(openssl_pkcs7_decrypt)
+{
+	X509 * cert = NULL;
+	EVP_PKEY * key = NULL;
+
+	BIO * in = NULL, * out = NULL, * datain = NULL;
+	PKCS7 * p7 = NULL;
+
+	int top = lua_gettop(L);
+	int ret = 0;
+
+	in = CHECK_OBJECT(1, BIO, "openssl.bio");
+	out = CHECK_OBJECT(2, BIO, "openssl.bio");
+	cert = CHECK_OBJECT(3,X509,"openssl.x509");
+	key = lua_isnil(L,4)?NULL: CHECK_OBJECT(4,EVP_PKEY,"openssl.evp_pkey");
+
+	p7 = SMIME_read_PKCS7(in, &datain);
+
+	if (p7 == NULL) {
+		goto clean_exit;
+	}
+	if (PKCS7_decrypt(p7, key, cert, out, PKCS7_DETACHED)) { 
+		ret = 1;
+	}
+clean_exit:
+	PKCS7_free(p7);
+	BIO_free(datain);
+
+
+	lua_pushboolean(L,ret);
+	return 1;
+}
+/* }}} */
+
 
 /* }}} */

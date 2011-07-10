@@ -87,6 +87,9 @@ LUA_FUNCTION(openssl_x509_export);
 LUA_FUNCTION(openssl_x509_tostring);
 LUA_FUNCTION(openssl_x509_check_private_key);
 LUA_FUNCTION(openssl_x509_public_key);
+LUA_FUNCTION(openssl_sk_x509_read);
+LUA_FUNCTION(openssl_sk_x509_new);
+
 
 LUA_FUNCTION(openssl_pkey_tostring);
 LUA_FUNCTION(openssl_pkey_read);
@@ -123,9 +126,12 @@ LUA_FUNCTION(openssl_csr_sign);
 
 LUA_FUNCTION(openssl_dh_compute_key);
 LUA_FUNCTION(openssl_random_bytes);
+LUA_FUNCTION(openssl_bio_new_mem);
+LUA_FUNCTION(openssl_bio_new_file);
 
 LUA_FUNCTION(openssl_get_digest);
 LUA_FUNCTION(openssl_get_cipher);
+
 
 void openssl_add_method_or_alias(const OBJ_NAME *name, void *arg) ;
 void openssl_add_method(const OBJ_NAME *name, void *arg);
@@ -141,15 +147,16 @@ void add_index_bool(lua_State* L, int i, int b);
 void add_assoc_int(lua_State* L, const char* i, int b);
 
 void add_assoc_asn1_time(lua_State*L, char * key, ASN1_UTCTIME * timestr);
-STACK_OF(X509) * load_all_certs_from_file(const char *certfile);
 
 int openssl_object_create(lua_State* L);
 
 int openssl_register_digest(lua_State* L);
 int openssl_register_cipher(lua_State* L);
 int openssl_register_x509(lua_State* L);
+int openssl_register_sk_x509(lua_State* L);
 int openssl_register_pkey(lua_State* L);
 int openssl_register_csr(lua_State* L);
+int openssl_register_bio(lua_State* L);
 
 #endif
 

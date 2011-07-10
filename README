@@ -9,20 +9,23 @@ Index
 3. Public/Private Key
 4. Cipher
 5. Message Digest
-6. Encrypt/Decrypt
-7. Certificate sign request
-8. Pkcs7
-9. Pkcs12
-0. Misc
+6. PKCS7 SMIME
+7. CSR & CRL
+8. Pkcs12
+9. Misc
+
+I.   Howto.
+II.  Examples
+III. Contacts
 
 1. Introduction
 ---------------
 
-The functions implemented so far make it possible to seal and open data, and
-also create and verify signatures.
-
 NEW: support for S/MIME encrypt/decrypt/sign/verify, as well as more
 flexibility for specifying certificates/keys.
+
+The functions implemented so far make it possible to seal and open data, and
+also create and verify signatures.
 
 Most of the functions require a key or a certificate as a parameter; to make
 things easy for you to use openssl, this extension allows you to specify 
@@ -36,54 +39,112 @@ Similarly, you can use the following methods of specifying a public key:
 
 1. As a key object returned from object:get_public
 
-openssl.stack_of_x509 is an important object ina lua-openssl, it can be used
-as a certchaina, trusted CA files or unstrustcerts.
+There are many important lua object type: 
+	openssl.bio,		
+	openssl.x509, 
+	openssl.stack_of_x509,
+	openssl.x509_req,
+	openssl.evp_pkey, 
+	openssl.digest, 
+	openssl.cipher,
+	openssl.engine
+	openssl.evp_cipher_ctx
+	openssl.evp_digest_ctx
+	...
+They are short write as bio, x509, sk_x509, x509_req, evp_pkey,digest, cipher,
+	engine(not used now!), cipher_ctx,  digest_ctx
+
+Notes, In next section of this document,
+
+    => means return a lua_openssl object
+    -> means return a basic type of lua
+
+If function return a nil, it will be follow by a error number and string
 
 2. Certificate
 --------------
 
-openssl.x509_read(string val) -> openssl.x509
-1. As an X.509 object returned from openssl.x509_read
-2. As a string containing the data from the certificate file
+openssl.x509_read(string val) => x509
+    val is a string containing the data from the certificate file
 
 x509:export([bool notext=true]) -> string
-  x509:parse([bool shortnames=true])=>table, that contain all x509 information
-x509:check_private_key(openssl.evp_pkey pkey) -> bool
-x509:public_key()->openssl.evp_pkey
-x509:checkpurpose(string purpose, openssl.stack_of_x509 cainfo [, openssl.stack_of_x509 untrustedcerts])->boolean
-     purpose canbe one of: ssl_client, ssl_server, ns_ssl_server, smime_sign,
-     smime_encrypt, crl_sign, any, ocsp_helper, timestamp_sign
+    export x509 as certificate content data
 
-    cainfo is an openssl.stack_of_x509 object (as mentioned above).
+x509:parse([bool shortnames=true]) -> table
+    return a table which contain all x509 information
+
+x509:check_private_key(evp_pkey pkey) -> boolean
+
+x509:get_public() => evp_pkey
+
+x509:checkpurpose(string purpose, sk_x509 ca [,sk_x509 untrusted])->boolean
+    purpose canbe one of: ssl_client, ssl_server, ns_ssl_server, smime_sign,
+    smime_encrypt, crl_sign, any, ocsp_helper, timestamp_sign
+
+    ca is an openssl.stack_of_x509 object contain certchain.
     untrusted is an openssl.stack_of_x509 object containing a bunch of certs
-that are not trusted but may be useful in validating the certificate.
+    that are not trusted but may be useful in validating the certificate.
+
+openssl.stack_of_x509 is an important object ina lua-openssl, it can be used
+as a certchaina, trusted CA files or unstrustcerts.
+
+openssl.sk_x509_read(filename) => sk_x509
+openssl.sk_x509_new([table array={}]} ->sk_x509
+
+sk_x509:push(openssl.x509 cert) => sk_x509
+sk_x509:pop()	=> x509
+
+sk_x509:set(number i, x509 cert) =>sk_x509
+sk_x509:get(number i) => x509
+
+sk_x509:insert(x509 cert,number i, ) =>sk_x509
+sk_x509:delete(number i) => x509
+
+sk_x509:totable() -> table 
+    tableas array contain x509 from index 1
+
+sk_x509:sort()
+
+#sk_x509  -> number
+    return number of certs in stack_of_x509
 
 3. Public/Private key functions
 -------------------------------
 
-openssl.evp_new([string alg='rsa' [,int bits=1024|512, [...]]])=>openssl.evp_pkey
-		default generate RSA key, bits=1024, 3rd paramater e default is 0x10001
-		dsa,with bits default 1024 ,and seed data default have no data
-		dh, with bits(prime_len) default 512, and generator default is 
-		ec, not use any paramater
+openssl.evp_new([string alg='rsa' [,int bits=1024|512, [...]]]) => evp_pkey
+    
+    default generate RSA key, bits=1024, 3rd paramater e default is 0x10001
+    dsa,with bits default 1024 ,and seed data default have no data
+    dh, with bits(prime_len) default 512, and generator default is 
+    ec, not use any paramater, not fully support
 
-openssl.pkey_new([table configargs])->openssl.evp_pkey, configargs = {dsa={n=,e=,...}|dh={}|dsa={}
+openssl.pkey_new([table args]) =>  evp_pkey
+    args = {dsa={n=,e=,...}|dh={}|dsa={}}
 
-openssl.evp_read(string data|openssl.x509 x509 [,bool public_key=true [,string passphrase]]) => openssl.evp_pkey
+openssl.evp_read(string data|x509 cert [,bool public_key=true 
+    [,string passphrase]]) => evp_pkey
+
    Read from a file or a data, coerce it into a EVP_PKEY object.
-	It can be:
-		1. X509 object -> public key will be extracted from it
-		2. interpreted as the data from the cert/key file and interpreted in same way as openssl_get_privatekey()
-	NOTE: If you are requesting a private key but have not specified a passphrase, you should use an
-	empty string rather than NULL for the passphrase - NULL causes a passphrase prompt to be emitted Lua error !
+   It can be:
+       1. X509 object -> public key will be extracted from it
+       2. interpreted as the data from the cert/key file and interpreted in
+       same way as openssl_get_privatekey()
 
-evp_pkey:export(epv_pkey key, [,boolean raw_key=false, [, string passphrase, [string outfilename]]]) => data | bool
-    If raw_key is true, export will export rsa,dsa or dh data
-	If outfilename gived, will save certificate encoded to file, or return as string
+    NOTE: If you are requesting a private key but have not specified a 
+    passphrase, you should use an empty string rather than NULL for the 
+    passphrase - NULL causes a passphrase prompt to be emitted Lua error !
+
+evp_pkey:export(epv_pkey key [,boolean raw_key=false [, string passphrase]]) 
+   -> string
+
+   If raw_key is true, export will export rsa,dsa or dh data
 	
-evp_peky:parse(evp_pkey key)->table, returns an table with the key details (bits, pkey, type)
-evp_pkey:is_private()->bool,Check whether the supplied key is a private key by checking if the secret prime factors are set
+evp_peky:parse(evp_pkey key) -> table
+    returns an table with the key details (bits, pkey, type)
 
+evp_pkey:is_private() -> boolean
+    Check whether the supplied key is a private key by checking if the secret
+    prime factors are set
 
 About padding
 
@@ -95,262 +156,249 @@ About padding
 	x931:	RSA_X931_PADDING	5
 	pss:	RSA_PKCS1_PSS_PADDING	6
 
-   If input other padding string value other(ingore capatical) than above, will raise lua error.
+   If input other padding string value other(ingore capatical) than above,
+   will raise lua error.
 
-evp_pkey:encrypt(string data [,string padding=pkcs1]) => string|nil
-evp_pkey:decrypt(string data [,string padding=pkcs1]) => string|nil
+evp_pkey:encrypt(string data [,string padding=pkcs1]) -> string
+evp_pkey:decrypt(string data [,string padding=pkcs1]) -> string
 
 4. Cipher
 ---------
 
-openssl.get_cipher([null|bool aliases=true]|string alg|int alg_id|openssl.asn1_obj|alg_obj) -> table|openssl.evp_cipher|nil
-openssl.get_cipher([bool aliases = true]) will return all ciphers methods default with alias, other will return a cipher method
+openssl.get_cipher(string alg|number alg_id) => evp_pkey
+    return a cipher method
+openssl.get_cipher([bool aliases = true]) ->table
+    return all ciphers methods default with alias, 
 
-evp_cipher:info() =>table, that with name, block_size,key_length,iv_length,flags,mode keys
-evp_cipher:encrypt_init([ string key [,string iv [,openssl.engine engimp]]]) ->openssl.evp_cipher_ctx
-evp_cipher:decrypt_init([ string key [,string iv [,openssl.engine engimp]]])->openssl.evp_cipher_ctx
-evp_cipher:cipher_init(bool enc, [, string key [,string iv [,openssl.engine engimp]]])->openssl.evp_cipher_ctx
+evp_cipher:info() ->table
+    result with name, block_size,key_length,iv_length,flags,mode keys
+   
+evp_cipher:encrypt_init([ string key [,string iv [,engine engimp]]]) 
+    => cipher_ctx
+evp_cipher:decrypt_init([ string key [,string iv [,engine engimp]]]) 
+    => cipher_ctx
+evp_cipher:cipher_init(bool enc, [, string key [,string iv 
+    [,engine engimp]]]) => cipher_ctx
 
-evp_cipher_ctx:info() =>table, that with block_size,key_length,iv_length,flags,mode,nid,type and cipher object keys
-evp_cipher_ctx:encrypt_update(string data)->string, which may be 0 length
-evp_cipher_ctx:encrypt_final()->string
-evp_cipher_ctx:decrypt_update(string data)->string, which may be 0 length
-evp_cipher_ctx:decrypt_final()->string
-evp_cipher_ctx:update(string data)->string, which may be 0 length
-evp_cipher_ctx:final()->string
-evp_digest_ctx:cleanup() = >boolean, reset state make object resulable.
+cipher_ctx:info() ->table
+    result with block_size,key_length,iv_length,flags,mode,nid,type 
+    and cipher object keys
+cipher_ctx:encrypt_update(string data)->string
+    return string may be 0 length
+cipher_ctx:encrypt_final()->string
+cipher_ctx:decrypt_update(string data)->string
+    return string may be 0 length
+cipher_ctx:decrypt_final()->string
+
+cipher_ctx:update(string data)->string
+    return string may be 0 length
+cipher_ctx:final()->string
+
+cipher_ctx:cleanup() -> boolean
+    reset state make object resulable.
 
 5. Message Digest
 -----------------
 
-openssl.get_digest([nil,bool aliases=true]|string alg|int alg_id|openssl.asn1_obj|alg_obj) -> table|openssl.evp_digest|nil
-openssl.get_digest([bool alias=true]) will return all md methods default with alias, other will return a evp_digest object
+openssl.get_digest(string alg|int alg_id) => digest_ctx
+    return a evp_digest object
+openssl.get_digest([bool alias=true]) -> table
+    return all md methods default with alias
 
-evp_digest:info() => table, that with key nid,name, size, block_size, pkey_type, flags
-evp_digest:digest(string in)=> string, that will be binary digest result
-evp_digest:init() => evp_digest_ctx, that is object
+evp_digest:info() -> table
+    return a table with key nid,name, size, block_size, pkey_type, flags
+evp_digest:digest(string in) -> string
+    return binary digest result
 
-evp_digest_ctx:info() => table, that with key block_size, size, type and diget object
-evp_digest_ctx:update(in) => boolean, means operation result succesful or fail.
-evp_digest_ctx:final() => string, that will be binary digest result
-evp_digest_ctx:cleanup() = >boolean, reset state make object resulable.
+evp_digest:init() => digest_ctx
 
-PKCS7 (S/MIME) Sign/Verify/Encrypt/Decrypt Functions:
------------------------------------------------------
+digest_ctx:info() -> table
+    return a table with key block_size, size, type and diget object
+digest_ctx:update(string data) -> boolean
+digest_ctx:final() -> string
+digest_ctx:cleanup() ->boolean
+
+6. PKCS7 (S/MIME) Sign/Verify/Encrypt/Decrypt Functions:
+-------------------------------------------------------
 
 These functions allow you to manipulate S/MIME messages!
 
 They are based on apps/smime.c from the openssl dist, so for information,
 see the documentation for openssl.
 
-You may pass in some flags that affect how these functions work using
-and array containing the following values:
-"detached", "nodetached", "text", "nointern", "noverify", "nochain",
-"nocerts", "noattr", "binary", "nosigs".
-The options correspond to the options of the same name for the
-"openssl smime" command (smime(1)).
+Strings "detached", "nodetached", "text", "nointern", "noverify",  "nochain",
+"nocerts", "noattr", "binary", "nosigs" are supported
 
+Decrypts the S/MIME message in the BIO object and and output the results to
+BIO object. recipcert is a CERT for one of the recipients. recipkey 
+specifies the private key matching recipcert.
 
-bool openssl_pkcs7_verify(string filename, array flags[, string signerscerts][,
-		array cainfo])
-
-Verifies that the signature on the MIME message contained in the file
-named by filename is valid.  If signerscerts is passed in, it holds the
-name of a file into which the certificates of those that signed the
-message will be stored.
-cainfo and flags are CA information and flag information as described
-above.
-
-
-bool openssl_pkcs7_encrypt(string infile, string outfile, array recipcerts,
-		array headers[, array flags])
-
-Encrypts the MIME message contained in the file named by infile using
-the certificates held in recipcerts.  The result is place in the file
-named outfile.
-recipcerts is an array of certificate identifiers representing the certs
-of the intended recipients of the message.
 headers is an array of headers to prepend to the message: they will
 not be included in the encoded section.
 flags is flag information as described above.
 Hint: you will want to put "To", "From", and "Subject" headers in headers.
 Headers can be either an assoc array keyed by header named, or can be
 and indexed array containing a single header line per value.
-The message will be encoded using a RC2-40 bit cipher.
-TODO: allow user to specify cipher.
 
-bool openssl_pkcs7_sign(string infile, string outfile, mixed signcert, mixed
-		signkey, array headers[, array flags][, string extracertsfilename])
+openssl.pkcs7_sign(bio in, bio out, x509 signcert, evp_pkey signkey, 
+	table headers [, string flags [,stack_of_x509 extracerts]])->boolean
 
-Signs the MIME message contained in the file named by infile using the
-certificate and key pair identified by signcert/signkey.
-Signkey must be the private key corresponding to signcert.
-The result is placed in the file named by outfile.
-Headers and flags have the same effects as mentioned above.
-extracertsfilename names a file containing a bunch of additional certificates
-to include in the signature, in order to aid the recipient in verifying the
-message.
+   Signs the MIME message in the BIO in with signcert/signkey and output the 
+   result to BIO out. 
+   headers lists plain text headers to exclude from the signed portion of the
+   message, and should include to, from and subject as a minimum 
 
+openssl.pkcs7_verify(bio in, string flags [, stack_of_x509 signerscerts,
+   [, stack_of_x509 cacerts, [, stack_of_x509 extracerts [,bio content])
+	->boolean
 
-bool openssl_pkcs7_decrypt(string infilename, string outfilename, mixed
-		recipcert, mixed recipkey)
+   Verifys that the data block is intact, the signer is who they say they are,
+   and returns the CERTs of the signers 
 
-Decrypts the MIME message contained in the file named by infilename
-using the certificate and private key pair recipcert/recipkey.
-The descrypted result is placed in outfilename.
-TODO: add flags parameter, if needed?
+openssl.pkcs7_encrypt(bio in, bio out, stack_of_x509 recipcerts, table header
+    [, string flags [,cipher md] -> boolean
 
+    Encrypts the message in the file named infile with the certificates in 
+    recipcerts and output the result to the file named outfile
 
-EVP Sign/Verify/Encrypt/Decrypt Functions:
-------------------------------------------
+openssl.pkcs7_decrypt(bio in, bio out, x509 recipcert [,evp_pkey recipkey])
+	->boolean	
 
-bool openssl_sign(string data, &string signature, mixed key)
+7. Certificate sign request and Certificate revocked list
+---------------------------------------------------------
 
-Uses key to create signature for data, returns true on success and false
-on failure. signature is passed by reference and contains the newly created
-signature on success.
+openssl.csr_new(evp_pkey privkey, table dn={} [,table args = nil])->x509_req
+openssl.csr_read(string data) -> x509_req
 
-
-int openssl_verify(string data, string signature, mixed key)
-
-Uses key to verify that the signature is correct for the given data.
-Returns 1 if correct, 0 if incorrect, and -1 on error.
-
-
-int openssl_seal(string data, &string sealdata, &array ekeys, array pubkeys)
-
-Encrypts data using pubkeys, so that only owners of the respective private
-keys and ekeys can decrypt and read the data. Returns the length of the
-sealed data on success, else false. On success, sealdata and ekeys hold
-the sealed data and envelope keys.
-
-
-bool openssl_open(string data, &string opendata, string ekey, int privkey)
-
-Opens (decrypts) sealed data using a private key and the corresponding
-envelope key. Returns true on success and false on failure.  On success,
-opendata will hold the descypted data.
-
-
-7. Certificate sign request
----------------------------
-
-openssl.csr_new(openssl.evp_pkey privkey, table dn={} [,table args = nil])->openssl.x509_req
-openssl.csr_read(string data) -> openssl.x509_req
-
-csr:sign(openssl.x509 cert, openssl.evp_pkey privkey, table arg) -> openssl.x509
+csr:sign(x509 cert, evp_pkey privkey, table arg) -> x509
 	args must have serialNumber as hexecoded string, num_days as number
 csr:export([boolean pem=true [, boolean noext=true]])->string
-csr:get_public() -> openssl.evp_pkey
+csr:get_public() -> evp_pkey
 
 
-8. PKCS7 S/MIME Function
-------------------------
-
-openssl.pkcs7_verify	(string)
-openssl.pkcs7_decrypt	
-openssl.pkcs7_sign	
-openssl.pkcs7_encrypt	
-
-
-9. PKCS12 Function
+8. PKCS12 Function
 ------------------
 
-openssl.pkcs12_read(string pkcs12, string pass) -> table|nil
-	Parses a PKCS12 to an table
-	pkcs12 are pkcs12 data
-
+openssl.pkcs12_read(string pkcs12data, string pass) -> table
+	Parses a PKCS12 data to an table
 	return a table which have cert, pkey, and extracerts three keys
 
-openssl.pkcs12_export(openssl.x509 x509, openssl.evp_pkey pkey, string pass [[, string friendname ], table extracerts])) -> string
+openssl.pkcs12_export(x509 cert, evp_pkey pkey, string pass 
+	[[, string friendname ], table extracerts])) -> string
 	Creates and exports a PKCS12 data
 
-	x509 is openssl.x509 object.
-	pkey is openssl.evp_pkey object.
-	pass is pkcs12 file password.
 	friendname is options, if exist, must at 4th paramater
 	extracerts is options, it can be at 4th or 5th(if friendname exist) paramater
 
 
-0. Misc Function
+9. Misc Function
 ----------------
 
-openssl.object_create(string oid, string name[, string alias] | tables args ) -> boolean
-    If you want to add a lot of object, pleause use table args, args must be array index 
-    start from 1, and every node is a table have oid,name and optional alias key.
+openssl.object_create(string oid, string name [, string alias] ) -> boolean
+    Add one object.
+openssl.object_create(tables args) -> boolean
+    Add a lot of object, args must be array index start from 1, and every 
+    node is a table have oid,name and optional alias key.
 
-openssl.random_bytes(number length [, boolean strong=false])  -> string,boolean
+openssl.random_bytes(number length [, boolean strong=false]) 
+    -> string, boolean
     Returns a string of the length specified filled with random bytes
 
-openssl.error_string()->number value, string error
-    If found error, it will return a error number code, followd ba string description
-    Or it will return notiong and  clear error state, so you can call it twice.
+openssl.error_string()-> number, string
+    If found error, it will return a error number code, followedd by string 
+    description or it will return nothing and clear error state,
+    so you can call it twice.
 
 
-HOWTO:
+openssl.sign(string data,  evp_pkey key [, digest md|string md_alg=SHA1])
+    ->string
+    Uses key to create signature for data, returns signed result
 
-To do anything you need a private key and a certificate containing the
-corresponding public key. This is similar to what you have using say an
-Apache webserver with OpenSSL. For testing you could try keys that come
-with OpenSSL, that's what the sample scripts below do. You can also get
-keys from some CA, or you can create them yourself.
+openssl.verify(string data, string signature, evp_pkey key 
+    [, digest md|string md_alg=SHA1]) ->boolean
+    Uses key to verify that the signature is correct for the given data.
 
+openssl.seal(string data, table pubkeys [, cipher enc|string md_alg=RC4])
+    -> string, table
+    Encrypts data using pubkeys, so that only owners of the respective
+    private keys and ekeys can decrypt and read the data. Returns the
+    sealed data and table contain ekeys hold envelope keys on success, 
+    else nil. 
 
-Creating private key
+openssl.open(string data, string ekey, int privkey, 
+    [, cipher enc|string md_alg=RC4]) -> string
 
-To generate an unprotected 1024 bit RSA private key you can do
-
-   openssl genrsa -out /tmp/test.key 1024
-
-Private keys should be protected by a passphrase though.
-
-
-Creating a self signed certificate
-
-To generate a self signed certificate from the key that is valid for
-365 days, do
-
-    openssl req -new -key /tmp/test.key -out /tmp/test.crt -days 365 -x509
+Opens (decrypts) sealed data using a private key and the corresponding
+envelope key. Returns decrypted data on success and nil on failure. 
 
 
-Example usage
+openssl.bio_new_mem([string data]) => bio
+    If data is none or nil, that will be a output object or input.
 
-These examples use keys that come with OpenSSL, you should perhaps test with
-those first.
+openssl.bio_new_file(string file [,string mode=r]) => bio
+    If mode not gived, will return a input bio object.
 
-read and parse certificate
+openssl.bio_new_mem([string data]) => bio
+    Create a memory bio, if data gived, that will be memory buffer data
+openssl.bio_new_file(string file, [string mode='r'])->bio
+    Create a file bio, if mode not gived, that default is 'r'
 
-		local openssl = require('openssl')
-		print(openssl)
-		for k,v in pairs(openssl) do
-				print(k,v)
+BIO object
+bio:read(number len) -> string
+bio:gets([number len=256]) -> string
+bio:write(string data)->number
+bio:puts(string data)->number
+
+bio:get_mem()->string
+    only support bio mem bio
+bio:close()
+bio:type()->string
+bio:reset()
+
+I.   HOWTO
+----------
+
+Howto 1: Build on Linux/Unix System.
+
+Howto 2: Build on Windows with MSVC.
+
+Howto 3: Build on Windows with mingw.
+
+
+II.  Example usage
+------------------
+
+Example 1:  Iterator a openssl.stack_of_x509(sk_x509) object
+
+    n = #sk
+    for i=1, n do
+	x = sk:get(i)
+    end
+
+Example 2: read and parse certificate
+
+	local openssl = require('openssl')
+
+	function dump(t,i)
+		for k,v in pairs(t) do
+			if(type(v)=='table') then
+				print( string.rep('\t',i),k..'={')
+				dump(v,i+1)
+				print( string.rep('\t',i),k..'=}')
+			else
+				print( string.rep('\t',i),k..'='..tostring(v))
+			end
 		end
+	end
 
-		function dump(t,i)
-				for k,v in pairs(t) do
-						if(type(v)=='table') then
-								print( string.rep('\t',i),k..'={')
-										dump(v,i+1)
-								print( string.rep('\t',i),k..'=}')
-						else
-								print( string.rep('\t',i),k..'='..tostring(v))
-						end
-				end
-		end
+	function test_x509()
+		local x = openssl.x509_read(certasstring)
+		print(x)
+		t = x:parse()
+		dump(t,0)
+		print(t)
+	end
 
-		function test_x509()
-				local x = openssl.x509_read('file://b.cer')
-				print(x)
-				t = x:parse()
-				dump(t,0)
-				print(t)
-		end
-
-		test_x509()
-
-Seal and open
-
-
-Sign and verify
+	test_x509()
 
 

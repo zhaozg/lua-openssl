@@ -16,7 +16,7 @@ static luaL_Reg x509_funcs[] = {
 	{"export",				openssl_x509_export},
 	{"check_private_key",	openssl_x509_check_private_key},
 	{"checkpurpose",		openssl_x509_checkpurpose},
-	{"public_key",			openssl_x509_public_key},
+	{"get_public",			openssl_x509_public_key},
 	{"__gc",				openssl_x509_free},
 	{"__tostring",			openssl_x509_tostring},
 

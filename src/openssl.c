@@ -12,6 +12,9 @@ const static luaL_Reg eay_functions[] = {
 
 	/* x.509 cert funcs */
 	{"x509_read",			openssl_x509_read	},
+	{"sk_x509_read",		openssl_sk_x509_read	},
+	{"sk_x509_new",			openssl_sk_x509_new	},
+
 
 	/* CSR funcs */
 	{"csr_new",				openssl_csr_new	},
@@ -25,6 +28,13 @@ const static luaL_Reg eay_functions[] = {
 	{"random_bytes",		openssl_random_bytes	},
 	{"error_string",		openssl_error_string	},
 	{"object_create",		openssl_object_create	},
+	{"bio_new_file",		openssl_bio_new_file	},
+	{"bio_new_mem",			openssl_bio_new_mem	},
+
+	{"sign",				openssl_sign	},
+	{"verify",				openssl_verify	},
+	{"seal",				openssl_seal	},
+	{"open",				openssl_open	},
 
 	/* PKCS12 funcs */
 	{"pkcs12_export",		openssl_pkcs12_export	},
@@ -36,14 +46,8 @@ const static luaL_Reg eay_functions[] = {
 	{"pkcs7_sign",			openssl_pkcs7_sign		},
 	{"pkcs7_encrypt",		openssl_pkcs7_encrypt	},
 
-	{"sign",				openssl_sign	},
-	{"verify",				openssl_verify	},
-	{"seal",				openssl_seal	},
-	{"open",				openssl_open	},
-
 
 	{"dh_compute_key",		openssl_dh_compute_key	},
-
 
 
 	{NULL, NULL}
@@ -164,24 +168,33 @@ LUA_FUNCTION(openssl_error_string)
 }
 /* }}} */
 
-/* {{{ proto signature openssl_sign(string data,  mixed key[, mixed method])
+/* {{{ proto signature openssl_sign(string data,  evp_pkey key [, digest md|string md_alg=SHA1]) ->string
    Signs data */
 LUA_FUNCTION(openssl_sign)
 {
-	EVP_PKEY *pkey;
+	int data_len;
+	const char * data = luaL_checklstring(L,1,&data_len);
+	EVP_PKEY *pkey = CHECK_OBJECT(2,EVP_PKEY,"openssl.evp_pkey");
+
 	int siglen;
 	unsigned char *sigbuf;
-	long keyresource = -1;
-	const char * data;
-	int data_len;
-	EVP_MD_CTX md_ctx;
-	long signature_algo = OPENSSL_ALGO_SHA1;
-	const EVP_MD *mdtype;
-	int ret = 0;
 
-	data = luaL_checklstring(L,1,&data_len);
-	pkey = CHECK_OBJECT(2,EVP_PKEY,"openssl.evp_pkey");
-	mdtype = CHECK_OBJECT(3,EVP_MD,"openssl.evp_digest");
+	EVP_MD_CTX md_ctx;
+	
+	int ret = 0;
+	int top = lua_gettop(L);
+
+	const EVP_MD *mdtype = NULL;
+	if(top>2) {
+		if(lua_isstring(L,3))
+			mdtype = EVP_get_digestbyname(lua_tostring(L,3));
+		else if(lua_isuserdata(L,3))
+			mdtype = CHECK_OBJECT(3,EVP_MD,"openssl.digest");
+		else
+			luaL_error(L, "#3 must be nil, string, or openssl.digest object");
+	}
+	if(!mdtype)
+		mdtype = EVP_get_digestbynid(OPENSSL_ALGO_SHA1);
 
 	siglen = EVP_PKEY_size(pkey);
 	sigbuf = malloc(siglen + 1);
@@ -191,87 +204,89 @@ LUA_FUNCTION(openssl_sign)
 	if (EVP_SignFinal (&md_ctx, sigbuf,(unsigned int *)&siglen, pkey)) {
 		lua_pushlstring(L,(char *)sigbuf, siglen);
 		ret = 1;
-	} else {
-		free(sigbuf);
 	}
+	free(sigbuf);
 	EVP_MD_CTX_cleanup(&md_ctx);
-	if (keyresource == -1) {
-		EVP_PKEY_free(pkey);
-	}
 	return ret;
 }
 /* }}} */
 
-/* {{{ proto int openssl_verify(string data, string signature, mixed key[, mixed method])
+/* {{{ proto int openssl_verify(string data, string signature, evp_pkey key[, digest md|string md_alg=SHA1]) ->boolean
    Verifys data */
 LUA_FUNCTION(openssl_verify)
 {
-	EVP_PKEY *pkey;
+	int data_len, signature_len;
+	const char* data = luaL_checklstring(L,1,&data_len);
+	const char* signature = luaL_checklstring(L,2,&signature_len);
+
+	EVP_PKEY *pkey = CHECK_OBJECT(3,EVP_PKEY,"openssl.evp_pkey");
+	int top = lua_gettop(L);
 	int err;
 	EVP_MD_CTX     md_ctx;
-	const EVP_MD *mdtype;
-	long keyresource = -1;
-	const char * data;	int data_len;
-	const char * signature;	int signature_len;
-	long signature_algo = OPENSSL_ALGO_SHA1;
-	
-	data = luaL_checklstring(L,1,&data_len);
-	signature = luaL_checklstring(L,2,&signature_len);
-	pkey = CHECK_OBJECT(3,EVP_PKEY,"openssl.evp_pkey");
-	mdtype = CHECK_OBJECT(4,EVP_MD,"openssl.evp_digest");
+
+	const EVP_MD *mdtype = NULL;
+	if(top>3) {
+		if(lua_isstring(L,4))
+			mdtype = EVP_get_digestbyname(lua_tostring(L,4));
+		else if(lua_isuserdata(L,4))
+			mdtype = CHECK_OBJECT(4,EVP_MD,"openssl.digest");
+		else
+			luaL_error(L, "#4 must be nil, string, or openssl.digest object");
+	}
+	if(!mdtype)
+		mdtype = EVP_get_digestbynid(OPENSSL_ALGO_SHA1);
+
 
 	EVP_VerifyInit   (&md_ctx, mdtype);
 	EVP_VerifyUpdate (&md_ctx, data, data_len);
 	err = EVP_VerifyFinal (&md_ctx, (unsigned char *)signature, signature_len, pkey);
 	EVP_MD_CTX_cleanup(&md_ctx);
-
-	if (keyresource == -1) {
-		EVP_PKEY_free(pkey);
-	}
 	lua_pushinteger(L,err);
+
 	return 1;
 }
 /* }}} */
 
-/* {{{ proto sealdata,ekeys openssl_seal(string data, array pubkeys [, string method])
+
+/* {{{ proto sealdata,ekeys openssl_seal(string data, tables pubkeys [, cipher enc|string md_alg=RC4])
    Seals data */
 LUA_FUNCTION(openssl_seal)
 {
+	int data_len;
+	const char * data = luaL_checklstring(L,1,&data_len); 
+
 	EVP_PKEY **pkeys;
-	long * key_resources;	/* so we know what to cleanup */
+
 	int i, len1, len2, *eksl, nkeys;
 	unsigned char *buf = NULL, **eks;
-	const char * data; int data_len;
-	const char *method =NULL;
-	int method_len = 0;
-	const EVP_CIPHER *cipher;
+
+	const EVP_CIPHER *cipher = NULL;
 	EVP_CIPHER_CTX ctx;
 	int ret = 0;
+	int top = lua_gettop(L);
 
-	data = luaL_checklstring(L,1,&data_len);
+	
 	luaL_checktype(L,2, LUA_TTABLE);
 	nkeys = lua_objlen(L,2);
-	method = luaL_optstring(L, 3, NULL);
-
 	if (!nkeys) {
-		luaL_error(L,"Fourth argument to openssl_seal() must be a non-empty array");
+		luaL_error(L,"#2 argument to openssl_seal() must be a non-empty table");
 	}
 
-	if (method) {
-		cipher = EVP_get_cipherbyname(method);
-		if (!cipher) {
-			luaL_error(L, "Unknown signature algorithm.");
-		}
-	} else {
-		cipher = EVP_rc4();
+	if(top>2) {
+		if(lua_isstring(L,3))
+			cipher = EVP_get_cipherbyname(lua_tostring(L,3));
+		else if(lua_isuserdata(L,3))
+			cipher = CHECK_OBJECT(3,EVP_CIPHER,"openssl.cipher");
+		else
+			luaL_error(L, "#3 argument must be nil, string, or openssl.cipher object");
 	}
+	if(!cipher)
+		cipher = EVP_rc4();
 
 	pkeys = malloc(nkeys*sizeof(*pkeys));
 	eksl = malloc(nkeys*sizeof(*eksl));
 	eks = malloc(nkeys*sizeof(*eks));
 	memset(eks, 0, sizeof(*eks) * nkeys);
-	key_resources = malloc(nkeys*sizeof(long));
-	memset(key_resources, 0, sizeof(*key_resources) * nkeys);
 
 	/* get the public keys we are using to seal this data */
 
@@ -290,11 +305,6 @@ LUA_FUNCTION(openssl_seal)
 		luaL_error(L,"EVP_EncryptInit failed");
 	}
 
-#if 0
-	/* Need this if allow ciphers that require initialization vector */
-	ivlen = EVP_CIPHER_CTX_iv_length(&ctx);
-	iv = ivlen ? malloc(ivlen + 1) : NULL;
-#endif
 	/* allocate one byte extra to make room for \0 */
 	buf = malloc(data_len + EVP_CIPHER_CTX_block_size(&ctx));
 
@@ -308,6 +318,7 @@ LUA_FUNCTION(openssl_seal)
 	if (len1 + len2 > 0) {
 		buf[len1 + len2] = '\0';
 		lua_pushlstring(L,buf,len1 + len2);
+
 		lua_newtable(L);
 		for (i=0; i<nkeys; i++) {
 			eks[i][eksl[i]] = '\0';
@@ -317,67 +328,46 @@ LUA_FUNCTION(openssl_seal)
 			lua_rawseti(L,-2, i+1);
 		}
 		ret = 2;
-#if 0
-		/* If allow ciphers that need IV, we need this */
-		zval_dtor(*ivec);
-		if (ivlen) {
-			iv[ivlen] = '\0';
-			ZVAL_STRINGL(*ivec, erealloc(iv, ivlen + 1), ivlen, 0);
-		} else {
-			ZVAL_EMPTY_STRING(*ivec);
-		}
-#endif
 
-	} else {
-		free(buf);
-	}
+	} 
 
-
-	for (i=0; i<nkeys; i++) {
-		if (key_resources[i] == -1) {
-			EVP_PKEY_free(pkeys[i]);
-		}
-		if (eks[i]) { 
-			free(eks[i]);
-		}
-	}
+	free(buf);
 	free(eks);
 	free(eksl);
 	free(pkeys);
-	free(key_resources);
 	return ret;
 }
 /* }}} */
 
-/* {{{ proto opendata openssl_open(string data, string ekey, mixed privkey, string method)
+/* {{{ proto opendata openssl_open(string data, string ekey, mixed privkey, [, cipher enc|string md_alg=RC4])
    Opens data */
 LUA_FUNCTION(openssl_open)
 {
-	EVP_PKEY *pkey;
+	int data_len;
+	int ekey_len;
+	const char * data = luaL_checklstring(L, 1, &data_len);	
+	const char * ekey = luaL_checklstring(L, 2, &ekey_len);	
+	EVP_PKEY *pkey =  CHECK_OBJECT(3,EVP_PKEY, "openssl.evp_pkey");
+	int top = lua_gettop(L);
+
 	int len1, len2;
 	unsigned char *buf;
-	long keyresource = -1;
+
 	EVP_CIPHER_CTX ctx;
-	const char * data;	int data_len;
-	const char * ekey;	int ekey_len;
-	const char *method =NULL;
-	int method_len = 0;
-	const EVP_CIPHER *cipher;
+	const EVP_CIPHER *cipher = NULL;
 	int ret = 0;
 
-	data = luaL_checklstring(L, 1, &data_len);
-	ekey = luaL_checklstring(L, 2, &ekey_len);
-	pkey = CHECK_OBJECT(3,EVP_PKEY, "openssl.evp_pkey");
-	method = luaL_optstring(L,4, NULL);
 
-	if (method) {
-		cipher = EVP_get_cipherbyname(method);
-		if (!cipher) {
-			luaL_error(L,"Unknown signature algorithm.");
-		}
-	} else {
-		cipher = EVP_rc4();
+	if(top>3) {
+		if(lua_isstring(L,4))
+			cipher = EVP_get_cipherbyname(lua_tostring(L,4));
+		else if(lua_isuserdata(L,4))
+			cipher = CHECK_OBJECT(4,EVP_CIPHER,"openssl.cipher");
+		else
+			luaL_error(L, "#4 argument must be nil, string, or openssl.cipher object");
 	}
+	if(!cipher)
+		cipher = EVP_rc4();
 	
 	buf = malloc(data_len + 1);
 
@@ -717,6 +707,9 @@ LUA_API int luaopen_openssl(lua_State*L)
 	openssl_register_csr(L);
 	openssl_register_digest(L);
 	openssl_register_cipher(L);
+	openssl_register_sk_x509(L);
+	openssl_register_bio(L);
+
 	luaL_register(L,"openssl",eay_functions);
 	
 	return 0;
