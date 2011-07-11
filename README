@@ -1,6 +1,6 @@
 OpenSSL binding for Lua
 
-$Id: README 2011/7/9  zhiguo.zhao $
+$Id: README 2011/7/11  zhiguo.zhao $
 
 Index
 -----
@@ -305,7 +305,6 @@ crl:parse() -> table
 	lastUpdate=110627103001Z
 	issuer={
 		CN=CA
-		O=SINOPEC
 		C=CN
 	}
 	nextUpdate=110707110000Z
