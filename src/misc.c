@@ -1,70 +1,5 @@
 #include "openssl.h"
 
-/* {{{ check_cert */
-int check_cert(X509_STORE *ctx, X509 *x, STACK_OF(X509) *untrustedchain, int purpose)
-{
-	int ret=0;
-	X509_STORE_CTX *csc;
-
-	csc = X509_STORE_CTX_new();
-	if (csc == NULL) {
-		printf("memory allocation -1");
-		return 0;
-	}
-	X509_STORE_CTX_init(csc, ctx, x, untrustedchain);
-	if(purpose >= 0) {
-		X509_STORE_CTX_set_purpose(csc, purpose);
-	}
-	ret = X509_verify_cert(csc);
-	X509_STORE_CTX_free(csc);
-
-	return ret;
-}
-/* }}} */
-
-
-
-/* {{{ setup_verify
- * calist is an array containing file and directory names.  create a
- * certificate store and add those certs to it for use in verification.
-*/
-
-X509_STORE * setup_verify(STACK_OF(X509)* calist)
-{
-	X509_STORE *store;
-	X509_LOOKUP * dir_lookup, * file_lookup;
-	int ndirs = 0, nfiles = 0;
-	X509 *x;
-	int i;
-
-	store = X509_STORE_new();
-
-	if (store == NULL) {
-		return NULL;
-	}
-
-	for (i=0; i<sk_X509_num(calist); i++)
-	{
-		x=sk_X509_value(calist,i);
-		X509_STORE_add_cert(store,x);
-	}
-
-	if (nfiles == 0) {
-		file_lookup = X509_STORE_add_lookup(store, X509_LOOKUP_file());
-		if (file_lookup) {
-			X509_LOOKUP_load_file(file_lookup, NULL, X509_FILETYPE_DEFAULT);
-		}
-	}
-	if (ndirs == 0) {
-		dir_lookup = X509_STORE_add_lookup(store, X509_LOOKUP_hash_dir());
-		if (dir_lookup) {
-			X509_LOOKUP_add_dir(dir_lookup, NULL, X509_FILETYPE_DEFAULT);
-		}
-	}
-	return store;
-}
-/* }}} */
-
 
 void add_index_bool(lua_State* L, int i, int b){
 	lua_pushboolean(L,b);
@@ -80,6 +15,102 @@ void add_assoc_string(lua_State *L, const char*name, const char*val, int flag) {
 	lua_pushstring(L,val);
 	lua_setfield(L,-2,name);
 }
+
+
+void add_assoc_asn1_string(lua_State*L, char * key, ASN1_STRING * str) /* {{{ */
+{
+	lua_pushlstring(L,(char *)str->data, str->length);
+	lua_setfield(L,-2,key);
+}
+
+
+time_t asn1_time_to_time_t(ASN1_UTCTIME * timestr) /* {{{ */
+{
+/*
+	This is how the time string is formatted:
+
+   snprintf(p, sizeof(p), "%02d%02d%02d%02d%02d%02dZ",ts->tm_year%100,
+      ts->tm_mon+1,ts->tm_mday,ts->tm_hour,ts->tm_min,ts->tm_sec);
+*/
+
+	time_t ret;
+	struct tm thetime;
+	char * strbuf;
+	char * thestr;
+	long gmadjust = 0;
+
+	if (timestr->length < 13) {
+		return (time_t)-1;
+	}
+
+	strbuf = strdup((char *)timestr->data);
+
+	memset(&thetime, 0, sizeof(thetime));
+
+	/* we work backwards so that we can use atoi more easily */
+
+	thestr = strbuf + timestr->length - 3;
+
+	thetime.tm_sec = atoi(thestr);
+	*thestr = '\0';
+	thestr -= 2;
+	thetime.tm_min = atoi(thestr);
+	*thestr = '\0';
+	thestr -= 2;
+	thetime.tm_hour = atoi(thestr);
+	*thestr = '\0';
+	thestr -= 2;
+	thetime.tm_mday = atoi(thestr);
+	*thestr = '\0';
+	thestr -= 2;
+	thetime.tm_mon = atoi(thestr)-1;
+	*thestr = '\0';
+	thestr -= 2;
+	thetime.tm_year = atoi(thestr);
+
+	if (thetime.tm_year < 68) {
+		thetime.tm_year += 100;
+	}
+
+	thetime.tm_isdst = -1;
+	ret = mktime(&thetime);
+
+#if HAVE_TM_GMTOFF
+	gmadjust = thetime.tm_gmtoff;
+#else
+	/*
+	** If correcting for daylight savings time, we set the adjustment to
+	** the value of timezone - 3600 seconds. Otherwise, we need to overcorrect and
+	** set the adjustment to the main timezone + 3600 seconds.
+	*/
+	gmadjust = -(thetime.tm_isdst ? (long)timezone - 3600 : (long)timezone + 3600);
+#endif
+	ret += gmadjust;
+
+	free(strbuf);
+
+	return ret;
+}
+/* }}} */
+
+void add_assoc_asn1_time(lua_State*L, char * key, ASN1_UTCTIME * timestr) /* {{{ */
+{
+	lua_pushinteger(L, (lua_Integer)asn1_time_to_time_t(timestr));
+	lua_setfield(L,-2,key);
+}
+
+void add_assoc_asn1_integer(lua_State*L, char * key, ASN1_INTEGER * ai) /* {{{ */
+{
+	BIGNUM *bn =  ASN1_INTEGER_to_BN(ai,NULL);
+	char* hex = BN_bn2hex(bn);
+	lua_pushstring(L, hex);
+	lua_setfield(L, -2, key);
+	OPENSSL_free(hex);
+	BN_free(bn);
+}
+
+
+/* }}} */
 
 void add_assoc_name_entry(lua_State*L, char * key, X509_NAME * name, int shortname) /* {{{ */
 {
@@ -164,149 +195,6 @@ void add_assoc_name_entry(lua_State*L, char * key, X509_NAME * name, int shortna
 	}
 }
 
-void add_assoc_asn1_string(lua_State*L, char * key, ASN1_STRING * str) /* {{{ */
-{
-	lua_pushlstring(L,(char *)str->data, str->length);
-	lua_setfield(L,-2,key);
-}
-
-
-time_t asn1_time_to_time_t(ASN1_UTCTIME * timestr) /* {{{ */
-{
-/*
-	This is how the time string is formatted:
-
-   snprintf(p, sizeof(p), "%02d%02d%02d%02d%02d%02dZ",ts->tm_year%100,
-      ts->tm_mon+1,ts->tm_mday,ts->tm_hour,ts->tm_min,ts->tm_sec);
-*/
-
-	time_t ret;
-	struct tm thetime;
-	char * strbuf;
-	char * thestr;
-	long gmadjust = 0;
-
-	if (timestr->length < 13) {
-		return (time_t)-1;
-	}
-
-	strbuf = strdup((char *)timestr->data);
-
-	memset(&thetime, 0, sizeof(thetime));
-
-	/* we work backwards so that we can use atoi more easily */
-
-	thestr = strbuf + timestr->length - 3;
-
-	thetime.tm_sec = atoi(thestr);
-	*thestr = '\0';
-	thestr -= 2;
-	thetime.tm_min = atoi(thestr);
-	*thestr = '\0';
-	thestr -= 2;
-	thetime.tm_hour = atoi(thestr);
-	*thestr = '\0';
-	thestr -= 2;
-	thetime.tm_mday = atoi(thestr);
-	*thestr = '\0';
-	thestr -= 2;
-	thetime.tm_mon = atoi(thestr)-1;
-	*thestr = '\0';
-	thestr -= 2;
-	thetime.tm_year = atoi(thestr);
-
-	if (thetime.tm_year < 68) {
-		thetime.tm_year += 100;
-	}
-
-	thetime.tm_isdst = -1;
-	ret = mktime(&thetime);
-
-#if HAVE_TM_GMTOFF
-	gmadjust = thetime.tm_gmtoff;
-#else
-	/*
-	** If correcting for daylight savings time, we set the adjustment to
-	** the value of timezone - 3600 seconds. Otherwise, we need to overcorrect and
-	** set the adjustment to the main timezone + 3600 seconds.
-	*/
-	gmadjust = -(thetime.tm_isdst ? (long)timezone - 3600 : (long)timezone + 3600);
-#endif
-	ret += gmadjust;
-
-	free(strbuf);
-
-	return ret;
-}
-/* }}} */
-
-void add_assoc_asn1_time(lua_State*L, char * key, ASN1_UTCTIME * timestr) /* {{{ */
-{
-	lua_pushinteger(L, (lua_Integer)asn1_time_to_time_t(timestr));
-	lua_setfield(L,-2,key);
-}
-
-
-static STACK_OF(X509) * load_all_certs_from_file(const char *certfile)
-{
-	STACK_OF(X509_INFO) *sk=NULL;
-	STACK_OF(X509) *stack=NULL, *ret=NULL;
-	BIO *in=NULL;
-	X509_INFO *xi;
-
-	if(!(stack = sk_X509_new_null())) {
-		printf("memory allocation -1");
-		goto end;
-	}
-
-	if(!(in=BIO_new_file(certfile, "r"))) {
-		printf("error opening the file, %s", certfile);
-		sk_X509_free(stack);
-		goto end;
-	}
-
-	/* This loads from a file, a stack of x509/crl/pkey sets */
-	if(!(sk=PEM_X509_INFO_read_bio(in, NULL, NULL, NULL))) {
-		printf("error reading the file, %s", certfile);
-		sk_X509_free(stack);
-		goto end;
-	}
-
-	/* scan over it and pull out the certs */
-	while (sk_X509_INFO_num(sk)) {
-		xi=sk_X509_INFO_shift(sk);
-		if (xi->x509 != NULL) {
-			sk_X509_push(stack,xi->x509);
-			xi->x509=NULL;
-		}
-		X509_INFO_free(xi);
-	}
-	if(!sk_X509_num(stack)) {
-		printf("no certificates in file, %s", certfile);
-		sk_X509_free(stack);
-		goto end;
-	}
-	ret=stack;
-end:
-	BIO_free(in);
-	sk_X509_INFO_free(sk);
-
-	return ret;
-}
-/* }}} */
-
-#define SSL_CONFIG_SYNTAX_CHECK(var) if (req->var && openssl_config_check_syntax(#var, \
-			req->config_filename, req->var, req->req_config) == -1) return -1
-
-#define SET_OPTIONAL_STRING_ARG(key, varname, defval, n)	\
-	lua_getfield(L,n,key); \
-	varname = luaL_optstring(L,-1,defval); \
-	lua_pop(L,1)
-
-#define SET_OPTIONAL_LONG_ARG(key, varname, defval, n)	\
-	lua_getfield(L,n,key); \
-	varname = luaL_optint(L,-1,defval); \
-	lua_pop(L,1)
 
 /*  openssl.object_create(string oid, string name[, string alias] | tables args ) -> boolean{{{1
 */
@@ -362,7 +250,6 @@ int openssl_object_create(lua_State* L)
 	return 0;
 }
 /* }}} */
-
 
 void openssl_add_method_or_alias(const OBJ_NAME *name, void *arg) 
 {
@@ -424,153 +311,5 @@ LUA_FUNCTION(openssl_random_bytes)
 	free(buffer);
 	return ret;
 }
+
 /* }}} */
-
-int openssl_sk_x509_read(lua_State*L) {
-	const char* file = luaL_checkstring(L,1);
-	STACK_OF(X509) * certs = load_all_certs_from_file(file);
-	if (certs) {
-		PUSH_OBJECT(certs, "openssl.stack_of_x509");
-	}else
-		lua_pushnil(L);
-	return 1;
-}
-
-int openssl_sk_x509_new(lua_State*L) {
-	int top = lua_gettop(L);
-	STACK_OF(X509) * sk = sk_X509_new_null();
-	if(top>0 && lua_istable(L,1))
-	{
-		lua_pushnil(L);
-		while(lua_next(L,1))
-		{
-			X509* x = CHECK_OBJECT(-1,X509,"openssl.x509");
-			sk_X509_push(sk,x);
-			lua_pop(L,1);
-		}
-	}
-	PUSH_OBJECT(sk,"openssl.stack_of_x509");
-	return 1;
-}
-
-int openssl_sk_x509_free(lua_State*L) {
-	STACK_OF(X509) * certs = CHECK_OBJECT(1,STACK_OF(X509), "openssl.stack_of_x509");
-	sk_X509_free(certs);
-	return 1;
-}
-
-int openssl_sk_x509_tostring(lua_State*L) {
-	STACK_OF(X509) * certs = CHECK_OBJECT(1,STACK_OF(X509), "openssl.stack_of_x509");
-	lua_pushfstring(L, "openssl.stack_of_x509:%p");
-	return 1;
-}
-
-
-int openssl_sk_x509_push(lua_State*L) {
-	STACK_OF(X509) * certs = CHECK_OBJECT(1,STACK_OF(X509), "openssl.stack_of_x509");
-	X509* cert = CHECK_OBJECT(2,X509, "openssl.x509");
-	sk_X509_push(certs,cert);
-	lua_pushvalue(L,1);
-	return 1;
-}
-
-int openssl_sk_x509_pop(lua_State*L) {
-	STACK_OF(X509) * certs = CHECK_OBJECT(1,STACK_OF(X509), "openssl.stack_of_x509");
-	X509* cert = sk_X509_pop(certs);
-	PUSH_OBJECT(cert,"openssl.x509");
-	return 1;
-}
-
-int openssl_sk_x509_insert(lua_State*L) {
-	STACK_OF(X509) * certs = CHECK_OBJECT(1,STACK_OF(X509), "openssl.stack_of_x509");
-	X509* cert = CHECK_OBJECT(2,X509, "openssl.x509");
-	int i = luaL_checkint(L,3);
-
-	sk_X509_insert(certs,cert,i);
-	lua_pushvalue(L,1);
-	return 1;
-}
-
-
-int openssl_sk_x509_delete(lua_State*L) {
-	STACK_OF(X509) * certs = CHECK_OBJECT(1,STACK_OF(X509), "openssl.stack_of_x509");
-	int i = luaL_checkint(L,2);
-
-	X509* cert = sk_X509_delete(certs,i);
-
-	PUSH_OBJECT(cert,"openssl.x509");
-	return 1;
-
-}
-
-int openssl_sk_x509_set(lua_State*L) {
-	STACK_OF(X509) * certs = CHECK_OBJECT(1,STACK_OF(X509), "openssl.stack_of_x509");
-	X509* cert = CHECK_OBJECT(2,X509, "openssl.x509");
-	int i = luaL_checkint(L,3);
-
-	sk_X509_set(certs,i,cert);
-	lua_pushvalue(L,1);
-	return 1;
-}
-
-int openssl_sk_x509_get(lua_State*L) {
-	STACK_OF(X509) * certs = CHECK_OBJECT(1,STACK_OF(X509), "openssl.stack_of_x509");
-	int i = luaL_checkint(L,2);
-	X509 *x = sk_X509_value(certs,i);
-
-	PUSH_OBJECT(x,"openssl.x509");
-	return 1;
-}
-
-int openssl_sk_x509_length(lua_State*L) {
-	STACK_OF(X509) * certs = CHECK_OBJECT(1,STACK_OF(X509), "openssl.stack_of_x509");
-	lua_pushinteger(L, sk_X509_num(certs));
-	return 1;
-}
-
-int openssl_sk_x509_sort(lua_State*L)
-{
-	STACK_OF(X509) * certs = CHECK_OBJECT(1,STACK_OF(X509), "openssl.stack_of_x509");
-	sk_X509_sort(certs);
-	return 0;
-}
-
-int openssl_sk_x509_totable(lua_State*L)
-{
-	STACK_OF(X509) * certs = CHECK_OBJECT(1,STACK_OF(X509), "openssl.stack_of_x509");
-	int n = sk_X509_num(certs);
-	int i=0;
-	lua_newtable(L);
-	for(i=0;i<n;i++)
-	{
-		X509 *x = sk_X509_value(certs,i);
-		PUSH_OBJECT(x,"openssl.x509");
-		lua_rawseti(L,-2, i+1);
-	}
-	return 1;
-}
-
-static luaL_Reg sk_x509_funcs[] = {
-	{"push",	openssl_sk_x509_push },
-	{"pop",		openssl_sk_x509_pop },
-
-	{"set",		openssl_sk_x509_set },
-	{"get",		openssl_sk_x509_get },
-
-	{"insert",	openssl_sk_x509_insert },
-	{"delete",	openssl_sk_x509_delete },
-
-	{"sort",	openssl_sk_x509_sort },
-	{"totable",	openssl_sk_x509_totable},
-
-	{"__length",openssl_sk_x509_length },
-	{"__tostring",	openssl_sk_x509_tostring },
-	{"__gc",	openssl_sk_x509_free },
-	{NULL,		NULL}
-};
-
-int openssl_register_sk_x509(lua_State*L)
-{
-	auxiliar_newclass(L,"openssl.stack_of_x509", sk_x509_funcs);
-	return 0;
-}

@@ -4,6 +4,11 @@ static int openssl_csr_tostring(lua_State*L);
 static int openssl_csr_free(lua_State*L);
 static int openssl_csr_get_public(lua_State*L);
 
+
+LUA_FUNCTION(openssl_csr_parse);
+LUA_FUNCTION(openssl_csr_export);
+LUA_FUNCTION(openssl_csr_sign);
+
 static luaL_reg csr_cfuns[] = {
 	{"export",			openssl_csr_export	},
 	{"parse",			openssl_csr_parse	},
@@ -810,25 +815,25 @@ LUA_FUNCTION(openssl_csr_parse)
 
 /* }}} */
 
-static int openssl_csr_tostring(lua_State*L) {
+static LUA_FUNCTION(openssl_csr_tostring) {
 	X509_REQ *csr = CHECK_OBJECT(1,X509_REQ,"openssl.x509_req");
 	lua_pushfstring(L,"openssl.x509_req:%p",csr);
 	return 1;
 }
 
-static int openssl_csr_free(lua_State*L) {
+static LUA_FUNCTION(openssl_csr_free) {
 	X509_REQ *csr = CHECK_OBJECT(1,X509_REQ,"openssl.x509_req");
 	X509_REQ_free(csr);
 	return 0;
 }
 
-static int openssl_csr_get_public(lua_State*L) {
+static LUA_FUNCTION(openssl_csr_get_public) {
 	X509_REQ *csr = CHECK_OBJECT(1,X509_REQ,"openssl.x509_req");
 	PUSH_OBJECT(csr->req_info->pubkey,"openssl.evp_pkey");
 	return 1;
 }
 
-int openssl_register_csr(lua_State*L) {
+LUA_FUNCTION(openssl_register_csr) {
 	auxiliar_newclass(L,"openssl.x509_req", csr_cfuns);
 	return 0;
 }

@@ -24,6 +24,73 @@ static luaL_Reg x509_funcs[] = {
 	{NULL,			NULL},
 };
 
+
+/* {{{ check_cert */
+static int check_cert(X509_STORE *ctx, X509 *x, STACK_OF(X509) *untrustedchain, int purpose)
+{
+	int ret=0;
+	X509_STORE_CTX *csc;
+
+	csc = X509_STORE_CTX_new();
+	if (csc == NULL) {
+		printf("memory allocation -1");
+		return 0;
+	}
+	X509_STORE_CTX_init(csc, ctx, x, untrustedchain);
+	if(purpose >= 0) {
+		X509_STORE_CTX_set_purpose(csc, purpose);
+	}
+	ret = X509_verify_cert(csc);
+	X509_STORE_CTX_free(csc);
+
+	return ret;
+}
+/* }}} */
+
+
+
+/* {{{ setup_verify
+ * calist is an array containing file and directory names.  create a
+ * certificate store and add those certs to it for use in verification.
+*/
+
+X509_STORE * setup_verify(STACK_OF(X509)* calist)
+{
+	X509_STORE *store;
+	X509_LOOKUP * dir_lookup, * file_lookup;
+	int ndirs = 0, nfiles = 0;
+	X509 *x;
+	int i;
+
+	store = X509_STORE_new();
+
+	if (store == NULL) {
+		return NULL;
+	}
+
+	for (i=0; i<sk_X509_num(calist); i++)
+	{
+		x=sk_X509_value(calist,i);
+		X509_STORE_add_cert(store,x);
+	}
+
+	if (nfiles == 0) {
+		file_lookup = X509_STORE_add_lookup(store, X509_LOOKUP_file());
+		if (file_lookup) {
+			X509_LOOKUP_load_file(file_lookup, NULL, X509_FILETYPE_DEFAULT);
+		}
+	}
+	if (ndirs == 0) {
+		dir_lookup = X509_STORE_add_lookup(store, X509_LOOKUP_hash_dir());
+		if (dir_lookup) {
+			X509_LOOKUP_add_dir(dir_lookup, NULL, X509_FILETYPE_DEFAULT);
+		}
+	}
+	return store;
+}
+/* }}} */
+
+
 /*  openssl.x509_read(string val) -> openssl.x509 {{{1
 
 	Read string val into an X509 object and returned, otherwise a nil
@@ -162,16 +229,8 @@ LUA_FUNCTION(openssl_x509_parse)
 
 	lua_pushinteger(L,X509_get_version(cert)); lua_setfield(L,-2,"version");
 
-	{
-		ASN1_INTEGER *ai = X509_get_serialNumber(cert);
-		BIGNUM *bn = ASN1_INTEGER_to_BN(ai,NULL);
-		char* s = BN_bn2dec(bn);
 
-		lua_pushstring(L,s);
-		lua_setfield(L,-2,"serialNumber");
-		OPENSSL_free(s);
-		BN_free(bn);
-	}
+	add_assoc_asn1_integer(L, "serialNumber", cert->cert_info->serialNumber);
 
 	add_assoc_asn1_string(L, "validFrom", 	X509_get_notBefore(cert));
 	add_assoc_asn1_string(L, "validTo", 		X509_get_notAfter(cert));

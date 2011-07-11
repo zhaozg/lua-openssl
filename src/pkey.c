@@ -443,6 +443,10 @@ LUA_FUNCTION(openssl_pkey_parse)
 				OPENSSL_PKEY_GET_BN(rsa, dmq1);
 				OPENSSL_PKEY_GET_BN(rsa, iqmp);
 				lua_setfield(L,-2, "rsa");
+
+				lua_pushstring(L,"rsa");
+				lua_setfield(L,-2,"type");
+
 			}
 
 			break;	
@@ -460,6 +464,10 @@ LUA_FUNCTION(openssl_pkey_parse)
 				OPENSSL_PKEY_GET_BN(dsa, priv_key);
 				OPENSSL_PKEY_GET_BN(dsa, pub_key);
 				lua_setfield(L,-2, "dsa");
+
+				lua_pushstring(L,"dsa");
+				lua_setfield(L,-2,"type");
+
 			}
 			break;
 		case EVP_PKEY_DH:
@@ -473,20 +481,26 @@ LUA_FUNCTION(openssl_pkey_parse)
 				OPENSSL_PKEY_GET_BN(dh, priv_key);
 				OPENSSL_PKEY_GET_BN(dh, pub_key);
 				lua_setfield(L,-2, "dh");
+
+				lua_pushstring(L,"dh");
+				lua_setfield(L,-2,"type");
+
 			}
 
 			break;
 #ifdef EVP_PKEY_EC 
 		case EVP_PKEY_EC:
 			ktype = OPENSSL_KEYTYPE_EC;
+
+			lua_pushstring(L,"ec");
+			lua_setfield(L,-2,"type");
+
 			break;
 #endif
 		default:
 			ktype = -1;
 			break;
 	}
-	lua_pushinteger(L,ktype);
-	lua_setfield(L,-2,"type");
 
 	return 1;
 }

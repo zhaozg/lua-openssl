@@ -120,6 +120,8 @@ openssl.evp_new([string alg='rsa' [,int bits=1024|512, [...]]]) => evp_pkey
 
 openssl.pkey_new([table args]) =>  evp_pkey
     args = {dsa={n=,e=,...}|dh={}|dsa={}}
+    private key should has it factor named n,q,e and so on, value is hex 
+    encoded string
 
 openssl.evp_read(string data|x509 cert [,bool public_key=true 
     [,string passphrase]]) => evp_pkey
@@ -141,6 +143,7 @@ evp_pkey:export(epv_pkey key [,boolean raw_key=false [, string passphrase]])
 	
 evp_peky:parse(evp_pkey key) -> table
     returns an table with the key details (bits, pkey, type)
+    pkey may be rsa, dh, dsa showd as table with factor hex encoded bignum.
 
 evp_pkey:is_private() -> boolean
     Check whether the supplied key is a private key by checking if the secret
@@ -267,13 +270,60 @@ openssl.pkcs7_decrypt(bio in, bio out, x509 recipcert [,evp_pkey recipkey])
 7. Certificate sign request and Certificate revocked list
 ---------------------------------------------------------
 
-openssl.csr_new(evp_pkey privkey, table dn={} [,table args = nil])->x509_req
-openssl.csr_read(string data) -> x509_req
+openssl.csr_new(evp_pkey privkey, table dn={} [,table args = nil]) => x509_req
+openssl.csr_read(string data) => x509_req
 
 csr:sign(x509 cert, evp_pkey privkey, table arg) -> x509
 	args must have serialNumber as hexecoded string, num_days as number
 csr:export([boolean pem=true [, boolean noext=true]])->string
 csr:get_public() -> evp_pkey
+
+
+openssl.crl_read(string data) => x509_crl
+openssl.crl_new(number version, x509 cacert,number lastUpdate,
+    number nextUpdate, table revoked{hexserial=time,...}) => x509_crl
+
+    Create a new X509 CRL object, lastUpdate and nextUpdate is time_t value,
+    revoked is a table that hex cert serial is key, and time_t revocked time.
+
+crl:verify(x509 cacert) -> boolean
+crl:sign(evp_pkey privkey, [string alg=sha1WithRSAEncryption|digest md])
+    -> boolean
+crl:sort()
+
+crl:set_version(number version=0) -> boolean
+crl:set_update_time([number lastUpdate=date() [, number nextUpdate=last+7d]])
+    -> boolean
+crl:set_issuer(x509 cacert) -> boolean
+crl:add_revocked(string hexserial [,number time=now() 
+    [, string reason|number reason = 0]) -> boolean
+
+crl:parse() -> table
+    table content is below.
+    {
+	sig_alg=sha1WithRSAEncryption
+	lastUpdate=110627103001Z
+	issuer={
+		CN=CA
+		O=SINOPEC
+		C=CN
+	}
+	nextUpdate=110707110000Z
+	nextUpdate_time_t=1310032800
+	lastUpdate_time_t=1309167001
+	crl_number=1008
+	version=1
+	hash=258a7571
+	revoked={
+		1={
+			time=1225869543
+			serial=4130323030303030303030314632
+			reason=Superseded
+		},
+		...
+	}
+    }
+  
 
 
 8. PKCS12 Function

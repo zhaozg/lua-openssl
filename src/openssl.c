@@ -20,6 +20,10 @@ const static luaL_Reg eay_functions[] = {
 	{"csr_new",				openssl_csr_new	},
 	{"csr_read",			openssl_csr_read	},
 
+	/* CRL funcs */
+	{"crl_new",				openssl_crl_new	},
+	{"crl_read",			openssl_crl_read	},
+
 	/* cipher/digest functions */
 	{"get_digest",			openssl_get_digest},
 	{"get_cipher",			openssl_get_cipher},
@@ -709,6 +713,7 @@ LUA_API int luaopen_openssl(lua_State*L)
 	openssl_register_cipher(L);
 	openssl_register_sk_x509(L);
 	openssl_register_bio(L);
+	openssl_register_crl(L);
 
 	luaL_register(L,"openssl",eay_functions);
 	
