@@ -198,9 +198,9 @@ LUA_FUNCTION(openssl_sign)
 		if(lua_isstring(L,3))
 			mdtype = EVP_get_digestbyname(lua_tostring(L,3));
 		else if(lua_isuserdata(L,3))
-			mdtype = CHECK_OBJECT(3,EVP_MD,"openssl.digest");
+			mdtype = CHECK_OBJECT(3,EVP_MD,"openssl.evp_digest");
 		else
-			luaL_error(L, "#3 must be nil, string, or openssl.digest object");
+			luaL_error(L, "#3 must be nil, string, or openssl.evp_digest object");
 	}
 	if(!mdtype)
 		mdtype = EVP_get_digestbynid(OPENSSL_ALGO_SHA1);
@@ -238,9 +238,9 @@ LUA_FUNCTION(openssl_verify)
 		if(lua_isstring(L,4))
 			mdtype = EVP_get_digestbyname(lua_tostring(L,4));
 		else if(lua_isuserdata(L,4))
-			mdtype = CHECK_OBJECT(4,EVP_MD,"openssl.digest");
+			mdtype = CHECK_OBJECT(4,EVP_MD,"openssl.evp_digest");
 		else
-			luaL_error(L, "#4 must be nil, string, or openssl.digest object");
+			luaL_error(L, "#4 must be nil, string, or openssl.evp_digest object");
 	}
 	if(!mdtype)
 		mdtype = EVP_get_digestbynid(OPENSSL_ALGO_SHA1);
@@ -285,9 +285,9 @@ LUA_FUNCTION(openssl_seal)
 		if(lua_isstring(L,3))
 			cipher = EVP_get_cipherbyname(lua_tostring(L,3));
 		else if(lua_isuserdata(L,3))
-			cipher = CHECK_OBJECT(3,EVP_CIPHER,"openssl.cipher");
+			cipher = CHECK_OBJECT(3,EVP_CIPHER,"openssl.evp_cipher");
 		else
-			luaL_error(L, "#3 argument must be nil, string, or openssl.cipher object");
+			luaL_error(L, "#3 argument must be nil, string, or openssl.evp_cipher object");
 	}
 	if(!cipher)
 		cipher = EVP_rc4();
@@ -371,9 +371,9 @@ LUA_API LUA_FUNCTION(openssl_open)
 		if(lua_isstring(L,4))
 			cipher = EVP_get_cipherbyname(lua_tostring(L,4));
 		else if(lua_isuserdata(L,4))
-			cipher = CHECK_OBJECT(4,EVP_CIPHER,"openssl.cipher");
+			cipher = CHECK_OBJECT(4,EVP_CIPHER,"openssl.evp_cipher");
 		else
-			luaL_error(L, "#4 argument must be nil, string, or openssl.cipher object");
+			luaL_error(L, "#4 argument must be nil, string, or openssl.evp_cipher object");
 	}
 	if(!cipher)
 		cipher = EVP_rc4();

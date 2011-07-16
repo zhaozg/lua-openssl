@@ -456,11 +456,11 @@ LUA_FUNCTION(openssl_csr_sign)
 		
 
 	lua_getfield(L, 4, "digest");
-	if(lua_isstring(L, -1) || auxiliar_isclass(L,"openssl.digest", -1))
+	if(lua_isstring(L, -1) || auxiliar_isclass(L,"openssl.evp_digest", -1))
 	{
 		digest = lua_gettop(L);
 	}else if(!lua_isnoneornil(L, -1))
-		luaL_error(L, "paramater #4 if have digest key, it's value must be string type or openssl.digest object");
+		luaL_error(L, "paramater #4 if have digest key, it's value must be string type or openssl.evp_digest object");
 
 	lua_getfield(L,4, "num_days");
 	if(lua_isnoneornil(L,-1))
@@ -548,7 +548,7 @@ LUA_FUNCTION(openssl_csr_sign)
 	{
 		const EVP_MD* md = NULL;
 		if (lua_isuserdata(L,digest)) {
-			md = CHECK_OBJECT(digest,EVP_MD,"openssl.digest");
+			md = CHECK_OBJECT(digest,EVP_MD,"openssl.evp_digest");
 		}
 		else if(lua_isstring(L,digest)) {
 			md = EVP_get_digestbyname(luaL_checkstring(L,digest));
@@ -580,7 +580,7 @@ cleanup:
 }
 /* }}} */
 
-/* {{{openssl.csr_new(openssl.evp_pkey pkey, table dn, [ arg = {[, table extraattribs, [table config [,string md|openssl.digest md]] }]  ) = >openssl.x509_req
+/* {{{openssl.csr_new(openssl.evp_pkey pkey, table dn, [ arg = {[, table extraattribs, [table config [,string md|openssl.evp_digest md]] }]  ) = >openssl.x509_req
    Generates CSR with gived private key, dn, and extraattribs */
 LUA_FUNCTION(openssl_csr_new)
 {
@@ -595,11 +595,11 @@ LUA_FUNCTION(openssl_csr_new)
 	attribs = extentions = digest = 0;
 
 	lua_getfield(L,3, "digest");
-	if(lua_isstring(L, -1) || auxiliar_isclass(L,"openssl.digest", -1))
+	if(lua_isstring(L, -1) || auxiliar_isclass(L,"openssl.evp_digest", -1))
 	{
 		digest = lua_gettop(L);
 	}else if(!lua_isnoneornil(L, -1))
-		luaL_error(L, "paramater #3 if have digest key, it's value must be string type or openssl.digest object");
+		luaL_error(L, "paramater #3 if have digest key, it's value must be string type or openssl.evp_digest object");
 
 
 	lua_getfield(L,3,"attribs");
@@ -626,7 +626,7 @@ LUA_FUNCTION(openssl_csr_new)
 	if (openssl_make_REQ(L, csr, pkey, dn, attribs, extentions) == 0) {
 		const EVP_MD* md = NULL;
 		if (lua_isuserdata(L,digest)) {
-			md = CHECK_OBJECT(digest,EVP_MD,"openssl.digest");
+			md = CHECK_OBJECT(digest,EVP_MD,"openssl.evp_digest");
 		}
 		else if(lua_isstring(L,digest)) {
 			md = EVP_get_digestbyname(luaL_checkstring(L,digest));

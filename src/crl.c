@@ -273,12 +273,12 @@ LUA_FUNCTION(openssl_crl_verify) {
 LUA_FUNCTION(openssl_crl_sign) {
 	X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
 	EVP_PKEY *key = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
-	const EVP_MD *md = lua_isuserdata(L,3) ? CHECK_OBJECT(3, EVP_MD, "openssl.digest")
+	const EVP_MD *md = lua_isuserdata(L,3) ? CHECK_OBJECT(3, EVP_MD, "openssl.evp_digest")
 		: EVP_get_digestbyname(luaL_optstring(L, 3, "sha1WithRSAEncryption"));
 	int ret = 0;
 
 	if(!md)
-		luaL_error(L,"#3 paramater must be openssl.digest or a valid digest alg name");
+		luaL_error(L,"#3 paramater must be openssl.evp_digest or a valid digest alg name");
 
 
 	ret = X509_CRL_sign(crl, key, md);

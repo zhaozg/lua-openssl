@@ -46,13 +46,13 @@ There are many important lua object type:
 	openssl.stack_of_x509,
 	openssl.x509_req,
 	openssl.evp_pkey, 
-	openssl.digest, 
-	openssl.cipher,
+	openssl.evp_digest, 
+	openssl.evp_cipher,
 	openssl.engine
 	openssl.evp_cipher_ctx
 	openssl.evp_digest_ctx
 	...
-They are short write as bio, x509, sk_x509, x509_req, evp_pkey,digest, cipher,
+They are short write as bio, x509, sk_x509, x509_req, evp_pkey,evp_digest, evp_cipher,
 	engine(not used now!), cipher_ctx,  digest_ctx
 
 Notes, In next section of this document,
@@ -170,7 +170,7 @@ evp_pkey:decrypt(string data [,string padding=pkcs1]) -> string
 ---------
 
 openssl.get_cipher(string alg|number alg_id) => evp_pkey
-    return a cipher method
+    return a evp_cipher method
 openssl.get_cipher([bool aliases = true]) ->table
     return all ciphers methods default with alias, 
 
@@ -193,7 +193,7 @@ evp_cipher:decrypt(string data, [ string key [,string iv
 
 cipher_ctx:info() ->table
     result with block_size,key_length,iv_length,flags,mode,nid,type 
-    and cipher object keys
+    and evp_cipher object keys
 cipher_ctx:encrypt_update(string data)->string
     return string may be 0 length
 cipher_ctx:encrypt_final()->string
@@ -218,8 +218,8 @@ openssl.get_digest([bool alias=true]) -> table
 
 evp_digest:info() -> table
     return a table with key nid,name, size, block_size, pkey_type, flags
-evp_digest:digest(string in) -> string
-    return binary digest result
+evp_digest:evp_digest(string in) -> string
+    return binary evp_digest result
 
 evp_digest:init() => digest_ctx
 
@@ -267,7 +267,7 @@ openssl.pkcs7_verify(bio in, string flags [, stack_of_x509 signerscerts,
    and returns the CERTs of the signers 
 
 openssl.pkcs7_encrypt(bio in, bio out, stack_of_x509 recipcerts, table header
-    [, string flags [,cipher md] -> boolean
+    [, string flags [,evp_cipher md] -> boolean
 
     Encrypts the message in the file named infile with the certificates in 
     recipcerts and output the result to the file named outfile
@@ -367,15 +367,15 @@ openssl.error_string()-> number, string
     so you can call it twice.
 
 
-openssl.sign(string data,  evp_pkey key [, digest md|string md_alg=SHA1])
+openssl.sign(string data,  evp_pkey key [, evp_digest md|string md_alg=SHA1])
     ->string
     Uses key to create signature for data, returns signed result
 
 openssl.verify(string data, string signature, evp_pkey key 
-    [, digest md|string md_alg=SHA1]) ->boolean
+    [, evp_digest md|string md_alg=SHA1]) ->boolean
     Uses key to verify that the signature is correct for the given data.
 
-openssl.seal(string data, table pubkeys [, cipher enc|string md_alg=RC4])
+openssl.seal(string data, table pubkeys [, evp_cipher enc|string md_alg=RC4])
     -> string, table
     Encrypts data using pubkeys, so that only owners of the respective
     private keys and ekeys can decrypt and read the data. Returns the
@@ -383,7 +383,7 @@ openssl.seal(string data, table pubkeys [, cipher enc|string md_alg=RC4])
     else nil. 
 
 openssl.open(string data, string ekey, int privkey, 
-    [, cipher enc|string md_alg=RC4]) -> string
+    [, evp_cipher enc|string md_alg=RC4]) -> string
 
 Opens (decrypts) sealed data using a private key and the corresponding
 envelope key. Returns decrypted data on success and nil on failure. 
@@ -442,18 +442,18 @@ II.  Example usage
 
 Example 1: short encrypt/decrypt
 
-	local cipher = openssl.get_cipher('des')
+	local evp_cipher = openssl.get_cipher('des')
 	m = 'abcdefghick'
 	key = m
-	cdata = cipher:encrypt(m,key)
-	m1  = cipher:decrypt(cdata,key)
+	cdata = evp_cipher:encrypt(m,key)
+	m1  = evp_cipher:decrypt(cdata,key)
 	assert(cdata==m1)
 
-Example 2: quich digest
+Example 2: quich evp_digest
 
         md = openssl.get_digest('md5')
         m = 'abcd' 
-        aa = md:digest(m)
+        aa = md:evp_digest(m)
 
         mdc=md:init()
         mdc:update(m)
