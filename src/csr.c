@@ -1,4 +1,9 @@
-#include "openssl.h"
+/* 
+$Id:$ 
+$Revision:$
+*/
+
+#include "openssl.h"
 
 static int openssl_csr_tostring(lua_State*L);
 static int openssl_csr_free(lua_State*L);
@@ -153,7 +158,11 @@ err:
 static X509_EXTENSION *do_ext_nconf(X509V3_CTX *ctx, int ext_nid,
 									int crit, char *value)
 {
+#if OPENSSL_VERSION_NUMBER > 0x10000000L
 	const X509V3_EXT_METHOD *method;
+#else
+	X509V3_EXT_METHOD *method;
+#endif
 	X509_EXTENSION *ext;
 	STACK_OF(CONF_VALUE) *nval;
 	void *ext_struc;
@@ -642,19 +651,14 @@ LUA_FUNCTION(openssl_csr_parse)
 {
 	X509_REQ * csr = CHECK_OBJECT(1,X509_REQ,"openssl.x509_req");
 	int  shortnames = lua_gettop(L)==1?1:lua_toboolean(L,2);
+
 	X509_NAME * subject = X509_REQ_get_subject_name(csr);
 	EVP_PKEY* pubkey=X509_REQ_get_pubkey(csr);
 	STACK_OF(X509_EXTENSION) *exts  = X509_REQ_get_extensions(csr);
 	STACK_OF(X509_ATTRIBUTE) *attrs = csr->req_info->attributes;
-	BIO* out = NULL;
+	BIO* out = BIO_new(BIO_s_mem());
 	char *name = NULL;
 	BUF_MEM *buf = NULL;
-
-#define ASSOC_BIO(n)  BIO_get_mem_ptr(out, &buf);	\
-	lua_pushlstring(L,buf->data, buf->length);  \
-	lua_setfield(L,-2, n); \
-	BIO_reset(out)
-
 
 	lua_newtable(L);
 	add_assoc_int(L,"version",ASN1_INTEGER_get(csr->req_info->version));
@@ -664,9 +668,14 @@ LUA_FUNCTION(openssl_csr_parse)
 	{
 		X509_REQ_INFO* ri=csr->req_info;
 		lua_newtable(L);
-		out = BIO_new(BIO_s_mem());
+		
+
+		ADD_ASSOC_ASN1(ASN1_OBJECT, out,ri->pubkey->algor->algorithm, "algorithm");
+
+		/*
 		i2a_ASN1_OBJECT(out,ri->pubkey->algor->algorithm);
 		ASSOC_BIO("algorithm");
+		*/
 
 		PUSH_OBJECT(pubkey,"openssl.evp_pkey");
 		lua_insert(L,1);
@@ -675,21 +684,17 @@ LUA_FUNCTION(openssl_csr_parse)
 		lua_remove(L,1);
 
 		lua_setfield(L,-2,"pubkey");
-		BIO_free(out);
 	}
 
 	if(attrs && X509at_get_attr_count(attrs))
 	{
 		int i, attr_nid;
-		out = BIO_new(BIO_s_mem());
 
 		lua_newtable(L);
 
 		for (i=0; i< X509at_get_attr_count(attrs); i++) {
 			X509_ATTRIBUTE *attr = X509at_get_attr(attrs,i);
 			ASN1_TYPE *av;
-			char *value;
-
 #if 0
 			{
 				char* dat = NULL;
@@ -716,8 +721,7 @@ LUA_FUNCTION(openssl_csr_parse)
 			{
 				attr_nid = OBJ_obj2nid(attr->object);
 				if(attr_nid == NID_undef) {
-					i2a_ASN1_OBJECT (out, attr->object);
-					ASSOC_BIO("object");
+					ADD_ASSOC_ASN1(ASN1_OBJECT, out,attr->object, "object");
 					name = NULL;
 				} else 
 					name  = shortnames ? (char*)OBJ_nid2sn(attr_nid) : (char*)OBJ_nid2ln(attr_nid) ;
@@ -726,9 +730,16 @@ LUA_FUNCTION(openssl_csr_parse)
 					av = sk_ASN1_TYPE_value(attr->value.set, 0);
 					switch(av->type) {
 				case V_ASN1_BMPSTRING:
-					value = OPENSSL_uni2asc(av->value.bmpstring->data,av->value.bmpstring->length);
-					add_assoc_string(L, name?name:"bmpstring", value,1);
-					OPENSSL_free(value);
+					{
+#if OPENSSL_VERSION_NUMBER > 0x10000000L
+						char *value = OPENSSL_uni2asc(av->value.bmpstring->data,av->value.bmpstring->length);
+						add_assoc_string(L, name?name:"bmpstring", value,1);
+						OPENSSL_free(value);
+#else
+						lua_pushlstring(L,av->value.bmpstring->data,av->value.bmpstring->length);
+						lua_setfield(L,-2, name?name:"bmpstring");
+#endif
+					}
 					break;
 
 				case V_ASN1_OCTET_STRING:
@@ -742,15 +753,13 @@ LUA_FUNCTION(openssl_csr_parse)
 					break;
 
 				default:
-					
-					
 					if(name)
 						lua_pushstring(L,name);
 					else
 						lua_pushfstring(L,"tag:%d",av->type);
 
 					{
-						char* dat = NULL;
+						unsigned char* dat = NULL;
 						int i = i2d_ASN1_TYPE(av,&dat);
 						if(i>0) {
 							lua_pushlstring(L,dat,i);
@@ -768,47 +777,12 @@ LUA_FUNCTION(openssl_csr_parse)
 			lua_rawseti(L,-2,i+1);
 #endif
 		}
-		BIO_free(out);
 		lua_setfield(L,-2,"attributes");
 
-		if(exts && sk_X509_EXTENSION_num(exts))
-		{
-			lua_newtable(L);
-
-			for (i=0; i<sk_X509_EXTENSION_num(exts); i++)
-			{
-				char buffer[256];
-				X509_EXTENSION *extension = sk_X509_EXTENSION_value(exts, i);
-				if (OBJ_obj2nid(X509_EXTENSION_get_object(extension)) != NID_undef) {
-					name = (char *)OBJ_nid2sn(OBJ_obj2nid(X509_EXTENSION_get_object(extension)));
-				} else {
-					OBJ_obj2txt(buffer, sizeof(buffer)-1, X509_EXTENSION_get_object(extension), 1);
-					name = buffer;
-				}
-				out = BIO_new(BIO_s_mem());
-				if (X509V3_EXT_print(out, extension, 0, 0)) {
-					BIO_get_mem_ptr(out, &buf);
-					lua_pushlstring(L,buf->data, buf->length);
-					lua_setfield(L,-2,name);
-				} else {
-					add_assoc_asn1_string(L, name, X509_EXTENSION_get_data(extension));
-				}
-				BIO_free(out);
-			}
-
-			lua_setfield(L,-2,"extensions");
-			sk_X509_EXTENSION_pop_free(exts, X509_EXTENSION_free); 
-		}
 	} 
+	add_assoc_x509_extension(L, "extensions", exts, out);
+	BIO_free(out);
 
-#if 0
-	if (csr->sig_alg && csr->signature)
-	{
-		lua_newtable(L);
-
-		lua_setfield(L,-2,"signature");
-	}
-#endif
 	return 1;
 }
 /* }}} */

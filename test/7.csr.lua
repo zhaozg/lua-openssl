@@ -1,4 +1,3 @@
-package.cpath=[[d:\work\luabuild\bin\Win32Debug\clibs\?.dll]]
 
 local openssl = require('openssl')
 
@@ -57,7 +56,7 @@ function test_new()
         
         c = pkey:encrypt('abcd')
         print(#c,c)
-        d = x509:public_key():decrypt(c)
+        d = x509:get_public():decrypt(c)
         print(#d,d)
         assert(d=='abcd')
 

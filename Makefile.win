@@ -1,0 +1,25 @@
+# $Id: Makefile.win,v 1.11 2008/05/07 19:06:37 carregal Exp $
+
+T= openssl
+
+include config.win
+
+OBJS=src\auxiliar.obj src\bio.obj src\cipher.obj src\crl.obj src\csr.obj src\digest.obj src\misc.obj src\openssl.obj src\pkcs12.obj src\pkcs7.obj  src\pkey.obj src\sk_x509.obj src\x509.obj
+
+
+lib: src\$T.dll
+
+.c.obj:
+	$(CC) /nologo /c /Fo$@ $(CFLAGS) $<
+
+src\$T.dll: $(OBJS)
+	link /DLL /out:src\$T.dll $(OBJS) "$(LUA_LIB)" "$(OPENSSL_LIB)" wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib 
+	IF EXIST src\$T.dll.manifest mt -manifest src\$T.dll.manifest -outputresource:src\$T.dll;2
+
+install: src\$T.dll
+	IF NOT EXIST "$(LUA_LIBDIR)" mkdir "$(LUA_LIBDIR)"
+	copy src\$T.dll "$(LUA_LIBDIR)"
+
+clean:
+	del src\$T.dll $(OBJS) src\$T.lib src\$T.exp
+	IF EXIST src\$T.dll.manifest del src\$T.dll.manifest

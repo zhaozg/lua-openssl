@@ -1,3 +1,8 @@
+/* 
+$Id:$ 
+$Revision:$
+*/
+
 #include "openssl.h"
 
 

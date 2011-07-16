@@ -1,3 +1,8 @@
+/* 
+$Id:$ 
+$Revision:$
+*/
+
 #include "openssl.h"
 
 LUA_FUNCTION(openssl_bio_new_mem){

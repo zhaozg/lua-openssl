@@ -1,3 +1,8 @@
+/* 
+$Id:$ 
+$Revision:$
+*/
+
 #include "openssl.h"
 
 
@@ -93,23 +98,6 @@ time_t asn1_time_to_time_t(ASN1_UTCTIME * timestr) /* {{{ */
 }
 /* }}} */
 
-void add_assoc_asn1_time(lua_State*L, char * key, ASN1_UTCTIME * timestr) /* {{{ */
-{
-	lua_pushinteger(L, (lua_Integer)asn1_time_to_time_t(timestr));
-	lua_setfield(L,-2,key);
-}
-
-void add_assoc_asn1_integer(lua_State*L, char * key, ASN1_INTEGER * ai) /* {{{ */
-{
-	BIGNUM *bn =  ASN1_INTEGER_to_BN(ai,NULL);
-	char* hex = BN_bn2hex(bn);
-	lua_pushstring(L, hex);
-	lua_setfield(L, -2, key);
-	OPENSSL_free(hex);
-	BN_free(bn);
-}
-
-
 /* }}} */
 
 void add_assoc_name_entry(lua_State*L, char * key, X509_NAME * name, int shortname) /* {{{ */
@@ -120,9 +108,15 @@ void add_assoc_name_entry(lua_State*L, char * key, X509_NAME * name, int shortna
 	X509_NAME_ENTRY * ne;
 	ASN1_STRING * str = NULL;
 	ASN1_OBJECT * obj;
+	char* p;
 
 	lua_newtable(L);
 	
+	p=X509_NAME_oneline(name,NULL,0);
+	lua_pushstring(L, p);
+	lua_rawseti(L, -2, 0);
+	OPENSSL_free(p);
+
 	for (i = 0; i < X509_NAME_entry_count(name); i++) {
 		unsigned char *to_add;
 		int to_add_len;

@@ -1,3 +1,8 @@
+/* 
+$Id:$ 
+$Revision:$
+*/
+
 #include "openssl.h"
 #include "auxiliar.h"
 
@@ -172,7 +177,7 @@ LUA_FUNCTION(openssl_pkey_new)
 	if (lua_isnoneornil(L,1) || lua_isstring(L,1)) {
 		alg = luaL_optstring(L,1,alg);
 
-		if (stricmp(alg,"rsa")==0)
+		if (strcasecmp(alg,"rsa")==0)
 		{
 			int bits = luaL_optint(L,2,1024);
 			int e = luaL_optint(L,3,65537);
@@ -180,7 +185,7 @@ LUA_FUNCTION(openssl_pkey_new)
 			pkey = EVP_PKEY_new();
 			EVP_PKEY_assign_RSA(pkey,rsa);
 
-		}else if(stricmp(alg,"dsa")==0)
+		}else if(strcasecmp(alg,"dsa")==0)
 		{
 			int bits = luaL_optint(L,2,1024);
 			int seed_len = 0;
@@ -195,7 +200,7 @@ LUA_FUNCTION(openssl_pkey_new)
 			pkey = EVP_PKEY_new();
 			EVP_PKEY_assign_DSA(pkey, dsa);
 
-		}else if(stricmp(alg,"dh")==0)
+		}else if(strcasecmp(alg,"dh")==0)
 		{
 			int bits = luaL_optint(L,2,512);
 			int generator = luaL_optint(L,3,2);
@@ -211,7 +216,7 @@ LUA_FUNCTION(openssl_pkey_new)
 			EVP_PKEY_assign_DH(pkey,dh);
 
 		}/*
-		 else if(stricmp(alg,"ec")==0)
+		 else if(strcasecmp(alg,"ec")==0)
 		 {
 		 int bits = luaL_optint(L,2,1024);
 
@@ -508,18 +513,20 @@ LUA_FUNCTION(openssl_pkey_parse)
 
 static int get_padding(const char*padding) {
 
-	if(padding==NULL || stricmp(padding,"pkcs1")==0)
+	if(padding==NULL || strcasecmp(padding,"pkcs1")==0)
 		return RSA_PKCS1_PADDING;
-	else if(stricmp(padding,"sslv23")==0)
+	else if(strcasecmp(padding,"sslv23")==0)
 		return RSA_SSLV23_PADDING;
-	else if(stricmp(padding,"no")==0)
+	else if(strcasecmp(padding,"no")==0)
 		return RSA_NO_PADDING;
-	else if(stricmp(padding,"oaep")==0)
+	else if(strcasecmp(padding,"oaep")==0)
 		return RSA_PKCS1_OAEP_PADDING;
-	else if(stricmp(padding,"x931")==0)
+	else if(strcasecmp(padding,"x931")==0)
 		return RSA_X931_PADDING;
-	else if(stricmp(padding,"pss")==0)
+#if OPENSSL_VERSION_NUMBER > 0x10000000L
+	else if(strcasecmp(padding,"pss")==0)
 		return  RSA_PKCS1_PSS_PADDING;
+#endif
 	return 0;
 }
 

@@ -1,3 +1,8 @@
+/* 
+$Id:$ 
+$Revision:$
+*/
+
 #include "openssl.h"
 
 /* true global; readonly after module startup */
@@ -345,7 +350,7 @@ LUA_FUNCTION(openssl_seal)
 
 /* {{{ proto opendata openssl_open(string data, string ekey, mixed privkey, [, cipher enc|string md_alg=RC4])
    Opens data */
-LUA_FUNCTION(openssl_open)
+LUA_API LUA_FUNCTION(openssl_open)
 {
 	int data_len;
 	int ekey_len;

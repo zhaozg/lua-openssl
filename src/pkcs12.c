@@ -1,3 +1,8 @@
+/* 
+$Id:$ 
+$Revision:$
+*/
+
 #include "openssl.h"
 
 
@@ -130,3 +135,4 @@ LUA_FUNCTION(openssl_pkcs12_read)
 
 
 /* }}} */
+

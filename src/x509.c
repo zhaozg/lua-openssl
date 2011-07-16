@@ -1,4 +1,45 @@
+/* 
+$Id:$ 
+$Revision:$
+*/
+
 #include "openssl.h"
+
+
+void add_assoc_x509_extension(lua_State*L, char* key, STACK_OF(X509_EXTENSION)* exts, BIO* bio)
+{
+	const char*extname;
+	char buf[256];
+	int n = exts ? sk_X509_EXTENSION_num(exts) : 0 ;
+	int i;
+
+	if( n > 0 )
+	{
+		lua_newtable(L);
+
+		for (i = 0; i < n; i++) {
+			X509_EXTENSION* ext = sk_X509_EXTENSION_value(exts,i);
+
+			if (OBJ_obj2nid(X509_EXTENSION_get_object(ext)) != NID_undef) {
+				extname = (char *)OBJ_nid2sn(OBJ_obj2nid(X509_EXTENSION_get_object(ext)));
+			} else {
+				OBJ_obj2txt(buf, sizeof(buf)-1, X509_EXTENSION_get_object(ext), 1);
+				extname = buf;
+			}
+			if (X509V3_EXT_print(bio, ext, 0, 0)) {
+				BUF_MEM *mem;
+				BIO_get_mem_ptr(bio, &mem);
+				lua_pushlstring(L,mem->data, mem->length);
+				lua_setfield(L,-2,extname);
+			} else {
+				ADD_ASSOC_ASN1_STRING(ASN1_OCTET_STRING, bio, X509_EXTENSION_get_data(ext), extname);
+			}
+			BIO_reset(bio);
+		}
+
+		lua_setfield(L,-2,key);
+	}
+}
 
 /* X509 module for the Lua/OpenSSL binding.
  *
@@ -199,15 +240,13 @@ LUA_FUNCTION(openssl_x509_check_private_key)
 LUA_FUNCTION(openssl_x509_parse)
 {
 	X509 * cert = CHECK_OBJECT(1,X509,"openssl.x509");
-	int useshortnames = lua_isnil(L,2)?1:lua_toboolean(L,2);
+	int useshortnames = lua_isnoneornil(L,2)?0:lua_toboolean(L,2);
 
 	int i;
 	char * tmpstr;
-	X509_EXTENSION *extension;
-	char *extname;
-	BIO  *bio_out;
-	BUF_MEM *bio_buf;
-	char buf[256];
+	BIO  *bio;
+
+	bio = BIO_new(BIO_s_mem());
 
 	lua_newtable(L);
 	if (cert->name) {
@@ -229,14 +268,10 @@ LUA_FUNCTION(openssl_x509_parse)
 
 	lua_pushinteger(L,X509_get_version(cert)); lua_setfield(L,-2,"version");
 
+	ADD_ASSOC_ASN1(ASN1_INTEGER, bio, cert->cert_info->serialNumber, "serialNumber");
 
-	add_assoc_asn1_integer(L, "serialNumber", cert->cert_info->serialNumber);
-
-	add_assoc_asn1_string(L, "validFrom", 	X509_get_notBefore(cert));
-	add_assoc_asn1_string(L, "validTo", 		X509_get_notAfter(cert));
-	add_assoc_asn1_time(L, "validFrom_time_t", X509_get_notBefore(cert));
-	add_assoc_asn1_time(L, "validTo_time_t", X509_get_notAfter(cert));
-
+	ADD_ASSOC_ASN1_TIME(bio, X509_get_notBefore(cert), "notBefore");
+	ADD_ASSOC_ASN1_TIME(bio, X509_get_notAfter(cert), "notAfter");
 
 	tmpstr = (char *)X509_alias_get0(cert, NULL);
 	if (tmpstr) {
@@ -275,50 +310,35 @@ LUA_FUNCTION(openssl_x509_parse)
 	}
 	lua_setfield(L,-2,"purposes");
 
-	lua_newtable(L);
-	for (i = 0; i < X509_get_ext_count(cert); i++) {
-		extension = X509_get_ext(cert, i);
-		if (OBJ_obj2nid(X509_EXTENSION_get_object(extension)) != NID_undef) {
-			extname = (char *)OBJ_nid2sn(OBJ_obj2nid(X509_EXTENSION_get_object(extension)));
-		} else {
-			OBJ_obj2txt(buf, sizeof(buf)-1, X509_EXTENSION_get_object(extension), 1);
-			extname = buf;
-		}
-		bio_out = BIO_new(BIO_s_mem());
-		if (X509V3_EXT_print(bio_out, extension, 0, 0)) {
-			BIO_get_mem_ptr(bio_out, &bio_buf);
-			lua_pushlstring(L,bio_buf->data, bio_buf->length);
-			lua_setfield(L,-2,extname);
-		} else {
-			add_assoc_asn1_string(L, extname, X509_EXTENSION_get_data(extension));
-		}
-		BIO_free(bio_out);
-	}
-	lua_setfield(L,-2,"extensions");
+	add_assoc_x509_extension(L, "extensions", cert->cert_info->extensions, bio);
+
+	BIO_free(bio);
 	return 1;
 }
 /* }}} */
 
 
 static int get_cert_purpose(const char* purpose) {
-	if(stricmp(purpose,"ssl_client")==0)
+	if(strcasecmp(purpose,"ssl_client")==0)
 		return X509_PURPOSE_SSL_CLIENT;
-	else if(stricmp(purpose,"ssl_server")==0)
+	else if(strcasecmp(purpose,"ssl_server")==0)
 		return X509_PURPOSE_SSL_SERVER;
-	else if(stricmp(purpose,"ns_ssl_server")==0)
+	else if(strcasecmp(purpose,"ns_ssl_server")==0)
 		return X509_PURPOSE_NS_SSL_SERVER;
-	else if(stricmp(purpose,"smime_sign")==0)
+	else if(strcasecmp(purpose,"smime_sign")==0)
 		return X509_PURPOSE_SMIME_SIGN;
-	else if(stricmp(purpose,"smime_encrypt")==0)
+	else if(strcasecmp(purpose,"smime_encrypt")==0)
 		return X509_PURPOSE_SMIME_ENCRYPT;
-	else if(stricmp(purpose,"crl_sign")==0)
+	else if(strcasecmp(purpose,"crl_sign")==0)
 		return X509_PURPOSE_CRL_SIGN;
-	else if(stricmp(purpose,"any")==0)
+	else if(strcasecmp(purpose,"any")==0)
 		return X509_PURPOSE_ANY;
-	else if(stricmp(purpose,"ocsp_helper")==0)
+	else if(strcasecmp(purpose,"ocsp_helper")==0)
 		return X509_PURPOSE_OCSP_HELPER;
-	else if(stricmp(purpose,"timestamp_sign")==0)
+#if OPENSSL_VERSION_NUMBER > 0x10000000L
+	else if(strcasecmp(purpose,"timestamp_sign")==0)
 		return X509_PURPOSE_TIMESTAMP_SIGN;
+#endif
 	
 	return 0;
 }

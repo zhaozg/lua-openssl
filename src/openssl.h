@@ -1,3 +1,8 @@
+/* 
+$Id:$ 
+$Revision:$
+*/
+
 #ifndef LUA_EAY_H
 #define LUA_EAY_H
 #include <lua.h>
@@ -22,6 +27,9 @@
 
 /* Common */
 #include <time.h>
+#ifndef MAX_PATH
+#define MAX_PATH PATH_MAX
+#endif
 
 #ifdef NETWARE
 #define timezone _timezone	/* timezone is called _timezone in LibC */
@@ -42,6 +50,7 @@
 
 #ifdef WIN32
 #define snprintf _snprintf
+#define strcasecmp stricmp
 #endif
 
 enum lua_openssl_key_type {
@@ -64,7 +73,6 @@ enum lua_openssl_cipher_type {
 	OPENSSL_CIPHER_DEFAULT = OPENSSL_CIPHER_RC2_40
 };
 
-int check_cert(X509_STORE *ctx, X509 *x, STACK_OF(X509) *untrustedchain, int purpose);
 X509_STORE * setup_verify(STACK_OF(X509)* calist);
 void add_assoc_asn1_string(lua_State*L, char * key, ASN1_STRING * str);
 
@@ -105,7 +113,7 @@ LUA_FUNCTION(openssl_pkey_decrypt);
 LUA_FUNCTION(openssl_sign);
 LUA_FUNCTION(openssl_verify);
 LUA_FUNCTION(openssl_seal);
-LUA_FUNCTION(openssl_open);
+LUA_API LUA_FUNCTION(openssl_open);
 
 LUA_FUNCTION(openssl_pkcs7_verify);
 LUA_FUNCTION(openssl_pkcs7_decrypt);
@@ -142,14 +150,43 @@ void openssl_add_method(const OBJ_NAME *name, void *arg);
 	*(void **)(lua_newuserdata(L, sizeof(void *))) = (o);	\
 	auxiliar_setclass(L,tname,-1);} while(0)
 
+#define ADD_ASSOC_BIO(bio, key)	{	\
+	BUF_MEM *buf;	BIO_get_mem_ptr(bio, &buf);	\
+	lua_pushlstring(L, buf->data, buf->length);	\
+	lua_setfield(L, -2, key); BIO_reset(bio);	\
+}
+
+#define ADD_ASSOC_ASN1(type, bio, asn1,  key ) {	\
+	BUF_MEM *buf;									\
+	i2a_##type(bio,asn1);							\
+	BIO_get_mem_ptr(bio, &buf);						\
+	lua_pushlstring(L, buf->data, buf->length);		\
+	lua_setfield(L, -2, key); BIO_reset(bio);		\
+}
+
+#define ADD_ASSOC_ASN1_STRING(type, bio, asn1,  key ) {	\
+	BUF_MEM *buf;									\
+	i2a_ASN1_STRING(bio,asn1, V_##type);							\
+	BIO_get_mem_ptr(bio, &buf);						\
+	lua_pushlstring(L, buf->data, buf->length);		\
+	lua_setfield(L, -2, key); BIO_reset(bio);		\
+}
+
+#define ADD_ASSOC_ASN1_TIME(bio, atime, key )	\
+	ASN1_TIME_print(bio,atime);					\
+	ADD_ASSOC_BIO(bio, key);					\
+	lua_pushfstring(L, "%s_time_t", key);			\
+	lua_pushinteger(L, (lua_Integer)asn1_time_to_time_t(atime));	\
+	lua_settable (L,-3)
+
 void add_assoc_name_entry(lua_State*L, char * key, X509_NAME * name, int shortname) ;
+void add_assoc_x509_extension(lua_State*L, char* key, STACK_OF(X509_EXTENSION)* ext, BIO* bio);
+
 void add_assoc_string(lua_State *L, const char*name, const char*val, int flag);
 void add_index_bool(lua_State* L, int i, int b);
 void add_assoc_int(lua_State* L, const char* i, int b);
 
-void add_assoc_asn1_time(lua_State*L, char * key, ASN1_UTCTIME * timestr);
-void add_assoc_asn1_integer(lua_State*L, char * key, ASN1_INTEGER * integer);
-
+time_t asn1_time_to_time_t(ASN1_UTCTIME * timestr);
 int openssl_object_create(lua_State* L);
 
 int openssl_register_digest(lua_State* L);

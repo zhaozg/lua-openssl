@@ -1,3 +1,8 @@
+/* 
+$Id:$ 
+$Revision:$
+*/
+
 #include "openssl.h"
 
 /* cipher module for the Lua/OpenSSL binding.
@@ -279,12 +284,104 @@ LUA_FUNCTION(openssl_cipher_ctx_cleanup) {
 	return 1;
 }
 
+LUA_FUNCTION(openssl_evp_encrypt){
+	EVP_CIPHER* cipher = CHECK_OBJECT(1,EVP_CIPHER, "openssl.evp_cipher");
+	int input_len = 0;
+	const char *input = luaL_checklstring(L, 2, &input_len);
+	int key_len = 0;
+	const char *key = luaL_optlstring(L, 3, NULL, &key_len); /* can be NULL */
+	size_t iv_len = 0;
+	const char *iv = luaL_optlstring(L, 4, NULL, &iv_len); /* can be NULL */
+	ENGINE *e = lua_isnoneornil(L,5) ? NULL : CHECK_OBJECT(5, ENGINE, "openssl.engine");
+	EVP_CIPHER_CTX c;
+
+	int output_len = 0;
+	int len = 0;
+	unsigned char *buffer = NULL;
+	unsigned char evp_key[EVP_MAX_KEY_LENGTH] = {0};
+	unsigned char evp_iv[EVP_MAX_IV_LENGTH] = {0};
+
+	if (key)
+	{
+		key_len = EVP_MAX_KEY_LENGTH>key_len?key_len:EVP_MAX_KEY_LENGTH;
+		memcpy(evp_key, key, key_len);
+	}
+	if (iv)
+	{
+		iv_len = EVP_MAX_IV_LENGTH>iv_len?iv_len:EVP_MAX_IV_LENGTH;
+		memcpy(evp_iv, iv, iv_len);
+	}
+
+	EVP_CIPHER_CTX_init(&c);
+
+	if(!EVP_EncryptInit_ex(&c, cipher, e, key?evp_key:NULL, iv?evp_iv:NULL ))
+	{
+		luaL_error(L, "EVP_DecryptInit_ex failed, please check openssl error");
+	}
+	buffer = malloc(input_len + EVP_CIPHER_CTX_block_size(&c));
+	EVP_EncryptUpdate(&c, buffer, &len, input, input_len);
+	output_len += len;
+	EVP_EncryptFinal(&c, buffer+len, &len);
+	output_len += len;
+	lua_pushlstring(L, (char*) buffer, output_len);
+	free(buffer);
+	return 1;
+}
+
+LUA_FUNCTION(openssl_evp_decrypt){
+	EVP_CIPHER* cipher = CHECK_OBJECT(1,EVP_CIPHER, "openssl.evp_cipher");
+	int input_len = 0;
+	const char *input = luaL_checklstring(L, 2, &input_len);
+	int key_len = 0;
+	const char *key = luaL_optlstring(L, 3, NULL, &key_len); /* can be NULL */
+	size_t iv_len = 0;
+	const char *iv = luaL_optlstring(L, 4, NULL, &iv_len); /* can be NULL */
+	ENGINE *e = lua_isnoneornil(L,5) ? NULL : CHECK_OBJECT(5, ENGINE, "openssl.engine");
+	EVP_CIPHER_CTX c;
+
+	int output_len = 0;
+	int len = 0;
+	unsigned char *buffer = NULL;
+	unsigned char evp_key[EVP_MAX_KEY_LENGTH] = {0};
+	unsigned char evp_iv[EVP_MAX_IV_LENGTH] = {0};
+	if (key)
+	{
+		key_len = EVP_MAX_KEY_LENGTH>key_len?key_len:EVP_MAX_KEY_LENGTH;
+		memcpy(evp_key, key, key_len);
+	}
+	if (iv)
+	{
+		iv_len = EVP_MAX_IV_LENGTH>iv_len?iv_len:EVP_MAX_IV_LENGTH;
+		memcpy(evp_iv, iv, iv_len);
+	}
+
+	EVP_CIPHER_CTX_init(&c);
+
+	if(!EVP_DecryptInit_ex(&c, cipher, e, key?evp_key:NULL, iv?evp_iv:NULL ))
+	{
+		luaL_error(L, "EVP_DecryptInit_ex failed, please check openssl error");
+	}
+
+	buffer = malloc(input_len);
+	EVP_DecryptUpdate(&c, buffer, &len, input, input_len);
+	output_len += len;
+	EVP_DecryptFinal(&c, buffer+len, &len);
+	output_len += len;
+	lua_pushlstring(L, (char*) buffer, output_len);
+	free(buffer);
+	return 1;
+}
+
 static luaL_Reg cipher_funs[] = {
 	{"info",			openssl_cipher_info},
-	{"__tostring",		openssl_cipher_tostring},
 	{"encrypt_init",	openssl_evp_encrypt_init},
 	{"decrypt_init",	openssl_evp_decrypt_init},
 	{"init",			openssl_evp_cipher_init},
+
+	{"encrypt",			openssl_evp_encrypt },
+	{"decrypt",			openssl_evp_decrypt },
+
+	{"__tostring",		openssl_cipher_tostring},
 
 	{NULL, NULL}
 };

@@ -1,0 +1,21 @@
+# Installation directories
+# System's libraries directory (where binary libraries are installed)
+LUA_LIBDIR= "d:\work\luabuild\bin\Win32Debug\clibs\"
+
+# Lua includes and lib
+LUA_INC= "d:\work\lua-5.1\src"
+LUA_LIB= "d:\work\lua-5.1\src\lua51.lib"
+
+# Openssl include and lib
+OPENSSL_INC="d:\work\portable\openssl\inc32"
+OPENSSL_LIB="d:\work\portable\openssl\out32\libeay32.lib d:\work\portable\openssl\out32\ssleay32.lib"
+
+LIBNAME= $T.dll
+
+# Compilation directives
+WARN= /O2
+INCS= /I$(LUA_INC) /I$(OPENSSL_INC)
+CFLAGS= /DWIN32_LEAN_AND_MEAN /MD $(WARN) $(INCS)
+CC= cl
+
+

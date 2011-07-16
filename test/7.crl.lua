@@ -1,5 +1,3 @@
-package.cpath=[[d:\work\luabuild\bin\Win32Debug\clibs\?.dll]]
-package.path=[[.\?.lua]]
 
 local openssl = require('openssl')
 require 'util'

@@ -1,6 +1,7 @@
 OpenSSL binding for Lua
 
-$Id: README 2011/7/11  zhiguo.zhao $
+$Id:$
+$Revision:$
 
 Index
 -----
@@ -182,6 +183,13 @@ evp_cipher:decrypt_init([ string key [,string iv [,engine engimp]]])
     => cipher_ctx
 evp_cipher:cipher_init(bool enc, [, string key [,string iv 
     [,engine engimp]]]) => cipher_ctx
+
+evp_cipher:encrypt(string data, [ string key [,string iv 
+    [,engine engimp]]]) -> string
+
+evp_cipher:decrypt(string data, [ string key [,string iv 
+    [,engine engimp]]]) -> string
+
 
 cipher_ctx:info() ->table
     result with block_size,key_length,iv_length,flags,mode,nid,type 
@@ -409,7 +417,22 @@ I.   HOWTO
 
 Howto 1: Build on Linux/Unix System.
 
+   Before build, please change setting in config file
+   work with Lua5.1£¬ sould support lua5.2 by update config file
+
+	make
+	make install
+	make clean
+
 Howto 2: Build on Windows with MSVC.
+
+   Before build, please change setting in config.win file
+   work with Lua5.1£¬ sould support lua5.2 by update config.win file
+
+	nmake -f makefile.win
+	nmake -f makefile.win install
+	nmake -f makefile.win clean
+
 
 Howto 3: Build on Windows with mingw.
 
@@ -417,14 +440,34 @@ Howto 3: Build on Windows with mingw.
 II.  Example usage
 ------------------
 
-Example 1:  Iterator a openssl.stack_of_x509(sk_x509) object
+Example 1: short encrypt/decrypt
 
-    n = #sk
-    for i=1, n do
-	x = sk:get(i)
-    end
+	local cipher = openssl.get_cipher('des')
+	m = 'abcdefghick'
+	key = m
+	cdata = cipher:encrypt(m,key)
+	m1  = cipher:decrypt(cdata,key)
+	assert(cdata==m1)
 
-Example 2: read and parse certificate
+Example 2: quich digest
+
+        md = openssl.get_digest('md5')
+        m = 'abcd' 
+        aa = md:digest(m)
+
+        mdc=md:init()
+        mdc:update(m)
+        bb = mdc:final()
+        assert(aa==bb)
+	
+Example 3:  Iterator a openssl.stack_of_x509(sk_x509) object
+
+	n = #sk
+	for i=1, n do
+		x = sk:get(i)
+	end
+
+Example 4: read and parse certificate
 
 	local openssl = require('openssl')
 
@@ -450,4 +493,4 @@ Example 2: read and parse certificate
 
 	test_x509()
 
-
+More please see test lua script file.
