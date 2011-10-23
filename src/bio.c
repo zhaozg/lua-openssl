@@ -176,6 +176,6 @@ static luaL_reg bio_funs[] = {
 };
 
 int openssl_register_bio(lua_State* L) {
-	auxiliar_newclass(L,"openssl.bio",bio_funs);
+	auxiliar_newclass(L, "openssl.bio", bio_funs);
 	return 0;
 }

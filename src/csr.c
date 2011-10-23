@@ -1,9 +1,4 @@
-/* 
-$Id:$ 
-$Revision:$
-*/
-
-#include "openssl.h"
+#include "openssl.h"
 
 static int openssl_csr_tostring(lua_State*L);
 static int openssl_csr_free(lua_State*L);
@@ -327,7 +322,8 @@ static int openssl_make_REQ(lua_State*L,
 						X509V3err(X509V3_F_X509V3_EXT_NCONF,X509V3_R_ERROR_IN_EXTENSION);
 						ERR_add_error_data(4,"name=", key, ", value=", val);
 					}
-					X509v3_add_ext(&exts, ret, -1);
+					else
+						X509v3_add_ext(&exts, ret, -1);
 				} else {
 					luaL_error(L, "extensions: %s is not a recognized name", key);
 				}
@@ -337,8 +333,6 @@ static int openssl_make_REQ(lua_State*L,
 			}
 			X509_REQ_add_extensions(csr, exts);
 			sk_X509_EXTENSION_pop_free(exts,X509_EXTENSION_free);
-
-
 		}
 	}
 
@@ -426,7 +420,8 @@ LUA_FUNCTION(openssl_csr_export)
 }
 /* }}} */
 
-/* {{{ proto resource openssl_csr_sign(obj csr, obj x509, obj priv_key[,table args = {serialNumber=...,num_days=...,...} )
+int openssl_conf_load_idx(lua_State*L, int idx);
+/* {{{ proto resource openssl_csr_sign(obj csr, obj x509, obj priv_key [,table args = {serialNumber=...,num_days=...,...}][,string group])
    Signs a cert with another CERT */
 LUA_FUNCTION(openssl_csr_sign)
 {
@@ -437,14 +432,14 @@ LUA_FUNCTION(openssl_csr_sign)
 	EVP_PKEY * key = NULL, *priv_key = NULL;
 	int i;
 	int ret = 0;
-	int dn, attribs, extentions, digest, num_days;
+	int dn, digest, num_days;
 
 	csr = CHECK_OBJECT(1,X509_REQ,"openssl.x509_req");
 	cert = lua_isnil(L,2) ? NULL: CHECK_OBJECT(2,X509,"openssl.x509");
 	priv_key = CHECK_OBJECT(3,EVP_PKEY,"openssl.evp_pkey");
 
 	luaL_checktype(L,4,LUA_TTABLE);
-	dn = attribs = extentions = digest = 0;
+	dn = digest = 0;
 
 	lua_getfield(L, 4, "serialNumber");
 	if(lua_isnil(L,-1))
@@ -468,24 +463,6 @@ LUA_FUNCTION(openssl_csr_sign)
 	else
 		num_days = luaL_checkint(L, -1);
 
-	lua_getfield(L, 4,"attribs");
-	if (lua_isnil(L,-1)) {
-		attribs = 0;
-		lua_pop(L,1);
-	}else{
-		luaL_checktype(L, -1, LUA_TTABLE);
-		attribs = lua_gettop(L);
-	}
-
-	lua_getfield(L, 4, "extentions");
-	if (lua_isnil(L, -1)) {
-		extentions = 0;
-		lua_pop(L,1);
-	}else {
-		luaL_checktype(L, -1, LUA_TTABLE);
-		extentions = lua_gettop(L);
-	}
-
 	if (cert && !X509_check_private_key(cert, priv_key)) {
 		luaL_error(L,"private key does not correspond to signing cert");
 	}
@@ -508,42 +485,76 @@ LUA_FUNCTION(openssl_csr_sign)
 	}
 	
 	/* Now we can get on with it */
-	
+	// 1)
 	new_cert = X509_new();
 	if (new_cert == NULL) {
 		luaL_error(L, "No memory");
 		goto cleanup;
 	}
+	// 2)
 	/* Version 3 cert */
-	if (!X509_set_version(new_cert, 2))
-		goto cleanup;
+	lua_getfield(L, 4,"version");
+	if (lua_isnil(L,-1)) {
+		if (!X509_set_version(new_cert, 2))
+			goto cleanup;
+	}else{
+		if (!X509_set_version(new_cert, lua_tointeger(L,-1)))
+			goto cleanup;
+	}
+	lua_pop(L,1);
 
+	// 3)
 	X509_set_serialNumber(new_cert, BN_to_ASN1_INTEGER(bn,X509_get_serialNumber(new_cert)));
-	X509_set_subject_name(new_cert, X509_REQ_get_subject_name(csr));
-
+	// 4)
 	if (cert == NULL) {
 		cert = new_cert;
 	}
 	if (!X509_set_issuer_name(new_cert, X509_get_subject_name(cert))) {
 		goto cleanup;
 	}
+	X509_set_subject_name(new_cert, X509_REQ_get_subject_name(csr));
+
+	// 5
 	X509_gmtime_adj(X509_get_notBefore(new_cert), 0);
-	X509_gmtime_adj(X509_get_notAfter(new_cert), (long)60*60*24*num_days);
-	i = X509_set_pubkey(new_cert, key);
-	if (!i) {
+	//X509_gmtime_adj(X509_get_notAfter(new_cert), (long)60*60*24*num_days);
+	if (!X509_time_adj_ex(X509_get_notAfter(new_cert), num_days, 0, NULL)) 
+		goto cleanup;
+
+	//6
+	if (!X509_set_pubkey(new_cert, key)) {
 		goto cleanup;
 	}
-#if 0
-	if (req.extensions_section) {
+
+	//
+	lua_getfield(L, 4, "extentions");
+	if ( lua_isnil (L, -1) ) {
+		new_cert->cert_info->extensions = X509_REQ_get_extensions(csr);
+	}
+	else{
 		X509V3_CTX ctx;
-		
+		LHASH_OF(CONF_VALUE)* conf = NULL;
+		const char* group = luaL_checkstring(L, 5);
+
 		X509V3_set_ctx(&ctx, cert, new_cert, csr, NULL, 0);
-		X509V3_set_conf_lhash(&ctx, req.req_config);
-		if (!X509V3_EXT_add_conf(req.req_config, &ctx, (char*)req.extensions_section, new_cert)) {
+
+		if(openssl_conf_load_idx(L,-1)==1)
+		{
+			conf = CHECK_OBJECT(-1,LHASH_OF(CONF_VALUE),"openssl.conf");
+			lua_pop(L,1);
+		}else
+		{
+			luaL_error(L,"load openssl config object failed");
+		}
+
+		X509V3_set_conf_lhash(&ctx, conf);
+		if (!X509V3_EXT_add_conf(conf, &ctx, group, new_cert)) 
+		{
 			goto cleanup;
 		}
+			
 	}
-	#endif
+	lua_pop(L,1);
+
 	/* Now sign it */
 	{
 		const EVP_MD* md = NULL;

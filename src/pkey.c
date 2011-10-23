@@ -215,17 +215,15 @@ LUA_FUNCTION(openssl_pkey_new)
 			pkey = EVP_PKEY_new();
 			EVP_PKEY_assign_DH(pkey,dh);
 
-		}/*
-		 else if(strcasecmp(alg,"ec")==0)
-		 {
+		}
+		else if(strcasecmp(alg,"ec")==0)
+		{
 		 int bits = luaL_optint(L,2,1024);
 
 		 EC_KEY *ec = EC_KEY_new();
-		 group = EC_KEY_get0_group(recip_key);
 
-		 EC_KEY_set_group(ec, group);
+		 EC_KEY_set_group(ec, EC_GROUP_new_by_curve_name(NID_secp192k1));
 
-		 EC_KEY_generate_key(ephemeral_key);
 		 if(!EC_KEY_generate_key(ec))
 			{
 			EC_KEY_free(ec);
@@ -233,7 +231,7 @@ LUA_FUNCTION(openssl_pkey_new)
 			}
 			pkey = EVP_PKEY_new();
 			EVP_PKEY_assign_EC_KEY(pkey,ec);
-			}*/
+			}
 		else
 		{
 			luaL_error(L,"not support %s!!!!",alg);

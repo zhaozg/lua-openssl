@@ -119,6 +119,9 @@ LUA_FUNCTION(openssl_pkcs7_verify);
 LUA_FUNCTION(openssl_pkcs7_decrypt);
 LUA_FUNCTION(openssl_pkcs7_sign);
 LUA_FUNCTION(openssl_pkcs7_encrypt);
+LUA_FUNCTION(openssl_pkcs7_read);
+LUA_FUNCTION(openssl_pkcs7_parse);
+
 
 LUA_FUNCTION(openssl_error_string);
 
@@ -141,6 +144,13 @@ LUA_FUNCTION(openssl_bio_new_file);
 LUA_FUNCTION(openssl_get_digest);
 LUA_FUNCTION(openssl_get_cipher);
 
+LUA_FUNCTION(openssl_ts_req_new);
+LUA_FUNCTION(openssl_ts_req_d2i);
+LUA_FUNCTION(openssl_ts_resp_d2i);
+LUA_FUNCTION(openssl_ts_resp_ctx_new);
+LUA_FUNCTION(openssl_ts_verify_ctx_new);
+
+LUA_FUNCTION(openssl_conf_load);
 
 void openssl_add_method_or_alias(const OBJ_NAME *name, void *arg) ;
 void openssl_add_method(const OBJ_NAME *name, void *arg);
@@ -197,6 +207,11 @@ int openssl_register_pkey(lua_State* L);
 int openssl_register_csr(lua_State* L);
 int openssl_register_bio(lua_State* L);
 int openssl_register_crl(lua_State* L);
+int openssl_register_ts(lua_State* L);
+int openssl_register_conf(lua_State* L);
+
+int openssl_register_pkcs7(lua_State* L);
+int openssl_register_misc(lua_State* L);
 
 #endif
 

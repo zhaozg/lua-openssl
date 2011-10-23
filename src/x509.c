@@ -4,7 +4,7 @@ $Revision:$
 */
 
 #include "openssl.h"
-
+#include "sk.h"
 
 void add_assoc_x509_extension(lua_State*L, char* key, STACK_OF(X509_EXTENSION)* exts, BIO* bio)
 {
@@ -405,3 +405,66 @@ int openssl_register_x509(lua_State*L) {
 	auxiliar_newclass(L,"openssl.x509", x509_funcs);
 	return 0;
 }
+
+//////////////////////////////////////////////////////////////////////////
+
+IMP_LUA_SK(X509, x509);
+
+static STACK_OF(X509) * load_all_certs_from_file(const char *certfile)
+{
+	STACK_OF(X509_INFO) *sk=NULL;
+	STACK_OF(X509) *stack=NULL, *ret=NULL;
+	BIO *in=NULL;
+	X509_INFO *xi;
+
+	if(!(stack = sk_X509_new_null())) {
+		printf("memory allocation -1");
+		goto end;
+	}
+
+	if(!(in=BIO_new_file(certfile, "r"))) {
+		printf("error opening the file, %s", certfile);
+		sk_X509_free(stack);
+		goto end;
+	}
+
+	/* This loads from a file, a stack of x509/crl/pkey sets */
+	if(!(sk=PEM_X509_INFO_read_bio(in, NULL, NULL, NULL))) {
+		printf("error reading the file, %s", certfile);
+		sk_X509_free(stack);
+		goto end;
+	}
+
+	/* scan over it and pull out the certs */
+	while (sk_X509_INFO_num(sk)) {
+		xi=sk_X509_INFO_shift(sk);
+		if (xi->x509 != NULL) {
+			sk_X509_push(stack,xi->x509);
+			xi->x509=NULL;
+		}
+		X509_INFO_free(xi);
+	}
+	if(!sk_X509_num(stack)) {
+		printf("no certificates in file, %s", certfile);
+		sk_X509_free(stack);
+		goto end;
+	}
+	ret=stack;
+end:
+	BIO_free(in);
+	sk_X509_INFO_free(sk);
+
+	return ret;
+}
+
+
+int openssl_sk_x509_read(lua_State*L) {
+	const char* file = luaL_checkstring(L,1);
+	STACK_OF(X509) * certs = load_all_certs_from_file(file);
+	if (certs) {
+		PUSH_OBJECT(certs, "openssl.stack_of_x509");
+	}else
+		lua_pushnil(L);
+	return 1;
+}
+

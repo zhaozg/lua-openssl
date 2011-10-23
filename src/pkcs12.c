@@ -103,16 +103,7 @@ LUA_FUNCTION(openssl_pkcs12_read)
 	zp12 = luaL_checklstring(L, 1, &zp12_len);
 	pass = luaL_checkstring(L, 2);
 	
-	
-
-	if (zp12_len > 7 && memcmp(zp12, "file://", 7)==0)
-	{
-		bio_in = BIO_new_file(zp12 + 7, "r");
-	}else
-	{
-		bio_in = BIO_new(BIO_s_mem());
-		BIO_write(bio_in, zp12, zp12_len);
-	}
+	bio_in = BIO_new_mem_buf(zp12, zp12_len);
 
 	
 	if(d2i_PKCS12_bio(bio_in, &p12) && PKCS12_parse(p12, pass, &pkey, &cert, &ca)) {

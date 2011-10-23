@@ -121,7 +121,7 @@ void add_assoc_name_entry(lua_State*L, char * key, X509_NAME * name, int shortna
 		unsigned char *to_add;
 		int to_add_len;
 		int tindex = 0;
-		int utf8 = 0;
+		//int utf8 = 0;
 
 		ne  = X509_NAME_get_entry(name, i);
 		obj = X509_NAME_ENTRY_get_object(ne);
@@ -145,24 +145,18 @@ void add_assoc_name_entry(lua_State*L, char * key, X509_NAME * name, int shortna
 				obj_cnt++;
 				ne  = X509_NAME_get_entry(name, j);
 				str = X509_NAME_ENTRY_get_data(ne);
+
+				/* Some Certificate not stardand
 				if (ASN1_STRING_type(str) != V_ASN1_UTF8STRING) {
 					to_add_len = ASN1_STRING_to_UTF8(&to_add, str);
-					if (to_add_len != -1) {
-						tindex++;
-						utf8 = 1;
-						lua_pushstring(L,"UTF8:");
-						lua_pushlstring(L,(char *)to_add, to_add_len);
-						lua_concat(L,2);
-						lua_rawseti(L,-2,tindex);
-					}
-				} else {
-					utf8 = 0;
-					to_add = ASN1_STRING_data(str);
-					to_add_len = ASN1_STRING_length(str);
-					tindex++;
-					lua_pushlstring(L,(char *)to_add, to_add_len);
-					lua_rawseti(L,-2,tindex);
 				}
+				*/
+
+				to_add = ASN1_STRING_data(str);
+				to_add_len = ASN1_STRING_length(str);
+				tindex++;
+				lua_pushlstring(L,(char *)to_add, to_add_len);
+				lua_rawseti(L,-2,tindex);
 			}
 			last = j;
 		}
@@ -173,12 +167,7 @@ void add_assoc_name_entry(lua_State*L, char * key, X509_NAME * name, int shortna
 		} else {
 			lua_pop(L,1);
 			if (obj_cnt && str && to_add_len > -1) {
-				if(utf8){
-					lua_pushstring(L,"UTF8:");
-					lua_pushlstring(L,(char *)to_add, to_add_len);
-					lua_concat(L,2);
-				}else
-					lua_pushlstring(L,(char *)to_add, to_add_len);
+				lua_pushlstring(L,(char *)to_add, to_add_len);
 				lua_setfield(L,-2, sname);
 			}
 		}
@@ -307,3 +296,62 @@ LUA_FUNCTION(openssl_random_bytes)
 }
 
 /* }}} */
+
+LUA_FUNCTION(openssl_x509_algo_parse) {
+	X509_ALGOR *algo = CHECK_OBJECT(1,X509_ALGOR,"openssl.x509_algor");
+	BIO* bio = BIO_new(BIO_s_mem());
+	lua_newtable(L);
+	ADD_ASSOC_ASN1(ASN1_OBJECT,bio,algo->algorithm,"algorithm");
+	//ADD_ASSOC_ASN1(ASN1_TYPE,bio,algo->parameter,"parameter");
+	BIO_free(bio);
+	return 1;
+}
+
+LUA_FUNCTION(openssl_x509_algo_tostring) {
+	X509_ALGOR *algo = CHECK_OBJECT(1,X509_ALGOR,"openssl.x509_algor");
+	lua_pushfstring(L,"openssl.x509_algor:%p");
+	return 1;
+}
+
+
+LUA_FUNCTION(openssl_x509_extension_parse) {
+	X509_EXTENSION *ext = CHECK_OBJECT(1,X509_EXTENSION,"openssl.x509_extension");
+	BIO* bio = BIO_new(BIO_s_mem());
+	lua_newtable(L);
+	lua_pushboolean(L,ext->critical);
+	lua_setfield(L,-2,"critical");
+	ADD_ASSOC_ASN1(ASN1_OBJECT,bio,ext->object,"object");
+	BIO_free(bio);
+	{
+		ASN1_OCTET_STRING *os = ext->value;
+		lua_pushlstring(L,os->data, os->length);
+		lua_setfield(L,-2,"value");
+	}
+	return 1;
+}
+
+LUA_FUNCTION(openssl_x509_extension_tostring) {
+	X509_EXTENSION *ext = CHECK_OBJECT(1,X509_EXTENSION,"openssl.x509_extension");
+	lua_pushfstring(L,"openssl.x509_extension:%p");
+	return 1;
+}
+
+static luaL_Reg x509_algo_funs[] = {
+	{"__tostring", openssl_x509_algo_tostring},
+	{"parse", openssl_x509_algo_parse},
+
+	{ NULL, NULL }
+};
+
+static luaL_Reg x509_extension_funs[] = {
+	{"__tostring", openssl_x509_extension_tostring},
+	{"parse", openssl_x509_extension_parse},
+
+	{ NULL, NULL }
+};
+
+int openssl_register_misc(lua_State*L) {
+   auxiliar_newclass(L,"openssl.x509_algor",		x509_algo_funs);
+   auxiliar_newclass(L,"openssl.x509_extension",	x509_extension_funs);
+   return 0;
+}
