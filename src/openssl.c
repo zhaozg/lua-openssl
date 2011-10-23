@@ -58,13 +58,14 @@ const static luaL_Reg eay_functions[] = {
 
 	{"dh_compute_key",		openssl_dh_compute_key	},
 
+#ifdef OPENSSL_HAVE_TS
 	/* timestamp handling */
 	{"ts_req_new",		openssl_ts_req_new	},
 	{"ts_req_d2i",		openssl_ts_req_d2i	},
 	{"ts_resp_d2i",		openssl_ts_resp_d2i	},
 	{"ts_resp_ctx_new",	openssl_ts_resp_ctx_new	},
 	{"ts_verify_ctx_new",	openssl_ts_verify_ctx_new	},
-	
+#endif
 
 	/* conf handle */
 	{"conf_load",		openssl_conf_load	},
@@ -729,7 +730,9 @@ LUA_API int luaopen_openssl(lua_State*L)
 	openssl_register_sk_x509(L);
 	openssl_register_bio(L);
 	openssl_register_crl(L);
+#ifdef OPENSSL_HAVE_TS
 	openssl_register_ts(L);
+#endif
 	openssl_register_conf(L);
 	openssl_register_pkcs7(L);
 	openssl_register_misc(L);

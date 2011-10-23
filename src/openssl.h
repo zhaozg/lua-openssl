@@ -25,6 +25,16 @@ $Revision:$
 #include <openssl/pkcs12.h>
 #include <openssl/ssl.h>
 
+#if OPENSSL_VERSION_NUMBER >= 0x10000002L 
+#define OPENSSL_HAVE_TS
+#define LHASH LHASH_OF(CONF_VALUE)
+#else
+#ifndef HEADER_EC_H
+#undef EVP_PKEY_EC
+#endif
+#endif
+
+
 /* Common */
 #include <time.h>
 #ifndef MAX_PATH
@@ -76,11 +86,7 @@ enum lua_openssl_cipher_type {
 X509_STORE * setup_verify(STACK_OF(X509)* calist);
 void add_assoc_asn1_string(lua_State*L, char * key, ASN1_STRING * str);
 
-#if OPENSSL_VERSION_NUMBER >= 0x10000002L
-int openssl_config_check_syntax(const char * section_label, const char * config_filename, const char * section, LHASH_OF(CONF_VALUE) * config);
-#else
 int openssl_config_check_syntax(const char * section_label, const char * config_filename, const char * section, LHASH * config);
-#endif
 
 extern char default_ssl_conf_filename[MAX_PATH];
 

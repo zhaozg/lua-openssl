@@ -22,7 +22,7 @@ static void table2data(lua_State*L, int idx,BIO* bio){
 int openssl_conf_load_idx(lua_State*L, int idx) {
 	long eline;
 	BIO* bio;
-	LHASH_OF(CONF_VALUE)* conf;
+	LHASH* conf;
 	if(lua_isstring(L,idx))
 	{
 		int l;
@@ -34,7 +34,7 @@ int openssl_conf_load_idx(lua_State*L, int idx) {
 		table2data(L,idx, bio);
 	}else if(lua_isuserdata(L,idx))
 	{
-		conf = CHECK_OBJECT(1, LHASH_OF(CONF_VALUE), "openssl.conf");
+		conf = CHECK_OBJECT(1, LHASH, "openssl.conf");
 	}else
 	{
 		luaL_error(L,"openssl.conf_load first paramater must be conf_context as string, table or openssl.conf object");
@@ -56,13 +56,13 @@ LUA_FUNCTION(openssl_conf_load){
 }
 
 LUA_FUNCTION(openssl_conf_gc) {
-	LHASH_OF(CONF_VALUE)* conf = CHECK_OBJECT(1,LHASH_OF(CONF_VALUE),"openssl.conf");
+	LHASH* conf = CHECK_OBJECT(1,LHASH,"openssl.conf");
 	CONF_free(conf);
 	return 0;
 }
 
 LUA_FUNCTION(openssl_conf_tostring) {
-	LHASH_OF(CONF_VALUE)* conf = CHECK_OBJECT(1,LHASH_OF(CONF_VALUE),"openssl.conf");
+	LHASH* conf = CHECK_OBJECT(1,LHASH,"openssl.conf");
 	lua_pushfstring(L,"openssl.conf:%p",conf);
 
 	return 1;
@@ -70,7 +70,7 @@ LUA_FUNCTION(openssl_conf_tostring) {
 
 LUA_FUNCTION(openssl_conf_get_number)
 {
-	LHASH_OF(CONF_VALUE)* conf = CHECK_OBJECT(1,LHASH_OF(CONF_VALUE),"openssl.conf");
+	LHASH* conf = CHECK_OBJECT(1,LHASH,"openssl.conf");
 	const char* group = luaL_checkstring(L,2);
 	const char* name = luaL_checkstring(L,3);
 	long result = 0;
@@ -81,7 +81,7 @@ LUA_FUNCTION(openssl_conf_get_number)
 
 LUA_FUNCTION(openssl_conf_get_string)
 {
-	LHASH_OF(CONF_VALUE)* conf = CHECK_OBJECT(1,LHASH_OF(CONF_VALUE),"openssl.conf");
+	LHASH* conf = CHECK_OBJECT(1,LHASH,"openssl.conf");
 	const char* group = luaL_checkstring(L,2);
 	const char* name = luaL_checkstring(L,3);
 	long result = 0;
@@ -126,15 +126,24 @@ static void dump_value_doall_arg(CONF_VALUE *a, lua_State *L)
 		}
 	}
 }
-
+#if OPENSSL_VERSION_NUMBER >= 0x10000002L 
 static IMPLEMENT_LHASH_DOALL_ARG_FN(dump_value, CONF_VALUE, lua_State)
+#endif
+#define LHM_lh_doall_arg(type, lh, fn, arg_type, arg) \
+	lh_doall_arg(CHECKED_LHASH_OF(type, lh), fn, CHECKED_PTR_OF(arg_type, arg))
+
 LUA_FUNCTION(openssl_conf_parse)
 {
-	LHASH_OF(CONF_VALUE)* conf = CHECK_OBJECT(1,LHASH_OF(CONF_VALUE),"openssl.conf");
+	LHASH* conf = CHECK_OBJECT(1,LHASH,"openssl.conf");
 
 	if(lua_gettop(L)==1 || auxiliar_checkboolean(L,2)) {
 		lua_newtable(L);
+#if OPENSSL_VERSION_NUMBER >= 0x10000002L 
 		lh_CONF_VALUE_doall_arg(conf, LHASH_DOALL_ARG_FN(dump_value), lua_State, L);
+#else
+		lh_doall_arg(conf,dump_value_doall_arg, L);
+#endif
+		
 		return 1;
 	}else
 	{

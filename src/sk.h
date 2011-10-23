@@ -5,7 +5,8 @@ $Revision:$
 
 #include "openssl.h"
 
-#define TAB2SK(TYPE, type) STACK_OF(TYPE)* sk_##type##_fromtable(lua_State*L, int idx) { \
+#define TAB2SK(TYPE, type) \
+STACK_OF(TYPE)* sk_##type##_fromtable(lua_State*L, int idx) { \
 	if (lua_istable(L,idx)) { \
 		STACK_OF(TYPE) * sk = SKM_sk_new_null(TYPE); \
 		int n = lua_objlen(L, idx); \
@@ -163,7 +164,7 @@ int openssl_sk_##type##_new(lua_State*L) { \
 	return 1; \
 } \
 \
-int openssl_register_sk_##type##(lua_State*L) { \
+int openssl_register_sk_##type(lua_State*L) { \
 	auxiliar_newclass(L,"openssl.stack_of_"#type, sk_##type##_funcs); \
 	return 0;  \
 };

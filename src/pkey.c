@@ -216,22 +216,22 @@ LUA_FUNCTION(openssl_pkey_new)
 			EVP_PKEY_assign_DH(pkey,dh);
 
 		}
+#ifdef EVP_PKEY_EC
 		else if(strcasecmp(alg,"ec")==0)
 		{
-		 int bits = luaL_optint(L,2,1024);
-
-		 EC_KEY *ec = EC_KEY_new();
-
-		 EC_KEY_set_group(ec, EC_GROUP_new_by_curve_name(NID_secp192k1));
-
-		 if(!EC_KEY_generate_key(ec))
+			int bits = luaL_optint(L,2,1024);
+			EC_KEY *ec = EC_KEY_new();
+			
+			EC_KEY_set_group(ec, EC_GROUP_new_by_curve_name(NID_secp192k1));
+			if(!EC_KEY_generate_key(ec))
 			{
-			EC_KEY_free(ec);
-			luaL_error(L,"EC_KEY_generate_key failed");
+				EC_KEY_free(ec);
+				luaL_error(L,"EC_KEY_generate_key failed");
 			}
 			pkey = EVP_PKEY_new();
 			EVP_PKEY_assign_EC_KEY(pkey,ec);
-			}
+		}
+#endif
 		else
 		{
 			luaL_error(L,"not support %s!!!!",alg);
@@ -506,10 +506,10 @@ LUA_FUNCTION(openssl_pkey_parse)
 	}
 
 	return 1;
-}
+};
 /* }}} */
 
-static int get_padding(const char*padding) {
+static int get_padding(const char* padding) {
 
 	if(padding==NULL || strcasecmp(padding,"pkcs1")==0)
 		return RSA_PKCS1_PADDING;
@@ -655,3 +655,4 @@ int openssl_register_pkey(lua_State*L) {
 	auxiliar_newclass(L,"openssl.evp_pkey", pkey_funcs);
 	return 0;
 }
+

@@ -95,9 +95,10 @@ X509_REVOKED *openssl_X509_REVOKED(lua_State*L, int snidx, int timeidx, int reas
 #else
 	{
 		ASN1_ENUMERATED * e = ASN1_ENUMERATED_new();
+		X509_EXTENSION * ext = X509_EXTENSION_new();
+
 		ASN1_ENUMERATED_set(e, reason);
 
-		X509_EXTENSION * ext = X509_EXTENSION_new();
 		X509_EXTENSION_set_object(ext, OBJ_nid2obj(NID_crl_reason));
 		X509_EXTENSION_set_data(ext,e);
 

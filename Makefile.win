@@ -4,7 +4,7 @@ T= openssl
 
 include config.win
 
-OBJS=src\auxiliar.obj src\bio.obj src\cipher.obj src\crl.obj src\csr.obj src\digest.obj src\misc.obj src\openssl.obj src\pkcs12.obj src\pkcs7.obj  src\pkey.obj src\sk_x509.obj src\x509.obj
+OBJS=src\auxiliar.obj src\bio.obj src\cipher.obj src\crl.obj src\csr.obj src\digest.obj src\misc.obj src\openssl.obj src\pkcs12.obj src\pkcs7.obj  src\pkey.obj src\x509.obj src\ots.obj src\conf.obj
 
 
 lib: src\$T.dll

@@ -343,6 +343,8 @@ static int openssl_make_REQ(lua_State*L,
 /* }}} */
 
 /* {{{ openssl.csr_read(string data)->openssl.x509_req */
+
+
 int openssl_csr_read(lua_State*L)
 {
 	X509_REQ * csr = NULL;
@@ -516,9 +518,12 @@ LUA_FUNCTION(openssl_csr_sign)
 
 	// 5
 	X509_gmtime_adj(X509_get_notBefore(new_cert), 0);
-	//X509_gmtime_adj(X509_get_notAfter(new_cert), (long)60*60*24*num_days);
+#if OPENSSL_VERSION_NUMBER > 0x10000002L 
 	if (!X509_time_adj_ex(X509_get_notAfter(new_cert), num_days, 0, NULL)) 
 		goto cleanup;
+#else
+	X509_gmtime_adj(X509_get_notAfter(new_cert), (long)60*60*24*num_days);
+#endif
 
 	//6
 	if (!X509_set_pubkey(new_cert, key)) {
@@ -532,14 +537,14 @@ LUA_FUNCTION(openssl_csr_sign)
 	}
 	else{
 		X509V3_CTX ctx;
-		LHASH_OF(CONF_VALUE)* conf = NULL;
+		LHASH* conf = NULL;
 		const char* group = luaL_checkstring(L, 5);
 
 		X509V3_set_ctx(&ctx, cert, new_cert, csr, NULL, 0);
 
 		if(openssl_conf_load_idx(L,-1)==1)
 		{
-			conf = CHECK_OBJECT(-1,LHASH_OF(CONF_VALUE),"openssl.conf");
+			conf = CHECK_OBJECT(-1,LHASH,"openssl.conf");
 			lua_pop(L,1);
 		}else
 		{
@@ -547,7 +552,7 @@ LUA_FUNCTION(openssl_csr_sign)
 		}
 
 		X509V3_set_conf_lhash(&ctx, conf);
-		if (!X509V3_EXT_add_conf(conf, &ctx, group, new_cert)) 
+		if (!X509V3_EXT_add_conf(conf, &ctx, (char*)group, new_cert)) 
 		{
 			goto cleanup;
 		}
