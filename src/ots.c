@@ -2,7 +2,7 @@
 
 #ifdef OPENSSL_HAVE_TS
 
-#include <openssl\ts.h>
+#include <openssl/ts.h>
 
 ASN1_INTEGER *tsa_serial_cb(TS_RESP_CTX *ctx, void *data)
 {

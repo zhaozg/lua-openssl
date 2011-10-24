@@ -9,7 +9,7 @@ OBJS=src/auxiliar.o src/bio.o src/cipher.o src/crl.o src/csr.o src/digest.o src/
 
 
 .c.o:
-	$(CC) -c -o $@ $?
+	$(CC) $(INCS) -c -o $@ $?
 
 all: $T.so
 
