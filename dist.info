@@ -1,0 +1,16 @@
+--- This file is part of LuaDist project
+
+name = "lua-openssl"
+version = "0.1.1"
+
+desc = "OpenSSL binding for Lua."
+author = "George Zhao"
+license = "MIT"
+url = "https://github.com/zhaozg/lua-openssl"
+maintainer = "Félix A.A."
+
+depends = {
+	"lua ~>5.1",
+	"openssl >= 0.9.8"
+	
+}
