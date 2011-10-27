@@ -5,13 +5,12 @@
 # Please note that the package source code is licensed under its own license.
 
 project ( lua-openssl C )
-cmake_minimum_required ( VERSION 2.6 )
+cmake_minimum_required ( VERSION 2.8 )
 include ( dist.cmake )
 
+find_package(OpenSSL )
 
-find_library(openssl_ssl_libraries names ssl ssleay32 ssleay32md)
-find_library(openssl_crypto_libraries names crypto)
-if(not openssl_ssl_libraries)
+if(NOT OPENSSL_FOUND)
     message("cannot find openssl.")
 endif()
 
