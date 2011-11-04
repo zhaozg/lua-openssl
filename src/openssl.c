@@ -693,18 +693,29 @@ LUA_FUNCTION(openssl_dh_compute_key)
 }
 /* }}} */
 
+#ifdef OPENSSL_THREADS
+#include "pt.c"
+#endif
+static int inited = 0;
 LUA_API int luaopen_openssl(lua_State*L)
 {
 	char * config_filename;
 
-	SSL_library_init();
-	OpenSSL_add_all_ciphers();
-	OpenSSL_add_all_digests();
-	OpenSSL_add_all_algorithms();
+	if(inited==0)
+	{
+#ifdef OPENSSL_THREADS
+		util_thread_setup();
+#endif
+		//SSL_library_init();
+		OpenSSL_add_all_ciphers();
+		OpenSSL_add_all_digests();
+		OpenSSL_add_all_algorithms();
 
-	ERR_load_ERR_strings();
-	ERR_load_crypto_strings();
-	ERR_load_EVP_strings();
+		ERR_load_ERR_strings();
+		ERR_load_crypto_strings();
+		ERR_load_EVP_strings();
+		inited = 1;
+	}
 
 
 	/* Determine default SSL configuration file */
