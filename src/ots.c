@@ -222,6 +222,7 @@ LUA_FUNCTION(openssl_ts_sign){
 		PUSH_OBJECT(resp,"openssl.ts_resp");
 	}else
 		lua_pushnil(L);
+	BIO_free(bio);
 
 	return 1;
 }
