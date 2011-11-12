@@ -65,6 +65,28 @@ LUA_FUNCTION(openssl_cipher_tostring)
 	return 1;
 }
 
+LUA_FUNCTION(openssl_evp_BytesToKey)
+{
+	EVP_CIPHER* c = CHECK_OBJECT(1,EVP_CIPHER, "openssl.evp_cipher");
+	EVP_MD* m = CHECK_OBJECT(2,EVP_MD, "openssl.evp_digest");
+	const char* salt, *k;  /* PKCS5_SALT_LEN */
+	int lsalt, lk;
+
+	unsigned char key[EVP_MAX_KEY_LENGTH],iv[EVP_MAX_IV_LENGTH];
+
+	salt = luaL_checklstring(L, 3, &lsalt);
+	if(lsalt < PKCS5_SALT_LEN)
+		luaL_error(L, "salt must not shorter than %d",PKCS5_SALT_LEN);
+	k = luaL_checklstring(L, 4, &lk);
+
+
+	EVP_BytesToKey(c,m,salt, k, lk,1,key,iv);
+	lua_pushlstring(L, key, EVP_MAX_KEY_LENGTH);
+	lua_pushlstring(L, iv, EVP_MAX_IV_LENGTH);
+	return 2;
+}
+
+
 /*  openssl.evp_encrypt_init(openssl.evp_cipher cipher[, string key [,string iv [,openssl.engine engimp]]])->openssl.evp_cipher_ctx{{{1
 */ 
 
@@ -377,7 +399,7 @@ static luaL_Reg cipher_funs[] = {
 	{"encrypt_init",	openssl_evp_encrypt_init},
 	{"decrypt_init",	openssl_evp_decrypt_init},
 	{"init",			openssl_evp_cipher_init},
-
+	{"BytesToKey",		openssl_evp_BytesToKey},
 	{"encrypt",			openssl_evp_encrypt },
 	{"decrypt",			openssl_evp_decrypt },
 
