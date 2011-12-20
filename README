@@ -124,7 +124,7 @@ openssl.pkey_new([table args]) =>  evp_pkey
     private key should has it factor named n,q,e and so on, value is hex 
     encoded string
 
-openssl.evp_read(string data|x509 cert [,bool public_key=true 
+openssl.pkey_read(string data|x509 cert [,bool public_key=true 
     [,string passphrase]]) => evp_pkey
 
    Read from a file or a data, coerce it into a EVP_PKEY object.
@@ -137,10 +137,13 @@ openssl.evp_read(string data|x509 cert [,bool public_key=true
     passphrase, you should use an empty string rather than NULL for the 
     passphrase - NULL causes a passphrase prompt to be emitted Lua error !
 
-evp_pkey:export(epv_pkey key [,boolean raw_key=false [, string passphrase]]) 
+evp_pkey:export(epv_pkey key [, boolean only_public = false [,boolean raw_key=false [, string passphrase]]]) 
    -> string
 
+   If only_public is true, export will export public key
    If raw_key is true, export will export rsa,dsa or dh data
+   if passphrase exist, export key will be encrypt with it
+
 	
 evp_peky:parse(evp_pkey key) -> table
     returns an table with the key details (bits, pkey, type)

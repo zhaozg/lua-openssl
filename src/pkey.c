@@ -40,7 +40,7 @@ the Apache error log!
 int openssl_pkey_read(lua_State*L)
 {
 	EVP_PKEY * key = NULL;
-	X509 * cert = NULL;
+	
 	int public_key = 1;
 	const char * passphrase = NULL;
 
@@ -48,19 +48,26 @@ int openssl_pkey_read(lua_State*L)
 	public_key = top > 1 ? lua_toboolean(L,2):1;
 	passphrase = top > 2 ? luaL_checkstring(L, 3) : NULL;
 
-	if (auxiliar_getclassudata(L,"openssl.evp_pkey", 1)) {
+    if(auxiliar_isclass(L,"openssl.x509", 1)) {
+        X509 * cert = NULL;
+        if (!public_key)
+            luaL_error(L,"x509 object not have a private key");
+        cert = CHECK_OBJECT(1, X509, "openssl.x509");
+        key = X509_get_pubkey(cert);
+    }
+
+	if (auxiliar_isclass(L,"openssl.evp_pkey", 1)) {
 		int is_priv;
 		key = CHECK_OBJECT(1, EVP_PKEY,"openssl.evp_pkey");
 
 		is_priv = openssl_is_private_key(key);
-		if(public_key && is_priv)
-			luaL_error(L,"evp_pkey object is not a public key");
-	}else if(auxiliar_getclassudata(L,"openssl.x509", 1)) {
-		if (!public_key)
-			luaL_error(L,"evp_pkey object is not a private key");
-		cert = CHECK_OBJECT(1, X509, "openssl.x509");
-		key = X509_get_pubkey(cert);
-	}else if(lua_isstring(L,1))
+        if(public_key) {
+            if(is_priv)
+			    luaL_error(L,"evp_pkey object is not a public key, NYI read from private");
+        }
+	}
+    
+    if(lua_isstring(L,1))
 	{
 		int len;
 		const char *str = luaL_checklstring(L,1,&len);
@@ -86,11 +93,6 @@ int openssl_pkey_read(lua_State*L)
 			}
 			BIO_free(in);
 		}
-	}
-
-	if (public_key && cert && key == NULL) {
-		/* extract public key from X509 cert */
-		key = (EVP_PKEY *) X509_get_pubkey(cert);
 	}
 
 	if (key)
@@ -331,49 +333,61 @@ LUA_FUNCTION(openssl_pkey_new)
 }
 /* }}} */
 
-/* {{{ openssl.pkey_export(openss.evp_key key [,boolean raw_key, [, string passphrase]) => data | bool
+/* {{{ openssl.pkey_export(openss.evp_key key [,boolean onlypublic=false, [boolean rawformat, [, string passphrase]]) => data | bool
 Gets an exportable representation of a key into a file or a var */
 
 LUA_FUNCTION(openssl_pkey_export)
 {
+    EVP_PKEY * key;
+    int expub = 0;
+    int exraw = 0;
 	int passphrase_len = 0;
 	BIO * bio_out = NULL;
 	int ret = 0;
 	const EVP_CIPHER * cipher;
+    const char * passphrase = NULL;
+    int is_priv;
 
-	EVP_PKEY * key = CHECK_OBJECT(1,EVP_PKEY,"openssl.evp_pkey");
-	int raw_key = lua_isnoneornil(L,2) ? 0 : lua_toboolean(L,2);
-	const char * passphrase = luaL_optlstring(L,4, NULL,&passphrase_len);
+	key = CHECK_OBJECT(1,EVP_PKEY,"openssl.evp_pkey");
+    if(!lua_isnoneornil(L,2))
+        expub = lua_toboolean(L,2);
+    if(!lua_isnoneornil(L,3))
+        exraw = lua_toboolean(L,3);
+	passphrase = luaL_optlstring(L,4, NULL,&passphrase_len);
 
-	int is_priv = openssl_is_private_key(key);
+	is_priv = openssl_is_private_key(key);
 	bio_out = BIO_new(BIO_s_mem());
+    if(!is_priv)
+        expub = 1;
 
 	if (passphrase) {
 		cipher = (EVP_CIPHER *) EVP_des_ede3_cbc();
 	} else {
 		cipher = NULL;
 	}
-	if(!raw_key) {
-		if(is_priv)
-		{
-			ret = PEM_write_bio_PrivateKey(bio_out, key, cipher, (unsigned char *)passphrase, passphrase_len, NULL, NULL);
-		}else
-		{
-			ret = PEM_write_bio_PUBKEY(bio_out,key);
-		}
+
+	if(!exraw) {
+        /* export with EVP format */
+        if(expub)
+        {
+            ret = PEM_write_bio_PUBKEY(bio_out,key);
+        }else{
+            ret = PEM_write_bio_PrivateKey(bio_out, key, cipher, (unsigned char *)passphrase, passphrase_len, NULL, NULL);
+        }
 	}else
 	{
+        /* export raw key format */
 		switch (EVP_PKEY_type(key->type)) {
 					case EVP_PKEY_RSA:
 					case EVP_PKEY_RSA2:
-						ret = is_priv ? PEM_write_bio_RSAPrivateKey(bio_out,key->pkey.rsa, cipher, (unsigned char *)passphrase, passphrase_len, NULL, NULL)
+						ret = !expub ? PEM_write_bio_RSAPrivateKey(bio_out,key->pkey.rsa, cipher, (unsigned char *)passphrase, passphrase_len, NULL, NULL)
 							: PEM_write_bio_RSAPublicKey(bio_out,key->pkey.rsa);
 						break;	
 					case EVP_PKEY_DSA:
 					case EVP_PKEY_DSA2:
 					case EVP_PKEY_DSA3:
 					case EVP_PKEY_DSA4:
-						ret = is_priv ? PEM_write_bio_DSAPrivateKey(bio_out,key->pkey.dsa, cipher, (unsigned char *)passphrase, passphrase_len, NULL, NULL)
+						ret = !expub ? PEM_write_bio_DSAPrivateKey(bio_out,key->pkey.dsa, cipher, (unsigned char *)passphrase, passphrase_len, NULL, NULL)
 							:PEM_write_bio_DSA_PUBKEY(bio_out,key->pkey.dsa);
 						break;
 					case EVP_PKEY_DH:
