@@ -1,5 +1,5 @@
-/* 
-$Id:$ 
+/*
+$Id:$
 $Revision:$
 */
 
@@ -11,7 +11,6 @@ $Revision:$
 #include "auxiliar.h"
 
 #include <assert.h>
-#include "openssl.h"
 
 /* OpenSSL includes */
 #include <openssl/evp.h>
@@ -24,8 +23,9 @@ $Revision:$
 #include <openssl/rand.h>
 #include <openssl/pkcs12.h>
 #include <openssl/ssl.h>
+#include <openssl/opensslv.h>
 
-#if OPENSSL_VERSION_NUMBER >= 0x10000002L 
+#if OPENSSL_VERSION_NUMBER >= 0x10000002L
 #define OPENSSL_HAVE_TS
 #define LHASH LHASH_OF(CONF_VALUE)
 #else
@@ -64,23 +64,23 @@ $Revision:$
 #endif
 
 enum lua_openssl_key_type {
-	OPENSSL_KEYTYPE_RSA,
-	OPENSSL_KEYTYPE_DSA,
-	OPENSSL_KEYTYPE_DH,
-	OPENSSL_KEYTYPE_DEFAULT = OPENSSL_KEYTYPE_RSA,
+    OPENSSL_KEYTYPE_RSA,
+    OPENSSL_KEYTYPE_DSA,
+    OPENSSL_KEYTYPE_DH,
+    OPENSSL_KEYTYPE_DEFAULT = OPENSSL_KEYTYPE_RSA,
 #ifdef EVP_PKEY_EC
-	OPENSSL_KEYTYPE_EC = OPENSSL_KEYTYPE_DH +1
+    OPENSSL_KEYTYPE_EC = OPENSSL_KEYTYPE_DH +1
 #endif
 };
 
 enum lua_openssl_cipher_type {
-	OPENSSL_CIPHER_RC2_40,
-	OPENSSL_CIPHER_RC2_128,
-	OPENSSL_CIPHER_RC2_64,
-	OPENSSL_CIPHER_DES,
-	OPENSSL_CIPHER_3DES,
+    OPENSSL_CIPHER_RC2_40,
+    OPENSSL_CIPHER_RC2_128,
+    OPENSSL_CIPHER_RC2_64,
+    OPENSSL_CIPHER_DES,
+    OPENSSL_CIPHER_3DES,
 
-	OPENSSL_CIPHER_DEFAULT = OPENSSL_CIPHER_RC2_40
+    OPENSSL_CIPHER_DEFAULT = OPENSSL_CIPHER_RC2_40
 };
 
 X509_STORE * setup_verify(STACK_OF(X509)* calist);
@@ -155,6 +155,7 @@ LUA_FUNCTION(openssl_ts_req_d2i);
 LUA_FUNCTION(openssl_ts_resp_d2i);
 LUA_FUNCTION(openssl_ts_resp_ctx_new);
 LUA_FUNCTION(openssl_ts_verify_ctx_new);
+LUA_FUNCTION(openssl_ec_list_curve_name);
 
 LUA_FUNCTION(openssl_conf_load);
 

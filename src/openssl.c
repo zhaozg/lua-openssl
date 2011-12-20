@@ -1,5 +1,5 @@
-/* 
-$Id:$ 
+/*
+$Id:$
 $Revision:$
 */
 
@@ -11,66 +11,70 @@ char default_ssl_conf_filename[MAX_PATH];
 /* {{{ openssl_functions[]
  */
 const static luaL_Reg eay_functions[] = {
-	/* pkey */
-	{"pkey_read",			openssl_pkey_read	},
-	{"pkey_new",			openssl_pkey_new	},
+    /* pkey */
+    {"pkey_read",			openssl_pkey_read	},
+    {"pkey_new",			openssl_pkey_new	},
 
-	/* x.509 cert funcs */
-	{"x509_read",			openssl_x509_read	},
-	{"sk_x509_read",		openssl_sk_x509_read	},
-	{"sk_x509_new",			openssl_sk_x509_new	},
+    /* x.509 cert funcs */
+    {"x509_read",			openssl_x509_read	},
+    {"sk_x509_read",		openssl_sk_x509_read	},
+    {"sk_x509_new",			openssl_sk_x509_new	},
 
 
-	/* CSR funcs */
-	{"csr_new",				openssl_csr_new	},
-	{"csr_read",			openssl_csr_read	},
+    /* CSR funcs */
+    {"csr_new",				openssl_csr_new	},
+    {"csr_read",			openssl_csr_read	},
 
-	/* CRL funcs */
-	{"crl_new",				openssl_crl_new	},
-	{"crl_read",			openssl_crl_read	},
+    /* CRL funcs */
+    {"crl_new",				openssl_crl_new	},
+    {"crl_read",			openssl_crl_read	},
 
-	/* cipher/digest functions */
-	{"get_digest",			openssl_get_digest},
-	{"get_cipher",			openssl_get_cipher},
+    /* cipher/digest functions */
+    {"get_digest",			openssl_get_digest},
+    {"get_cipher",			openssl_get_cipher},
 
-	/* misc function */
-	{"random_bytes",		openssl_random_bytes	},
-	{"error_string",		openssl_error_string	},
-	{"object_create",		openssl_object_create	},
-	{"bio_new_file",		openssl_bio_new_file	},
-	{"bio_new_mem",			openssl_bio_new_mem	},
+    /* misc function */
+    {"random_bytes",		openssl_random_bytes	},
+    {"error_string",		openssl_error_string	},
+    {"object_create",		openssl_object_create	},
+    {"bio_new_file",		openssl_bio_new_file	},
+    {"bio_new_mem",			openssl_bio_new_mem	},
 
-	{"sign",				openssl_sign	},
-	{"verify",				openssl_verify	},
-	{"seal",				openssl_seal	},
-	{"open",				openssl_open	},
+    {"sign",				openssl_sign	},
+    {"verify",				openssl_verify	},
+    {"seal",				openssl_seal	},
+    {"open",				openssl_open	},
 
-	/* PKCS12 funcs */
-	{"pkcs12_export",		openssl_pkcs12_export	},
-	{"pkcs12_read",			openssl_pkcs12_read	},
+    /* PKCS12 funcs */
+    {"pkcs12_export",		openssl_pkcs12_export	},
+    {"pkcs12_read",			openssl_pkcs12_read	},
 
-	/* for S/MIME handling */
-	{"pkcs7_read",			openssl_pkcs7_read	},
-	{"pkcs7_verify",		openssl_pkcs7_verify	},
-	{"pkcs7_decrypt",		openssl_pkcs7_decrypt	},
-	{"pkcs7_sign",			openssl_pkcs7_sign		},
-	{"pkcs7_encrypt",		openssl_pkcs7_encrypt	},
+    /* for S/MIME handling */
+    {"pkcs7_read",			openssl_pkcs7_read	},
+    {"pkcs7_verify",		openssl_pkcs7_verify	},
+    {"pkcs7_decrypt",		openssl_pkcs7_decrypt	},
+    {"pkcs7_sign",			openssl_pkcs7_sign		},
+    {"pkcs7_encrypt",		openssl_pkcs7_encrypt	},
 
-	{"dh_compute_key",		openssl_dh_compute_key	},
+    {"dh_compute_key",		openssl_dh_compute_key	},
 
 #ifdef OPENSSL_HAVE_TS
-	/* timestamp handling */
-	{"ts_req_new",		openssl_ts_req_new	},
-	{"ts_req_d2i",		openssl_ts_req_d2i	},
-	{"ts_resp_d2i",		openssl_ts_resp_d2i	},
-	{"ts_resp_ctx_new",	openssl_ts_resp_ctx_new	},
-	{"ts_verify_ctx_new",	openssl_ts_verify_ctx_new	},
+    /* timestamp handling */
+    {"ts_req_new",		openssl_ts_req_new	},
+    {"ts_req_d2i",		openssl_ts_req_d2i	},
+    {"ts_resp_d2i",		openssl_ts_resp_d2i	},
+    {"ts_resp_ctx_new",	openssl_ts_resp_ctx_new	},
+    {"ts_verify_ctx_new",	openssl_ts_verify_ctx_new	},
 #endif
 
-	/* conf handle */
-	{"conf_load",		openssl_conf_load	},
+#ifdef EVP_PKEY_EC
+    {"list_curve_name",	openssl_ec_list_curve_name },
+#endif
 
-	{NULL, NULL}
+    /* conf handle */
+    {"conf_load",		openssl_conf_load	},
+
+    {NULL, NULL}
 };
 /* }}} */
 
@@ -80,31 +84,31 @@ static int ssl_stream_data_index;
 /* {{{ resource destructors */
 static void pkey_free(lua_State *L)
 {
-	EVP_PKEY *pkey = CHECK_OBJECT(1,EVP_PKEY,"openssl.pkey");
+    EVP_PKEY *pkey = CHECK_OBJECT(1,EVP_PKEY,"openssl.pkey");
 
-	assert(pkey != NULL);
+    assert(pkey != NULL);
 
-	EVP_PKEY_free(pkey);
+    EVP_PKEY_free(pkey);
 }
 
 static void csr_free(lua_State *L)
 {
-	X509_REQ * csr  = CHECK_OBJECT(1,X509_REQ,"openssl.x509_req");
-	X509_REQ_free(csr);
+    X509_REQ * csr  = CHECK_OBJECT(1,X509_REQ,"openssl.x509_req");
+    X509_REQ_free(csr);
 }
 /* }}} */
 #if 0
 /* {{{ openssl safe_mode & open_basedir checks */
 inline static int openssl_safe_mode_chk(char *filename)
 {
-	if (PG(safe_mode) && (!checkuid(filename, NULL, CHECKUID_CHECK_FILE_AND_DIR))) {
-		return -1;
-	}
-	if (check_open_basedir(filename)) {
-		return -1;
-	}
-	
-	return 0;
+    if (PG(safe_mode) && (!checkuid(filename, NULL, CHECKUID_CHECK_FILE_AND_DIR))) {
+        return -1;
+    }
+    if (check_open_basedir(filename)) {
+        return -1;
+    }
+
+    return 0;
 }
 /* }}} */
 
@@ -118,48 +122,48 @@ int openssl_config_check_syntax(const char * section_label, const char * config_
 int openssl_config_check_syntax(const char * section_label, const char * config_filename, const char * section, LHASH * config)
 #endif
 {
-	X509V3_CTX ctx;
+    X509V3_CTX ctx;
 
-	X509V3_set_ctx_test(&ctx);
-	X509V3_set_conf_lhash(&ctx, config);
-	if (!X509V3_EXT_add_conf(config, &ctx, (char *)section, NULL)) {
-		printf("Error loading %s section %s of %s",
-			section_label,
-			section,
-			config_filename);
-		return -1;
-	}
-	return 0;
+    X509V3_set_ctx_test(&ctx);
+    X509V3_set_conf_lhash(&ctx, config);
+    if (!X509V3_EXT_add_conf(config, &ctx, (char *)section, NULL)) {
+        printf("Error loading %s section %s of %s",
+               section_label,
+               section,
+               config_filename);
+        return -1;
+    }
+    return 0;
 }
 
 
 
 static STACK_OF(X509) * array_to_X509_sk(lua_State *L, int n) /* {{{ */
 {
-	STACK_OF(X509) * sk = NULL;
+    STACK_OF(X509) * sk = NULL;
     X509 * cert;
     int len,i;
 
-	sk = sk_X509_new_null();
+    sk = sk_X509_new_null();
 
-	/* get certs */
-	if (lua_istable(L,n))
-	{
-		len = lua_objlen(L,n);
-		for (i=1; i<=len; i++)
-		{
-			lua_rawgeti(L,n,i);
-			cert = CHECK_OBJECT(-1,X509,"openssl.x509");
-			cert = X509_dup(cert);
-			sk_X509_push(sk, cert);
-		}
-	}else
-	{
-		cert = CHECK_OBJECT(n,X509,"openssl.x509");
-		cert = X509_dup(cert);
-		sk_X509_push(sk, cert);
-	}
-	return sk;
+    /* get certs */
+    if (lua_istable(L,n))
+    {
+        len = lua_objlen(L,n);
+        for (i=1; i<=len; i++)
+        {
+            lua_rawgeti(L,n,i);
+            cert = CHECK_OBJECT(-1,X509,"openssl.x509");
+            cert = X509_dup(cert);
+            sk_X509_push(sk, cert);
+        }
+    } else
+    {
+        cert = CHECK_OBJECT(n,X509,"openssl.x509");
+        cert = X509_dup(cert);
+        sk_X509_push(sk, cert);
+    }
+    return sk;
 }
 /* }}} */
 
@@ -167,24 +171,24 @@ static STACK_OF(X509) * array_to_X509_sk(lua_State *L, int n) /* {{{ */
    Returns a description of the last error, and alters the index of the error messages. Returns false when the are no more messages */
 LUA_FUNCTION(openssl_error_string)
 {
-	char buf[512];
-	unsigned long val;
-	int verbose = lua_toboolean(L,1);
+    char buf[512];
+    unsigned long val;
+    int verbose = lua_toboolean(L,1);
 
-	val = ERR_get_error();
-	if (val) {
-		lua_pushinteger(L,val);
-		lua_pushstring(L, ERR_error_string(val, buf));
+    val = ERR_get_error();
+    if (val) {
+        lua_pushinteger(L,val);
+        lua_pushstring(L, ERR_error_string(val, buf));
 
-		return 2;
-	}
-	if(verbose)
-	{
-		ERR_print_errors_fp(stderr); 
-		ERR_clear_error();
-	}
+        return 2;
+    }
+    if(verbose)
+    {
+        ERR_print_errors_fp(stderr);
+        ERR_clear_error();
+    }
 
-	return 0;
+    return 0;
 }
 /* }}} */
 
@@ -192,42 +196,42 @@ LUA_FUNCTION(openssl_error_string)
    Signs data */
 LUA_FUNCTION(openssl_sign)
 {
-	int data_len;
-	const char * data = luaL_checklstring(L,1,&data_len);
-	EVP_PKEY *pkey = CHECK_OBJECT(2,EVP_PKEY,"openssl.evp_pkey");
+    int data_len;
+    const char * data = luaL_checklstring(L,1,&data_len);
+    EVP_PKEY *pkey = CHECK_OBJECT(2,EVP_PKEY,"openssl.evp_pkey");
 
-	int siglen;
-	unsigned char *sigbuf;
+    int siglen;
+    unsigned char *sigbuf;
 
-	EVP_MD_CTX md_ctx;
-	
-	int ret = 0;
-	int top = lua_gettop(L);
+    EVP_MD_CTX md_ctx;
 
-	const EVP_MD *mdtype = NULL;
-	if(top>2) {
-		if(lua_isstring(L,3))
-			mdtype = EVP_get_digestbyname(lua_tostring(L,3));
-		else if(lua_isuserdata(L,3))
-			mdtype = CHECK_OBJECT(3,EVP_MD,"openssl.evp_digest");
-		else
-			luaL_error(L, "#3 must be nil, string, or openssl.evp_digest object");
-	}
-	if(!mdtype)
-		mdtype = EVP_get_digestbynid(OPENSSL_ALGO_SHA1);
+    int ret = 0;
+    int top = lua_gettop(L);
 
-	siglen = EVP_PKEY_size(pkey);
-	sigbuf = malloc(siglen + 1);
+    const EVP_MD *mdtype = NULL;
+    if(top>2) {
+        if(lua_isstring(L,3))
+            mdtype = EVP_get_digestbyname(lua_tostring(L,3));
+        else if(lua_isuserdata(L,3))
+            mdtype = CHECK_OBJECT(3,EVP_MD,"openssl.evp_digest");
+        else
+            luaL_error(L, "#3 must be nil, string, or openssl.evp_digest object");
+    }
+    if(!mdtype)
+        mdtype = EVP_get_digestbynid(OPENSSL_ALGO_SHA1);
 
-	EVP_SignInit(&md_ctx, mdtype);
-	EVP_SignUpdate(&md_ctx, data, data_len);
-	if (EVP_SignFinal (&md_ctx, sigbuf,(unsigned int *)&siglen, pkey)) {
-		lua_pushlstring(L,(char *)sigbuf, siglen);
-		ret = 1;
-	}
-	free(sigbuf);
-	EVP_MD_CTX_cleanup(&md_ctx);
-	return ret;
+    siglen = EVP_PKEY_size(pkey);
+    sigbuf = malloc(siglen + 1);
+
+    EVP_SignInit(&md_ctx, mdtype);
+    EVP_SignUpdate(&md_ctx, data, data_len);
+    if (EVP_SignFinal (&md_ctx, sigbuf,(unsigned int *)&siglen, pkey)) {
+        lua_pushlstring(L,(char *)sigbuf, siglen);
+        ret = 1;
+    }
+    free(sigbuf);
+    EVP_MD_CTX_cleanup(&md_ctx);
+    return ret;
 }
 /* }}} */
 
@@ -235,35 +239,35 @@ LUA_FUNCTION(openssl_sign)
    Verifys data */
 LUA_FUNCTION(openssl_verify)
 {
-	int data_len, signature_len;
-	const char* data = luaL_checklstring(L,1,&data_len);
-	const char* signature = luaL_checklstring(L,2,&signature_len);
+    int data_len, signature_len;
+    const char* data = luaL_checklstring(L,1,&data_len);
+    const char* signature = luaL_checklstring(L,2,&signature_len);
 
-	EVP_PKEY *pkey = CHECK_OBJECT(3,EVP_PKEY,"openssl.evp_pkey");
-	int top = lua_gettop(L);
-	int err;
-	EVP_MD_CTX     md_ctx;
+    EVP_PKEY *pkey = CHECK_OBJECT(3,EVP_PKEY,"openssl.evp_pkey");
+    int top = lua_gettop(L);
+    int err;
+    EVP_MD_CTX     md_ctx;
 
-	const EVP_MD *mdtype = NULL;
-	if(top>3) {
-		if(lua_isstring(L,4))
-			mdtype = EVP_get_digestbyname(lua_tostring(L,4));
-		else if(lua_isuserdata(L,4))
-			mdtype = CHECK_OBJECT(4,EVP_MD,"openssl.evp_digest");
-		else
-			luaL_error(L, "#4 must be nil, string, or openssl.evp_digest object");
-	}
-	if(!mdtype)
-		mdtype = EVP_get_digestbynid(OPENSSL_ALGO_SHA1);
+    const EVP_MD *mdtype = NULL;
+    if(top>3) {
+        if(lua_isstring(L,4))
+            mdtype = EVP_get_digestbyname(lua_tostring(L,4));
+        else if(lua_isuserdata(L,4))
+            mdtype = CHECK_OBJECT(4,EVP_MD,"openssl.evp_digest");
+        else
+            luaL_error(L, "#4 must be nil, string, or openssl.evp_digest object");
+    }
+    if(!mdtype)
+        mdtype = EVP_get_digestbynid(OPENSSL_ALGO_SHA1);
 
 
-	EVP_VerifyInit   (&md_ctx, mdtype);
-	EVP_VerifyUpdate (&md_ctx, data, data_len);
-	err = EVP_VerifyFinal (&md_ctx, (unsigned char *)signature, signature_len, pkey);
-	EVP_MD_CTX_cleanup(&md_ctx);
-	lua_pushinteger(L,err);
+    EVP_VerifyInit   (&md_ctx, mdtype);
+    EVP_VerifyUpdate (&md_ctx, data, data_len);
+    err = EVP_VerifyFinal (&md_ctx, (unsigned char *)signature, signature_len, pkey);
+    EVP_MD_CTX_cleanup(&md_ctx);
+    lua_pushinteger(L,err);
 
-	return 1;
+    return 1;
 }
 /* }}} */
 
@@ -272,90 +276,90 @@ LUA_FUNCTION(openssl_verify)
    Seals data */
 LUA_FUNCTION(openssl_seal)
 {
-	int data_len;
-	const char * data = luaL_checklstring(L,1,&data_len); 
+    int data_len;
+    const char * data = luaL_checklstring(L,1,&data_len);
 
-	EVP_PKEY **pkeys;
+    EVP_PKEY **pkeys;
 
-	int i, len1, len2, *eksl, nkeys;
-	unsigned char *buf = NULL, **eks;
+    int i, len1, len2, *eksl, nkeys;
+    unsigned char *buf = NULL, **eks;
 
-	const EVP_CIPHER *cipher = NULL;
-	EVP_CIPHER_CTX ctx;
-	int ret = 0;
-	int top = lua_gettop(L);
+    const EVP_CIPHER *cipher = NULL;
+    EVP_CIPHER_CTX ctx;
+    int ret = 0;
+    int top = lua_gettop(L);
 
-	
-	luaL_checktype(L,2, LUA_TTABLE);
-	nkeys = lua_objlen(L,2);
-	if (!nkeys) {
-		luaL_error(L,"#2 argument to openssl_seal() must be a non-empty table");
-	}
 
-	if(top>2) {
-		if(lua_isstring(L,3))
-			cipher = EVP_get_cipherbyname(lua_tostring(L,3));
-		else if(lua_isuserdata(L,3))
-			cipher = CHECK_OBJECT(3,EVP_CIPHER,"openssl.evp_cipher");
-		else
-			luaL_error(L, "#3 argument must be nil, string, or openssl.evp_cipher object");
-	}
-	if(!cipher)
-		cipher = EVP_rc4();
+    luaL_checktype(L,2, LUA_TTABLE);
+    nkeys = lua_objlen(L,2);
+    if (!nkeys) {
+        luaL_error(L,"#2 argument to openssl_seal() must be a non-empty table");
+    }
 
-	pkeys = malloc(nkeys*sizeof(*pkeys));
-	eksl = malloc(nkeys*sizeof(*eksl));
-	eks = malloc(nkeys*sizeof(*eks));
-	memset(eks, 0, sizeof(*eks) * nkeys);
+    if(top>2) {
+        if(lua_isstring(L,3))
+            cipher = EVP_get_cipherbyname(lua_tostring(L,3));
+        else if(lua_isuserdata(L,3))
+            cipher = CHECK_OBJECT(3,EVP_CIPHER,"openssl.evp_cipher");
+        else
+            luaL_error(L, "#3 argument must be nil, string, or openssl.evp_cipher object");
+    }
+    if(!cipher)
+        cipher = EVP_rc4();
 
-	/* get the public keys we are using to seal this data */
+    pkeys = malloc(nkeys*sizeof(*pkeys));
+    eksl = malloc(nkeys*sizeof(*eksl));
+    eks = malloc(nkeys*sizeof(*eks));
+    memset(eks, 0, sizeof(*eks) * nkeys);
 
-	i = 0;
-	for(i=1; i<=nkeys; i++) {
-		lua_rawgeti(L,2,i);
+    /* get the public keys we are using to seal this data */
 
-		pkeys[i] =  CHECK_OBJECT(-1,EVP_PKEY, "openssl.evp_pkey");
-		if (pkeys[i] == NULL) {
-			luaL_error(L,"not a public key (%dth member of pubkeys)", i+1);
-		}
-		eks[i] = malloc(EVP_PKEY_size(pkeys[i]) + 1);
-		lua_pop(L,1);
-	}
-	if (!EVP_EncryptInit(&ctx,cipher,NULL,NULL)) {
-		luaL_error(L,"EVP_EncryptInit failed");
-	}
+    i = 0;
+    for(i=1; i<=nkeys; i++) {
+        lua_rawgeti(L,2,i);
 
-	/* allocate one byte extra to make room for \0 */
-	buf = malloc(data_len + EVP_CIPHER_CTX_block_size(&ctx));
+        pkeys[i] =  CHECK_OBJECT(-1,EVP_PKEY, "openssl.evp_pkey");
+        if (pkeys[i] == NULL) {
+            luaL_error(L,"not a public key (%dth member of pubkeys)", i+1);
+        }
+        eks[i] = malloc(EVP_PKEY_size(pkeys[i]) + 1);
+        lua_pop(L,1);
+    }
+    if (!EVP_EncryptInit(&ctx,cipher,NULL,NULL)) {
+        luaL_error(L,"EVP_EncryptInit failed");
+    }
 
-	if (!EVP_SealInit(&ctx, cipher, eks, eksl, NULL, pkeys, nkeys) || !EVP_SealUpdate(&ctx, buf, &len1, (unsigned char *)data, data_len)) {
-		free(buf);
-		luaL_error(L,"EVP_SealInit failed");
-	}
+    /* allocate one byte extra to make room for \0 */
+    buf = malloc(data_len + EVP_CIPHER_CTX_block_size(&ctx));
 
-	EVP_SealFinal(&ctx, buf + len1, &len2);
+    if (!EVP_SealInit(&ctx, cipher, eks, eksl, NULL, pkeys, nkeys) || !EVP_SealUpdate(&ctx, buf, &len1, (unsigned char *)data, data_len)) {
+        free(buf);
+        luaL_error(L,"EVP_SealInit failed");
+    }
 
-	if (len1 + len2 > 0) {
-		buf[len1 + len2] = '\0';
-		lua_pushlstring(L,buf,len1 + len2);
+    EVP_SealFinal(&ctx, buf + len1, &len2);
 
-		lua_newtable(L);
-		for (i=0; i<nkeys; i++) {
-			eks[i][eksl[i]] = '\0';
-			lua_pushlstring(L, eks[i], eksl[i]);
-			free(eks[i]);
-			eks[i] = NULL;
-			lua_rawseti(L,-2, i+1);
-		}
-		ret = 2;
+    if (len1 + len2 > 0) {
+        buf[len1 + len2] = '\0';
+        lua_pushlstring(L,buf,len1 + len2);
 
-	} 
+        lua_newtable(L);
+        for (i=0; i<nkeys; i++) {
+            eks[i][eksl[i]] = '\0';
+            lua_pushlstring(L, eks[i], eksl[i]);
+            free(eks[i]);
+            eks[i] = NULL;
+            lua_rawseti(L,-2, i+1);
+        }
+        ret = 2;
 
-	free(buf);
-	free(eks);
-	free(eksl);
-	free(pkeys);
-	return ret;
+    }
+
+    free(buf);
+    free(eks);
+    free(eksl);
+    free(pkeys);
+    return ret;
 }
 /* }}} */
 
@@ -363,46 +367,46 @@ LUA_FUNCTION(openssl_seal)
    Opens data */
 LUA_API LUA_FUNCTION(openssl_open)
 {
-	int data_len;
-	int ekey_len;
-	const char * data = luaL_checklstring(L, 1, &data_len);	
-	const char * ekey = luaL_checklstring(L, 2, &ekey_len);	
-	EVP_PKEY *pkey =  CHECK_OBJECT(3,EVP_PKEY, "openssl.evp_pkey");
-	int top = lua_gettop(L);
+    int data_len;
+    int ekey_len;
+    const char * data = luaL_checklstring(L, 1, &data_len);
+    const char * ekey = luaL_checklstring(L, 2, &ekey_len);
+    EVP_PKEY *pkey =  CHECK_OBJECT(3,EVP_PKEY, "openssl.evp_pkey");
+    int top = lua_gettop(L);
 
-	int len1, len2;
-	unsigned char *buf;
+    int len1, len2;
+    unsigned char *buf;
 
-	EVP_CIPHER_CTX ctx;
-	const EVP_CIPHER *cipher = NULL;
-	int ret = 0;
+    EVP_CIPHER_CTX ctx;
+    const EVP_CIPHER *cipher = NULL;
+    int ret = 0;
 
 
-	if(top>3) {
-		if(lua_isstring(L,4))
-			cipher = EVP_get_cipherbyname(lua_tostring(L,4));
-		else if(lua_isuserdata(L,4))
-			cipher = CHECK_OBJECT(4,EVP_CIPHER,"openssl.evp_cipher");
-		else
-			luaL_error(L, "#4 argument must be nil, string, or openssl.evp_cipher object");
-	}
-	if(!cipher)
-		cipher = EVP_rc4();
-	
-	buf = malloc(data_len + 1);
+    if(top>3) {
+        if(lua_isstring(L,4))
+            cipher = EVP_get_cipherbyname(lua_tostring(L,4));
+        else if(lua_isuserdata(L,4))
+            cipher = CHECK_OBJECT(4,EVP_CIPHER,"openssl.evp_cipher");
+        else
+            luaL_error(L, "#4 argument must be nil, string, or openssl.evp_cipher object");
+    }
+    if(!cipher)
+        cipher = EVP_rc4();
 
-	if (EVP_OpenInit(&ctx, cipher, (unsigned char *)ekey, ekey_len, NULL, pkey) && EVP_OpenUpdate(&ctx, buf, &len1, (unsigned char *)data, data_len)) {
-		if (!EVP_OpenFinal(&ctx, buf + len1, &len2) || (len1 + len2 == 0)) {
-			free(buf);
-		}
-	} else {
-		free(buf);
-	}
+    buf = malloc(data_len + 1);
 
-	buf[len1 + len2] = '\0';
-	lua_pushlstring(L, buf, len1 + len2);
-	free(buf);
-	return 1;
+    if (EVP_OpenInit(&ctx, cipher, (unsigned char *)ekey, ekey_len, NULL, pkey) && EVP_OpenUpdate(&ctx, buf, &len1, (unsigned char *)data, data_len)) {
+        if (!EVP_OpenFinal(&ctx, buf + len1, &len2) || (len1 + len2 == 0)) {
+            free(buf);
+        }
+    } else {
+        free(buf);
+    }
+
+    buf[len1 + len2] = '\0';
+    lua_pushlstring(L, buf, len1 + len2);
+    free(buf);
+    return 1;
 }
 /* }}} */
 
@@ -413,113 +417,113 @@ LUA_API LUA_FUNCTION(openssl_open)
 #if 0
 static int verify_callback(int preverify_ok, X509_STORE_CTX *ctx) /* {{{ */
 {
-	void *stream;
-	SSL *ssl;
-	X509 *err_cert;
-	int err, depth, ret;
+    void *stream;
+    SSL *ssl;
+    X509 *err_cert;
+    int err, depth, ret;
 
-	ret = preverify_ok;
+    ret = preverify_ok;
 
-	/* determine the status for the current cert */
-	err_cert = X509_STORE_CTX_get_current_cert(ctx);
-	err = X509_STORE_CTX_get_error(ctx);
-	depth = X509_STORE_CTX_get_error_depth(ctx);
+    /* determine the status for the current cert */
+    err_cert = X509_STORE_CTX_get_current_cert(ctx);
+    err = X509_STORE_CTX_get_error(ctx);
+    depth = X509_STORE_CTX_get_error_depth(ctx);
 
-	/* conjure the stream & context to use */
-	ssl = X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx());
-	stream = SSL_get_ex_data(ssl, ssl_stream_data_index);
+    /* conjure the stream & context to use */
+    ssl = X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx());
+    stream = SSL_get_ex_data(ssl, ssl_stream_data_index);
 
-	/* if allow_self_signed is set, make sure that verification succeeds */
-	if (err == X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT && GET_VER_OPT("allow_self_signed") && zval_is_true(*val)) {
-		ret = 1;
-	}
+    /* if allow_self_signed is set, make sure that verification succeeds */
+    if (err == X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT && GET_VER_OPT("allow_self_signed") && zval_is_true(*val)) {
+        ret = 1;
+    }
 
-	/* check the depth */
-	if (GET_VER_OPT("verify_depth")) {
-		convert_to_long_ex(val);
+    /* check the depth */
+    if (GET_VER_OPT("verify_depth")) {
+        convert_to_long_ex(val);
 
-		if (depth > Z_LVAL_PP(val)) {
-			ret = 0;
-			X509_STORE_CTX_set_error(ctx, X509_V_ERR_CERT_CHAIN_TOO_LONG);
-		}
-	}
+        if (depth > Z_LVAL_PP(val)) {
+            ret = 0;
+            X509_STORE_CTX_set_error(ctx, X509_V_ERR_CERT_CHAIN_TOO_LONG);
+        }
+    }
 
-	return ret;
+    return ret;
 
 }
 /* }}} */
 
 int openssl_apply_verification_policy(SSL *ssl, X509 *peer, stream *stream) /* {{{ */
 {
-	zval **val = NULL;
-	char *cnmatch = NULL;
-	X509_NAME *name;
-	char buf[1024];
-	int err;
+    zval **val = NULL;
+    char *cnmatch = NULL;
+    X509_NAME *name;
+    char buf[1024];
+    int err;
 
-	/* verification is turned off */
-	if (!(GET_VER_OPT("verify_peer") && zval_is_true(*val))) {
-		return 0;
-	}
+    /* verification is turned off */
+    if (!(GET_VER_OPT("verify_peer") && zval_is_true(*val))) {
+        return 0;
+    }
 
-	if (peer == NULL) {
-		error_docref(NULL, E_WARNING, "Could not get peer certificate");
-		return -1;
-	}
+    if (peer == NULL) {
+        error_docref(NULL, E_WARNING, "Could not get peer certificate");
+        return -1;
+    }
 
-	err = SSL_get_verify_result(ssl);
-	switch (err) {
-		case X509_V_OK:
-			/* fine */
-			break;
-		case X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT:
-			if (GET_VER_OPT("allow_self_signed") && zval_is_true(*val)) {
-				/* allowed */
-				break;
-			}
-			/* not allowed, so fall through */
-		default:
-			error_docref(NULL, E_WARNING, "Could not verify peer: code:%d %s", err, X509_verify_cert_error_string(err));
-			return -1;
-	}
+    err = SSL_get_verify_result(ssl);
+    switch (err) {
+    case X509_V_OK:
+        /* fine */
+        break;
+    case X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT:
+        if (GET_VER_OPT("allow_self_signed") && zval_is_true(*val)) {
+            /* allowed */
+            break;
+        }
+        /* not allowed, so fall through */
+    default:
+        error_docref(NULL, E_WARNING, "Could not verify peer: code:%d %s", err, X509_verify_cert_error_string(err));
+        return -1;
+    }
 
-	/* if the cert passed the usual checks, apply our own local policies now */
+    /* if the cert passed the usual checks, apply our own local policies now */
 
-	name = X509_get_subject_name(peer);
+    name = X509_get_subject_name(peer);
 
-	/* Does the common name match ? (used primarily for https://) */
-	GET_VER_OPT_STRING("CN_match", cnmatch);
-	if (cnmatch) {
-		int match = 0;
-		int name_len = X509_NAME_get_text_by_NID(name, NID_commonName, buf, sizeof(buf));
+    /* Does the common name match ? (used primarily for https://) */
+    GET_VER_OPT_STRING("CN_match", cnmatch);
+    if (cnmatch) {
+        int match = 0;
+        int name_len = X509_NAME_get_text_by_NID(name, NID_commonName, buf, sizeof(buf));
 
-		if (name_len == -1) {
-			error_docref(NULL, E_WARNING, "Unable to locate peer certificate CN");
-			return -1;
-		} else if (name_len != strlen(buf)) {
-			error_docref(NULL, E_WARNING, "Peer certificate CN=`%.*s' is malformed", name_len, buf);
-			return -1;
-		}
+        if (name_len == -1) {
+            error_docref(NULL, E_WARNING, "Unable to locate peer certificate CN");
+            return -1;
+        } else if (name_len != strlen(buf)) {
+            error_docref(NULL, E_WARNING, "Peer certificate CN=`%.*s' is malformed", name_len, buf);
+            return -1;
+        }
 
-		match = strcmp(cnmatch, buf) == 0;
-		if (!match && strlen(buf) > 3 && buf[0] == '*' && buf[1] == '.') {
-			/* Try wildcard */
+        match = strcmp(cnmatch, buf) == 0;
+        if (!match && strlen(buf) > 3 && buf[0] == '*' && buf[1] == '.') {
+            /* Try wildcard */
 
-			if (strchr(buf+2, '.')) {
-				char *tmp = strstr(cnmatch, buf+1);
+            if (strchr(buf+2, '.')) {
+                char *tmp = strstr(cnmatch, buf+1);
 
-				match = tmp && strcmp(tmp, buf+2) && tmp == strchr(cnmatch, '.');
-			}
-		}
+                match = tmp && strcmp(tmp, buf+2) && tmp == strchr(cnmatch, '.');
+            }
+        }
 
-		if (!match) {
-			/* didn't match */
-			error_docref(NULL, E_WARNING, "Peer certificate CN=`%.*s' did not match expected CN=`%s'", name_len, buf, cnmatch);
-			return -1;
-		}
-	}
+        if (!match) {
+            /* didn't match */
+            error_docref(NULL, E_WARNING, "Peer certificate CN=`%.*s' did not match expected CN=`%s'", name_len, buf, cnmatch);
+            return -1;
+        }
+    }
 
-	return 0;
+    return 0;
 }
 /* }}} */
 
@@ -544,111 +548,111 @@ static int passwd_callback(char *buf, int num, int verify, void *data) /* {{{ */
 
 SSL *SSL_new_from_context(SSL_CTX *ctx, stream *stream) /* {{{ */
 {
-	zval **val = NULL;
-	char *cafile = NULL;
-	char *capath = NULL;
-	char *certfile = NULL;
-	char *cipherlist = NULL;
-	int ok = 1;
+    zval **val = NULL;
+    char *cafile = NULL;
+    char *capath = NULL;
+    char *certfile = NULL;
+    char *cipherlist = NULL;
+    int ok = 1;
 
-	ERR_clear_error();
+    ERR_clear_error();
 
-	/* look at context options in the stream and set appropriate verification flags */
-	if (GET_VER_OPT("verify_peer") && zval_is_true(*val)) {
+    /* look at context options in the stream and set appropriate verification flags */
+    if (GET_VER_OPT("verify_peer") && zval_is_true(*val)) {
 
-		/* turn on verification callback */
-		SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, verify_callback);
+        /* turn on verification callback */
+        SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, verify_callback);
 
-		/* CA stuff */
-		GET_VER_OPT_STRING("cafile", cafile);
-		GET_VER_OPT_STRING("capath", capath);
+        /* CA stuff */
+        GET_VER_OPT_STRING("cafile", cafile);
+        GET_VER_OPT_STRING("capath", capath);
 
-		if (cafile || capath) {
-			if (!SSL_CTX_load_verify_locations(ctx, cafile, capath)) {
-				error_docref(NULL, E_WARNING, "Unable to set verify locations `%s' `%s'", cafile, capath);
-				return NULL;
-			}
-		}
+        if (cafile || capath) {
+            if (!SSL_CTX_load_verify_locations(ctx, cafile, capath)) {
+                error_docref(NULL, E_WARNING, "Unable to set verify locations `%s' `%s'", cafile, capath);
+                return NULL;
+            }
+        }
 
-		if (GET_VER_OPT("verify_depth")) {
-			convert_to_long_ex(val);
-			SSL_CTX_set_verify_depth(ctx, Z_LVAL_PP(val));
-		}
-	} else {
-		SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
-	}
+        if (GET_VER_OPT("verify_depth")) {
+            convert_to_long_ex(val);
+            SSL_CTX_set_verify_depth(ctx, Z_LVAL_PP(val));
+        }
+    } else {
+        SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
+    }
 
-	/* callback for the passphrase (for localcert) */
-	if (GET_VER_OPT("passphrase")) {
-		SSL_CTX_set_default_passwd_cb_userdata(ctx, stream);
-		SSL_CTX_set_default_passwd_cb(ctx, passwd_callback);
-	}
+    /* callback for the passphrase (for localcert) */
+    if (GET_VER_OPT("passphrase")) {
+        SSL_CTX_set_default_passwd_cb_userdata(ctx, stream);
+        SSL_CTX_set_default_passwd_cb(ctx, passwd_callback);
+    }
 
-	GET_VER_OPT_STRING("ciphers", cipherlist);
-	if (!cipherlist) {
-		cipherlist = "DEFAULT";
-	}
-	if (SSL_CTX_set_cipher_list(ctx, cipherlist) != 1) {
-		return NULL;
-	}
+    GET_VER_OPT_STRING("ciphers", cipherlist);
+    if (!cipherlist) {
+        cipherlist = "DEFAULT";
+    }
+    if (SSL_CTX_set_cipher_list(ctx, cipherlist) != 1) {
+        return NULL;
+    }
 
-	GET_VER_OPT_STRING("local_cert", certfile);
-	if (certfile) {
-		X509 *cert = NULL;
-		EVP_PKEY *key = NULL;
-		SSL *tmpssl;
-		char resolved_path_buff[MAXPATHLEN];
-		const char * private_key = NULL;
+    GET_VER_OPT_STRING("local_cert", certfile);
+    if (certfile) {
+        X509 *cert = NULL;
+        EVP_PKEY *key = NULL;
+        SSL *tmpssl;
+        char resolved_path_buff[MAXPATHLEN];
+        const char * private_key = NULL;
 
-		if (VCWD_REALPATH(certfile, resolved_path_buff)) {
-			/* a certificate to use for authentication */
-			if (SSL_CTX_use_certificate_chain_file(ctx, resolved_path_buff) != 1) {
-				error_docref(NULL, E_WARNING, "Unable to set local cert chain file `%s'; Check that your cafile/capath settings include details of your certificate and its issuer", certfile);
-				return NULL;
-			}
-			GET_VER_OPT_STRING("local_pk", private_key);
+        if (VCWD_REALPATH(certfile, resolved_path_buff)) {
+            /* a certificate to use for authentication */
+            if (SSL_CTX_use_certificate_chain_file(ctx, resolved_path_buff) != 1) {
+                error_docref(NULL, E_WARNING, "Unable to set local cert chain file `%s'; Check that your cafile/capath settings include details of your certificate and its issuer", certfile);
+                return NULL;
+            }
+            GET_VER_OPT_STRING("local_pk", private_key);
 
-			if (private_key) {
-				char resolved_path_buff_pk[MAXPATHLEN];
-				if (VCWD_REALPATH(private_key, resolved_path_buff_pk)) {
-					if (SSL_CTX_use_PrivateKey_file(ctx, resolved_path_buff_pk, SSL_FILETYPE_PEM) != 1) {
-						error_docref(NULL, E_WARNING, "Unable to set private key file `%s'", resolved_path_buff_pk);
-						return NULL;
-					}
-				}
-			} else {
-				if (SSL_CTX_use_PrivateKey_file(ctx, resolved_path_buff, SSL_FILETYPE_PEM) != 1) {
-					error_docref(NULL, E_WARNING, "Unable to set private key file `%s'", resolved_path_buff);
-					return NULL;
-				}		
-			}
+            if (private_key) {
+                char resolved_path_buff_pk[MAXPATHLEN];
+                if (VCWD_REALPATH(private_key, resolved_path_buff_pk)) {
+                    if (SSL_CTX_use_PrivateKey_file(ctx, resolved_path_buff_pk, SSL_FILETYPE_PEM) != 1) {
+                        error_docref(NULL, E_WARNING, "Unable to set private key file `%s'", resolved_path_buff_pk);
+                        return NULL;
+                    }
+                }
+            } else {
+                if (SSL_CTX_use_PrivateKey_file(ctx, resolved_path_buff, SSL_FILETYPE_PEM) != 1) {
+                    error_docref(NULL, E_WARNING, "Unable to set private key file `%s'", resolved_path_buff);
+                    return NULL;
+                }
+            }
 
-			tmpssl = SSL_new(ctx);
-			cert = SSL_get_certificate(tmpssl);
+            tmpssl = SSL_new(ctx);
+            cert = SSL_get_certificate(tmpssl);
 
-			if (cert) {
-				key = X509_get_pubkey(cert);
-				EVP_PKEY_copy_parameters(key, SSL_get_privatekey(tmpssl));
-				EVP_PKEY_free(key);
-			}
-			SSL_free(tmpssl);
+            if (cert) {
+                key = X509_get_pubkey(cert);
+                EVP_PKEY_copy_parameters(key, SSL_get_privatekey(tmpssl));
+                EVP_PKEY_free(key);
+            }
+            SSL_free(tmpssl);
 
-			if (!SSL_CTX_check_private_key(ctx)) {
-				error_docref(NULL, E_WARNING, "Private key does not match certificate!");
-			}
-		}
-	}
-	if (ok) {
-		SSL *ssl = SSL_new(ctx);
+            if (!SSL_CTX_check_private_key(ctx)) {
+                error_docref(NULL, E_WARNING, "Private key does not match certificate!");
+            }
+        }
+    }
+    if (ok) {
+        SSL *ssl = SSL_new(ctx);
 
-		if (ssl) {
-			/* map SSL => stream */
-			SSL_set_ex_data(ssl, ssl_stream_data_index, stream);
-		}
-		return ssl;
-	}
+        if (ssl) {
+            /* map SSL => stream */
+            SSL_set_ex_data(ssl, ssl_stream_data_index, stream);
+        }
+        return ssl;
+    }
 
-	return NULL;
+    return NULL;
 }
 /* }}} */
 
@@ -659,98 +663,221 @@ SSL *SSL_new_from_context(SSL_CTX *ctx, stream *stream) /* {{{ */
    Computes shared sicret for public value of remote DH key and local DH key */
 LUA_FUNCTION(openssl_dh_compute_key)
 {
-	const char *pub_str;
-	int pub_len;
-	EVP_PKEY *pkey;
-	BIGNUM *pub;
-	char *data;
-	int len;
-	int ret = 0;
+    const char *pub_str;
+    int pub_len;
+    EVP_PKEY *pkey;
+    BIGNUM *pub;
+    char *data;
+    int len;
+    int ret = 0;
 
-	pub_str = luaL_checklstring(L,1,&pub_len);
-	pkey = CHECK_OBJECT(2,EVP_PKEY,"openssl.evp_pkey");
+    pub_str = luaL_checklstring(L,1,&pub_len);
+    pkey = CHECK_OBJECT(2,EVP_PKEY,"openssl.evp_pkey");
 
-	if (!pkey || EVP_PKEY_type(pkey->type) != EVP_PKEY_DH || !pkey->pkey.dh) {
-		luaL_error(L,"paramater 2 must dh key");
-	}
+    if (!pkey || EVP_PKEY_type(pkey->type) != EVP_PKEY_DH || !pkey->pkey.dh) {
+        luaL_error(L,"paramater 2 must dh key");
+    }
 
-	pub = BN_bin2bn((unsigned char*)pub_str, pub_len, NULL);
+    pub = BN_bin2bn((unsigned char*)pub_str, pub_len, NULL);
 
-	data = malloc(DH_size(pkey->pkey.dh) + 1);
-	len = DH_compute_key((unsigned char*)data, pub, pkey->pkey.dh);
+    data = malloc(DH_size(pkey->pkey.dh) + 1);
+    len = DH_compute_key((unsigned char*)data, pub, pkey->pkey.dh);
 
-	if (len >= 0) {
-		data[len] = 0;
-		lua_pushlstring(L,data,len);
-		ret = 1;
-	} else {
-		free(data);
-		ret = 0;
-	}
+    if (len >= 0) {
+        data[len] = 0;
+        lua_pushlstring(L,data,len);
+        ret = 1;
+    } else {
+        free(data);
+        ret = 0;
+    }
 
-	BN_free(pub);
-	return ret;
+    BN_free(pub);
+    return ret;
 }
 /* }}} */
 
-#ifdef OPENSSL_THREADS
-#include "pt.c"
+#include "pthread.h"
+static int g_init= 0 ;
+static pthread_mutex_t cs_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+
+static pthread_mutex_t *lock_cs = NULL;
+static int	lock_num_locks = 0;
+
+static void util_thr_lock(int mode, int type,
+                          const char *file, int line)
+{
+    if (type < lock_num_locks) {
+        if (mode & CRYPTO_LOCK) {
+            pthread_mutex_lock(&lock_cs[type]);
+        }
+        else {
+            pthread_mutex_unlock(&lock_cs[type]);
+        }
+    }
+}
+
+/* Dynamic lock structure */
+struct CRYPTO_dynlock_value {
+    const char* file;
+    int line;
+    pthread_mutex_t mutex;
+};
+
+/*
+ * Dynamic lock creation callback
+ */
+static struct CRYPTO_dynlock_value *dyn_create_function(const char *file,
+        int line)
+{
+    struct CRYPTO_dynlock_value *value;
+    value = (struct CRYPTO_dynlock_value *)malloc(sizeof(struct CRYPTO_dynlock_value));
+    if (!value) {
+        return NULL;
+    }
+    value->file = strdup(file);
+    value->line = line;
+    pthread_mutex_init(&value->mutex, NULL);
+    return value;
+}
+
+/*
+ * Dynamic locking and unlocking function
+ */
+
+static void dyn_lock_function(int mode, struct CRYPTO_dynlock_value *l,
+                              const char *file, int line)
+{
+    if (mode & CRYPTO_LOCK) {
+        pthread_mutex_lock(&l->mutex);
+    }
+    else {
+        pthread_mutex_unlock(&l->mutex);
+    }
+}
+
+/*
+ * Dynamic lock destruction callback
+ */
+static void dyn_destroy_function(struct CRYPTO_dynlock_value *l,
+                                 const char *file, int line)
+{
+    pthread_mutex_destroy(&l->mutex);
+    free((char*)l->file);
+    free(l);
+}
+
+static unsigned long util_thr_id(void)
+{
+    /* OpenSSL needs this to return an unsigned long.  On OS/390, the pthread
+     * id is a structure twice that big.  Use the TCB pointer instead as a
+     * unique unsigned long.
+     */
+#ifdef __MVS__
+    struct PSA {
+        char unmapped[540];
+        unsigned long PSATOLD;
+    } *psaptr = 0;
+
+    return psaptr->PSATOLD;
+#elif WIN32
+    return (unsigned long) GetCurrentThreadId();
+#else
+    return (unsigned long) pthread_self();
 #endif
-static int inited = 0;
+}
+
+static void util_thread_cleanup(void *data)
+{
+    CRYPTO_set_locking_callback(NULL);
+    CRYPTO_set_id_callback(NULL);
+
+    CRYPTO_set_dynlock_create_callback(NULL);
+    CRYPTO_set_dynlock_lock_callback(NULL);
+    CRYPTO_set_dynlock_destroy_callback(NULL);
+}
+
+void util_thread_setup()
+{
+    int i;
+
+    lock_num_locks = CRYPTO_num_locks();
+    lock_cs = malloc(lock_num_locks * sizeof(lock_cs));
+
+    for (i = 0; i < lock_num_locks; i++) {
+        pthread_mutex_init(&(lock_cs[i]), NULL);
+    }
+
+    CRYPTO_set_id_callback(util_thr_id);
+
+    CRYPTO_set_locking_callback(util_thr_lock);
+
+    CRYPTO_set_dynlock_create_callback(dyn_create_function);
+    CRYPTO_set_dynlock_lock_callback(dyn_lock_function);
+    CRYPTO_set_dynlock_destroy_callback(dyn_destroy_function);
+}
+
+
 LUA_API int luaopen_openssl(lua_State*L)
 {
-	char * config_filename;
+    char * config_filename;
+#ifdef PTW32_VERSION
+    pthread_win32_process_attach_np();
+#endif
+    pthread_mutex_lock( &cs_mutex );
+    if(g_init==0)
+    {
+        g_init =  1;
 
-	if(inited==0)
-	{
 #ifdef OPENSSL_THREADS
-		util_thread_setup();
+        util_thread_setup();
 #endif
-		//SSL_library_init();
-		OpenSSL_add_all_ciphers();
-		OpenSSL_add_all_digests();
-		OpenSSL_add_all_algorithms();
+        //SSL_library_init();
+        OpenSSL_add_all_ciphers();
+        OpenSSL_add_all_digests();
+        OpenSSL_add_all_algorithms();
 
-		ERR_load_ERR_strings();
-		ERR_load_crypto_strings();
-		ERR_load_EVP_strings();
-		inited = 1;
-	}
+        ERR_load_ERR_strings();
+        ERR_load_crypto_strings();
+        ERR_load_EVP_strings();
 
+    }
+    pthread_mutex_unlock( &cs_mutex );
 
-	/* Determine default SSL configuration file */
-	config_filename = getenv("OPENSSL_CONF");
-	if (config_filename == NULL) {
-		config_filename = getenv("SSLEAY_CONF");
-	}
+    /* Determine default SSL configuration file */
+    config_filename = getenv("OPENSSL_CONF");
+    if (config_filename == NULL) {
+        config_filename = getenv("SSLEAY_CONF");
+    }
 
-	/* default to 'openssl.cnf' if no environment variable is set */
-	if (config_filename == NULL) {
-		snprintf(default_ssl_conf_filename, sizeof(default_ssl_conf_filename), "%s/%s",
-			X509_get_default_cert_area(),
-			"openssl.cnf");
-	} else {
-		strncpy(default_ssl_conf_filename, config_filename, sizeof(default_ssl_conf_filename));
-	}
+    /* default to 'openssl.cnf' if no environment variable is set */
+    if (config_filename == NULL) {
+        snprintf(default_ssl_conf_filename, sizeof(default_ssl_conf_filename), "%s/%s",
+                 X509_get_default_cert_area(),
+                 "openssl.cnf");
+    } else {
+        strncpy(default_ssl_conf_filename, config_filename, sizeof(default_ssl_conf_filename));
+    }
 
-	openssl_register_pkey(L);
-	openssl_register_x509(L);
-	openssl_register_csr(L);
-	openssl_register_digest(L);
-	openssl_register_cipher(L);
-	openssl_register_sk_x509(L);
-	openssl_register_bio(L);
-	openssl_register_crl(L);
+    openssl_register_pkey(L);
+    openssl_register_x509(L);
+    openssl_register_csr(L);
+    openssl_register_digest(L);
+    openssl_register_cipher(L);
+    openssl_register_sk_x509(L);
+    openssl_register_bio(L);
+    openssl_register_crl(L);
 #ifdef OPENSSL_HAVE_TS
-	openssl_register_ts(L);
+    openssl_register_ts(L);
 #endif
-	openssl_register_conf(L);
-	openssl_register_pkcs7(L);
-	openssl_register_misc(L);
+    openssl_register_conf(L);
+    openssl_register_pkcs7(L);
+    openssl_register_misc(L);
 
-	luaL_register(L,"openssl",eay_functions);
-	
-	return 1;
+    luaL_register(L,"openssl",eay_functions);
+
+    return 1;
 }
 
 /*

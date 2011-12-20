@@ -31,7 +31,7 @@ void auxiliar_newclass(lua_State *L, const char *classname, luaL_reg *func) {
     luaL_newmetatable(L, classname); /* mt */
     /* create __index table to place methods */
     lua_pushstring(L, "__index");    /* mt,"__index" */
-    lua_newtable(L);                 /* mt,"__index",it */ 
+    lua_newtable(L);                 /* mt,"__index",it */
     /* put class name into class metatable */
     lua_pushstring(L, "class");      /* mt,"__index",it,"class" */
     lua_pushstring(L, classname);    /* mt,"__index",it,"class",classname */
@@ -89,7 +89,7 @@ int auxiliar_checkboolean(lua_State *L, int objidx) {
 }
 
 /*-------------------------------------------------------------------------*\
-* Return userdata pointer if object belongs to a given class, abort with 
+* Return userdata pointer if object belongs to a given class, abort with
 * error otherwise
 \*-------------------------------------------------------------------------*/
 void *auxiliar_checkclass(lua_State *L, const char *classname, int objidx) {
@@ -104,20 +104,20 @@ void *auxiliar_checkclass(lua_State *L, const char *classname, int objidx) {
 
 int auxiliar_isclass(lua_State *L, const char *classname, int objidx) {
 
-	void *p = lua_touserdata(L, objidx);
-	if (p != NULL) {  /* value is a userdata? */
-		if (lua_getmetatable(L, objidx)) {  /* does it have a metatable? */
-			lua_getfield(L, LUA_REGISTRYINDEX, classname);  /* get correct metatable */
-			if (lua_rawequal(L, -1, -2)) {  /* does it have the correct mt? */
-				lua_pop(L, 2);  /* remove both metatables */
-				return 1;
-			}
-		}
-	}
-	return 0;
+    void *p = lua_touserdata(L, objidx);
+    if (p != NULL) {  /* value is a userdata? */
+        if (lua_getmetatable(L, objidx)) {  /* does it have a metatable? */
+            lua_getfield(L, LUA_REGISTRYINDEX, classname);  /* get correct metatable */
+            if (lua_rawequal(L, -1, -2)) {  /* does it have the correct mt? */
+                lua_pop(L, 2);  /* remove both metatables */
+                return 1;
+            }
+        }
+    }
+    return 0;
 }
 /*-------------------------------------------------------------------------*\
-* Return userdata pointer if object belongs to a given group, abort with 
+* Return userdata pointer if object belongs to a given group, abort with
 * error otherwise
 \*-------------------------------------------------------------------------*/
 void *auxiliar_checkgroup(lua_State *L, const char *groupname, int objidx) {
@@ -144,7 +144,7 @@ void auxiliar_setclass(lua_State *L, const char *classname, int objidx) {
 }
 
 /*-------------------------------------------------------------------------*\
-* Get a userdata pointer if object belongs to a given group. Return NULL 
+* Get a userdata pointer if object belongs to a given group. Return NULL
 * otherwise
 \*-------------------------------------------------------------------------*/
 void *auxiliar_getgroupudata(lua_State *L, const char *groupname, int objidx) {
@@ -162,7 +162,7 @@ void *auxiliar_getgroupudata(lua_State *L, const char *groupname, int objidx) {
 }
 
 /*-------------------------------------------------------------------------*\
-* Get a userdata pointer if object belongs to a given class. Return NULL 
+* Get a userdata pointer if object belongs to a given class. Return NULL
 * otherwise
 \*-------------------------------------------------------------------------*/
 void *auxiliar_getclassudata(lua_State *L, const char *classname, int objidx) {
