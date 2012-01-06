@@ -1,8 +1,10 @@
-/*
-$Id:$
-$Revision:$
-*/
-
+/*=========================================================================*\
+* misc routines
+* lua-openssl toolkit
+*
+* $Id$
+* $Source$
+\*=========================================================================*/
 #include "openssl.h"
 
 void add_index_bool(lua_State* L, int i, int b) {

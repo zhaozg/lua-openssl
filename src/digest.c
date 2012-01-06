@@ -1,8 +1,10 @@
-/*
-$Id:$
-$Revision:$
-*/
-
+/*=========================================================================*\
+* digest routines
+* lua-openssl toolkit
+*
+* $Id$
+* $Source$
+\*=========================================================================*/
 #include "openssl.h"
 
 /* digest module for the Lua/OpenSSL binding.

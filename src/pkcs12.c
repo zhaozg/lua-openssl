@@ -1,13 +1,13 @@
-/*
-$Id:$
-$Revision:$
-*/
-
+/*=========================================================================*\
+* PKCS12 routines
+* lua-openssl toolkit
+*
+* $Id$
+* $Source$
+\*=========================================================================*/
 #include "openssl.h"
 
-
-
-/* PKCS11 module for the Lua/OpenSSL binding.
+/* PKCS12 module for the Lua/OpenSSL binding.
  *
  * The functions in this module can be used to load, parse, export, verify... functions.
  * pkcs12_read()

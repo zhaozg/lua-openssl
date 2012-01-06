@@ -1,8 +1,10 @@
-/*
-$Id:$
-$Revision:$
-*/
-
+/*=========================================================================*\
+* evp_pkey routines
+* lua-openssl toolkit
+*
+* $Id$
+* $Source$
+\*=========================================================================*/
 #include "openssl.h"
 #include "auxiliar.h"
 #include "ec_lcl.h"

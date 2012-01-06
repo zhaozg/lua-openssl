@@ -1,3 +1,10 @@
+/*=========================================================================*\
+* X509 certificate sign request routines
+* lua-openssl toolkit
+*
+* $Id$
+* $Source$
+\*=========================================================================*/
 #include "openssl.h"
 
 static int openssl_csr_tostring(lua_State*L);

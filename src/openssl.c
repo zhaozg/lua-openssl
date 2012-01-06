@@ -1,8 +1,10 @@
-/*
-$Id:$
-$Revision:$
-*/
-
+/*=========================================================================*\
+* main routines
+* lua-openssl toolkit
+*
+* $Id$
+* $Source$
+\*=========================================================================*/
 #include "openssl.h"
 
 /* true global; readonly after module startup */

@@ -1,8 +1,10 @@
-/*
-$Id:$
-$Revision:$
-*/
-
+/*=========================================================================*\
+* cipher routines
+* lua-openssl toolkit
+*
+* $Id$
+* $Source$
+\*=========================================================================*/
 #include "openssl.h"
 
 /* cipher module for the Lua/OpenSSL binding.
