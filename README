@@ -26,6 +26,9 @@ III. Contacts
 1. Introduction
 ---------------
 
+        This product includes PHP software,
+        freely available from <http://www.php.net/software/>
+
 I need a full openssl binding for lua, after googled, I can't find a fit version.
 I study PHP openssl binding, and php-openssl is a good implement, It inspire me. 
 So I decide to write a Full and Fee openssl for lua.
