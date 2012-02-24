@@ -363,6 +363,7 @@ LUA_FUNCTION(openssl_evp_encrypt) {
     EVP_EncryptFinal(&c, buffer+len, &len);
     output_len += len;
     lua_pushlstring(L, (char*) buffer, output_len);
+    EVP_CIPHER_CTX_cleanup(&c);
     free(buffer);
     return 1;
 }
@@ -407,6 +408,7 @@ LUA_FUNCTION(openssl_evp_decrypt) {
     EVP_DecryptFinal(&c, buffer+len, &len);
     output_len += len;
     lua_pushlstring(L, (char*) buffer, output_len);
+    EVP_CIPHER_CTX_cleanup(&c);
     free(buffer);
     return 1;
 }
