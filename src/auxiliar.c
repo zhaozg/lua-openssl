@@ -8,10 +8,6 @@
 #include <stdio.h>
 
 #include "auxiliar.h"
-#if LUA_VERSION_NUM==501
-#define lua_rawlen lua_strlen
-#define luaL_typeerror luaL_typerror
-#endif
 /*=========================================================================*\
 * Exported functions
 \*=========================================================================*/
@@ -83,8 +79,11 @@ void auxiliar_add2group(lua_State *L, const char *classname, const char *groupna
 * Make sure argument is a boolean
 \*-------------------------------------------------------------------------*/
 int auxiliar_checkboolean(lua_State *L, int objidx) {
-    if (!lua_isboolean(L, objidx))
-        luaL_typeerror(L, objidx, lua_typename(L, LUA_TBOOLEAN));
+    if (!lua_isboolean(L, objidx)){
+      const char *msg = lua_pushfstring(L, "%s expected, got %s",
+         lua_typename(L, LUA_TBOOLEAN), luaL_typename(L, objidx));
+         return luaL_argerror(L, objidx, msg); 
+    }
     return lua_toboolean(L, objidx);
 }
 

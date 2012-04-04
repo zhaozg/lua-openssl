@@ -22,6 +22,14 @@
 \*=========================================================================*/
 #include "openssl.h"
 
+#if LUA_VERSION_NUM>501
+int luaL_typerror (lua_State *L, int narg, const char *tname) {
+  const char *msg = lua_pushfstring(L, "%s expected, got %s",
+                                    tname, luaL_typename(L, narg));
+  return luaL_argerror(L, narg, msg);
+} 
+#endif
+
 /* true global; readonly after module startup */
 char default_ssl_conf_filename[MAX_PATH];
 
@@ -890,9 +898,12 @@ LUA_API int luaopen_openssl(lua_State*L)
     openssl_register_conf(L);
     openssl_register_pkcs7(L);
     openssl_register_misc(L);
-
+#if LUA_VERSION_NUM==501
     luaL_register(L,"openssl",eay_functions);
-
+#elif LUA_VERSION_NUM==502
+    lua_newtable(L);
+    luaL_setfuncs(L, eay_functions, 0);
+#endif
     return 1;
 }
 

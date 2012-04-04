@@ -25,6 +25,9 @@
 #include <lualib.h>
 #include <lauxlib.h>
 #include "auxiliar.h"
+#if LUA_VERSION_NUM>501
+#define lua_objlen lua_rawlen
+#endif
 
 #include <assert.h>
 
