@@ -195,7 +195,7 @@ LUA_FUNCTION(openssl_crl_new) {
 }
 
 LUA_FUNCTION(openssl_crl_read) {
-    int len;
+    size_t len;
     char* dat = (char*)luaL_checklstring(L, 1, &len);
     BIO *in = BIO_new_mem_buf(dat, len);
 

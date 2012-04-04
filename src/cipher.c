@@ -87,7 +87,7 @@ LUA_FUNCTION(openssl_evp_BytesToKey)
     EVP_CIPHER* c = CHECK_OBJECT(1,EVP_CIPHER, "openssl.evp_cipher");
     EVP_MD* m = CHECK_OBJECT(2,EVP_MD, "openssl.evp_digest");
     const char* salt, *k;  /* PKCS5_SALT_LEN */
-    int lsalt, lk;
+    size_t lsalt, lk;
 
     unsigned char key[EVP_MAX_KEY_LENGTH],iv[EVP_MAX_IV_LENGTH];
 
@@ -130,7 +130,7 @@ LUA_FUNCTION(openssl_evp_encrypt_init)
 LUA_FUNCTION(openssl_evp_encrypt_update)
 {
     EVP_CIPHER_CTX* c = CHECK_OBJECT(1,EVP_CIPHER_CTX, "openssl.evp_cipher_ctx");
-    int inl;
+    size_t inl;
     const char* in= luaL_checklstring(L,2,&inl);
     int outl = inl+EVP_MAX_BLOCK_LENGTH;
     char* out = malloc(outl);
@@ -192,7 +192,7 @@ LUA_FUNCTION(openssl_evp_decrypt_init)
 LUA_FUNCTION(openssl_evp_decrypt_update)
 {
     EVP_CIPHER_CTX* c = CHECK_OBJECT(1,EVP_CIPHER_CTX, "openssl.evp_cipher_ctx");
-    int inl;
+    size_t inl;
     const char* in= luaL_checklstring(L,2,&inl);
     int outl = inl+EVP_MAX_BLOCK_LENGTH;
     char* out = malloc(outl);
@@ -255,7 +255,7 @@ LUA_FUNCTION(openssl_evp_cipher_init)
 LUA_FUNCTION(openssl_evp_cipher_update)
 {
     EVP_CIPHER_CTX* c = CHECK_OBJECT(1,EVP_CIPHER_CTX, "openssl.evp_cipher_ctx");
-    int inl;
+    size_t inl;
     const char* in= luaL_checklstring(L,2,&inl);
     int outl = inl+EVP_MAX_BLOCK_LENGTH;
     char* out = malloc(outl);
@@ -325,9 +325,9 @@ LUA_FUNCTION(openssl_cipher_ctx_cleanup) {
 
 LUA_FUNCTION(openssl_evp_encrypt) {
     EVP_CIPHER* cipher = CHECK_OBJECT(1,EVP_CIPHER, "openssl.evp_cipher");
-    int input_len = 0;
+    size_t input_len = 0;
     const char *input = luaL_checklstring(L, 2, &input_len);
-    int key_len = 0;
+    size_t key_len = 0;
     const char *key = luaL_optlstring(L, 3, NULL, &key_len); /* can be NULL */
     size_t iv_len = 0;
     const char *iv = luaL_optlstring(L, 4, NULL, &iv_len); /* can be NULL */
@@ -370,9 +370,9 @@ LUA_FUNCTION(openssl_evp_encrypt) {
 
 LUA_FUNCTION(openssl_evp_decrypt) {
     EVP_CIPHER* cipher = CHECK_OBJECT(1,EVP_CIPHER, "openssl.evp_cipher");
-    int input_len = 0;
+    size_t input_len = 0;
     const char *input = luaL_checklstring(L, 2, &input_len);
-    int key_len = 0;
+    size_t key_len = 0;
     const char *key = luaL_optlstring(L, 3, NULL, &key_len); /* can be NULL */
     size_t iv_len = 0;
     const char *iv = luaL_optlstring(L, 4, NULL, &iv_len); /* can be NULL */

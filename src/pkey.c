@@ -22,7 +22,9 @@
 \*=========================================================================*/
 #include "openssl.h"
 #include "auxiliar.h"
+#ifndef OPENSSL_NO_EC
 #include "ec_lcl.h"
+#endif
 
 /* {{{ EVP Public/Private key functions */
 
@@ -86,7 +88,7 @@ int openssl_pkey_read(lua_State*L)
 
     if(lua_isstring(L,1))
     {
-        int len;
+        size_t len;
         const char *str = luaL_checklstring(L,1,&len);
 
         /* it's an X509 file/cert of some kind, and we need to extract the data from that */
@@ -216,7 +218,7 @@ LUA_FUNCTION(openssl_pkey_new)
         } else if(strcasecmp(alg,"dsa")==0)
         {
             int bits = luaL_optint(L,2,1024);
-            int seed_len = 0;
+       	    size_t seed_len = 0;
             const char* seed = luaL_optlstring(L,3,NULL,&seed_len);
 
             DSA *dsa = DSA_generate_parameters(bits, (char*)seed,seed_len, NULL,  NULL, NULL, NULL);
@@ -243,7 +245,7 @@ LUA_FUNCTION(openssl_pkey_new)
             pkey = EVP_PKEY_new();
             EVP_PKEY_assign_DH(pkey,dh);
         }
-#ifdef EVP_PKEY_EC
+#ifndef OPENSSL_NO_EC
         else if(strcasecmp(alg,"ec")==0)
         {
             int bits = luaL_optint(L,2,1024);
@@ -382,7 +384,7 @@ LUA_FUNCTION(openssl_pkey_export)
     EVP_PKEY * key;
     int expub = 0;
     int exraw = 0;
-    int passphrase_len = 0;
+    size_t passphrase_len = 0;
     BIO * bio_out = NULL;
     int ret = 0;
     const EVP_CIPHER * cipher;
@@ -434,11 +436,13 @@ LUA_FUNCTION(openssl_pkey_export)
         case EVP_PKEY_DH:
             ret = PEM_write_bio_DHparams(bio_out,key->pkey.dh);
             break;
+#ifndef OPENSSL_NO_EC
         case EVP_PKEY_EC:
             ret = !expub ? PEM_write_bio_ECPrivateKey(bio_out,key->pkey.ec, cipher, (unsigned char *)passphrase, passphrase_len, NULL, NULL)
                   :PEM_write_bio_EC_PUBKEY(bio_out,key->pkey.ec);
 
             break;
+#endif
         default:
             ret = 0;
             break;
@@ -605,7 +609,7 @@ LUA_FUNCTION(openssl_pkey_parse)
         }
 
         break;
-#ifdef EVP_PKEY_EC
+#ifndef OPENSSL_NO_EC
     case EVP_PKEY_EC:
         ktype = OPENSSL_KEYTYPE_EC;
 
@@ -677,7 +681,7 @@ static int get_padding(const char* padding) {
    Encrypts data with key */
 LUA_FUNCTION(openssl_pkey_encrypt)
 {
-    int dlen = 0;
+    size_t dlen = 0;
     EVP_PKEY *pkey = CHECK_OBJECT(1,EVP_PKEY,"openssl.evp_pkey");
     const char *data = luaL_checklstring(L,2,&dlen);
     int padding = get_padding(luaL_optstring(L,3,"pkcs1"));
@@ -728,7 +732,7 @@ LUA_FUNCTION(openssl_pkey_encrypt)
    Decrypts data with private key */
 LUA_FUNCTION(openssl_pkey_decrypt)
 {
-    int dlen = 0;
+    size_t dlen = 0;
     EVP_PKEY *pkey = CHECK_OBJECT(1,EVP_PKEY,"openssl.evp_pkey");
     const char *data = luaL_checklstring(L,2,&dlen);
     int padding = get_padding(luaL_optstring(L,3,"pkcs1"));

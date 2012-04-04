@@ -277,7 +277,7 @@ LUA_FUNCTION(openssl_ts_resp_ctx_tostring) {
 */
 
 LUA_FUNCTION(openssl_ts_req_new) {
-    int l;
+    size_t l;
     const char* hash = luaL_checklstring(L, 1, &l);
     const char* hash_alg = luaL_checkstring(L, 2);
     int option = lua_gettop(L)>2 ? 3 : 0;
@@ -460,7 +460,7 @@ LUA_FUNCTION(openssl_ts_req_i2d) {
 
 LUA_FUNCTION(openssl_ts_req_d2i) {
     size_t l;
-    const char* buf = luaL_checklstring(L,1,&l);
+    const unsigned char* buf = luaL_checklstring(L,1,&l);
 
     TS_REQ *req = d2i_TS_REQ(NULL,&buf,l);
     PUSH_OBJECT(req,"openssl.ts_req");
@@ -584,7 +584,7 @@ LUA_FUNCTION(openssl_ts_resp_parse) {
 
 LUA_FUNCTION(openssl_ts_resp_d2i) {
     size_t l;
-    const char* buf = luaL_checklstring(L,1,&l);
+    const unsigned char* buf = luaL_checklstring(L,1,&l);
 
     TS_RESP *res = d2i_TS_RESP(NULL,&buf,l);
     PUSH_OBJECT(res,"openssl.ts_resp");
@@ -643,7 +643,7 @@ LUA_FUNCTION(openssl_ts_verify_ctx_new) {
         lua_getfield(L,1,"source");
         if(!lua_isnil(L,-1))
         {
-            int l;
+            size_t l;
             const char*data = luaL_checklstring(L,-1,&l);
             ctx = TS_VERIFY_CTX_new();
             ctx->flags = TS_VFY_VERSION | TS_VFY_SIGNER;
@@ -653,7 +653,7 @@ LUA_FUNCTION(openssl_ts_verify_ctx_new) {
 
         lua_getfield(L,1,"digest");
         if(!lua_isnil(L,-1)) {
-            int l;
+            size_t l;
             const char*data = luaL_checklstring(L,-1,&l);
             ctx = TS_VERIFY_CTX_new();
             ctx->flags = TS_VFY_VERSION | TS_VFY_SIGNER;
@@ -671,7 +671,7 @@ LUA_FUNCTION(openssl_ts_verify_ctx_new) {
                 TS_REQ* req = CHECK_OBJECT(1,TS_REQ,"openssl.ts_req");
                 ctx = TS_REQ_to_TS_VERIFY_CTX(req, NULL);
             } else {
-                int l;
+                size_t l;
                 const char*data = luaL_checklstring(L,-1,&l);
 
                 BIO* bio = BIO_new_mem_buf((void*)data,l);

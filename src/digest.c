@@ -83,7 +83,7 @@ LUA_FUNCTION(openssl_digest_info)
 LUA_FUNCTION(openssl_digest_digest)
 {
     EVP_MD *md = CHECK_OBJECT(1,EVP_MD, "openssl.evp_digest");
-    int inl;
+    size_t inl;
     const char* in = luaL_checklstring(L,2,&inl);
     ENGINE*     e = lua_gettop(L)>2?CHECK_OBJECT(3,ENGINE,"openssl.engine"):NULL;
 
@@ -129,7 +129,7 @@ LUA_FUNCTION(openssl_evp_digest_init)
 LUA_FUNCTION(openssl_evp_digest_update)
 {
     EVP_MD_CTX* c = CHECK_OBJECT(1,EVP_MD_CTX, "openssl.evp_digest_ctx");
-    int inl;
+    size_t inl;
 
     const char* in= luaL_checklstring(L,2,&inl);
 

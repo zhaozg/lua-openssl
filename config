@@ -4,7 +4,7 @@
 PREFIX=/usr/local
 
 # System's libraries directory (where binary libraries are installed)
-LUA_LIBDIR= $(PREFIX)/lib/lua/5.1
+LUA_LIBDIR= $(PREFIX)/lib/lua/5.2
 
 # Lua includes directory
 LUA_INC= $(PREFIX)/include
@@ -19,6 +19,6 @@ LIBNAME= $T.so.$V
 WARN= -O2 -Wall -fPIC -W -Waggregate-return -Wcast-align -Wmissing-prototypes -Wnested-externs -Wshadow -Wwrite-strings -pedantic
 INCS= -I$(LUA_INC)
 CFLAGS= $(WARN) $(INCS)
-CC= gcc
+CC= gcc -fPIC
 
 

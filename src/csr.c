@@ -285,7 +285,7 @@ static int openssl_make_REQ(lua_State*L,
                 /*
                 printf("%s - %s\n", lua_typename(L, lua_type(L, -2)), lua_typename(L, lua_type(L, -1)));
                 */
-                int vall = 0;
+                size_t vall = 0;
                 const char * strindex = lua_tostring(L,-2);
                 const char * val = luaL_checklstring(L,-1,&vall);
 
@@ -372,7 +372,7 @@ int openssl_csr_read(lua_State*L)
     X509_REQ * csr = NULL;
     char * filename = NULL;
     BIO * in = NULL;
-    int dlen;
+    size_t dlen;
     const char*data;
 
     data = luaL_checklstring(L,1,&dlen);

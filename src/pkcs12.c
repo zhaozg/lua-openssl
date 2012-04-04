@@ -108,7 +108,7 @@ LUA_FUNCTION(openssl_pkcs12_export)
 LUA_FUNCTION(openssl_pkcs12_read)
 {
     const char *pass, *zp12;
-    int zp12_len;
+    size_t zp12_len;
     PKCS12 * p12 = NULL;
     EVP_PKEY * pkey = NULL;
     X509 * cert = NULL;

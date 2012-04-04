@@ -158,7 +158,7 @@ X509_STORE * setup_verify(STACK_OF(X509)* calist)
 LUA_FUNCTION(openssl_x509_read)
 {
     X509 *cert = NULL;
-    int data_len;
+    size_t data_len;
     const char *data = luaL_checklstring(L, 1, &data_len);
 
     BIO *in = BIO_new_mem_buf((void*)data, data_len);

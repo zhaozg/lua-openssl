@@ -353,6 +353,7 @@ LUA_FUNCTION(openssl_x509_extension_tostring) {
 }
 
 LUA_FUNCTION(openssl_ec_list_curve_name) {
+#ifndef OPENSSL_NO_EC
     size_t n = 0;
     size_t crv_len = EC_get_builtin_curves(NULL, 0);
     EC_builtin_curve *curves = OPENSSL_malloc((int)(sizeof(EC_builtin_curve) * crv_len));
@@ -382,6 +383,9 @@ LUA_FUNCTION(openssl_ec_list_curve_name) {
 
     OPENSSL_free(curves);
     return 1;
+#else
+    return 0;
+#endif
 };
 
 static luaL_Reg x509_algo_funs[] = {

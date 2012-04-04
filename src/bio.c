@@ -23,7 +23,7 @@
 #include "openssl.h"
 
 LUA_FUNCTION(openssl_bio_new_mem) {
-    int l = 0;
+    size_t l = 0;
     char* d = (char*)luaL_optlstring(L,1,NULL, &l);
     BIO *bio = d ? BIO_new_mem_buf(d, l) : BIO_new(BIO_s_mem());
     PUSH_OBJECT(bio, "openssl.bio");
@@ -89,7 +89,7 @@ LUA_FUNCTION(openssl_bio_gets) {
 
 LUA_FUNCTION(openssl_bio_write) {
     BIO* bio = CHECK_OBJECT(1,BIO,"openssl.bio");
-    int len = 0;
+    size_t len = 0;
     const char* d = luaL_checklstring(L,2, &len);
     int ret = 1;
 

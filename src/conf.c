@@ -47,7 +47,7 @@ int openssl_conf_load_idx(lua_State*L, int idx) {
     LHASH* conf;
     if(lua_isstring(L,idx))
     {
-        int l;
+        size_t l;
         const char * data= luaL_checklstring(L,idx,&l);
         bio = BIO_new_mem_buf((void*)data,l);
     } else if(lua_istable(L,idx))

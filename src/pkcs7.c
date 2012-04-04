@@ -26,7 +26,7 @@
 //////////////////////////////////////////////////////////////////////////
 
 LUA_FUNCTION(openssl_pkcs7_read) {
-    int l=0;
+    size_t l=0;
     const char* ctx = luaL_checklstring(L,1,&l);
     BIO* bio = BIO_new_mem_buf((void*)ctx, l);
     PKCS7 *p7 = d2i_PKCS7_bio(bio,NULL);

@@ -213,7 +213,7 @@ LUA_FUNCTION(openssl_error_string)
    Signs data */
 LUA_FUNCTION(openssl_sign)
 {
-    int data_len;
+    size_t data_len;
     const char * data = luaL_checklstring(L,1,&data_len);
     EVP_PKEY *pkey = CHECK_OBJECT(2,EVP_PKEY,"openssl.evp_pkey");
 
@@ -256,7 +256,7 @@ LUA_FUNCTION(openssl_sign)
    Verifys data */
 LUA_FUNCTION(openssl_verify)
 {
-    int data_len, signature_len;
+    size_t data_len, signature_len;
     const char* data = luaL_checklstring(L,1,&data_len);
     const char* signature = luaL_checklstring(L,2,&signature_len);
 
@@ -293,7 +293,7 @@ LUA_FUNCTION(openssl_verify)
    Seals data */
 LUA_FUNCTION(openssl_seal)
 {
-    int data_len;
+    size_t data_len;
     const char * data = luaL_checklstring(L,1,&data_len);
 
     EVP_PKEY **pkeys;
@@ -384,8 +384,7 @@ LUA_FUNCTION(openssl_seal)
    Opens data */
 LUA_API LUA_FUNCTION(openssl_open)
 {
-    int data_len;
-    int ekey_len;
+    size_t data_len, ekey_len;
     const char * data = luaL_checklstring(L, 1, &data_len);
     const char * ekey = luaL_checklstring(L, 2, &ekey_len);
     EVP_PKEY *pkey =  CHECK_OBJECT(3,EVP_PKEY, "openssl.evp_pkey");
@@ -681,7 +680,7 @@ SSL *SSL_new_from_context(SSL_CTX *ctx, stream *stream) /* {{{ */
 LUA_FUNCTION(openssl_dh_compute_key)
 {
     const char *pub_str;
-    int pub_len;
+    size_t pub_len;
     EVP_PKEY *pkey;
     BIGNUM *pub;
     char *data;
