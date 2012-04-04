@@ -71,7 +71,7 @@ LUA_FUNCTION(openssl_digest_info)
     EVP_MD *md = CHECK_OBJECT(1,EVP_MD, "openssl.evp_digest");
     lua_newtable(L);
     add_assoc_int(L,"nid", EVP_MD_nid(md));
-    add_assoc_string(L,"name", EVP_MD_name(md),1);
+    add_assoc_string(L,"name", EVP_MD_name(md));
     add_assoc_int(L,"size", EVP_MD_size(md));
     add_assoc_int(L,"block_size", EVP_MD_block_size(md));
 
@@ -88,9 +88,9 @@ LUA_FUNCTION(openssl_digest_digest)
     ENGINE*     e = lua_gettop(L)>2?CHECK_OBJECT(3,ENGINE,"openssl.engine"):NULL;
 
     char buf[MAX_PATH];
-    int  blen = MAX_PATH;
+    unsigned int  blen = MAX_PATH;
 
-    int status = EVP_Digest(in, inl, buf, &blen, md, e);
+    int status = EVP_Digest(in, inl, (unsigned char*)buf, &blen, md, e);
     if (status) {
         lua_pushlstring(L,buf,blen);
     } else

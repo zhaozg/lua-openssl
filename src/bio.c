@@ -89,11 +89,11 @@ LUA_FUNCTION(openssl_bio_gets) {
 
 LUA_FUNCTION(openssl_bio_write) {
     BIO* bio = CHECK_OBJECT(1,BIO,"openssl.bio");
-    size_t len = 0;
-    const char* d = luaL_checklstring(L,2, &len);
+    size_t size = 0;
+    const char* d = luaL_checklstring(L,2, &size);
     int ret = 1;
 
-    len = BIO_write(bio, d, len);
+    int len = BIO_write(bio, d, size);
     if(len>=0) {
         lua_pushinteger(L, len);
         ret = 1;
@@ -159,20 +159,20 @@ LUA_FUNCTION(openssl_bio_type) {
     BIO* bio = CHECK_OBJECT(1,BIO,"openssl.bio");
     lua_pushstring(L, BIO_method_name(bio));
     return 1;
-};
+}
 
 LUA_FUNCTION(openssl_bio_reset) {
     BIO* bio = CHECK_OBJECT(1,BIO,"openssl.bio");
     BIO_reset(bio);
     return 0;
-};
+}
 
 
 LUA_FUNCTION(openssl_bio_tostring) {
     BIO* bio = CHECK_OBJECT(1,BIO,"openssl.bio");
     lua_pushfstring(L, "openssl.bio:%p",bio);
     return 1;
-};
+}
 
 static luaL_reg bio_funs[] = {
     {"read",	openssl_bio_read	},
@@ -196,3 +196,4 @@ int openssl_register_bio(lua_State* L) {
     auxiliar_newclass(L, "openssl.bio", bio_funs);
     return 0;
 }
+

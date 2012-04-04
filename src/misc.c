@@ -32,7 +32,7 @@ void add_assoc_int(lua_State* L, const char* name, int b) {
     lua_setfield(L,-2,name);
 }
 
-void add_assoc_string(lua_State *L, const char*name, const char*val, int flag) {
+void add_assoc_string(lua_State *L, const char*name, const char*val) {
     lua_pushstring(L,val);
     lua_setfield(L,-2,name);
 }
@@ -116,7 +116,7 @@ time_t asn1_time_to_time_t(ASN1_UTCTIME * timestr) /* {{{ */
 
 /* }}} */
 
-void add_assoc_name_entry(lua_State*L, char * key, X509_NAME * name, int shortname) /* {{{ */
+void add_assoc_name_entry(lua_State*L,const  char * key,const X509_NAME * name, int shortname) /* {{{ */
 {
     int i, j = -1, last = -1, obj_cnt = 0;
     char *sname;

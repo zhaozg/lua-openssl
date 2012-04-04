@@ -66,7 +66,7 @@ LUA_FUNCTION(openssl_cipher_info)
 {
     EVP_CIPHER *cipher = CHECK_OBJECT(1,EVP_CIPHER, "openssl.evp_cipher");
     lua_newtable(L);
-    add_assoc_string(L,"name", EVP_CIPHER_name(cipher),1);
+    add_assoc_string(L,"name", EVP_CIPHER_name(cipher));
     add_assoc_int(L,"block_size", EVP_CIPHER_block_size(cipher));
     add_assoc_int(L,"key_length", EVP_CIPHER_key_length(cipher));
     add_assoc_int(L,"iv_length", EVP_CIPHER_iv_length(cipher));
@@ -89,7 +89,7 @@ LUA_FUNCTION(openssl_evp_BytesToKey)
     const char* salt, *k;  /* PKCS5_SALT_LEN */
     size_t lsalt, lk;
 
-    unsigned char key[EVP_MAX_KEY_LENGTH],iv[EVP_MAX_IV_LENGTH];
+    char key[EVP_MAX_KEY_LENGTH],iv[EVP_MAX_IV_LENGTH];
 
     salt = luaL_checklstring(L, 3, &lsalt);
     if(lsalt < PKCS5_SALT_LEN)
@@ -97,7 +97,7 @@ LUA_FUNCTION(openssl_evp_BytesToKey)
     k = luaL_checklstring(L, 4, &lk);
 
 
-    EVP_BytesToKey(c,m,salt, k, lk,1,key,iv);
+    EVP_BytesToKey(c,m,(unsigned char*)salt, (unsigned char*)k, lk,1,(unsigned char*)key,(unsigned char*)iv);
     lua_pushlstring(L, key, EVP_MAX_KEY_LENGTH);
     lua_pushlstring(L, iv, EVP_MAX_IV_LENGTH);
     return 2;
@@ -118,7 +118,7 @@ LUA_FUNCTION(openssl_evp_encrypt_init)
     PUSH_OBJECT(ctx,"openssl.evp_cipher_ctx");
     EVP_CIPHER_CTX_init(ctx);
 
-    if (!EVP_EncryptInit_ex(ctx,c,e, k, iv)) {
+    if (!EVP_EncryptInit_ex(ctx,c,e, (const unsigned char*)k, (const unsigned char*)iv)) {
         luaL_error(L,"EVP_EncryptInit failed");
     }
     return 1;
@@ -133,11 +133,11 @@ LUA_FUNCTION(openssl_evp_encrypt_update)
     size_t inl;
     const char* in= luaL_checklstring(L,2,&inl);
     int outl = inl+EVP_MAX_BLOCK_LENGTH;
-    char* out = malloc(outl);
+    unsigned char* out = malloc(outl);
 
-    if(EVP_EncryptUpdate(c,out,&outl,in,inl))
+    if(EVP_EncryptUpdate(c,out,&outl,(const unsigned char*)in,inl))
     {
-        lua_pushlstring(L,out,outl);
+        lua_pushlstring(L,(const char*)out,outl);
         free(out);
         return 1;
     }
@@ -152,12 +152,12 @@ LUA_FUNCTION(openssl_evp_encrypt_final)
 {
     EVP_CIPHER_CTX* c = CHECK_OBJECT(1,EVP_CIPHER_CTX, "openssl.evp_cipher_ctx");
     int outl = EVP_MAX_BLOCK_LENGTH;
-    char out[EVP_MAX_BLOCK_LENGTH];
+    unsigned char out[EVP_MAX_BLOCK_LENGTH];
 
     EVP_EncryptFinal_ex(c,out,&outl);
     if(outl)
     {
-        lua_pushlstring(L,out,outl);
+        lua_pushlstring(L,(const char*)out,outl);
         return 1;
     }
     return 0;
@@ -180,7 +180,7 @@ LUA_FUNCTION(openssl_evp_decrypt_init)
     PUSH_OBJECT(ctx,"openssl.evp_cipher_ctx");
     EVP_CIPHER_CTX_init(ctx);
 
-    if (!EVP_DecryptInit_ex(ctx,c,e, k, iv)) {
+    if (!EVP_DecryptInit_ex(ctx,c,e, (const unsigned char*)k, (const unsigned char*)iv)) {
         luaL_error(L,"EVP_DecryptInit_ex failed");
     }
     return 1;

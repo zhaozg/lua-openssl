@@ -35,14 +35,14 @@ char default_ssl_conf_filename[MAX_PATH];
 
 /* {{{ openssl_functions[]
  */
-const static luaL_Reg eay_functions[] = {
+static const luaL_Reg eay_functions[] = {
     /* pkey */
     {"pkey_read",			openssl_pkey_read	},
     {"pkey_new",			openssl_pkey_new	},
 
     /* x.509 cert funcs */
     {"x509_read",			openssl_x509_read	},
-    {"sk_x509_read",		openssl_sk_x509_read	},
+    {"sk_x509_read",			openssl_sk_x509_read	},
     {"sk_x509_new",			openssl_sk_x509_new	},
 
 

@@ -292,7 +292,7 @@ static int openssl_make_REQ(lua_State*L,
                 if (strindex) {
                     int nid = OBJ_txt2nid(strindex);
                     if (nid != NID_undef) {
-                        if (!X509_REQ_add1_attr_by_NID(csr,nid,MBSTRING_ASC,val,vall)) {
+                        if (!X509_REQ_add1_attr_by_NID(csr,nid,MBSTRING_ASC,(const unsigned char*)val,vall)) {
                             luaL_error(L, "attribs: X509_REQ_add1_attr %s -> %s (failed)", strindex, val);
                             return -1;
                         }
@@ -315,16 +315,11 @@ static int openssl_make_REQ(lua_State*L,
             lua_pushnil(L);  /* first key */
             while (lua_next(L, extensions) != 0) {
                 /* uses 'key' (at index -2) and 'value' (at index -1) */
-                /*
-                printf("%s - %s\n", lua_typename(L, lua_type(L, -2)), lua_typename(L, lua_type(L, -1)));
-                */
-                int vall = 0;
                 const char * key = lua_tostring(L,-2);
                 char* val = (char*)lua_tostring(L,-1);
                 int nid = OBJ_txt2nid(key);
 
                 if (nid != NID_undef) {
-                    const X509V3_EXT_METHOD *method = X509V3_EXT_get_nid(nid);
                     int crit = v3_check_critical(&val);
                     int ext_type = v3_check_generic(&val);
                     X509_EXTENSION *ret;
@@ -367,10 +362,9 @@ static int openssl_make_REQ(lua_State*L,
 /* {{{ openssl.csr_read(string data)->openssl.x509_req */
 
 
-int openssl_csr_read(lua_State*L)
+LUA_FUNCTION(openssl_csr_read)
 {
     X509_REQ * csr = NULL;
-    char * filename = NULL;
     BIO * in = NULL;
     size_t dlen;
     const char*data;
@@ -509,13 +503,13 @@ LUA_FUNCTION(openssl_csr_sign)
     }
 
     /* Now we can get on with it */
-    // 1)
+    /* 1) */
     new_cert = X509_new();
     if (new_cert == NULL) {
         luaL_error(L, "No memory");
         goto cleanup;
     }
-    // 2)
+    /* 2) */
     /* Version 3 cert */
     lua_getfield(L, 4,"version");
     if (lua_isnil(L,-1)) {
@@ -527,9 +521,9 @@ LUA_FUNCTION(openssl_csr_sign)
     }
     lua_pop(L,1);
 
-    // 3)
+    /* 3) */
     X509_set_serialNumber(new_cert, BN_to_ASN1_INTEGER(bn,X509_get_serialNumber(new_cert)));
-    // 4)
+    /* 4) */
     if (cert == NULL) {
         cert = new_cert;
     }
@@ -538,7 +532,7 @@ LUA_FUNCTION(openssl_csr_sign)
     }
     X509_set_subject_name(new_cert, X509_REQ_get_subject_name(csr));
 
-    // 5
+    /* 5 */
     X509_gmtime_adj(X509_get_notBefore(new_cert), 0);
 #if OPENSSL_VERSION_NUMBER > 0x10000002L
     if (!X509_time_adj_ex(X509_get_notAfter(new_cert), num_days, 0, NULL))
@@ -547,12 +541,11 @@ LUA_FUNCTION(openssl_csr_sign)
     X509_gmtime_adj(X509_get_notAfter(new_cert), (long)60*60*24*num_days);
 #endif
 
-    //6
+    /* 6 */
     if (!X509_set_pubkey(new_cert, key)) {
         goto cleanup;
     }
 
-    //
     lua_getfield(L, 4, "extentions");
     if ( lua_isnil (L, -1) ) {
         new_cert->cert_info->extensions = X509_REQ_get_extensions(csr);

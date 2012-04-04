@@ -141,9 +141,9 @@ STACK_OF(TYPE)* sk_##type##_fromtable(lua_State*L, int idx) { \
 
 
 #define IMP_LUA_SK(TYPE,type) \
-TAB2SK(TYPE,type); \
+TAB2SK(TYPE,type);	\
 SK2TAB(TYPE,type);	\
-	\
+			\
 SK_TOTABLE(TYPE,type);	\
 SK_FREE(TYPE,type);	\
 SK_TOSTRING(TYPE,type);	\
@@ -154,24 +154,24 @@ SK_DELETE(TYPE,type);	\
 SK_SET(TYPE,type);	\
 SK_GET(TYPE,type);	\
 SK_LENGTH(TYPE,type);	\
-SK_SORT(TYPE,type); \
-SK_SORTED(TYPE,type); \
+SK_SORT(TYPE,type); 	\
+SK_SORTED(TYPE,type); 	\
 \
 \
-static luaL_Reg sk_##type##_funcs[] = { \
-	{"push",	sk_##type##_push },  \
+static luaL_Reg sk_##type##_funcs[] = { 	\
+	{"push",	sk_##type##_push }, 	\
 	{"pop",		sk_##type##_pop },	\
 	{"set",		sk_##type##_set },	\
 	{"get",		sk_##type##_get },	\
 	{"insert",	sk_##type##_insert },	\
 	{"delete",	sk_##type##_delete },	\
-	{"sort",	sk_##type##_sort },		\
-	{"sorted",	sk_##type##_sorted },		\
+	{"sort",	sk_##type##_sort },	\
+	{"sorted",	sk_##type##_sorted },	\
 	{"totable",	sk_##type##_totable},	\
 	{"parse",	sk_##type##_totable},	\
 	{"__len",	sk_##type##_length },	\
 	{"__tostring",	sk_##type##_tostring },	\
-	{"__gc",		sk_##type##_free },		\
+	{"__gc",	sk_##type##_free },	\
 	{NULL,		NULL}	\
 }; \
 \
@@ -184,7 +184,11 @@ int openssl_sk_##type##_new(lua_State*L) { \
 int openssl_register_sk_##type(lua_State*L) { \
 	auxiliar_newclass(L,"openssl.stack_of_"#type, sk_##type##_funcs); \
 	return 0;  \
-};
+}
+
+#define DEF_LUA_SK(TYPE,type) 			\
+int openssl_sk_##type##_new(lua_State*L);	\
+int openssl_register_sk_##type(lua_State*L) 
 
 /************************************************************************/
 /*                                                                      */

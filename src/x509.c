@@ -23,7 +23,7 @@
 #include "openssl.h"
 #include "sk.h"
 
-void add_assoc_x509_extension(lua_State*L, char* key, STACK_OF(X509_EXTENSION)* exts, BIO* bio)
+void add_assoc_x509_extension(lua_State*L, const char* key, STACK_OF(X509_EXTENSION)* exts, BIO* bio)
 {
     const char*extname;
     char buf[256];
@@ -295,7 +295,7 @@ LUA_FUNCTION(openssl_x509_parse)
 
     tmpstr = (char *)X509_alias_get0(cert, NULL);
     if (tmpstr) {
-        add_assoc_string(L, "alias",tmpstr , 1);
+        add_assoc_string(L, "alias",tmpstr);
     }
     /*
     	add_assoc_long(return_value, "signaturetypeLONG", X509_get_signature_type(cert));
@@ -426,8 +426,7 @@ int openssl_register_x509(lua_State*L) {
     return 0;
 }
 
-//////////////////////////////////////////////////////////////////////////
-
+DEF_LUA_SK(X509, x509);
 IMP_LUA_SK(X509, x509);
 
 static STACK_OF(X509) * load_all_certs_from_file(const char *certfile)

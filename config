@@ -16,9 +16,10 @@ LIB_OPTION= -shared #for Linux
 LIBNAME= $T.so.$V
 
 # Compilation directives
-WARN= -O2 -Wall -fPIC -W -Waggregate-return -Wcast-align -Wmissing-prototypes -Wnested-externs -Wshadow -Wwrite-strings -pedantic
+WARN_MOST= -Wall -fPIC -W -Waggregate-return -Wcast-align -Wmissing-prototypes -Wnested-externs -Wshadow -Wwrite-strings -pedantic
+WARN= -Wall -fPIC
 INCS= -I$(LUA_INC)
 CFLAGS= $(WARN) $(INCS)
-CC= gcc -fPIC
+CC= gcc -g -fPIC $(CFLAGS)
 
 
