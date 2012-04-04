@@ -27,6 +27,7 @@
 #include "auxiliar.h"
 #if LUA_VERSION_NUM>501
 #define lua_objlen lua_rawlen
+int luaL_typerror (lua_State *L, int narg, const char *tname);
 #endif
 
 #include <assert.h>
