@@ -54,11 +54,16 @@ int luaL_typerror (lua_State *L, int narg, const char *tname);
 typedef unsigned char byte;
 
 #define MULTI_LINE_MACRO_BEGIN do {  
+#ifdef _MSC_VER
 #define MULTI_LINE_MACRO_END	\
 __pragma(warning(push))		\
 __pragma(warning(disable:4127)) \
 } while(0)			\
 __pragma(warning(pop)) 
+#else
+#define MULTI_LINE_MACRO_END \
+} while(0)
+#endif
 
 /* Common */
 #include <time.h>
