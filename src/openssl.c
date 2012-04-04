@@ -102,27 +102,10 @@ static const luaL_Reg eay_functions[] = {
     {NULL, NULL}
 };
 /* }}} */
-
+#if 0
 static int ssl_stream_data_index;
 
 
-/* {{{ resource destructors */
-static void pkey_free(lua_State *L)
-{
-    EVP_PKEY *pkey = CHECK_OBJECT(1,EVP_PKEY,"openssl.pkey");
-
-    assert(pkey != NULL);
-
-    EVP_PKEY_free(pkey);
-}
-
-static void csr_free(lua_State *L)
-{
-    X509_REQ * csr  = CHECK_OBJECT(1,X509_REQ,"openssl.x509_req");
-    X509_REQ_free(csr);
-}
-/* }}} */
-#if 0
 /* {{{ openssl safe_mode & open_basedir checks */
 inline static int openssl_safe_mode_chk(char *filename)
 {
@@ -162,35 +145,6 @@ int openssl_config_check_syntax(const char * section_label, const char * config_
 }
 
 
-
-static STACK_OF(X509) * array_to_X509_sk(lua_State *L, int n) /* {{{ */
-{
-    STACK_OF(X509) * sk = NULL;
-    X509 * cert;
-    int len,i;
-
-    sk = sk_X509_new_null();
-
-    /* get certs */
-    if (lua_istable(L,n))
-    {
-        len = lua_objlen(L,n);
-        for (i=1; i<=len; i++)
-        {
-            lua_rawgeti(L,n,i);
-            cert = CHECK_OBJECT(-1,X509,"openssl.x509");
-            cert = X509_dup(cert);
-            sk_X509_push(sk, cert);
-        }
-    } else
-    {
-        cert = CHECK_OBJECT(n,X509,"openssl.x509");
-        cert = X509_dup(cert);
-        sk_X509_push(sk, cert);
-    }
-    return sk;
-}
-/* }}} */
 
 /* {{{ proto mixed openssl_error_string(void)
    Returns a description of the last error, and alters the index of the error messages. Returns false when the are no more messages */
@@ -819,17 +773,6 @@ static unsigned long util_thr_id(void)
 #endif
 }
 
-static void util_thread_cleanup(void *data)
-{
-	(void*)data;
-    CRYPTO_set_locking_callback(NULL);
-    CRYPTO_set_id_callback(NULL);
-
-    CRYPTO_set_dynlock_create_callback(NULL);
-    CRYPTO_set_dynlock_lock_callback(NULL);
-    CRYPTO_set_dynlock_destroy_callback(NULL);
-}
-
 void util_thread_setup()
 {
     int i;
@@ -862,13 +805,9 @@ LUA_API int luaopen_openssl(lua_State*L)
     {
         g_init =  1;
 
-#ifdef OPENSSL_THREADS
         util_thread_setup();
-#endif
-        //SSL_library_init();
         OpenSSL_add_all_ciphers();
         OpenSSL_add_all_digests();
-        OpenSSL_add_all_algorithms();
 
         ERR_load_ERR_strings();
         ERR_load_crypto_strings();

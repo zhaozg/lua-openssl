@@ -11,7 +11,7 @@ print(openssl.random_bytes(length, true))
 secret_key = "secret"
 cipher = openssl.get_cipher("RC4")
 
-num = 10000000
+num = 10
 i = 1
 while i <= num do
         i = i+1

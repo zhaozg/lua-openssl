@@ -426,8 +426,7 @@ int openssl_register_x509(lua_State*L) {
     return 0;
 }
 
-DEF_LUA_SK(X509, x509);
-IMP_LUA_SK(X509, x509);
+IMP_LUA_SK(X509, x509)
 
 static STACK_OF(X509) * load_all_certs_from_file(const char *certfile)
 {

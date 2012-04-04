@@ -4,7 +4,7 @@
 PREFIX=/usr/local
 
 # System's libraries directory (where binary libraries are installed)
-LUA_LIBDIR= $(PREFIX)/lib/lua/5.2
+LUA_LIBDIR= $(PREFIX)/lib/lua/5.1
 
 # Lua includes directory
 LUA_INC= $(PREFIX)/include

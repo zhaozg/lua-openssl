@@ -766,7 +766,7 @@ LUA_FUNCTION(openssl_csr_parse)
                         add_assoc_string(L, name?name:"bmpstring", value);
                         OPENSSL_free(value);
 #else
-                        lua_pushlstring(L,av->value.bmpstring->data,av->value.bmpstring->length);
+                        lua_pushlstring(L,(const char*)av->value.bmpstring->data,av->value.bmpstring->length);
                         lua_setfield(L,-2, name?name:"bmpstring");
 #endif
                     }

@@ -135,14 +135,12 @@ LUA_FUNCTION(openssl_evp_encrypt_update)
     int outl = inl+EVP_MAX_BLOCK_LENGTH;
     unsigned char* out = malloc(outl);
 
-    if(EVP_EncryptUpdate(c,out,&outl,(const byte*)in,inl))
+    if(EVP_EncryptUpdate(c,out,&outl,(const byte*)in,inl) && outl)
     {
         lua_pushlstring(L,(const char*)out,outl);
-        free(out);
-        return 1;
     }
     free(out);
-    return 0;
+    return outl?1:0;
 }
 /* }}} */
 
@@ -154,8 +152,7 @@ LUA_FUNCTION(openssl_evp_encrypt_final)
     int outl = EVP_MAX_BLOCK_LENGTH;
     unsigned char out[EVP_MAX_BLOCK_LENGTH];
 
-    EVP_EncryptFinal_ex(c,out,&outl);
-    if(outl)
+    if(EVP_EncryptFinal_ex(c,out,&outl) && outl)
     {
         lua_pushlstring(L,(const char*)out,outl);
         return 1;
@@ -197,14 +194,12 @@ LUA_FUNCTION(openssl_evp_decrypt_update)
     int outl = inl+EVP_MAX_BLOCK_LENGTH;
     char* out = malloc(outl);
 
-    if(EVP_DecryptUpdate(c,(byte*)out,&outl,(const byte*)in,inl))
+    if(EVP_DecryptUpdate(c,(byte*)out,&outl,(const byte*)in,inl) && outl)
     {
         lua_pushlstring(L,out,outl);
-        free(out);
-        return 1;
     }
     free(out);
-    return 0;
+    return outl?1:0;
 }
 /* }}} */
 
@@ -257,18 +252,17 @@ LUA_FUNCTION(openssl_evp_cipher_update)
     EVP_CIPHER_CTX* c = CHECK_OBJECT(1,EVP_CIPHER_CTX, "openssl.evp_cipher_ctx");
     size_t inl;
     const char* in= luaL_checklstring(L,2,&inl);
-    int outl = inl+EVP_MAX_BLOCK_LENGTH;
+    int outl = inl + EVP_MAX_BLOCK_LENGTH;
     char* out = malloc(outl);
 
 
-    if(EVP_CipherUpdate(c,(byte*)out,&outl,(const byte*)in,inl))
+    if(EVP_CipherUpdate(c,(byte*)out,&outl,(const byte*)in,inl) && outl)
     {
         lua_pushlstring(L,out,outl);
-        free(out);
-        return 1;
     }
     free(out);
-    return 0;
+
+    return outl?1:0;
 }
 /* }}} */
 
