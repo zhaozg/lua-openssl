@@ -307,7 +307,8 @@ LUA_FUNCTION(openssl_seal)
     EVP_PKEY **pkeys;
 
     int i, len1, len2, *eksl, nkeys;
-    unsigned char *buf = NULL, **eks;
+    unsigned char *buf;
+    unsigned char **eks;
 
     const EVP_CIPHER *cipher = NULL;
     EVP_CIPHER_CTX ctx;
@@ -355,8 +356,8 @@ LUA_FUNCTION(openssl_seal)
     }
 
     /* allocate one byte extra to make room for \0 */
+    len1 = data_len + EVP_CIPHER_CTX_block_size(&ctx)+1;
     buf = malloc(data_len + EVP_CIPHER_CTX_block_size(&ctx));
-
     if (!EVP_SealInit(&ctx, cipher, eks, eksl, NULL, pkeys, nkeys) || !EVP_SealUpdate(&ctx, buf, &len1, (unsigned char *)data, data_len)) {
         free(buf);
         luaL_error(L,"EVP_SealInit failed");
@@ -366,12 +367,12 @@ LUA_FUNCTION(openssl_seal)
 
     if (len1 + len2 > 0) {
         buf[len1 + len2] = '\0';
-        lua_pushlstring(L,buf,len1 + len2);
+        lua_pushlstring(L,(const char*)buf,len1 + len2);
 
         lua_newtable(L);
         for (i=0; i<nkeys; i++) {
             eks[i][eksl[i]] = '\0';
-            lua_pushlstring(L, eks[i], eksl[i]);
+            lua_pushlstring(L, (const char*)eks[i], eksl[i]);
             free(eks[i]);
             eks[i] = NULL;
             lua_rawseti(L,-2, i+1);
@@ -398,13 +399,11 @@ LUA_API LUA_FUNCTION(openssl_open)
     EVP_PKEY *pkey =  CHECK_OBJECT(3,EVP_PKEY, "openssl.evp_pkey");
     int top = lua_gettop(L);
 
-    int len1, len2;
+    int len1, len2 = 0;
     unsigned char *buf;
 
     EVP_CIPHER_CTX ctx;
     const EVP_CIPHER *cipher = NULL;
-    int ret = 0;
-
 
     if(top>3) {
         if(lua_isstring(L,4))
@@ -417,9 +416,11 @@ LUA_API LUA_FUNCTION(openssl_open)
     if(!cipher)
         cipher = EVP_rc4();
 
-    buf = malloc(data_len + 1);
+    len1 = data_len + 1;
+    buf = malloc(len1);
 
     if (EVP_OpenInit(&ctx, cipher, (unsigned char *)ekey, ekey_len, NULL, pkey) && EVP_OpenUpdate(&ctx, buf, &len1, (unsigned char *)data, data_len)) {
+	len2 = data_len - len1;
         if (!EVP_OpenFinal(&ctx, buf + len1, &len2) || (len1 + len2 == 0)) {
             free(buf);
         }
@@ -428,7 +429,7 @@ LUA_API LUA_FUNCTION(openssl_open)
     }
 
     buf[len1 + len2] = '\0';
-    lua_pushlstring(L, buf, len1 + len2);
+    lua_pushlstring(L, (const char*)buf, len1 + len2);
     free(buf);
     return 1;
 }
@@ -732,6 +733,8 @@ static int	lock_num_locks = 0;
 static void util_thr_lock(int mode, int type,
                           const char *file, int line)
 {
+	(void*)file;
+	(void*)line;
     if (type < lock_num_locks) {
         if (mode & CRYPTO_LOCK) {
             pthread_mutex_lock(&lock_cs[type]);
@@ -773,6 +776,8 @@ static struct CRYPTO_dynlock_value *dyn_create_function(const char *file,
 static void dyn_lock_function(int mode, struct CRYPTO_dynlock_value *l,
                               const char *file, int line)
 {
+	(void*)file;
+	(void*)line;
     if (mode & CRYPTO_LOCK) {
         pthread_mutex_lock(&l->mutex);
     }
@@ -787,6 +792,8 @@ static void dyn_lock_function(int mode, struct CRYPTO_dynlock_value *l,
 static void dyn_destroy_function(struct CRYPTO_dynlock_value *l,
                                  const char *file, int line)
 {
+	(void*)file;
+	(void*)line;
     pthread_mutex_destroy(&l->mutex);
     free((char*)l->file);
     free(l);
@@ -814,6 +821,7 @@ static unsigned long util_thr_id(void)
 
 static void util_thread_cleanup(void *data)
 {
+	(void*)data;
     CRYPTO_set_locking_callback(NULL);
     CRYPTO_set_id_callback(NULL);
 

@@ -151,7 +151,7 @@ LUA_FUNCTION(openssl_pkcs7_parse)
             BIO_free(bio);
 #else
             ASN1_OCTET_STRING *os = PKCS7_get_octet_string(p7->d.sign->contents);
-            lua_pushlstring(L,os->data, os->length);
+            lua_pushlstring(L,(const char*)os->data, os->length);
             lua_setfield(L,-2,"content");
 #endif
         }
@@ -289,7 +289,7 @@ LUA_FUNCTION(openssl_pkcs7_verify)
     BIO * in = NULL, * datain = NULL, * dataout = NULL;
     long flags = 0;
 
-    int ret;
+    int ret = 0;
     int top = lua_gettop(L);
 
     in = CHECK_OBJECT(1,BIO,"openssl.bio");
@@ -330,7 +330,6 @@ LUA_FUNCTION(openssl_pkcs7_verify)
             }
             sk_X509_free(signers1);
         }
-        goto clean_exit;
     } else {
         ret = 0;
     }
@@ -416,7 +415,6 @@ LUA_FUNCTION(openssl_pkcs7_decrypt)
     BIO * in = NULL, * out = NULL, * datain = NULL;
     PKCS7 * p7 = NULL;
 
-    int top = lua_gettop(L);
     int ret = 0;
 
     in = CHECK_OBJECT(1, BIO, "openssl.bio");

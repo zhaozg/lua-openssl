@@ -46,15 +46,19 @@ int luaL_typerror (lua_State *L, int narg, const char *tname);
 #include <openssl/ssl.h>
 #include <openssl/opensslv.h>
 
-#if OPENSSL_VERSION_NUMBER >= 0x10000002L
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+#include <openssl/lhash.h>
 #define OPENSSL_HAVE_TS
-#define LHASH LHASH_OF(CONF_VALUE);
-#else
-#ifndef HEADER_EC_H
-#undef EVP_PKEY_EC
+#define LHASH LHASH_OF(CONF_VALUE)
 #endif
-#endif
+typedef unsigned char byte;
 
+#define MULTI_LINE_MACRO_BEGIN do {  
+#define MULTI_LINE_MACRO_END	\
+__pragma(warning(push))		\
+__pragma(warning(disable:4127)) \
+} while(0)			\
+__pragma(warning(pop)) 
 
 /* Common */
 #include <time.h>
@@ -199,7 +203,7 @@ LUA_FUNCTION(openssl_error_string);
 LUA_FUNCTION(openssl_sign);
 LUA_FUNCTION(openssl_verify);
 LUA_FUNCTION(openssl_seal);
-LUA_FUNCTION(openssl_open);
+
 LUA_FUNCTION(openssl_dh_compute_key);
 LUA_FUNCTION(openssl_ts_resp_ctx_new);
 LUA_FUNCTION(openssl_ts_sign);
@@ -254,45 +258,50 @@ LUA_FUNCTION(openssl_x509_public_key);
 LUA_FUNCTION(openssl_sk_x509_read);
 LUA_FUNCTION(openssl_sk_x509_new);
 
+LUA_API LUA_FUNCTION(openssl_open);
+
 void openssl_add_method_or_alias(const OBJ_NAME *name, void *arg) ;
 void openssl_add_method(const OBJ_NAME *name, void *arg);
 
 #define CHECK_OBJECT(n,type,name) *(type**)luaL_checkudata(L,n,name)
 
-#define PUSH_OBJECT(o, tname)  do {				\
+#define PUSH_OBJECT(o, tname)		\
+	MULTI_LINE_MACRO_BEGIN		\
 	*(void **)(lua_newuserdata(L, sizeof(void *))) = (o);	\
-	auxiliar_setclass(L,tname,-1);} while(0)
+	auxiliar_setclass(L,tname,-1);	\
+	MULTI_LINE_MACRO_END
 
-#define ADD_ASSOC_BIO(bio, key)	{			\
+#define ADD_ASSOC_BIO(bio, key)	MULTI_LINE_MACRO_BEGIN	\
 	BUF_MEM *buf;	BIO_get_mem_ptr(bio, &buf);	\
 	lua_pushlstring(L, buf->data, buf->length);	\
 	lua_setfield(L, -2, key); BIO_reset(bio);	\
-}
+	MULTI_LINE_MACRO_END
 
-#define ADD_ASSOC_ASN1(type, bio, asn1,  key ) {	\
+#define ADD_ASSOC_ASN1(type, bio, asn1,  key ) MULTI_LINE_MACRO_BEGIN \
 	BUF_MEM *buf;					\
 	i2a_##type(bio,asn1);				\
 	BIO_get_mem_ptr(bio, &buf);			\
 	lua_pushlstring(L, buf->data, buf->length);	\
 	lua_setfield(L, -2, key); BIO_reset(bio);	\
-}
+	MULTI_LINE_MACRO_END
 
-#define ADD_ASSOC_ASN1_STRING(type, bio, asn1,  key ) {	\
+#define ADD_ASSOC_ASN1_STRING(type, bio, asn1,  key ) MULTI_LINE_MACRO_BEGIN \
 	BUF_MEM *buf;					\
 	i2a_ASN1_STRING(bio,asn1, V_##type);		\
 	BIO_get_mem_ptr(bio, &buf);			\
 	lua_pushlstring(L, buf->data, buf->length);	\
 	lua_setfield(L, -2, key); BIO_reset(bio);	\
-}
+	MULTI_LINE_MACRO_END
 
-#define ADD_ASSOC_ASN1_TIME(bio, atime, key )				\
+#define ADD_ASSOC_ASN1_TIME(bio, atime, key ) MULTI_LINE_MACRO_BEGIN	\
 	ASN1_TIME_print(bio,atime);					\
 	ADD_ASSOC_BIO(bio, key);					\
 	lua_pushfstring(L, "%s_time_t", key);				\
 	lua_pushinteger(L, (lua_Integer)asn1_time_to_time_t(atime));	\
-	lua_settable (L,-3)
+	lua_settable (L,-3);    \
+	MULTI_LINE_MACRO_END
 
-void add_assoc_name_entry(lua_State*L, const  char * key, const X509_NAME * name, int shortname);
+void add_assoc_name_entry(lua_State*L, const  char * key, X509_NAME * name, int shortname);
 void add_assoc_x509_extension(lua_State*L, const char* key, STACK_OF(X509_EXTENSION)* ext, BIO* bio);
 
 void add_assoc_string(lua_State *L, const char*name, const char*val);

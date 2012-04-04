@@ -436,19 +436,19 @@ static STACK_OF(X509) * load_all_certs_from_file(const char *certfile)
     BIO *in=NULL;
     X509_INFO *xi;
 
-    if(!(stack = sk_X509_new_null())) {
+    if((stack = sk_X509_new_null())==NULL) {
         printf("memory allocation -1");
         goto end;
     }
 
-    if(!(in=BIO_new_file(certfile, "r"))) {
+    if((in=BIO_new_file(certfile, "r"))==NULL) {
         printf("error opening the file, %s", certfile);
         sk_X509_free(stack);
         goto end;
     }
 
     /* This loads from a file, a stack of x509/crl/pkey sets */
-    if(!(sk=PEM_X509_INFO_read_bio(in, NULL, NULL, NULL))) {
+    if((sk=PEM_X509_INFO_read_bio(in, NULL, NULL, NULL))==NULL) {
         printf("error reading the file, %s", certfile);
         sk_X509_free(stack);
         goto end;

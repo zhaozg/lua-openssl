@@ -42,9 +42,9 @@ static void table2data(lua_State*L, int idx,BIO* bio) {
 }
 
 int openssl_conf_load_idx(lua_State*L, int idx) {
-    long eline;
-    BIO* bio;
-    LHASH* conf;
+    long eline = -1;
+    BIO* bio = NULL;
+    LHASH* conf = NULL;
     if(lua_isstring(L,idx))
     {
         size_t l;
@@ -62,7 +62,8 @@ int openssl_conf_load_idx(lua_State*L, int idx) {
         luaL_error(L,"openssl.conf_load first paramater must be conf_context as string, table or openssl.conf object");
     }
 
-    conf = CONF_load_bio(NULL, bio, &eline);
+    if(!conf && bio)
+	    conf = CONF_load_bio(NULL, bio, &eline);
     if(!conf)
     {
         lua_pushnil(L);
@@ -95,7 +96,6 @@ LUA_FUNCTION(openssl_conf_get_number)
     LHASH* conf = CHECK_OBJECT(1,LHASH,"openssl.conf");
     const char* group = luaL_checkstring(L,2);
     const char* name = luaL_checkstring(L,3);
-    long result = 0;
     lua_pushinteger(L,CONF_get_number(conf,group,name));
     return 1;
 }
@@ -106,7 +106,6 @@ LUA_FUNCTION(openssl_conf_get_string)
     LHASH* conf = CHECK_OBJECT(1,LHASH,"openssl.conf");
     const char* group = luaL_checkstring(L,2);
     const char* name = luaL_checkstring(L,3);
-    long result = 0;
     lua_pushstring(L,CONF_get_string(conf,group,name));
 
     return 1;

@@ -177,23 +177,20 @@ static int openssl_is_private_key(EVP_PKEY* pkey)
 }
 /* }}} */
 
-#define OPENSSL_PKEY_GET_BN(bn, _name) do {				\
-	if (bn != NULL) {							\
-	int len = BN_num_bytes(bn);			\
+#define OPENSSL_PKEY_GET_BN(bn, _name)  if (bn != NULL) {	\
 	char *str = BN_bn2hex(bn);	\
 	lua_pushstring(L,str);									\
 	lua_setfield(L,-2,#_name);									\
 	OPENSSL_free(str);									\
-	}																\
-} while (0)
+}
 
-#define OPENSSL_PKEY_SET_BN(n, _type, _name) do {						\
+#define OPENSSL_PKEY_SET_BN(n, _type, _name) {						\
 	lua_getfield(L,n,#_name);											\
 	if(lua_isstring(L,-1)) {											\
-	size_t l; const char* bn = luaL_checklstring(L,-1,&l);				\
-	BN_hex2bn(&_type->_name,bn);							\
+	    size_t l; const char* bn = luaL_checklstring(L,-1,&l);				\
+	    BN_hex2bn(&_type->_name,bn);							\
 	};																	\
-	lua_pop(L,1);	} while (0)
+	lua_pop(L,1);}
 
 
 /* {{{ openssl_pkey_new([table configargs])->openssl.evp_pkey
@@ -221,7 +218,7 @@ LUA_FUNCTION(openssl_pkey_new)
        	    size_t seed_len = 0;
             const char* seed = luaL_optlstring(L,3,NULL,&seed_len);
 
-            DSA *dsa = DSA_generate_parameters(bits, (char*)seed,seed_len, NULL,  NULL, NULL, NULL);
+            DSA *dsa = DSA_generate_parameters(bits, (byte*)seed,seed_len, NULL,  NULL, NULL, NULL);
             if( !DSA_generate_key(dsa))
             {
                 DSA_free(dsa);
@@ -248,18 +245,17 @@ LUA_FUNCTION(openssl_pkey_new)
 #ifndef OPENSSL_NO_EC
         else if(strcasecmp(alg,"ec")==0)
         {
-            int bits = luaL_optint(L,2,1024);
             int ec_name = 0;
             EC_KEY *ec = NULL;
             EC_GROUP *group = NULL;
 
-            if (lua_isnumber(L, 3)) {
-                ec_name = luaL_checkint(L, 3);
-            } else if(lua_isstring(L, 3)) {
-                const char* name = luaL_checkstring(L, 3);
+            if (lua_isnumber(L, 2)) {
+                ec_name = luaL_checkint(L, 2);
+            } else if(lua_isstring(L, 2)) {
+                const char* name = luaL_checkstring(L,2);
                 ec_name = OBJ_sn2nid(name);
             } else {
-                luaL_typerror(L, 3, "must be a number or string name");
+                luaL_typerror(L, 2, "must be a number or string name");
             }
 
             ec = EC_KEY_new();
@@ -502,7 +498,7 @@ static int openssl_put_ec_group(lua_State*L, EC_GROUP* group)
     lua_pushinteger(L,group->asn1_form);
     lua_setfield(L, -2, "asn1_form");
 
-    lua_pushlstring(L,group->seed,group->seed_len);
+    lua_pushlstring(L,(const char*)group->seed,group->seed_len);
     lua_setfield(L,-2,"seed");
 
     OPENSSL_PKEY_GET_BN(&group->field, field);
@@ -616,7 +612,6 @@ LUA_FUNCTION(openssl_pkey_parse)
         if(pkey->pkey.ec != NULL)
         {
             struct ec_key_st* ec = pkey->pkey.ec;
-            EC_GROUP* group = ec->group;
             EC_POINT* point = ec->pub_key;
             lua_newtable(L);
 
@@ -688,7 +683,6 @@ LUA_FUNCTION(openssl_pkey_encrypt)
     int clen = EVP_PKEY_size(pkey);
     int private = openssl_is_private_key(pkey);
     luaL_Buffer buf;
-    int ret = 0;
 
     luaL_buffinit(L, &buf);
 
@@ -698,7 +692,7 @@ LUA_FUNCTION(openssl_pkey_encrypt)
         if(private) {
             if((RSA_private_encrypt(dlen,
                                     (unsigned char *)data,
-                                    luaL_prepbuffer(&buf),
+                                    (byte*)luaL_prepbuffer(&buf),
                                     pkey->pkey.rsa,
                                     padding) == clen))
             {
@@ -710,7 +704,7 @@ LUA_FUNCTION(openssl_pkey_encrypt)
         {
             if(RSA_public_encrypt(dlen,
                                   (unsigned char *)data,
-                                  luaL_prepbuffer(&buf),
+                                  (byte*)luaL_prepbuffer(&buf),
                                   pkey->pkey.rsa,
                                   padding) == clen)
             {
@@ -736,7 +730,6 @@ LUA_FUNCTION(openssl_pkey_decrypt)
     EVP_PKEY *pkey = CHECK_OBJECT(1,EVP_PKEY,"openssl.evp_pkey");
     const char *data = luaL_checklstring(L,2,&dlen);
     int padding = get_padding(luaL_optstring(L,3,"pkcs1"));
-    int mlen = EVP_PKEY_size(pkey);
     int private = openssl_is_private_key(pkey);
     luaL_Buffer buf;
     int ret = 0;
@@ -749,7 +742,7 @@ LUA_FUNCTION(openssl_pkey_decrypt)
         {
             ret = RSA_private_decrypt(dlen,
                                       (unsigned char *)data,
-                                      luaL_prepbuffer(&buf),
+                                      (byte*)luaL_prepbuffer(&buf),
                                       pkey->pkey.rsa,
                                       padding);
             if (ret != -1) {
@@ -761,7 +754,7 @@ LUA_FUNCTION(openssl_pkey_decrypt)
         {
             ret = RSA_public_decrypt(dlen,
                                      (unsigned char *)data,
-                                     luaL_prepbuffer(&buf),
+                                     (byte*)luaL_prepbuffer(&buf),
                                      pkey->pkey.rsa,
                                      padding);
             if (ret != -1) {

@@ -44,7 +44,7 @@ STACK_OF(TYPE)* sk_##type##_fromtable(lua_State*L, int idx) { \
 
 #define SK2TAB(TYPE,type)  int _sk_##type##_totable(lua_State* L, STACK_OF(TYPE) *sk)  { \
 	int i=0, n=0;  \
-    lua_newtable(L); \
+	lua_newtable(L); \
 	n = SKM_sk_num(TYPE, sk); \
 	for(i=0;i<n;i++) { \
 		TYPE *x =  SKM_sk_value(TYPE, sk, i); \
@@ -99,7 +99,7 @@ STACK_OF(TYPE)* sk_##type##_fromtable(lua_State*L, int idx) { \
 #define SK_DELETE(TYPE, type) static int sk_##type##_delete(lua_State*L) { \
 	STACK_OF(TYPE) * st = CHECK_OBJECT(1, STACK_OF(TYPE), "openssl.stack_of_"#type); \
 	int i = luaL_checkint(L,2);	\
-	TYPE* val = sk_X509_delete(st,i); \
+	sk_X509_delete(st,i); \
 	PUSH_OBJECT(st,"openssl."#type); \
 	return 1;  \
 }

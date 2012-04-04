@@ -116,7 +116,7 @@ time_t asn1_time_to_time_t(ASN1_UTCTIME * timestr) /* {{{ */
 
 /* }}} */
 
-void add_assoc_name_entry(lua_State*L,const  char * key,const X509_NAME * name, int shortname) /* {{{ */
+void add_assoc_name_entry(lua_State*L,const  char * key, X509_NAME * name, int shortname) /* {{{ */
 {
     int i, j = -1, last = -1, obj_cnt = 0;
     char *sname;
@@ -134,8 +134,8 @@ void add_assoc_name_entry(lua_State*L,const  char * key,const X509_NAME * name, 
     OPENSSL_free(p);
 
     for (i = 0; i < X509_NAME_entry_count(name); i++) {
-        unsigned char *to_add;
-        int to_add_len;
+        unsigned char *to_add = NULL;
+        int to_add_len = -1;
         int tindex = 0;
         //int utf8 = 0;
 
@@ -244,9 +244,9 @@ int openssl_object_create(lua_State* L)
             lua_pop(L,1);
         }
         lua_pushboolean(L,1);
-        return 1;
+        ret = 1;
     }
-    return 0;
+    return ret;
 }
 /* }}} */
 
@@ -272,7 +272,7 @@ LUA_FUNCTION(openssl_random_bytes)
     long length = luaL_checkint(L,1);
     int strong = lua_isnil(L,2) ? 0 : lua_toboolean(L,2);
 
-    unsigned char *buffer = NULL;
+    char *buffer = NULL;
     int ret = 0;
 
     if (length <= 0) {
@@ -286,7 +286,7 @@ LUA_FUNCTION(openssl_random_bytes)
 #endif
     if (strong)
     {
-        ret = RAND_bytes(buffer,length);
+        ret = RAND_bytes((byte*)buffer,length);
         if(ret) {
             lua_pushlstring(L, buffer, length);
             lua_pushboolean(L, 1);
@@ -297,7 +297,7 @@ LUA_FUNCTION(openssl_random_bytes)
         }
     }
     else {
-        ret = RAND_pseudo_bytes(buffer, length);
+        ret = RAND_pseudo_bytes((byte*)buffer, length);
         if(ret>=0) {
             lua_pushlstring(L, buffer, length);
             lua_pushboolean(L, ret);
@@ -325,7 +325,7 @@ LUA_FUNCTION(openssl_x509_algo_parse) {
 
 LUA_FUNCTION(openssl_x509_algo_tostring) {
     X509_ALGOR *algo = CHECK_OBJECT(1,X509_ALGOR,"openssl.x509_algor");
-    lua_pushfstring(L,"openssl.x509_algor:%p");
+    lua_pushfstring(L,"openssl.x509_algor:%p",algo);
     return 1;
 }
 
@@ -340,7 +340,7 @@ LUA_FUNCTION(openssl_x509_extension_parse) {
     BIO_free(bio);
     {
         ASN1_OCTET_STRING *os = ext->value;
-        lua_pushlstring(L,os->data, os->length);
+        lua_pushlstring(L,(const char*)os->data, os->length);
         lua_setfield(L,-2,"value");
     }
     return 1;
@@ -348,7 +348,7 @@ LUA_FUNCTION(openssl_x509_extension_parse) {
 
 LUA_FUNCTION(openssl_x509_extension_tostring) {
     X509_EXTENSION *ext = CHECK_OBJECT(1,X509_EXTENSION,"openssl.x509_extension");
-    lua_pushfstring(L,"openssl.x509_extension:%p");
+    lua_pushfstring(L,"openssl.x509_extension:%p",ext);
     return 1;
 }
 

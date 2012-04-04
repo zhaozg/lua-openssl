@@ -328,7 +328,7 @@ LUA_FUNCTION(openssl_crl_parse) {
     X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
     int useshortnames = lua_isnoneornil(L,2)?0:lua_toboolean(L,2);
     BIO* bio = BIO_new(BIO_s_mem());
-    int i;
+    int i,n;
     ASN1_INTEGER *crlnum;
 
     lua_newtable(L);
@@ -342,27 +342,25 @@ LUA_FUNCTION(openssl_crl_parse) {
         lua_pushstring(L,buf);
         lua_setfield(L,-2,"hash");
     }
-#if 0
+#if 1
     {
+	const EVP_MD *digest = EVP_get_digestbyname("SHA1");
         unsigned char md[EVP_MAX_MD_SIZE];
+	n = sizeof(md);
 
-        if (!X509_CRL_digest(crl,digest,md,&n))
+        if (X509_CRL_digest(crl,digest,md,(unsigned int*)&n))
         {
-            BIO_printf(bio_err,"out of memory\n");
-            goto end;
-        }
-        BIO_printf(bio_out,"%s Fingerprint=",
-                   OBJ_nid2sn(EVP_MD_type(digest)));
-        for (j=0; j<(int)n; j++)
-        {
-            BIO_printf(bio_out,"%02X%c",md[j],
-                       (j+1 == (int)n)
-                       ?'\n':':');
+		lua_newtable(L);
+		lua_pushstring(L, OBJ_nid2sn(EVP_MD_type(digest)));
+		lua_setfield(L,-2,"alg");
+		lua_pushlstring(L,(const char*)md,n);
+		lua_setfield(L,-2,"hash");
+		lua_setfield(L,-2,"fingerprint");
         }
     }
 #endif
 
-    add_assoc_name_entry(L, "issuer", 	X509_CRL_get_issuer(crl), 0);
+    add_assoc_name_entry(L, "issuer", 	X509_CRL_get_issuer(crl), useshortnames);
 
     ADD_ASSOC_ASN1_TIME(bio, X509_CRL_get_lastUpdate(crl), "lastUpdate");
     ADD_ASSOC_ASN1_TIME(bio, X509_CRL_get_nextUpdate(crl), "nextUpdate");
@@ -380,9 +378,7 @@ LUA_FUNCTION(openssl_crl_parse) {
 
     add_assoc_x509_extension(L, "extensions", crl->crl->extensions, bio);
 
-    {
-        int n = sk_X509_REVOKED_num(crl->crl->revoked);
-        int i;
+        n = sk_X509_REVOKED_num(crl->crl->revoked);
         lua_newtable(L);
         for (i=0; i<n; i++)
         {
@@ -412,7 +408,7 @@ LUA_FUNCTION(openssl_crl_parse) {
         }
 
         lua_setfield(L,-2, "revoked");
-    }
+
     BIO_free(bio);
 
     return 1;

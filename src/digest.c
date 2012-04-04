@@ -145,10 +145,10 @@ LUA_FUNCTION(openssl_evp_digest_update)
 LUA_FUNCTION(openssl_evp_digest_final)
 {
     EVP_MD_CTX* c = CHECK_OBJECT(1,EVP_MD_CTX, "openssl.evp_digest_ctx");
-    int outl = EVP_MAX_MD_SIZE;
+    unsigned int outl = EVP_MAX_MD_SIZE;
     char out[EVP_MAX_MD_SIZE];
 
-    if(EVP_DigestFinal_ex(c,out,&outl) && outl)
+    if(EVP_DigestFinal_ex(c,(byte*)out,&outl) && outl)
     {
         lua_pushlstring(L,out,outl);
         return 1;

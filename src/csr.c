@@ -49,7 +49,7 @@ static X509_EXTENSION *do_ext_i2d(const X509V3_EXT_METHOD *method, int ext_nid,
                                   int crit, void *ext_struc)
 {
     unsigned char *ext_der;
-    int ext_len;
+    int ext_len = 0;
     ASN1_OCTET_STRING *ext_oct;
     X509_EXTENSION *ext;
     /* Convert internal representation to DER */
@@ -63,11 +63,11 @@ static X509_EXTENSION *do_ext_i2d(const X509V3_EXT_METHOD *method, int ext_nid,
     {
         unsigned char *p;
         ext_len = method->i2d(ext_struc, NULL);
-        if(!(ext_der = OPENSSL_malloc(ext_len))) goto merr;
+        if((ext_der = OPENSSL_malloc(ext_len))==NULL) goto merr;
         p = ext_der;
         method->i2d(ext_struc, &p);
     }
-    if (!(ext_oct = M_ASN1_OCTET_STRING_new())) goto merr;
+    if ((ext_oct = M_ASN1_OCTET_STRING_new())==NULL) goto merr;
     ext_oct->data = ext_der;
     ext_oct->length = ext_len;
 
@@ -136,7 +136,7 @@ static X509_EXTENSION *v3_generic_extension(ASN1_OBJECT *obj, char *value,
         X509V3_CTX *ctx)
 {
     unsigned char *ext_der=NULL;
-    long ext_len;
+    long ext_len = 0;
     ASN1_OCTET_STRING *oct=NULL;
     X509_EXTENSION *extension=NULL;
 
@@ -152,7 +152,7 @@ static X509_EXTENSION *v3_generic_extension(ASN1_OBJECT *obj, char *value,
         goto err;
     }
 
-    if (!(oct = M_ASN1_OCTET_STRING_new()))
+    if ((oct = M_ASN1_OCTET_STRING_new())==NULL)
     {
         X509V3err(X509V3_F_V3_GENERIC_EXTENSION,ERR_R_MALLOC_FAILURE);
         goto err;
@@ -188,7 +188,7 @@ static X509_EXTENSION *do_ext_nconf(X509V3_CTX *ctx, int ext_nid,
         X509V3err(X509V3_F_DO_EXT_NCONF,X509V3_R_UNKNOWN_EXTENSION_NAME);
         return NULL;
     }
-    if (!(method = X509V3_EXT_get_nid(ext_nid)))
+    if ((method = X509V3_EXT_get_nid(ext_nid))==NULL)
     {
         X509V3err(X509V3_F_DO_EXT_NCONF,X509V3_R_UNKNOWN_EXTENSION);
         return NULL;
@@ -209,7 +209,7 @@ static X509_EXTENSION *do_ext_nconf(X509V3_CTX *ctx, int ext_nid,
     }
     else if(method->s2i)
     {
-        if(!(ext_struc = method->s2i(method, ctx, value))) return NULL;
+        if((ext_struc = method->s2i(method, ctx, value))==NULL) return NULL;
     }
     else if(method->r2i)
     {
@@ -218,7 +218,7 @@ static X509_EXTENSION *do_ext_nconf(X509V3_CTX *ctx, int ext_nid,
             X509V3err(X509V3_F_DO_EXT_NCONF,X509V3_R_NO_CONFIG_DATABASE);
             return NULL;
         }
-        if(!(ext_struc = method->r2i(method, ctx, value))) return NULL;
+        if((ext_struc = method->r2i(method, ctx, value))==NULL) return NULL;
     }
     else
     {
@@ -292,7 +292,7 @@ static int openssl_make_REQ(lua_State*L,
                 if (strindex) {
                     int nid = OBJ_txt2nid(strindex);
                     if (nid != NID_undef) {
-                        if (!X509_REQ_add1_attr_by_NID(csr,nid,MBSTRING_ASC,(const unsigned char*)val,vall)) {
+                        if (!X509_REQ_add1_attr_by_NID(csr,nid,MBSTRING_ASC,(const byte*)val,vall)) {
                             luaL_error(L, "attribs: X509_REQ_add1_attr %s -> %s (failed)", strindex, val);
                             return -1;
                         }
@@ -443,7 +443,6 @@ int openssl_conf_load_idx(lua_State*L, int idx);
    Signs a cert with another CERT */
 LUA_FUNCTION(openssl_csr_sign)
 {
-    long serial = 0L;
     X509 * cert = NULL, *new_cert = NULL;
     X509_REQ * csr;
     BIGNUM *bn = NULL;
@@ -475,6 +474,7 @@ LUA_FUNCTION(openssl_csr_sign)
     } else if(!lua_isnoneornil(L, -1))
         luaL_error(L, "paramater #4 if have digest key, it's value must be string type or openssl.evp_digest object");
 
+    num_days = 365;
     lua_getfield(L,4, "num_days");
     if(lua_isnoneornil(L,-1))
         luaL_error(L, "paramater #4 must have num_days key and value must be number");
@@ -689,7 +689,6 @@ LUA_FUNCTION(openssl_csr_parse)
     STACK_OF(X509_ATTRIBUTE) *attrs = csr->req_info->attributes;
     BIO* out = BIO_new(BIO_s_mem());
     char *name = NULL;
-    BUF_MEM *buf = NULL;
 
     lua_newtable(L);
     add_assoc_int(L,"version",ASN1_INTEGER_get(csr->req_info->version));
@@ -746,7 +745,7 @@ LUA_FUNCTION(openssl_csr_parse)
             {
                 lua_pushinteger(L,attr->value.single->type);
                 lua_setfield(L,-2,"type");
-                lua_pushlstring(L,attr->value.single->value.bit_string->data,attr->value.single->value.bit_string->length);
+                lua_pushlstring(L,(const char *)attr->value.single->value.bit_string->data,attr->value.single->value.bit_string->length);
                 lua_setfield(L,-2,"bit_string");
             } else
             {
@@ -764,7 +763,7 @@ LUA_FUNCTION(openssl_csr_parse)
                     {
 #if OPENSSL_VERSION_NUMBER > 0x10000000L
                         char *value = OPENSSL_uni2asc(av->value.bmpstring->data,av->value.bmpstring->length);
-                        add_assoc_string(L, name?name:"bmpstring", value,1);
+                        add_assoc_string(L, name?name:"bmpstring", value);
                         OPENSSL_free(value);
 #else
                         lua_pushlstring(L,av->value.bmpstring->data,av->value.bmpstring->length);
@@ -774,12 +773,12 @@ LUA_FUNCTION(openssl_csr_parse)
                     break;
 
                     case V_ASN1_OCTET_STRING:
-                        lua_pushlstring(L, av->value.octet_string->data, av->value.octet_string->length);
+                        lua_pushlstring(L, (const char *)av->value.octet_string->data, av->value.octet_string->length);
                         lua_setfield(L, -2, name?name:"octet_string");
                         break;
 
                     case V_ASN1_BIT_STRING:
-                        lua_pushlstring(L, av->value.bit_string->data, av->value.bit_string->length);
+                        lua_pushlstring(L, (const char *)av->value.bit_string->data, av->value.bit_string->length);
                         lua_setfield(L, -2, name?name:"bit_string");
                         break;
 
@@ -793,7 +792,7 @@ LUA_FUNCTION(openssl_csr_parse)
                             unsigned char* dat = NULL;
                             int i = i2d_ASN1_TYPE(av,&dat);
                             if(i>0) {
-                                lua_pushlstring(L,dat,i);
+                                lua_pushlstring(L,(const char *)dat,i);
                                 OPENSSL_free(dat);
                             } else
                                 lua_pushnil(L);

@@ -118,7 +118,7 @@ LUA_FUNCTION(openssl_evp_encrypt_init)
     PUSH_OBJECT(ctx,"openssl.evp_cipher_ctx");
     EVP_CIPHER_CTX_init(ctx);
 
-    if (!EVP_EncryptInit_ex(ctx,c,e, (const unsigned char*)k, (const unsigned char*)iv)) {
+    if (!EVP_EncryptInit_ex(ctx,c,e, (const byte*)k, (const byte*)iv)) {
         luaL_error(L,"EVP_EncryptInit failed");
     }
     return 1;
@@ -135,7 +135,7 @@ LUA_FUNCTION(openssl_evp_encrypt_update)
     int outl = inl+EVP_MAX_BLOCK_LENGTH;
     unsigned char* out = malloc(outl);
 
-    if(EVP_EncryptUpdate(c,out,&outl,(const unsigned char*)in,inl))
+    if(EVP_EncryptUpdate(c,out,&outl,(const byte*)in,inl))
     {
         lua_pushlstring(L,(const char*)out,outl);
         free(out);
@@ -180,7 +180,7 @@ LUA_FUNCTION(openssl_evp_decrypt_init)
     PUSH_OBJECT(ctx,"openssl.evp_cipher_ctx");
     EVP_CIPHER_CTX_init(ctx);
 
-    if (!EVP_DecryptInit_ex(ctx,c,e, (const unsigned char*)k, (const unsigned char*)iv)) {
+    if (!EVP_DecryptInit_ex(ctx,c,e, (const byte*)k, (const byte*)iv)) {
         luaL_error(L,"EVP_DecryptInit_ex failed");
     }
     return 1;
@@ -197,7 +197,7 @@ LUA_FUNCTION(openssl_evp_decrypt_update)
     int outl = inl+EVP_MAX_BLOCK_LENGTH;
     char* out = malloc(outl);
 
-    if(EVP_DecryptUpdate(c,out,&outl,in,inl))
+    if(EVP_DecryptUpdate(c,(byte*)out,&outl,(const byte*)in,inl))
     {
         lua_pushlstring(L,out,outl);
         free(out);
@@ -216,7 +216,7 @@ LUA_FUNCTION(openssl_evp_decrypt_final)
     int outl = EVP_MAX_BLOCK_LENGTH;
     char out[EVP_MAX_BLOCK_LENGTH];
 
-    if(EVP_DecryptFinal_ex(c,out,&outl) && outl)
+    if(EVP_DecryptFinal_ex(c,(byte*)out,&outl) && outl)
     {
         lua_pushlstring(L,out,outl);
         return 1;
@@ -243,7 +243,7 @@ LUA_FUNCTION(openssl_evp_cipher_init)
     PUSH_OBJECT(ctx,"openssl.evp_cipher_ctx");
     EVP_CIPHER_CTX_init(ctx);
 
-    if (!EVP_CipherInit_ex(ctx,c,e, k, iv,enc)) {
+    if (!EVP_CipherInit_ex(ctx,c,e, (const byte*)k, (const byte*)iv,enc)) {
         luaL_error(L,"EVP_DecryptInit_ex failed");
     }
     return 1;
@@ -261,7 +261,7 @@ LUA_FUNCTION(openssl_evp_cipher_update)
     char* out = malloc(outl);
 
 
-    if(EVP_CipherUpdate(c,out,&outl,in,inl))
+    if(EVP_CipherUpdate(c,(byte*)out,&outl,(const byte*)in,inl))
     {
         lua_pushlstring(L,out,outl);
         free(out);
@@ -280,7 +280,7 @@ LUA_FUNCTION(openssl_evp_cipher_final)
     int outl = EVP_MAX_BLOCK_LENGTH;
     char out[EVP_MAX_BLOCK_LENGTH];
 
-    if(EVP_CipherFinal_ex(c,out,&outl) && outl)
+    if(EVP_CipherFinal_ex(c,(byte*)out,&outl) && outl)
     {
         lua_pushlstring(L,out,outl);
         return 1;
@@ -336,9 +336,9 @@ LUA_FUNCTION(openssl_evp_encrypt) {
 
     int output_len = 0;
     int len = 0;
-    unsigned char *buffer = NULL;
-    unsigned char evp_key[EVP_MAX_KEY_LENGTH] = {0};
-    unsigned char evp_iv[EVP_MAX_IV_LENGTH] = {0};
+    char *buffer = NULL;
+    char evp_key[EVP_MAX_KEY_LENGTH] = {0};
+    char evp_iv[EVP_MAX_IV_LENGTH] = {0};
 
     if (key)
     {
@@ -353,14 +353,14 @@ LUA_FUNCTION(openssl_evp_encrypt) {
 
     EVP_CIPHER_CTX_init(&c);
 
-    if(!EVP_EncryptInit_ex(&c, cipher, e, key?evp_key:NULL, iv?evp_iv:NULL ))
+    if(!EVP_EncryptInit_ex(&c, cipher, e, key?(const byte*)evp_key:NULL, iv?(const byte*)evp_iv:NULL ))
     {
         luaL_error(L, "EVP_DecryptInit_ex failed, please check openssl error");
     }
     buffer = malloc(input_len + EVP_CIPHER_CTX_block_size(&c));
-    EVP_EncryptUpdate(&c, buffer, &len, input, input_len);
+    EVP_EncryptUpdate(&c,(byte*) buffer, &len, (const byte*)input, input_len);
     output_len += len;
-    EVP_EncryptFinal(&c, buffer+len, &len);
+    EVP_EncryptFinal(&c, (byte*)buffer+len, &len);
     output_len += len;
     lua_pushlstring(L, (char*) buffer, output_len);
     EVP_CIPHER_CTX_cleanup(&c);
@@ -381,9 +381,9 @@ LUA_FUNCTION(openssl_evp_decrypt) {
 
     int output_len = 0;
     int len = 0;
-    unsigned char *buffer = NULL;
-    unsigned char evp_key[EVP_MAX_KEY_LENGTH] = {0};
-    unsigned char evp_iv[EVP_MAX_IV_LENGTH] = {0};
+    char *buffer = NULL;
+    char evp_key[EVP_MAX_KEY_LENGTH] = {0};
+    char evp_iv[EVP_MAX_IV_LENGTH] = {0};
     if (key)
     {
         key_len = EVP_MAX_KEY_LENGTH>key_len?key_len:EVP_MAX_KEY_LENGTH;
@@ -397,15 +397,15 @@ LUA_FUNCTION(openssl_evp_decrypt) {
 
     EVP_CIPHER_CTX_init(&c);
 
-    if(!EVP_DecryptInit_ex(&c, cipher, e, key?evp_key:NULL, iv?evp_iv:NULL ))
+    if(!EVP_DecryptInit_ex(&c, cipher, e, key?(const byte*)evp_key:NULL, iv?(const byte*)evp_iv:NULL ))
     {
         luaL_error(L, "EVP_DecryptInit_ex failed, please check openssl error");
     }
 
     buffer = malloc(input_len);
-    EVP_DecryptUpdate(&c, buffer, &len, input, input_len);
+    EVP_DecryptUpdate(&c, (byte*)buffer, &len, (const byte*)input, input_len);
     output_len += len;
-    EVP_DecryptFinal(&c, buffer+len, &len);
+    EVP_DecryptFinal(&c, (byte*)buffer+len, &len);
     output_len += len;
     lua_pushlstring(L, (char*) buffer, output_len);
     EVP_CIPHER_CTX_cleanup(&c);

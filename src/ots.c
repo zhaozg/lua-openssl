@@ -420,7 +420,7 @@ LUA_FUNCTION(openssl_ts_req_parse) {
     lua_newtable(L);
     {
         ASN1_OCTET_STRING *os = req->msg_imprint->hashed_msg;
-        lua_pushlstring(L,os->data, os->length);
+        lua_pushlstring(L,(const char*)os->data, os->length);
         lua_setfield(L,-2,"content");
 
         PUSH_OBJECT(req->msg_imprint->hash_algo,"openssl.x509_algor");
@@ -460,9 +460,9 @@ LUA_FUNCTION(openssl_ts_req_i2d) {
 
 LUA_FUNCTION(openssl_ts_req_d2i) {
     size_t l;
-    const unsigned char* buf = luaL_checklstring(L,1,&l);
+    const char* buf = luaL_checklstring(L,1,&l);
 
-    TS_REQ *req = d2i_TS_REQ(NULL,&buf,l);
+    TS_REQ *req = d2i_TS_REQ(NULL,(const byte**)&buf,l);
     PUSH_OBJECT(req,"openssl.ts_req");
     return 1;
 }
@@ -500,7 +500,7 @@ LUA_FUNCTION(openssl_ts_resp_parse) {
 
         ADD_ASSOC_ASN1(ASN1_INTEGER,bio,res->status_info->status,"status");
         if(res->status_info->failure_info) {
-            lua_pushlstring(L,res->status_info->failure_info->data,res->status_info->failure_info->length);
+            lua_pushlstring(L,(const char*)res->status_info->failure_info->data,res->status_info->failure_info->length);
             lua_setfield(L,-2,"failure_info");
         }
 
@@ -512,7 +512,7 @@ LUA_FUNCTION(openssl_ts_resp_parse) {
             n = SKM_sk_num(ASN1_UTF8STRING, sk);
             for(i=0; i<n; i++) {
                 ASN1_UTF8STRING *x =  SKM_sk_value(ASN1_UTF8STRING, sk, i);
-                lua_pushlstring(L,x->data,x->length);
+                lua_pushlstring(L,(const char*)x->data,x->length);
                 lua_rawseti(L,-2, i+1);
             }
             lua_setfield(L,-2,"text");
@@ -547,7 +547,7 @@ LUA_FUNCTION(openssl_ts_resp_parse) {
             ASN1_OCTET_STRING *os = info->msg_imprint->hashed_msg;
             lua_newtable(L);
 
-            lua_pushlstring(L,os->data, os->length);
+            lua_pushlstring(L,(const char*)os->data, os->length);
             lua_setfield(L,-2,"content");
 
             PUSH_OBJECT(info->msg_imprint->hash_algo,"openssl.x509_algor");
@@ -584,9 +584,9 @@ LUA_FUNCTION(openssl_ts_resp_parse) {
 
 LUA_FUNCTION(openssl_ts_resp_d2i) {
     size_t l;
-    const unsigned char* buf = luaL_checklstring(L,1,&l);
+    const char* buf = luaL_checklstring(L,1,&l);
 
-    TS_RESP *res = d2i_TS_RESP(NULL,&buf,l);
+    TS_RESP *res = d2i_TS_RESP(NULL,(const byte**)&buf,l);
     PUSH_OBJECT(res,"openssl.ts_resp");
     return 1;
 }
