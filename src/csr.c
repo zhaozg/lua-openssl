@@ -446,40 +446,60 @@ LUA_FUNCTION(openssl_csr_sign)
     X509 * cert = NULL, *new_cert = NULL;
     X509_REQ * csr;
     BIGNUM *bn = NULL;
+    const EVP_MD* md = NULL;
     EVP_PKEY * key = NULL, *priv_key = NULL;
     int i;
     int ret = 0;
-    int dn, digest, num_days;
+    int dn, digest, num_days,version,extension;
+    const char* group;
+
+    dn = digest = extension = 0;
+    version = 2;
+    num_days = 365;
 
     csr = CHECK_OBJECT(1,X509_REQ,"openssl.x509_req");
     cert = lua_isnil(L,2) ? NULL: CHECK_OBJECT(2,X509,"openssl.x509");
     priv_key = CHECK_OBJECT(3,EVP_PKEY,"openssl.evp_pkey");
-
     luaL_checktype(L,4,LUA_TTABLE);
-    dn = digest = 0;
+    group = luaL_optstring(L, 5, NULL);
 
-    lua_getfield(L, 4, "serialNumber");
-    if(lua_isnil(L,-1))
-        luaL_error(L,"paramater #4 must have serialNumber key and value must be string or number type");
-
-    BN_dec2bn(&bn,lua_tostring(L,-1));
-    BN_set_negative(bn,0);
-    lua_pop(L, 1);
-
-
-    lua_getfield(L, 4, "digest");
-    if(lua_isstring(L, -1) || auxiliar_isclass(L,"openssl.evp_digest", -1))
     {
-        digest = lua_gettop(L);
-    } else if(!lua_isnoneornil(L, -1))
-        luaL_error(L, "paramater #4 if have digest key, it's value must be string type or openssl.evp_digest object");
+	    lua_getfield(L, 4, "serialNumber");
+	    if(lua_isnil(L,-1))
+		    luaL_error(L,"paramater #4 must have serialNumber key and value must be string or number type");
 
-    num_days = 365;
-    lua_getfield(L,4, "num_days");
-    if(lua_isnoneornil(L,-1))
-        luaL_error(L, "paramater #4 must have num_days key and value must be number");
-    else
-        num_days = luaL_checkint(L, -1);
+	    BN_dec2bn(&bn,lua_tostring(L,-1));
+	    BN_set_negative(bn,0);
+	    lua_pop(L, 1);
+
+	    lua_getfield(L, 4, "digest");
+	    if(lua_isstring(L, -1) || auxiliar_isclass(L,"openssl.evp_digest", -1))
+	    {
+		    digest = lua_gettop(L);
+	    } else if(!lua_isnoneornil(L, -1))
+		    luaL_error(L, "paramater #4 if have digest key, it's value must be string type or openssl.evp_digest object");
+
+	    lua_getfield(L,4, "num_days");
+	    if(!lua_isnoneornil(L,-1))
+		    num_days = luaL_checkint(L, -1);
+
+	    lua_getfield(L, 4,"version");
+	    if (lua_isnil(L,-1)) {
+		    version = 2;
+	    } else {
+		    version = lua_tointeger(L,-1);
+	    }
+	    lua_pop(L,1);
+
+	    lua_getfield(L, 4, "extentions");
+	    if ( !lua_isnil (L, -1) ) {
+		    luaL_checktype(L,-1,LUA_TTABLE);
+		    extension = lua_gettop(L);
+	    }
+	    else 
+		    lua_pop(L,1);
+    }
+
 
     if (cert && !X509_check_private_key(cert, priv_key)) {
         luaL_error(L,"private key does not correspond to signing cert");
@@ -509,17 +529,10 @@ LUA_FUNCTION(openssl_csr_sign)
         luaL_error(L, "No memory");
         goto cleanup;
     }
-    /* 2) */
+
     /* Version 3 cert */
-    lua_getfield(L, 4,"version");
-    if (lua_isnil(L,-1)) {
-        if (!X509_set_version(new_cert, 2))
-            goto cleanup;
-    } else {
-        if (!X509_set_version(new_cert, lua_tointeger(L,-1)))
-            goto cleanup;
-    }
-    lua_pop(L,1);
+    if (!X509_set_version(new_cert, lua_tointeger(L,-1)))
+	    goto cleanup;
 
     /* 3) */
     X509_set_serialNumber(new_cert, BN_to_ASN1_INTEGER(bn,X509_get_serialNumber(new_cert)));
@@ -546,54 +559,51 @@ LUA_FUNCTION(openssl_csr_sign)
         goto cleanup;
     }
 
-    lua_getfield(L, 4, "extentions");
-    if ( lua_isnil (L, -1) ) {
+    if(extension && group)
+    {
+	    X509V3_CTX ctx;
+	    LHASH* conf = NULL;
+
+	    X509V3_set_ctx(&ctx, cert, new_cert, csr, NULL, 0);
+
+	    if(openssl_conf_load_idx(L,extension)==1)
+	    {
+		    conf = CHECK_OBJECT(-1,LHASH,"openssl.conf");
+		    lua_pop(L,1);
+	    } else
+	    {
+		    luaL_error(L,"load openssl config object failed");
+	    }
+
+	    X509V3_set_conf_lhash(&ctx, conf);
+	    if (!X509V3_EXT_add_conf(conf, &ctx, (char*)group, new_cert))
+	    {
+		    goto cleanup;
+	    }
+    }else
         new_cert->cert_info->extensions = X509_REQ_get_extensions(csr);
-    }
-    else {
-        X509V3_CTX ctx;
-        LHASH* conf = NULL;
-        const char* group = luaL_checkstring(L, 5);
-
-        X509V3_set_ctx(&ctx, cert, new_cert, csr, NULL, 0);
-
-        if(openssl_conf_load_idx(L,-1)==1)
-        {
-            conf = CHECK_OBJECT(-1,LHASH,"openssl.conf");
-            lua_pop(L,1);
-        } else
-        {
-            luaL_error(L,"load openssl config object failed");
-        }
-
-        X509V3_set_conf_lhash(&ctx, conf);
-        if (!X509V3_EXT_add_conf(conf, &ctx, (char*)group, new_cert))
-        {
-            goto cleanup;
-        }
-
-    }
-    lua_pop(L,1);
 
     /* Now sign it */
+
+    if(digest)
     {
-        const EVP_MD* md = NULL;
-        if (lua_isuserdata(L,digest)) {
-            md = CHECK_OBJECT(digest,EVP_MD,"openssl.evp_digest");
-        }
-        else if(lua_isstring(L,digest)) {
-            md = EVP_get_digestbyname(luaL_checkstring(L,digest));
-            if(!md) luaL_error(L,"EVP_get_digestbyname(%s) failed",luaL_checkstring(L,digest));
-        } else
-            md = EVP_get_digestbyname("sha1WithRSAEncryption");
-
-
-        if (!X509_sign(new_cert, priv_key, md)) {
-            luaL_error(L,"failed to sign it");
-            goto cleanup;
-        }
+	    if (lua_isuserdata(L,digest)) {
+		    md = CHECK_OBJECT(digest,EVP_MD,"openssl.evp_digest");
+	    }
+	    else if(lua_isstring(L,digest)) {
+		    md = EVP_get_digestbyname(luaL_checkstring(L,digest));
+		    if(!md) luaL_error(L,"EVP_get_digestbyname(%s) failed",luaL_checkstring(L,digest));
+	    } 
 
     }
+    if(!md)
+            md = EVP_get_digestbyname("sha1WithRSAEncryption");
+
+    if (!X509_sign(new_cert, priv_key, md)) {
+	    luaL_error(L,"failed to sign it");
+	    goto cleanup;
+    }
+
 
     /* Succeeded; lets return the cert */
     PUSH_OBJECT(new_cert,"openssl.x509");
@@ -621,49 +631,51 @@ LUA_FUNCTION(openssl_csr_new)
     int dn, attribs, extentions, digest;
 
     luaL_checktype(L, 2, LUA_TTABLE);
-    luaL_checktype(L, 3, LUA_TTABLE);
     dn = 2;
     attribs = extentions = digest = 0;
-
-    lua_getfield(L,3, "digest");
-    if(lua_isstring(L, -1) || auxiliar_isclass(L,"openssl.evp_digest", -1))
+    if(!lua_isnoneornil(L,3))
     {
-        digest = lua_gettop(L);
-    } else if(!lua_isnoneornil(L, -1))
-        luaL_error(L, "paramater #3 if have digest key, it's value must be string type or openssl.evp_digest object");
+	    luaL_checktype(L, 3, LUA_TTABLE);
+	    lua_getfield(L,3, "digest");
+	    if(lua_isstring(L, -1) || auxiliar_isclass(L,"openssl.evp_digest", -1))
+	    {
+		    digest = lua_gettop(L);
+	    } else if(!lua_isnoneornil(L, -1))
+		    luaL_error(L, "paramater #3 if have digest key, it's value must be string type or openssl.evp_digest object");
 
+	    lua_getfield(L,3,"attribs");
+	    if (lua_isnil(L,-1)) {
+		    lua_pop(L,1);
+	    } else {
+		    luaL_checktype(L, -1, LUA_TTABLE);
+		    attribs = lua_gettop(L);
+	    }
 
-    lua_getfield(L,3,"attribs");
-    if (lua_isnil(L,-1)) {
-        attribs = 0;
-        lua_pop(L,1);
-    } else {
-        luaL_checktype(L, -1, LUA_TTABLE);
-        attribs = lua_gettop(L);
+	    lua_getfield(L,3, "extentions");
+	    if (lua_isnil(L, -1)) {;
+		    lua_pop(L,1);
+	    } else {
+		    luaL_checktype(L, -1, LUA_TTABLE);
+		    extentions = lua_gettop(L);
+	    }
     }
-
-    lua_getfield(L,3, "extentions");
-    if (lua_isnil(L, -1)) {
-        extentions = 0;
-        lua_pop(L,1);
-    } else {
-        luaL_checktype(L, -1, LUA_TTABLE);
-        extentions = lua_gettop(L);
-    }
-
     csr = X509_REQ_new();
     if(!csr) luaL_error(L,"out of memory!");
 
     if (openssl_make_REQ(L, csr, pkey, dn, attribs, extentions) == 0) {
         const EVP_MD* md = NULL;
-        if (lua_isuserdata(L,digest)) {
-            md = CHECK_OBJECT(digest,EVP_MD,"openssl.evp_digest");
-        }
-        else if(lua_isstring(L,digest)) {
-            md = EVP_get_digestbyname(luaL_checkstring(L,digest));
-            if(!md) luaL_error(L,"EVP_get_digestbyname(%s) failed",luaL_checkstring(L,digest));
-        } else
-            md = EVP_get_digestbyname("sha1WithRSAEncryption");
+	if(digest) {
+		if (lua_isuserdata(L,digest)) {
+			md = CHECK_OBJECT(digest,EVP_MD,"openssl.evp_digest");
+		}else{
+			md = EVP_get_digestbyname(luaL_checkstring(L,digest));
+		} 
+	}
+	else
+		md = EVP_get_digestbyname("sha1WithRSAEncryption");
+
+	if(!md) 
+		luaL_error(L,"get_digest with(%s) failed",lua_tostring(L,digest));
 
         if (X509_REQ_sign(csr, pkey, md)) {
             PUSH_OBJECT(csr,"openssl.x509_req");

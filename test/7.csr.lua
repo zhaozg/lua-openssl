@@ -1,17 +1,6 @@
-
 local openssl = require('openssl')
-
-function dump(t,i)
-        for k,v in pairs(t) do
-                if(type(v)=='table') then
-                        print( string.rep('\t',i),k..'={')
-                                dump(v,i+1)
-                        print( string.rep('\t',i),k..'=}')
-                else
-                        print( string.rep('\t',i),k..'='..tostring(v))
-                end
-        end
-end
+local openssl = require('openssl')
+require 'util'
 
 function save(data,file)
         local f = assert(io.open(file,'w'))
@@ -47,7 +36,7 @@ function test_new()
         args.serialNumber = '1234567890123456789012345678'
         args.num_days = 365
         
-        x509 = csr:sign(nil,pkey,args)
+        x509 = assert(csr:sign(nil,pkey,args))
         
         dump(x509:parse(), 0);
 
@@ -60,7 +49,7 @@ function test_new()
         print(#d,d)
         assert(d=='abcd')
 
-        c = x509:public_key():encrypt('abcd')
+        c = x509:get_public():encrypt('abcd')
         print(#c,c)
         d = pkey:decrypt(c)
         print(#d,d)
@@ -90,12 +79,13 @@ function test_csr()
         print(x)
         t = x:parse()
         dump(t,0)
---[[
+
         local pkey = openssl.pkey_new()
         x = openssl.csr_new(pkey,{commonName='zhaozg'})
+---[[
         t = x:parse()
         dump(t,0)
-        x509 = x:sign(nil,pkey,365)
+        x509 = x:sign(nil,pkey,{serialNumber=11,num_days=365})
         t = x509:parse()
         dump(t,0)
         
