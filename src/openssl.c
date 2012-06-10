@@ -88,7 +88,7 @@ static const luaL_Reg eay_functions[] = {
     {"ts_req_new",		openssl_ts_req_new	},
     {"ts_req_d2i",		openssl_ts_req_d2i	},
     {"ts_resp_d2i",		openssl_ts_resp_d2i	},
-    {"ts_resp_ctx_new",	openssl_ts_resp_ctx_new	},
+    {"ts_resp_ctx_new",		openssl_ts_resp_ctx_new	},
     {"ts_verify_ctx_new",	openssl_ts_verify_ctx_new	},
 #endif
 
@@ -98,7 +98,6 @@ static const luaL_Reg eay_functions[] = {
 
     /* conf handle */
     {"conf_load",		openssl_conf_load	},
-
     {NULL, NULL}
 };
 /* }}} */
@@ -150,24 +149,24 @@ int openssl_config_check_syntax(const char * section_label, const char * config_
    Returns a description of the last error, and alters the index of the error messages. Returns false when the are no more messages */
 LUA_FUNCTION(openssl_error_string)
 {
-    char buf[512];
+    char buf[1024];
     unsigned long val;
     int verbose = lua_toboolean(L,1);
-
+    int ret = 0;
     val = ERR_get_error();
     if (val) {
         lua_pushinteger(L,val);
-        lua_pushstring(L, ERR_error_string(val, buf));
-
-        return 2;
+	ERR_error_string_n(val, buf,sizeof(buf));
+        lua_pushstring(L, buf);
+	ret = 2;
     }
     if(verbose)
     {
         ERR_print_errors_fp(stderr);
-        ERR_clear_error();
     }
+    ERR_clear_error();
 
-    return 0;
+    return ret;
 }
 /* }}} */
 

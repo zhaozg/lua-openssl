@@ -536,6 +536,8 @@ LUA_FUNCTION(openssl_csr_sign)
 
     /* 3) */
     X509_set_serialNumber(new_cert, BN_to_ASN1_INTEGER(bn,X509_get_serialNumber(new_cert)));
+    X509_set_subject_name(new_cert, X509_REQ_get_subject_name(csr));
+
     /* 4) */
     if (cert == NULL) {
         cert = new_cert;
@@ -543,7 +545,6 @@ LUA_FUNCTION(openssl_csr_sign)
     if (!X509_set_issuer_name(new_cert, X509_get_subject_name(cert))) {
         goto cleanup;
     }
-    X509_set_subject_name(new_cert, X509_REQ_get_subject_name(csr));
 
     /* 5 */
     X509_gmtime_adj(X509_get_notBefore(new_cert), 0);
