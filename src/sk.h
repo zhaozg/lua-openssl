@@ -33,6 +33,7 @@ STACK_OF(TYPE)* sk_##type##_fromtable(lua_State*L, int idx) { \
 			lua_rawgeti(L, idx, i+1);  \
 			x = CHECK_OBJECT(-1,TYPE,"openssl." #type);  \
 			SKM_sk_push(TYPE, sk, x); \
+			CRYPTO_add(&x->references,1,CRYPTO_LOCK_##TYPE);  \
 			lua_pop(L,1); \
 		} \
 		return sk;  \

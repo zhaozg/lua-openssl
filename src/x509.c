@@ -70,21 +70,19 @@ void add_assoc_x509_extension(lua_State*L, const char* key, STACK_OF(X509_EXTENS
 
 
 static luaL_Reg x509_funcs[] = {
-    {"parse",				openssl_x509_parse},
-    {"export",				openssl_x509_export},
-    {"check_private_key",	openssl_x509_check_private_key},
-    {"checkpurpose",		openssl_x509_checkpurpose},
-    {"get_public",			openssl_x509_public_key},
-    {"__gc",				openssl_x509_free},
-    {"__tostring",			openssl_x509_tostring},
-
+    {"parse",		openssl_x509_parse},
+    {"export",		openssl_x509_export},
+    {"check",		openssl_x509_check},
+    {"get_public",	openssl_x509_public_key},
+    {"__gc",		openssl_x509_free},
+    {"__tostring",	openssl_x509_tostring},
 
     {NULL,			NULL},
 };
 
 
 /* {{{ check_cert */
-static int check_cert(X509_STORE *ctx, X509 *x, STACK_OF(X509) *untrustedchain, int purpose)
+static int check_cert(X509_STORE *ca, X509 *x, STACK_OF(X509) *untrustedchain, int purpose)
 {
     int ret=0;
     X509_STORE_CTX *csc;
@@ -94,8 +92,8 @@ static int check_cert(X509_STORE *ctx, X509 *x, STACK_OF(X509) *untrustedchain, 
         printf("memory allocation -1");
         return 0;
     }
-    X509_STORE_CTX_init(csc, ctx, x, untrustedchain);
-    if(purpose >= 0) {
+    X509_STORE_CTX_init(csc, ca, x, untrustedchain);
+    if(purpose > 0) {
         X509_STORE_CTX_set_purpose(csc, purpose);
     }
     ret = X509_verify_cert(csc);
@@ -233,24 +231,8 @@ LUA_FUNCTION(openssl_x509_export)
 }
 /* }}} */
 
-/*  openssl.x509_check_private_key(openssl.x509 x509, openssl.evp_pkey pkey) -> bool{{{1
-
-	check an X509 object whether match with an EVP_PKEY, and return match result.
-*/
-
-LUA_FUNCTION(openssl_x509_check_private_key)
-{
-    X509 * cert = CHECK_OBJECT(1,X509,"openssl.x509");
-    EVP_PKEY * key = CHECK_OBJECT(1,EVP_PKEY,"openssl.evp_pkey");
-
-    lua_pushboolean(L,X509_check_private_key(cert, key));
-    return 1;
-}
-/* }}} */
-
 
 /*  openssl.x509_parse(openssl.x509 x509 [,bool shortnames=true]) -> table{{{1
-
 	parse an X509 object and return parsed information as a fields/values table.
 */
 
@@ -363,39 +345,42 @@ static int get_cert_purpose(const char* purpose) {
     return 0;
 }
 
-/*  openssl.checkpurpose(openssl.x509 x509,string purpose, openssl.stack_of_x509 cainfo [, string untrustedfile]) -> boolean{{{1
-
-	Checks the CERT to see if it can be used for the purpose in purpose. cainfo holds information about trusted CAs
+/*  openssl.check(openssl.x509 x509, (openssl.evp_pkey pkey)|(
+	openssl.stack_of_x509 ca=nil,openssl.stack_of_x509 untrustechains=nil,string purpose=nil])  -> boolean{{{1
+    if #2 is EVP_PKEY, check an X509 object whether match with an EVP_PKEY, and return match result.
+    if #2 is a stack_of_x509, that include all trusted ca certificates
+    if #3 is a stack_of_x509, that include all certificate chains
+    if #4 is string, that is purpose
 */
 
-LUA_FUNCTION(openssl_x509_checkpurpose)
+LUA_FUNCTION(openssl_x509_check)
 {
     X509 * cert = CHECK_OBJECT(1,X509,"openssl.x509");
-    const char* spurpose = luaL_checkstring(L,2);
-    int purpose = get_cert_purpose(spurpose);
-    STACK_OF(X509)* cert_stack = CHECK_OBJECT(3,STACK_OF(X509),"openssl.stack_of_x509");
+    if (auxiliar_isclass(L, "openssl.evp_pkey", 2)){
+	EVP_PKEY * key = CHECK_OBJECT(1,EVP_PKEY,"openssl.evp_pkey");
+	lua_pushboolean(L,X509_check_private_key(cert, key));
+	return 1;
+    }else{
+	STACK_OF(X509)* cert_stack = lua_isnoneornil(L,2) ? 
+		NULL : CHECK_OBJECT(2,STACK_OF(X509),"openssl.stack_of_x509");
+	STACK_OF(X509)* untrustedchain = lua_isnoneornil(L,3) ? 
+		NULL : CHECK_OBJECT(3,STACK_OF(X509),"openssl.stack_of_x509");
+	const char* spurpose = luaL_optstring(L,4, NULL);
+	int purpose = spurpose==NULL?0:get_cert_purpose(spurpose);
 
-    STACK_OF(X509) * untrustedchain = lua_isnoneornil(L,4) ? NULL :  CHECK_OBJECT(4,STACK_OF(X509),"openssl.stack_of_x509");
-    X509_STORE * cainfo = setup_verify(cert_stack);
-
-    if(purpose==0)
-    {
-        luaL_error(L,"#%s paramater is not supported",spurpose);
+	X509_STORE * cainfo = setup_verify(cert_stack);
+	int ret = check_cert(cainfo, cert, untrustedchain, purpose);
+	if (ret != 0 && ret != 1) {
+		lua_pushnil(L);
+		lua_pushinteger(L,ret);
+		ret = 2;
+	} else {
+		lua_pushboolean(L,ret);
+		ret = 1;
+	}
+	X509_STORE_free(cainfo);
+	return ret;
     }
-
-    if (cainfo) {
-        int ret = check_cert(cainfo, cert, untrustedchain, purpose);
-        if (ret != 0 && ret != 1) {
-            lua_pushinteger(L,ret);
-        } else {
-            lua_pushboolean(L,ret);
-        }
-        X509_STORE_free(cainfo);
-        return 1;
-    }
-
-    lua_pushnil(L);
-    return 1;
 }
 /* }}} */
 

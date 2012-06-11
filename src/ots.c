@@ -634,6 +634,15 @@ X509_STORE* Stack2Store(STACK_OF(X509)* sk)
     return store;
 }
 
+/*  openssl.ts_verify_ctx_new(
+	openssl.ts_req  --tsa request object
+	|string,	--der encode tsa request
+	|{source=raw dat,digest=md value}
+	,
+	openssl.stack_of_x509|openssl.x509 --ca certificate
+	openssl.stack_of_x509|openssl.x509 --others certificate
+	)
+*/
 
 LUA_FUNCTION(openssl_ts_verify_ctx_new) {
     TS_VERIFY_CTX *ctx = NULL;
@@ -644,12 +653,12 @@ LUA_FUNCTION(openssl_ts_verify_ctx_new) {
         TS_REQ* req = CHECK_OBJECT(1,TS_REQ,"openssl.ts_req");
         ctx = TS_REQ_to_TS_VERIFY_CTX(req, NULL);
     }else if(lua_isstring(L, 1)){
-	    size_t l;
-	    const char*data = luaL_checklstring(L,1,&l);
+	size_t l;
+	const char*data = luaL_checklstring(L,1,&l);
 
-	    BIO* bio = BIO_new_mem_buf((void*)data,l);
-	    TS_REQ* req = d2i_TS_REQ_bio(bio, NULL);
-	    ctx = TS_REQ_to_TS_VERIFY_CTX(req, NULL);
+	BIO* bio = BIO_new_mem_buf((void*)data,l);
+	TS_REQ* req = d2i_TS_REQ_bio(bio, NULL);
+	ctx = TS_REQ_to_TS_VERIFY_CTX(req, NULL);
     } else if(lua_istable(L,1))
     {
         ctx = TS_VERIFY_CTX_new();
@@ -680,21 +689,35 @@ LUA_FUNCTION(openssl_ts_verify_ctx_new) {
     {
 	    if(top>2)
 	    {
-		    ctx->certs = sk_X509_dup(CHECK_OBJECT(3,STACK_OF(X509), "openssl.stack_of_x509"));
+		    if(auxiliar_isclass(L,"openssl.stack_of_x509",3)){
+			ctx->certs = sk_X509_dup(CHECK_OBJECT(3,STACK_OF(X509), "openssl.stack_of_x509"));
+		    }else if(auxiliar_isclass(L,"openssl.x509",3)){
+			X509* x = auxiliar_checkclass(L,"openssl.x509",3);
+			ctx->certs = sk_X509_new_null();
+			sk_X509_push(ctx->certs,x);
+			CRYPTO_add(&x->references,1,CRYPTO_LOCK_X509); 
+		    }
+		    else {
+			    luaL_error(L,"#3 must be a object of openssl.stack_of_x509 or openssl.x509");
+		    }
+	    }
+	    if(top>1){
+		    if(auxiliar_isclass(L,"openssl.stack_of_x509",2)){
+			    STACK_OF(X509) *cas = CHECK_OBJECT(2, STACK_OF(X509), "openssl.stack_of_x509");
+			    ctx->store = Stack2Store(cas);
+		    }else if(auxiliar_isclass(L,"openssl.x509",2)){
+			    X509* x = auxiliar_checkclass(L,"openssl.x509",2);
+			    ctx->store = X509_STORE_new();
+			    X509_STORE_add_cert(ctx->store, x);
+			    CRYPTO_add(&x->references,1,CRYPTO_LOCK_X509); 
+		    }else {
+			    luaL_error(L,"#2 must be a object of openssl.stack_of_x509 or openssl.x509");
+		    }
 		    ctx->flags |= TS_VFY_SIGNER;
 	    }
-	    if(auxiliar_isclass(L,"openssl.stack_of_x509",2)){
-		STACK_OF(X509) *cas = CHECK_OBJECT(2, STACK_OF(X509), "openssl.stack_of_x509");
-		ctx->store = Stack2Store(cas);
-	    }else if(auxiliar_isclass(L,"openssl.x509",2)){
-	        X509* x = auxiliar_checkclass(L,"openssl.x509",2);
-		ctx->store = X509_STORE_new();
-		X509_STORE_add_cert(ctx->store, X509_dup(x));
-	    }else {
-		    luaL_error(L,"#2 must be a object of openssl.stack_of_x509 or openssl.x509");
-	    }
         
-        ctx->flags |= TS_VFY_SIGNATURE;
+	    ctx->flags |= TS_VFY_SIGNATURE;
+        
         PUSH_OBJECT(ctx,"openssl.ts_verify_ctx");
     } else
         lua_pushnil(L);

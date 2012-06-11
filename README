@@ -91,11 +91,11 @@ x509:export([bool notext=true]) -> string
 x509:parse([bool shortnames=true]) -> table
     return a table which contain all x509 information
 
-x509:check_private_key(evp_pkey pkey) -> boolean
 
 x509:get_public() => evp_pkey
 
-x509:checkpurpose(string purpose, sk_x509 ca [,sk_x509 untrusted])->boolean
+x509:check(evp_pkey pkey) -> boolean
+x509:check(sk_x509 ca [,sk_x509 untrusted[,string purpose]])->boolean
     purpose canbe one of: ssl_client, ssl_server, ns_ssl_server, smime_sign,
     smime_encrypt, crl_sign, any, ocsp_helper, timestamp_sign
 
@@ -103,7 +103,8 @@ x509:checkpurpose(string purpose, sk_x509 ca [,sk_x509 untrusted])->boolean
     untrusted is an openssl.stack_of_x509 object containing a bunch of certs
     that are not trusted but may be useful in validating the certificate.
 
-openssl.stack_of_x509 is an important object ina lua-openssl, it can be used
+
+openssl.stack_of_x509 is an important object in lua-openssl, it can be used
 as a certchaina, trusted CA files or unstrustcerts.
 
 openssl.sk_x509_read(filename) => sk_x509
