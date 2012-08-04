@@ -155,7 +155,7 @@ openssl.pkey_read(string data|x509 cert [,bool public_key=true
     passphrase, you should use an empty string rather than NULL for the 
     passphrase - NULL causes a passphrase prompt to be emitted Lua error !
 
-evp_pkey:export(epv_pkey key [, boolean only_public = false [,boolean raw_key=false [, string passphrase]]]) 
+evp_pkey:export([boolean only_public = false [,boolean raw_key=false [,boolean pem=true,[, string passphrase]]]]) 
    -> string
 
    If only_public is true, export will export public key
