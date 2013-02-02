@@ -239,7 +239,7 @@ LUA_FUNCTION(openssl_x509_export)
 LUA_FUNCTION(openssl_x509_parse)
 {
     X509 * cert = CHECK_OBJECT(1,X509,"openssl.x509");
-    int useshortnames = lua_isnoneornil(L,2)?0:lua_toboolean(L,2);
+    int useshortnames = lua_isnoneornil(L,2)?1:lua_toboolean(L,2);
 
     int i;
     char * tmpstr;
@@ -288,31 +288,32 @@ LUA_FUNCTION(openssl_x509_parse)
     lua_newtable(L);
     /* NOTE: the purposes are added as integer keys - the keys match up to the X509_PURPOSE_SSL_XXX defines
        in x509v3.h */
-    for (i = 0; i < X509_PURPOSE_get_count(); i++) {
-        int id, purpset1,purpset2;
-        char * pname;
+    for (i = 0; i < 2*X509_PURPOSE_get_count(); i++) {
+        int id, ca, set;
         X509_PURPOSE * purp;
-        purp = X509_PURPOSE_get0(i);
+
+        ca = i%2;
+        purp = X509_PURPOSE_get0(i/2);
         id = X509_PURPOSE_get_id(purp);
-
-        purpset1 = X509_check_purpose(cert, id, 0);
-        purpset2 = X509_check_purpose(cert, id, 1);
-        if(purpset1 || purpset2)
+        set = X509_check_purpose(cert, id, ca);
+        if(set)
         {
-            lua_newtable(L);
-            add_index_bool(L, 1, purpset1);
-            add_index_bool(L, 2, purpset2);
+           char * pname = useshortnames ? X509_PURPOSE_get0_sname(purp) : X509_PURPOSE_get0_name(purp);
+           if(ca){
+               lua_pushfstring(L,"%s CA",pname);
+           }else
+               lua_pushstring(L,pname);
 
-            pname = useshortnames ? X509_PURPOSE_get0_sname(purp) : X509_PURPOSE_get0_name(purp);
-            lua_pushstring(L,pname);
-            lua_rawseti(L,-2,3);
-            lua_rawseti(L,-2,i+1);
+            lua_pushboolean(L,1);
+            lua_settable(L,-3);
         }
         /* NOTE: if purpset > 1 then it's a warning - we should mention it ? */
     }
     lua_setfield(L,-2,"purposes");
 
     add_assoc_x509_extension(L, "extensions", cert->cert_info->extensions, bio);
+    lua_pushboolean(L,X509_check_ca(cert));
+    lua_setfield(L, -2, "ca");
 
     BIO_free(bio);
     return 1;

@@ -427,10 +427,48 @@ LUA_FUNCTION(openssl_crl_free) {
     return 0;
 }
 
+
+LUA_FUNCTION(openssl_crl_export)
+{
+	int pem, notext;
+	X509_CRL * crl = CHECK_OBJECT(1,X509_CRL,"openssl.x509_crl");
+	int top = lua_gettop(L);
+	BIO* bio_out = NULL;
+
+	pem = top > 1 ? lua_toboolean(L, 2) : 1;
+	notext = (pem && top>2) ? lua_toboolean(L,3):1;
+
+	bio_out	 = BIO_new(BIO_s_mem());
+	if (pem) {
+		if (!notext) {
+			X509_CRL_print(bio_out, crl);
+		}
+
+		if (PEM_write_bio_X509_CRL(bio_out, crl))  {
+			BUF_MEM *bio_buf;
+			BIO_get_mem_ptr(bio_out, &bio_buf);
+			lua_pushlstring(L,bio_buf->data, bio_buf->length);
+		} else
+			lua_pushnil(L);
+	} else
+	{
+		if(i2d_X509_CRL_bio(bio_out, crl)) {
+			BUF_MEM *bio_buf;
+			BIO_get_mem_ptr(bio_out, &bio_buf);
+			lua_pushlstring(L,bio_buf->data, bio_buf->length);
+		} else
+			lua_pushnil(L);
+	}
+
+	BIO_free(bio_out);
+	return 1;
+}
+
 static luaL_Reg crl_funcs[] = {
     {"sort",	openssl_crl_sort},
     {"verify",	openssl_crl_verify},
     {"sign",	openssl_crl_sign},
+	{"export",	openssl_crl_export},
 
     {"set_version",		openssl_crl_set_version		},
     {"set_update_time",	openssl_crl_set_updatetime	},

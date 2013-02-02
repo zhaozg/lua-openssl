@@ -8,6 +8,10 @@
 #include <stdio.h>
 
 #include "auxiliar.h"
+#if LUA_VERSION_NUM==501
+#define lua_rawlen lua_strlen
+#define luaL_typeerror luaL_typerror
+#endif
 /*=========================================================================*\
 * Exported functions
 \*=========================================================================*/
@@ -23,7 +27,7 @@ int auxiliar_open(lua_State *L) {
 * Creates a new class with given methods
 * Methods whose names start with __ are passed directly to the metatable.
 \*-------------------------------------------------------------------------*/
-void auxiliar_newclass(lua_State *L, const char *classname, const luaL_reg *func) {
+void auxiliar_newclass(lua_State *L, const char *classname, luaL_reg *func) {
     luaL_newmetatable(L, classname); /* mt */
     /* create __index table to place methods */
     lua_pushstring(L, "__index");    /* mt,"__index" */
@@ -79,11 +83,8 @@ void auxiliar_add2group(lua_State *L, const char *classname, const char *groupna
 * Make sure argument is a boolean
 \*-------------------------------------------------------------------------*/
 int auxiliar_checkboolean(lua_State *L, int objidx) {
-    if (!lua_isboolean(L, objidx)){
-      const char *msg = lua_pushfstring(L, "%s expected, got %s",
-         lua_typename(L, LUA_TBOOLEAN), luaL_typename(L, objidx));
-         return luaL_argerror(L, objidx, msg); 
-    }
+    if (!lua_isboolean(L, objidx))
+        luaL_typerror(L, objidx, lua_typename(L, LUA_TBOOLEAN));
     return lua_toboolean(L, objidx);
 }
 
@@ -102,7 +103,6 @@ void *auxiliar_checkclass(lua_State *L, const char *classname, int objidx) {
 }
 
 int auxiliar_isclass(lua_State *L, const char *classname, int objidx) {
-
     void *p = lua_touserdata(L, objidx);
     if (p != NULL) {  /* value is a userdata? */
         if (lua_getmetatable(L, objidx)) {  /* does it have a metatable? */

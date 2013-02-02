@@ -115,19 +115,22 @@ LUA_FUNCTION(openssl_pkcs12_read)
     STACK_OF(X509) * ca = NULL;
     BIO * bio_in = NULL;
     int base64 = 0;
+	int olb64 = 0;
     BIO * b64 = NULL;
 
     zp12 = luaL_checklstring(L, 1, &zp12_len);
     pass = luaL_checkstring(L, 2);
     if(!lua_isnoneornil(L,3))
         base64 = auxiliar_checkboolean(L,3);
+	if(!lua_isnoneornil(L,4))
+		olb64 = auxiliar_checkboolean(L,4);
 
     bio_in = BIO_new_mem_buf((void*)zp12, zp12_len);
     if(base64)
     {
         if ((b64=BIO_new(BIO_f_base64())) == NULL)
             return 0;
-        //if (olb64) BIO_set_flags(b64,BIO_FLAGS_BASE64_NO_NL);
+        if (olb64) BIO_set_flags(b64,BIO_FLAGS_BASE64_NO_NL);
         bio_in=BIO_push(b64,bio_in);
     }
 

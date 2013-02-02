@@ -33,7 +33,9 @@ I need a full openssl binding for lua, after googled, I can't find a fit version
 I study PHP openssl binding, and php-openssl is a good implement, It inspire me. 
 So I decide to write a Full and Fee openssl for lua.
 
-My mother tongue is not English, Sorry for dimness explain puzzle you.
+Because not be familiar with English language, Sorry for dimness explain puzzle you.
+
+lua-openssl tookit worked on lua(5.1 or 5.2), openssl(0.9.8 or above 1.0.0).
 
 The target of lua-openssl is below:
 
