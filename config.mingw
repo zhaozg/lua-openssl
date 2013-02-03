@@ -1,0 +1,21 @@
+# Installation directories
+# System's libraries directory (where binary libraries are installed)
+LUA_LIBDIR= "d:\work\luabuild\bin\Win32Debug\clibs\"
+
+# Lua includes and lib
+LUA_INC= "e:\work\luajit-2.0\src"
+LUA_LIB= "e:\work\luajit-2.0\bin\x86\luajit.lib"
+
+# Openssl include and lib
+OPENSSL_INC=-I"e:\work\portable\openssl\inc32"
+OPENSSL_LIB=
+
+LIBS= $(LUA_LIB) $(OPENSSL_LIB)
+
+# Compilation directives
+WARN= -Wall
+INCS= -I$(LUA_INC) $(OPENSSL_INC)
+CFLAGS= -DWIN32_LEAN_AND_MEAN $(WARN) $(INCS)
+CC= gcc -m32
+LIB_OPTION=  -lcrypto -lssl -luser32 -lkernel32 
+

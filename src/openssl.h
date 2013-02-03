@@ -43,8 +43,9 @@ int luaL_typerror (lua_State *L, int narg, const char *tname);
 #include <openssl/conf.h>
 #include <openssl/rand.h>
 #include <openssl/pkcs12.h>
-#include <openssl/ssl.h>
 #include <openssl/opensslv.h>
+
+#define LOPENSSL_VERSION_STR	"0.0.5"
 
 #if OPENSSL_VERSION_NUMBER >= 0x10000000L
 #include <openssl/lhash.h>
@@ -90,7 +91,9 @@ __pragma(warning(pop))
 
 #ifdef WIN32
 #define snprintf _snprintf
+#ifndef strcasecmp
 #define strcasecmp stricmp
+#endif
 #endif
 
 enum lua_openssl_key_type {
@@ -306,9 +309,7 @@ void openssl_add_method(const OBJ_NAME *name, void *arg);
 	MULTI_LINE_MACRO_END
 
 
-#define LOPENSSL_VERSION_STR	"0.0.5"
-
-void add_assoc_name_entry(lua_State*L, const  char * key, X509_NAME * name, int shortname);
+void add_assoc_name_entry(lua_State*L, const  char *key, X509_NAME *name, int shortname);
 void add_assoc_x509_extension(lua_State*L, const char* key, STACK_OF(X509_EXTENSION)* ext, BIO* bio);
 
 void add_assoc_string(lua_State *L, const char*name, const char*val);
