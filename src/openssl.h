@@ -305,6 +305,9 @@ void openssl_add_method(const OBJ_NAME *name, void *arg);
 	lua_settable (L,-3);    \
 	MULTI_LINE_MACRO_END
 
+
+#define LOPENSSL_VERSION_STR	"0.0.5"
+
 void add_assoc_name_entry(lua_State*L, const  char * key, X509_NAME * name, int shortname);
 void add_assoc_x509_extension(lua_State*L, const char* key, STACK_OF(X509_EXTENSION)* ext, BIO* bio);
 

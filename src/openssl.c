@@ -30,6 +30,13 @@ int luaL_typerror (lua_State *L, int narg, const char *tname) {
 } 
 #endif
 
+static int openssl_version(lua_State*L)
+{
+		lua_pushstring(L, LOPENSSL_VERSION_STR);
+		lua_pushstring(L, LUA_VERSION);
+		lua_pushstring(L, OPENSSL_VERSION_TEXT);
+		return 3;
+}
 /* true global; readonly after module startup */
 char default_ssl_conf_filename[MAX_PATH];
 
@@ -98,6 +105,8 @@ static const luaL_Reg eay_functions[] = {
 
     /* conf handle */
     {"conf_load",		openssl_conf_load	},
+	{"version",			openssl_version },
+
     {NULL, NULL}
 };
 /* }}} */

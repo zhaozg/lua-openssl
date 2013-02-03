@@ -9,7 +9,8 @@ OpenSSL binding for Lua
 
 Index
 -----
-1. Introduce
+0. Introduction
+1. Version
 2. Certificate
 3. Public/Private Key
 4. Cipher
@@ -23,7 +24,7 @@ I.   Howto.
 II.  Examples
 III. Contacts
 
-1. Introduction
+0. Introduction
 ---------------
 
         This product includes PHP software,
@@ -31,11 +32,9 @@ III. Contacts
 
 I need a full openssl binding for lua, after googled, I can't find a fit version.
 I study PHP openssl binding, and php-openssl is a good implement, It inspire me. 
-So I decide to write a Full and Fee openssl for lua.
+So I decide to write a Full and Free openssl for lua.
 
 Because not be familiar with English language, Sorry for dimness explain puzzle you.
-
-lua-openssl tookit worked on lua(5.1 or 5.2), openssl(0.9.8 or above 1.0.0).
 
 The target of lua-openssl is below:
 
@@ -80,6 +79,17 @@ Notes, In next section of this document,
     -> means return a basic type of lua
 
 If function return a nil, it will be follow by a error number and string
+
+1. Introduction
+---------------
+
+lua-openssl head version 0.0.5.
+lua-openssl tookit worked on lua(5.1 or 5.2), openssl(0.9.8 or above 1.0.0).
+
+lua-openssl version howto get?
+
+    openssl = require'openssl'
+    lua_openssl_version, lua_version, openssl_version = openssl.version()
 
 2. Certificate
 --------------
