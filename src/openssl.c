@@ -21,6 +21,7 @@
 * Author:  george zhao <zhaozg(at)gmail.com>
 \*=========================================================================*/
 #include "openssl.h"
+#include <openssl/ssl.h>
 
 #if LUA_VERSION_NUM>501
 int luaL_typerror (lua_State *L, int narg, const char *tname) {
@@ -102,6 +103,8 @@ static const luaL_Reg eay_functions[] = {
 #ifdef EVP_PKEY_EC
     {"list_curve_name",	openssl_ec_list_curve_name },
 #endif
+	{"ssl_ctx_new",		openssl_ssl_ctx_new },
+	{"ssl_session_new",	openssl_ssl_session_read},
 
     /* conf handle */
     {"conf_load",		openssl_conf_load	},
@@ -816,11 +819,12 @@ LUA_API int luaopen_openssl(lua_State*L)
         util_thread_setup();
         OpenSSL_add_all_ciphers();
         OpenSSL_add_all_digests();
+		SSL_library_init();
 
         ERR_load_ERR_strings();
         ERR_load_crypto_strings();
         ERR_load_EVP_strings();
-
+		ERR_load_SSL_strings();
     }
     pthread_mutex_unlock( &cs_mutex );
 
@@ -853,6 +857,8 @@ LUA_API int luaopen_openssl(lua_State*L)
     openssl_register_conf(L);
     openssl_register_pkcs7(L);
     openssl_register_misc(L);
+	openssl_register_ssl(L);
+
 #if LUA_VERSION_NUM==501
     luaL_register(L,"openssl",eay_functions);
 #elif LUA_VERSION_NUM==502

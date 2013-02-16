@@ -265,6 +265,9 @@ LUA_FUNCTION(openssl_x509_public_key);
 LUA_FUNCTION(openssl_sk_x509_read);
 LUA_FUNCTION(openssl_sk_x509_new);
 
+LUA_FUNCTION(openssl_ssl_ctx_new);
+LUA_FUNCTION(openssl_ssl_session_read);
+
 LUA_API LUA_FUNCTION(openssl_open);
 
 void openssl_add_method_or_alias(const OBJ_NAME *name, void *arg) ;
@@ -332,6 +335,6 @@ int openssl_register_conf(lua_State* L);
 
 int openssl_register_pkcs7(lua_State* L);
 int openssl_register_misc(lua_State* L);
-
+int openssl_register_ssl(lua_State* L);
 #endif
 
