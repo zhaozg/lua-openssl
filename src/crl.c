@@ -110,9 +110,10 @@ X509_REVOKED *openssl_X509_REVOKED(lua_State*L, int snidx, int timeidx, int reas
 #if OPENSSL_VERSION_NUMBER > 0x10000000L
     revoked->reason = reason;
 #else
+	/*
     {
         ASN1_ENUMERATED * e = ASN1_ENUMERATED_new();
-        X509_EXTENSION * ext = X509_EXTENSION_new();
+		X509_EXTENSION * ext = X509_EXTENSION_new();
 
         ASN1_ENUMERATED_set(e, reason);
 
@@ -121,13 +122,14 @@ X509_REVOKED *openssl_X509_REVOKED(lua_State*L, int snidx, int timeidx, int reas
 
         if(!revoked->extensions)
             revoked->extensions = sk_X509_EXTENSION_new_null();
-
+		
+		X509_REVOKED_add_ext()
         sk_X509_REVOKED_push(revoked->extensions,ext);
 
         X509_EXTENSION_free(ext);
         ASN1_ENUMERATED_free(e);
     }
-
+	*/
 #endif
 
     ASN1_TIME_free(tm);
@@ -161,7 +163,6 @@ LUA_FUNCTION(openssl_crl_new) {
     ASN1_TIME_set(ltm, lastUpdate);
     ntm = ASN1_TIME_new();
     ASN1_TIME_set(ntm, nextUpdate);
-
     X509_CRL_set_lastUpdate(crl, ltm);
     X509_CRL_set_nextUpdate(crl, ntm);
     if ( lua_istable(L,5) ) {
@@ -179,15 +180,13 @@ LUA_FUNCTION(openssl_crl_new) {
 
                 revoked = openssl_X509_REVOKED(L, -1, -2, -3);
                 if(revoked) {
-                    sk_X509_REVOKED_push(crl->crl->revoked, revoked);
-                    X509_REVOKED_free(revoked);
+					X509_CRL_add0_revoked(crl,revoked);
                 }
                 lua_pop(L, 3);
             }
             lua_pop(L,1);
         }
     }
-    X509_CRL_sort(crl);
     ASN1_TIME_free(ltm);
     ASN1_TIME_free(ntm);
     PUSH_OBJECT(crl,"openssl.x509_crl");
@@ -297,13 +296,10 @@ LUA_FUNCTION(openssl_crl_sign) {
 
     if(!md)
         luaL_error(L,"#3 paramater must be openssl.evp_digest or a valid digest alg name");
-
-
+	
+	X509_CRL_sort(crl);
     ret = X509_CRL_sign(crl, key, md);
-    if(ret==0 || ret==1) {
-        lua_pushboolean(L,ret);
-    } else
-        lua_pushnil(L);
+    lua_pushboolean(L,ret);
     return 1;
 
 }
@@ -315,12 +311,8 @@ LUA_FUNCTION(openssl_crl_add_revocked) {
     int reasonidx = 4;
     int ret = 0;
     X509_REVOKED* revoked = openssl_X509_REVOKED(L, serailidx, timeidx, reasonidx);
-    ret = sk_X509_REVOKED_push(crl->crl->revoked,revoked);
-    X509_REVOKED_free(revoked);
-    if(ret==0 || ret==1) {
-        lua_pushboolean(L,ret);
-    } else
-        lua_pushnil(L);
+    ret = X509_CRL_add0_revoked(crl,revoked);
+    lua_pushboolean(L,ret);
     return 1;
 }
 

@@ -254,7 +254,6 @@ LUA_FUNCTION(openssl_pkey_read);
 LUA_FUNCTION(openssl_pkey_encrypt);
 LUA_FUNCTION(openssl_pkey_decrypt);
 LUA_FUNCTION(openssl_pkey_is_private);
-LUA_FUNCTION(openssl_pkey_tostring);
 LUA_FUNCTION(openssl_x509_read);
 LUA_FUNCTION(openssl_x509_export);
 LUA_FUNCTION(openssl_x509_parse);
@@ -267,6 +266,7 @@ LUA_FUNCTION(openssl_sk_x509_new);
 
 LUA_FUNCTION(openssl_ssl_ctx_new);
 LUA_FUNCTION(openssl_ssl_session_read);
+LUA_FUNCTION(openssl_engine);
 
 LUA_API LUA_FUNCTION(openssl_open);
 
@@ -336,5 +336,7 @@ int openssl_register_conf(lua_State* L);
 int openssl_register_pkcs7(lua_State* L);
 int openssl_register_misc(lua_State* L);
 int openssl_register_ssl(lua_State* L);
+int openssl_register_engine(lua_State* L);
+
 #endif
 

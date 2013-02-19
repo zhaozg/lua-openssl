@@ -5,7 +5,7 @@
 int openssl_ssl_ctx_new(lua_State*L)
 {
 	const char* meth = luaL_optstring(L, 1, "TLSv1");
-	const SSL_METHOD* method = NULL;
+	SSL_METHOD* method = NULL;
 	SSL_CTX* ctx;
 	int ret = 0;
 	if(strcmp(meth,"SSLv3")==0)
@@ -435,14 +435,14 @@ static int openssl_ssl_session_gc(lua_State*L){
 	SSL_SESSION_free(session);
 	return 0;
 }
-
+#if OPENSSL_VERSION_NUMBER > 0x10000000L
 static int openssl_ssl_session_peer(lua_State*L){
 	SSL_SESSION* session = CHECK_OBJECT(1, SSL_SESSION, "openssl.ssl_session");
 	X509 *x = SSL_SESSION_get0_peer(session);
 	PUSH_OBJECT(x,"openssl.x509");
 	return 1;
 }
-
+#endif
 static int openssl_ssl_session_id(lua_State*L){
 	SSL_SESSION* session = CHECK_OBJECT(1, SSL_SESSION, "openssl.ssl_session");
 	
@@ -452,21 +452,25 @@ static int openssl_ssl_session_id(lua_State*L){
 		lua_pushlstring(L, id, len);
 		return 1;
 	}else{
+#if OPENSSL_VERSION_NUMBER > 0x10000000L
 		size_t len;
 		const char* id = luaL_checklstring(L, 2, &len);
 		int ret = SSL_SESSION_set1_id_context(session, id, len);
 		lua_pushboolean(L, ret);
 		return 1;
+#else
+		return 0;
+#endif
 	}
 }
-
+#if OPENSSL_VERSION_NUMBER > 0x10000000L
 static int openssl_ssl_session_compress_id(lua_State*L){
 	SSL_SESSION* session = CHECK_OBJECT(1, SSL_SESSION, "openssl.ssl_session");
 	unsigned int id  = SSL_SESSION_get_compress_id(session);
 	lua_pushinteger(L, id);
 	return 1;
 }
-
+#endif
 static int openssl_ssl_session_export(lua_State*L){
 	SSL_SESSION* session = CHECK_OBJECT(1, SSL_SESSION, "openssl.ssl_session");
 	int pem = lua_isnoneornil(L,2)?1:auxiliar_checkboolean(L,2);
@@ -489,7 +493,9 @@ static luaL_Reg ssl_session_funcs[] = {
 	{"id",				openssl_ssl_session_id},
 	{"time",			openssl_ssl_session_time},
 	{"timeout",			openssl_ssl_session_timeout},
+#if OPENSSL_VERSION_NUMBER > 0x10000000L
 	{"compress_id",		openssl_ssl_session_compress_id},
+#endif
 	{"export",			openssl_ssl_session_export},
 
 	{"__gc",			openssl_ssl_session_gc},
@@ -548,10 +554,10 @@ static int openssl_ssl_current_cipher(lua_State*L){
 
 	lua_pushstring(L,SSL_CIPHER_get_version(c));
 	lua_setfield(L, -2, "version");
-
+#if OPENSSL_VERSION_NUMBER > 0x10000000L
 	lua_pushinteger(L, SSL_CIPHER_get_id(c));
 	lua_setfield(L, -2, "id");
-
+#endif
 	if(SSL_CIPHER_get_bits(c,&bits)==1){
 		lua_pushinteger(L, bits);
 		lua_setfield(L, -2, "bits");
@@ -855,14 +861,14 @@ static int openssl_ssl_renegotiate(lua_State*L){
 	lua_pushboolean(L, ret);
 	return 1;
 }
-
+#if OPENSSL_VERSION_NUMBER > 0x10000000L
 static int openssl_ssl_renegotiate_abbreviated(lua_State*L){
 	SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
 	int ret = SSL_renegotiate_abbreviated(s);
 	lua_pushboolean(L, ret);
 	return 1;
 }
-
+#endif
 static int openssl_ssl_renegotiate_pending(lua_State*L){
 	SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
 	int ret = SSL_renegotiate_pending(s);
@@ -909,7 +915,7 @@ static int openssl_ssl_get_certificate(lua_State*L){
 	PUSH_OBJECT(x,"openssl.x509");
 	return 1;
 }
-
+#if OPENSSL_VERSION_NUMBER > 0x10000000L
 static int openssl_ssl_cache_hit(lua_State*L){
 	SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
 	int ret = SSL_cache_hit(s);
@@ -922,7 +928,7 @@ static int openssl_ssl_set_debug(lua_State*L){
 	SSL_set_debug(s, debug);
 	return 0;
 }
-
+#endif
 static int openssl_ssl_ctx(lua_State*L){
 	SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
 	if(lua_isnoneornil(L, 2)){
@@ -956,8 +962,10 @@ static int openssl_ssl_state(lua_State*L){
 		lua_pushinteger(L, l);
 		return 1;
 	}else{
+#if OPENSSL_VERSION_NUMBER > 0x10000000L
 		int l = luaL_checkint(L, 2);
 		SSL_set_state(s, l);
+#endif
 		return 0;
 	}
 }
@@ -1110,17 +1118,17 @@ static luaL_Reg ssl_funcs[] = {
 	{"error",			openssl_ssl_error},
 	{"version",			openssl_ssl_version},
 	{"state",			openssl_ssl_state},
-	
+#if OPENSSL_VERSION_NUMBER > 0x10000000L	
 	{"set_debug",		openssl_ssl_set_debug},
 	{"cache_hit",		openssl_ssl_cache_hit},	
-
+	{"renegotiate_abbreviated",	openssl_ssl_renegotiate_abbreviated},
+#endif
 	{"shutdown",			openssl_ssl_shutdown},
 	{"set_shutdown",		openssl_ssl_set_shutdown},
 	{"get_shutdown",		openssl_ssl_get_shutdown},
 	{"version",				openssl_ssl_version},
 
 	{"renegotiate_pending",		openssl_ssl_renegotiate_pending},
-	{"renegotiate_abbreviated",	openssl_ssl_renegotiate_abbreviated},
 	{"renegotiate",				openssl_ssl_renegotiate},
 	{"do_handshake",			openssl_ssl_do_handshake},
 

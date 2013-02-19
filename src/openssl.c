@@ -22,7 +22,7 @@
 \*=========================================================================*/
 #include "openssl.h"
 #include <openssl/ssl.h>
-
+#include <openssl/engine.h>
 #if LUA_VERSION_NUM>501
 int luaL_typerror (lua_State *L, int narg, const char *tname) {
   const char *msg = lua_pushfstring(L, "%s expected, got %s",
@@ -41,9 +41,91 @@ static int openssl_version(lua_State*L)
 /* true global; readonly after module startup */
 char default_ssl_conf_filename[MAX_PATH];
 
+
+typedef struct {
+	const char* name;
+	int value;
+} namedInteger;
+
+static namedInteger consts[] = {
+	{"LEAVE",       -1},
+	{"ENGINE_F_DYNAMIC_CTRL",					 ENGINE_F_DYNAMIC_CTRL},
+	{"ENGINE_F_DYNAMIC_GET_DATA_CTX",			 ENGINE_F_DYNAMIC_GET_DATA_CTX},
+	{"ENGINE_F_DYNAMIC_LOAD",					 ENGINE_F_DYNAMIC_LOAD},
+	{"ENGINE_F_DYNAMIC_SET_DATA_CTX",			 ENGINE_F_DYNAMIC_SET_DATA_CTX},
+	{"ENGINE_F_ENGINE_ADD",						 ENGINE_F_ENGINE_ADD},
+	{"ENGINE_F_ENGINE_BY_ID",					 ENGINE_F_ENGINE_BY_ID},
+	{"ENGINE_F_ENGINE_CMD_IS_EXECUTABLE",		 ENGINE_F_ENGINE_CMD_IS_EXECUTABLE},
+	{"ENGINE_F_ENGINE_CTRL",					 ENGINE_F_ENGINE_CTRL},
+	{"ENGINE_F_ENGINE_CTRL_CMD",				 ENGINE_F_ENGINE_CTRL_CMD},
+	{"ENGINE_F_ENGINE_CTRL_CMD_STRING",			 ENGINE_F_ENGINE_CTRL_CMD_STRING},
+	{"ENGINE_F_ENGINE_FINISH",					 ENGINE_F_ENGINE_FINISH},
+	{"ENGINE_F_ENGINE_FREE_UTIL",				 ENGINE_F_ENGINE_FREE_UTIL},
+	{"ENGINE_F_ENGINE_GET_CIPHER",				 ENGINE_F_ENGINE_GET_CIPHER},
+	{"ENGINE_F_ENGINE_GET_DEFAULT_TYPE",		 ENGINE_F_ENGINE_GET_DEFAULT_TYPE},
+	{"ENGINE_F_ENGINE_GET_DIGEST",				 ENGINE_F_ENGINE_GET_DIGEST},
+	{"ENGINE_F_ENGINE_GET_NEXT",				 ENGINE_F_ENGINE_GET_NEXT},
+	{"ENGINE_F_ENGINE_GET_PREV",				 ENGINE_F_ENGINE_GET_PREV},
+	{"ENGINE_F_ENGINE_INIT",					 ENGINE_F_ENGINE_INIT},
+	{"ENGINE_F_ENGINE_LIST_ADD",				 ENGINE_F_ENGINE_LIST_ADD},
+	{"ENGINE_F_ENGINE_LIST_REMOVE",				 ENGINE_F_ENGINE_LIST_REMOVE},
+	{"ENGINE_F_ENGINE_LOAD_PRIVATE_KEY",		 ENGINE_F_ENGINE_LOAD_PRIVATE_KEY},
+	{"ENGINE_F_ENGINE_LOAD_PUBLIC_KEY",			 ENGINE_F_ENGINE_LOAD_PUBLIC_KEY},
+	{"ENGINE_F_ENGINE_LOAD_SSL_CLIENT_CERT",	 ENGINE_F_ENGINE_LOAD_SSL_CLIENT_CERT},
+	{"ENGINE_F_ENGINE_NEW",						 ENGINE_F_ENGINE_NEW},
+	{"ENGINE_F_ENGINE_REMOVE",					 ENGINE_F_ENGINE_REMOVE},
+	{"ENGINE_F_ENGINE_SET_DEFAULT_STRING",		 ENGINE_F_ENGINE_SET_DEFAULT_STRING},
+	{"ENGINE_F_ENGINE_SET_DEFAULT_TYPE",		 ENGINE_F_ENGINE_SET_DEFAULT_TYPE},
+	{"ENGINE_F_ENGINE_SET_ID",					 ENGINE_F_ENGINE_SET_ID},
+	{"ENGINE_F_ENGINE_SET_NAME",				 ENGINE_F_ENGINE_SET_NAME},
+	{"ENGINE_F_ENGINE_TABLE_REGISTER",			 ENGINE_F_ENGINE_TABLE_REGISTER},
+	{"ENGINE_F_ENGINE_UNLOAD_KEY",				 ENGINE_F_ENGINE_UNLOAD_KEY},
+	{"ENGINE_F_ENGINE_UNLOCKED_FINISH",			 ENGINE_F_ENGINE_UNLOCKED_FINISH},
+	{"ENGINE_F_ENGINE_UP_REF",					 ENGINE_F_ENGINE_UP_REF},
+	{"ENGINE_F_INT_CTRL_HELPER",				 ENGINE_F_INT_CTRL_HELPER},
+	{"ENGINE_F_INT_ENGINE_CONFIGURE",			 ENGINE_F_INT_ENGINE_CONFIGURE},
+	{"ENGINE_F_INT_ENGINE_MODULE_INIT",			 ENGINE_F_INT_ENGINE_MODULE_INIT},
+	{"ENGINE_F_LOG_MESSAGE",					 ENGINE_F_LOG_MESSAGE},
+	{"ENGINE_METHOD_RSA",	 	ENGINE_METHOD_RSA},
+	{"ENGINE_METHOD_DSA",		ENGINE_METHOD_DSA},
+	{"ENGINE_METHOD_DH",		ENGINE_METHOD_DH},
+	{"ENGINE_METHOD_RAND",	ENGINE_METHOD_RAND},
+	{"ENGINE_METHOD_ECDH",	ENGINE_METHOD_ECDH},
+	{"ENGINE_METHOD_ECDSA",	ENGINE_METHOD_ECDSA},
+	{"ENGINE_METHOD_CIPHERS",	ENGINE_METHOD_CIPHERS},
+	{"ENGINE_METHOD_DIGESTS",	ENGINE_METHOD_DIGESTS},
+	{"ENGINE_METHOD_STORE",	ENGINE_METHOD_STORE},
+	{"ENGINE_METHOD_ALL",		ENGINE_METHOD_ALL},
+	{"ENGINE_METHOD_NONE",	ENGINE_METHOD_NONE},
+
+	{NULL,	-1}
+};
+
+void setNamedIntegers(lua_State* L, namedInteger* p) {
+	while(p->name) {
+		lua_pushinteger(L, p->value);
+		lua_setfield(L, -2, p->name);
+		p++;
+	}
+}
+
+int openssl_topointer(lua_State*L){
+	void* p = NULL;
+	if(lua_isuserdata(L, 1))
+		p = *(void**)lua_touserdata(L,1);
+	else if(lua_islightuserdata(L, 1)){
+		p = lua_touserdata(L,1);
+	}
+	if(p)
+		lua_pushlightuserdata(L, p);
+	else
+		lua_pushnil(L);
+	return 1;
+}
 /* {{{ openssl_functions[]
  */
 static const luaL_Reg eay_functions[] = {
+	{"topointer",			openssl_topointer	},
     /* pkey */
     {"pkey_read",			openssl_pkey_read	},
     {"pkey_new",			openssl_pkey_new	},
@@ -100,6 +182,7 @@ static const luaL_Reg eay_functions[] = {
     {"ts_verify_ctx_new",	openssl_ts_verify_ctx_new	},
 #endif
 
+	{"engine",			openssl_engine},
 #ifdef EVP_PKEY_EC
     {"list_curve_name",	openssl_ec_list_curve_name },
 #endif
@@ -825,6 +908,9 @@ LUA_API int luaopen_openssl(lua_State*L)
         ERR_load_crypto_strings();
         ERR_load_EVP_strings();
 		ERR_load_SSL_strings();
+
+		ENGINE_load_dynamic();
+		ENGINE_load_openssl();
     }
     pthread_mutex_unlock( &cs_mutex );
 
@@ -857,6 +943,7 @@ LUA_API int luaopen_openssl(lua_State*L)
     openssl_register_conf(L);
     openssl_register_pkcs7(L);
     openssl_register_misc(L);
+	openssl_register_engine(L);
 	openssl_register_ssl(L);
 
 #if LUA_VERSION_NUM==501
@@ -865,6 +952,7 @@ LUA_API int luaopen_openssl(lua_State*L)
     lua_newtable(L);
     luaL_setfuncs(L, eay_functions, 0);
 #endif
+	setNamedIntegers(L, consts);
     return 1;
 }
 
