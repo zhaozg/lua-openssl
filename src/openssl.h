@@ -131,8 +131,13 @@ extern char default_ssl_conf_filename[MAX_PATH];
 
 #define LUA_FUNCTION(X) int X(lua_State *L)
 
+extern const BIT_STRING_BITNAME reason_flags[];
+extern const int reason_num;
+int openssl_get_revoke_reason(const char*s);
+
 LUA_FUNCTION(openssl_bio_new_mem);
 LUA_FUNCTION(openssl_bio_new_file);
+LUA_FUNCTION(openssl_bio_new_accept);
 LUA_FUNCTION(openssl_bio_read);
 LUA_FUNCTION(openssl_bio_gets);
 LUA_FUNCTION(openssl_bio_write);
@@ -268,6 +273,10 @@ LUA_FUNCTION(openssl_ssl_ctx_new);
 LUA_FUNCTION(openssl_ssl_session_read);
 LUA_FUNCTION(openssl_engine);
 
+LUA_FUNCTION(openssl_ocsp_request_new);
+LUA_FUNCTION(openssl_ocsp_response);
+
+
 LUA_API LUA_FUNCTION(openssl_open);
 
 void openssl_add_method_or_alias(const OBJ_NAME *name, void *arg) ;
@@ -337,6 +346,8 @@ int openssl_register_pkcs7(lua_State* L);
 int openssl_register_misc(lua_State* L);
 int openssl_register_ssl(lua_State* L);
 int openssl_register_engine(lua_State* L);
+
+LUA_FUNCTION(openssl_register_ocsp);
 
 #endif
 

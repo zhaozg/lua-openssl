@@ -26,21 +26,20 @@
 int		X509_CRL_cmp(const X509_CRL *a, const X509_CRL *b);
 int		X509_CRL_match(const X509_CRL *a, const X509_CRL *b);
 
-static const BIT_STRING_BITNAME reason_flags[] = {
-    {0, "Unused", "unused"},
-    {1, "Key Compromise", "keyCompromise"},
-    {2, "CA Compromise", "CACompromise"},
-    {3, "Affiliation Changed", "affiliationChanged"},
-    {4, "Superseded", "superseded"},
-    {5, "Cessation Of Operation", "cessationOfOperation"},
-    {6, "Certificate Hold", "certificateHold"},
-    {7, "Privilege Withdrawn", "privilegeWithdrawn"},
-    {8, "AA Compromise", "AACompromise"},
-    {-1, NULL, NULL}
-};
+int openssl_get_revoke_reason(const char*s){
 
-static int reason_num = sizeof(reason_flags)/sizeof(BIT_STRING_BITNAME) - 1;
-
+	int reason = -1;
+	int i;
+	for (i=0; i<reason_num; i++)
+	{
+		if(strcasecmp(s,reason_flags[i].lname)==0 || strcasecmp(s,reason_flags[i].sname)==0)
+		{
+			reason = reason_flags[i].bitnum;
+			break;
+		}
+	}
+	return reason;
+}
 
 X509_REVOKED *openssl_X509_REVOKED(lua_State*L, int snidx, int timeidx, int reasonidx) {
     X509_REVOKED *revoked = X509_REVOKED_new();
@@ -85,15 +84,7 @@ X509_REVOKED *openssl_X509_REVOKED(lua_State*L, int snidx, int timeidx, int reas
     {
         const char* s = lua_tostring(L, reasonidx);
         int i=0;
-        reason = -1;
-        for (i=0; i<reason_num; i++)
-        {
-            if(strcasecmp(s,reason_flags[i].lname)==0 || strcasecmp(s,reason_flags[i].sname)==0)
-            {
-                reason = reason_flags[i].bitnum;
-                break;
-            }
-        }
+        reason = openssl_get_revoke_reason(s);
         if(reason < 0 || reason >= reason_num) {
             err = "certificate revoked reason is not valid string";
             goto end;
@@ -146,15 +137,16 @@ end:
 }
 
 LUA_FUNCTION(openssl_crl_new) {
-    long version = luaL_checkinteger(L,1);
-    X509* x509 = CHECK_OBJECT(2, X509, "openssl.x509");
-    time_t lastUpdate = luaL_checkinteger(L,3);
-    time_t nextUpdate = luaL_checkinteger(L,4);
+    X509* x509 = CHECK_OBJECT(1, X509, "openssl.x509");
+    time_t lastUpdate = luaL_checkinteger(L,2);
+    time_t nextUpdate = luaL_checkinteger(L,3);
+	long version;
     X509_CRL * crl = NULL;
     ASN1_TIME *ltm,*ntm;
 
-    if(!lua_isnoneornil(L,5))
-        luaL_checktype(L,5, LUA_TTABLE);
+    if(!lua_isnoneornil(L,4))
+        luaL_checktype(L, 4, LUA_TTABLE);
+	version = luaL_optint(L, 5, 1);
 
     crl = X509_CRL_new();
     X509_CRL_set_version(crl, version);
@@ -165,12 +157,12 @@ LUA_FUNCTION(openssl_crl_new) {
     ASN1_TIME_set(ntm, nextUpdate);
     X509_CRL_set_lastUpdate(crl, ltm);
     X509_CRL_set_nextUpdate(crl, ntm);
-    if ( lua_istable(L,5) ) {
-        int n = lua_objlen(L, 5);
+    if ( lua_istable(L,4) ) {
+        int n = lua_objlen(L, 4);
         int i = 0;
         for (i=0; i<n; i++)
         {
-            lua_rawgeti(L, 5, i+1);
+            lua_rawgeti(L, 4, i+1);
             if(lua_istable(L,-1))
             {
                 X509_REVOKED *revoked;

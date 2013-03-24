@@ -26,12 +26,20 @@
 #include "ec_lcl.h"
 #endif
 
+static int openssl_pkey_bits(lua_State *L) {
+	EVP_PKEY *pkey = CHECK_OBJECT(1,EVP_PKEY,"openssl.evp_pkey");
+	lua_Integer ret=EVP_PKEY_bits(pkey);
+	lua_pushinteger(L,ret);
+	return  1;
+};
+
 /* {{{ EVP Public/Private key functions */
 
 static luaL_Reg pkey_funcs[] = {
     {"is_private",		openssl_pkey_is_private},
     {"export",			openssl_pkey_export},
     {"parse",			openssl_pkey_parse},
+	{"bits",			openssl_pkey_bits},
 
     {"encrypt",			openssl_pkey_encrypt},
     {"decrypt",			openssl_pkey_decrypt},
@@ -209,7 +217,7 @@ LUA_FUNCTION(openssl_pkey_new)
         {
             int bits = luaL_optint(L,2,1024);
             int e = luaL_optint(L,3,65537);
-            RSA* rsa = RSA_generate_key(bits,e,NULL,NULL);
+            RSA* rsa = bits?RSA_generate_key(bits,e,NULL,NULL):RSA_new();
 			if(bits==0 || rsa->n==0)
 				rsa->n = BN_new();
             pkey = EVP_PKEY_new();
@@ -250,6 +258,7 @@ LUA_FUNCTION(openssl_pkey_new)
             int ec_name = 0;
             EC_KEY *ec = NULL;
             EC_GROUP *group = NULL;
+			int flag = OPENSSL_EC_NAMED_CURVE;
 
             if (lua_isnumber(L, 2)) {
                 ec_name = luaL_checkint(L, 2);
@@ -259,7 +268,7 @@ LUA_FUNCTION(openssl_pkey_new)
             } else {
                 luaL_typerror(L, 2, "must be a number or string name");
             }
-
+			flag = lua_isnoneornil(L, 3)? flag : lua_toboolean(L, 3);
             ec = EC_KEY_new();
             group = EC_GROUP_new_by_curve_name(ec_name);
             if (!group) {
@@ -271,6 +280,9 @@ LUA_FUNCTION(openssl_pkey_new)
                 EC_KEY_free(ec);
                 luaL_error(L,"EC_KEY_generate_key failed");
             }
+
+			EC_KEY_set_asn1_flag(ec, flag);
+
             pkey = EVP_PKEY_new();
             EVP_PKEY_set1_EC_KEY(pkey,ec);
         }

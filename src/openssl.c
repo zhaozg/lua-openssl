@@ -22,6 +22,7 @@
 \*=========================================================================*/
 #include "openssl.h"
 #include <openssl/ssl.h>
+#include <openssl/asn1.h>
 #include <openssl/engine.h>
 #if LUA_VERSION_NUM>501
 int luaL_typerror (lua_State *L, int narg, const char *tname) {
@@ -122,6 +123,24 @@ int openssl_topointer(lua_State*L){
 		lua_pushnil(L);
 	return 1;
 }
+
+
+const BIT_STRING_BITNAME reason_flags[] = {
+	{0, "Unused", "unused"},
+	{1, "Key Compromise", "keyCompromise"},
+	{2, "CA Compromise", "CACompromise"},
+	{3, "Affiliation Changed", "affiliationChanged"},
+	{4, "Superseded", "superseded"},
+	{5, "Cessation Of Operation", "cessationOfOperation"},
+	{6, "Certificate Hold", "certificateHold"},
+	{7, "Privilege Withdrawn", "privilegeWithdrawn"},
+	{8, "AA Compromise", "AACompromise"},
+	{-1, NULL, NULL}
+};
+
+const int reason_num = sizeof(reason_flags)/sizeof(BIT_STRING_BITNAME) - 1;
+
+
 /* {{{ openssl_functions[]
  */
 static const luaL_Reg eay_functions[] = {
@@ -153,7 +172,8 @@ static const luaL_Reg eay_functions[] = {
     {"error_string",		openssl_error_string	},
     {"object_create",		openssl_object_create	},
     {"bio_new_file",		openssl_bio_new_file	},
-    {"bio_new_mem",			openssl_bio_new_mem	},
+    {"bio_new_mem",			openssl_bio_new_mem	   },
+	{"bio_new_accept",		openssl_bio_new_accept },
 
     {"sign",				openssl_sign	},
     {"verify",				openssl_verify	},
@@ -192,6 +212,12 @@ static const luaL_Reg eay_functions[] = {
     /* conf handle */
     {"conf_load",		openssl_conf_load	},
 	{"version",			openssl_version },
+
+	/* ocsp handle */
+	{"ocsp_request_read", openssl_ocsp_request_new},
+	{"ocsp_request_new", openssl_ocsp_request_new},
+	{"ocsp_response_new", openssl_ocsp_response},
+	{"ocsp_response_read",openssl_ocsp_response},
 
     {NULL, NULL}
 };
@@ -945,6 +971,7 @@ LUA_API int luaopen_openssl(lua_State*L)
     openssl_register_misc(L);
 	openssl_register_engine(L);
 	openssl_register_ssl(L);
+	openssl_register_ocsp(L);
 
 #if LUA_VERSION_NUM==501
     luaL_register(L,"openssl",eay_functions);

@@ -83,8 +83,7 @@ static int openssl_make_REQ(lua_State*L,
         }
     }
 
-    X509_REQ_set_pubkey(csr, pkey);
-    return 0;
+    return X509_REQ_set_pubkey(csr, pkey);
 }
 
 /* }}} */
@@ -230,7 +229,6 @@ LUA_FUNCTION(openssl_csr_sign)
 		    lua_pop(L,1);
     }
 
-
     if (cert && !X509_check_private_key(cert, priv_key)) {
         luaL_error(L,"private key does not correspond to signing cert");
     }
@@ -261,7 +259,7 @@ LUA_FUNCTION(openssl_csr_sign)
     }
 
     /* Version 3 cert */
-    if (!X509_set_version(new_cert, lua_tointeger(L,-1)))
+    if (!X509_set_version(new_cert, version))
 	    goto cleanup;
 
     /* 3) */
@@ -346,11 +344,11 @@ LUA_FUNCTION(openssl_csr_new)
     X509_REQ *csr = NULL;
 
     EVP_PKEY *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
-    int dn, attribs, extentions, digest;
+    int dn, attribs, extensions , digest;
 
     luaL_checktype(L, 2, LUA_TTABLE);
     dn = 2;
-    attribs = extentions = digest = 0;
+    attribs = extensions  = digest = 0;
     if(!lua_isnoneornil(L,3))
     {
 	    luaL_checktype(L, 3, LUA_TTABLE);
@@ -369,38 +367,40 @@ LUA_FUNCTION(openssl_csr_new)
 		    attribs = lua_gettop(L);
 	    }
 
-	    lua_getfield(L,3, "extentions");
+	    lua_getfield(L,3, "extensions");
 	    if (lua_isnil(L, -1)) {;
 		    lua_pop(L,1);
 	    } else {
 		    luaL_checktype(L, -1, LUA_TTABLE);
-		    extentions = lua_gettop(L);
+		    extensions = lua_gettop(L);
 	    }
     }
     csr = X509_REQ_new();
     if(!csr) luaL_error(L,"out of memory!");
 
-    if (openssl_make_REQ(L, csr, pkey, dn, attribs, extentions) == 0) {
+    if (openssl_make_REQ(L, csr, pkey, dn, attribs, extensions)) {
         const EVP_MD* md = NULL;
-	if(digest) {
-		if (lua_isuserdata(L,digest)) {
-			md = CHECK_OBJECT(digest,EVP_MD,"openssl.evp_digest");
-		}else{
-			md = EVP_get_digestbyname(luaL_checkstring(L,digest));
-		} 
-	}
-	else
-		md = EVP_get_digestbyname("sha1WithRSAEncryption");
+		if(digest) {
+			if (lua_isuserdata(L,digest)) {
+				md = CHECK_OBJECT(digest,EVP_MD,"openssl.evp_digest");
+			}else{
+				md = EVP_get_digestbyname(luaL_checkstring(L,digest));
+			} 
+		}
+		else
+			md = EVP_get_digestbyname("sha1WithRSAEncryption");
 
-	if(!md) 
-		luaL_error(L,"get_digest with(%s) failed",lua_tostring(L,digest));
+		if(!md) 
+			luaL_error(L,"get_digest with(%s) failed",lua_tostring(L,digest));
 
         if (X509_REQ_sign(csr, pkey, md)) {
             PUSH_OBJECT(csr,"openssl.x509_req");
         } else {
-            luaL_error(L,"Error signing request");
+            luaL_error(L,"Error signing cert request");
         }
-    }
+    }else{
+		luaL_error(L,"Error make cert request");
+	}
 
     return 1;
 }
