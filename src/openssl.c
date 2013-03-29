@@ -24,6 +24,8 @@
 #include <openssl/ssl.h>
 #include <openssl/asn1.h>
 #include <openssl/engine.h>
+#include <openssl/opensslconf.h>
+
 #if LUA_VERSION_NUM>501
 int luaL_typerror (lua_State *L, int narg, const char *tname) {
   const char *msg = lua_pushfstring(L, "%s expected, got %s",
@@ -795,137 +797,21 @@ LUA_FUNCTION(openssl_dh_compute_key)
     return ret;
 }
 /* }}} */
+static int g_init=0;
 
-#include "pthread.h"
-static int g_init= 0 ;
-static pthread_mutex_t cs_mutex = PTHREAD_MUTEX_INITIALIZER;
-
-
-static pthread_mutex_t *lock_cs = NULL;
-static int	lock_num_locks = 0;
-
-static void util_thr_lock(int mode, int type,
-                          const char *file, int line)
-{
-	(void*)file;
-	(void*)line;
-    if (type < lock_num_locks) {
-        if (mode & CRYPTO_LOCK) {
-            pthread_mutex_lock(&lock_cs[type]);
-        }
-        else {
-            pthread_mutex_unlock(&lock_cs[type]);
-        }
-    }
-}
-
-/* Dynamic lock structure */
-struct CRYPTO_dynlock_value {
-    const char* file;
-    int line;
-    pthread_mutex_t mutex;
-};
-
-/*
- * Dynamic lock creation callback
- */
-static struct CRYPTO_dynlock_value *dyn_create_function(const char *file,
-        int line)
-{
-    struct CRYPTO_dynlock_value *value;
-    value = (struct CRYPTO_dynlock_value *)malloc(sizeof(struct CRYPTO_dynlock_value));
-    if (!value) {
-        return NULL;
-    }
-    value->file = strdup(file);
-    value->line = line;
-    pthread_mutex_init(&value->mutex, NULL);
-    return value;
-}
-
-/*
- * Dynamic locking and unlocking function
- */
-
-static void dyn_lock_function(int mode, struct CRYPTO_dynlock_value *l,
-                              const char *file, int line)
-{
-	(void*)file;
-	(void*)line;
-    if (mode & CRYPTO_LOCK) {
-        pthread_mutex_lock(&l->mutex);
-    }
-    else {
-        pthread_mutex_unlock(&l->mutex);
-    }
-}
-
-/*
- * Dynamic lock destruction callback
- */
-static void dyn_destroy_function(struct CRYPTO_dynlock_value *l,
-                                 const char *file, int line)
-{
-	(void*)file;
-	(void*)line;
-    pthread_mutex_destroy(&l->mutex);
-    free((char*)l->file);
-    free(l);
-}
-
-static unsigned long util_thr_id(void)
-{
-    /* OpenSSL needs this to return an unsigned long.  On OS/390, the pthread
-     * id is a structure twice that big.  Use the TCB pointer instead as a
-     * unique unsigned long.
-     */
-#ifdef __MVS__
-    struct PSA {
-        char unmapped[540];
-        unsigned long PSATOLD;
-    } *psaptr = 0;
-
-    return psaptr->PSATOLD;
-#elif WIN32
-    return (unsigned long) GetCurrentThreadId();
-#else
-    return (unsigned long) pthread_self();
-#endif
-}
-
-void util_thread_setup()
-{
-    int i;
-
-    lock_num_locks = CRYPTO_num_locks();
-    lock_cs = malloc(lock_num_locks * sizeof(lock_cs));
-
-    for (i = 0; i < lock_num_locks; i++) {
-        pthread_mutex_init(&(lock_cs[i]), NULL);
-    }
-
-    CRYPTO_set_id_callback(util_thr_id);
-
-    CRYPTO_set_locking_callback(util_thr_lock);
-
-    CRYPTO_set_dynlock_create_callback(dyn_create_function);
-    CRYPTO_set_dynlock_lock_callback(dyn_lock_function);
-    CRYPTO_set_dynlock_destroy_callback(dyn_destroy_function);
-}
-
-
+void CRYPTO_thread_setup(void);
+void CRYPTO_thread_cleanup(void); 
+int luaopen_bn(lua_State *L);
 LUA_API int luaopen_openssl(lua_State*L)
 {
     char * config_filename;
-#ifdef PTW32_VERSION
-    pthread_win32_process_attach_np();
-#endif
-    pthread_mutex_lock( &cs_mutex );
+	CRYPTO_thread_setup();
+	CRYPTO_lock(CRYPTO_LOCK,CRYPTO_LOCK_ERR,__FILE__,__LINE__);
     if(g_init==0)
     {
         g_init =  1;
+		
 
-        util_thread_setup();
         OpenSSL_add_all_ciphers();
         OpenSSL_add_all_digests();
 		SSL_library_init();
@@ -938,7 +824,7 @@ LUA_API int luaopen_openssl(lua_State*L)
 		ENGINE_load_dynamic();
 		ENGINE_load_openssl();
     }
-    pthread_mutex_unlock( &cs_mutex );
+	CRYPTO_lock(CRYPTO_UNLOCK,CRYPTO_LOCK_ERR,__FILE__,__LINE__);
 
     /* Determine default SSL configuration file */
     config_filename = getenv("OPENSSL_CONF");
@@ -980,6 +866,11 @@ LUA_API int luaopen_openssl(lua_State*L)
     luaL_setfuncs(L, eay_functions, 0);
 #endif
 	setNamedIntegers(L, consts);
+
+	/* third part */
+	luaopen_bn(L);
+	lua_setfield(L, -2, "bn");
+
     return 1;
 }
 

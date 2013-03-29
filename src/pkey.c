@@ -255,9 +255,9 @@ LUA_FUNCTION(openssl_pkey_new)
 #ifndef OPENSSL_NO_EC
         else if(strcasecmp(alg,"ec")==0)
         {
-            int ec_name = 0;
+            int ec_name = NID_undef;
             EC_KEY *ec = NULL;
-            EC_GROUP *group = NULL;
+            
 			int flag = OPENSSL_EC_NAMED_CURVE;
 
             if (lua_isnumber(L, 2)) {
@@ -265,26 +265,26 @@ LUA_FUNCTION(openssl_pkey_new)
             } else if(lua_isstring(L, 2)) {
                 const char* name = luaL_checkstring(L,2);
                 ec_name = OBJ_sn2nid(name);
-            } else {
-                luaL_typerror(L, 2, "must be a number or string name");
             }
 			flag = lua_isnoneornil(L, 3)? flag : lua_toboolean(L, 3);
             ec = EC_KEY_new();
-            group = EC_GROUP_new_by_curve_name(ec_name);
-            if (!group) {
-                luaL_error(L,"not support curve_name %d:%s!!!!", ec_name, OBJ_nid2sn(ec_name));
-            }
-            EC_KEY_set_group(ec, group);
-            if(!EC_KEY_generate_key(ec))
-            {
-                EC_KEY_free(ec);
-                luaL_error(L,"EC_KEY_generate_key failed");
-            }
+			if(ec_name!=NID_undef){
+				EC_GROUP *group = EC_GROUP_new_by_curve_name(ec_name);
+				if (!group) {
+					luaL_error(L,"not support curve_name %d:%s!!!!", ec_name, OBJ_nid2sn(ec_name));
+				}
+				EC_KEY_set_group(ec, group);
+				if(!EC_KEY_generate_key(ec))
+				{
+					EC_KEY_free(ec);
+					luaL_error(L,"EC_KEY_generate_key failed");
+				}
+			}
 
 			EC_KEY_set_asn1_flag(ec, flag);
 
             pkey = EVP_PKEY_new();
-            EVP_PKEY_set1_EC_KEY(pkey,ec);
+            EVP_PKEY_set1_EC_KEY(pkey, ec);
         }
 #endif
         else

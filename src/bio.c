@@ -230,6 +230,22 @@ LUA_FUNCTION(openssl_bio_fd) {
 	return 1;
 }
 
+LUA_FUNCTION(openssl_bio_accept_port) {
+	BIO* bio = CHECK_OBJECT(1,BIO,"openssl.bio");
+	int typ = BIO_method_type(bio);
+	if(typ & BIO_TYPE_FD){
+		lua_pushstring(L, BIO_get_accept_port(bio));
+	}else
+		luaL_error(L, "BIO type miss match");
+	return 1;
+}
+
+int BIO_socket_ioctl(int fd, long type, void *arg);
+int BIO_socket_nbio(int fd,int mode);
+int BIO_get_port(const char *str, unsigned short *port_ptr);
+int BIO_get_host_ip(const char *str, unsigned char *ip);
+int BIO_get_accept_socket(char *host_port,int mode);
+
 static luaL_reg bio_funs[] = {
     {"read",	openssl_bio_read	},
     {"gets",	openssl_bio_gets	},
@@ -244,6 +260,8 @@ static luaL_reg bio_funs[] = {
     {"type",	openssl_bio_type	},
     {"reset",	openssl_bio_reset	},
 
+	{"accept_port",		openssl_bio_accept_port	},
+	
     {"__tostring",	openssl_bio_tostring	},
     {"__gc",	openssl_bio_free	},
 
