@@ -39,7 +39,7 @@ static luaL_Reg pkey_funcs[] = {
     {"is_private",		openssl_pkey_is_private},
     {"export",			openssl_pkey_export},
     {"parse",			openssl_pkey_parse},
-	{"bits",			openssl_pkey_bits},
+    {"bits",			openssl_pkey_bits},
 
     {"encrypt",			openssl_pkey_encrypt},
     {"decrypt",			openssl_pkey_decrypt},
@@ -606,9 +606,6 @@ returns an array with the key details (bits, pkey, type)*/
 LUA_FUNCTION(openssl_pkey_parse)
 {
     EVP_PKEY *pkey = CHECK_OBJECT(1,EVP_PKEY,"openssl.evp_pkey");
-
-    long ktype;
-
     lua_newtable(L);
 
     lua_pushinteger(L,EVP_PKEY_bits(pkey));
@@ -621,8 +618,6 @@ LUA_FUNCTION(openssl_pkey_parse)
     switch (EVP_PKEY_type(pkey->type)) {
     case EVP_PKEY_RSA:
     case EVP_PKEY_RSA2:
-        ktype = OPENSSL_KEYTYPE_RSA;
-
         if (pkey->pkey.rsa != NULL) {
             RSA* rsa = pkey->pkey.rsa;
             lua_newtable(L);
@@ -648,8 +643,6 @@ LUA_FUNCTION(openssl_pkey_parse)
     case EVP_PKEY_DSA2:
     case EVP_PKEY_DSA3:
     case EVP_PKEY_DSA4:
-        ktype = OPENSSL_KEYTYPE_DSA;
-
         if (pkey->pkey.dsa != NULL) {
             DSA* dsa = pkey->pkey.dsa;
             lua_newtable(L);
@@ -669,9 +662,6 @@ LUA_FUNCTION(openssl_pkey_parse)
         }
         break;
     case EVP_PKEY_DH:
-
-        ktype = OPENSSL_KEYTYPE_DH;
-
         if (pkey->pkey.dh != NULL) {
             DH* dh = pkey->pkey.dh;
             lua_newtable(L);
@@ -691,8 +681,6 @@ LUA_FUNCTION(openssl_pkey_parse)
         break;
 #ifndef OPENSSL_NO_EC
     case EVP_PKEY_EC:
-        ktype = OPENSSL_KEYTYPE_EC;
-
         if(pkey->pkey.ec != NULL)
         {
             struct ec_key_st* ec = pkey->pkey.ec;
@@ -731,7 +719,6 @@ LUA_FUNCTION(openssl_pkey_parse)
         break;
 #endif
     default:
-        ktype = -1;
         break;
     };
 
@@ -876,4 +863,3 @@ int openssl_register_pkey(lua_State*L) {
     auxiliar_newclass(L,"openssl.evp_pkey", pkey_funcs);
     return 0;
 }
-

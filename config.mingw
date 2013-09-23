@@ -16,6 +16,6 @@ LIBS= $(LUA_LIB) $(OPENSSL_LIB)
 WARN= -Wall
 INCS= -I$(LUA_INC) $(OPENSSL_INC)
 CFLAGS= -DWIN32_LEAN_AND_MEAN $(WARN) $(INCS)
-CC= gcc -m32
+CC= gcc -m64
 LIB_OPTION=  -lcrypto -lssl -luser32 -lkernel32 
 

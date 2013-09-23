@@ -20,7 +20,7 @@ static const char* const list[] = {
 };
 
 int openssl_engine(lua_State *L){
-	ENGINE* eng = NULL;
+	const ENGINE* eng = NULL;
 	if(lua_isnoneornil(L, 1)){
 		eng = ENGINE_new();
 	}else if(lua_isstring(L, 1)){
@@ -48,7 +48,7 @@ int openssl_engine(lua_State *L){
 			"\tnil or none will create a new engine\n"
 			"\tbut we get %s:%s",lua_typename(L,lua_type(L,  1)),lua_tostring(L,1));
 	if(eng){
-		PUSH_OBJECT(eng,"openssl.engine");
+		PUSH_OBJECT((void*)eng,"openssl.engine");
 	}else
 		lua_pushnil(L);
 	return 1;

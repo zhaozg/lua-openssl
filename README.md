@@ -212,9 +212,9 @@ openssl.get_cipher([bool aliases = true]) ->table
 evp_cipher:info() ->table
     result with name, block_size,key_length,iv_length,flags,mode keys
 
-evp_cipher:encrypt_init([ string key [,string iv [,engine engimp]]])
+evp_cipher:encrypt_init([ string key [,string iv [,boolean nopad [,engine engimp]]]])
     => cipher_ctx
-evp_cipher:decrypt_init([ string key [,string iv [,engine engimp]]])
+evp_cipher:decrypt_init([ string key [,string iv [,boolean nopad [,engine engimp]]]])
     => cipher_ctx
 evp_cipher:cipher_init(bool enc, [, string key [,string iv
     [,engine engimp]]]) => cipher_ctx

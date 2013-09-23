@@ -179,10 +179,9 @@ LUA_FUNCTION(openssl_csr_sign)
     EVP_PKEY * key = NULL, *priv_key = NULL;
     int i;
     int ret = 0;
-    int dn, digest, num_days,version,extension;
-    const char* group;
-
-    dn = digest = extension = 0;
+    int digest, num_days,version,extension;
+ 
+    digest = extension = 0;
     version = 2;
     num_days = 365;
 
@@ -190,7 +189,6 @@ LUA_FUNCTION(openssl_csr_sign)
     cert = lua_isnil(L,2) ? NULL: CHECK_OBJECT(2,X509,"openssl.x509");
     priv_key = CHECK_OBJECT(3,EVP_PKEY,"openssl.evp_pkey");
     luaL_checktype(L,4,LUA_TTABLE);
-    group = luaL_optstring(L, 5, NULL);
 
     {
 	    lua_getfield(L, 4, "serialNumber");

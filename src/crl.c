@@ -47,13 +47,11 @@ X509_REVOKED *openssl_X509_REVOKED(lua_State*L, int snidx, int timeidx, int reas
     BIGNUM * bn = NULL;
     ASN1_TIME *tm = NULL;
     int reason = 0;
-    const char* err = NULL;
     ASN1_INTEGER *it = NULL;
 
 
     if(!BN_hex2bn(&bn, serial))
     {
-        err = "certificate serial number is not valid hexadecimal number";
         goto end;
     };
 
@@ -68,7 +66,6 @@ X509_REVOKED *openssl_X509_REVOKED(lua_State*L, int snidx, int timeidx, int reas
     {
 
     } else {
-        err = "certificate revoked time is not valid time_t or timez string";
         goto end;
     }
 
@@ -76,22 +73,18 @@ X509_REVOKED *openssl_X509_REVOKED(lua_State*L, int snidx, int timeidx, int reas
     {
         reason = luaL_optinteger(L, reasonidx, 0);
         if(reason < 0 || reason >= reason_num) {
-            err = "certificate revoked reason is not valid number";
             goto end;
         }
 
     } else if(lua_isstring(L, reasonidx))
     {
         const char* s = lua_tostring(L, reasonidx);
-        int i=0;
         reason = openssl_get_revoke_reason(s);
         if(reason < 0 || reason >= reason_num) {
-            err = "certificate revoked reason is not valid string";
             goto end;
         }
     } else
     {
-        err = "certificate revoked reason is not valid number or string";
         goto end;
     };
 

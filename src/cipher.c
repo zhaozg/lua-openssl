@@ -229,18 +229,24 @@ LUA_FUNCTION(openssl_evp_cipher_init)
 {
     EVP_CIPHER* c = CHECK_OBJECT(1,EVP_CIPHER, "openssl.evp_cipher");
     int enc = auxiliar_checkboolean(L,2);
-
-    const char* k = luaL_optstring(L,3,NULL);
+	size_t kl = 0;
+    const char* k = luaL_optlstring(L,3,NULL,&kl);
     const char* iv = luaL_optstring(L,4,NULL);
-    ENGINE*     e = lua_gettop(L)>4? CHECK_OBJECT(5,ENGINE,"openssl.engine") :NULL;
+	int nopad = lua_toboolean(L,5);
+
+    ENGINE*     e = lua_gettop(L)>5? CHECK_OBJECT(6,ENGINE,"openssl.engine") :NULL;
 
     EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
     PUSH_OBJECT(ctx,"openssl.evp_cipher_ctx");
     EVP_CIPHER_CTX_init(ctx);
 
     if (!EVP_CipherInit_ex(ctx,c,e, (const byte*)k, (const byte*)iv,enc)) {
-        luaL_error(L,"EVP_DecryptInit_ex failed");
+        luaL_error(L,"EVP_CipherInit_ex failed");
     }
+	if(!EVP_CIPHER_CTX_set_padding(ctx,!nopad))
+	{
+		luaL_error(L,"EVP_CIPHER_CTX_set_padding failed");
+	}
     return 1;
 }
 /* }}} */

@@ -135,15 +135,33 @@ LUA_FUNCTION(openssl_pkcs7_parse)
     case NID_pkcs7_signed:
     {
         PKCS7_SIGNED *sign = p7->d.sign;
+		PKCS7* c = sign->contents;
+		PKCS7_SIGNER_INFO* si = sk_PKCS7_SIGNER_INFO_value(sign->signer_info,0);
+
         certs = sign->cert? sign->cert : NULL;
         crls = sign->crl ? sign->crl : NULL;
+#if 0
+		typedef struct pkcs7_signed_st
+		{
+			ASN1_INTEGER			*version;	/* version 1 */
+			STACK_OF(X509_ALGOR)		*md_algs;	/* md used */
+			STACK_OF(X509)			*cert;		/* [ 0 ] */
+			STACK_OF(X509_CRL)		*crl;		/* [ 1 ] */
+			STACK_OF(PKCS7_SIGNER_INFO)	*signer_info;
 
+			struct pkcs7_st			*contents;
+		} PKCS7_SIGNED;
+#endif
         PUSH_OBJECT(sk_X509_ALGOR_dup(sign->md_algs),"openssl.stack_of_x509_algor");
         lua_setfield(L,-2,"md_algs");
         PUSH_OBJECT(sk_PKCS7_SIGNER_INFO_dup(sign->signer_info),"openssl.stack_of_pkcs7_signer_info");
         lua_setfield(L,-2,"signer_info");
         lua_pushboolean(L,PKCS7_is_detached(p7));
         lua_setfield(L,-2,"detached");
+		if(c){
+			PUSH_OBJECT(PKCS7_dup(c), "openssl.pkcs7");
+			lua_setfield(L, -2, "contents");
+		}
         if(!PKCS7_is_detached(p7)) {
 #if 0
             BIO  *bio = BIO_new(BIO_s_mem());
@@ -155,14 +173,65 @@ LUA_FUNCTION(openssl_pkcs7_parse)
             lua_setfield(L,-2,"content");
 #endif
         }
-
     }
-
     break;
     case NID_pkcs7_signedAndEnveloped:
         certs=p7->d.signed_and_enveloped->cert;
         crls=p7->d.signed_and_enveloped->crl;
         break;
+	case NID_pkcs7_enveloped:
+		{/*
+			BIO * mem = BIO_new(BIO_s_mem());
+			BIO * v_p7bio = PKCS7_dataDecode(p7,pkey,NULL,NULL);
+			BUF_MEM *bptr = NULL;
+			unsigned char src[4096];
+			int len;
+
+			while((len = BIO_read(v_p7bio,src,4096))>0){
+				BIO_write(mem, src, len);
+			}
+			BIO_free(v_p7bio);
+			BIO_get_mem_ptr(mem, &bptr);
+			if((int)*puiDataLen < bptr->length)
+			{
+				*puiDataLen = bptr->length;
+				ret = SAR_MemoryErr;
+			}else{
+				*puiDataLen =  bptr->length;
+				memcpy(pucData,bptr->data, bptr->length);
+			}
+		*/
+		}
+		break;
+	case NID_pkcs7_digest:
+		{
+			PKCS7_DIGEST* d =p7->d.digest;
+			PKCS7* c = d->contents;
+			ASN1_OCTET_STRING *data = d->digest;
+
+			lua_pushliteral(L, "digest");
+			lua_setfield(L, -2, "type");
+
+			if(data){
+				int dlen = ASN1_STRING_length(data);
+				const char* dptr = ASN1_STRING_data(data);
+				lua_pushlstring(L, dptr, dlen);
+				lua_setfield(L, -2, "digest");
+			}
+		}
+		break;
+	case NID_pkcs7_data:
+	{
+		ASN1_OCTET_STRING *data = p7->d.data;
+		int dlen = ASN1_STRING_length(data);
+		const char* dptr = ASN1_STRING_data(data);
+
+		lua_pushliteral(L, "data");
+		lua_setfield(L, -2, "type");
+		lua_pushlstring(L, dptr, dlen);
+		lua_setfield(L, -2, "data");
+	}
+		break;
     default:
         break;
     }
