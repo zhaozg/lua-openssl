@@ -3,8 +3,7 @@ T=openssl
 CONFIG= ./config
 include $(CONFIG)
 
-OBJS=src/auxiliar.o src/bio.o src/cipher.o src/crl.o src/digest.o src/misc.o src/openssl.o src/pkcs12.o src/pkcs7.o  src/pkey.o src/x509.o src/ots.o src/csr.o src/conf.o src/xname.o src/xexts.o src/xattrs.o
-
+OBJS=src/auxiliar.o src/bio.o src/cipher.o src/conf.o src/ocsp.o src/crl.o src/csr.o src/digest.o src/engine.o src/lbn.o src/misc.o src/openssl.o src/ots.o src/pkcs12.o src/pkcs7.o src/pkey.o src/ssl.o src/x509.o src/xname.o src/xexts.o src/xattrs.o src/th-lock.o
 
 
 .c.o:

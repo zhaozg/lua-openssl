@@ -21,7 +21,7 @@
 * Author:  george zhao <zhaozg(at)gmail.com>
 \*=========================================================================*/
 #include "openssl.h"
-
+#include <memory.h>
 /* cipher module for the Lua/OpenSSL binding.
  *
  * The functions in this module can be used to load, parse, export, verify... functions.

@@ -1,9 +1,6 @@
 #include <openssl/engine.h>
 #include "openssl.h"
 
-#ifdef LUA_FFILIBNAME
-#include <lj_obj.h>
-#endif
 static const char* const list[] = {
 	"RSA",	/* 0 */
 	"DSA",
@@ -32,19 +29,11 @@ int openssl_engine(lua_State *L){
 			eng = ENGINE_get_first();
 		else
 			eng = ENGINE_get_last();
-#ifdef LUA_FFILIBNAME
-	}else if(lua_type(L, 1) == LUA_TCDATA)
-	{
-		eng = lua_topointer(L,1);
-#endif
 	}else
 		luaL_error(L, 
 			"#1 may be string, boolean, nil, userdata for engine or none\n"
 			"\tstring for an engine id to load\n"
 			"\ttrue for first engine, false or last engine\n"
-#ifdef LUA_FFILIBNAME
-			"\tuserdata will be warp as a openssl.engine object\n"
-#endif
 			"\tnil or none will create a new engine\n"
 			"\tbut we get %s:%s",lua_typename(L,lua_type(L,  1)),lua_tostring(L,1));
 	if(eng){
