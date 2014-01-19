@@ -3,15 +3,14 @@
 
 int openssl_ocsp_request_new(lua_State*L){
 	OCSP_REQUEST *req = NULL;
-	
+	BIO* bio = NULL;
 	if (lua_isstring(L,1)){
-		int len;
+		size_t len;
 		const char* dat = lua_tolstring(L,1, &len);
-		const char **p = &dat;
-		req = d2i_OCSP_REQUEST(NULL, p, len);
+		bio = BIO_new_mem_buf((void*)dat,len);
+		req = d2i_OCSP_REQUEST_bio(bio, NULL);
 		if (!req) {
-			BIO *bio = BIO_new_mem_buf((void*)dat,len);
-			p = &dat;
+			BIO_reset(bio);
 			req = PEM_read_bio_OCSP_REQUEST(bio, NULL, NULL);
 		}
 	}else{
@@ -20,9 +19,7 @@ int openssl_ocsp_request_new(lua_State*L){
 		ASN1_BIT_STRING *ikey = X509_get0_pubkey_bitstr(issuer);
 		
 		OCSP_CERTID *id = NULL;
-		int ret = 0;
 		OCSP_ONEREQ *one;
-		BIO* bio = NULL;
 		char buf[1024];
 		int nonce = lua_gettop(L)>2?auxiliar_checkboolean(L, 3):0;
 		req = OCSP_REQUEST_new();
@@ -37,7 +34,7 @@ int openssl_ocsp_request_new(lua_State*L){
 					id = OCSP_cert_to_id(NULL,cert,issuer);
 					one = OCSP_request_add0_id(req,id);
 				}else{
-					int len;
+					size_t len;
 					char *serial = (char *)luaL_checklstring(L,-1, &len);
 					ASN1_INTEGER *sno = ASN1_INTEGER_new();
 					bio = BIO_new_mem_buf(serial, len);
@@ -47,7 +44,6 @@ int openssl_ocsp_request_new(lua_State*L){
 						ASN1_INTEGER_free(sno);
 						one = OCSP_request_add0_id(req,id);
 					};
-					BIO_free(bio);
 				}
 				lua_pop(L, 1);
 			}
@@ -56,24 +52,24 @@ int openssl_ocsp_request_new(lua_State*L){
 			id = OCSP_cert_to_id(NULL,cert,issuer);
 			one = OCSP_request_add0_id(req,id);
 		}else{
-			int len;
-			char *serial = (char *)luaL_checklstring(L,2, &len);
+			size_t len;
+			const char *serial = (char *)luaL_checklstring(L,2, &len);
 			ASN1_INTEGER *sno = ASN1_INTEGER_new();
 
-			bio = BIO_new_mem_buf(serial, len);
+			bio = BIO_new_mem_buf((unsigned char*)serial, len);
 
 			if(a2i_ASN1_INTEGER(bio, sno, buf, 1024)==1)
 			{
 				id = OCSP_cert_id_new(EVP_sha1(),iname,ikey,sno);
 				ASN1_INTEGER_free(sno);
 				one = OCSP_request_add0_id(req,id);
-			};
-			BIO_free(bio);
+			};;
 		}
 		if(nonce)
 			OCSP_request_add1_nonce(req, NULL,  -1);
 	}
-	
+	if(bio)
+		BIO_free(bio);
 	PUSH_OBJECT(req,"openssl.ocsp_request");
 	return 1;
 }
@@ -196,10 +192,10 @@ int openssl_ocsp_response(lua_State *L){
 	OCSP_RESPONSE *res = NULL;
 
 	if (lua_isstring(L,1)){
-		int len;
+		size_t len;
 		const char* dat = lua_tolstring(L,1, &len);
 		const char **p = &dat;
-		res = d2i_OCSP_RESPONSE(NULL, p, len);
+		res = d2i_OCSP_RESPONSE(NULL, (const unsigned char**)p, len);
 		if (!res) {
 			BIO *bio = BIO_new_mem_buf((void*)dat,len);
 			p = &dat;

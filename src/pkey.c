@@ -432,7 +432,7 @@ LUA_FUNCTION(openssl_pkey_export)
 #if OPENSSL_VERSION_NUMBER > 0x10000000L
 				ret = i2b_PublicKey_bio(bio_out,key);
 #else
-				char* p;
+				unsigned char* p;
 				int l;
 				l = i2d_PublicKey(key,NULL);
 				if(l>0){
@@ -455,7 +455,7 @@ LUA_FUNCTION(openssl_pkey_export)
 #if OPENSSL_VERSION_NUMBER > 0x10000000L
 					ret = i2b_PrivateKey_bio(bio_out,key);
 #else
-					char* p;
+					unsigned char* p;
 					int l;
 					l = i2d_PrivateKey(key,NULL);
 					if(l>0){

@@ -179,11 +179,10 @@ LUA_FUNCTION(openssl_bio_get_mem) {
 
 LUA_FUNCTION(openssl_bio_close) {
     BIO* bio = CHECK_OBJECT(1,BIO,"openssl.bio");
-	BIO_shutdown_wr(bio);
+    BIO_shutdown_wr(bio);
     BIO_set_close(bio,1);
     lua_pushnil(L);
     lua_replace(L,1);
-
     return 0;
 }
 

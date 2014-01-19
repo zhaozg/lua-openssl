@@ -137,10 +137,11 @@ LUA_FUNCTION(openssl_pkcs7_parse)
         PKCS7_SIGNED *sign = p7->d.sign;
 		PKCS7* c = sign->contents;
 		PKCS7_SIGNER_INFO* si = sk_PKCS7_SIGNER_INFO_value(sign->signer_info,0);
-
+		(void*)si;
         certs = sign->cert? sign->cert : NULL;
         crls = sign->crl ? sign->crl : NULL;
 #if 0
+
 		typedef struct pkcs7_signed_st
 		{
 			ASN1_INTEGER			*version;	/* version 1 */
@@ -208,14 +209,15 @@ LUA_FUNCTION(openssl_pkcs7_parse)
 			PKCS7_DIGEST* d =p7->d.digest;
 			PKCS7* c = d->contents;
 			ASN1_OCTET_STRING *data = d->digest;
+			(void*)c;
 
 			lua_pushliteral(L, "digest");
 			lua_setfield(L, -2, "type");
 
 			if(data){
 				int dlen = ASN1_STRING_length(data);
-				const char* dptr = ASN1_STRING_data(data);
-				lua_pushlstring(L, dptr, dlen);
+				unsigned char* dptr = ASN1_STRING_data(data);
+				lua_pushlstring(L, (const char*)dptr, dlen);
 				lua_setfield(L, -2, "digest");
 			}
 		}
@@ -224,11 +226,11 @@ LUA_FUNCTION(openssl_pkcs7_parse)
 	{
 		ASN1_OCTET_STRING *data = p7->d.data;
 		int dlen = ASN1_STRING_length(data);
-		const char* dptr = ASN1_STRING_data(data);
+		unsigned char* dptr = ASN1_STRING_data(data);
 
 		lua_pushliteral(L, "data");
 		lua_setfield(L, -2, "type");
-		lua_pushlstring(L, dptr, dlen);
+		lua_pushlstring(L, (const char*)dptr, dlen);
 		lua_setfield(L, -2, "data");
 	}
 		break;

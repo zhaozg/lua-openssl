@@ -49,18 +49,18 @@ merr:
 /* Check the extension string for critical flag */
 static int v3_check_critical(char **value)
 {
-    char *p = *value;
+    const char *p = *value;
     if ((strlen(p) < 9) || strncmp(p, "critical,", 9)) return 0;
     p+=9;
     while(isspace((unsigned char)*p)) p++;
-    *value = p;
+    *value = (char*)p;
     return 1;
 }
 
 static int v3_check_generic(char **value)
 {
     int gen_type = 0;
-    char *p = *value;
+    const char *p = *value;
     if ((strlen(p) >= 4) && !strncmp(p, "DER:", 4))
     {
         p+=4;
@@ -75,7 +75,7 @@ static int v3_check_generic(char **value)
         return 0;
 
     while (isspace((unsigned char)*p)) p++;
-    *value = p;
+    *value = (char*)p;
     return gen_type;
 }
 

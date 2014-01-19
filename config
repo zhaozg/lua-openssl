@@ -17,7 +17,7 @@ LIBNAME= $T.so.$V
 
 # Compilation directives
 WARN_MOST= -Wall -fPIC -W -Waggregate-return -Wcast-align -Wmissing-prototypes -Wnested-externs -Wshadow -Wwrite-strings -pedantic
-WARN= -Wall -fPIC
+WARN= -Wall -fPIC -Wno-unused-value
 INCS= -I$(LUA_INC)
 CFLAGS= $(WARN) $(INCS) -DPTHREADS
 CC= gcc -g -fPIC $(CFLAGS)

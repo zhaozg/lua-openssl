@@ -32,7 +32,7 @@ int luaL_typerror (lua_State *L, int narg, const char *tname);
 #endif
 
 #include <assert.h>
-
+#include <string.h>
 /* OpenSSL includes */
 #include <openssl/evp.h>
 #include <openssl/x509.h>

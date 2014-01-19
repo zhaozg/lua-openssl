@@ -7,7 +7,6 @@ int openssl_ssl_ctx_new(lua_State*L)
 	const char* meth = luaL_optstring(L, 1, "TLSv1");
 	SSL_METHOD* method = NULL;
 	SSL_CTX* ctx;
-	int ret = 0;
 	if(strcmp(meth,"SSLv3")==0)
 		method = SSLv3_method();		/* SSLv3 */
 	else if(strcmp(meth,"SSLv3_server")==0)
@@ -155,7 +154,7 @@ static int openssl_ssl_ctx_sessions(lua_State*L){
 	SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
 	if(lua_isstring(L, 2)){
 		size_t s;
-		const char* sid_ctx = luaL_checklstring(L, 2, &s);
+		unsigned char* sid_ctx = (unsigned char*)luaL_checklstring(L, 2, &s);
 		int ret = SSL_CTX_set_session_id_context(ctx, sid_ctx, s);
 		lua_pushboolean(L, ret);
 		return 1;
@@ -200,7 +199,7 @@ static int openssl_ssl_ctx_use_RSAPrivateKey(lua_State*L){
 	int ret;
 	if(lua_isstring(L,2)){
 		size_t size;
-		const char* d = luaL_checklstring(L, 2, &size);
+		unsigned char* d = (unsigned char*)luaL_checklstring(L, 2, &size);
 		ret = SSL_CTX_use_RSAPrivateKey_ASN1(ctx, d, size);
 	}else{
 		RSA* rsa = CHECK_OBJECT(2, RSA, "openssl.rsa");
@@ -215,7 +214,7 @@ static int openssl_ssl_ctx_use_PrivateKey(lua_State*L){
 	int ret;
 	if(lua_isstring(L,2)){
 		size_t size;
-		const char* d = luaL_checklstring(L, 2, &size);
+		unsigned char* d = (unsigned char*)luaL_checklstring(L, 2, &size);
 		int pk = luaL_checkint(L, 3);
 		ret = SSL_CTX_use_PrivateKey_ASN1(pk, ctx, d, size);
 	}else{
@@ -231,7 +230,7 @@ static int openssl_ssl_ctx_use_certificate(lua_State*L){
 	int ret;
 	if(lua_isstring(L,2)){
 		size_t size;
-		const char* d = luaL_checklstring(L, 2, &size);
+		unsigned char* d = (unsigned char*)luaL_checklstring(L, 2, &size);
 		ret = SSL_CTX_use_certificate_ASN1(ctx, size, d);
 	}else{
 		X509* x = CHECK_OBJECT(2, X509, "openssl.x509");
@@ -373,7 +372,8 @@ oid SSL_CTX_sess_set_remove_cb(SSL_CTX *ctx, void (*remove_session_cb)(struct ss
 oid (*SSL_CTX_sess_get_remove_cb(SSL_CTX *ctx))(struct ssl_ctx_st *ctx, SSL_SESSION *sess);
 oid SSL_CTX_sess_set_get_cb(SSL_CTX *ctx, SSL_SESSION *(*get_session_cb)(struct ssl_st *ssl, unsigned char *data,int len,int *copy));
 SL_SESSION *(*SSL_CTX_sess_get_get_cb(SSL_CTX *ctx))(struct ssl_st *ssl, unsigned char *Data, int len, int *copy);
-	/* These are the ones being used, the ones in SSL_SESSION are
+
+ These are the ones being used, the ones in SSL_SESSION are
 	SSL_SESSION *session;
 */
 
@@ -449,7 +449,7 @@ static int openssl_ssl_session_id(lua_State*L){
 	if(lua_isnoneornil(L,2)){
 		unsigned int len;
 		const unsigned char* id = SSL_SESSION_get_id(session, &len);
-		lua_pushlstring(L, id, len);
+		lua_pushlstring(L, (const char*)id, len);
 		return 1;
 	}else{
 #if OPENSSL_VERSION_NUMBER > 0x10000000L
@@ -563,7 +563,7 @@ static int openssl_ssl_current_cipher(lua_State*L){
 		lua_setfield(L, -2, "bits");
 	};
 
-	lua_pushstring(L, SSL_CIPHER_description(c, B.buffer, sizeof(B.buffer)));
+	lua_pushstring(L, SSL_CIPHER_description((SSL_CIPHER*)c, B.buffer, sizeof(B.buffer)));
 	lua_setfield(L, -2, "description");
 
 	return 1;
@@ -572,7 +572,7 @@ static int openssl_ssl_current_cipher(lua_State*L){
 static int openssl_ssl_fd(lua_State*L){
 	SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
 	int fd,rfd,wfd;
-	int ret = 1;
+
 	fd =  luaL_optint(L, 2, -1);
 	rfd = luaL_optint(L, 3, -1);
 	wfd = luaL_optint(L, 4, -1);
@@ -695,7 +695,7 @@ static int openssl_ssl_use_PrivateKey(lua_State*L){
 		size_t size;
 		const char* d = luaL_checklstring(L, 2, &size);
 		int pk = luaL_checkint(L, 3);
-		ret = SSL_use_PrivateKey_ASN1(pk, s, d, size);
+		ret = SSL_use_PrivateKey_ASN1(pk, s, (unsigned char*)d, size);
 	}else{
 		EVP_PKEY* pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
 		ret = SSL_use_PrivateKey(s, pkey);
@@ -710,7 +710,7 @@ static int openssl_ssl_use_certificate(lua_State*L){
 	if(lua_isstring(L,2)){
 		size_t size;
 		const char* d = luaL_checklstring(L, 2, &size);
-		ret = SSL_use_certificate_ASN1(s, d, (int)size);
+		ret = SSL_use_certificate_ASN1(s, (unsigned char*)d, (int)size);
 	}else{
 		X509* x = CHECK_OBJECT(2, X509, "openssl.x509");
 		ret = SSL_use_certificate(s, x);
@@ -822,6 +822,7 @@ static int openssl_ssl_write(lua_State*L){
 
 static int openssl_ssl_ctrl(lua_State*L){
 	SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
+	(void*)s;
 	/*
 	int trust = luaL_checkint(L, 2);
 	int ret = SSL_ctrl(s); (SSL *ssl,void *buf,int num);
@@ -929,6 +930,7 @@ static int openssl_ssl_set_debug(lua_State*L){
 	return 0;
 }
 #endif
+#if OPENSSL_VERSION_NUMBER >= 0x0090819fL
 static int openssl_ssl_ctx(lua_State*L){
 	SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
 	if(lua_isnoneornil(L, 2)){
@@ -941,7 +943,7 @@ static int openssl_ssl_ctx(lua_State*L){
 	}
 	return 1;
 }
-
+#endif
 static int openssl_ssl_verify_result(lua_State*L){
 	SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
 	if(lua_isnoneornil(L, 2)){
@@ -1015,6 +1017,7 @@ static int openssl_ssl_get_client_CA_list(lua_State*L){
 static int openssl_ssl_alert_type_string(lua_State*L)
 {
 	SSL* s =  CHECK_OBJECT(1, SSL,  "openssl.ssl");
+	(void*)s;
 	int v = luaL_checkint(L, 2);
 	int _long = lua_isnoneornil(L,3)?0:auxiliar_checkboolean(L, 3);
 	const char* val;
@@ -1028,6 +1031,7 @@ static int openssl_ssl_alert_type_string(lua_State*L)
 static int openssl_ssl_alert_desc_string(lua_State*L)
 {
 	SSL* s =  CHECK_OBJECT(1, SSL,  "openssl.ssl");
+	(void*)s;
 	int v = luaL_checkint(L, 2);
 	int _long = lua_isnoneornil(L,3)?0:auxiliar_checkboolean(L, 3);
 	const char* val;
@@ -1052,7 +1056,7 @@ static int openssl_ssl_session(lua_State*L){
 		{
 			size_t sz;
 			const char* sid_ctx = luaL_checklstring(L, 2, &sz);
-			int ret = SSL_set_session_id_context(s, sid_ctx, sz);
+			int ret = SSL_set_session_id_context(s, (unsigned char*)sid_ctx, sz);
 			lua_pushboolean(L, ret);
 		}else{
 			ss = CHECK_OBJECT(2, SSL_SESSION, "openssl.ssl_session");
@@ -1104,7 +1108,9 @@ static luaL_Reg ssl_funcs[] = {
 	{"alert_desc",			openssl_ssl_alert_desc_string},
 
 	{"dup",				openssl_ssl_dup},
+#if OPENSSL_VERSION_NUMBER >= 0x0090819fL
 	{"ctx",				openssl_ssl_ctx},
+#endif
 	
 	{"clear",			openssl_ssl_clear},
 	{"want",			openssl_ssl_want},
@@ -1127,6 +1133,10 @@ static luaL_Reg ssl_funcs[] = {
 	{"set_shutdown",		openssl_ssl_set_shutdown},
 	{"get_shutdown",		openssl_ssl_get_shutdown},
 	{"version",				openssl_ssl_version},
+
+	{"set_purpose",			openssl_ssl_set_purpose},
+	{"set_trust",			openssl_ssl_set_trust},
+	{"verify_result",		openssl_ssl_verify_result},
 
 	{"renegotiate_pending",		openssl_ssl_renegotiate_pending},
 	{"renegotiate",				openssl_ssl_renegotiate},

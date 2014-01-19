@@ -45,11 +45,6 @@ static luaL_reg csr_cfuns[] = {
 };
 
 
-
-
-
-
-
 /* {{{ x509 CSR functions */
 
 /* {{{ openssl_make_REQ */

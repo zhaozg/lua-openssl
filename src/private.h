@@ -8,3 +8,4 @@ int lo_lt2extensions(lua_State*L,
 int lo_lt2attrs(lua_State*L,
     STACK_OF(X509_ATTRIBUTE) **attributes,
     int attr);
+

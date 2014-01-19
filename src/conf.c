@@ -162,7 +162,7 @@ LUA_FUNCTION(openssl_conf_parse)
 #if OPENSSL_VERSION_NUMBER >= 0x10000002L
         lh_CONF_VALUE_doall_arg(conf, LHASH_DOALL_ARG_FN(dump_value), lua_State, L);
 #else
-        lh_doall_arg(conf,dump_value_doall_arg, L);
+        lh_doall_arg(conf,(LHASH_DOALL_ARG_FN_TYPE)dump_value_doall_arg, L);
 #endif
 
         return 1;
