@@ -31,7 +31,7 @@ int luaL_typerror (lua_State *L, int narg, const char *tname) {
   const char *msg = lua_pushfstring(L, "%s expected, got %s",
                                     tname, luaL_typename(L, narg));
   return luaL_argerror(L, narg, msg);
-} 
+}
 #endif
 
 static int openssl_version(lua_State*L)
@@ -799,34 +799,26 @@ LUA_FUNCTION(openssl_dh_compute_key)
     return ret;
 }
 /* }}} */
-static int g_init=0;
 
 void CRYPTO_thread_setup(void);
-void CRYPTO_thread_cleanup(void); 
+void CRYPTO_thread_cleanup(void);
 int luaopen_bn(lua_State *L);
 LUA_API int luaopen_openssl(lua_State*L)
 {
     char * config_filename;
-	CRYPTO_thread_setup();
-	CRYPTO_lock(CRYPTO_LOCK,CRYPTO_LOCK_ERR,__FILE__,__LINE__);
-    if(g_init==0)
-    {
-        g_init =  1;
-		
+    CRYPTO_thread_setup();
 
-        OpenSSL_add_all_ciphers();
-        OpenSSL_add_all_digests();
-		SSL_library_init();
+    OpenSSL_add_all_ciphers();
+    OpenSSL_add_all_digests();
+    SSL_library_init();
 
-        ERR_load_ERR_strings();
-        ERR_load_crypto_strings();
-        ERR_load_EVP_strings();
-		ERR_load_SSL_strings();
+    ERR_load_ERR_strings();
+    ERR_load_crypto_strings();
+    ERR_load_EVP_strings();
+    ERR_load_SSL_strings();
 
-		ENGINE_load_dynamic();
-		ENGINE_load_openssl();
-    }
-	CRYPTO_lock(CRYPTO_UNLOCK,CRYPTO_LOCK_ERR,__FILE__,__LINE__);
+    ENGINE_load_dynamic();
+    ENGINE_load_openssl();
 
     /* Determine default SSL configuration file */
     config_filename = getenv("OPENSSL_CONF");
@@ -857,9 +849,9 @@ LUA_API int luaopen_openssl(lua_State*L)
     openssl_register_conf(L);
     openssl_register_pkcs7(L);
     openssl_register_misc(L);
-	openssl_register_engine(L);
-	openssl_register_ssl(L);
-	openssl_register_ocsp(L);
+    openssl_register_engine(L);
+    openssl_register_ssl(L);
+    openssl_register_ocsp(L);
 
 #if LUA_VERSION_NUM==501
     luaL_register(L,"openssl",eay_functions);
@@ -867,11 +859,11 @@ LUA_API int luaopen_openssl(lua_State*L)
     lua_newtable(L);
     luaL_setfuncs(L, eay_functions, 0);
 #endif
-	setNamedIntegers(L, consts);
+    setNamedIntegers(L, consts);
 
-	/* third part */
-	luaopen_bn(L);
-	lua_setfield(L, -2, "bn");
+    /* third part */
+    luaopen_bn(L);
+    lua_setfield(L, -2, "bn");
 
     return 1;
 }
