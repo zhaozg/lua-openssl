@@ -417,10 +417,8 @@ LUA_FUNCTION(openssl_seal)
     memset(eks, 0, sizeof(*eks) * nkeys);
 
     /* get the public keys we are using to seal this data */
-
-    i = 0;
-    for(i=1; i<=nkeys; i++) {
-        lua_rawgeti(L,2,i);
+    for(i=0; i<nkeys; i++) {
+        lua_rawgeti(L,2,i+1);
 
         pkeys[i] =  CHECK_OBJECT(-1,EVP_PKEY, "openssl.evp_pkey");
         if (pkeys[i] == NULL) {
@@ -497,14 +495,22 @@ LUA_API LUA_FUNCTION(openssl_open)
     len1 = data_len + 1;
     buf = malloc(len1);
 
-    if (EVP_OpenInit(&ctx, cipher, (unsigned char *)ekey, ekey_len, NULL, pkey) && EVP_OpenUpdate(&ctx, buf, &len1, (unsigned char *)data, data_len)) {
-	len2 = data_len - len1;
-        if (!EVP_OpenFinal(&ctx, buf + len1, &len2) || (len1 + len2 == 0)) {
-            free(buf);
-        }
-    } else {
-        free(buf);
-    }
+    if (EVP_OpenInit(&ctx, cipher, (unsigned char *)ekey, ekey_len, NULL, pkey) && EVP_OpenUpdate(&ctx, buf, &len1, (unsigned char *)data, data_len))
+	{
+		len2 = data_len - len1;
+	    if (!EVP_OpenFinal(&ctx, buf + len1, &len2) || (len1 + len2 == 0))
+		{
+			luaL_error(L,"EVP_OpenFinal() failed.");
+			free(buf);
+			return 0;
+		}
+	}
+	else
+	{
+		luaL_error(L,"EVP_OpenInit() failed.");
+		free(buf);
+		return 0;
+	}
 
     buf[len1 + len2] = '\0';
     lua_pushlstring(L, (const char*)buf, len1 + len2);
