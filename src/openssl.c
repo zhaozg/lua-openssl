@@ -219,7 +219,7 @@ static const luaL_Reg eay_functions[] = {
 
 	/* ocsp handle */
 	{"ocsp_request_read", openssl_ocsp_request_new},
-	{"ocsp_request_new", openssl_ocsp_request_new},
+	{"ocsp_request_new",  openssl_ocsp_request_new},
 	{"ocsp_response_new", openssl_ocsp_response},
 	{"ocsp_response_read",openssl_ocsp_response},
 
@@ -825,7 +825,9 @@ LUA_API int luaopen_openssl(lua_State*L)
 
     ENGINE_load_dynamic();
     ENGINE_load_openssl();
-
+#ifdef LOAD_ENGINE_CUSTOM
+	LOAD_ENGINE_CUSTOM();
+#endif
     /* Determine default SSL configuration file */
     config_filename = getenv("OPENSSL_CONF");
     if (config_filename == NULL) {
@@ -858,6 +860,7 @@ LUA_API int luaopen_openssl(lua_State*L)
     openssl_register_engine(L);
     openssl_register_ssl(L);
     openssl_register_ocsp(L);
+	openssl_register_ec(L);
 
 #if LUA_VERSION_NUM==501
     luaL_register(L,"openssl",eay_functions);

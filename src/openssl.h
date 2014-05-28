@@ -286,7 +286,7 @@ void openssl_add_method(const OBJ_NAME *name, void *arg);
 
 #define PUSH_OBJECT(o, tname)		\
 	MULTI_LINE_MACRO_BEGIN		\
-	*(void **)(lua_newuserdata(L, sizeof(void *))) = (o);	\
+	*(void **)(lua_newuserdata(L, sizeof(void *))) = (void*)(o);	\
 	auxiliar_setclass(L,tname,-1);	\
 	MULTI_LINE_MACRO_END
 
@@ -341,6 +341,8 @@ int openssl_register_bio(lua_State* L);
 int openssl_register_crl(lua_State* L);
 int openssl_register_ts(lua_State* L);
 int openssl_register_conf(lua_State* L);
+
+int openssl_register_ec(lua_State* L);
 
 int openssl_register_pkcs7(lua_State* L);
 int openssl_register_misc(lua_State* L);

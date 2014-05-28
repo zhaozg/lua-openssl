@@ -614,57 +614,6 @@ LUA_FUNCTION(openssl_pkey_free)
 }
 /* }}} */
 
-#ifndef OPENSSL_NO_EC
-static int openssl_put_ec_group(lua_State*L, EC_GROUP* group)
-{
-    lua_newtable(L);
-    if(group->generator)
-    {
-        EC_POINT * g = group->generator;
-        lua_newtable(L);
-        OPENSSL_PKEY_GET_BN(&g->X, X);
-        OPENSSL_PKEY_GET_BN(&g->Y, Y);
-        OPENSSL_PKEY_GET_BN(&g->Z, Z);
-        lua_setfield(L,-2,"generator");
-    }
-    OPENSSL_PKEY_GET_BN(&group->order, order);
-    OPENSSL_PKEY_GET_BN(&group->cofactor, cofactor);
-
-    lua_pushinteger(L, group->curve_name);
-    lua_setfield(L, -2, "curve_name");
-
-    lua_pushinteger(L,group->asn1_flag);
-    lua_setfield(L, -2, "asn1_flag");
-
-    lua_pushinteger(L,group->asn1_form);
-    lua_setfield(L, -2, "asn1_form");
-
-    lua_pushlstring(L,(const char*)group->seed,group->seed_len);
-    lua_setfield(L,-2,"seed");
-
-    OPENSSL_PKEY_GET_BN(&group->field, field);
-    //OPENSSL_PKEY_GET_BN(&group->a, a);
-    //OPENSSL_PKEY_GET_BN(&group->b, b);
-
-    lua_pushinteger(L,group->a_is_minus3);
-    lua_setfield(L,-2,"a_is_minus3");
-
-    lua_newtable(L);
-    {
-        int i;
-        for(i=0; i<6; i++)
-        {
-            lua_pushinteger(L,group->poly[i]);
-            lua_rawseti(L,-2,i);
-        }
-    }
-    lua_setfield(L,-2,"poly");
-
-    lua_setfield(L,-2,"group");
-    return 1;
-}
-#endif
-
 /* {{{  openssl.pkey_parse(resource key)
 returns an array with the key details (bits, pkey, type)*/
 LUA_FUNCTION(openssl_pkey_parse)
@@ -747,34 +696,34 @@ LUA_FUNCTION(openssl_pkey_parse)
     case EVP_PKEY_EC:
         if(pkey->pkey.ec != NULL)
         {
-            struct ec_key_st* ec = pkey->pkey.ec;
-            EC_POINT* point = ec->pub_key;
+			const EC_KEY* ec = EVP_PKEY_get1_EC_KEY(pkey);
+            const EC_POINT* point = EC_KEY_get0_public_key(ec);
+			const EC_GROUP* group = EC_KEY_get0_group(ec);
             lua_newtable(L);
 
+			/*
             lua_pushinteger(L, pkey->pkey.ec->version);
             lua_setfield(L, -2, "version");
+			*/
 
-            lua_pushinteger(L, pkey->pkey.ec->enc_flag);
+            lua_pushinteger(L, EC_KEY_get_enc_flags(ec));
             lua_setfield(L, -2, "enc_flag");
 
-            lua_pushinteger(L, pkey->pkey.ec->conv_form);
+            lua_pushinteger(L, EC_KEY_get_conv_form(ec));
             lua_setfield(L, -2, "conv_form");
 
-            OPENSSL_PKEY_GET_BN(ec->priv_key, priv_key);
-
-            lua_newtable(L);
-            OPENSSL_PKEY_GET_BN(&point->X, X);
-            OPENSSL_PKEY_GET_BN(&point->Y, Y);
-            OPENSSL_PKEY_GET_BN(&point->Z, Z);
+			PUSH_OBJECT(point,"openssl.ec_point");
             lua_setfield(L, -2, "pub_key");
+			
+			PUSH_OBJECT(group, "openssl.ec_group");
+			lua_setfield(L, -2, "group");
 
-            if(ec->group)
-                openssl_put_ec_group(L, ec->group);
+			OPENSSL_PKEY_GET_BN(ec->priv_key, priv_key);
 
-			PUSH_OBJECT(ec,"openssl.ec");
-			lua_rawseti(L,-2, 0);
 
-            lua_setfield(L,-2,"ec");
+			PUSH_OBJECT(ec,"openssl.ec_key");
+			lua_setfield(L,-2,"ec");
+
 
             lua_pushstring(L,"ec");
             lua_setfield(L,-2,"type");

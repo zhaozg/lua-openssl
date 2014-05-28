@@ -5,7 +5,7 @@
 int openssl_ssl_ctx_new(lua_State*L)
 {
 	const char* meth = luaL_optstring(L, 1, "TLSv1");
-	SSL_METHOD* method = NULL;
+	const SSL_METHOD* method = NULL;
 	SSL_CTX* ctx;
 	if(strcmp(meth,"SSLv3")==0)
 		method = SSLv3_method();		/* SSLv3 */
