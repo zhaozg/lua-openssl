@@ -202,11 +202,10 @@ static int openssl_is_private_key(EVP_PKEY* pkey)
 	lua_pop(L,1);}
 
 
-/* {{{ openssl_pkey_new([table configargs])->openssl.evp_pkey
+/* {{{ openssl_pkey_new([table config args])->openssl.evp_pkey
 Generates a new private key */
 LUA_FUNCTION(openssl_pkey_new)
 {
-    int args = lua_gettop(L);
     EVP_PKEY *pkey = NULL;
     const char* alg = "rsa";
 
@@ -291,23 +290,25 @@ LUA_FUNCTION(openssl_pkey_new)
         {
             luaL_error(L,"not support %s!!!!",alg);
         }
-    } else if (args && lua_istable(L,args)) {
-        lua_getfield(L,1,"rsa");
-        if (lua_istable(L,-1))
+    } else if (lua_istable(L,1)) {
+		lua_getfield(L,1,"alg");
+		alg = luaL_optstring(L,-1,alg);
+		lua_pop(L,1);
+        if (strcasecmp(alg,"rsa")==0)
         {
             pkey = EVP_PKEY_new();
             if (pkey) {
                 RSA *rsa = RSA_new();
                 if (rsa) {
-                    OPENSSL_PKEY_SET_BN(-1, rsa, n);
-                    OPENSSL_PKEY_SET_BN(-1, rsa, e);
-                    OPENSSL_PKEY_SET_BN(-1, rsa, d);
-                    OPENSSL_PKEY_SET_BN(-1, rsa, p);
-                    OPENSSL_PKEY_SET_BN(-1, rsa, q);
-                    OPENSSL_PKEY_SET_BN(-1, rsa, dmp1);
-                    OPENSSL_PKEY_SET_BN(-1, rsa, dmq1);
-                    OPENSSL_PKEY_SET_BN(-1, rsa, iqmp);
-                    if (rsa->n && rsa->d) {
+                    OPENSSL_PKEY_SET_BN(1, rsa, n);
+                    OPENSSL_PKEY_SET_BN(1, rsa, e);
+                    OPENSSL_PKEY_SET_BN(1, rsa, d);
+                    OPENSSL_PKEY_SET_BN(1, rsa, p);
+                    OPENSSL_PKEY_SET_BN(1, rsa, q);
+                    OPENSSL_PKEY_SET_BN(1, rsa, dmp1);
+                    OPENSSL_PKEY_SET_BN(1, rsa, dmq1);
+                    OPENSSL_PKEY_SET_BN(1, rsa, iqmp);
+                    if (rsa->n) {
                         if (!EVP_PKEY_set1_RSA(pkey, rsa)) {
                             EVP_PKEY_free(pkey);
                             pkey = NULL;
@@ -315,65 +316,128 @@ LUA_FUNCTION(openssl_pkey_new)
                     }
                 }
             }
-        }
-        lua_pop(L,1);
-        if(!pkey)
+        }else if(strcasecmp(alg,"dsa")==0)
         {
-            lua_getfield(L,1,"dsa");
-            if (lua_istable(L,-1)) {
-                pkey = EVP_PKEY_new();
-                if (pkey) {
-                    DSA *dsa = DSA_new();
-                    if (dsa) {
-                        OPENSSL_PKEY_SET_BN(-1, dsa, p);
-                        OPENSSL_PKEY_SET_BN(-1, dsa, q);
-                        OPENSSL_PKEY_SET_BN(-1, dsa, g);
-                        OPENSSL_PKEY_SET_BN(-1, dsa, priv_key);
-                        OPENSSL_PKEY_SET_BN(-1, dsa, pub_key);
-                        if (dsa->p && dsa->q && dsa->g) {
-                            if (!dsa->priv_key && !dsa->pub_key) {
-                                DSA_generate_key(dsa);
-                            }
-                            if (!EVP_PKEY_set1_DSA(pkey, dsa)) {
-                                EVP_PKEY_free(pkey);
-                                pkey = NULL;
-                            }
-                        }
-                    }
-                }
-            }
-            lua_pop(L,1);
+			pkey = EVP_PKEY_new();
+			if (pkey) {
+				DSA *dsa = DSA_new();
+				if (dsa) {
+					OPENSSL_PKEY_SET_BN(-1, dsa, p);
+					OPENSSL_PKEY_SET_BN(-1, dsa, q);
+					OPENSSL_PKEY_SET_BN(-1, dsa, g);
+					OPENSSL_PKEY_SET_BN(-1, dsa, priv_key);
+					OPENSSL_PKEY_SET_BN(-1, dsa, pub_key);
+					if (dsa->p && dsa->q && dsa->g) {
+						if (!dsa->priv_key && !dsa->pub_key) {
+							DSA_generate_key(dsa);
+						}
+						if (!EVP_PKEY_set1_DSA(pkey, dsa)) {
+							EVP_PKEY_free(pkey);
+							pkey = NULL;
+						}
+					}
+				}
+			}
         }
-        if(!pkey) {
-            lua_getfield(L,1,"dh");
-            if (lua_istable(L,-1)) {
-                pkey = EVP_PKEY_new();
-                if (pkey) {
-                    DH *dh = DH_new();
-                    if (dh) {
-                        OPENSSL_PKEY_SET_BN(-1, dh, p);
-                        OPENSSL_PKEY_SET_BN(-1, dh, g);
-                        OPENSSL_PKEY_SET_BN(-1, dh, priv_key);
-                        OPENSSL_PKEY_SET_BN(-1, dh, pub_key);
-                        if (dh->p && dh->g) {
-                            if (!dh->pub_key) {
-                                DH_generate_key(dh);
-                            }
-                            if (!EVP_PKEY_set1_DH(pkey, dh)) {
-                                EVP_PKEY_free(pkey);
-                                pkey = NULL;
-                            }
-                        }
-                    }
-                }
-            }
-            lua_pop(L,1);
+        else if(strcasecmp(alg,"dh")==0){
+
+			pkey = EVP_PKEY_new();
+			if (pkey) {
+				DH *dh = DH_new();
+				if (dh) {
+					OPENSSL_PKEY_SET_BN(-1, dh, p);
+					OPENSSL_PKEY_SET_BN(-1, dh, g);
+					OPENSSL_PKEY_SET_BN(-1, dh, priv_key);
+					OPENSSL_PKEY_SET_BN(-1, dh, pub_key);
+					if (dh->p && dh->g) {
+						if (!dh->pub_key) {
+							DH_generate_key(dh);
+						}
+						if (!EVP_PKEY_set1_DH(pkey, dh)) {
+							EVP_PKEY_free(pkey);
+							pkey = NULL;
+						}
+					}
+				}
+			}
         }
-        if(pkey)
+        else if(strcasecmp(alg,"ec")==0)
         {
-            PUSH_OBJECT(pkey,"openssl.evp_pkey");
-            return 1;
-        }
+
+			int ec_name = NID_undef;
+			BIGNUM *d = NULL;
+			BIGNUM *x = NULL;
+			BIGNUM *y = NULL;
+			BIGNUM *z = NULL;
+			EC_GROUP *group = NULL;
+
+			lua_getfield(L, -1, "ec_name");
+			if (lua_isnumber(L, -1)) {
+				ec_name = luaL_checkint(L, -1);
+			} else if(lua_isstring(L, -1)) {
+				const char* name = luaL_checkstring(L,-1);
+				ec_name = OBJ_sn2nid(name);
+			}else{
+				luaL_error(L,"not support ec_name type:%s!!!!", lua_typename(L,lua_type(L,-1)));
+			}
+			lua_pop(L,1);
+
+			lua_getfield(L, -1, "D");
+			if(!lua_isnil(L, -1)){
+				BN_hex2bn(&d,luaL_checkstring(L, -1));
+			}
+			lua_pop(L,1);
+
+			lua_getfield(L, -1, "X");
+			if(!lua_isnil(L, -1)){
+				BN_hex2bn(&x,luaL_checkstring(L, -1));
+			}
+			lua_pop(L,1);
+
+			lua_getfield(L, -1, "Y");
+			if(!lua_isnil(L, -1)){
+				BN_hex2bn(&y,luaL_checkstring(L, -1));
+			}
+			lua_pop(L,1);
+
+			lua_getfield(L, -1, "Z");
+			if(!lua_isnil(L, -1)){
+				BN_hex2bn(&z,luaL_checkstring(L, -1));
+			}
+			lua_pop(L,1);
+
+			if(ec_name!=NID_undef)
+				group = EC_GROUP_new_by_curve_name(ec_name);
+
+			if (!group) {
+				luaL_error(L,"not support curve_name %d:%s!!!!", ec_name, OBJ_nid2sn(ec_name));
+			}
+
+			pkey = EVP_PKEY_new();
+			if (pkey) {
+				EC_KEY *ec = EC_KEY_new();
+				if (ec) {
+					EC_KEY_set_group(ec,group);
+					if(d)
+						EC_KEY_set_private_key(ec,d);
+					if(x!=NULL && y!=NULL){
+						EC_POINT *pnt = EC_POINT_new(group);
+						BN_CTX *ctx = BN_CTX_new();
+						if(z==NULL)
+							EC_POINT_set_affine_coordinates_GFp(group,pnt,x,y,ctx);
+						else
+							EC_POINT_set_Jprojective_coordinates_GFp(group,pnt,x,y,z,ctx);
+
+						EC_KEY_set_public_key(ec,pnt);
+					}
+					if (!EVP_PKEY_set1_EC_KEY(pkey, ec)) {
+						EC_KEY_free(ec);
+						EVP_PKEY_free(pkey);
+						pkey = NULL;
+					}
+				}
+			}        
+		}
     }
 
     if(pkey)

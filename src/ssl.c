@@ -1017,7 +1017,6 @@ static int openssl_ssl_get_client_CA_list(lua_State*L){
 static int openssl_ssl_alert_type_string(lua_State*L)
 {
 	SSL* s =  CHECK_OBJECT(1, SSL,  "openssl.ssl");
-	(void*)s;
 	int v = luaL_checkint(L, 2);
 	int _long = lua_isnoneornil(L,3)?0:auxiliar_checkboolean(L, 3);
 	const char* val;
@@ -1031,7 +1030,6 @@ static int openssl_ssl_alert_type_string(lua_State*L)
 static int openssl_ssl_alert_desc_string(lua_State*L)
 {
 	SSL* s =  CHECK_OBJECT(1, SSL,  "openssl.ssl");
-	(void*)s;
 	int v = luaL_checkint(L, 2);
 	int _long = lua_isnoneornil(L,3)?0:auxiliar_checkboolean(L, 3);
 	const char* val;

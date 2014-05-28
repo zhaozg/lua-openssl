@@ -59,7 +59,7 @@ Similarly, you can use the following methods of specifying a public key:
 1. As a key object returned from object:get_public
 
 There are many important lua object type:
-	openssl.bio,		
+	openssl.bio,
 	openssl.x509,
 	openssl.stack_of_x509,
 	openssl.x509_req,
@@ -147,9 +147,7 @@ openssl.evp_new([string alg='rsa' [,int bits=1024|512, [...]]]) => evp_pkey
     default generate RSA key, bits=1024, 3rd paramater e default is 0x10001
     dsa,with bits default 1024 ,and seed data default have no data
     dh, with bits(prime_len) default 512, and generator default is
-    ec, not use any paramater, not fully support,paramater maybe
-    ('ec','prime256v1',[named=true]),if named give false,will have
-    explicit ec parameters,others only include a curve name.
+    ec, with ec_name,D,X,Y,Z.
 
 openssl.pkey_new([table args]) =>  evp_pkey
     args = {dsa={n=,e=,...}|dh={}|dsa={}}
@@ -176,7 +174,7 @@ evp_pkey:export([boolean only_public = false [,boolean raw_key=false [,boolean p
    If raw_key is true, export will export rsa,dsa or dh data
    if passphrase exist, export key will be encrypt with it
 
-	
+
 evp_peky:parse(evp_pkey key) -> table
     returns an table with the key details (bits, pkey, type)
     pkey may be rsa, dh, dsa showd as table with factor hex encoded bignum.
@@ -308,7 +306,7 @@ openssl.pkcs7_encrypt(bio in, bio out, stack_of_x509 recipcerts, table header
     recipcerts and output the result to the file named outfile
 
 openssl.pkcs7_decrypt(bio in, bio out, x509 recipcert [,evp_pkey recipkey])
-	->boolean	
+	->boolean
 
 7. Certificate sign request and Certificate revocked list
 ---------------------------------------------------------
@@ -494,7 +492,7 @@ Example 2: quich evp_digest
         mdc:update(m)
         bb = mdc:final()
         assert(aa==bb)
-	
+
 Example 3:  Iterator a openssl.stack_of_x509(sk_x509) object
 
 	n = #sk

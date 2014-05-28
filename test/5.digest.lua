@@ -12,6 +12,10 @@ function test_digest()
         t = openssl.get_digest(true)
         dump(t,0)
 
+        md = openssl.get_digest('sha1')
+        dump(md:info(),0)
+        aa = md:digest('abcd')
+
         md = openssl.get_digest('md5')
         dump(md:info(),0)
         aa = md:digest('abcd')
