@@ -202,6 +202,63 @@ static int openssl_is_private_key(EVP_PKEY* pkey)
 	lua_pop(L,1);}
 
 
+int EC_KEY_generate_key_part(EC_KEY *eckey)
+{	
+	int	ok = 0;
+	BN_CTX	*ctx = NULL;
+	BIGNUM	*priv_key = NULL, *order = NULL;
+	EC_POINT *pub_key = NULL;
+	const EC_GROUP *group;
+
+	if (!eckey)
+	{
+		return 0;
+	}
+	group = EC_KEY_get0_group(eckey);
+
+	if ((order = BN_new()) == NULL) goto err;
+	if ((ctx = BN_CTX_new()) == NULL) goto err;
+	priv_key = (BIGNUM*)EC_KEY_get0_private_key(eckey);
+
+	if (priv_key == NULL)
+	{
+		goto err;
+	}
+
+	if (!EC_GROUP_get_order(group, order, ctx))
+		goto err;
+
+	if(BN_is_zero(priv_key))
+		goto err;
+	pub_key = (EC_POINT *)EC_KEY_get0_public_key(eckey);
+
+	if (pub_key == NULL)
+	{
+		pub_key = EC_POINT_new(group);
+		if (pub_key == NULL)
+			goto err;
+	}
+
+	if (!EC_POINT_mul(group, pub_key, priv_key, NULL, NULL, ctx))
+		goto err;
+	{
+		EC_POINT_make_affine(EC_KEY_get0_group(eckey),
+			(EC_POINT *)EC_KEY_get0_public_key(eckey),
+			NULL);
+	}
+	EC_KEY_set_private_key(eckey,priv_key);
+	EC_KEY_set_public_key(eckey, pub_key);
+
+	ok=1;
+
+err:	
+	if (order)
+		BN_free(order);
+
+	if (ctx != NULL)
+		BN_CTX_free(ctx);
+	return(ok);
+}
 /* {{{ openssl_pkey_new([table config args])->openssl.evp_pkey
 Generates a new private key */
 LUA_FUNCTION(openssl_pkey_new)
@@ -422,18 +479,21 @@ LUA_FUNCTION(openssl_pkey_new)
 						EC_KEY_set_private_key(ec,d);
 					if(x!=NULL && y!=NULL){
 						EC_POINT *pnt = EC_POINT_new(group);
-						BN_CTX *ctx = BN_CTX_new();
 						if(z==NULL)
-							EC_POINT_set_affine_coordinates_GFp(group,pnt,x,y,ctx);
+							EC_POINT_set_affine_coordinates_GFp(group,pnt,x,y,NULL);
 						else
-							EC_POINT_set_Jprojective_coordinates_GFp(group,pnt,x,y,z,ctx);
+							EC_POINT_set_Jprojective_coordinates_GFp(group,pnt,x,y,z,NULL);
 
 						EC_KEY_set_public_key(ec,pnt);
 					}
+					
 					if (!EVP_PKEY_set1_EC_KEY(pkey, ec)) {
 						EC_KEY_free(ec);
 						EVP_PKEY_free(pkey);
 						pkey = NULL;
+					}
+					if(d && !EC_KEY_check_key(ec)){
+						EC_KEY_generate_key_part(ec);
 					}
 				}
 			}        
