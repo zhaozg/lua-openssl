@@ -73,12 +73,6 @@ static int openssl_eckey_group(lua_State *L){
 	return 0;
 };
 
-#define OPENSSL_PKEY_GET_BN(bn, _name)  if (bn != NULL) {	\
-	char *str = BN_bn2hex(bn);	\
-	lua_pushstring(L,str);									\
-	lua_setfield(L,-2,#_name);									\
-	OPENSSL_free(str);									\
-}
 static int openssl_ec_group_parse(lua_State*L)
 {
 	const EC_GROUP* group = CHECK_OBJECT(1,EC_GROUP,"openssl.ec_group");

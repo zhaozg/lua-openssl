@@ -186,20 +186,27 @@ static int openssl_is_private_key(EVP_PKEY* pkey)
 }
 /* }}} */
 
-#define OPENSSL_PKEY_GET_BN(bn, _name)  if (bn != NULL) {	\
-	char *str = BN_bn2hex(bn);	\
-	lua_pushstring(L,str);									\
-	lua_setfield(L,-2,#_name);									\
-	OPENSSL_free(str);									\
+#define OPENSSL_PKEY_GET_BN(bn, _name)	\
+if (bn != NULL) {						\
+	PUSH_OBJECT(bn,"openssl.bn");		\
+	lua_setfield(L,-2,#_name);			\
 }
 
-#define OPENSSL_PKEY_SET_BN(n, _type, _name) {						\
-	lua_getfield(L,n,#_name);											\
-	if(lua_isstring(L,-1)) {											\
-	    size_t l; const char* bn = luaL_checklstring(L,-1,&l);				\
-	    BN_hex2bn(&_type->_name,bn);							\
-	};																	\
-	lua_pop(L,1);}
+#define OPENSSL_PKEY_SET_BN(n, _type, _name)	{		\
+	lua_getfield(L,n,#_name);							\
+	if(lua_isstring(L,-1)) {							\
+	    size_t l = 0;									\
+		const char* bn = luaL_checklstring(L,-1,&l);	\
+		if(_type->_name==NULL)  _type->_name = BN_new();\
+	    BN_bin2bn(bn,l,_type->_name);					\
+	}else if(auxiliar_isclass(L,"openssl.bn",n)) {		\
+		const BIGNUM* bn = CHECK_OBJECT(n,BIGNUM,"openssl.bn");	\
+		if(_type->_name==NULL)  _type->_name = BN_new();\
+		BN_copy(_type->_name, bn);						\
+	}else if(!lua_isnil(L,-1))	\
+		luaL_error(L,"arg #%d must be string or openssl.bn",n);	\
+	lua_pop(L,1);										\
+}
 
 
 int EC_KEY_generate_key_part(EC_KEY *eckey)
@@ -259,6 +266,17 @@ err:
 		BN_CTX_free(ctx);
 	return(ok);
 }
+
+#define CHECK_BN(b,n)								\
+	if(lua_isstring(L, n)){							\
+	size_t l =0;								\
+	const char* s = luaL_checklstring(L,n,&l);	\
+	BN_bin2bn(s,l,b);							\
+	}else {											\
+	const BIGNUM* bn = CHECK_OBJECT(n, BIGNUM, "openssl.bn");	\
+	BN_copy(b,bn);								\
+	}
+
 /* {{{ openssl_pkey_new([table config args])->openssl.evp_pkey
 Generates a new private key */
 LUA_FUNCTION(openssl_pkey_new)
@@ -441,25 +459,29 @@ LUA_FUNCTION(openssl_pkey_new)
 
 			lua_getfield(L, -1, "D");
 			if(!lua_isnil(L, -1)){
-				BN_hex2bn(&d,luaL_checkstring(L, -1));
+				d = BN_new();
+				CHECK_BN(d,-1);
 			}
 			lua_pop(L,1);
 
 			lua_getfield(L, -1, "X");
 			if(!lua_isnil(L, -1)){
-				BN_hex2bn(&x,luaL_checkstring(L, -1));
+				x = BN_new();
+				CHECK_BN(x,-1);
 			}
 			lua_pop(L,1);
 
 			lua_getfield(L, -1, "Y");
 			if(!lua_isnil(L, -1)){
-				BN_hex2bn(&y,luaL_checkstring(L, -1));
+				y = BN_new();
+				CHECK_BN(y,-1);
 			}
 			lua_pop(L,1);
 
 			lua_getfield(L, -1, "Z");
 			if(!lua_isnil(L, -1)){
-				BN_hex2bn(&z,luaL_checkstring(L, -1));
+				z = BN_new();
+				CHECK_BN(z,-1);
 			}
 			lua_pop(L,1);
 
