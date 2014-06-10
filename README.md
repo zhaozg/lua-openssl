@@ -1,11 +1,11 @@
 OpenSSL binding for Lua
+-----------------------
 
-/*=========================================================================*\
+  ------------------------------------------------------------------------------
 * lua-openssl toolkit
-*
 * Full and Free OpenSSL binding for Lua.
 * It is not finished.
-\*=========================================================================*/
+  ------------------------------------------------------------------------------
 
 Index
 -----
@@ -16,19 +16,19 @@ Index
 4. Cipher
 5. Message Digest
 6. PKCS7 SMIME
-7. CSR & CRL
+7. CSR and CRL
 8. Pkcs12
 9. Misc
 
-I.   Howto.
-II.  Examples
-III. Contacts
+A. Howto
+B. Examples
+C. Contacts
 
 0. Introduction
 ---------------
 
-        This product includes PHP software,
-        freely available from <http://www.php.net/software/>
+    This product includes PHP software,
+     freely available from <http://www.php.net/software/>
 
 I need a full openssl binding for lua, after googled, I can't find a fit version.
 I study PHP openssl binding, and php-openssl is a good implement, It inspire me.
@@ -59,19 +59,20 @@ Similarly, you can use the following methods of specifying a public key:
 1. As a key object returned from object:get_public
 
 There are many important lua object type:
-	openssl.bio,
-	openssl.x509,
-	openssl.stack_of_x509,
-	openssl.x509_req,
-	openssl.evp_pkey,
-	openssl.evp_digest,
-	openssl.evp_cipher,
-	openssl.engine
-	openssl.evp_cipher_ctx
-	openssl.evp_digest_ctx
-	...
-They are short write as bio, x509, sk_x509, x509_req, evp_pkey,evp_digest, evp_cipher,
-	engine(not used now!), cipher_ctx,  digest_ctx
+    openssl.bio,
+    openssl.x509,
+    openssl.stack_of_x509,
+    openssl.x509_req,
+    openssl.evp_pkey,
+    openssl.evp_digest,
+    openssl.evp_cipher,
+    openssl.engine,
+    openssl.evp_cipher_ctx
+    openssl.evp_digest_ctx
+    and so on
+
+They are short write as bio, x509, sk_x509, x509_req, evp_pkey,evp_digest,
+  evp_cipher, engine(not used now!), cipher_ctx, digest_ctx
 
 Notes, In next section of this document,
 
@@ -243,6 +244,7 @@ cipher_ctx:cleanup() -> boolean
 
 5. Message Digest
 -----------------
+
 openssl.digest.list([boolean alias=true])  -> array
     return all md methods default with alias
 openssl.digest.get(string alg|int alg_id|openssl.asn1_object obj) => openssl.evp_digest
@@ -273,6 +275,7 @@ digest_ctx:final([string last [,boolean raw=true]) -> string
 digest_ctx:reset() ->boolean
     cleanup evp_message_ctx to reusable
     this is a compat api with LuaCyrpto
+
 
 6. PKCS7 (S/MIME) Sign/Verify/Encrypt/Decrypt Functions:
 -------------------------------------------------------
@@ -549,7 +552,7 @@ More please see test lua script file.
   lua-openssl LICENSE
   ===================
 
-  --------------------------------------------------------------------
+  ------------------------------------------------------------------------------
   Copyright (c) 2011 - 2012 zhaozg, zhaozg(at)gmail.com
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -569,4 +572,4 @@ More please see test lua script file.
   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
   THE SOFTWARE.
-  --------------------------------------------------------------------
+  ------------------------------------------------------------------------------
