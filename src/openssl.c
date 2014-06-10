@@ -168,7 +168,6 @@ static const luaL_Reg eay_functions[] = {
     {"crl_read",			openssl_crl_read	},
 
     /* cipher/digest functions */
-    {"get_digest",			openssl_get_digest},
     {"get_cipher",			openssl_get_cipher},
 
     /* misc function */
@@ -178,11 +177,6 @@ static const luaL_Reg eay_functions[] = {
     {"bio_new_file",		openssl_bio_new_file	},
     {"bio_new_mem",			openssl_bio_new_mem	   },
 	{"bio_new_accept",		openssl_bio_new_accept },
-
-    {"sign",				openssl_sign	},
-    {"verify",				openssl_verify	},
-    {"seal",				openssl_seal	},
-    {"open",				openssl_open	},
 
     /* PKCS12 funcs */
     {"pkcs12_export",		openssl_pkcs12_export	},
@@ -222,6 +216,18 @@ static const luaL_Reg eay_functions[] = {
 	{"ocsp_request_new",  openssl_ocsp_request_new},
 	{"ocsp_response_new", openssl_ocsp_response},
 	{"ocsp_response_read",openssl_ocsp_response},
+
+	/* compat with lua-crypto */
+	{"list",			openssl_list},
+	{"hex",				openssl_hex},
+
+	{"encrypt",			openssl_evp_encrypt},
+	{"decrypt",			openssl_evp_decrypt},
+
+	{"sign",			openssl_sign},
+	{"verify",			openssl_verify},
+	{"seal",			openssl_seal},
+	{"open",			openssl_open1},
 
     {NULL, NULL}
 };
@@ -467,7 +473,7 @@ LUA_FUNCTION(openssl_seal)
 
 /* {{{ proto opendata openssl_open(string data, string ekey, mixed privkey, [, cipher enc|string md_alg=RC4])
    Opens data */
-LUA_API LUA_FUNCTION(openssl_open)
+LUA_FUNCTION(openssl_open1)
 {
     size_t data_len, ekey_len;
     const char * data = luaL_checklstring(L, 1, &data_len);
@@ -808,7 +814,7 @@ LUA_FUNCTION(openssl_dh_compute_key)
 
 void CRYPTO_thread_setup(void);
 void CRYPTO_thread_cleanup(void);
-int luaopen_bn(lua_State *L);
+
 LUA_API int luaopen_openssl(lua_State*L)
 {
     char * config_filename;
@@ -846,7 +852,6 @@ LUA_API int luaopen_openssl(lua_State*L)
     openssl_register_pkey(L);
     openssl_register_x509(L);
     openssl_register_csr(L);
-    openssl_register_digest(L);
     openssl_register_cipher(L);
     openssl_register_sk_x509(L);
     openssl_register_bio(L);
@@ -869,6 +874,9 @@ LUA_API int luaopen_openssl(lua_State*L)
     luaL_setfuncs(L, eay_functions, 0);
 #endif
     setNamedIntegers(L, consts);
+
+	luaopen_digest(L);
+	lua_setfield(L, -2, "digest");
 
     /* third part */
     luaopen_bn(L);

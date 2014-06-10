@@ -195,7 +195,6 @@ LUA_FUNCTION(openssl_csr_sign);
 LUA_FUNCTION(openssl_csr_new);
 LUA_FUNCTION(openssl_csr_parse);
 LUA_FUNCTION(openssl_register_csr);
-LUA_FUNCTION(openssl_get_digest);
 LUA_FUNCTION(openssl_digest_info);
 LUA_FUNCTION(openssl_digest_digest);
 LUA_FUNCTION(openssl_digest_tostring);
@@ -213,9 +212,14 @@ LUA_FUNCTION(openssl_x509_extension_parse);
 LUA_FUNCTION(openssl_x509_extension_tostring);
 LUA_FUNCTION(openssl_ec_list_curve_name);
 LUA_FUNCTION(openssl_error_string);
+
+LUA_FUNCTION(openssl_list);
+LUA_FUNCTION(openssl_hex);
+LUA_FUNCTION(openssl_digest);
 LUA_FUNCTION(openssl_sign);
 LUA_FUNCTION(openssl_verify);
 LUA_FUNCTION(openssl_seal);
+LUA_FUNCTION(openssl_open1);
 
 LUA_FUNCTION(openssl_dh_compute_key);
 LUA_FUNCTION(openssl_ts_resp_ctx_new);
@@ -276,6 +280,8 @@ LUA_FUNCTION(openssl_engine);
 LUA_FUNCTION(openssl_ocsp_request_new);
 LUA_FUNCTION(openssl_ocsp_response);
 
+LUA_API LUA_FUNCTION(luaopen_digest);
+LUA_API LUA_FUNCTION(luaopen_bn);
 
 LUA_API LUA_FUNCTION(openssl_open);
 
@@ -331,7 +337,6 @@ void add_assoc_int(lua_State* L, const char* i, int b);
 time_t asn1_time_to_time_t(ASN1_UTCTIME * timestr);
 int openssl_object_create(lua_State* L);
 
-int openssl_register_digest(lua_State* L);
 int openssl_register_cipher(lua_State* L);
 int openssl_register_x509(lua_State* L);
 int openssl_register_sk_x509(lua_State* L);

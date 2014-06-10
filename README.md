@@ -243,28 +243,39 @@ cipher_ctx:cleanup() -> boolean
 
 5. Message Digest
 -----------------
-
-openssl.get_digest(string alg|int alg_id) => digest_ctx
-    return a evp_digest object
-openssl.get_digest([bool alias=true]) -> table
+openssl.digest.list([boolean alias=true])  -> array
     return all md methods default with alias
+openssl.digest.get(string alg|int alg_id|openssl.asn1_object obj) => openssl.evp_digest
+    return a evp_digest object
+openssl.digest.new(string alg|int alg_id|openssl.asn1_object obj) => openssl.evp_digest_ctx
+    return a evp_digest_ctx object
+    this is a compat api for LuaCrypto
+openssl.digest(string alg|openssl.evp_digest obj, string msg [,boolean raw=false]) -> string
+    return a hash value for msg, if raw is true, it will be hex encoded
+    this is a compat api with LuaCyrpto
 
+
+evp_digest:new([openssl.engine e]) => openssl.evp_digest_ctx
+    return a evp_digest_ctx object
 evp_digest:info() -> table
-    return a table with key nid,name, size, block_size, pkey_type, flags
-evp_digest:evp_digest(string in) -> string
-    return binary evp_digest result
+    return a table with key nid, name, size, block_size, pkey_type, flags
+evp_digest:digest(string msg[, openssl.engine e]) -> string
+    return binary hash value for msg
 
-evp_digest:init() => digest_ctx
 
 digest_ctx:info() -> table
-    return a table with key block_size, size, type and diget object
+    return a table with key block_size, size, type and digest
 digest_ctx:update(string data) -> boolean
-digest_ctx:final() -> string
-digest_ctx:cleanup() ->boolean
+    this is a compat api with LuaCyrpto
+digest_ctx:final([string last [,boolean raw=true]) -> string
+    return a hash value,default is binaray
+    this is a compat api with LuaCyrpto
+digest_ctx:reset() ->boolean
+    cleanup evp_message_ctx to reusable
+    this is a compat api with LuaCyrpto
 
 6. PKCS7 (S/MIME) Sign/Verify/Encrypt/Decrypt Functions:
 -------------------------------------------------------
-
 These functions allow you to manipulate S/MIME messages!
 
 They are based on apps/smime.c from the openssl dist, so for information,
@@ -384,21 +395,14 @@ openssl.pkcs12_export(x509 cert, evp_pkey pkey, string pass
 9. Misc Function
 ----------------
 
-openssl.object_create(string oid, string name [, string alias] ) -> boolean
-    Add one object.
-openssl.object_create(tables args) -> boolean
-    Add a lot of object, args must be array index start from 1, and every
-    node is a table have oid,name and optional alias key.
+I do some work try to keep compat with lua-crypto,API list
 
-openssl.random_bytes(number length [, boolean strong=false])
-    -> string, boolean
-    Returns a string of the length specified filled with random bytes
-
-openssl.error_string()-> number, string
-    If found error, it will return a error number code, followedd by string
-    description or it will return nothing and clear error state,
-    so you can call it twice.
-
+openssl.hex(string bin) -> hex string
+    Return a hex string.
+    this is a compat api with LuaCyrpto
+openssl.list(string 'digests'|'ciphers'|'pkeys'|'comps') -> array
+    Return method name array.
+    this is a compat api with LuaCyrpto
 
 openssl.sign(string data,  evp_pkey key [, evp_digest md|string md_alg=SHA1])
     ->string
@@ -417,10 +421,24 @@ openssl.seal(string data, table pubkeys [, evp_cipher enc|string md_alg=RC4])
 
 openssl.open(string data, string ekey, int privkey,
     [, evp_cipher enc|string md_alg=RC4]) -> string
+    Opens (decrypts) sealed data using a private key and the corresponding
+    envelope key. Returns decrypted data on success and nil on failure.
 
-Opens (decrypts) sealed data using a private key and the corresponding
-envelope key. Returns decrypted data on success and nil on failure.
 
+openssl.object_create(string oid, string name [, string alias] ) -> boolean
+    Add one object.
+openssl.object_create(tables args) -> boolean
+    Add a lot of object, args must be array index start from 1, and every
+    node is a table have oid,name and optional alias key.
+
+openssl.random_bytes(number length [, boolean strong=false])
+    -> string, boolean
+    Returns a string of the length specified filled with random bytes
+
+openssl.error_string()-> number, string
+    If found error, it will return a error number code, followedd by string
+    description or it will return nothing and clear error state,
+    so you can call it twice.
 
 openssl.bio_new_mem([string data]) => bio
     If data is none or nil, that will be a output object or input.

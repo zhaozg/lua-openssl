@@ -407,3 +407,38 @@ int openssl_register_misc(lua_State*L) {
     auxiliar_newclass(L,"openssl.x509_extension",	x509_extension_funs);
     return 0;
 }
+
+LUA_FUNCTION(openssl_hex){
+	size_t l = 0;
+	const char* s = luaL_checklstring(L, 1, &l);
+	char* h;
+	BIGNUM *bn = BN_new();
+	BN_bin2bn((const unsigned char*)s, (int)l, bn);
+	h = BN_bn2hex(bn);
+	lua_pushstring(L, h);
+	OPENSSL_free(h);
+	return 1;
+}
+
+
+static void list_callback(const OBJ_NAME *obj, void *arg)
+{
+	lua_State *L = (lua_State *)arg;
+	int idx = (int)lua_objlen(L, -1);
+	lua_pushstring(L, obj->name);
+	lua_rawseti(L, -2, idx + 1);
+}
+
+LUA_FUNCTION(openssl_list){
+	static int options[] = {
+		OBJ_NAME_TYPE_MD_METH,
+		OBJ_NAME_TYPE_CIPHER_METH,
+		OBJ_NAME_TYPE_PKEY_METH,
+		OBJ_NAME_TYPE_COMP_METH
+	};
+	static const char *names[] = {"digests","ciphers", "pkeys", "comps"};
+	int idx = luaL_checkoption (L, 1, NULL, names);
+	lua_createtable(L, 0, 0);
+	OBJ_NAME_do_all_sorted(options[idx], list_callback, L);
+	return 1;
+}

@@ -48,7 +48,7 @@ LUA_FUNCTION(openssl_get_cipher) {
         cipher = EVP_get_cipherbyname(lua_tostring(L,1));
     else if(lua_isnumber(L,1))
         cipher = EVP_get_cipherbynid(lua_tointeger(L,1));
-    else if(auxiliar_isclass(L,"openssl.obj",1))
+    else if(auxiliar_isclass(L,"openssl.asn1_object",1))
         cipher = EVP_get_cipherbyobj(CHECK_OBJECT(1,ASN1_OBJECT,"openssl.asn1_object"));
     else {
         luaL_typerror(L,1,"please input correct paramater");

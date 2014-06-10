@@ -1,72 +1,118 @@
 /*
-   +----------------------------------------------------------------------+
-   | PHP Version 5                                                        |
-   +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2012 The PHP Group                                |
-   +----------------------------------------------------------------------+
-   | This source file is subject to version 3.01 of the PHP license,      |
-   | that is bundled with this package in the file LICENSE, and is        |
-   | available through the world-wide-web at the following url:           |
-   | http://www.php.net/license/3_01.txt                                  |
-   | If you did not receive a copy of the PHP license and are unable to   |
-   | obtain it through the world-wide-web, please send a note to          |
-   | license@php.net so we can mail you a copy immediately.               |
-   +----------------------------------------------------------------------+
-*/
-/*=========================================================================*\
-* digest routines
-* lua-openssl toolkit
-*
-* This product includes PHP software, freely available from <http://www.php.net/software/>
+* digest.c
+* digest module for lua-openssl binding
 * Author:  george zhao <zhaozg(at)gmail.com>
-\*=========================================================================*/
+*/
 #include "openssl.h"
 
-/* digest module for the Lua/OpenSSL binding.
- *
- * The functions in this module can be used to load, parse, export, verify... functions.
- * get_cipher()
- * cipher_info()
- */
+#define MYNAME		"digest"
+#define MYVERSION	MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
+	"based on OpenSSL " SHLIB_VERSION_NUMBER
+#define MYTYPE			"openssl.digest"
 
-/* openssl.get_digest([nil,bool aliases=true]|string alg|int alg_id|openssl.asn1_obj|alg_obj) -> table|openssl.evp_digest|null  {{{1
+static LUA_FUNCTION(openssl_digest_list) {
+	int aliases = lua_isnoneornil(L,1)?1:lua_toboolean(L,1);
+	lua_newtable(L);
+	OBJ_NAME_do_all_sorted(OBJ_NAME_TYPE_MD_METH, aliases ? openssl_add_method_or_alias: openssl_add_method, L);
+	return 1;
+};
 
-    openssl.get_digest([bool alias=true]) will return all md methods default with alias
-	other will return a md method
-*/
-
-LUA_FUNCTION(openssl_get_digest) {
+static LUA_FUNCTION(openssl_digest_get) {
     const EVP_MD* md = NULL;
 
-    if (lua_isnoneornil(L,1) || lua_isboolean(L,1))
-    {
-        int aliases = lua_isnoneornil(L,1)?1:lua_toboolean(L,1);
-
-        lua_newtable(L);
-        OBJ_NAME_do_all_sorted(OBJ_NAME_TYPE_MD_METH, aliases ? openssl_add_method_or_alias: openssl_add_method, L);
-        return 1;
-    }
-
-    if (lua_isstring(L,1))
+	if (lua_isstring(L,1))
         md = EVP_get_digestbyname(lua_tostring(L,1));
     else if(lua_isnumber(L,1))
         md = EVP_get_digestbynid(lua_tointeger(L,1));
-    else if(auxiliar_isclass(L,"openssl.obj",1))
+    else if(auxiliar_isclass(L,"openssl.asn1_object",1))
         md = EVP_get_digestbyobj(CHECK_OBJECT(1,ASN1_OBJECT,"openssl.asn1_object"));
     else
     {
-        luaL_typerror(L,1,"please input correct paramater");
+		luaL_error(L, "argument #1 must be a string, NID number or ans1_object identify digest method");
     }
 
-    if(md)
-        PUSH_OBJECT((void*)md,"openssl.evp_digest");
-    else
-        lua_pushnil(L);
-    return 1;
+	if(md)
+		PUSH_OBJECT((void*)md,"openssl.evp_digest");
+	else
+		lua_pushnil(L);
+	return 1;
 }
-/* }}} */
 
-LUA_FUNCTION(openssl_digest_info)
+static LUA_FUNCTION(openssl_digest_new)
+{
+	const EVP_MD* md = NULL;
+
+	if (lua_isstring(L,1))
+		md = EVP_get_digestbyname(lua_tostring(L,1));
+	else if(lua_isnumber(L,1))
+		md = EVP_get_digestbynid(lua_tointeger(L,1));
+	else if(auxiliar_isclass(L,"openssl.asn1_object",1))
+		md = EVP_get_digestbyobj(CHECK_OBJECT(1,ASN1_OBJECT,"openssl.asn1_object"));
+	else
+	{
+		luaL_error(L, "argument #1 must be a string, NID number or ans1_object identify digest method");
+	}
+
+	if(md){
+		ENGINE* e =  (!lua_isnoneornil(L,2)) ? CHECK_OBJECT(2,ENGINE,"openssl.engine") : NULL;
+		EVP_MD_CTX* ctx = EVP_MD_CTX_create();
+		EVP_MD_CTX_init(ctx);
+		if (!EVP_DigestInit_ex(ctx,md,e)) {
+			luaL_error(L,"EVP_DigestInit_ex failed");
+		}
+		PUSH_OBJECT(ctx,"openssl.evp_digest_ctx");
+	}else
+		lua_pushnil(L);
+	return 1;
+}
+
+static LUA_FUNCTION(openssl_digest)
+{
+	const EVP_MD *md = NULL;
+	if(lua_istable(L, 1)){
+		if(lua_getmetatable(L, 1) && lua_equal(L, 1, -1))
+		{
+			lua_pop(L, 1);
+			lua_remove(L, 1);
+		}else
+			luaL_error(L,"call function with invalid state");
+	}
+	if(lua_isstring(L,1)){
+		md = EVP_get_digestbyname(lua_tostring(L,1));
+	}else if(auxiliar_isclass(L,"openssl.evp_digest",1))
+	{
+		md = CHECK_OBJECT(1, EVP_MD, "openssl.evp_digest");
+	}else
+		luaL_error(L, "argument #1 must be a string identify digest method or an openssl.evp_digest object");
+
+	if(md)
+	{
+		size_t inl;
+		char buf[MAX_PATH];
+		unsigned int  blen = MAX_PATH;
+		const char* in = luaL_checklstring(L,2,&inl);
+		int raw = (lua_isnoneornil(L,3)) ? 0 : lua_toboolean(L,3);
+		int status = EVP_Digest(in, inl, (unsigned char*)buf, &blen, md, NULL);
+		if (status) {
+			if(raw)
+				lua_pushlstring(L,buf,blen);
+			else{
+				BIGNUM *B = BN_new();
+				BN_bin2bn(buf,blen,B);
+				in = BN_bn2hex(B);
+				lua_pushstring(L,in);
+				OPENSSL_free((void*)in);
+				BN_free(B);
+			}
+		} else
+			luaL_error(L,"EVP_Digest method fail");
+	}else
+		luaL_error(L,"argument #1 is not a valid digest algorithm or openssl.evp_digest object");
+	return 1;
+};
+
+/*** evp_digest method ***/
+static LUA_FUNCTION(openssl_digest_info)
 {
     EVP_MD *md = CHECK_OBJECT(1,EVP_MD, "openssl.evp_digest");
     lua_newtable(L);
@@ -80,35 +126,25 @@ LUA_FUNCTION(openssl_digest_info)
     return 1;
 }
 
-LUA_FUNCTION(openssl_digest_digest)
+static LUA_FUNCTION(openssl_digest_digest)
 {
+	size_t inl;
     EVP_MD *md = CHECK_OBJECT(1,EVP_MD, "openssl.evp_digest");
-    size_t inl;
     const char* in = luaL_checklstring(L,2,&inl);
-    ENGINE*     e = lua_gettop(L)>2?CHECK_OBJECT(3,ENGINE,"openssl.engine"):NULL;
+    ENGINE*     e = (!lua_isnoneornil(L, 3)) ? CHECK_OBJECT(3,ENGINE,"openssl.engine") : NULL;
 
-    char buf[MAX_PATH];
-    unsigned int  blen = MAX_PATH;
+    char buf[EVP_MAX_MD_SIZE];
+    unsigned int  blen = EVP_MAX_MD_SIZE;
 
     int status = EVP_Digest(in, inl, (unsigned char*)buf, &blen, md, e);
     if (status) {
         lua_pushlstring(L,buf,blen);
     } else
-        lua_pushnil(L);
+        luaL_error(L,"EVP_Digest method fail");
     return 1;
 }
 
-LUA_FUNCTION(openssl_digest_tostring)
-{
-    EVP_MD *md = CHECK_OBJECT(1,EVP_MD, "openssl.evp_digest");
-    lua_pushfstring(L,"openssl.evp_digest:%p",md);
-    return 1;
-}
-
-/*  openssl.evp_encrypt_init(openssl.evp_digest md [,openssl.engine engimp])->openssl.evp_digest_ctx{{{1
-*/
-
-LUA_FUNCTION(openssl_evp_digest_init)
+static LUA_FUNCTION(openssl_evp_digest_init)
 {
     EVP_MD* md = CHECK_OBJECT(1,EVP_MD, "openssl.evp_digest");
     ENGINE*     e = lua_gettop(L)>1?CHECK_OBJECT(2,ENGINE,"openssl.engine"):NULL;
@@ -122,15 +158,27 @@ LUA_FUNCTION(openssl_evp_digest_init)
     }
     return 1;
 }
-/* }}} */
 
-/*  openssl.evp_digest_init(openssl.evp_digest_ctx ctx, string data)->bool{{{1
-*/
-LUA_FUNCTION(openssl_evp_digest_update)
+/** openssl.evp_digest_ctx method */
+
+static LUA_FUNCTION(openssl_digest_ctx_info)
 {
-    EVP_MD_CTX* c = CHECK_OBJECT(1,EVP_MD_CTX, "openssl.evp_digest_ctx");
-    size_t inl;
+	EVP_MD_CTX *ctx = CHECK_OBJECT(1,EVP_MD_CTX, "openssl.evp_digest_ctx");
+	lua_newtable(L);
+	add_assoc_int(L,"block_size", EVP_MD_CTX_block_size(ctx));
+	add_assoc_int(L,"size", EVP_MD_CTX_size(ctx));
+	add_assoc_int(L,"type", EVP_MD_CTX_type(ctx));
 
+	PUSH_OBJECT((void*)EVP_MD_CTX_md(ctx),"openssl.evp_digest");
+	lua_setfield(L,-2,"digest");
+	return 1;
+}
+
+
+static LUA_FUNCTION(openssl_evp_digest_update)
+{
+	size_t inl;
+    EVP_MD_CTX* c = CHECK_OBJECT(1,EVP_MD_CTX, "openssl.evp_digest_ctx");
     const char* in= luaL_checklstring(L,2,&inl);
 
     int ret = EVP_DigestUpdate(c,in,inl);
@@ -138,82 +186,124 @@ LUA_FUNCTION(openssl_evp_digest_update)
     lua_pushboolean(L,ret);
     return 1;
 }
-/* }}} */
 
-/*  openssl.evp_digest_final(openssl.evp_digest_ctx ctx)->string{{{1
-*/
-LUA_FUNCTION(openssl_evp_digest_final)
+static LUA_FUNCTION(openssl_evp_digest_final)
 {
     EVP_MD_CTX* c = CHECK_OBJECT(1,EVP_MD_CTX, "openssl.evp_digest_ctx");
     unsigned int outl = EVP_MAX_MD_SIZE;
     char out[EVP_MAX_MD_SIZE];
+	int ret;
+	int raw = 0;
+	if(lua_isstring(L,2)){
+		size_t inl;
+		const char* in= luaL_checklstring(L,2,&inl);
+		ret = EVP_DigestUpdate(c,in,inl);
+		if(!ret)
+			luaL_error(L,"digest update fail");
+		raw = (lua_isnoneornil(L,3)) ? 0 : lua_toboolean(L, 3);
+	}else
+		raw = (lua_isnoneornil(L,3)) ? 0 : lua_toboolean(L, 3);
 
     if(EVP_DigestFinal_ex(c,(byte*)out,&outl) && outl)
     {
-        lua_pushlstring(L,out,outl);
+		if(raw){
+			lua_pushlstring(L,out,outl);
+		}else{
+			char* in;
+			BIGNUM *B = BN_new();
+			BN_bin2bn(out,outl,B);
+			in = BN_bn2hex(B);
+			lua_pushstring(L,in);
+			OPENSSL_free((void*)in);
+			BN_free(B);
+		}
+			
         return 1;
-    }
+    }else
+		luaL_error(L, "digest final fail");
     return 0;
 }
-/* }}} */
 
-
-
-LUA_FUNCTION(openssl_digest_ctx_info)
-{
-    EVP_MD_CTX *ctx = CHECK_OBJECT(1,EVP_MD_CTX, "openssl.evp_digest_ctx");
-    lua_newtable(L);
-    add_assoc_int(L,"block_size", EVP_MD_CTX_block_size(ctx));
-    add_assoc_int(L,"size", EVP_MD_CTX_size(ctx));
-    add_assoc_int(L,"type", EVP_MD_CTX_type(ctx));
-
-    PUSH_OBJECT((void*)EVP_MD_CTX_md(ctx),"openssl.evp_digest");
-    lua_setfield(L,-2,"digest");
-    return 1;
-}
-
-LUA_FUNCTION(openssl_digest_ctx_tostring) {
-    EVP_MD_CTX *ctx = CHECK_OBJECT(1,EVP_MD_CTX, "openssl.evp_digest_ctx");
-    lua_pushfstring(L,"openssl.evp_digest_ctx:%p",ctx);
-    return 1;
-}
-
-LUA_FUNCTION(openssl_digest_ctx_free) {
+static LUA_FUNCTION(openssl_digest_ctx_free) {
     EVP_MD_CTX *ctx = CHECK_OBJECT(1,EVP_MD_CTX, "openssl.evp_digest_ctx");
     EVP_MD_CTX_destroy(ctx);
     return 0;
 }
 
-LUA_FUNCTION(openssl_digest_ctx_cleanup) {
+static LUA_FUNCTION(openssl_digest_ctx_reset) {
     EVP_MD_CTX *ctx = CHECK_OBJECT(1,EVP_MD_CTX, "openssl.evp_digest_ctx");
-    lua_pushboolean(L,EVP_MD_CTX_cleanup(ctx)==0);
+	const EVP_MD *md = EVP_MD_CTX_md(ctx);
+	ENGINE* e = ctx->engine;
+
+	EVP_MD_CTX_cleanup(ctx);
+	EVP_MD_CTX_init(ctx);
+	if (!EVP_DigestInit_ex(ctx, md, e))
+	{
+		luaL_error(L,"reset digest fail");
+	}
+    lua_pushboolean(L,1);
     return 1;
+}
+
+static LUA_FUNCTION(openssl_digest_ctx_clone) {
+	EVP_MD_CTX *ctx = CHECK_OBJECT(1,EVP_MD_CTX, "openssl.evp_digest_ctx");
+	EVP_MD_CTX *d = EVP_MD_CTX_create();
+	EVP_MD_CTX_init(d);
+	if (!EVP_MD_CTX_copy_ex(d, ctx))
+	{
+		luaL_error(L, "EVP_MD_CTX_copy_ex fail");
+	}
+	PUSH_OBJECT(d,"openssl.evp_digest_ctx");
+	return 1;
 }
 
 
 static luaL_Reg digest_funs[] = {
-    {"info",			openssl_digest_info},
-    {"digest",			openssl_digest_digest},
-    {"init",			openssl_evp_digest_init},
+	{"new",				openssl_evp_digest_init},
+	{"info",			openssl_digest_info},
+	{"digest",			openssl_digest_digest},
+	{"__tostring",		auxiliar_tostring},
 
-    {"__tostring",		openssl_digest_tostring},
-    {NULL, NULL}
+	{NULL, NULL}
 };
 
 static luaL_Reg digest_ctx_funs[] = {
-    {"update",			openssl_evp_digest_update},
-    {"final",			openssl_evp_digest_final},
-
-    {"info",		openssl_digest_ctx_info},
-    {"__tostring",	openssl_digest_ctx_tostring},
-    {"__gc",		openssl_digest_ctx_free},
-    {"cleanup",		openssl_digest_ctx_cleanup},
-    {NULL, NULL}
+	{"update",		openssl_evp_digest_update},
+	{"final",		openssl_evp_digest_final},
+	{"info",		openssl_digest_ctx_info},
+	{"clone",		openssl_digest_ctx_clone},
+	{"reset",		openssl_digest_ctx_reset},
+	{"__tostring",	auxiliar_tostring},
+	{"__gc",		openssl_digest_ctx_free},
+	{NULL, NULL}
 };
 
-int openssl_register_digest(lua_State* L)
+static const luaL_Reg R[] =
 {
-    auxiliar_newclass(L,"openssl.evp_digest",		digest_funs);
-    auxiliar_newclass(L,"openssl.evp_digest_ctx",	digest_ctx_funs);
-    return 0;
+	{ "__call",	 openssl_digest},
+	{ "list",    openssl_digest_list}, 
+	{ "get",	 openssl_digest_get},
+	{ "new",	 openssl_digest_new},
+	{ "digest",	 openssl_digest},
+
+	{NULL,	NULL}
+};
+
+LUALIB_API int luaopen_digest(lua_State *L)
+{
+	auxiliar_newclass(L,"openssl.evp_digest",		digest_funs);
+	auxiliar_newclass(L,"openssl.evp_digest_ctx",	digest_ctx_funs);
+
+	luaL_newmetatable(L,MYTYPE);
+	lua_setglobal(L,MYNAME);
+	luaL_register(L,MYNAME,R);
+	lua_pushvalue(L, -1);
+	lua_setmetatable(L, -2);
+	lua_pushliteral(L,"version");			/** version */
+	lua_pushliteral(L,MYVERSION);
+	lua_settable(L,-3);
+	lua_pushliteral(L,"__index");
+	lua_pushvalue(L,-2);
+	lua_settable(L,-3);
+	return 1;
 }
