@@ -110,7 +110,8 @@ int auxiliar_isclass(lua_State *L, const char *classname, int objidx) {
             if (lua_rawequal(L, -1, -2)) {  /* does it have the correct mt? */
                 lua_pop(L, 2);  /* remove both metatables */
                 return 1;
-            }
+            }else
+                lua_pop(L, 2);
         }
     }
     return 0;
