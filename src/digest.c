@@ -1,8 +1,11 @@
-/*
+/*=========================================================================*\
 * digest.c
 * digest module for lua-openssl binding
+* lua-openssl toolkit
+*
 * Author:  george zhao <zhaozg(at)gmail.com>
-*/
+\*=========================================================================*/
+
 #include "openssl.h"
 
 #define MYNAME		"digest"
@@ -112,20 +115,6 @@ static LUA_FUNCTION(openssl_digest)
 };
 
 /*** evp_digest method ***/
-static LUA_FUNCTION(openssl_digest_info)
-{
-    EVP_MD *md = CHECK_OBJECT(1,EVP_MD, "openssl.evp_digest");
-    lua_newtable(L);
-    add_assoc_int(L,"nid", EVP_MD_nid(md));
-    add_assoc_string(L,"name", EVP_MD_name(md));
-    add_assoc_int(L,"size", EVP_MD_size(md));
-    add_assoc_int(L,"block_size", EVP_MD_block_size(md));
-
-    add_assoc_int(L,"pkey_type", EVP_MD_pkey_type(md));
-    add_assoc_int(L,"flags", EVP_MD_type(md));
-    return 1;
-}
-
 static LUA_FUNCTION(openssl_digest_digest)
 {
 	size_t inl;
@@ -142,6 +131,20 @@ static LUA_FUNCTION(openssl_digest_digest)
     } else
         luaL_error(L,"EVP_Digest method fail");
     return 1;
+}
+
+static LUA_FUNCTION(openssl_digest_info)
+{
+	EVP_MD *md = CHECK_OBJECT(1,EVP_MD, "openssl.evp_digest");
+	lua_newtable(L);
+	add_assoc_int(L,"nid", EVP_MD_nid(md));
+	add_assoc_string(L,"name", EVP_MD_name(md));
+	add_assoc_int(L,"size", EVP_MD_size(md));
+	add_assoc_int(L,"block_size", EVP_MD_block_size(md));
+
+	add_assoc_int(L,"pkey_type", EVP_MD_pkey_type(md));
+	add_assoc_int(L,"flags", EVP_MD_type(md));
+	return 1;
 }
 
 static LUA_FUNCTION(openssl_evp_digest_init)

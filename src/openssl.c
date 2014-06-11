@@ -167,9 +167,6 @@ static const luaL_Reg eay_functions[] = {
     {"crl_new",				openssl_crl_new	},
     {"crl_read",			openssl_crl_read	},
 
-    /* cipher/digest functions */
-    {"get_cipher",			openssl_get_cipher},
-
     /* misc function */
     {"random_bytes",		openssl_random_bytes	},
     {"error_string",		openssl_error_string	},
@@ -220,9 +217,6 @@ static const luaL_Reg eay_functions[] = {
 	/* compat with lua-crypto */
 	{"list",			openssl_list},
 	{"hex",				openssl_hex},
-
-	{"encrypt",			openssl_evp_encrypt},
-	{"decrypt",			openssl_evp_decrypt},
 
 	{"sign",			openssl_sign},
 	{"verify",			openssl_verify},
@@ -852,7 +846,6 @@ LUA_API int luaopen_openssl(lua_State*L)
     openssl_register_pkey(L);
     openssl_register_x509(L);
     openssl_register_csr(L);
-    openssl_register_cipher(L);
     openssl_register_sk_x509(L);
     openssl_register_bio(L);
     openssl_register_crl(L);
@@ -877,6 +870,9 @@ LUA_API int luaopen_openssl(lua_State*L)
 
 	luaopen_digest(L);
 	lua_setfield(L, -2, "digest");
+
+	luaopen_cipher(L);
+	lua_setfield(L, -2, "cipher");
 
     /* third part */
     luaopen_bn(L);

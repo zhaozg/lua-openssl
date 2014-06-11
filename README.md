@@ -1,24 +1,24 @@
 lua-openssl toolkit - A free, MIT-licensed OpenSSL binding for Lua (Work in progress).
 
-Index
------
-0. [Introduction](#0-introduction)
-1. [Version](#1-version)
-2. [Certificate](#2-certificate)
-3. [Public/Private Key](#3-publicprivate-key-functions)
-4. [Cipher](#4-cipher)
-5. [Message Digest](#5-message-digest)
-6. [PKCS7 SMIME](#6-pkcs7-smime-signverifyencryptdecrypt-functions)
-7. [CSR & CRL](#7-certificate-sign-request-and-certificate-revocked-list)
-8. [Pkcs12](#8-pkcs12-function)
-9. [Misc](#9-misc-functions)
+#Index
 
-* I.   [Howto](#i---howto)
-* II.  [Examples](#ii--example-usage)
-* III. [Contact](#iii-contact)
+1. [Introduction](#1-introduction)
+2. [Version](#2-version)
+3. [Certificate](#3-certificate)
+4. [Public/Private Key](#4-publicprivate-key-functions)
+5. [Cipher](#5-cipher)
+6. [Message Digest](#6-message-digest)
+7. [PKCS7 SMIME](#7-pkcs7-smime-signverifyencryptdecrypt-functions)
+8. [CSR & CRL](#8-certificate-sign-request-and-certificate-revocked-list)
+9. [Pkcs12](#9-pkcs12-function)
+0. [Misc](#10-misc-functions)
 
-0. Introduction
----------------
+A. [Howto](#a-howto)
+B. [Examples](#b-example-usage)
+C. [Contact](#c-contact)
+
+
+#1. Introduction
 
 I needed a full OpenSSL binding for Lua and, after I googled, I couldn't find a version that could fit my needs.
 I studied the PHP openssl binding, which is a good implementation, and it inspired me.
@@ -30,9 +30,8 @@ Below you can find the development progress of lua-openssl. The goal is to fully
 * Symmetrical encrypt/decrypt. (Finished)
 * RSA low level API. (UNFINISHED)
 * X509 and PKCS. (UNFINISHED)
-* Asymmetrical encrypt/decrypt/sign/verify.
+* Asymmetrical encrypt/decrypt/sign/verify/seal/open.
 * SSL/TLS. (DEVELOPMENT NOT STARTED, PENDING)
-
 
 Most of the lua-openssl functions require a key or a certificate as a parameter; to make
 things easy for you to use OpenSSL, this extension allows you to specify
@@ -44,7 +43,15 @@ certificates or a key in the following ways:
 
 Similarly, you can also specify a public key as a key object returned from object:get_public.
 
-### lua-openssl Objects
+## lua-openssl modules
+digest, cipher be write as modules.
+```
+   local digest = require'openssl'digest
+   local cipher = require'openssl'cipher
+```
+digest() equals with digest.digest(), same cipher() equals with cipher.cipher()
+
+## lua-openssl Objects
 
 The following are some important lua-openssl object types:
 
@@ -74,8 +81,7 @@ Please note that in the next sections of this document:
 
 If a function returns nil, it will be followed by an error number and string.
 
-1. Version
-----------
+#2. Version
 
 This lua-openssl toolkit works with Lua 5.1 or 5.2, and OpenSSL (0.9.8 or above 1.0.0). It is recommended to use the most up-to-date OpenSSL version because of the recent security fixes.
 
@@ -86,12 +92,11 @@ openssl = require "openssl"
 lua_openssl_version, lua_version, openssl_version = openssl.version()
 ```
 
-2. Certificate
---------------
+#3. Certificate
 
 * ***openssl.x509_read*** (string val) => x509
  * val is a string containing the data from the certificate file
-   
+
 * ***x509:export*** ([bool notext=true]) -> string
  * export x509 as certificate content data
 
@@ -108,8 +113,7 @@ lua_openssl_version, lua_version, openssl_version = openssl.version()
  * untrusted is an openssl.stack_of_x509 object containing a bunch of certs that are not trusted but may be useful in validating the certificate.
 
 
-openssl.stack_of_x509 is an important object in lua-openssl, it can be used
-as a certchain, trusted CA files or unstrust certs.
+***openssl.stack_of_x509*** is an important object in lua-openssl, it can be used as a certchain, trusted CA files or unstrust certs.
 
 * ***openssl.sk_x509_read*** (filename) => sk_x509
 * ***openssl.sk_x509_new*** ([table array={}]} ->sk_x509
@@ -126,8 +130,7 @@ as a certchain, trusted CA files or unstrust certs.
 
 `#sk_x509` returns the number of certs in stack_of_x509
 
-3. Public/Private key functions
--------------------------------
+#4. Public/Private key functions
 
 * ***openssl.evp_new*** ([string alg='rsa' [,int bits=1024|512, [...]]]) => evp_pkey
  * default generate RSA key, bits=1024, 3rd paramater e default is 0x10001
@@ -140,7 +143,7 @@ as a certchain, trusted CA files or unstrust certs.
 
 * ***openssl.pkey_read*** (string data|x509 cert [,bool public_key=true [,string passphrase]]) => evp_pkey
  * Read from a file or a data, coerce it into a EVP_PKEY object.
- 
+
 It can be:
 1. X509 object -> public key will be extracted from it
 2. interpreted as the data from the cert/key file and interpreted in same way as openssl_get_privatekey()
@@ -181,39 +184,59 @@ If a padding string value other than above is used as input (ignore capital), it
 * ***evp_pkey:encrypt*** (string data [,string padding=pkcs1]) -> string
 * ***evp_pkey:decrypt*** (string data [,string padding=pkcs1]) -> string
 
-4. Cipher
----------
+#5. Cipher
+* ***openssl.cipher.list*** ([boolean alias=true])  -> array
+ * return all cipher methods default with alias
+* ***openssl.cipher.get*** (string alg|int alg_id|asn1_object obj) => evp_cipher
+ *   return a evp_cipher method object
+* ***openssl.cipher.encrypt***(string alg|int alg_id|asn1_object obj, string input_msg,
+   string key [,string iv[,boolean pad=true[,openssl.engine e]]]) -> string
+ * return encrypted message,defualt with pad but without iv
+* ***openssl.cipher.decrypt***(string alg|int alg_id|asn1_object obj, string input_msg,
+   string key[,string iv[,boolean pad=true[,openssl.engine e]]]) -> string
+ * return decrypt message
+* ***openssl.cipher.cipher***(string alg|int alg_id|asn1_object obj, boolean encrypt,string input_msg,
+  string key[,string iv[,boolean pad=true[,openssl.engine e]]]) -> string
+ * return encrypted or decrypted message
+* ***openssl.cipher***(string alg|int alg_id|openssl.asn1_object obj,boolean encrypt,string input_msg,
+  string key[,string iv[,boolean pad=true[,openssl.engine e]]]) -> string
+ * return encrypted or decrypted message, this API implicated with metatable __call function.
+* ***openssl.cipher.new***(string alg|int alg_id|openssl.asn1_object obj, boolean encrypt,
+  string key[,string iv[,boolean pad=true[,openssl.engine e]]]) => openssl.evp_cipher_ctx
+ * return evp_cipher_ctx object to encrypt or decrypt
+* ***openssl.cipher.encrypt_new***(string alg|int alg_id|openssl.asn1_object obj,
+  string key[,string iv[,boolean pad=true[,openssl.engine e]]]) => openssl.evp_cipher_ctx
+ * return evp_cipher_ctx object to encrypt
+* ***openssl.cipher.decrypt_new***(string alg|int alg_id|openssl.asn1_object obj,
+   string key[,string iv[,boolean pad=true[,openssl.engine e]]]) => openssl.evp_cipher_ctx
+ * return evp_cipher_ctx object to encrypt
+* ***evp_cipher:info***() ->table
+ * return table result with name, block_size,key_length,iv_length,flags,mode keys
+* ***evp_cipher:BytesToKey***(string bytes) -> string key,string iv
+ * raturn key and iv according to input bytes
+* ***evp_cipher:encrypt***(string input_msg, string key
+  [,string iv[,boolean pad=true[,openssl.engine e]]]) -> string
+ * encrypt input_msg with key and return result
+* ***evp_cipher:decrypt***(string input_msg, string key
+ [,string iv[,boolean pad=true[,openssl.engine e]]]) -> string
+ * decrypt input_msg with key and return result
+* ***evp_cipher:cipher***(boolean encrypt, string msg, string key,
+ [,string iv[,boolean pad=true[,openssl.engine e]]]) -> string
+ * encrypt or decrypt input msg and return result
+* ***evp_cipher:new***(boolean encrypt, string key[,string iv[,boolean pad=true[,openssl.engine e]]]) => openssl.evp_cipher_ctx
+ * create encrypt or decrypt evp_cipher_ctx object with key,iv ...., and return it
+* ***evp_cipher:encrypt_new***(string key[,string iv[,boolean pad=true[,openssl.engine e]]])  => openssl.evp_cipher_ctx
+ * create encrypt evp_cipher_ctx object, and return it
+* ***evp_cipher:decrypt_new***(string key[,string iv[,boolean pad=true[,openssl.engine e]]])  => openssl.evp_cipher_ctx
+ * create decrypt evp_cipher_ctx object, and return it
+* ***cipher_ctx:info***() ->table
+  * return table with block_size,key_length,iv_length,flags,mode,nid,type and evp_cipher(object) keys
+* ***cipher_ctx:update***(string data) -> string
+  * return result string, may be 0 length
+* ***cipher_ctx:final()*** -> string
+  * return result string, may be 0 length
 
-* ***openssl.get_cipher*** (string alg|number alg_id) => evp_pkey
- * Return an evp_cipher method
-* ***openssl.get_cipher*** ([bool aliases = true]) -> table
- * Return all ciphers methods default with alias
-
-* ***evp_cipher:info*** () -> table
- * Returns a table with name, block_size,key_length,iv_length,flags and mode keys
-* ***evp_cipher:encrypt_init*** ([ string key [,string iv [,boolean nopad [,engine engimp]]]]) => cipher_ctx
-* ***evp_cipher:decrypt_init*** ([ string key [,string iv [,boolean nopad [,engine engimp]]]]) => cipher_ctx
-* ***evp_cipher:cipher_init*** (bool enc, [, string key [,string iv [,engine engimp]]]) => cipher_ctx
-* ***evp_cipher:encrypt*** (string data, [ string key [,string iv [,engine engimp]]]) -> string
-* ***evp_cipher:decrypt*** (string data, [ string key [,string iv [,engine engimp]]]) -> string
-
-* ***cipher_ctx:info*** () -> table
- * Returns a table with block_size,key_length,iv_length,flags,mode,nid,type and evp_cipher object keys
-* ***cipher_ctx:encrypt_update*** (string data) -> string
- * Return string may be of length 0
-* ***cipher_ctx:encrypt_final*** () -> string
-* ***cipher_ctx:decrypt_update*** (string data) -> string
- * Return string may be of length 0
-* ***cipher_ctx:decrypt_final*** () -> string
-
-* ***cipher_ctx:update*** (string data) -> string
- * Return string may be of length 0
-* ***cipher_ctx:final*** () -> string
-* ***cipher_ctx:cleanup*** () -> boolean
- * Reset state, make object reusable.
-
-5. Message Digest
------------------
+#6. Message Digest
 
 * ***openssl.digest.list*** ([boolean alias=true])  -> array
  * Return all md methods default with alias
@@ -221,11 +244,8 @@ If a padding string value other than above is used as input (ignore capital), it
  * Return a evp_digest object
 * ***openssl.digest.new*** (string alg|int alg_id|openssl.asn1_object obj) => openssl.evp_digest_ctx
  * Return a evp_digest_ctx object
- * this is a compat API for LuaCrypto
 * ***openssl.digest*** (string alg|openssl.evp_digest obj, string msg [,boolean raw=false]) -> string
  * Return a hash value for msg, if raw is true, it will be hex encoded
- * this is a compat api with LuaCrypto
-
 * ***evp_digest:new*** ([openssl.engine e]) => openssl.evp_digest_ctx
  * Return an evp_digest_ctx object
 * ***evp_digest:info*** () -> table
@@ -236,16 +256,12 @@ If a padding string value other than above is used as input (ignore capital), it
 * ***digest_ctx:info*** () -> table
  * Return a table with key block_size, size, type and digest
 * ***digest_ctx:update*** (string data) -> boolean
- * this is a compat API with LuaCrypto
 * ***digest_ctx:final*** ([string last [,boolean raw=true]) -> string
  * Return a hash value,default is binaray
- * This is a compat API with LuaCrypto
 * ***digest_ctx:reset*** () ->boolean
  * Cleanup evp_message_ctx to make it reusable.
- * this is a compat API with LuaCrypto
 
-6. PKCS7 (S/MIME) Sign/Verify/Encrypt/Decrypt Functions:
--------------------------------------------------------
+#7. PKCS7 (S/MIME) Sign/Verify/Encrypt/Decrypt Functions:
 
 These functions allow you to manipulate S/MIME messages!
 
@@ -280,8 +296,7 @@ and indexed array containing a single header line per value.
 
 * ***openssl.pkcs7_decrypt*** (bio in, bio out, x509 recipcert [,evp_pkey recipkey]) ->boolean
 
-7. Certificate sign request and Certificate revocked list
----------------------------------------------------------
+#8. Certificate sign request and Certificate revocked list
 
 * ***openssl.csr_new*** (evp_pkey privkey, table dn={} [,table args = nil]) => x509_req
 * ***openssl.csr_read*** (string data) => x509_req
@@ -307,7 +322,7 @@ and indexed array containing a single header line per value.
 
 * ***crl:parse*** () -> table
  * Below you can find an example of table content.
-    
+
 ```
     {
 	sig_alg=sha1WithRSAEncryption
@@ -334,8 +349,7 @@ and indexed array containing a single header line per value.
 ```
 
 
-8. PKCS12 Function
-------------------
+#9. PKCS12 Function
 
 * ***openssl.pkcs12_read*** (string pkcs12data, string pass) -> table
  * Parses a PKCS12 data to a table
@@ -347,8 +361,7 @@ and indexed array containing a single header line per value.
  * extracerts is optional, it can be as 4th or 5th parameter (if friendname is supplied)
 
 
-9. Misc Functions
------------------
+#10. Misc Functions
 
 I have made some work to try to keep compatibility with lua-crypto's API.
 
@@ -362,7 +375,7 @@ I have made some work to try to keep compatibility with lua-crypto's API.
 
 * ***openssl.sign*** (string data,  evp_pkey key [, evp_digest md|string md_alg=SHA1]) ->string
  * Uses key to create signature for data, returns signed result
-  
+
 * ***openssl.verify*** (string data, string signature, evp_pkey key [, evp_digest md|string md_alg=SHA1]) ->boolean
  * Uses key to verify that the signature is correct for the given data.
 
@@ -410,10 +423,9 @@ I have made some work to try to keep compatibility with lua-crypto's API.
 * ***bio:type*** () -> string
 * ***bio:reset*** ()
 
-I.   HOWTO
-----------
+#A.   Howto
 
-### HowTo 1: Build on Linux/Unix System.
+### Howto 1: Build on Linux/Unix System.
 
 Before building, please change the setting in the config file.
 Works with Lua5.1 (should support Lua5.2 by updating config file).
@@ -422,7 +434,7 @@ Works with Lua5.1 (should support Lua5.2 by updating config file).
 	make install
 	make clean
 
-### HowTo 2: Build on Windows with MSVC.
+### Howto 2: Build on Windows with MSVC.
 
 Before building, please change the setting in the config.win file.
 Works with Lua5.1 (should support Lua5.2 by updating the config.win file).
@@ -432,12 +444,11 @@ Works with Lua5.1 (should support Lua5.2 by updating the config.win file).
 	nmake -f makefile.win clean
 
 
-### HowTo 3: Build on Windows with mingw.
+### Howto 3: Build on Windows with mingw.
 
 TODO
 
-II.  Example usage
-------------------
+#B.  Example usage
 
 ### Example 1: short encrypt/decrypt
 
@@ -502,12 +513,12 @@ test_x509()
 
 For more examples, please see test lua script file.
 
-III. Contact
+#C. Contact
 ------------
 
 ***lua-openssl License***
 
-Copyright (c) 2011 - 2012 zhaozg, zhaozg(at)gmail.com
+Copyright (c) 2011 - 2014 zhaozg, zhaozg(at)gmail.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to
@@ -528,5 +539,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 --------------------------------------------------------------------
-  
+
 This product includes PHP software, freely available from <http://www.php.net/software/>
+
