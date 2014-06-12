@@ -1,3 +1,10 @@
+/*=========================================================================*\
+* engine.c
+* engine object for lua-openssl binding
+*
+* Author:  george zhao <zhaozg(at)gmail.com>
+\*=========================================================================*/
+
 #include <openssl/engine.h>
 #include "openssl.h"
 

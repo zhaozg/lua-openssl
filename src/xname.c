@@ -1,6 +1,5 @@
 /*=========================================================================*\
 * x509 name routines
-* lua-openssl toolkit
 *
 * This product includes PHP software, freely available from <http://www.php.net/software/>
 * Author:  george zhao <zhaozg(at)gmail.com>

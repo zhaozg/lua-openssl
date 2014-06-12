@@ -1,7 +1,18 @@
+/*=========================================================================*\
+* ocsp.c
+* X509 certificate sign request routines for lua-openssl binding
+*
+* Author:  george zhao <zhaozg(at)gmail.com>
+\*=========================================================================*/
 #include "openssl.h"
 #include "openssl/ocsp.h"
 
-int openssl_ocsp_request_new(lua_State*L){
+#define MYNAME		"ocsp"
+#define MYVERSION	MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
+	"based on OpenSSL " SHLIB_VERSION_NUMBER
+#define MYTYPE			"openssl.ocsp"
+
+static int openssl_ocsp_request_new(lua_State*L){
 	OCSP_REQUEST *req = NULL;
 	BIO* bio = NULL;
 	if (lua_isstring(L,1)){
@@ -75,7 +86,7 @@ int openssl_ocsp_request_new(lua_State*L){
 }
 
 
-int openssl_ocsp_request_export(lua_State*L){
+static int openssl_ocsp_request_export(lua_State*L){
 	OCSP_REQUEST *req = CHECK_OBJECT(1, OCSP_REQUEST, "openssl.ocsp_request");
 	int pem = 1;
 	int ret = 0;
@@ -99,13 +110,13 @@ int openssl_ocsp_request_export(lua_State*L){
 	return ret;
 }
 
-int openssl_ocsp_request_free(lua_State*L){
+static int openssl_ocsp_request_free(lua_State*L){
 	OCSP_REQUEST *req = CHECK_OBJECT(1, OCSP_REQUEST, "openssl.ocsp_request");
 	OCSP_REQUEST_free(req);
 	return 0;
 }
 
-int openssl_ocsp_request_sign(lua_State*L){
+static int openssl_ocsp_request_sign(lua_State*L){
 	OCSP_REQUEST *req = CHECK_OBJECT(1, OCSP_REQUEST, "openssl.ocsp_request");
 	X509 *signer = CHECK_OBJECT(2, X509, "openssl.x509");
 	EVP_PKEY *pkey = CHECK_OBJECT(3, EVP_PKEY, "openssl.evp_pkey");
@@ -129,7 +140,7 @@ int openssl_ocsp_request_sign(lua_State*L){
 }
 
 
-int openssl_ocsp_request_parse(lua_State*L){
+static int openssl_ocsp_request_parse(lua_State*L){
 	OCSP_REQUEST *req = CHECK_OBJECT(1, OCSP_REQUEST, "openssl.ocsp_request");
 	OCSP_REQINFO *inf = req->tbsRequest;
 	OCSP_SIGNATURE *sig = req->optionalSignature;
@@ -188,7 +199,7 @@ int openssl_ocsp_request_parse(lua_State*L){
 	return 1;
 }
 
-int openssl_ocsp_response(lua_State *L){
+static int openssl_ocsp_response(lua_State *L){
 	OCSP_RESPONSE *res = NULL;
 
 	if (lua_isstring(L,1)){
@@ -336,7 +347,7 @@ int openssl_ocsp_response(lua_State *L){
 
 
 
-int openssl_ocsp_response_export(lua_State*L){
+static int openssl_ocsp_response_export(lua_State*L){
 	OCSP_RESPONSE *res = CHECK_OBJECT(1, OCSP_RESPONSE, "openssl.ocsp_response");
 	int pem = 1;
 	int ret = 0;
@@ -360,6 +371,10 @@ int openssl_ocsp_response_export(lua_State*L){
 	return ret;
 }
 
+static int openssl_ocsp_response_parse(lua_State *L){
+	luaL_error(L,"NYI");
+	return 1;
+}
 int openssl_ocsp_response_free(lua_State*L){
 	OCSP_RESPONSE *res = CHECK_OBJECT(1, OCSP_RESPONSE, "openssl.ocsp_response");
 	OCSP_RESPONSE_free(res);
@@ -378,15 +393,38 @@ static luaL_reg ocsp_req_cfuns[] = {
 
 static luaL_reg ocsp_res_cfuns[] = {
 	{"export",			openssl_ocsp_response_export	},
-	//{"parse",			openssl_ocsp_response_parse	},
+	{"parse",			openssl_ocsp_response_parse	},
 	{"__gc",			openssl_ocsp_response_free	},
 
 	{"__tostring",		auxiliar_tostring	},
 
 	{NULL,				NULL	}
 };
-LUA_FUNCTION(openssl_register_ocsp) {
+
+static luaL_reg R[] = {
+	{"request_read", openssl_ocsp_request_new},
+	{"request_new",  openssl_ocsp_request_new},
+	{"response_new", openssl_ocsp_response},
+	{"response_read",openssl_ocsp_response},
+
+	{NULL,		NULL}
+};
+
+LUALIB_API int luaopen_ocsp(lua_State *L)
+{
 	auxiliar_newclass(L,"openssl.ocsp_request",		ocsp_req_cfuns);
 	auxiliar_newclass(L,"openssl.ocsp_response",	ocsp_res_cfuns);
-	return 0;
+
+	luaL_newmetatable(L,MYTYPE);
+	lua_setglobal(L,MYNAME);
+	luaL_register(L,MYNAME,R);
+	lua_pushvalue(L, -1);
+	lua_setmetatable(L, -2);
+	lua_pushliteral(L,"version");			/** version */
+	lua_pushliteral(L,MYVERSION);
+	lua_settable(L,-3);
+	lua_pushliteral(L,"__index");
+	lua_pushvalue(L,-2);
+	lua_settable(L,-3);
+	return 1;
 }

@@ -1,8 +1,20 @@
+/*=========================================================================*\
+* ssl.c
+* SSL modules for lua-openssl binding
+*
+* Author:  george zhao <zhaozg(at)gmail.com>
+\*=========================================================================*/
 #include "openssl.h"
+#include "private.h"
+#define MYNAME		"ssl"
+#define MYVERSION	MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
+	"based on OpenSSL " SHLIB_VERSION_NUMBER
+#define MYTYPE			"openssl.ssl"
+
 #include <openssl/ssl.h>
 
 /****************************SSL CTX********************************/
-int openssl_ssl_ctx_new(lua_State*L)
+static int openssl_ssl_ctx_new(lua_State*L)
 {
 	const char* meth = luaL_optstring(L, 1, "TLSv1");
 	const SSL_METHOD* method = NULL;
@@ -378,13 +390,13 @@ SL_SESSION *(*SSL_CTX_sess_get_get_cb(SSL_CTX *ctx))(struct ssl_st *ssl, unsigne
 */
 
 
-int openssl_ssl_session_new(lua_State*L){
+static int openssl_ssl_session_new(lua_State*L){
 	SSL_SESSION *ss = SSL_SESSION_new();
 	PUSH_OBJECT(ss,"openssl.ssl_session");
 	return 1;
 }
 
-int openssl_ssl_session_read(lua_State*L){
+static int openssl_ssl_session_read(lua_State*L){
 	size_t size;
 	const char* dat = luaL_checklstring(L, 1, &size);
 	BIO *in = BIO_new_mem_buf((void*)dat, size);
@@ -1179,9 +1191,31 @@ int (*SSL_CTX_get_verify_callback(const SSL_CTX *ctx))(int,X509_STORE_CTX *);
 void SSL_CTX_set_verify(SSL_CTX *ctx,int mode,	int (*callback)(int, X509_STORE_CTX *));
 void SSL_CTX_set_cert_verify_callback(SSL_CTX *ctx, int (*cb)(X509_STORE_CTX *,void *), void *arg);
 
-int openssl_register_ssl(lua_State* L){
+static luaL_reg R[] = {
+	{"ctx_new",		openssl_ssl_ctx_new },
+	{"session_new",	openssl_ssl_session_read},
+	{"session_new",	openssl_ssl_session_read},
+	{NULL,		NULL}
+};
+
+LUALIB_API int luaopen_ssl(lua_State *L)
+{
+	ERR_load_SSL_strings();
+
 	auxiliar_newclass(L,"openssl.ssl_ctx",		ssl_ctx_funcs);
 	auxiliar_newclass(L,"openssl.ssl_session",	ssl_session_funcs);
 	auxiliar_newclass(L,"openssl.ssl",			ssl_funcs);
-	return 0;
+
+	luaL_newmetatable(L,MYTYPE);
+	lua_setglobal(L,MYNAME);
+	luaL_register(L,MYNAME,R);
+	lua_pushvalue(L, -1);
+	lua_setmetatable(L, -2);
+	lua_pushliteral(L,"version");			/** version */
+	lua_pushliteral(L,MYVERSION);
+	lua_settable(L,-3);
+	lua_pushliteral(L,"__index");
+	lua_pushvalue(L,-2);
+	lua_settable(L,-3);
+	return 1;
 }

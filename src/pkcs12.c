@@ -1,48 +1,17 @@
-/*
-   +----------------------------------------------------------------------+
-   | PHP Version 5                                                        |
-   +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2012 The PHP Group                                |
-   +----------------------------------------------------------------------+
-   | This source file is subject to version 3.01 of the PHP license,      |
-   | that is bundled with this package in the file LICENSE, and is        |
-   | available through the world-wide-web at the following url:           |
-   | http://www.php.net/license/3_01.txt                                  |
-   | If you did not receive a copy of the PHP license and are unable to   |
-   | obtain it through the world-wide-web, please send a note to          |
-   | license@php.net so we can mail you a copy immediately.               |
-   +----------------------------------------------------------------------+
-*/
 /*=========================================================================*\
-* PKCS12 routines
-* lua-openssl toolkit
+* pkcs12.c
+* PKCS12 routines for lua-openssl binding
 *
-* This product includes PHP software, freely available from <http://www.php.net/software/>
 * Author:  george zhao <zhaozg(at)gmail.com>
 \*=========================================================================*/
 #include "openssl.h"
 
-/* PKCS12 module for the Lua/OpenSSL binding.
- *
- * The functions in this module can be used to load, parse, export, verify... functions.
- * pkcs12_read()
- * pkcs12_export()
- */
+#define MYNAME		"pkcs12"
+#define MYVERSION	MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
+	"based on OpenSSL " SHLIB_VERSION_NUMBER
+#define MYTYPE			"openssl.pkcs12"
 
-/*  openssl.pkcs12_export(openssl.x509 x509, openssl.evp_pkey pkey, string pass [[, string friendname ], table extracerts]) -> string{{{1
-
-	Creates and exports a PKCS to file *
-
-	x509 is openssl.x509 object.
-	pkey is openssl.evp_pkey object.
-	pass is pkcs12 file password.
-	option paramaers
-	   friendly_name:	frinedly_name for pkcs11
-	   extracerts:		extra certs in cert chains
-	file is option
-*/
-
-LUA_FUNCTION(openssl_pkcs12_export)
+static LUA_FUNCTION(openssl_pkcs12_export)
 {
     X509 * cert = CHECK_OBJECT(1, X509, "openssl.x509");
     EVP_PKEY *priv_key = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
@@ -60,7 +29,7 @@ LUA_FUNCTION(openssl_pkcs12_export)
         else if(lua_isuserdata(L, 4))
             ca = CHECK_OBJECT(4, STACK_OF(X509), "openssl.stack_of_x509");
         else
-            luaL_typerror(L,4,"must be a string or openssl.stack_of_x509 object");
+            luaL_argerror(L,4,"must be string as friendly_name or openssl.stack_of_x509 object as cacets");
 
         if (top>4)
             ca = CHECK_OBJECT(5, STACK_OF(X509), "openssl.stack_of_x509");
@@ -93,19 +62,8 @@ LUA_FUNCTION(openssl_pkcs12_export)
 
     return 0;
 }
-/* }}} */
 
-
-/*  openssl.pkcs12_read(string pkcs12, string pass) -> table|nil{{{1
-
-	Parses a PKCS12 to an table
-	pkcs12 are file path or pkcs11 data
-	. if it starts with file:// then it will be interpreted as the path to that pkcs12
-	. it will be interpreted as the pkcs12 data
-
-*/
-
-LUA_FUNCTION(openssl_pkcs12_read)
+static LUA_FUNCTION(openssl_pkcs12_read)
 {
     const char *pass, *zp12;
     size_t zp12_len;
@@ -150,8 +108,27 @@ LUA_FUNCTION(openssl_pkcs12_read)
     }
     return 0;
 }
-/* }}} */
 
+static luaL_reg R[] = {
+	{"read",		openssl_pkcs12_read	},
+	{"export",		openssl_pkcs12_export  },
 
-/* }}} */
+	{NULL,		NULL}
+};
+
+LUALIB_API int luaopen_pkcs12(lua_State *L)
+{
+	luaL_newmetatable(L,MYTYPE);
+	lua_setglobal(L,MYNAME);
+	luaL_register(L,MYNAME,R);
+	lua_pushvalue(L, -1);
+	lua_setmetatable(L, -2);
+	lua_pushliteral(L,"version");			/** version */
+	lua_pushliteral(L,MYVERSION);
+	lua_settable(L,-3);
+	lua_pushliteral(L,"__index");
+	lua_pushvalue(L,-2);
+	lua_settable(L,-3);
+	return 1;
+}
 

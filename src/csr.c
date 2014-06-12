@@ -1,53 +1,16 @@
-/*
-   +----------------------------------------------------------------------+
-   | PHP Version 5                                                        |
-   +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2012 The PHP Group                                |
-   +----------------------------------------------------------------------+
-   | This source file is subject to version 3.01 of the PHP license,      |
-   | that is bundled with this package in the file LICENSE, and is        |
-   | available through the world-wide-web at the following url:           |
-   | http://www.php.net/license/3_01.txt                                  |
-   | If you did not receive a copy of the PHP license and are unable to   |
-   | obtain it through the world-wide-web, please send a note to          |
-   | license@php.net so we can mail you a copy immediately.               |
-   +----------------------------------------------------------------------+
-*/
 /*=========================================================================*\
-* X509 certificate sign request routines
-* lua-openssl toolkit
+* csr.c
+* X509 certificate sign request routines for lua-openssl binding
 *
-* This product includes PHP software, freely available from <http://www.php.net/software/>
 * Author:  george zhao <zhaozg(at)gmail.com>
 \*=========================================================================*/
 #include "openssl.h"
 #include "private.h"
+#define MYNAME		"csr"
+#define MYVERSION	MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
+	"based on OpenSSL " SHLIB_VERSION_NUMBER
+#define MYTYPE			"openssl.csr"
 
-static int openssl_csr_tostring(lua_State*L);
-static int openssl_csr_free(lua_State*L);
-static int openssl_csr_get_public(lua_State*L);
-
-
-LUA_FUNCTION(openssl_csr_parse);
-LUA_FUNCTION(openssl_csr_export);
-LUA_FUNCTION(openssl_csr_sign);
-
-static luaL_reg csr_cfuns[] = {
-    {"export",			openssl_csr_export	},
-    {"parse",			openssl_csr_parse	},
-    {"sign",			openssl_csr_sign	},
-    {"get_public",		openssl_csr_get_public	},
-
-    {"__tostring",		openssl_csr_tostring	},
-    {"__gc",			openssl_csr_free	},
-
-    {NULL,				NULL	}
-};
-
-
-/* {{{ x509 CSR functions */
-
-/* {{{ openssl_make_REQ */
 static int openssl_make_REQ(lua_State*L,
                             X509_REQ * csr,
                             EVP_PKEY *pkey,
@@ -81,12 +44,7 @@ static int openssl_make_REQ(lua_State*L,
     return X509_REQ_set_pubkey(csr, pkey);
 }
 
-/* }}} */
-
-/* {{{ openssl.csr_read(string data)->openssl.x509_req */
-
-
-LUA_FUNCTION(openssl_csr_read)
+static LUA_FUNCTION(openssl_csr_read)
 {
     X509_REQ * csr = NULL;
     BIO * in = NULL;
@@ -115,11 +73,8 @@ LUA_FUNCTION(openssl_csr_read)
 
     return 0;
 }
-/* }}} */
 
-/* {{{ proto string openssl_csr_export(resource csr [, boolean pem [,bool notext=true]])
-   Exports a CSR to a var */
-LUA_FUNCTION(openssl_csr_export)
+static LUA_FUNCTION(openssl_csr_export)
 {
     X509_REQ * csr = CHECK_OBJECT(1,X509_REQ,"openssl.x509_req");
     int pem, notext;
@@ -160,12 +115,10 @@ LUA_FUNCTION(openssl_csr_export)
     BIO_free(bio_out);
     return 1;
 }
-/* }}} */
 
 int openssl_conf_load_idx(lua_State*L, int idx);
-/* {{{ proto resource openssl_csr_sign(obj csr, obj x509, obj priv_key [,table args = {serialNumber=...,num_days=...,...}][,string group])
-   Signs a cert with another CERT */
-LUA_FUNCTION(openssl_csr_sign)
+
+static LUA_FUNCTION(openssl_csr_sign)
 {
     X509 * cert = NULL, *new_cert = NULL;
     X509_REQ * csr;
@@ -328,11 +281,8 @@ cleanup:
 
     return ret;
 }
-/* }}} */
 
-/* {{{openssl.csr_new(openssl.evp_pkey pkey, table dn, [ arg = {[, table extraattribs, [table config [,string md|openssl.evp_digest md]] }]  ) = >openssl.x509_req
-   Generates CSR with gived private key, dn, and extraattribs */
-LUA_FUNCTION(openssl_csr_new)
+static LUA_FUNCTION(openssl_csr_new)
 {
     X509_REQ *csr = NULL;
 
@@ -397,11 +347,8 @@ LUA_FUNCTION(openssl_csr_new)
 
     return 1;
 }
-/* }}} */
 
-/* {{{ csr.parse(openssl.x509_req csr, boolean shortname)=>table
-   Returns the table that contains all infomration about x509_req */
-LUA_FUNCTION(openssl_csr_parse)
+static LUA_FUNCTION(openssl_csr_parse)
 {
     X509_REQ * csr = CHECK_OBJECT(1,X509_REQ,"openssl.x509_req");
     int  shortnames = lua_gettop(L)==1?1:lua_toboolean(L,2);
@@ -431,8 +378,10 @@ LUA_FUNCTION(openssl_csr_parse)
         */
 
         PUSH_OBJECT(pubkey,"openssl.evp_pkey");
+		/*
         lua_insert(L,1);
         openssl_pkey_parse(L);
+		*/
         lua_setfield(L,-2,"pubkey");
         lua_remove(L,1);
 
@@ -538,15 +487,6 @@ LUA_FUNCTION(openssl_csr_parse)
 
     return 1;
 }
-/* }}} */
-
-/* }}} */
-
-static LUA_FUNCTION(openssl_csr_tostring) {
-    X509_REQ *csr = CHECK_OBJECT(1,X509_REQ,"openssl.x509_req");
-    lua_pushfstring(L,"openssl.x509_req:%p",csr);
-    return 1;
-}
 
 static LUA_FUNCTION(openssl_csr_free) {
     X509_REQ *csr = CHECK_OBJECT(1,X509_REQ,"openssl.x509_req");
@@ -560,7 +500,40 @@ static LUA_FUNCTION(openssl_csr_get_public) {
     return 1;
 }
 
-LUA_FUNCTION(openssl_register_csr) {
-    auxiliar_newclass(L,"openssl.x509_req", csr_cfuns);
-    return 0;
+static luaL_reg csr_cfuns[] = {
+	{"export",			openssl_csr_export	},
+	{"parse",			openssl_csr_parse	},
+	{"sign",			openssl_csr_sign	},
+	{"get_public",		openssl_csr_get_public	},
+
+	{"__tostring",		auxiliar_tostring	},
+	{"__gc",			openssl_csr_free	},
+
+	{NULL,				NULL	}
+};
+
+
+static luaL_reg R[] = {
+	{"new",				openssl_csr_new	},
+	{"read",			openssl_csr_read	},
+
+	{NULL,		NULL}
+};
+
+LUALIB_API int luaopen_csr(lua_State *L)
+{
+	auxiliar_newclass(L,"openssl.x509_req", csr_cfuns);
+
+	luaL_newmetatable(L,MYTYPE);
+	lua_setglobal(L,MYNAME);
+	luaL_register(L,MYNAME,R);
+	lua_pushvalue(L, -1);
+	lua_setmetatable(L, -2);
+	lua_pushliteral(L,"version");			/** version */
+	lua_pushliteral(L,MYVERSION);
+	lua_settable(L,-3);
+	lua_pushliteral(L,"__index");
+	lua_pushvalue(L,-2);
+	lua_settable(L,-3);
+	return 1;
 }

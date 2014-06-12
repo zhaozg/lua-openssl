@@ -1,10 +1,14 @@
 /*=========================================================================*\
-* ec routines
-* lua-openssl toolkit
+* ec.c
+* EC routines for lua-openssl binding
 *
 * Author:  george zhao <zhaozg(at)gmail.com>
 \*=========================================================================*/
 #include "openssl.h"
+#define MYNAME		"ec"
+#define MYVERSION	MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
+	"based on OpenSSL " SHLIB_VERSION_NUMBER
+#define MYTYPE			"openssl.ec"
 
 #define lua_boxpointer(L,u) \
 	(*(void **)(lua_newuserdata(L, sizeof(void *))) = (u))
@@ -190,14 +194,64 @@ static luaL_Reg ec_point_funs[] = {
 	{ NULL, NULL }
 };
 
-int openssl_register_ec(lua_State* L)
+
+static LUA_FUNCTION(openssl_ec_list_curve_name) {
+	size_t n = 0;
+	size_t crv_len = EC_get_builtin_curves(NULL, 0);
+	EC_builtin_curve *curves = OPENSSL_malloc((int)(sizeof(EC_builtin_curve) * crv_len));
+
+	if (curves == NULL)
+		return 0;
+
+	if (!EC_get_builtin_curves(curves, crv_len))
+	{
+		OPENSSL_free(curves);
+		return 0;
+	}
+
+	lua_newtable(L);
+	for (n = 0; n < crv_len; n++)
+	{
+		const char *comment;
+		const char *sname;
+		comment = curves[n].comment;
+		sname   = OBJ_nid2sn(curves[n].nid);
+		if (comment == NULL) comment = "CURVE DESCRIPTION NOT AVAILABLE";
+		if (sname == NULL) 	sname = "";
+
+		lua_pushstring(L, comment);
+		lua_setfield(L, -2, sname);
+	}
+
+	OPENSSL_free(curves);
+	return 1;
+};
+
+static luaL_Reg R[] = {
+	{"list", openssl_ec_list_curve_name},
+
+	{ NULL, NULL }
+};
+
+LUALIB_API int luaopen_ec(lua_State *L)
 {
 	auxiliar_newclass(L,"openssl.ec_point",		ec_point_funs);
 	auxiliar_newclass(L,"openssl.ec_group",		ec_group_funs);
 	auxiliar_newclass(L,"openssl.ec_key",		ec_key_funs);
-	
-	return 0;
-};
+
+	luaL_newmetatable(L,MYTYPE);
+	lua_setglobal(L,MYNAME);
+	luaL_register(L,MYNAME,R);
+	lua_pushvalue(L, -1);
+	lua_setmetatable(L, -2);
+	lua_pushliteral(L,"version");			/** version */
+	lua_pushliteral(L,MYVERSION);
+	lua_settable(L,-3);
+	lua_pushliteral(L,"__index");
+	lua_pushvalue(L,-2);
+	lua_settable(L,-3);
+	return 1;
+}
 
 #endif
 

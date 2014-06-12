@@ -1,27 +1,17 @@
-/*
-   +----------------------------------------------------------------------+
-   | PHP Version 5                                                        |
-   +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2012 The PHP Group                                |
-   +----------------------------------------------------------------------+
-   | This source file is subject to version 3.01 of the PHP license,      |
-   | that is bundled with this package in the file LICENSE, and is        |
-   | available through the world-wide-web at the following url:           |
-   | http://www.php.net/license/3_01.txt                                  |
-   | If you did not receive a copy of the PHP license and are unable to   |
-   | obtain it through the world-wide-web, please send a note to          |
-   | license@php.net so we can mail you a copy immediately.               |
-   +----------------------------------------------------------------------+
-*/
 /*=========================================================================*\
-* evp_pkey routines
-* lua-openssl toolkit
+* pkey.c
+* pkey module for lua-openssl binding
 *
-* This product includes PHP software, freely available from <http://www.php.net/software/>
 * Author:  george zhao <zhaozg(at)gmail.com>
 \*=========================================================================*/
+
 #include "openssl.h"
-#include "auxiliar.h"
+
+#define MYNAME		"pkey"
+#define MYVERSION	MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
+	"based on OpenSSL " SHLIB_VERSION_NUMBER
+#define MYTYPE			"openssl.pkey"
+
 #ifndef OPENSSL_NO_EC
 #include "ec_lcl.h"
 #endif
@@ -33,46 +23,67 @@ static int openssl_pkey_bits(lua_State *L) {
 	return  1;
 };
 
-/* {{{ EVP Public/Private key functions */
 
-static luaL_Reg pkey_funcs[] = {
-    {"is_private",		openssl_pkey_is_private},
-    {"export",			openssl_pkey_export},
-    {"parse",			openssl_pkey_parse},
-    {"bits",			openssl_pkey_bits},
+static int openssl_is_private_key(EVP_PKEY* pkey)
+{
+	assert(pkey != NULL);
 
-    {"encrypt",			openssl_pkey_encrypt},
-    {"decrypt",			openssl_pkey_decrypt},
+	switch (pkey->type) {
+#ifndef OPENSSL_NO_RSA
+	case EVP_PKEY_RSA:
+	case EVP_PKEY_RSA2:
+		assert(pkey->pkey.rsa != NULL);
+		if (pkey->pkey.rsa != NULL && (NULL == pkey->pkey.rsa->p || NULL == pkey->pkey.rsa->q)) {
+			return 0;
+		}
+		break;
+#endif
+#ifndef OPENSSL_NO_DSA
+	case EVP_PKEY_DSA:
+	case EVP_PKEY_DSA1:
+	case EVP_PKEY_DSA2:
+	case EVP_PKEY_DSA3:
+	case EVP_PKEY_DSA4:
+		assert(pkey->pkey.dsa != NULL);
 
-    {"__gc",			openssl_pkey_free},
-    {"__tostring",		auxiliar_tostring},
+		if (NULL == pkey->pkey.dsa->p || NULL == pkey->pkey.dsa->q || NULL == pkey->pkey.dsa->priv_key) {
+			return 0;
+		}
+		break;
+#endif
+#ifndef OPENSSL_NO_DH
+	case EVP_PKEY_DH:
+		assert(pkey->pkey.dh != NULL);
 
-    {NULL,			NULL},
-};
+		if (NULL == pkey->pkey.dh->p || NULL == pkey->pkey.dh->priv_key) {
+			return 0;
+		}
+		break;
+#endif
+#ifndef OPENSSL_NO_EC
+	case EVP_PKEY_EC:
+		assert(pkey->pkey.ec != NULL);
 
-static int openssl_is_private_key(EVP_PKEY* pkey);
+		if (NULL == pkey->pkey.ec->priv_key) {
+			return 0;
+		}
+		break;
+#endif
+	default:
+		return -1;
+		break;
+	}
+	return 1;
+}
 
-/* {{{ openssl_evp_read(string data|openssl.x509 x509 [,bool public_key=true [,string passphrase]]) => openssl.evp_pkey
-Read from a file or a data, coerce it into a EVP_PKEY object.
-It can be:
-1. private key resource from openssl_get_privatekey()
-2. X509 resource -> public key will be extracted from it
-3. interpreted as the data from the cert/key file and interpreted in same way as openssl_get_privatekey()
-4. an array(0 => [items 2..4], 1 => passphrase)
-5. if val is a string and it is not an X509 certificate, then interpret as public key
-NOTE: If you are requesting a private key but have not specified a passphrase, you should use an
-empty string rather than NULL for the passphrase - NULL causes a passphrase prompt to be emitted in
-the Apache error log!
-*/
-int openssl_pkey_read(lua_State*L)
+static int openssl_pkey_read(lua_State*L)
 {
     EVP_PKEY * key = NULL;
-
     int public_key = 1;
     const char * passphrase = NULL;
 
     int top = lua_gettop(L);
-    public_key = top > 1 ? lua_toboolean(L,2):1;
+    public_key = top > 1 ? lua_toboolean(L,2) : 1;
     passphrase = top > 2 ? luaL_checkstring(L, 3) : NULL;
 
     if(auxiliar_isclass(L,"openssl.x509", 1)) {
@@ -92,7 +103,7 @@ int openssl_pkey_read(lua_State*L)
             if(is_priv)
                 luaL_error(L,"evp_pkey object is not a public key, NYI read from private");
         }
-	key->references++;
+		key->references++;
     }
 
     if(lua_isstring(L,1))
@@ -129,62 +140,6 @@ int openssl_pkey_read(lua_State*L)
         lua_pushnil(L);
     return 1;
 }
-/* }}} */
-
-/* {{{ openssl_is_private_key
-Check whether the supplied key is a private key by checking if the secret prime factors are set */
-static int openssl_is_private_key(EVP_PKEY* pkey)
-{
-    assert(pkey != NULL);
-
-    switch (pkey->type) {
-#ifndef OPENSSL_NO_RSA
-    case EVP_PKEY_RSA:
-    case EVP_PKEY_RSA2:
-        assert(pkey->pkey.rsa != NULL);
-        if (pkey->pkey.rsa != NULL && (NULL == pkey->pkey.rsa->p || NULL == pkey->pkey.rsa->q)) {
-            return 0;
-        }
-        break;
-#endif
-#ifndef OPENSSL_NO_DSA
-    case EVP_PKEY_DSA:
-    case EVP_PKEY_DSA1:
-    case EVP_PKEY_DSA2:
-    case EVP_PKEY_DSA3:
-    case EVP_PKEY_DSA4:
-        assert(pkey->pkey.dsa != NULL);
-
-        if (NULL == pkey->pkey.dsa->p || NULL == pkey->pkey.dsa->q || NULL == pkey->pkey.dsa->priv_key) {
-            return 0;
-        }
-        break;
-#endif
-#ifndef OPENSSL_NO_DH
-    case EVP_PKEY_DH:
-        assert(pkey->pkey.dh != NULL);
-
-        if (NULL == pkey->pkey.dh->p || NULL == pkey->pkey.dh->priv_key) {
-            return 0;
-        }
-        break;
-#endif
-#ifndef OPENSSL_NO_EC
-    case EVP_PKEY_EC:
-        assert(pkey->pkey.ec != NULL);
-
-        if (NULL == pkey->pkey.ec->priv_key) {
-            return 0;
-        }
-        break;
-#endif
-    default:
-        return -1;
-        break;
-    }
-    return 1;
-}
-/* }}} */
 
 #define OPENSSL_PKEY_GET_BN(bn, _name)	\
 if (bn != NULL) {						\
@@ -209,7 +164,7 @@ if (bn != NULL) {						\
 }
 
 
-int EC_KEY_generate_key_part(EC_KEY *eckey)
+static int EC_KEY_generate_key_part(EC_KEY *eckey)
 {	
 	int	ok = 0;
 	BN_CTX	*ctx = NULL;
@@ -277,9 +232,7 @@ err:
 	BN_copy(b,bn);								\
 	}
 
-/* {{{ openssl_pkey_new([table config args])->openssl.evp_pkey
-Generates a new private key */
-LUA_FUNCTION(openssl_pkey_new)
+static LUA_FUNCTION(openssl_pkey_new)
 {
     EVP_PKEY *pkey = NULL;
     const char* alg = "rsa";
@@ -530,12 +483,8 @@ LUA_FUNCTION(openssl_pkey_new)
     return 0;
 
 }
-/* }}} */
 
-/* {{{ openssl.pkey_export(openss.evp_key key [,boolean onlypublic=false, [boolean rawformat, [, string passphrase]]) => data | bool
-Gets an exportable representation of a key into a file or a var */
-
-LUA_FUNCTION(openssl_pkey_export)
+static LUA_FUNCTION(openssl_pkey_export)
 {
     EVP_PKEY * key;
     int expub = 0;
@@ -684,21 +633,14 @@ LUA_FUNCTION(openssl_pkey_export)
     return ret;
 }
 
-/* }}} */
-
-/* {{{ proto void openssl_pkey_free(int key)
-Frees a key */
-LUA_FUNCTION(openssl_pkey_free)
+static LUA_FUNCTION(openssl_pkey_free)
 {
     EVP_PKEY *pkey = CHECK_OBJECT(1,EVP_PKEY,"openssl.evp_pkey");
     EVP_PKEY_free(pkey);
     return 0;
 }
-/* }}} */
 
-/* {{{  openssl.pkey_parse(resource key)
-returns an array with the key details (bits, pkey, type)*/
-LUA_FUNCTION(openssl_pkey_parse)
+static LUA_FUNCTION(openssl_pkey_parse)
 {
     EVP_PKEY *pkey = CHECK_OBJECT(1,EVP_PKEY,"openssl.evp_pkey");
     lua_newtable(L);
@@ -840,9 +782,7 @@ static int get_padding(const char* padding) {
     return 0;
 }
 
-/* {{{ evp_pkey:encrypt(string data, [string padding=])=>string
-   Encrypts data with key */
-LUA_FUNCTION(openssl_pkey_encrypt)
+static LUA_FUNCTION(openssl_pkey_encrypt)
 {
     size_t dlen = 0;
     EVP_PKEY *pkey = CHECK_OBJECT(1,EVP_PKEY,"openssl.evp_pkey");
@@ -888,11 +828,8 @@ LUA_FUNCTION(openssl_pkey_encrypt)
     }
     return 0;
 }
-/* }}} */
 
-/* {{{ evp_pkey:decrypt(string data,[,string padding=pkcs1]) => string
-   Decrypts data with private key */
-LUA_FUNCTION(openssl_pkey_decrypt)
+static LUA_FUNCTION(openssl_pkey_decrypt)
 {
     size_t dlen = 0;
     EVP_PKEY *pkey = CHECK_OBJECT(1,EVP_PKEY,"openssl.evp_pkey");
@@ -938,10 +875,8 @@ LUA_FUNCTION(openssl_pkey_decrypt)
 
     return 0;
 }
-/* }}} */
 
-
-LUA_FUNCTION(openssl_pkey_is_private)
+static LUA_FUNCTION(openssl_pkey_is_private)
 {
     EVP_PKEY *pkey = CHECK_OBJECT(1,EVP_PKEY,"openssl.evp_pkey");
     int private = openssl_is_private_key(pkey);
@@ -954,7 +889,312 @@ LUA_FUNCTION(openssl_pkey_is_private)
     return 1;
 }
 
-int openssl_register_pkey(lua_State*L) {
-    auxiliar_newclass(L,"openssl.evp_pkey", pkey_funcs);
-    return 0;
+
+static LUA_FUNCTION(openssl_dh_compute_key)
+{
+    const char *pub_str;
+    size_t pub_len;
+    EVP_PKEY *pkey;
+    BIGNUM *pub;
+    char *data;
+    int len;
+    int ret = 0;
+
+    pkey = CHECK_OBJECT(1,EVP_PKEY,"openssl.evp_pkey");
+	pub_str = luaL_checklstring(L,1,&pub_len);
+    
+    if (!pkey || EVP_PKEY_type(pkey->type) != EVP_PKEY_DH || !pkey->pkey.dh) {
+		luaL_argerror(L, 1, "only support DH private key");
+    }
+
+    pub = BN_bin2bn((unsigned char*)pub_str, pub_len, NULL);
+
+    data = malloc(DH_size(pkey->pkey.dh) + 1);
+    len = DH_compute_key((unsigned char*)data, pub, pkey->pkey.dh);
+
+    if (len >= 0) {
+        data[len] = 0;
+        lua_pushlstring(L,data,len);
+        ret = 1;
+    } else {
+        free(data);
+        ret = 0;
+    }
+
+    BN_free(pub);
+    return ret;
 }
+
+static LUA_FUNCTION(openssl_sign)
+{
+    size_t data_len;
+	EVP_PKEY *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
+    const char * data = luaL_checklstring(L,2,&data_len);
+    int top = lua_gettop(L);
+
+    const EVP_MD *mdtype = NULL;
+    if(top>2) {
+        if(lua_isstring(L,3)){
+            mdtype = EVP_get_digestbyname(lua_tostring(L,3));
+		}else if(lua_isuserdata(L,3))
+            mdtype = CHECK_OBJECT(3,EVP_MD,"openssl.evp_digest");
+        else
+			luaL_argerror(L, 3, "must be string for digest alg name, or openssl.evp_digest object,default use 'sha1'");
+    }else
+        mdtype = EVP_get_digestbynid(OPENSSL_ALGO_SHA1);
+	if(mdtype){
+		int ret = 0;
+		EVP_MD_CTX md_ctx;
+		unsigned int siglen = EVP_PKEY_size(pkey);
+		unsigned char *sigbuf = malloc(siglen + 1);
+
+		EVP_SignInit(&md_ctx, mdtype);
+		EVP_SignUpdate(&md_ctx, data, data_len);
+		if (EVP_SignFinal (&md_ctx, sigbuf, &siglen, pkey)) {
+			lua_pushlstring(L,(char *)sigbuf, siglen);
+			ret = 1;
+		}
+		free(sigbuf);
+		EVP_MD_CTX_cleanup(&md_ctx);
+		return ret;
+	}else
+		luaL_argerror(L, 3, "Not support digest alg");
+
+	return 0;
+}
+
+static LUA_FUNCTION(openssl_verify)
+{
+    size_t data_len, signature_len;
+    EVP_PKEY *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
+	const char* data = luaL_checklstring(L,2, &data_len);
+    const char* signature = luaL_checklstring(L,3, &signature_len);
+    
+	const EVP_MD *mdtype = NULL;
+    int top = lua_gettop(L);
+	if(top>3) {
+		if(lua_isstring(L,4))
+			mdtype = EVP_get_digestbyname(lua_tostring(L,4));
+		else if(lua_isuserdata(L,4))
+			mdtype = CHECK_OBJECT(4,EVP_MD,"openssl.evp_digest");
+		else
+			luaL_error(L, "#4 must be nil, string, or openssl.evp_digest object");
+	}else
+		mdtype = EVP_get_digestbynid(OPENSSL_ALGO_SHA1);
+	if(mdtype){
+		int result;
+		EVP_MD_CTX     md_ctx;
+
+		EVP_VerifyInit   (&md_ctx, mdtype);
+		EVP_VerifyUpdate (&md_ctx, data, data_len);
+		result = EVP_VerifyFinal (&md_ctx, (unsigned char *)signature, signature_len, pkey);
+		EVP_MD_CTX_cleanup(&md_ctx);
+		lua_pushinteger(L,result);
+
+		return 1;
+	}else
+		luaL_argerror(L, 4, "Not support digest alg");
+
+	return 0;
+}
+
+
+static luaL_Reg pkey_funcs[] = {
+	{"is_private",		openssl_pkey_is_private},
+	{"export",			openssl_pkey_export},
+	{"parse",			openssl_pkey_parse},
+	{"bits",			openssl_pkey_bits},
+
+	{"encrypt",			openssl_pkey_encrypt},
+	{"decrypt",			openssl_pkey_decrypt},
+	{"sign",			openssl_sign},
+	{"verify",			openssl_verify},
+
+	{"compute_key",		openssl_dh_compute_key},
+	
+	{"__gc",			openssl_pkey_free},
+	{"__tostring",		auxiliar_tostring},
+
+	{NULL,			NULL},
+};
+
+
+static LUA_FUNCTION(openssl_seal)
+{
+    size_t data_len;
+    const char *data = NULL;
+	int nkeys;
+    const EVP_CIPHER *cipher = NULL;
+    int top = lua_gettop(L);
+
+    luaL_checktype(L,1, LUA_TTABLE);
+	nkeys = lua_objlen(L,1);
+	if (!nkeys) {
+		luaL_argerror(L, 1, "empty array");
+	}
+
+	data = luaL_checklstring(L,2, &data_len);
+
+    if(top>2) {
+        if(lua_isstring(L,3))
+            cipher = EVP_get_cipherbyname(lua_tostring(L,3));
+        else if(lua_isuserdata(L,3))
+            cipher = CHECK_OBJECT(3,EVP_CIPHER,"openssl.evp_cipher");
+        else
+            luaL_argerror(L, 3, "only accept string, or openssl.evp_cipher object");
+    }else
+		cipher = EVP_get_cipherbyname("rc4");
+	if(cipher){
+		EVP_CIPHER_CTX ctx;
+		int ret = 0;
+		EVP_PKEY **pkeys;
+		unsigned char **eks;
+		int *eksl;
+
+		int i, len1, len2;
+		unsigned char *buf;
+
+		pkeys = malloc(nkeys*sizeof(*pkeys));
+		eksl = malloc(nkeys*sizeof(*eksl));
+		eks = malloc(nkeys*sizeof(*eks));
+
+		memset(eks, 0, sizeof(*eks) * nkeys);
+
+		/* get the public keys we are using to seal this data */
+		for(i=0; i<nkeys; i++) {
+			lua_rawgeti(L,1,i+1);
+
+			pkeys[i] =  CHECK_OBJECT(-1,EVP_PKEY, "openssl.evp_pkey");
+			if (pkeys[i] == NULL) {
+				luaL_argerror(L, 1, "table with gap");
+			}
+			eks[i] = malloc(EVP_PKEY_size(pkeys[i]));
+
+			lua_pop(L,1);
+		}
+
+		if (!EVP_EncryptInit(&ctx,cipher,NULL,NULL)) {
+			luaL_error(L,"EVP_EncryptInit failed");
+		}
+
+		/* allocate one byte extra to make room for \0 */
+		len1 = data_len + EVP_CIPHER_CTX_block_size(&ctx)+1;
+		buf = malloc(data_len + EVP_CIPHER_CTX_block_size(&ctx));
+
+		if (!EVP_SealInit(&ctx, cipher, eks, eksl, NULL, pkeys, nkeys) || !EVP_SealUpdate(&ctx, buf, &len1, (unsigned char *)data, data_len)) {
+			free(buf);
+			luaL_error(L,"EVP_SealInit failed");
+		}
+
+		EVP_SealFinal(&ctx, buf + len1, &len2);
+
+		if (len1 + len2 > 0) {
+			buf[len1 + len2] = '\0';
+			lua_pushlstring(L,(const char*)buf,len1 + len2);
+
+			lua_newtable(L);
+			for (i=0; i<nkeys; i++) {
+				eks[i][eksl[i]] = '\0';
+				lua_pushlstring(L, (const char*)eks[i], eksl[i]);
+				free(eks[i]);
+				eks[i] = NULL;
+				lua_rawseti(L,-2, i+1);
+			}
+			ret = 2;
+
+		}
+
+		free(buf);
+		free(eks);
+		free(eksl);
+		free(pkeys);
+		return ret;
+	}else
+		luaL_argerror(L, 3, "Not support cipher alg");
+	return 0;
+}
+
+
+static LUA_FUNCTION(openssl_open)
+{
+	EVP_PKEY *pkey =  CHECK_OBJECT(1,EVP_PKEY, "openssl.evp_pkey");
+    size_t data_len, ekey_len;
+    const char * data = luaL_checklstring(L, 2, &data_len);
+    const char * ekey = luaL_checklstring(L, 3, &ekey_len);
+    int top = lua_gettop(L);
+
+    int len1, len2 = 0;
+    unsigned char *buf;
+
+    EVP_CIPHER_CTX ctx;
+    const EVP_CIPHER *cipher = NULL;
+
+    if(top>3) {
+        if(lua_isstring(L,4))
+            cipher = EVP_get_cipherbyname(lua_tostring(L,4));
+        else if(lua_isuserdata(L,4))
+            cipher = CHECK_OBJECT(4,EVP_CIPHER,"openssl.evp_cipher");
+        else
+            luaL_error(L, "#4 argument must be nil, string, or openssl.evp_cipher object");
+    }else
+		cipher = EVP_get_cipherbyname("rc4");
+	if(cipher){
+		len1 = data_len + 1;
+		buf = malloc(len1);
+
+		if (EVP_OpenInit(&ctx, cipher, (unsigned char *)ekey, ekey_len, NULL, pkey) && EVP_OpenUpdate(&ctx, buf, &len1, (unsigned char *)data, data_len))
+		{
+			len2 = data_len - len1;
+			if (!EVP_OpenFinal(&ctx, buf + len1, &len2) || (len1 + len2 == 0))
+			{
+				luaL_error(L,"EVP_OpenFinal() failed.");
+				free(buf);
+				return 0;
+			}
+		}
+		else
+		{
+			luaL_error(L,"EVP_OpenInit() failed.");
+			free(buf);
+			return 0;
+		}
+
+		buf[len1 + len2] = '\0';
+		lua_pushlstring(L, (const char*)buf, len1 + len2);
+		free(buf);
+		return 1;
+	}else
+		luaL_argerror(L, 4, "Not support cipher alg");
+	return 0;
+}
+
+
+static const luaL_Reg R[] =
+{
+	{"read",		openssl_pkey_read},
+	{"new",			openssl_pkey_new},
+	{"seal",		openssl_seal},
+	{"open",		openssl_open},
+
+	{NULL,	NULL}
+};
+
+LUALIB_API int luaopen_pkey(lua_State *L)
+{
+	auxiliar_newclass(L,"openssl.evp_pkey", pkey_funcs);
+
+	luaL_newmetatable(L,MYTYPE);
+	lua_setglobal(L,MYNAME);
+	luaL_register(L,MYNAME,R);
+	lua_pushvalue(L, -1);
+	lua_setmetatable(L, -2);
+	lua_pushliteral(L,"version");			/** version */
+	lua_pushliteral(L,MYVERSION);
+	lua_settable(L,-3);
+	lua_pushliteral(L,"__index");
+	lua_pushvalue(L,-2);
+	lua_settable(L,-3);
+	return 1;
+}
+
+

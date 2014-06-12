@@ -1,33 +1,36 @@
-/*
-   +----------------------------------------------------------------------+
-   | PHP Version 5                                                        |
-   +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2012 The PHP Group                                |
-   +----------------------------------------------------------------------+
-   | This source file is subject to version 3.01 of the PHP license,      |
-   | that is bundled with this package in the file LICENSE, and is        |
-   | available through the world-wide-web at the following url:           |
-   | http://www.php.net/license/3_01.txt                                  |
-   | If you did not receive a copy of the PHP license and are unable to   |
-   | obtain it through the world-wide-web, please send a note to          |
-   | license@php.net so we can mail you a copy immediately.               |
-   +----------------------------------------------------------------------+
-*/
 /*=========================================================================*\
-* crl routines
-* lua-openssl toolkit
+* crl.c
+* X509 certificate revoke routines for lua-openssl binding
 *
-* This product includes PHP software, freely available from <http://www.php.net/software/>
 * Author:  george zhao <zhaozg(at)gmail.com>
 \*=========================================================================*/
 #include "openssl.h"
-
+#include "private.h"
+#define MYNAME		"crl"
+#define MYVERSION	MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
+	"based on OpenSSL " SHLIB_VERSION_NUMBER
+#define MYTYPE			"openssl.crl"
 
 int		X509_CRL_cmp(const X509_CRL *a, const X509_CRL *b);
 int		X509_CRL_match(const X509_CRL *a, const X509_CRL *b);
 
-int openssl_get_revoke_reason(const char*s){
 
+static const BIT_STRING_BITNAME reason_flags[] = {
+	{0, "Unused", "unused"},
+	{1, "Key Compromise", "keyCompromise"},
+	{2, "CA Compromise", "CACompromise"},
+	{3, "Affiliation Changed", "affiliationChanged"},
+	{4, "Superseded", "superseded"},
+	{5, "Cessation Of Operation", "cessationOfOperation"},
+	{6, "Certificate Hold", "certificateHold"},
+	{7, "Privilege Withdrawn", "privilegeWithdrawn"},
+	{8, "AA Compromise", "AACompromise"},
+	{-1, NULL, NULL}
+};
+
+static const int reason_num = sizeof(reason_flags)/sizeof(BIT_STRING_BITNAME) - 1;
+
+int openssl_get_revoke_reason(const char*s){
 	int reason = -1;
 	int i;
 	for (i=0; i<reason_num; i++)
@@ -41,7 +44,7 @@ int openssl_get_revoke_reason(const char*s){
 	return reason;
 }
 
-X509_REVOKED *openssl_X509_REVOKED(lua_State*L, int snidx, int timeidx, int reasonidx) {
+static X509_REVOKED *openssl_X509_REVOKED(lua_State*L, int snidx, int timeidx, int reasonidx) {
     X509_REVOKED *revoked = X509_REVOKED_new();
     const char* serial = luaL_checkstring(L, snidx);
     BIGNUM * bn = NULL;
@@ -129,7 +132,7 @@ end:
     return NULL;
 }
 
-LUA_FUNCTION(openssl_crl_new) {
+static LUA_FUNCTION(openssl_crl_new) {
     X509* x509 = CHECK_OBJECT(1, X509, "openssl.x509");
     time_t lastUpdate = luaL_checkinteger(L,2);
     time_t nextUpdate = luaL_checkinteger(L,3);
@@ -178,7 +181,7 @@ LUA_FUNCTION(openssl_crl_new) {
     return 1;
 }
 
-LUA_FUNCTION(openssl_crl_read) {
+static LUA_FUNCTION(openssl_crl_read) {
     size_t len;
     char* dat = (char*)luaL_checklstring(L, 1, &len);
     BIO *in = BIO_new_mem_buf(dat, len);
@@ -200,7 +203,7 @@ LUA_FUNCTION(openssl_crl_read) {
     return 0;
 }
 
-LUA_FUNCTION(openssl_crl_set_version) {
+static LUA_FUNCTION(openssl_crl_set_version) {
     X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
     long version = luaL_optinteger(L,2, 0);
     int ret = X509_CRL_set_version(crl, version);
@@ -211,7 +214,7 @@ LUA_FUNCTION(openssl_crl_set_version) {
     return 1;
 }
 
-LUA_FUNCTION(openssl_crl_set_issuer) {
+static LUA_FUNCTION(openssl_crl_set_issuer) {
     X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
     X509* x509 = CHECK_OBJECT(2, X509, "openssl.x509");
 
@@ -223,7 +226,7 @@ LUA_FUNCTION(openssl_crl_set_issuer) {
     return 1;
 }
 
-LUA_FUNCTION(openssl_crl_set_updatetime) {
+static LUA_FUNCTION(openssl_crl_set_updatetime) {
     X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
     ASN1_TIME *ltm, *ntm;
     int ret = 0;
@@ -249,7 +252,7 @@ LUA_FUNCTION(openssl_crl_set_updatetime) {
     return 1;
 }
 
-LUA_FUNCTION(openssl_crl_sort) {
+static LUA_FUNCTION(openssl_crl_sort) {
     X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
     int ret = X509_CRL_sort(crl);
     if(ret==0 || ret==1) {
@@ -259,7 +262,7 @@ LUA_FUNCTION(openssl_crl_sort) {
     return 1;
 }
 
-LUA_FUNCTION(openssl_crl_verify) {
+static LUA_FUNCTION(openssl_crl_verify) {
     X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
     X509* cacert = CHECK_OBJECT(2, X509, "openssl.x509");
 
@@ -289,7 +292,7 @@ LUA_FUNCTION(openssl_crl_sign) {
 
 }
 
-LUA_FUNCTION(openssl_crl_add_revocked) {
+static LUA_FUNCTION(openssl_crl_add_revocked) {
     X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
     int serailidx = 2;
     int timeidx = 3;
@@ -301,7 +304,7 @@ LUA_FUNCTION(openssl_crl_add_revocked) {
     return 1;
 }
 
-LUA_FUNCTION(openssl_crl_parse) {
+static LUA_FUNCTION(openssl_crl_parse) {
     X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
     int useshortnames = lua_isnoneornil(L,2)?0:lua_toboolean(L,2);
     BIO* bio = BIO_new(BIO_s_mem());
@@ -391,21 +394,21 @@ LUA_FUNCTION(openssl_crl_parse) {
     return 1;
 }
 
-LUA_FUNCTION(openssl_crl_tostring) {
+static LUA_FUNCTION(openssl_crl_tostring) {
     X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
     lua_pushfstring(L,"openssl.x509_crl:%p",crl);
     return 1;
 }
 
 
-LUA_FUNCTION(openssl_crl_free) {
+static LUA_FUNCTION(openssl_crl_free) {
     X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
     X509_CRL_free(crl);
     return 0;
 }
 
 
-LUA_FUNCTION(openssl_crl_export)
+static LUA_FUNCTION(openssl_crl_export)
 {
 	int pem, notext;
 	X509_CRL * crl = CHECK_OBJECT(1,X509_CRL,"openssl.x509_crl");
@@ -461,8 +464,26 @@ static luaL_Reg crl_funcs[] = {
     {NULL,	NULL}
 };
 
+static luaL_reg R[] = {
+	{"new",				openssl_crl_new	},
+	{"read",			openssl_crl_read},
+	{NULL,		NULL}
+};
 
-LUA_FUNCTION(openssl_register_crl) {
-    auxiliar_newclass(L,"openssl.x509_crl", crl_funcs);
-    return 0;
+LUALIB_API int luaopen_crl(lua_State *L)
+{
+	auxiliar_newclass(L,"openssl.x509_crl", crl_funcs);
+
+	luaL_newmetatable(L,MYTYPE);
+	lua_setglobal(L,MYNAME);
+	luaL_register(L,MYNAME,R);
+	lua_pushvalue(L, -1);
+	lua_setmetatable(L, -2);
+	lua_pushliteral(L,"version");			/** version */
+	lua_pushliteral(L,MYVERSION);
+	lua_settable(L,-3);
+	lua_pushliteral(L,"__index");
+	lua_pushvalue(L,-2);
+	lua_settable(L,-3);
+	return 1;
 }

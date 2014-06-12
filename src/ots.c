@@ -1,32 +1,21 @@
-/*
-   +----------------------------------------------------------------------+
-   | PHP Version 5                                                        |
-   +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2012 The PHP Group                                |
-   +----------------------------------------------------------------------+
-   | This source file is subject to version 3.01 of the PHP license,      |
-   | that is bundled with this package in the file LICENSE, and is        |
-   | available through the world-wide-web at the following url:           |
-   | http://www.php.net/license/3_01.txt                                  |
-   | If you did not receive a copy of the PHP license and are unable to   |
-   | obtain it through the world-wide-web, please send a note to          |
-   | license@php.net so we can mail you a copy immediately.               |
-   +----------------------------------------------------------------------+
-*/
 /*=========================================================================*\
-* timestamp sign routines
-* lua-openssl toolkit
+* ots.c
+* timestamp module for lua-openssl binding
 *
-* This product includes PHP software, freely available from <http://www.php.net/software/>
 * Author:  george zhao <zhaozg(at)gmail.com>
 \*=========================================================================*/
 #include "openssl.h"
+
+#define MYNAME		"ts"
+#define MYVERSION	MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
+	"based on OpenSSL " SHLIB_VERSION_NUMBER
+#define MYTYPE			"openssl.ts"
 
 #ifdef OPENSSL_HAVE_TS
 
 #include <openssl/ts.h>
 
-ASN1_INTEGER *tsa_serial_cb(TS_RESP_CTX *ctx, void *data)
+static ASN1_INTEGER *tsa_serial_cb(TS_RESP_CTX *ctx, void *data)
 {
     lua_State *L = (lua_State*) data;
     ASN1_INTEGER *serial = NULL;
@@ -63,7 +52,7 @@ ASN1_INTEGER *tsa_serial_cb(TS_RESP_CTX *ctx, void *data)
 /*  openssl.ts_resp_ctx_newsign(x509 signer, evp_pkey pkey, string def_policy, table options[, stack_of_x509 certs=nil] ) -> ts_resp_ctx {{{1
 */
 
-LUA_FUNCTION(openssl_ts_resp_ctx_new) {
+static LUA_FUNCTION(openssl_ts_resp_ctx_new) {
     X509 *signer =   CHECK_OBJECT(1, X509,"openssl.x509");
     EVP_PKEY *pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
     STACK_OF(X509) *certs = lua_isnoneornil(L,3) ? NULL : CHECK_OBJECT(3,STACK_OF(X509),"openssl.stack_of_x509");
@@ -231,7 +220,7 @@ LUA_FUNCTION(openssl_ts_resp_ctx_new) {
 
 /*  ts_resp_ctx:ts_sign(string req|ts_req res ) -> ts_resp{{{1
 */
-LUA_FUNCTION(openssl_ts_sign) {
+static LUA_FUNCTION(openssl_ts_sign) {
     TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX,"openssl.ts_resp_ctx");
     BIO *bio = NULL;
     TS_RESP * resp;
@@ -258,13 +247,13 @@ LUA_FUNCTION(openssl_ts_sign) {
 }
 /* }}} */
 
-LUA_FUNCTION(openssl_ts_resp_ctx_gc) {
+static LUA_FUNCTION(openssl_ts_resp_ctx_gc) {
     TS_RESP_CTX *ctx = CHECK_OBJECT(1,TS_RESP_CTX,"openssl.ts_resp_ctx");
     TS_RESP_CTX_free(ctx);
     return 0;
 }
 
-LUA_FUNCTION(openssl_ts_resp_ctx_tostring) {
+static LUA_FUNCTION(openssl_ts_resp_ctx_tostring) {
     TS_RESP_CTX *ctx = CHECK_OBJECT(1,TS_RESP_CTX,"openssl.ts_resp_ctx");
     lua_pushfstring(L,"openssl.ts_resp_ctx:%p",ctx);
     return 1;
@@ -276,7 +265,7 @@ LUA_FUNCTION(openssl_ts_resp_ctx_tostring) {
 /*  openssl:ts_req_new(string req,string digest_alg[,table option={version=1,policy=,nonce=,cert_req=}] ) -> ts_req{{{1
 */
 
-LUA_FUNCTION(openssl_ts_req_new) {
+static LUA_FUNCTION(openssl_ts_req_new) {
     size_t l;
     const char* hash = luaL_checklstring(L, 1, &l);
     const char* hash_alg = luaL_checkstring(L, 2);
@@ -371,28 +360,26 @@ LUA_FUNCTION(openssl_ts_req_new) {
     return 0;
 }
 
-LUA_FUNCTION(openssl_ts_req_gc) {
+static LUA_FUNCTION(openssl_ts_req_gc) {
     TS_REQ *req = CHECK_OBJECT(1,TS_REQ,"openssl.ts_req");
     TS_REQ_free(req);
     return 0;
 }
 
-LUA_FUNCTION(openssl_ts_req_tostring) {
+static LUA_FUNCTION(openssl_ts_req_tostring) {
     TS_REQ *req = CHECK_OBJECT(1,TS_REQ,"openssl.ts_req");
     lua_pushfstring(L,"openssl.ts_req:%p",req);
     return 1;
 }
 
-LUA_FUNCTION(openssl_ts_req_to_verify_ctx) {
+static LUA_FUNCTION(openssl_ts_req_to_verify_ctx) {
     TS_REQ *req = CHECK_OBJECT(1,TS_REQ,"openssl.ts_req");
     TS_VERIFY_CTX *ctx = TS_REQ_to_TS_VERIFY_CTX(req, NULL);
     PUSH_OBJECT(ctx,"openssl.ts_verify_ctx");
     return 1;
 }
 
-
-
-LUA_FUNCTION(openssl_ts_req_parse) {
+static LUA_FUNCTION(openssl_ts_req_parse) {
     TS_REQ *req = CHECK_OBJECT(1,TS_REQ,"openssl.ts_req");
     BIO* bio = BIO_new(BIO_s_mem());
 
@@ -441,7 +428,7 @@ LUA_FUNCTION(openssl_ts_req_parse) {
     return 1;
 }
 
-LUA_FUNCTION(openssl_ts_req_i2d) {
+static LUA_FUNCTION(openssl_ts_req_i2d) {
     TS_REQ *req = CHECK_OBJECT(1, TS_REQ,"openssl.ts_req");
 
     BIO *bio = BIO_new(BIO_s_mem());
@@ -458,7 +445,7 @@ LUA_FUNCTION(openssl_ts_req_i2d) {
     return 0;
 }
 
-LUA_FUNCTION(openssl_ts_req_d2i) {
+static LUA_FUNCTION(openssl_ts_req_d2i) {
     size_t l;
     const char* buf = luaL_checklstring(L,1,&l);
 
@@ -468,13 +455,13 @@ LUA_FUNCTION(openssl_ts_req_d2i) {
 }
 //////////////////////////////////////////////////////////////////////////
 
-LUA_FUNCTION(openssl_ts_resp_gc) {
+static LUA_FUNCTION(openssl_ts_resp_gc) {
     TS_RESP *res = CHECK_OBJECT(1,TS_RESP,"openssl.ts_resp");
     TS_RESP_free(res);
     return 0;
 }
 
-LUA_FUNCTION(openssl_ts_resp_i2d) {
+static LUA_FUNCTION(openssl_ts_resp_i2d) {
     TS_RESP *res = CHECK_OBJECT(1, TS_RESP,"openssl.ts_resp");
 
     BIO *bio = BIO_new(BIO_s_mem());
@@ -489,7 +476,7 @@ LUA_FUNCTION(openssl_ts_resp_i2d) {
     return 0;
 }
 
-LUA_FUNCTION(openssl_ts_resp_parse) {
+static LUA_FUNCTION(openssl_ts_resp_parse) {
     TS_RESP *res = CHECK_OBJECT(1, TS_RESP,"openssl.ts_resp");
 
     BIO* bio = BIO_new(BIO_s_mem());
@@ -582,7 +569,7 @@ LUA_FUNCTION(openssl_ts_resp_parse) {
     return 1;
 }
 
-LUA_FUNCTION(openssl_ts_resp_d2i) {
+static LUA_FUNCTION(openssl_ts_resp_d2i) {
     size_t len;
     const unsigned char* buf = (const unsigned char*)luaL_checklstring(L,1,&len);
     const unsigned char** p = &buf;
@@ -595,7 +582,7 @@ LUA_FUNCTION(openssl_ts_resp_d2i) {
     return 1;
 }
 
-LUA_FUNCTION(openssl_ts_resp_tst_info) {
+static LUA_FUNCTION(openssl_ts_resp_tst_info) {
     TS_RESP *resp = CHECK_OBJECT(1,TS_RESP,"openssl.ts_resp");
     TS_TST_INFO *info = resp->tst_info;
     BIO *bio = BIO_new(BIO_s_mem());
@@ -609,14 +596,14 @@ LUA_FUNCTION(openssl_ts_resp_tst_info) {
     return 1;
 }
 
-LUA_FUNCTION(openssl_ts_resp_tostring) {
+static LUA_FUNCTION(openssl_ts_resp_tostring) {
     TS_RESP *resp = CHECK_OBJECT(1,TS_RESP,"openssl.ts_resp");
     lua_pushfstring(L,"openssl.ts_resp:%p",resp);
     return 1;
 }
 
 //////////////////////////////////////////////////////////////////////////
-X509_STORE* Stack2Store(STACK_OF(X509)* sk)
+static X509_STORE* Stack2Store(STACK_OF(X509)* sk)
 {
     X509_STORE *store = NULL;
     int i;
@@ -644,7 +631,7 @@ X509_STORE* Stack2Store(STACK_OF(X509)* sk)
 	)
 */
 
-LUA_FUNCTION(openssl_ts_verify_ctx_new) {
+static LUA_FUNCTION(openssl_ts_verify_ctx_new) {
     TS_VERIFY_CTX *ctx = NULL;
     int top = lua_gettop(L);
 
@@ -724,14 +711,14 @@ LUA_FUNCTION(openssl_ts_verify_ctx_new) {
     return 1;
 }
 
-LUA_FUNCTION(openssl_ts_verify_ctx_gc) {
+static LUA_FUNCTION(openssl_ts_verify_ctx_gc) {
     TS_VERIFY_CTX *ctx = CHECK_OBJECT(1,TS_VERIFY_CTX,"openssl.ts_verify_ctx");
     TS_VERIFY_CTX_free(ctx);
     //void TS_VERIFY_CTX_cleanup(TS_VERIFY_CTX *ctx);
     return 0;
 }
 
-LUA_FUNCTION(openssl_ts_verify_ctx_response) {
+static LUA_FUNCTION(openssl_ts_verify_ctx_response) {
     TS_VERIFY_CTX *ctx = CHECK_OBJECT(1,TS_VERIFY_CTX,"openssl.ts_verify_ctx");
     TS_RESP *response = CHECK_OBJECT(2,TS_RESP,"openssl.ts_resp");
     int ret = TS_RESP_verify_response(ctx, response);
@@ -739,7 +726,7 @@ LUA_FUNCTION(openssl_ts_verify_ctx_response) {
     return 1;
 }
 
-LUA_FUNCTION(openssl_ts_verify_ctx_token) {
+static LUA_FUNCTION(openssl_ts_verify_ctx_token) {
     TS_VERIFY_CTX *ctx = CHECK_OBJECT(1,TS_VERIFY_CTX,"openssl.ts_verify_ctx");
     PKCS7 *token = CHECK_OBJECT(2,PKCS7,"openssl.pkcs7");
     int ret = TS_RESP_verify_token(ctx, token);
@@ -747,7 +734,7 @@ LUA_FUNCTION(openssl_ts_verify_ctx_token) {
     return 1;
 }
 
-LUA_FUNCTION(openssl_ts_verify_ctx_tostring) {
+static LUA_FUNCTION(openssl_ts_verify_ctx_tostring) {
     TS_RESP *resp = CHECK_OBJECT(1,TS_RESP,"openssl.ts_verify_ctx");
     lua_pushfstring(L,"openssl.ts_verify_ctx:%p",resp);
     return 1;
@@ -791,15 +778,36 @@ static luaL_Reg ts_verify_ctx_funs[] = {
     { NULL, NULL }
 };
 
-int openssl_register_ts(lua_State* L)
+static luaL_reg R[] = {
+	{"req_new",		openssl_ts_req_new	},
+	{"req_d2i",		openssl_ts_req_d2i	},
+	{"resp_d2i",		openssl_ts_resp_d2i	},
+	{"resp_ctx_new",		openssl_ts_resp_ctx_new	},
+	
+	{"verify_ctx_new",	openssl_ts_verify_ctx_new	},
+
+	{NULL,		NULL}
+};
+
+LUALIB_API int luaopen_ts(lua_State *L)
 {
-    auxiliar_newclass(L,"openssl.ts_req",		ts_req_funs);
-    auxiliar_newclass(L,"openssl.ts_resp",		ts_resp_funs);
-    auxiliar_newclass(L,"openssl.ts_resp_ctx",	ts_resp_ctx_funs);
-    auxiliar_newclass(L,"openssl.ts_verify_ctx",	ts_verify_ctx_funs);
+	auxiliar_newclass(L,"openssl.ts_req",		ts_req_funs);
+	auxiliar_newclass(L,"openssl.ts_resp",		ts_resp_funs);
+	auxiliar_newclass(L,"openssl.ts_resp_ctx",	ts_resp_ctx_funs);
+	auxiliar_newclass(L,"openssl.ts_verify_ctx",	ts_verify_ctx_funs);
 
-
-    return 0;
+	luaL_newmetatable(L,MYTYPE);
+	lua_setglobal(L,MYNAME);
+	luaL_register(L,MYNAME,R);
+	lua_pushvalue(L, -1);
+	lua_setmetatable(L, -2);
+	lua_pushliteral(L,"version");			/** version */
+	lua_pushliteral(L,MYVERSION);
+	lua_settable(L,-3);
+	lua_pushliteral(L,"__index");
+	lua_pushvalue(L,-2);
+	lua_settable(L,-3);
+	return 1;
 }
 
 #endif

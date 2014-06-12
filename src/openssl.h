@@ -1,18 +1,3 @@
-/*
-   +----------------------------------------------------------------------+
-   | PHP Version 5                                                        |
-   +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2012 The PHP Group                                |
-   +----------------------------------------------------------------------+
-   | This source file is subject to version 3.01 of the PHP license,      |
-   | that is bundled with this package in the file LICENSE, and is        |
-   | available through the world-wide-web at the following url:           |
-   | http://www.php.net/license/3_01.txt                                  |
-   | If you did not receive a copy of the PHP license and are unable to   |
-   | obtain it through the world-wide-web, please send a note to          |
-   | license@php.net so we can mail you a copy immediately.               |
-   +----------------------------------------------------------------------+
-*/
 /*=========================================================================*\
 * x509 routines
 * lua-openssl toolkit
@@ -28,7 +13,6 @@
 #include "auxiliar.h"
 #if LUA_VERSION_NUM>501
 #define lua_objlen lua_rawlen
-int luaL_typerror (lua_State *L, int narg, const char *tname);
 #endif
 
 #include <assert.h>
@@ -119,143 +103,44 @@ enum lua_openssl_cipher_type {
 X509_STORE * setup_verify(STACK_OF(X509)* calist);
 void add_assoc_asn1_string(lua_State*L, char * key, ASN1_STRING * str);
 
-#if OPENSSL_VERSION_NUMBER >= 0x10000002L
-int openssl_config_check_syntax(const char * section_label, const char * config_filename, const char * section, LHASH_OF(CONF_VALUE) * config); 
-#else
-int openssl_config_check_syntax(const char * section_label, const char * config_filename, const char * section, LHASH * config);
-#endif
-
-
-extern char default_ssl_conf_filename[MAX_PATH];
-
 
 #define LUA_FUNCTION(X) int X(lua_State *L)
 
-extern const BIT_STRING_BITNAME reason_flags[];
-extern const int reason_num;
+
 int openssl_get_revoke_reason(const char*s);
 
-LUA_FUNCTION(openssl_bio_new_mem);
-LUA_FUNCTION(openssl_bio_new_file);
-LUA_FUNCTION(openssl_bio_new_accept);
-LUA_FUNCTION(openssl_bio_read);
-LUA_FUNCTION(openssl_bio_gets);
-LUA_FUNCTION(openssl_bio_write);
-LUA_FUNCTION(openssl_bio_puts);
-LUA_FUNCTION(openssl_bio_get_mem);
-LUA_FUNCTION(openssl_bio_close);
-LUA_FUNCTION(openssl_bio_free);
-LUA_FUNCTION(openssl_bio_type);
-LUA_FUNCTION(openssl_bio_reset);
-LUA_FUNCTION(openssl_bio_tostring);
-LUA_FUNCTION(openssl_conf_load);
-LUA_FUNCTION(openssl_conf_gc);
-LUA_FUNCTION(openssl_conf_tostring);
-LUA_FUNCTION(openssl_conf_get_number);
-LUA_FUNCTION(openssl_conf_get_string);
-LUA_FUNCTION(openssl_conf_parse);
-LUA_FUNCTION(openssl_crl_new);
-LUA_FUNCTION(openssl_crl_read);
-LUA_FUNCTION(openssl_crl_set_version);
-LUA_FUNCTION(openssl_crl_set_issuer);
-LUA_FUNCTION(openssl_crl_set_updatetime);
-LUA_FUNCTION(openssl_crl_sort);
-LUA_FUNCTION(openssl_crl_verify);
-LUA_FUNCTION(openssl_crl_sign);
-LUA_FUNCTION(openssl_crl_add_revocked);
-LUA_FUNCTION(openssl_crl_parse);
-LUA_FUNCTION(openssl_crl_tostring);
-LUA_FUNCTION(openssl_crl_free);
-LUA_FUNCTION(openssl_register_crl);
-LUA_FUNCTION(openssl_csr_parse);
-LUA_FUNCTION(openssl_csr_read);
-LUA_FUNCTION(openssl_csr_export);
-LUA_FUNCTION(openssl_csr_sign);
-LUA_FUNCTION(openssl_csr_export);
-LUA_FUNCTION(openssl_csr_sign);
-LUA_FUNCTION(openssl_csr_new);
-LUA_FUNCTION(openssl_csr_parse);
-LUA_FUNCTION(openssl_register_csr);
-LUA_FUNCTION(openssl_random_bytes);
 LUA_FUNCTION(openssl_x509_algo_parse);
 LUA_FUNCTION(openssl_x509_algo_tostring);
 LUA_FUNCTION(openssl_x509_extension_parse);
 LUA_FUNCTION(openssl_x509_extension_tostring);
-LUA_FUNCTION(openssl_ec_list_curve_name);
-LUA_FUNCTION(openssl_error_string);
 
 LUA_FUNCTION(openssl_list);
 LUA_FUNCTION(openssl_hex);
-LUA_FUNCTION(openssl_digest);
-LUA_FUNCTION(openssl_sign);
-LUA_FUNCTION(openssl_verify);
-LUA_FUNCTION(openssl_seal);
-LUA_FUNCTION(openssl_open1);
+LUA_FUNCTION(openssl_engine);
+LUA_FUNCTION(openssl_error_string);
+LUA_FUNCTION(openssl_random_bytes);
 
-LUA_FUNCTION(openssl_dh_compute_key);
-LUA_FUNCTION(openssl_ts_resp_ctx_new);
-LUA_FUNCTION(openssl_ts_sign);
-LUA_FUNCTION(openssl_ts_resp_ctx_gc);
-LUA_FUNCTION(openssl_ts_resp_ctx_tostring);
-LUA_FUNCTION(openssl_ts_req_new);
-LUA_FUNCTION(openssl_ts_req_gc);
-LUA_FUNCTION(openssl_ts_req_tostring);
-LUA_FUNCTION(openssl_ts_req_to_verify_ctx);
-LUA_FUNCTION(openssl_ts_req_parse);
-LUA_FUNCTION(openssl_ts_req_i2d);
-LUA_FUNCTION(openssl_ts_req_d2i);
-LUA_FUNCTION(openssl_ts_resp_gc);
-LUA_FUNCTION(openssl_ts_resp_i2d);
-LUA_FUNCTION(openssl_ts_resp_parse);
-LUA_FUNCTION(openssl_ts_resp_d2i);
-LUA_FUNCTION(openssl_ts_resp_tst_info);
-LUA_FUNCTION(openssl_ts_resp_tostring);
-LUA_FUNCTION(openssl_ts_verify_ctx_new);
-LUA_FUNCTION(openssl_ts_verify_ctx_gc);
-LUA_FUNCTION(openssl_ts_verify_ctx_response);
-LUA_FUNCTION(openssl_ts_verify_ctx_token);
-LUA_FUNCTION(openssl_ts_verify_ctx_tostring);
-LUA_FUNCTION(openssl_pkcs12_export);
-LUA_FUNCTION(openssl_pkcs12_read);
-LUA_FUNCTION(openssl_pkcs7_read);
-LUA_FUNCTION(openssl_pkcs7_gc);
-LUA_FUNCTION(openssl_pkcs7_tostring);
-LUA_FUNCTION(openssl_pkcs7_export);
-LUA_FUNCTION(openssl_pkcs7_parse);
-LUA_FUNCTION(openssl_pkcs7_sign);
-LUA_FUNCTION(openssl_pkcs7_verify);
-LUA_FUNCTION(openssl_pkcs7_encrypt);
-LUA_FUNCTION(openssl_pkcs7_decrypt);
-LUA_FUNCTION(openssl_pkey_new);
-LUA_FUNCTION(openssl_pkey_export);
-LUA_FUNCTION(openssl_pkey_free);
-LUA_FUNCTION(openssl_pkey_parse);
-LUA_FUNCTION(openssl_pkey_read);
-LUA_FUNCTION(openssl_pkey_encrypt);
-LUA_FUNCTION(openssl_pkey_decrypt);
-LUA_FUNCTION(openssl_pkey_is_private);
-LUA_FUNCTION(openssl_x509_read);
-LUA_FUNCTION(openssl_x509_export);
-LUA_FUNCTION(openssl_x509_parse);
-LUA_FUNCTION(openssl_x509_check);
-LUA_FUNCTION(openssl_x509_free);
-LUA_FUNCTION(openssl_x509_tostring);
-LUA_FUNCTION(openssl_x509_public_key);
 LUA_FUNCTION(openssl_sk_x509_read);
 LUA_FUNCTION(openssl_sk_x509_new);
 
-LUA_FUNCTION(openssl_ssl_ctx_new);
-LUA_FUNCTION(openssl_ssl_session_read);
-LUA_FUNCTION(openssl_engine);
+LUA_FUNCTION(openssl_conf_load);
 
-LUA_FUNCTION(openssl_ocsp_request_new);
-LUA_FUNCTION(openssl_ocsp_response);
 
 LUA_API LUA_FUNCTION(luaopen_digest);
 LUA_API LUA_FUNCTION(luaopen_cipher);
 LUA_API LUA_FUNCTION(luaopen_bn);
+LUA_API LUA_FUNCTION(luaopen_pkey);
+LUA_API LUA_FUNCTION(luaopen_x509);
+LUA_API LUA_FUNCTION(luaopen_pkcs7);
+LUA_API LUA_FUNCTION(luaopen_pkcs12);
+LUA_API LUA_FUNCTION(luaopen_bio);
+LUA_API LUA_FUNCTION(luaopen_ts);
+LUA_API LUA_FUNCTION(luaopen_csr);
+LUA_API LUA_FUNCTION(luaopen_crl);
+LUA_API LUA_FUNCTION(luaopen_ocsp);
+LUA_API LUA_FUNCTION(luaopen_ssl);
+LUA_API LUA_FUNCTION(luaopen_ec);
 
-LUA_API LUA_FUNCTION(openssl_open);
 
 void openssl_add_method_or_alias(const OBJ_NAME *name, void *arg) ;
 void openssl_add_method(const OBJ_NAME *name, void *arg);
@@ -303,29 +188,16 @@ void add_assoc_name_entry(lua_State*L, const  char *key, X509_NAME *name, int sh
 void add_assoc_x509_extension(lua_State*L, const char* key, STACK_OF(X509_EXTENSION)* ext, BIO* bio);
 
 void add_assoc_string(lua_State *L, const char*name, const char*val);
-void add_index_bool(lua_State* L, int i, int b);
 void add_assoc_int(lua_State* L, const char* i, int b);
 
 time_t asn1_time_to_time_t(ASN1_UTCTIME * timestr);
-int openssl_object_create(lua_State* L);
 
 int openssl_register_x509(lua_State* L);
 int openssl_register_sk_x509(lua_State* L);
-int openssl_register_pkey(lua_State* L);
-int openssl_register_csr(lua_State* L);
-int openssl_register_bio(lua_State* L);
-int openssl_register_crl(lua_State* L);
-int openssl_register_ts(lua_State* L);
 int openssl_register_conf(lua_State* L);
 
-int openssl_register_ec(lua_State* L);
 
-int openssl_register_pkcs7(lua_State* L);
-int openssl_register_misc(lua_State* L);
-int openssl_register_ssl(lua_State* L);
 int openssl_register_engine(lua_State* L);
-
-LUA_FUNCTION(openssl_register_ocsp);
 
 #endif
 

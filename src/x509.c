@@ -1,27 +1,47 @@
-/*
-   +----------------------------------------------------------------------+
-   | PHP Version 5                                                        |
-   +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2012 The PHP Group                                |
-   +----------------------------------------------------------------------+
-   | This source file is subject to version 3.01 of the PHP license,      |
-   | that is bundled with this package in the file LICENSE, and is        |
-   | available through the world-wide-web at the following url:           |
-   | http://www.php.net/license/3_01.txt                                  |
-   | If you did not receive a copy of the PHP license and are unable to   |
-   | obtain it through the world-wide-web, please send a note to          |
-   | license@php.net so we can mail you a copy immediately.               |
-   +----------------------------------------------------------------------+
-*/
 /*=========================================================================*\
-* x509 routines
-* lua-openssl toolkit
+* x509.c
+* x509 modules for lua-openssl binding
 *
-* This product includes PHP software, freely available from <http://www.php.net/software/>
 * Author:  george zhao <zhaozg(at)gmail.com>
 \*=========================================================================*/
+
 #include "openssl.h"
 #include "sk.h"
+
+#define MYNAME		"x509"
+#define MYVERSION	MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
+	"based on OpenSSL " SHLIB_VERSION_NUMBER
+#define MYTYPE			"openssl.x509"
+
+/*** openssl.x509_algor object ***/
+static LUA_FUNCTION(openssl_x509_algo_parse) {
+	X509_ALGOR *algo = CHECK_OBJECT(1,X509_ALGOR,"openssl.x509_algor");
+	BIO* bio = BIO_new(BIO_s_mem());
+	lua_newtable(L);
+	ADD_ASSOC_ASN1(ASN1_OBJECT,bio,algo->algorithm,"algorithm");
+	//ADD_ASSOC_ASN1(ASN1_TYPE,bio,algo->parameter,"parameter");
+	BIO_free(bio);
+	return 1;
+}
+
+/*** openssl.x509_extension object ***/
+static LUA_FUNCTION(openssl_x509_extension_parse) {
+	X509_EXTENSION *ext = CHECK_OBJECT(1,X509_EXTENSION,"openssl.x509_extension");
+	BIO* bio = BIO_new(BIO_s_mem());
+	lua_newtable(L);
+	lua_pushboolean(L,ext->critical);
+	lua_setfield(L,-2,"critical");
+	ADD_ASSOC_ASN1(ASN1_OBJECT,bio,ext->object,"object");
+	BIO_free(bio);
+	{
+		ASN1_OCTET_STRING *os = ext->value;
+		lua_pushlstring(L,(const char*)os->data, os->length);
+		lua_setfield(L,-2,"value");
+	}
+	return 1;
+}
+
+/**********************************************************/
 
 void add_assoc_x509_extension(lua_State*L, const char* key, STACK_OF(X509_EXTENSION)* exts, BIO* bio)
 {
@@ -57,28 +77,6 @@ void add_assoc_x509_extension(lua_State*L, const char* key, STACK_OF(X509_EXTENS
         lua_setfield(L,-2,key);
     }
 }
-
-/* X509 module for the Lua/OpenSSL binding.
- *
- * The functions in this module can be used to load, parse, export, verify... functions.
- * parse()
- * export()
- * check_private_key()
- * checkpurpose()
- * public_key()
- */
-
-
-static luaL_Reg x509_funcs[] = {
-    {"parse",		openssl_x509_parse},
-    {"export",		openssl_x509_export},
-    {"check",		openssl_x509_check},
-    {"get_public",	openssl_x509_public_key},
-    {"__gc",		openssl_x509_free},
-    {"__tostring",	openssl_x509_tostring},
-
-    {NULL,			NULL},
-};
 
 
 /* {{{ check_cert */
@@ -407,11 +405,6 @@ LUA_FUNCTION(openssl_x509_public_key)
     return 1;
 }
 
-int openssl_register_x509(lua_State*L) {
-    auxiliar_newclass(L,"openssl.x509", x509_funcs);
-    return 0;
-}
-
 IMP_LUA_SK(X509, x509)
 
 static STACK_OF(X509) * load_all_certs_from_file(const char *certfile)
@@ -470,5 +463,70 @@ int openssl_sk_x509_read(lua_State*L) {
     } else
         lua_pushnil(L);
     return 1;
+}
+
+
+/* X509 module for the Lua/OpenSSL binding.
+ *
+ * The functions in this module can be used to load, parse, export, verify... functions.
+ * parse()
+ * export()
+ * check_private_key()
+ * checkpurpose()
+ * public_key()
+ */
+
+static luaL_Reg x509_algo_funs[] = {
+	{"__tostring", auxiliar_tostring},
+	{"parse", openssl_x509_algo_parse},
+
+	{ NULL, NULL }
+};
+
+static luaL_Reg x509_extension_funs[] = {
+	{"__tostring", auxiliar_tostring},
+	{"parse", openssl_x509_extension_parse},
+
+	{ NULL, NULL }
+};
+
+static luaL_Reg x509_funcs[] = {
+	{"parse",		openssl_x509_parse},
+	{"export",		openssl_x509_export},
+	{"check",		openssl_x509_check},
+	{"get_public",	openssl_x509_public_key},
+	{"__gc",		openssl_x509_free},
+	{"__tostring",	openssl_x509_tostring},
+
+	{NULL,			NULL},
+};
+
+static luaL_reg R[] = {
+	{"read",			openssl_x509_read	},
+	{"sk_x509_read",		openssl_sk_x509_read	},
+	{"sk_x509_new",			openssl_sk_x509_new	},
+
+	{NULL,		NULL}
+};
+
+LUALIB_API int luaopen_x509(lua_State *L)
+{
+	auxiliar_newclass(L,"openssl.x509_algor",		x509_algo_funs);
+	auxiliar_newclass(L,"openssl.x509_extension",	x509_extension_funs);
+	auxiliar_newclass(L,"openssl.x509", x509_funcs);
+
+	openssl_register_sk_x509(L);
+	luaL_newmetatable(L,MYTYPE);
+	lua_setglobal(L,MYNAME);
+	luaL_register(L,MYNAME,R);
+	lua_pushvalue(L, -1);
+	lua_setmetatable(L, -2);
+	lua_pushliteral(L,"version");			/** version */
+	lua_pushliteral(L,MYVERSION);
+	lua_settable(L,-3);
+	lua_pushliteral(L,"__index");
+	lua_pushvalue(L,-2);
+	lua_settable(L,-3);
+	return 1;
 }
 

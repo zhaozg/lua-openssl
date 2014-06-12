@@ -1,7 +1,6 @@
 /*=========================================================================*\
 * cipher.c
 * cipher module for lua-openssl binding
-* lua-openssl toolkit
 *
 * Author:  george zhao <zhaozg(at)gmail.com>
 \*=========================================================================*/
@@ -49,7 +48,7 @@ static LUA_FUNCTION(openssl_cipher_get) {
 }
 
 static LUA_FUNCTION(openssl_evp_encrypt) {
-	EVP_CIPHER* cipher = NULL;
+	const EVP_CIPHER* cipher = NULL;
 	if(lua_istable(L, 1)){
 		if(lua_getmetatable(L, 1) && lua_equal(L, 1, -1))
 		{
@@ -109,7 +108,7 @@ static LUA_FUNCTION(openssl_evp_encrypt) {
 }
 
 static LUA_FUNCTION(openssl_evp_decrypt) {
-	EVP_CIPHER* cipher;
+	const EVP_CIPHER* cipher;
 	if(lua_istable(L, 1)){
 		if(lua_getmetatable(L, 1) && lua_equal(L, 1, -1))
 		{
@@ -169,7 +168,7 @@ static LUA_FUNCTION(openssl_evp_decrypt) {
 }
 
 static LUA_FUNCTION(openssl_evp_cipher) {
-	EVP_CIPHER* cipher = NULL;
+	const EVP_CIPHER* cipher = NULL;
 	if(lua_istable(L, 1)){
 		if(lua_getmetatable(L, 1) && lua_equal(L, 1, -1))
 		{
@@ -544,6 +543,8 @@ static const luaL_Reg R[] =
 
 LUALIB_API int luaopen_cipher(lua_State *L)
 {
+	ERR_load_crypto_strings();
+
 	auxiliar_newclass(L,"openssl.evp_cipher",		cipher_funs);
 	auxiliar_newclass(L,"openssl.evp_cipher_ctx",	cipher_ctx_funs);
 

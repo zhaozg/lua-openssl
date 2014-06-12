@@ -1,28 +1,17 @@
-/*
-   +----------------------------------------------------------------------+
-   | PHP Version 5                                                        |
-   +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2012 The PHP Group                                |
-   +----------------------------------------------------------------------+
-   | This source file is subject to version 3.01 of the PHP license,      |
-   | that is bundled with this package in the file LICENSE, and is        |
-   | available through the world-wide-web at the following url:           |
-   | http://www.php.net/license/3_01.txt                                  |
-   | If you did not receive a copy of the PHP license and are unable to   |
-   | obtain it through the world-wide-web, please send a note to          |
-   | license@php.net so we can mail you a copy immediately.               |
-   +----------------------------------------------------------------------+
-*/
 /*=========================================================================*\
-* bio routines
-* lua-openssl toolkit
+* bio.c
+* bio object for lua-openssl binding
 *
-* This product includes PHP software, freely available from <http://www.php.net/software/>
 * Author:  george zhao <zhaozg(at)gmail.com>
 \*=========================================================================*/
-#include "openssl.h"
 
-LUA_FUNCTION(openssl_bio_new_mem) {
+#include "openssl.h"
+#define MYNAME		"bio"
+#define MYVERSION	MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
+	"based on OpenSSL " SHLIB_VERSION_NUMBER
+#define MYTYPE			"openssl.bio"
+
+static LUA_FUNCTION(openssl_bio_new_mem) {
     size_t l = 0;
     char* d = (char*)luaL_optlstring(L,1,NULL, &l);
     BIO *bio = d ? BIO_new_mem_buf(d, l) : BIO_new(BIO_s_mem());
@@ -30,7 +19,7 @@ LUA_FUNCTION(openssl_bio_new_mem) {
     return 1;
 }
 
-LUA_FUNCTION(openssl_bio_new_accept) {
+static LUA_FUNCTION(openssl_bio_new_accept) {
 	const char* port = lua_tostring(L,1);
 	BIO* b = BIO_new_accept((char*)port);
 	int ret;
@@ -47,8 +36,18 @@ LUA_FUNCTION(openssl_bio_new_accept) {
 	return 1;
 }
 
+static LUA_FUNCTION(openssl_bio_new_file) {
+    const char* f = luaL_checkstring(L,1);
+    const char* m = luaL_optstring(L,2,"r");
+    BIO *bio = BIO_new_file(f,m);
+    if(!bio)
+        luaL_error(L, "error opening the file(%s) for mode (%s)", f, m);
+    PUSH_OBJECT(bio,"openssl.bio");
+    return 1;
+}
 
-LUA_FUNCTION(openssl_accept){
+/* bio object method */
+static LUA_FUNCTION(openssl_accept){
 	BIO* bio = CHECK_OBJECT(1,BIO,"openssl.bio");
 	int ret = BIO_do_accept(bio);
 	BIO *nb;
@@ -64,18 +63,7 @@ LUA_FUNCTION(openssl_accept){
 	return 1;
 }
 
-
-LUA_FUNCTION(openssl_bio_new_file) {
-    const char* f = luaL_checkstring(L,1);
-    const char* m = luaL_optstring(L,2,"r");
-    BIO *bio = BIO_new_file(f,m);
-    if(!bio)
-        luaL_error(L, "error opening the file(%s) for mode (%s)", f, m);
-    PUSH_OBJECT(bio,"openssl.bio");
-    return 1;
-}
-
-LUA_FUNCTION(openssl_bio_read) {
+static LUA_FUNCTION(openssl_bio_read) {
     BIO* bio = CHECK_OBJECT(1,BIO,"openssl.bio");
     int len = luaL_optint(L,2, 2048);
     char* buf = malloc(len);
@@ -95,7 +83,7 @@ LUA_FUNCTION(openssl_bio_read) {
     return ret;
 }
 
-LUA_FUNCTION(openssl_bio_gets) {
+static LUA_FUNCTION(openssl_bio_gets) {
     BIO* bio = CHECK_OBJECT(1,BIO,"openssl.bio");
     int len = luaL_optint(L,2,256);
     char* buf;
@@ -119,7 +107,7 @@ LUA_FUNCTION(openssl_bio_gets) {
 }
 
 
-LUA_FUNCTION(openssl_bio_write) {
+static LUA_FUNCTION(openssl_bio_write) {
     BIO* bio = CHECK_OBJECT(1,BIO,"openssl.bio");
     size_t size = 0;
     const char* d = luaL_checklstring(L,2, &size);
@@ -139,7 +127,7 @@ LUA_FUNCTION(openssl_bio_write) {
     return ret;
 }
 
-LUA_FUNCTION(openssl_bio_puts) {
+static LUA_FUNCTION(openssl_bio_puts) {
     BIO* bio = CHECK_OBJECT(1,BIO,"openssl.bio");
     const char* s = luaL_checkstring(L,2);
     int ret = 1;
@@ -157,13 +145,14 @@ LUA_FUNCTION(openssl_bio_puts) {
     return ret;
 }
 
-LUA_FUNCTION(openssl_bio_flush) {
+static LUA_FUNCTION(openssl_bio_flush) {
 	BIO* bio = CHECK_OBJECT(1,BIO,"openssl.bio");
 	int ret = BIO_flush(bio);
 	lua_pushinteger(L, ret);
 	return 1;
 }
-LUA_FUNCTION(openssl_bio_get_mem) {
+
+static LUA_FUNCTION(openssl_bio_get_mem) {
     BIO* bio = CHECK_OBJECT(1,BIO,"openssl.bio");
     if(BIO_method_type(bio)==BIO_TYPE_MEM)
     {
@@ -177,7 +166,7 @@ LUA_FUNCTION(openssl_bio_get_mem) {
 }
 
 
-LUA_FUNCTION(openssl_bio_close) {
+static LUA_FUNCTION(openssl_bio_close) {
     BIO* bio = CHECK_OBJECT(1,BIO,"openssl.bio");
     BIO_shutdown_wr(bio);
     BIO_set_close(bio,1);
@@ -187,33 +176,33 @@ LUA_FUNCTION(openssl_bio_close) {
 }
 
 
-LUA_FUNCTION(openssl_bio_free) {
+static LUA_FUNCTION(openssl_bio_free) {
     BIO* bio = CHECK_OBJECT(1,BIO,"openssl.bio");
     BIO_free(bio);
     return 0;
 }
 
 
-LUA_FUNCTION(openssl_bio_type) {
+static LUA_FUNCTION(openssl_bio_type) {
     BIO* bio = CHECK_OBJECT(1,BIO,"openssl.bio");
     lua_pushstring(L, BIO_method_name(bio));
     return 1;
 }
 
-LUA_FUNCTION(openssl_bio_reset) {
+static LUA_FUNCTION(openssl_bio_reset) {
     BIO* bio = CHECK_OBJECT(1,BIO,"openssl.bio");
     BIO_reset(bio);
     return 0;
 }
 
 
-LUA_FUNCTION(openssl_bio_tostring) {
+static LUA_FUNCTION(openssl_bio_tostring) {
     BIO* bio = CHECK_OBJECT(1,BIO,"openssl.bio");
     lua_pushfstring(L, "openssl.bio:%p",bio);
     return 1;
 }
 
-LUA_FUNCTION(openssl_bio_fd) {
+static LUA_FUNCTION(openssl_bio_fd) {
 	BIO* bio = CHECK_OBJECT(1,BIO,"openssl.bio");
 	int typ = BIO_method_type(bio);
 	if(typ & BIO_TYPE_FD){
@@ -229,7 +218,7 @@ LUA_FUNCTION(openssl_bio_fd) {
 	return 1;
 }
 
-LUA_FUNCTION(openssl_bio_accept_port) {
+static LUA_FUNCTION(openssl_bio_accept_port) {
 	BIO* bio = CHECK_OBJECT(1,BIO,"openssl.bio");
 	int typ = BIO_method_type(bio);
 	if(typ & BIO_TYPE_FD){
@@ -267,8 +256,29 @@ static luaL_reg bio_funs[] = {
     {NULL,		NULL}
 };
 
-int openssl_register_bio(lua_State* L) {
-    auxiliar_newclass(L, "openssl.bio", bio_funs);
-    return 0;
+static luaL_reg R[] = {
+	{"file",		openssl_bio_new_file	},
+	{"mem",			openssl_bio_new_mem	   },
+	{"accept",		openssl_bio_new_accept },
+	{ "__call",		openssl_bio_new_mem},
+	{NULL,		NULL}
+};
+
+LUALIB_API int luaopen_bio(lua_State *L)
+{
+	auxiliar_newclass(L,"openssl.bio", bio_funs);
+
+	luaL_newmetatable(L,MYTYPE);
+	lua_setglobal(L,MYNAME);
+	luaL_register(L,MYNAME,R);
+	lua_pushvalue(L, -1);
+	lua_setmetatable(L, -2);
+	lua_pushliteral(L,"version");			/** version */
+	lua_pushliteral(L,MYVERSION);
+	lua_settable(L,-3);
+	lua_pushliteral(L,"__index");
+	lua_pushvalue(L,-2);
+	lua_settable(L,-3);
+	return 1;
 }
 

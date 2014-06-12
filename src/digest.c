@@ -1,7 +1,6 @@
 /*=========================================================================*\
 * digest.c
 * digest module for lua-openssl binding
-* lua-openssl toolkit
 *
 * Author:  george zhao <zhaozg(at)gmail.com>
 \*=========================================================================*/
@@ -294,6 +293,8 @@ static const luaL_Reg R[] =
 
 LUALIB_API int luaopen_digest(lua_State *L)
 {
+	ERR_load_crypto_strings();
+
 	auxiliar_newclass(L,"openssl.evp_digest",		digest_funs);
 	auxiliar_newclass(L,"openssl.evp_digest_ctx",	digest_ctx_funs);
 

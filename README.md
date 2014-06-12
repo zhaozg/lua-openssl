@@ -13,9 +13,9 @@ lua-openssl toolkit - A free, MIT-licensed OpenSSL binding for Lua (Work in prog
 9. [Pkcs12](#9-pkcs12-function)
 0. [Misc](#10-misc-functions)
 
-A. [Howto](#a-howto)
-B. [Examples](#b-example-usage)
-C. [Contact](#c-contact)
+*A [Howto](#a-howto)
+*B [Examples](#b-example-usage)
+*C [Contact](#c-contact)
 
 
 #1. Introduction
@@ -38,8 +38,7 @@ things easy for you to use OpenSSL, this extension allows you to specify
 certificates or a key in the following ways:
 
 1. As an openssl.x509 object returned from openssl.x509_read
-2. As an openssl.evp_pkey object return from openssl.pkey_read
-   or openssl.pkey_new
+2. As an openssl.evp_pkey object return from openssl.pkey_read or openssl.pkey_new
 
 Similarly, you can also specify a public key as a key object returned from object:get_public.
 
@@ -67,8 +66,8 @@ The following are some important lua-openssl object types:
 	openssl.evp_cipher_ctx
 	openssl.evp_digest_ctx
 	...
-```	
-	
+```
+
 They are shortened as bio, x509, sk_x509, x509_req, evp_pkey,evp_digest, evp_cipher,
 	engine (not used yet!), cipher_ctx, and digest_ctx.
 
@@ -132,28 +131,34 @@ lua_openssl_version, lua_version, openssl_version = openssl.version()
 
 #4. Public/Private key functions
 
-* ***openssl.evp_new*** ([string alg='rsa' [,int bits=1024|512, [...]]]) => evp_pkey
- * default generate RSA key, bits=1024, 3rd paramater e default is 0x10001
- * dsa,with bits default 1024 ,and seed data default have no data
- * dh, with bits(prime_len) default 512, and generator default is ec, with ec_name,D,X,Y,Z.
-
-* ***openssl.pkey_new*** ([table args]) =>  evp_pkey
- * args = {dsa={n=,e=,...}|dh={}|dsa={}}
- * private key should has it factor named n,q,e and so on, value is hex encoded string
-
-* ***openssl.pkey_read*** (string data|x509 cert [,bool public_key=true [,string passphrase]]) => evp_pkey
+* ***openssl.pkey.read*** (string data|x509 cert [,bool public_key=true [,string passphrase]]) => evp_pkey
  * Read from a file or a data, coerce it into a EVP_PKEY object.
+  It can be:
+  *1. X509 object -> public key will be extracted from it
+  *2. the key pem/der file data```
 
-It can be:
-1. X509 object -> public key will be extracted from it
-2. interpreted as the data from the cert/key file and interpreted in same way as openssl_get_privatekey()
+* ***openssl.pkey.new*** ([string alg='rsa' [,int bits=1024|512, [...]]]) => evp_pkey
+ * generate new keypair, support alg include rsa,dsa,dh,ec
+ * default alg is RSA key, bits=1024, 3rd argument e default is 0x10001
+ * dsa,with bits default 1024 ,and option seed data
+ * dh, with bits(prime_len) default 512,
+ * ec, with ec_name, and option flag
 
+* ***openssl.pkey.new*** ({alg='rsa|dsa|dh|ec', ... }) => evp_pkey
+ * this pattern pkey.new need table as pkey argument, and key 'alg' must be given.
+ ```
+ when arg is rsa, table may with key n,e,d,p,q,dmp1,dmq1,iqmp,both are string value
+ when arg is dsa, table may with key p,q,g,priv_key,pub_key,both are string value
+ when arg is dh, table may with key p,g,priv_key,pub_key,both are string value
+ when arg is ec, table may with D,X,Y,Z,both are string value
 ```
-    NOTE: If you are requesting a private key but have not specified a
-    passphrase, you should use an empty string rather than NULL for the
-    passphrase - NULL causes a passphrase prompt to be emitted: Lua error!
-```
+* private key should has it factor named n,q,e and so on, value is hex encoded string
 
+* ***openssl.pkey.seal***(table pubkeys, string data[, cipher enc|string alg='RC4']) -> string,table
+ * Seals data with pub_key in tables
+ * return sealed data,and keys encrypt by recipcerts pubkey
+* ***openssl.pkey.open***(evp_pkey pkey, string data,string ekey[, cipher enc|string alg='RC4']) -> string
+ * Open sealed data with private key.
 * ***evp_pkey:export*** ([boolean only_public = false [,boolean raw_key=false [,boolean pem=true,[, string passphrase]]]]) -> string
  * If only_public is true, will export public key
  * If raw_key is true, will export rsa, dsa or dh data
@@ -165,6 +170,9 @@ It can be:
 
 * ***evp_pkey:is_private*** () -> boolean
  * Check whether the supplied key is a private key (by checking if the secret prime factors are set)
+
+* ***evp_pkey:compute_key***(string remote_public_key) -> string
+ * Compute shared secret for remote public key and local private key,Only for DH key.
 
 ### About padding
 
@@ -183,12 +191,15 @@ If a padding string value other than above is used as input (ignore capital), it
 
 * ***evp_pkey:encrypt*** (string data [,string padding=pkcs1]) -> string
 * ***evp_pkey:decrypt*** (string data [,string padding=pkcs1]) -> string
+* ***evp_pkey:sign***(string data[,digest md|string alg='sha1']) -> string
+* ***evp_pkey:verify***(string data,string sig[,digest md|string alg='sha1']) -> boolean
+
 
 #5. Cipher
 * ***openssl.cipher.list*** ([boolean alias=true])  -> array
- * return all cipher methods default with alias
+ *  return all cipher methods default with alias
 * ***openssl.cipher.get*** (string alg|int alg_id|asn1_object obj) => evp_cipher
- *   return a evp_cipher method object
+ *  return a evp_cipher method object
 * ***openssl.cipher.encrypt***(string alg|int alg_id|asn1_object obj, string input_msg,
    string key [,string iv[,boolean pad=true[,openssl.engine e]]]) -> string
  * return encrypted message,defualt with pad but without iv
@@ -200,7 +211,7 @@ If a padding string value other than above is used as input (ignore capital), it
  * return encrypted or decrypted message
 * ***openssl.cipher***(string alg|int alg_id|openssl.asn1_object obj,boolean encrypt,string input_msg,
   string key[,string iv[,boolean pad=true[,openssl.engine e]]]) -> string
- * return encrypted or decrypted message, this API implicated with metatable __call function.
+ * return encrypted or decrypted message, this API implicated with metatable `__call` function.
 * ***openssl.cipher.new***(string alg|int alg_id|openssl.asn1_object obj, boolean encrypt,
   string key[,string iv[,boolean pad=true[,openssl.engine e]]]) => openssl.evp_cipher_ctx
  * return evp_cipher_ctx object to encrypt or decrypt
@@ -252,7 +263,6 @@ If a padding string value other than above is used as input (ignore capital), it
  * Return a table with key nid, name, size, block_size, pkey_type, and flags
 * ***evp_digest:digest*** (string msg[, openssl.engine e]) -> string
  * Return a binary hash value for msg
-
 * ***digest_ctx:info*** () -> table
  * Return a table with key block_size, size, type and digest
 * ***digest_ctx:update*** (string data) -> boolean
@@ -261,9 +271,39 @@ If a padding string value other than above is used as input (ignore capital), it
 * ***digest_ctx:reset*** () ->boolean
  * Cleanup evp_message_ctx to make it reusable.
 
-#7. PKCS7 (S/MIME) Sign/Verify/Encrypt/Decrypt Functions:
+#7. PKCS7 (S/MIME)
 
-These functions allow you to manipulate S/MIME messages!
+* ***openssl.pkcs7.read***(bio|string in[,string format='auto']) => openssl.pkcs7,string
+ * Read string or bio object, which include pkcs7 content, if success will return pkcs7 object or nil
+ * format allow "auto","der","pem","smime", default is "auto" will try all method until load ok
+ * when format is "smime", second return maybe content,if include.
+
+* ***openssl.pkcs7.sign***(string|bio msg, x509 signcert, evp_pkey signkey[, int flags [,stack_of_x509 extracerts]]) => openssl.pkcs7
+ * Signs message with signcert/signkey and return signed pkcs7 object.
+
+* ***openssl.pkcs7.verify*** (pkcs7 in[, string flags [, stack_of_x509 signerscerts [, stack_of_x509 cacerts,
+   [, stack_of_x509 extracerts [,bio content]]]}]) ->boolean, openssl.sk_x509
+ * Verify signed pkcs7 object, the signer is who they say they are, and returns the verify result,follow by signers.
+
+* ***openssl.pkcs7.encrypt*** (string|bio msg, stack_of_x509 recipcerts, [, string flags [,evp_cipher cipher]]) => openssl.pkcs7
+ * Encrypts message with the certificates in recipcerts and output the return pkcs7 object.
+
+* ***openssl.pkcs7.decrypt*** (pkcs7 in, x509 recipcert [,evp_pkey recipkey]) -> string
+ * Decrypt pkcs7 message
+
+* ***pkcs7:verify*** ([string flags [, stack_of_x509 signerscerts [, stack_of_x509 cacerts,
+   [, stack_of_x509 extracerts [,bio content]]]}]) ->boolean, openssl.sk_x509
+ * Verify signed pkcs7 object, the signer is who they say they are, and returns the verify result,follow by signers.
+
+* ***pkcs7:decrypt*** (pkcs7 in, x509 recipcert [,evp_pkey recipkey]) -> string
+ * Decrypt pkcs7 message
+
+* ***pkcs7:export*** (boolean pem) -> string
+ * export pkcs7 as a string, which can be to read
+
+* ***pkcs7:parse***() -> table
+ * raturn a table has pkcs7 infomation, include type,and other things relate to types
+
 
 They are based on apps/smime.c from the OpenSSL dist, so for more information,
 see the documentation for OpenSSL.
@@ -280,32 +320,16 @@ not be included in the encoded section.
 
 flags is flag information as described above.
 
-***Hint***: you will want to put "To", "From", and "Subject" fields in the headers.
-Headers can be either an assoc array keyed by header named, or can be
-and indexed array containing a single header line per value.
-
-* ***openssl.pkcs7_sign***(bio in, bio out, x509 signcert, evp_pkey signkey, table headers [, string flags [,stack_of_x509 extracerts]])->boolean
- * Signs the MIME message in the BIO in with signcert/signkey and output the result to BIO out.
- * headers lists plain text headers to exclude from the signed portion of the message, and should include to, from and subject as a minimum
-
-* ***openssl.pkcs7_verify*** (bio in, string flags [, stack_of_x509 signerscerts, [, stack_of_x509 cacerts, [, stack_of_x509 extracerts [,bio content]) ->boolean
- * Verifys that the data block is intact, the signer is who they say they are, and returns the CERTs of the signers.
-
-* ***openssl.pkcs7_encrypt*** (bio in, bio out, stack_of_x509 recipcerts, table header [, string flags [,evp_cipher md] -> boolean
- * Encrypts the message in the file named infile with the certificates in recipcerts and output the result to the file named outfile.
-
-* ***openssl.pkcs7_decrypt*** (bio in, bio out, x509 recipcert [,evp_pkey recipkey]) ->boolean
-
 #8. Certificate sign request and Certificate revocked list
 
-* ***openssl.csr_new*** (evp_pkey privkey, table dn={} [,table args = nil]) => x509_req
-* ***openssl.csr_read*** (string data) => x509_req
-
-* ***csr:sign*** (x509 cert, evp_pkey privkey, table arg) -> x509
+* ***openssl.csr.new*** (evp_pkey privkey, table dn={} [,table args = nil]) => x509_req
+ * Generates CSR with gived private key, dn, and extraattribs */
+* ***openssl.csr.read*** (string data) => x509_req
+* ***x509_req:sign*** (x509 cert, evp_pkey privkey, table arg={serialNumber=,num_days=}) => x509
  * args must have serialNumber as hexecoded string, num_days as number
-* ***csr:export*** ([boolean pem=true [, boolean noext=true]])->string
-* ***csr:get_public*** () -> evp_pkey
-
+* ***x509_req:export*** ([boolean pem=true [, boolean noext=true]])->string
+* ***x509_req:get_public*** () -> evp_pkey
+* ***x509_req:parse() -> table
 
 * ***openssl.crl_read*** (string data) => x509_crl
 * ***openssl.crl_new*** (number version, x509 cacert,number lastUpdate, number nextUpdate, table revoked{hexserial=time,...}) => x509_crl
@@ -351,19 +375,19 @@ and indexed array containing a single header line per value.
 
 #9. PKCS12 Function
 
-* ***openssl.pkcs12_read*** (string pkcs12data, string pass) -> table
+* ***openssl.pkcs12.read*** (string pkcs12data, string pass) -> table
  * Parses a PKCS12 data to a table
- * Returns a table containing cert, pkey, and extracerts (three) keys
+ * Returns a table containing cert, pkey, and extracerts keys
 
-* ***openssl.pkcs12_export*** (x509 cert, evp_pkey pkey, string pass [[, string friendname ], table extracerts])) -> string
+* ***openssl.pkcs12.export*** (x509 cert, evp_pkey pkey, string pass [[, string friendname ], table extracerts])) -> string
  * Creates and exports a PKCS12 data
  * friendname is optional, if supplied, must be as 4th parameter
  * extracerts is optional, it can be as 4th or 5th parameter (if friendname is supplied)
 
 
-#10. Misc Functions
+#10. Misc Functions and Objects
 
-I have made some work to try to keep compatibility with lua-crypto's API.
+##Funcions
 
 * ***openssl.hex*** (string bin) -> hex string
  * Returns a hex string.
@@ -373,6 +397,45 @@ I have made some work to try to keep compatibility with lua-crypto's API.
  * Returns a method name array.
  * this is a compat API with LuaCrypto
 
+* ***openssl.error***([boolean verbose=false]) -> number, errmsg[, verbose]
+ * Return openssl error message, should be call fellow fail method.
+
+* ***openssl.random***(number length[, boolean strong]) -> string
+ * Return a random string with length
+
+* ***openssl.object***(number nid[,string name[,string alias]]) -> boolean|asn1_object
+ * When given nid only, if nid exist return ans1_object,or nil
+ * When nid followed by name, will create new asn1_object,return boolean for result
+
+##Objects
+###openssl.bio
+
+***openssl.bio*** is a help object, it is useful, but rarely use.
+
+* ***openssl.bio.mem*** ([string data]) => bio
+ * Create a memory bio, if data given, it will be memory buffer data
+ * It can be input or output object.
+
+* ***openssl.bio*** ([string data]) => bio
+ * same with ***bio.mem***, implicaion by metatable "__call"
+
+* ***openssl.file*** (string file [,string mode='r']) => bio
+ * Create a file bio, if mode not given, the default is 'r'
+
+* ***bio:read*** (number len) -> string
+* ***bio:gets*** ([number len=256]) -> string
+* ***bio:write*** (string data) -> number
+* ***bio:puts*** (string data) -> number
+* ***bio:get_mem***() -> string
+ * only supports bio mem
+* ***bio:close*** ()
+* ***bio:type*** () -> string
+* ***bio:reset*** ()
+
+###openssl.engine
+***openssl.engine*** is a help object, it can change openssl default action.
+
+###mis
 * ***openssl.sign*** (string data,  evp_pkey key [, evp_digest md|string md_alg=SHA1]) ->string
  * Uses key to create signature for data, returns signed result
 
@@ -399,29 +462,6 @@ I have made some work to try to keep compatibility with lua-crypto's API.
 * ***openssl.error_string*** () -> number, string
  * If an error is found, it will return an error number code, followed by description string or it will return nothing and clear the error state, so you can call it twice.
 
-* ***openssl.bio_new_mem*** ([string data]) => bio
- * If data is none or nil, it will be an output object or input.
-
-* ***openssl.bio_new_file*** (string file [,string mode=r]) => bio
- * If mode not given, will return an input bio object.
-
-* ***openssl.bio_new_mem*** ([string data]) => bio
- * Create a memory bio, if data given, it will be memory buffer data
-
-* ***openssl.bio_new_file*** (string file, [string mode='r']) -> bio
- * Create a file bio, if mode not given, the default is 'r'
-
-### BIO Object
-
-* ***bio:read*** (number len) -> string
-* ***bio:gets*** ([number len=256]) -> string
-* ***bio:write*** (string data) -> number
-* ***bio:puts*** (string data) -> number
-* ***bio:get_mem***() -> string
- * only supports bio mem
-* ***bio:close*** ()
-* ***bio:type*** () -> string
-* ***bio:reset*** ()
 
 #A.   Howto
 
