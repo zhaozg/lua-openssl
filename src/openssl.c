@@ -127,14 +127,25 @@ static int openssl_object(lua_State* L)
 			lua_pushnil(L);
 	}else{
 		const char* oid  = luaL_checkstring(L,1);
-		const char* name = luaL_checkstring(L,2);
-		const char* alias = luaL_optstring(L,3,name);
-
-
-		if(OBJ_create(oid, name, alias)==NID_undef)
-			lua_pushboolean(L,0);
-		else
-			lua_pushboolean(L,1);
+		if(lua_isnoneornil(L, 2))
+		{
+			const char* name = luaL_checkstring(L,2);
+			const char* alias = luaL_optstring(L,3,name);
+			if(OBJ_create(oid, name, alias)==NID_undef)
+				lua_pushboolean(L,0);
+			else
+				lua_pushboolean(L,1);
+		}else{
+			int nid = OBJ_txt2nid(oid);
+			if(nid!=NID_undef){
+				ASN1_OBJECT* obj = OBJ_nid2obj(nid);
+				if(obj)
+					PUSH_OBJECT(obj,"openssl.asn1_object");
+				else
+					lua_pushnil(L);
+			}else
+				lua_pushnil(L);
+		}
 	}
 	return 1;
 }

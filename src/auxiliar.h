@@ -36,6 +36,20 @@
 #if LUA_VERSION_NUM>501
 #define luaL_reg luaL_Reg
 #endif
+
+#define AUXILIAR_SET(L, lvar, cval, ltype)	\
+	do {									\
+	lua_push##ltype(L, (cval));				\
+	lua_setfield(L, -2, lvar);				\
+	} while(0)
+
+#define AUXLIAR_GET(L, lvar, cvar, ltype)	\
+	do {									\
+	lua_getfield(L, -1, lvar);				\
+	cvar = lua_to##ltype(L, -1);			\
+	lua_pop(L, 1);							\
+	} while(0)
+
 int auxiliar_open(lua_State *L);
 void auxiliar_newclass(lua_State *L, const char *classname, const luaL_reg *func);
 void auxiliar_add2group(lua_State *L, const char *classname, const char *group);

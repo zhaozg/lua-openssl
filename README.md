@@ -3,19 +3,18 @@ lua-openssl toolkit - A free, MIT-licensed OpenSSL binding for Lua (Work in prog
 #Index
 
 1. [Introduction](#1-introduction)
-2. [Version](#2-version)
-3. [Certificate](#3-certificate)
+2. [Message Digest](#2-message-digest)
+3. [Cipher](#3-cipher)
 4. [Public/Private Key](#4-publicprivate-key-functions)
-5. [Cipher](#5-cipher)
-6. [Message Digest](#6-message-digest)
-7. [PKCS7 SMIME](#7-pkcs7-smime-signverifyencryptdecrypt-functions)
-8. [CSR & CRL](#8-certificate-sign-request-and-certificate-revocked-list)
-9. [Pkcs12](#9-pkcs12-function)
-0. [Misc](#10-misc-functions)
+5. [PKCS7 SMIME](#5-pkcs7-smime-signverifyencryptdecrypt-functions)
+6. [Pkcs12](#6-pkcs12-function)
+7. [Certificate](#7-certificate)
+8. [SSL](#8-ssl)
+9. [Misc](#9-misc-functions)
 
-*A [Howto](#a-howto)
-*B [Examples](#b-example-usage)
-*C [Contact](#c-contact)
+* A [Howto](#a-howto)
+* B [Examples](#b-example-usage)
+* C [Contact](#c-contact)
 
 
 #1. Introduction
@@ -26,12 +25,11 @@ So I decided to write this OpenSSL toolkit for Lua.
 
 Below you can find the development progress of lua-openssl. The goal is to fully support the listed items.
 
-* Message digest. (Finished)
 * Symmetrical encrypt/decrypt. (Finished)
-* RSA low level API. (UNFINISHED)
+* Message digest. (Finished)
+* Asymmetrical encrypt/decrypt/sign/verify/seal/open. (Finished)
 * X509 and PKCS. (UNFINISHED)
-* Asymmetrical encrypt/decrypt/sign/verify/seal/open.
-* SSL/TLS. (DEVELOPMENT NOT STARTED, PENDING)
+* SSL/TLS. (UNFINISHED)
 
 Most of the lua-openssl functions require a key or a certificate as a parameter; to make
 things easy for you to use OpenSSL, this extension allows you to specify
@@ -80,7 +78,7 @@ Please note that in the next sections of this document:
 
 If a function returns nil, it will be followed by an error number and string.
 
-#2. Version
+## Version
 
 This lua-openssl toolkit works with Lua 5.1 or 5.2, and OpenSSL (0.9.8 or above 1.0.0). It is recommended to use the most up-to-date OpenSSL version because of the recent security fixes.
 
@@ -91,111 +89,32 @@ openssl = require "openssl"
 lua_openssl_version, lua_version, openssl_version = openssl.version()
 ```
 
-#3. Certificate
+#2. Message Digest
 
-* ***openssl.x509_read*** (string val) => x509
- * val is a string containing the data from the certificate file
+* ***openssl.digest.list*** ([boolean alias=true])  -> array
+ * Return all md methods default with alias
+* ***openssl.digest.get***(string alg|int alg_id|openssl.asn1_object obj) => openssl.evp_digest
+ * Return a evp_digest object
+* ***openssl.digest.new*** (string alg|int alg_id|openssl.asn1_object obj) => openssl.evp_digest_ctx
+ * Return a evp_digest_ctx object
+* ***openssl.digest*** (string alg|openssl.evp_digest obj, string msg [,boolean raw=false]) -> string
+ * Return a hash value for msg, if raw is true, it will be hex encoded
+* ***evp_digest:new*** ([openssl.engine e]) => openssl.evp_digest_ctx
+ * Return an evp_digest_ctx object
+* ***evp_digest:info*** () -> table
+ * Return a table with key nid, name, size, block_size, pkey_type, and flags
+* ***evp_digest:digest*** (string msg[, openssl.engine e]) -> string
+ * Return a binary hash value for msg
+* ***digest_ctx:info*** () -> table
+ * Return a table with key block_size, size, type and digest
+* ***digest_ctx:update*** (string data) -> boolean
+* ***digest_ctx:final*** ([string last [,boolean raw=true]) -> string
+ * Return a hash value,default is binaray
+* ***digest_ctx:reset*** () ->boolean
+ * Cleanup evp_message_ctx to make it reusable.
 
-* ***x509:export*** ([bool notext=true]) -> string
- * export x509 as certificate content data
+#3. Cipher
 
-* ***x509:parse*** ([bool shortnames=true]) -> table
- * returns a table which contains all x509 information
-
-* ***x509:get_public*** () => evp_pkey
-
-* ***x509:check*** (evp_pkey pkey) -> boolean
-
-* ***x509:check*** (sk_x509 ca [,sk_x509 untrusted[,string purpose]])->boolean
- * purpose can be one of: ssl_client, ssl_server, ns_ssl_server, smime_sign, smime_encrypt, crl_sign, any, ocsp_helper, timestamp_sign
- * ca is an openssl.stack_of_x509 object contain certchain.
- * untrusted is an openssl.stack_of_x509 object containing a bunch of certs that are not trusted but may be useful in validating the certificate.
-
-
-***openssl.stack_of_x509*** is an important object in lua-openssl, it can be used as a certchain, trusted CA files or unstrust certs.
-
-* ***openssl.sk_x509_read*** (filename) => sk_x509
-* ***openssl.sk_x509_new*** ([table array={}]} ->sk_x509
-
-* ***sk_x509:push*** (openssl.x509 cert) => sk_x509
-* ***sk_x509:pop*** () => x509
-* ***sk_x509:set*** (number i, x509 cert) =>sk_x509
-* ***sk_x509:get*** (number i) => x509
-* ***sk_x509:insert*** (x509 cert,number i, ) =>sk_x509
-* ***sk_x509:delete*** (number i) => x509
-* ***sk_x509:totable*** () -> table
- * table as array contain x509 from index 1
-* ***sk_x509:sort*** ()
-
-`#sk_x509` returns the number of certs in stack_of_x509
-
-#4. Public/Private key functions
-
-* ***openssl.pkey.read*** (string data|x509 cert [,bool public_key=true [,string passphrase]]) => evp_pkey
- * Read from a file or a data, coerce it into a EVP_PKEY object.
-  It can be:
-  *1. X509 object -> public key will be extracted from it
-  *2. the key pem/der file data```
-
-* ***openssl.pkey.new*** ([string alg='rsa' [,int bits=1024|512, [...]]]) => evp_pkey
- * generate new keypair, support alg include rsa,dsa,dh,ec
- * default alg is RSA key, bits=1024, 3rd argument e default is 0x10001
- * dsa,with bits default 1024 ,and option seed data
- * dh, with bits(prime_len) default 512,
- * ec, with ec_name, and option flag
-
-* ***openssl.pkey.new*** ({alg='rsa|dsa|dh|ec', ... }) => evp_pkey
- * this pattern pkey.new need table as pkey argument, and key 'alg' must be given.
- ```
- when arg is rsa, table may with key n,e,d,p,q,dmp1,dmq1,iqmp,both are string value
- when arg is dsa, table may with key p,q,g,priv_key,pub_key,both are string value
- when arg is dh, table may with key p,g,priv_key,pub_key,both are string value
- when arg is ec, table may with D,X,Y,Z,both are string value
-```
-* private key should has it factor named n,q,e and so on, value is hex encoded string
-
-* ***openssl.pkey.seal***(table pubkeys, string data[, cipher enc|string alg='RC4']) -> string,table
- * Seals data with pub_key in tables
- * return sealed data,and keys encrypt by recipcerts pubkey
-* ***openssl.pkey.open***(evp_pkey pkey, string data,string ekey[, cipher enc|string alg='RC4']) -> string
- * Open sealed data with private key.
-* ***evp_pkey:export*** ([boolean only_public = false [,boolean raw_key=false [,boolean pem=true,[, string passphrase]]]]) -> string
- * If only_public is true, will export public key
- * If raw_key is true, will export rsa, dsa or dh data
- * If passphrase exists, export key will be encrypted with it
-
-* ***evp_peky:parse*** (evp_pkey key) -> table
- * Returns a table with the key details (bits, pkey, and type)
- * pkey may be rsa, dh, dsa, shown as table with factor hex encoded bignum.
-
-* ***evp_pkey:is_private*** () -> boolean
- * Check whether the supplied key is a private key (by checking if the secret prime factors are set)
-
-* ***evp_pkey:compute_key***(string remote_public_key) -> string
- * Compute shared secret for remote public key and local private key,Only for DH key.
-
-### About padding
-
-Currently supports 6 padding modes. They are:
-
-```
-	pkcs1:	RSA_PKCS1_PADDING	1
-	sslv23:	RSA_SSLV23_PADDING	2
-	no:	RSA_NO_PADDING		3
-	oaep:	RSA_PKCS1_OAEP_PADDING	4
-	x931:	RSA_X931_PADDING	5
-	pss:	RSA_PKCS1_PSS_PADDING	6
-```
-
-If a padding string value other than above is used as input (ignore capital), it will raise a Lua error.
-
-* ***evp_pkey:encrypt*** (string data [,string padding=pkcs1]) -> string
-* ***evp_pkey:decrypt*** (string data [,string padding=pkcs1]) -> string
-* ***evp_pkey:sign***(string data[,digest md|string alg='sha1']) -> string
-* ***evp_pkey:verify***(string data,string sig[,digest md|string alg='sha1']) -> boolean
-
-
-#5. Cipher
 * ***openssl.cipher.list*** ([boolean alias=true])  -> array
  *  return all cipher methods default with alias
 * ***openssl.cipher.get*** (string alg|int alg_id|asn1_object obj) => evp_cipher
@@ -247,31 +166,94 @@ If a padding string value other than above is used as input (ignore capital), it
 * ***cipher_ctx:final()*** -> string
   * return result string, may be 0 length
 
-#6. Message Digest
+#4. Public/Private key functions
 
-* ***openssl.digest.list*** ([boolean alias=true])  -> array
- * Return all md methods default with alias
-* ***openssl.digest.get***(string alg|int alg_id|openssl.asn1_object obj) => openssl.evp_digest
- * Return a evp_digest object
-* ***openssl.digest.new*** (string alg|int alg_id|openssl.asn1_object obj) => openssl.evp_digest_ctx
- * Return a evp_digest_ctx object
-* ***openssl.digest*** (string alg|openssl.evp_digest obj, string msg [,boolean raw=false]) -> string
- * Return a hash value for msg, if raw is true, it will be hex encoded
-* ***evp_digest:new*** ([openssl.engine e]) => openssl.evp_digest_ctx
- * Return an evp_digest_ctx object
-* ***evp_digest:info*** () -> table
- * Return a table with key nid, name, size, block_size, pkey_type, and flags
-* ***evp_digest:digest*** (string msg[, openssl.engine e]) -> string
- * Return a binary hash value for msg
-* ***digest_ctx:info*** () -> table
- * Return a table with key block_size, size, type and digest
-* ***digest_ctx:update*** (string data) -> boolean
-* ***digest_ctx:final*** ([string last [,boolean raw=true]) -> string
- * Return a hash value,default is binaray
-* ***digest_ctx:reset*** () ->boolean
- * Cleanup evp_message_ctx to make it reusable.
+* ***openssl.pkey.new*** ([string alg='rsa' [,int bits=1024|512, [...]]]) => evp_pkey
+ * generate new keypair, support alg include rsa,dsa,dh,ec
+ * default alg is RSA key, bits=1024, 3rd argument e default is 0x10001
+ * dsa,with bits default 1024 ,and option seed data
+ * dh, with bits(prime_len) default 512,
+ * ec, with ec_name, and option flag
 
-#7. PKCS7 (S/MIME)
+* ***openssl.pkey.new*** ({alg='rsa|dsa|dh|ec', ... }) => evp_pkey
+ * this pattern pkey.new need table as pkey argument, and key 'alg' must be given.
+ ```
+ when arg is rsa, table may with key n,e,d,p,q,dmp1,dmq1,iqmp,both are string value
+ when arg is dsa, table may with key p,q,g,priv_key,pub_key,both are string value
+ when arg is dh, table may with key p,g,priv_key,pub_key,both are string value
+ when arg is ec, table may with D,X,Y,Z,both are string value
+```
+* private key should has it factor named n,q,e and so on, value is hex encoded string
+
+* ***openssl.pkey.read*** (string data|x509 cert [,bool public_key=true [,string passphrase]]) => evp_pkey
+ * Read from a file or a data, coerce it into a EVP_PKEY object.
+  It can be:
+  *1. X509 object -> public key will be extracted from it
+  *2. the key pem/der file data```
+
+* ***openssl.pkey.seal***(table pubkeys, string data[, cipher enc|string alg='RC4']) -> string,table
+ * Encrypts data using pubkeys in table, so that only owners of the respective private keys and ekeys can decrypt and read the data.
+ * Returns the sealed data and table containing encrypted keys, hold envelope keys on success, else nil.
+
+* ***openssl.pkey.seal***(evp_pkey pkey, string data[, cipher enc|string alg='RC4']) -> string,table
+ * Encrypts data using pubkeys, so that only owners of the respective private keys and ekeys can decrypt and read the data.
+ * Return sealed data,and encrypt key success, else nil.
+
+* ***openssl.pkey.open*** (evp_pkey key, string data, string ekey [, evp_cipher enc|string md_alg=RC4]) -> string
+ * Open/decrypt sealed data using private key,and the corresponding envelope key.
+ * Returns decrypted data on success and nil on failure.
+
+* ***openssl.pkey.sign*** (evp_pkey key, string data [, evp_digest md|string md_alg=SHA1]) ->string
+ * Uses key to create signature for data, returns signed result
+
+* ***openssl.pkey.verify*** (evp_pkey key, string data, string signature [, evp_digest md|string md_alg=SHA1]) ->boolean
+ * Uses key to verify that the signature is correct for the given data.
+
+* ***openssl.pkey.encrypt*** (evp_pkey key, string data [,string padding=pkcs1]) -> string
+ * Use key to encrypt data, default padding use 'pkcs1', data length should not longer than key size.
+
+* ***openssl.pkey.decrypt*** (evp_pkey key, string data [,string padding=pkcs1]) -> string
+ * Use key to decrypt data, default padding use 'pkcs1', data length must equals with key size.
+
+* ***evp_pkey:export*** ([boolean only_public = false [,boolean raw_key=false [,boolean pem=true,[, string passphrase]]]]) -> string
+ * If only_public is true, will export public key
+ * If raw_key is true, will export rsa, dsa or dh data
+ * If passphrase exists, export key will be encrypted with it
+
+* ***evp_peky:parse*** (evp_pkey key) -> table
+ * Returns a table with the key details (bits, pkey, and type)
+ * pkey may be rsa, dh, dsa, shown as table with factor hex encoded bignum.
+
+* ***evp_pkey:is_private*** () -> boolean
+ * Check whether the supplied key is a private key (by checking if the secret prime factors are set)
+
+* ***evp_pkey:compute_key***(string remote_public_key) -> string
+ * Compute shared secret for remote public key and local private key,Only for DH key.
+
+### About padding
+
+Currently supports 6 padding modes. They are:
+
+```
+	pkcs1:	RSA_PKCS1_PADDING	1
+	sslv23:	RSA_SSLV23_PADDING	2
+	no:	RSA_NO_PADDING		3
+	oaep:	RSA_PKCS1_OAEP_PADDING	4
+	x931:	RSA_X931_PADDING	5
+	pss:	RSA_PKCS1_PSS_PADDING	6
+```
+
+If a padding string value other than above is used as input (ignore capital), it will raise a Lua error.
+
+* ***evp_pkey:encrypt*** (string data [,string padding=pkcs1]) -> string
+* ***evp_pkey:decrypt*** (string data [,string padding=pkcs1]) -> string
+* ***evp_pkey:sign***(string data[,digest md|string alg='sha1']) -> string
+* ***evp_pkey:verify***(string data,string sig[,digest md|string alg='sha1']) -> boolean
+* ***evp_pkey:seal***(string data[, cipher enc|string alg='RC4']) -> string,table
+* ***evp_pkey.open***(string data, string ekey [, evp_cipher enc|string md_alg=RC4]) -> string
+
+
+#5. PKCS7 (S/MIME)
 
 * ***openssl.pkcs7.read***(bio|string in[,string format='auto']) => openssl.pkcs7,string
  * Read string or bio object, which include pkcs7 content, if success will return pkcs7 object or nil
@@ -302,7 +284,7 @@ If a padding string value other than above is used as input (ignore capital), it
  * export pkcs7 as a string, which can be to read
 
 * ***pkcs7:parse***() -> table
- * raturn a table has pkcs7 infomation, include type,and other things relate to types
+ * Return a table has pkcs7 infomation, include type,and other things relate to types
 
 
 They are based on apps/smime.c from the OpenSSL dist, so for more information,
@@ -320,7 +302,59 @@ not be included in the encoded section.
 
 flags is flag information as described above.
 
-#8. Certificate sign request and Certificate revocked list
+
+#6. PKCS12 Function
+
+* ***openssl.pkcs12.read*** (string pkcs12data, string pass) -> table
+ * Parses a PKCS12 data to a table
+ * Returns a table containing cert, pkey, and extracerts keys
+
+* ***openssl.pkcs12.export*** (x509 cert, evp_pkey pkey, string pass [[, string friendname ], table extracerts])) -> string
+ * Creates and exports a PKCS12 data
+ * friendname is optional, if supplied, must be as 4th parameter
+ * extracerts is optional, it can be as 4th or 5th parameter (if friendname is supplied)
+
+
+#7. Certificate
+
+##X509 certificate
+
+* ***openssl.x509.read*** (string val) => x509
+ * val is a string containing the data from the certificate file
+
+* ***x509:export*** ([bool notext=true]) -> string
+ * export x509 as certificate content data
+
+* ***x509:parse*** ([bool shortnames=true]) -> table
+ * returns a table which contains all x509 information
+
+* ***x509:get_public*** () => evp_pkey
+
+* ***x509:check*** (evp_pkey pkey) -> boolean
+
+* ***x509:check*** (sk_x509 ca [,sk_x509 untrusted[,string purpose]])->boolean
+ * purpose can be one of: ssl_client, ssl_server, ns_ssl_server, smime_sign, smime_encrypt, crl_sign, any, ocsp_helper, timestamp_sign
+ * ca is an openssl.stack_of_x509 object contain certchain.
+ * untrusted is an openssl.stack_of_x509 object containing a bunch of certs that are not trusted but may be useful in validating the certificate.
+
+***openssl.stack_of_x509*** is an important object in lua-openssl, it can be used as a certchain, trusted CA files or unstrust certs.
+
+* ***openssl.sk_x509_read*** (filename) => sk_x509
+* ***openssl.sk_x509_new*** ([table array={}]} =>sk_x509
+
+* ***sk_x509:push*** (openssl.x509 cert) => sk_x509
+* ***sk_x509:pop*** () => x509
+* ***sk_x509:set*** (number i, x509 cert) =>sk_x509
+* ***sk_x509:get*** (number i) => x509
+* ***sk_x509:insert*** (x509 cert,number i, ) =>sk_x509
+* ***sk_x509:delete*** (number i) => x509
+* ***sk_x509:totable*** () -> table
+ * table as array contain x509 from index 1
+* ***sk_x509:sort*** ()
+
+`#sk_x509` returns the number of certs in stack_of_x509
+
+##certificate sign request
 
 * ***openssl.csr.new*** (evp_pkey privkey, table dn={} [,table args = nil]) => x509_req
  * Generates CSR with gived private key, dn, and extraattribs */
@@ -330,6 +364,8 @@ flags is flag information as described above.
 * ***x509_req:export*** ([boolean pem=true [, boolean noext=true]])->string
 * ***x509_req:get_public*** () -> evp_pkey
 * ***x509_req:parse() -> table
+
+##Certificate revocked list
 
 * ***openssl.crl_read*** (string data) => x509_crl
 * ***openssl.crl_new*** (number version, x509 cacert,number lastUpdate, number nextUpdate, table revoked{hexserial=time,...}) => x509_crl
@@ -372,20 +408,9 @@ flags is flag information as described above.
     }
 ```
 
+#8. SSL
 
-#9. PKCS12 Function
-
-* ***openssl.pkcs12.read*** (string pkcs12data, string pass) -> table
- * Parses a PKCS12 data to a table
- * Returns a table containing cert, pkey, and extracerts keys
-
-* ***openssl.pkcs12.export*** (x509 cert, evp_pkey pkey, string pass [[, string friendname ], table extracerts])) -> string
- * Creates and exports a PKCS12 data
- * friendname is optional, if supplied, must be as 4th parameter
- * extracerts is optional, it can be as 4th or 5th parameter (if friendname is supplied)
-
-
-#10. Misc Functions and Objects
+#9. Misc Functions and Objects
 
 ##Funcions
 
@@ -403,9 +428,21 @@ flags is flag information as described above.
 * ***openssl.random***(number length[, boolean strong]) -> string
  * Return a random string with length
 
-* ***openssl.object***(number nid[,string name[,string alias]]) -> boolean|asn1_object
- * When given nid only, if nid exist return ans1_object,or nil
- * When nid followed by name, will create new asn1_object,return boolean for result
+* ***openssl.object***(string oid, string name [, string alias]) -> boolean
+ * Add an object, return true for success or nil
+
+* ***openssl.object***(number nid|string name) => asn1_object
+ * Return asn1_object if exist or nil
+
+* ***openssl.random*** (number length [, boolean strong=false]) -> string, boolean
+ * Returns a string of the length specified filled with random bytes
+
+* ***openssl.error*** ([boolean verbose=false]) -> number, string[,string]
+ * If an error is found, it will return an error number code, followed by description string or it will return nothing and clear the error state, so you can call it twice.
+ * When set verbose true, 3rd value returned is verbose message
+
+* ***openssl.engine*** (string id) => openssl.engine
+
 
 ##Objects
 ###openssl.bio
@@ -434,33 +471,6 @@ flags is flag information as described above.
 
 ###openssl.engine
 ***openssl.engine*** is a help object, it can change openssl default action.
-
-###mis
-* ***openssl.sign*** (string data,  evp_pkey key [, evp_digest md|string md_alg=SHA1]) ->string
- * Uses key to create signature for data, returns signed result
-
-* ***openssl.verify*** (string data, string signature, evp_pkey key [, evp_digest md|string md_alg=SHA1]) ->boolean
- * Uses key to verify that the signature is correct for the given data.
-
-* ***openssl.seal*** (string data, table pubkeys [, evp_cipher enc|string md_alg=RC4]) -> string, table
- * Encrypts data using pubkeys, so that only owners of the respective private keys and ekeys can decrypt and read the data.
- * Returns the sealed data and table containing ekeys, hold envelope keys on success, else nil.
-
-* ***openssl.open*** (string data, string ekey, int privkey, [, evp_cipher enc|string md_alg=RC4]) -> string
- * Opens (decrypts) sealed data using a private key and the corresponding envelope key.
- * Returns decrypted data on success and nil on failure.
-
-* ***openssl.object_create*** (string oid, string name [, string alias] ) -> boolean
- * Add a single object.
-
-* ***openssl.object_create*** (tables args) -> boolean
- * Add multiple objects, args must be an array index starting from 1, and every node is a table and have oid, name and an optional alias key.
-
-* ***openssl.random_bytes*** (number length [, boolean strong=false]) -> string, boolean
- * Returns a string of the length specified filled with random bytes
-
-* ***openssl.error_string*** () -> number, string
- * If an error is found, it will return an error number code, followed by description string or it will return nothing and clear the error state, so you can call it twice.
 
 
 #A.   Howto

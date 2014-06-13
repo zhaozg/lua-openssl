@@ -101,8 +101,6 @@ enum lua_openssl_cipher_type {
 };
 
 X509_STORE * setup_verify(STACK_OF(X509)* calist);
-void add_assoc_asn1_string(lua_State*L, char * key, ASN1_STRING * str);
-
 
 #define LUA_FUNCTION(X) int X(lua_State *L)
 
@@ -186,9 +184,6 @@ void openssl_add_method(const OBJ_NAME *name, void *arg);
 
 void add_assoc_name_entry(lua_State*L, const  char *key, X509_NAME *name, int shortname);
 void add_assoc_x509_extension(lua_State*L, const char* key, STACK_OF(X509_EXTENSION)* ext, BIO* bio);
-
-void add_assoc_string(lua_State *L, const char*name, const char*val);
-void add_assoc_int(lua_State* L, const char* i, int b);
 
 time_t asn1_time_to_time_t(ASN1_UTCTIME * timestr);
 

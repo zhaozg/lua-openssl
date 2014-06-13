@@ -374,12 +374,12 @@ static LUA_FUNCTION(openssl_cipher_info)
 {
     EVP_CIPHER *cipher = CHECK_OBJECT(1,EVP_CIPHER, "openssl.evp_cipher");
     lua_newtable(L);
-    add_assoc_string(L,"name", EVP_CIPHER_name(cipher));
-    add_assoc_int(L,"block_size", EVP_CIPHER_block_size(cipher));
-    add_assoc_int(L,"key_length", EVP_CIPHER_key_length(cipher));
-    add_assoc_int(L,"iv_length", EVP_CIPHER_iv_length(cipher));
-    add_assoc_int(L,"flags", EVP_CIPHER_flags(cipher));
-    add_assoc_int(L,"mode", EVP_CIPHER_mode(cipher));
+    AUXILIAR_SET(L,"name", EVP_CIPHER_name(cipher),string);
+    AUXILIAR_SET(L,"block_size", EVP_CIPHER_block_size(cipher), integer);
+    AUXILIAR_SET(L,"key_length", EVP_CIPHER_key_length(cipher), integer);
+    AUXILIAR_SET(L,"iv_length", EVP_CIPHER_iv_length(cipher), integer);
+    AUXILIAR_SET(L,"flags", EVP_CIPHER_flags(cipher), integer);
+    AUXILIAR_SET(L,"mode", EVP_CIPHER_mode(cipher), integer);
 
     return 1;
 }
@@ -475,13 +475,13 @@ static LUA_FUNCTION(openssl_cipher_ctx_info)
 {
     EVP_CIPHER_CTX *ctx = CHECK_OBJECT(1,EVP_CIPHER_CTX, "openssl.evp_cipher_ctx");
     lua_newtable(L);
-    add_assoc_int(L,"block_size", EVP_CIPHER_CTX_block_size(ctx));
-    add_assoc_int(L,"key_length", EVP_CIPHER_CTX_key_length(ctx));
-    add_assoc_int(L,"iv_length", EVP_CIPHER_CTX_iv_length(ctx));
-    add_assoc_int(L,"flags", EVP_CIPHER_CTX_flags(ctx));
-    add_assoc_int(L,"nid", EVP_CIPHER_CTX_nid(ctx));
-    add_assoc_int(L,"type", EVP_CIPHER_CTX_mode(ctx));
-    add_assoc_int(L,"mode", EVP_CIPHER_CTX_type(ctx));
+    AUXILIAR_SET(L,"block_size", EVP_CIPHER_CTX_block_size(ctx),integer);
+    AUXILIAR_SET(L,"key_length", EVP_CIPHER_CTX_key_length(ctx),integer);
+    AUXILIAR_SET(L,"iv_length", EVP_CIPHER_CTX_iv_length(ctx),integer);
+    AUXILIAR_SET(L,"flags", EVP_CIPHER_CTX_flags(ctx),integer);
+    AUXILIAR_SET(L,"nid", EVP_CIPHER_CTX_nid(ctx),integer);
+    AUXILIAR_SET(L,"type", EVP_CIPHER_CTX_mode(ctx),integer);
+    AUXILIAR_SET(L,"mode", EVP_CIPHER_CTX_type(ctx),integer);
     PUSH_OBJECT((void*)EVP_CIPHER_CTX_cipher(ctx),"openssl.evp_cipher");
     lua_setfield(L,-2,"cipher");
     return 1;

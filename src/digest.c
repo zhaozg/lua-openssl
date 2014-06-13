@@ -136,13 +136,13 @@ static LUA_FUNCTION(openssl_digest_info)
 {
 	EVP_MD *md = CHECK_OBJECT(1,EVP_MD, "openssl.evp_digest");
 	lua_newtable(L);
-	add_assoc_int(L,"nid", EVP_MD_nid(md));
-	add_assoc_string(L,"name", EVP_MD_name(md));
-	add_assoc_int(L,"size", EVP_MD_size(md));
-	add_assoc_int(L,"block_size", EVP_MD_block_size(md));
+	AUXILIAR_SET(L,"nid", EVP_MD_nid(md),integer);
+	AUXILIAR_SET(L,"name", EVP_MD_name(md),string);
+	AUXILIAR_SET(L,"size", EVP_MD_size(md),integer);
+	AUXILIAR_SET(L,"block_size", EVP_MD_block_size(md),integer);
 
-	add_assoc_int(L,"pkey_type", EVP_MD_pkey_type(md));
-	add_assoc_int(L,"flags", EVP_MD_type(md));
+	AUXILIAR_SET(L,"pkey_type", EVP_MD_pkey_type(md),integer);
+	AUXILIAR_SET(L,"flags", EVP_MD_type(md),integer);
 	return 1;
 }
 
@@ -167,9 +167,9 @@ static LUA_FUNCTION(openssl_digest_ctx_info)
 {
 	EVP_MD_CTX *ctx = CHECK_OBJECT(1,EVP_MD_CTX, "openssl.evp_digest_ctx");
 	lua_newtable(L);
-	add_assoc_int(L,"block_size", EVP_MD_CTX_block_size(ctx));
-	add_assoc_int(L,"size", EVP_MD_CTX_size(ctx));
-	add_assoc_int(L,"type", EVP_MD_CTX_type(ctx));
+	AUXILIAR_SET(L,"block_size", EVP_MD_CTX_block_size(ctx),integer);
+	AUXILIAR_SET(L,"size", EVP_MD_CTX_size(ctx),integer);
+	AUXILIAR_SET(L,"type", EVP_MD_CTX_type(ctx),integer);
 
 	PUSH_OBJECT((void*)EVP_MD_CTX_md(ctx),"openssl.evp_digest");
 	lua_setfield(L,-2,"digest");

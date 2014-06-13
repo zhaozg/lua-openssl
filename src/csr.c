@@ -361,7 +361,7 @@ static LUA_FUNCTION(openssl_csr_parse)
     char *name = NULL;
 
     lua_newtable(L);
-    add_assoc_int(L,"version",ASN1_INTEGER_get(csr->req_info->version));
+    AUXILIAR_SET(L,"version",ASN1_INTEGER_get(csr->req_info->version),integer);
     add_assoc_name_entry(L, "subject", subject, shortnames);
 
 
@@ -435,7 +435,7 @@ static LUA_FUNCTION(openssl_csr_parse)
                     {
 #if OPENSSL_VERSION_NUMBER > 0x10000000L
                         char *value = OPENSSL_uni2asc(av->value.bmpstring->data,av->value.bmpstring->length);
-                        add_assoc_string(L, name?name:"bmpstring", value);
+                        AUXILIAR_SET(L, name?name:"bmpstring", value,string);
                         OPENSSL_free(value);
 #else
                         lua_pushlstring(L,(const char*)av->value.bmpstring->data,av->value.bmpstring->length);

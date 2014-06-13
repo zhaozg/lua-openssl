@@ -6,23 +6,6 @@
 \*=========================================================================*/
 #include "openssl.h"
 
-void add_assoc_int(lua_State* L, const char* name, int b) {
-    lua_pushinteger(L,b);
-    lua_setfield(L,-2,name);
-}
-
-void add_assoc_string(lua_State *L, const char*name, const char*val) {
-    lua_pushstring(L,val);
-    lua_setfield(L,-2,name);
-}
-
-
-void add_assoc_asn1_string(lua_State*L, char * key, ASN1_STRING * str) /* {{{ */
-{
-    lua_pushlstring(L,(char *)str->data, str->length);
-    lua_setfield(L,-2,key);
-}
-
 
 time_t asn1_time_to_time_t(ASN1_UTCTIME * timestr) /* {{{ */
 {
