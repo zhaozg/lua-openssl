@@ -6,6 +6,7 @@
 \*=========================================================================*/
 
 #include "openssl.h"
+#include "private.h"
 
 #define MYNAME		"cipher"
 #define MYVERSION	MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
@@ -374,12 +375,12 @@ static LUA_FUNCTION(openssl_cipher_info)
 {
     EVP_CIPHER *cipher = CHECK_OBJECT(1,EVP_CIPHER, "openssl.evp_cipher");
     lua_newtable(L);
-    AUXILIAR_SET(L,"name", EVP_CIPHER_name(cipher),string);
-    AUXILIAR_SET(L,"block_size", EVP_CIPHER_block_size(cipher), integer);
-    AUXILIAR_SET(L,"key_length", EVP_CIPHER_key_length(cipher), integer);
-    AUXILIAR_SET(L,"iv_length", EVP_CIPHER_iv_length(cipher), integer);
-    AUXILIAR_SET(L,"flags", EVP_CIPHER_flags(cipher), integer);
-    AUXILIAR_SET(L,"mode", EVP_CIPHER_mode(cipher), integer);
+    AUXILIAR_SET(L,-1,"name", EVP_CIPHER_name(cipher),string);
+    AUXILIAR_SET(L,-1,"block_size", EVP_CIPHER_block_size(cipher), integer);
+    AUXILIAR_SET(L,-1,"key_length", EVP_CIPHER_key_length(cipher), integer);
+    AUXILIAR_SET(L,-1,"iv_length", EVP_CIPHER_iv_length(cipher), integer);
+    AUXILIAR_SET(L,-1,"flags", EVP_CIPHER_flags(cipher), integer);
+    AUXILIAR_SET(L,-1,"mode", EVP_CIPHER_mode(cipher), integer);
 
     return 1;
 }
@@ -475,15 +476,15 @@ static LUA_FUNCTION(openssl_cipher_ctx_info)
 {
     EVP_CIPHER_CTX *ctx = CHECK_OBJECT(1,EVP_CIPHER_CTX, "openssl.evp_cipher_ctx");
     lua_newtable(L);
-    AUXILIAR_SET(L,"block_size", EVP_CIPHER_CTX_block_size(ctx),integer);
-    AUXILIAR_SET(L,"key_length", EVP_CIPHER_CTX_key_length(ctx),integer);
-    AUXILIAR_SET(L,"iv_length", EVP_CIPHER_CTX_iv_length(ctx),integer);
-    AUXILIAR_SET(L,"flags", EVP_CIPHER_CTX_flags(ctx),integer);
-    AUXILIAR_SET(L,"nid", EVP_CIPHER_CTX_nid(ctx),integer);
-    AUXILIAR_SET(L,"type", EVP_CIPHER_CTX_mode(ctx),integer);
-    AUXILIAR_SET(L,"mode", EVP_CIPHER_CTX_type(ctx),integer);
-    PUSH_OBJECT((void*)EVP_CIPHER_CTX_cipher(ctx),"openssl.evp_cipher");
-    lua_setfield(L,-2,"cipher");
+    AUXILIAR_SET(L,-1,"block_size", EVP_CIPHER_CTX_block_size(ctx),integer);
+    AUXILIAR_SET(L,-1,"key_length", EVP_CIPHER_CTX_key_length(ctx),integer);
+    AUXILIAR_SET(L,-1,"iv_length", EVP_CIPHER_CTX_iv_length(ctx),integer);
+    AUXILIAR_SET(L,-1,"flags", EVP_CIPHER_CTX_flags(ctx),integer);
+    AUXILIAR_SET(L,-1,"nid", EVP_CIPHER_CTX_nid(ctx),integer);
+    AUXILIAR_SET(L,-1,"type", EVP_CIPHER_CTX_mode(ctx),integer);
+    AUXILIAR_SET(L,-1,"mode", EVP_CIPHER_CTX_type(ctx),integer);
+
+    AUXILIAR_SETOBJECT(L, EVP_CIPHER_CTX_cipher(ctx),"openssl.evp_cipher", -1,"cipher");
     return 1;
 }
 

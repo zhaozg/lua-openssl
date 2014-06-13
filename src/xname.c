@@ -46,8 +46,7 @@ int XNAME_to_ltable(lua_State*L, X509_NAME * xname,int idx, int shortname){
         int nid = OBJ_obj2nid(obj);
 		const char* name = shortname ? OBJ_nid2sn(nid) : OBJ_nid2ln(nid);
 
-		lua_pushlstring(L, ASN1_STRING_data(str), ASN1_STRING_length(str));
-		lua_setfield(L, idx, name);
+		AUXILIAR_SETLSTR(L,idx,name,ASN1_STRING_data(str), ASN1_STRING_length(str));
 
 		lua_pushstring(L,name);
 		lua_rawseti(L, idx, i+1);

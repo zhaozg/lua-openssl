@@ -312,15 +312,13 @@ static LUA_FUNCTION(openssl_crl_parse) {
     ASN1_INTEGER *crlnum;
 
     lua_newtable(L);
-    lua_pushinteger(L, X509_CRL_get_version(crl));
-    lua_setfield(L, -2, "version");
+	AUXILIAR_SET(L, -1, "version", X509_CRL_get_version(crl), integer);
 
     /* hash as used in CA directories to lookup cert by subject name */
     {
         char buf[32];
         snprintf(buf, sizeof(buf), "%08lx", X509_NAME_hash(X509_CRL_get_issuer(crl)));
-        lua_pushstring(L,buf);
-        lua_setfield(L,-2,"hash");
+		AUXILIAR_SET(L, -1, "hash", buf, string);
     }
 #if 1
     {
@@ -331,10 +329,9 @@ static LUA_FUNCTION(openssl_crl_parse) {
         if (X509_CRL_digest(crl,digest,md,(unsigned int*)&n))
         {
 		lua_newtable(L);
-		lua_pushstring(L, OBJ_nid2sn(EVP_MD_type(digest)));
-		lua_setfield(L,-2,"alg");
-		lua_pushlstring(L,(const char*)md,n);
-		lua_setfield(L,-2,"hash");
+		AUXILIAR_SET(L, -1, "alg", OBJ_nid2sn(EVP_MD_type(digest)), string);
+		AUXILIAR_SETLSTR(L,-1,"hash",(const char*)md,n);
+
 		lua_setfield(L,-2,"fingerprint");
         }
     }
@@ -342,19 +339,15 @@ static LUA_FUNCTION(openssl_crl_parse) {
 
     add_assoc_name_entry(L, "issuer", 	X509_CRL_get_issuer(crl), useshortnames);
 
-    ADD_ASSOC_ASN1_TIME(bio, X509_CRL_get_lastUpdate(crl), "lastUpdate");
-    ADD_ASSOC_ASN1_TIME(bio, X509_CRL_get_nextUpdate(crl), "nextUpdate");
+	AUXILIAR_SETOBJECT(L,X509_CRL_get_lastUpdate(crl),"openssl.asn1_time",-1,"lastUpdate");
+
+	AUXILIAR_SETOBJECT(L,X509_CRL_get_nextUpdate(crl),"openssl.asn1_time",-1, "nextUpdate");
 
     i = OBJ_obj2nid(crl->crl->sig_alg->algorithm);
-    lua_pushstring(L, i==NID_undef ? "NONE": OBJ_nid2ln(i));
-    lua_setfield(L, -2, "sig_alg");
+	AUXILIAR_SET(L, -1, "sig_alg", i==NID_undef ? "NONE": OBJ_nid2ln(i), string);
 
     crlnum = X509_CRL_get_ext_d2i(crl, NID_crl_number,NULL, NULL);
-    if(crlnum) {
-        i2a_ASN1_INTEGER(bio, crlnum);
-        ASN1_INTEGER_free(crlnum);
-        ADD_ASSOC_BIO(bio,"crl_number");
-    }
+	AUXILIAR_SETOBJECT(L, crlnum,"openssl.asn1_string",-1,"crl_number");
 
     add_assoc_x509_extension(L, "extensions", crl->crl->extensions, bio);
 
@@ -366,21 +359,18 @@ static LUA_FUNCTION(openssl_crl_parse) {
             lua_newtable(L);
 
 #if OPENSSL_VERSION_NUMBER > 0x10000000L
-            lua_pushstring(L,reason_flags[revoked->reason].lname);
-            lua_setfield(L,-2,"CRLReason");
+			AUXILIAR_SET(L, -1, "CRLReason", reason_flags[revoked->reason].lname, string);
 #else
             {
                 int crit = 0;
                 void* reason = X509_REVOKED_get_ext_d2i(revoked, NID_crl_reason,&crit, NULL);
 
-                lua_pushstring(L,reason_flags[ASN1_ENUMERATED_get(reason)].lname);
-                lua_setfield(L,-2,"CRLReason");
+				AUXILIAR_SET(L, -1, "CRLReason", reason_flags[ASN1_ENUMERATED_get(reason)].lname, string);
                 ASN1_ENUMERATED_free(reason);
             }
 #endif
-
-            ADD_ASSOC_ASN1(ASN1_INTEGER, bio, revoked->serialNumber,"serialNumber");
-            ADD_ASSOC_ASN1_TIME(bio, revoked->revocationDate, "revocationDate");
+			AUXILIAR_SETOBJECT(L, revoked->serialNumber, "openssl.asn1_string", -1, "serialNumber");
+			AUXILIAR_SETOBJECT(L, revoked->revocationDate, "openssl.asn1_string", -1, "revocationDate");
 
             add_assoc_x509_extension(L, "extensions", revoked->extensions, bio);
 

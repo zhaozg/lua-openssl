@@ -149,12 +149,14 @@ static int openssl_ocsp_request_parse(lua_State*L){
 	BIO* bio = BIO_new(BIO_s_mem());
 	int i,num;
 	lua_newtable(L);
-	lua_pushinteger(L, ASN1_INTEGER_get(inf->version));
-	lua_setfield(L,-2,"version");
+	AUXILIAR_SET(L, -1, "version", ASN1_INTEGER_get(inf->version), integer);
 	if(inf->requestorName){
+		BUF_MEM *buf;
 		GENERAL_NAME_print(bio, inf->requestorName);
-		ADD_ASSOC_BIO(bio, "requestorName");
-		BIO_reset(bio);
+
+		BIO_get_mem_ptr(bio, &buf);
+		AUXILIAR_SETLSTR(L, -1, "requestorName", buf->data, buf->length);
+		BIO_reset(bio);	
 	}
 	num = sk_OCSP_ONEREQ_num(inf->requestList);
 	lua_newtable(L);
@@ -163,20 +165,10 @@ static int openssl_ocsp_request_parse(lua_State*L){
 		OCSP_CERTID *a = one->reqCert;
 		lua_newtable(L);
 		{
-			i2a_ASN1_OBJECT(bio, a->hashAlgorithm->algorithm);
-			ADD_ASSOC_BIO(bio, "hashAlgorithm");
-
-			BIO_reset(bio);
-			i2a_ASN1_STRING(bio, a->issuerNameHash, V_ASN1_OCTET_STRING);
-			ADD_ASSOC_BIO(bio, "issuerNameHash");
-
-			BIO_reset(bio);
-			i2a_ASN1_STRING(bio, a->issuerKeyHash, V_ASN1_OCTET_STRING);
-			ADD_ASSOC_BIO(bio, "issuerKeyHash");
-
-			BIO_reset(bio);
-			i2a_ASN1_INTEGER(bio, a->serialNumber);
-			ADD_ASSOC_BIO(bio, "serialNumber");
+			AUXILIAR_SETOBJECT(L, a->hashAlgorithm->algorithm,"openssl.asn1_object",-1, "hashAlgorithm");
+			AUXILIAR_SETOBJECT(L, a->issuerNameHash,"openssl.asn1_string",-1, "issuerNameHash");
+			AUXILIAR_SETOBJECT(L, a->issuerKeyHash,"openssl.asn1_string",-1, "issuerKeyHash");
+			AUXILIAR_SETOBJECT(L, a->serialNumber,"openssl.asn1_string",-1, "serialNumber");
 		}
 		lua_rawseti(L, -2, i+1);
 	}

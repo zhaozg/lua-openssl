@@ -5,6 +5,8 @@
 * Author:  george zhao <zhaozg(at)gmail.com>
 \*=========================================================================*/
 #include "openssl.h"
+#include "private.h"
+
 #define MYNAME		"ec"
 #define MYVERSION	MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
 	"based on OpenSSL " SHLIB_VERSION_NUMBER
@@ -87,36 +89,23 @@ static int openssl_ec_group_parse(lua_State*L)
 	lua_newtable(L);
 	if(generator)
 	{
-		PUSH_OBJECT(generator,"openssl.ec_point");
-		lua_setfield(L, -2, "generator");
+		AUXILIAR_SETOBJECT(L, generator,"openssl.ec_point", -1, "generator");
 	}
 
 	order = BN_new();
 	EC_GROUP_get_order(group,order,ctx);
-	PUSH_OBJECT(order,"openssl.bn");
-	lua_setfield(L, -2, "order");
+	AUXILIAR_SETOBJECT(L, order,"openssl.bn",-1, "order");
 
 	cofactor = BN_new();
 	EC_GROUP_get_cofactor(group,cofactor,ctx);
-	PUSH_OBJECT(cofactor,"openssl.bn");
-	lua_setfield(L, -2, "cofactor");
+	AUXILIAR_SETOBJECT(L,cofactor,"openssl.bn", -1, "cofactor");
 
-	lua_pushinteger(L, EC_GROUP_get_asn1_flag(group));
-	lua_setfield(L, -2, "asn1_flag");
+	AUXILIAR_SET(L, -1, "asn1_flag", EC_GROUP_get_asn1_flag(group), integer);
+	AUXILIAR_SET(L, -1, "degree", EC_GROUP_get_degree(group), integer);
+	AUXILIAR_SET(L, -1, "curve_name", EC_GROUP_get_curve_name(group), integer);
+	AUXILIAR_SET(L, -1, "conversion_form", EC_GROUP_get_point_conversion_form(group), integer);
 
-	lua_pushinteger(L, EC_GROUP_get_degree(group));
-	lua_setfield(L, -2, "degree");
-
-	lua_pushlstring(L,EC_GROUP_get0_seed(group),EC_GROUP_get_seed_len(group));
-	lua_setfield(L,-2,"seed");
-
-	lua_pushinteger(L,EC_GROUP_get_curve_name(group));
-	lua_setfield(L,-2,"curve_name");
-
-	lua_pushinteger(L,EC_GROUP_get_point_conversion_form(group));
-	lua_setfield(L,-2,"conversion_form");
-
-	
+	AUXILIAR_SETLSTR(L, -1,"seed", EC_GROUP_get0_seed(group),EC_GROUP_get_seed_len(group));
 	
 	X = BN_new();
 	Y = BN_new();
@@ -124,12 +113,9 @@ static int openssl_ec_group_parse(lua_State*L)
 	EC_GROUP_get_curve_GFp(group, P,X,Y,ctx);
 	lua_newtable(L);
 	{
-		PUSH_OBJECT(P,"openssl.bn");
-		lua_setfield(L, -2, "P");
-		PUSH_OBJECT(X,"openssl.bn");
-		lua_setfield(L, -2, "X");
-		PUSH_OBJECT(Y,"openssl.bn");
-		lua_setfield(L, -2, "Y");
+		AUXILIAR_SETOBJECT(L,P,"openssl.bn", -1, "P");
+		AUXILIAR_SETOBJECT(L,X,"openssl.bn", -1, "X");
+		AUXILIAR_SETOBJECT(L,Y,"openssl.bn", -1, "Y");
 	}
 	lua_setfield(L,-2,"curve");
 	BN_CTX_free(ctx);
@@ -219,8 +205,7 @@ static LUA_FUNCTION(openssl_ec_list_curve_name) {
 		if (comment == NULL) comment = "CURVE DESCRIPTION NOT AVAILABLE";
 		if (sname == NULL) 	sname = "";
 
-		lua_pushstring(L, comment);
-		lua_setfield(L, -2, sname);
+		AUXILIAR_SET(L,-1,sname,comment,string);
 	}
 
 	OPENSSL_free(curves);

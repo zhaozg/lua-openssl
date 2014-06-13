@@ -37,15 +37,23 @@
 #define luaL_reg luaL_Reg
 #endif
 
-#define AUXILIAR_SET(L, lvar, cval, ltype)	\
+#define AUXILIAR_SET(L,tidx, lvar, cval, ltype)	\
 	do {									\
+	int n = tidx < 0 ? tidx-1 : tidx;		\
 	lua_push##ltype(L, (cval));				\
-	lua_setfield(L, -2, lvar);				\
+	lua_setfield(L, n, lvar);				\
 	} while(0)
 
-#define AUXLIAR_GET(L, lvar, cvar, ltype)	\
+#define AUXILIAR_SETLSTR(L,tidx, lvar, cval,len)	\
 	do {									\
-	lua_getfield(L, -1, lvar);				\
+	int n = tidx < 0 ? tidx-1 : tidx;		\
+	lua_pushlstring(L, (cval),len);				\
+	lua_setfield(L, n, lvar);				\
+	} while(0)
+
+#define AUXLIAR_GET(L,tidx, lvar, cvar, ltype)	\
+	do {									\
+	lua_getfield(L, tidx, lvar);			\
 	cvar = lua_to##ltype(L, -1);			\
 	lua_pop(L, 1);							\
 	} while(0)

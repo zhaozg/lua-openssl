@@ -107,8 +107,7 @@ static void dump_value_doall_arg(CONF_VALUE *a, lua_State *L)
             lua_setfield(L,-2,a->section);
             lua_getfield(L,-1,a->section);
         }
-        lua_pushstring(L,a->value);
-        lua_setfield(L,-2,a->name);
+		AUXILIAR_SET(L, -1, a->name, a->value, string);
         lua_pop(L,1);
     }
     else
@@ -126,8 +125,7 @@ static void dump_value_doall_arg(CONF_VALUE *a, lua_State *L)
             }
         } else
         {
-            lua_pushstring(L,a->value);
-            lua_setfield(L,-2,a->name);
+			AUXILIAR_SET(L, -1, a->name, a->value, string);
         }
     }
 }

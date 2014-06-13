@@ -561,22 +561,17 @@ static int openssl_ssl_current_cipher(lua_State*L){
 
 	lua_newtable(L);
 
-	lua_pushstring(L,SSL_CIPHER_get_name(c));
-	lua_setfield(L, -2, "name");
+	AUXILIAR_SET(L, -1, "name", SSL_CIPHER_get_name(c), string);
+	AUXILIAR_SET(L, -1, "version", SSL_CIPHER_get_version(c), string);
 
-	lua_pushstring(L,SSL_CIPHER_get_version(c));
-	lua_setfield(L, -2, "version");
 #if OPENSSL_VERSION_NUMBER > 0x10000000L
-	lua_pushinteger(L, SSL_CIPHER_get_id(c));
-	lua_setfield(L, -2, "id");
+	AUXILIAR_SET(L, -1, "id", SSL_CIPHER_get_id(c), integer);
 #endif
 	if(SSL_CIPHER_get_bits(c,&bits)==1){
-		lua_pushinteger(L, bits);
-		lua_setfield(L, -2, "bits");
+		AUXILIAR_SET(L, -1, "bits", bits, integer);
 	};
 
-	lua_pushstring(L, SSL_CIPHER_description((SSL_CIPHER*)c, B.buffer, sizeof(B.buffer)));
-	lua_setfield(L, -2, "description");
+	AUXILIAR_SET(L, -1, "description", SSL_CIPHER_description((SSL_CIPHER*)c, B.buffer, sizeof(B.buffer)), string);
 
 	return 1;
 }

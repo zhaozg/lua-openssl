@@ -6,6 +6,7 @@
 \*=========================================================================*/
 
 #include "openssl.h"
+#include "private.h"
 
 #define MYNAME		"pkey"
 #define MYVERSION	MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
@@ -645,9 +646,7 @@ static LUA_FUNCTION(openssl_pkey_parse)
     EVP_PKEY *pkey = CHECK_OBJECT(1,EVP_PKEY,"openssl.evp_pkey");
     lua_newtable(L);
 
-    lua_pushinteger(L,EVP_PKEY_bits(pkey));
-    lua_setfield(L,-2,"bits");
-
+	AUXILIAR_SET(L, -1, "bits",EVP_PKEY_bits(pkey), integer);
 
     /*TODO: Use the real values once the openssl constants are used
     * See the enum at the top of this file
@@ -670,9 +669,7 @@ static LUA_FUNCTION(openssl_pkey_parse)
 			lua_rawseti(L,-2, 0);
             lua_setfield(L,-2, "rsa");
 
-            lua_pushstring(L,"rsa");
-            lua_setfield(L,-2,"type");
-
+            AUXILIAR_SET(L,-1,"type","rsa",string);
         }
 
         break;
@@ -693,9 +690,7 @@ static LUA_FUNCTION(openssl_pkey_parse)
 
             lua_setfield(L,-2, "dsa");
 
-            lua_pushstring(L,"dsa");
-            lua_setfield(L,-2,"type");
-
+			AUXILIAR_SET(L, -1, "type","dsa", string);
         }
         break;
     case EVP_PKEY_DH:
@@ -710,9 +705,7 @@ static LUA_FUNCTION(openssl_pkey_parse)
 			lua_rawseti(L,-2, 0);
             lua_setfield(L,-2, "dh");
 
-            lua_pushstring(L,"dh");
-            lua_setfield(L,-2,"type");
-
+			AUXILIAR_SET(L, -1, "type","dh", string);
         }
 
         break;
@@ -725,32 +718,16 @@ static LUA_FUNCTION(openssl_pkey_parse)
 			const EC_GROUP* group = EC_KEY_get0_group(ec);
             lua_newtable(L);
 
-			/*
-            lua_pushinteger(L, pkey->pkey.ec->version);
-            lua_setfield(L, -2, "version");
-			*/
+			AUXILIAR_SET(L, -1, "enc_flag", EC_KEY_get_enc_flags(ec), integer);
+			AUXILIAR_SET(L, -1, "conv_form", EC_KEY_get_conv_form(ec), integer);
 
-            lua_pushinteger(L, EC_KEY_get_enc_flags(ec));
-            lua_setfield(L, -2, "enc_flag");
-
-            lua_pushinteger(L, EC_KEY_get_conv_form(ec));
-            lua_setfield(L, -2, "conv_form");
-
-			PUSH_OBJECT(point,"openssl.ec_point");
-            lua_setfield(L, -2, "pub_key");
-			
-			PUSH_OBJECT(group, "openssl.ec_group");
-			lua_setfield(L, -2, "group");
+			AUXILIAR_SETOBJECT(L,point,"openssl.ec_point",-1, "pub_key");			
+			AUXILIAR_SETOBJECT(L,group, "openssl.ec_group",-1, "group");
 
 			OPENSSL_PKEY_GET_BN(ec->priv_key, priv_key);
 
-
-			PUSH_OBJECT(ec,"openssl.ec_key");
-			lua_setfield(L,-2,"ec");
-
-
-            lua_pushstring(L,"ec");
-            lua_setfield(L,-2,"type");
+			AUXILIAR_SETOBJECT(L,ec,"openssl.ec_key",-1,"ec");
+			AUXILIAR_SET(L, -1, "type", "ec", string);
         }
 
         break;
@@ -941,7 +918,7 @@ static LUA_FUNCTION(openssl_sign)
         else
 			luaL_argerror(L, 3, "must be string for digest alg name, or openssl.evp_digest object,default use 'sha1'");
     }else
-        mdtype = EVP_get_digestbynid(OPENSSL_ALGO_SHA1);
+        mdtype = EVP_get_digestbyname("sha1");
 	if(mdtype){
 		int ret = 0;
 		EVP_MD_CTX md_ctx;
@@ -980,7 +957,7 @@ static LUA_FUNCTION(openssl_verify)
 		else
 			luaL_error(L, "#4 must be nil, string, or openssl.evp_digest object");
 	}else
-		mdtype = EVP_get_digestbynid(OPENSSL_ALGO_SHA1);
+		mdtype = EVP_get_digestbyname("sha1");
 	if(mdtype){
 		int result;
 		EVP_MD_CTX     md_ctx;

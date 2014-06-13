@@ -201,6 +201,10 @@ LUA_API int luaopen_openssl(lua_State*L)
 	luaopen_bio(L);
 	lua_setfield(L, -2, "bio");
 
+	luaopen_asn1(L);
+	lua_setfield(L, -2, "asn1");
+
+
 	luaopen_digest(L);
 	lua_setfield(L, -2, "digest");
 
@@ -244,7 +248,7 @@ LUA_API int luaopen_openssl(lua_State*L)
 
 	/* third part */
     luaopen_bn(L);
-    lua_setfield(L, -2, "bn");
+	lua_setfield(L, -2, "bn");
 
     return 1;
 }

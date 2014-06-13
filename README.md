@@ -469,6 +469,28 @@ flags is flag information as described above.
 * ***bio:type*** () -> string
 * ***bio:reset*** ()
 
+###openssl.asn1_string***
+
+* ***openssl.asn1.string_new***([string type='octet']) => asn1_string
+ * Create asn1_string, default will be 'octet' string.
+ * type must be in:	"bit", "octet","utf8","numeric","printable","t61","teletex",
+   "videotex","ia5","graphics","iso64","visible","general","unversal","bmp"
+
+* ***asn1_string:len***() or ***`#asn1_string`***
+ * Return length of string
+
+* ***asn1_string:data***() -> string
+ * Return raw data of string
+
+* ***asn1_string:data***(string s) -> boolean
+ * Set raw data to asn1_string
+
+* ***asn1_string:dup***() => asn1_string
+* ***asn1_string:toutf8***() -> string
+* ***asn1_string:type*** => string
+* ***asn1_string:equals***(asn1_string another) or ***asn1_string a==asn1_string b*** -> boolean
+ * Return true if equals or false
+
 ###openssl.engine
 ***openssl.engine*** is a help object, it can change openssl default action.
 

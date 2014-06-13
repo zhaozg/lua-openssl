@@ -16,29 +16,22 @@
 
 /*** openssl.x509_algor object ***/
 static LUA_FUNCTION(openssl_x509_algo_parse) {
-	X509_ALGOR *algo = CHECK_OBJECT(1,X509_ALGOR,"openssl.x509_algor");
-	BIO* bio = BIO_new(BIO_s_mem());
+	const X509_ALGOR *algo = CHECK_OBJECT(1,X509_ALGOR,"openssl.x509_algor");
 	lua_newtable(L);
-	ADD_ASSOC_ASN1(ASN1_OBJECT,bio,algo->algorithm,"algorithm");
-	//ADD_ASSOC_ASN1(ASN1_TYPE,bio,algo->parameter,"parameter");
-	BIO_free(bio);
+	AUXILIAR_SETOBJECT(L, algo->parameter, "openssl.asn1_type",   -1, "parameter");
+	AUXILIAR_SETOBJECT(L, algo->algorithm, "openssl.asn1_object", -1, "algorithm");
+
 	return 1;
 }
 
 /*** openssl.x509_extension object ***/
 static LUA_FUNCTION(openssl_x509_extension_parse) {
 	X509_EXTENSION *ext = CHECK_OBJECT(1,X509_EXTENSION,"openssl.x509_extension");
-	BIO* bio = BIO_new(BIO_s_mem());
 	lua_newtable(L);
-	lua_pushboolean(L,ext->critical);
-	lua_setfield(L,-2,"critical");
-	ADD_ASSOC_ASN1(ASN1_OBJECT,bio,ext->object,"object");
-	BIO_free(bio);
-	{
-		ASN1_OCTET_STRING *os = ext->value;
-		lua_pushlstring(L,(const char*)os->data, os->length);
-		lua_setfield(L,-2,"value");
-	}
+	AUXILIAR_SET(L, -1, "critical", ext->critical, boolean);
+	AUXILIAR_SETOBJECT(L, ext->object, "openssl.asn1_object", -1, "object");
+	AUXILIAR_SETOBJECT(L, ext->value, "openssl.asn1_string", -1, "value");
+
 	return 1;
 }
 
@@ -213,35 +206,29 @@ LUA_FUNCTION(openssl_x509_parse)
 
     lua_newtable(L);
     if (cert->name) {
-        lua_pushstring(L,cert->name);
-        lua_setfield(L,-2,"name");
+		AUXILIAR_SET(L, -1, "name", cert->name, string);
     }
 
-    lua_pushboolean(L,cert->valid);
-    lua_setfield(L,-2,"valid");
+    AUXILIAR_SET(L, -1, "valid", cert->valid, boolean);
 
     add_assoc_name_entry(L, "subject", 		X509_get_subject_name(cert), useshortnames);
     /* hash as used in CA directories to lookup cert by subject name */
     {
         char buf[32];
         snprintf(buf, sizeof(buf), "%08lx", X509_subject_name_hash(cert));
-        lua_pushstring(L,buf);
-        lua_setfield(L,-2,"hash");
+		AUXILIAR_SET(L, -1, "hash", buf, string);
     }
 
     add_assoc_name_entry(L, "issuer", 		X509_get_issuer_name(cert), useshortnames);
 
-    lua_pushinteger(L,X509_get_version(cert));
-    lua_setfield(L,-2,"version");
-
-    ADD_ASSOC_ASN1(ASN1_INTEGER, bio, cert->cert_info->serialNumber, "serialNumber");
-
-    ADD_ASSOC_ASN1_TIME(bio, X509_get_notBefore(cert), "notBefore");
-    ADD_ASSOC_ASN1_TIME(bio, X509_get_notAfter(cert), "notAfter");
+	AUXILIAR_SET(L, -1, "version", X509_get_version(cert), integer);
+	AUXILIAR_SETOBJECT(L, cert->cert_info->serialNumber, "openssl.asn1_string", -1, "serialNumber");
+	AUXILIAR_SETOBJECT(L,X509_get_notBefore(cert),"openssl.asn1_time", -1, "notBefore");
+	AUXILIAR_SETOBJECT(L,X509_get_notAfter(cert),"openssl.asn1_time",-1, "notAfter");
 
     tmpstr = (char *)X509_alias_get0(cert, NULL);
     if (tmpstr) {
-        AUXILIAR_SET(L, "alias",tmpstr,string);
+        AUXILIAR_SET(L,-1, "alias",tmpstr,string);
     }
 
     lua_newtable(L);
@@ -262,8 +249,8 @@ LUA_FUNCTION(openssl_x509_parse)
                lua_pushfstring(L,"%s CA",pname);
            }else
                lua_pushstring(L,pname);
-
-            lua_pushboolean(L,1);
+			
+		   lua_pushboolean(L,1);
             lua_settable(L,-3);
         }
         /* NOTE: if purpset > 1 then it's a warning - we should mention it ? */
@@ -271,8 +258,8 @@ LUA_FUNCTION(openssl_x509_parse)
     lua_setfield(L,-2,"purposes");
 
     add_assoc_x509_extension(L, "extensions", cert->cert_info->extensions, bio);
-    lua_pushboolean(L,X509_check_ca(cert));
-    lua_setfield(L, -2, "ca");
+	
+	AUXILIAR_SET(L, -1, "ca", X509_check_ca(cert), boolean);
 
     BIO_free(bio);
     return 1;
@@ -349,13 +336,6 @@ LUA_FUNCTION(openssl_x509_free)
     X509 *cert = CHECK_OBJECT(1,X509,"openssl.x509");
     X509_free(cert);
     return 0;
-}
-
-LUA_FUNCTION(openssl_x509_tostring)
-{
-    X509 *cert = CHECK_OBJECT(1,X509,"openssl.x509");
-    lua_pushfstring(L,"openssl.x509:%p",cert);
-    return 1;
 }
 
 LUA_FUNCTION(openssl_x509_public_key)
@@ -457,7 +437,7 @@ static luaL_Reg x509_funcs[] = {
 	{"check",		openssl_x509_check},
 	{"get_public",	openssl_x509_public_key},
 	{"__gc",		openssl_x509_free},
-	{"__tostring",	openssl_x509_tostring},
+	{"__tostring",	auxiliar_tostring},
 
 	{NULL,			NULL},
 };
@@ -490,4 +470,3 @@ LUALIB_API int luaopen_x509(lua_State *L)
 	lua_settable(L,-3);
 	return 1;
 }
-

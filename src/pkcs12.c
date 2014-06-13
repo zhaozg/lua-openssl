@@ -5,6 +5,7 @@
 * Author:  george zhao <zhaozg(at)gmail.com>
 \*=========================================================================*/
 #include "openssl.h"
+#include "private.h"
 
 #define MYNAME		"pkcs12"
 #define MYVERSION	MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
@@ -95,14 +96,9 @@ static LUA_FUNCTION(openssl_pkcs12_read)
     if(d2i_PKCS12_bio(bio_in, &p12) && PKCS12_parse(p12, pass, &pkey, &cert, &ca)) {
         lua_newtable(L);
 
-        PUSH_OBJECT(cert,"openssl.x509");
-        lua_setfield(L,-2,"cert");
-
-        PUSH_OBJECT(pkey,"openssl.evp_pkey");
-        lua_setfield(L,-2,"pkey");
-
-        PUSH_OBJECT(ca,"openssl.stack_of_x509");
-        lua_setfield(L,-2,"extracerts");
+        AUXILIAR_SETOBJECT(L,cert,"openssl.x509" ,-1,"cert");
+        AUXILIAR_SETOBJECT(L,pkey,"openssl.evp_pkey" ,-1,"pkey");
+        AUXILIAR_SETOBJECT(L,ca,"openssl.stack_of_x509" ,-1,"extracerts");
 
         return 1;
     }

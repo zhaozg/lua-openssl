@@ -6,6 +6,7 @@
 \*=========================================================================*/
 
 #include "openssl.h"
+#include "private.h"
 
 #define MYNAME		"pkcs7"
 #define MYVERSION	MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
@@ -174,7 +175,7 @@ static LUA_FUNCTION(openssl_pkcs7_encrypt)
 	BIO * infile = NULL;
 	long flags = 0;
 	PKCS7 * p7 = NULL;
-	const EVP_CIPHER *cipher = EVP_get_cipherbynid(OPENSSL_CIPHER_DEFAULT);
+	const EVP_CIPHER *cipher = NULL;
 	int ret = 0;
 	int top = lua_gettop(L);
 
@@ -318,9 +319,7 @@ static LUA_FUNCTION(openssl_pkcs7_parse)
     int i=OBJ_obj2nid(p7->type);
 
     lua_newtable(L);
-    lua_pushstring(L,OBJ_nid2ln(i));
-    lua_setfield(L,-2,"type");
-
+	AUXILIAR_SET(L, -1, "type", OBJ_nid2ln(i), string);
     switch (i)
     {
     case NID_pkcs7_signed:
@@ -344,26 +343,15 @@ static LUA_FUNCTION(openssl_pkcs7_parse)
 			struct pkcs7_st			*contents;
 		} PKCS7_SIGNED;
 #endif
-        PUSH_OBJECT(sk_X509_ALGOR_dup(sign->md_algs),"openssl.stack_of_x509_algor");
-        lua_setfield(L,-2,"md_algs");
-        PUSH_OBJECT(sk_PKCS7_SIGNER_INFO_dup(sign->signer_info),"openssl.stack_of_pkcs7_signer_info");
-        lua_setfield(L,-2,"signer_info");
-        lua_pushboolean(L,PKCS7_is_detached(p7));
-        lua_setfield(L,-2,"detached");
+        AUXILIAR_SETOBJECT(L,sk_X509_ALGOR_dup(sign->md_algs),"openssl.stack_of_x509_algor",-1,"md_algs");
+        AUXILIAR_SETOBJECT(L,sk_PKCS7_SIGNER_INFO_dup(sign->signer_info),"openssl.stack_of_pkcs7_signer_info",-1,"signer_info");
+		AUXILIAR_SET(L, -1, "detached", PKCS7_is_detached(p7), boolean);
+
 		if(c){
-			PUSH_OBJECT(PKCS7_dup(c), "openssl.pkcs7");
-			lua_setfield(L, -2, "contents");
+			AUXILIAR_SETOBJECT(L,PKCS7_dup(c), "openssl.pkcs7", -1, "contents");
 		}
         if(!PKCS7_is_detached(p7)) {
-#if 0
-            BIO  *bio = BIO_new(BIO_s_mem());
-            ADD_ASSOC_ASN1_STRING(ASN1_OCTET_STRING, bio, PKCS7_get_octet_string(p7->d.sign->contents), "content", lua_absindex(L,-2));
-            BIO_free(bio);
-#else
-            ASN1_OCTET_STRING *os = PKCS7_get_octet_string(p7->d.sign->contents);
-            lua_pushlstring(L,(const char*)os->data, os->length);
-            lua_setfield(L,-2,"content");
-#endif
+			AUXILIAR_SETOBJECT(L,p7->d.sign->contents,"openssl.pkcs7",-1,"content");
         }
     }
     break;
@@ -402,14 +390,12 @@ static LUA_FUNCTION(openssl_pkcs7_parse)
 			ASN1_OCTET_STRING *data = d->digest;
 			(void*)c;
 
-			lua_pushliteral(L, "digest");
-			lua_setfield(L, -2, "type");
+			AUXILIAR_SET(L, -1, "type", "digest", string);
 
 			if(data){
 				int dlen = ASN1_STRING_length(data);
 				unsigned char* dptr = ASN1_STRING_data(data);
-				lua_pushlstring(L, (const char*)dptr, dlen);
-				lua_setfield(L, -2, "digest");
+				AUXILIAR_SETLSTR(L, -1, "digest",(const char*)dptr, dlen);
 			}
 		}
 		break;
@@ -419,10 +405,8 @@ static LUA_FUNCTION(openssl_pkcs7_parse)
 		int dlen = ASN1_STRING_length(data);
 		unsigned char* dptr = ASN1_STRING_data(data);
 
-		lua_pushliteral(L, "data");
-		lua_setfield(L, -2, "type");
-		lua_pushlstring(L, (const char*)dptr, dlen);
-		lua_setfield(L, -2, "data");
+		AUXILIAR_SET(L, -1, "type", "data", string);
+		AUXILIAR_SETLSTR(L, -1, "data",(const char*)dptr, dlen);
 	}
 		break;
     default:
@@ -431,13 +415,11 @@ static LUA_FUNCTION(openssl_pkcs7_parse)
 
     if (certs != NULL)
     {
-        PUSH_OBJECT(sk_X509_dup(certs), "openssl.stack_of_x509");
-        lua_setfield(L,-2, "certs");
+        AUXILIAR_SETOBJECT(L,sk_X509_dup(certs), "openssl.stack_of_x509",-1, "certs");
     }
     if (crls != NULL)
     {
-        PUSH_OBJECT(sk_X509_CRL_dup(crls), "openssl.stack_of_crl");
-        lua_setfield(L,-2, "crls");
+        AUXILIAR_SETOBJECT(L,sk_X509_CRL_dup(crls), "openssl.stack_of_crl",-1, "crls");
     }
 
     return 1;

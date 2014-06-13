@@ -11,9 +11,6 @@
 #include <lualib.h>
 #include <lauxlib.h>
 #include "auxiliar.h"
-#if LUA_VERSION_NUM>501
-#define lua_objlen lua_rawlen
-#endif
 
 #include <assert.h>
 #include <string.h>
@@ -60,18 +57,6 @@ __pragma(warning(pop))
 #define timezone _timezone	/* timezone is called _timezone in LibC */
 #endif
 
-#define DEFAULT_KEY_LENGTH	512
-#define MIN_KEY_LENGTH		384
-
-#define OPENSSL_ALGO_SHA1 	1
-#define OPENSSL_ALGO_MD5	2
-#define OPENSSL_ALGO_MD4	3
-#ifdef HAVE_OPENSSL_MD2_H
-#define OPENSSL_ALGO_MD2	4
-#endif
-#define OPENSSL_ALGO_DSS1	5
-
-#define DEBUG_SMIME	0
 
 #ifdef WIN32
 #define snprintf _snprintf
@@ -80,25 +65,6 @@ __pragma(warning(pop))
 #endif
 #endif
 
-enum lua_openssl_key_type {
-    OPENSSL_KEYTYPE_RSA,
-    OPENSSL_KEYTYPE_DSA,
-    OPENSSL_KEYTYPE_DH,
-    OPENSSL_KEYTYPE_DEFAULT = OPENSSL_KEYTYPE_RSA,
-#ifdef EVP_PKEY_EC
-    OPENSSL_KEYTYPE_EC = OPENSSL_KEYTYPE_DH +1
-#endif
-};
-
-enum lua_openssl_cipher_type {
-    OPENSSL_CIPHER_RC2_40,
-    OPENSSL_CIPHER_RC2_128,
-    OPENSSL_CIPHER_RC2_64,
-    OPENSSL_CIPHER_DES,
-    OPENSSL_CIPHER_3DES,
-
-    OPENSSL_CIPHER_DEFAULT = OPENSSL_CIPHER_RC2_40
-};
 
 X509_STORE * setup_verify(STACK_OF(X509)* calist);
 
@@ -107,19 +73,12 @@ X509_STORE * setup_verify(STACK_OF(X509)* calist);
 
 int openssl_get_revoke_reason(const char*s);
 
-LUA_FUNCTION(openssl_x509_algo_parse);
-LUA_FUNCTION(openssl_x509_algo_tostring);
-LUA_FUNCTION(openssl_x509_extension_parse);
-LUA_FUNCTION(openssl_x509_extension_tostring);
-
 LUA_FUNCTION(openssl_list);
 LUA_FUNCTION(openssl_hex);
 LUA_FUNCTION(openssl_engine);
 LUA_FUNCTION(openssl_error_string);
 LUA_FUNCTION(openssl_random_bytes);
 
-LUA_FUNCTION(openssl_sk_x509_read);
-LUA_FUNCTION(openssl_sk_x509_new);
 
 LUA_FUNCTION(openssl_conf_load);
 
@@ -132,6 +91,8 @@ LUA_API LUA_FUNCTION(luaopen_x509);
 LUA_API LUA_FUNCTION(luaopen_pkcs7);
 LUA_API LUA_FUNCTION(luaopen_pkcs12);
 LUA_API LUA_FUNCTION(luaopen_bio);
+LUA_API LUA_FUNCTION(luaopen_asn1);
+
 LUA_API LUA_FUNCTION(luaopen_ts);
 LUA_API LUA_FUNCTION(luaopen_csr);
 LUA_API LUA_FUNCTION(luaopen_crl);
@@ -149,36 +110,6 @@ void openssl_add_method(const OBJ_NAME *name, void *arg);
 	MULTI_LINE_MACRO_BEGIN		\
 	*(void **)(lua_newuserdata(L, sizeof(void *))) = (void*)(o);	\
 	auxiliar_setclass(L,tname,-1);	\
-	MULTI_LINE_MACRO_END
-
-#define ADD_ASSOC_BIO(bio, key)	MULTI_LINE_MACRO_BEGIN	\
-	BUF_MEM *buf;	BIO_get_mem_ptr(bio, &buf);	\
-	lua_pushlstring(L, buf->data, buf->length);	\
-	lua_setfield(L, -2, key); BIO_reset(bio);	\
-	MULTI_LINE_MACRO_END
-
-#define ADD_ASSOC_ASN1(type, bio, asn1,  key ) MULTI_LINE_MACRO_BEGIN \
-	BUF_MEM *buf;					\
-	i2a_##type(bio,asn1);				\
-	BIO_get_mem_ptr(bio, &buf);			\
-	lua_pushlstring(L, buf->data, buf->length);	\
-	lua_setfield(L, -2, key); BIO_reset(bio);	\
-	MULTI_LINE_MACRO_END
-
-#define ADD_ASSOC_ASN1_STRING(type, bio, asn1,  key, idx ) MULTI_LINE_MACRO_BEGIN \
-	BUF_MEM *buf;					\
-	i2a_ASN1_STRING(bio,asn1, V_##type);		\
-	BIO_get_mem_ptr(bio, &buf);			\
-	lua_pushlstring(L, buf->data, buf->length);	\
-	lua_setfield(L, idx, key); BIO_reset(bio);	\
-	MULTI_LINE_MACRO_END
-
-#define ADD_ASSOC_ASN1_TIME(bio, atime, key ) MULTI_LINE_MACRO_BEGIN	\
-	ASN1_TIME_print(bio,atime);					\
-	ADD_ASSOC_BIO(bio, key);					\
-	lua_pushfstring(L, "%s_time_t", key);				\
-	lua_pushinteger(L, (lua_Integer)asn1_time_to_time_t(atime));	\
-	lua_settable (L,-3);    \
 	MULTI_LINE_MACRO_END
 
 int openssl_register_x509(lua_State* L);

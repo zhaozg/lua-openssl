@@ -361,7 +361,7 @@ static LUA_FUNCTION(openssl_csr_parse)
     char *name = NULL;
 
     lua_newtable(L);
-    AUXILIAR_SET(L,"version",ASN1_INTEGER_get(csr->req_info->version),integer);
+    AUXILIAR_SET(L,-1,"version",ASN1_INTEGER_get(csr->req_info->version),integer);
     add_assoc_name_entry(L, "subject", subject, shortnames);
 
 
@@ -369,21 +369,8 @@ static LUA_FUNCTION(openssl_csr_parse)
         X509_REQ_INFO* ri=csr->req_info;
         lua_newtable(L);
 
-
-        ADD_ASSOC_ASN1(ASN1_OBJECT, out,ri->pubkey->algor->algorithm, "algorithm");
-
-        /*
-        i2a_ASN1_OBJECT(out,ri->pubkey->algor->algorithm);
-        ASSOC_BIO("algorithm");
-        */
-
-        PUSH_OBJECT(pubkey,"openssl.evp_pkey");
-		/*
-        lua_insert(L,1);
-        openssl_pkey_parse(L);
-		*/
-        lua_setfield(L,-2,"pubkey");
-        lua_remove(L,1);
+		AUXILIAR_SETOBJECT(L, ri->pubkey->algor->algorithm, "openssl.asn1_object", -1, "algorithm");
+		AUXILIAR_SETOBJECT(L,pubkey,"openssl.evp_pkey",-1,"pubkey");
 
         lua_setfield(L,-2,"pubkey");
     }
@@ -415,15 +402,13 @@ static LUA_FUNCTION(openssl_csr_parse)
 
             if(attr->single)
             {
-                lua_pushinteger(L,attr->value.single->type);
-                lua_setfield(L,-2,"type");
-                lua_pushlstring(L,(const char *)attr->value.single->value.bit_string->data,attr->value.single->value.bit_string->length);
-                lua_setfield(L,-2,"bit_string");
+				AUXILIAR_SET(L, -1, "type",attr->value.single->type,integer);
+				AUXILIAR_SETLSTR(L,-1,"bit_string",(const char *)attr->value.single->value.bit_string->data,attr->value.single->value.bit_string->length);
             } else
             {
                 attr_nid = OBJ_obj2nid(attr->object);
                 if(attr_nid == NID_undef) {
-                    ADD_ASSOC_ASN1(ASN1_OBJECT, out,attr->object, "object");
+					AUXILIAR_SETOBJECT(L, attr->object, "openssl.asn1_object", -1, "object");
                     name = NULL;
                 } else
                     name  = shortnames ? (char*)OBJ_nid2sn(attr_nid) : (char*)OBJ_nid2ln(attr_nid) ;
@@ -435,23 +420,23 @@ static LUA_FUNCTION(openssl_csr_parse)
                     {
 #if OPENSSL_VERSION_NUMBER > 0x10000000L
                         char *value = OPENSSL_uni2asc(av->value.bmpstring->data,av->value.bmpstring->length);
-                        AUXILIAR_SET(L, name?name:"bmpstring", value,string);
+                        AUXILIAR_SET(L,-1, name?name:"bmpstring", value,string);
                         OPENSSL_free(value);
 #else
-                        lua_pushlstring(L,(const char*)av->value.bmpstring->data,av->value.bmpstring->length);
-                        lua_setfield(L,-2, name?name:"bmpstring");
+						AUXILIAR_SETLSTR(L,-1,name?name:"bmpstring",
+							(const char*)av->value.bmpstring->data,av->value.bmpstring->length);
 #endif
                     }
                     break;
 
                     case V_ASN1_OCTET_STRING:
-                        lua_pushlstring(L, (const char *)av->value.octet_string->data, av->value.octet_string->length);
-                        lua_setfield(L, -2, name?name:"octet_string");
+						AUXILIAR_SETLSTR(L,-1,name?name:"octet_string",
+							(const char *)av->value.octet_string->data, av->value.octet_string->length);
                         break;
 
                     case V_ASN1_BIT_STRING:
-                        lua_pushlstring(L, (const char *)av->value.bit_string->data, av->value.bit_string->length);
-                        lua_setfield(L, -2, name?name:"bit_string");
+						AUXILIAR_SETLSTR(L,-1,name?name:"bit_string",
+							(const char *)av->value.bit_string->data, av->value.bit_string->length);
                         break;
 
                     default:

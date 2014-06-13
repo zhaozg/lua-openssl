@@ -396,31 +396,26 @@ static LUA_FUNCTION(openssl_ts_req_parse) {
         STACK_OF(X509_EXTENSION) *extensions;	/* [0] OPTIONAL */
     } TS_REQ;
 #endif
-    ADD_ASSOC_ASN1(ASN1_INTEGER, bio, req->version, "version");
-    lua_pushboolean(L,req->cert_req);
-    lua_setfield(L,-2, "cert_req");
+	AUXILIAR_SETOBJECT(L, req->version, "openssl.asn1_string", -1, "version");
+
+	AUXILIAR_SET(L, -1, "cert_req", req->cert_req, boolean);
 
     if(req->policy_id)
-        ADD_ASSOC_ASN1(ASN1_OBJECT, bio, req->policy_id, "policy_id");
+		AUXILIAR_SETOBJECT(L, req->policy_id, "openssl.asn1_object", -1, "policy_id");
     if(req->nonce)
-        ADD_ASSOC_ASN1(ASN1_INTEGER, bio, req->nonce, "nonce");
-
+		AUXILIAR_SETOBJECT(L, req->nonce, "openssl.asn1_string", -1, "nonce");
     lua_newtable(L);
     {
         ASN1_OCTET_STRING *os = req->msg_imprint->hashed_msg;
-        lua_pushlstring(L,(const char*)os->data, os->length);
-        lua_setfield(L,-2,"content");
-
-        PUSH_OBJECT(req->msg_imprint->hash_algo,"openssl.x509_algor");
-        lua_setfield(L,-2,"hash_algo");
+		AUXILIAR_SETLSTR(L, -1, "content", (const char*)os->data, os->length);
+        AUXILIAR_SETOBJECT(L, req->msg_imprint->hash_algo,"openssl.x509_algor", -1,"hash_algo");
     }
     lua_setfield(L,-2,"msg_imprint");
 
 
     if(req->extensions)
     {
-        PUSH_OBJECT(req->extensions,"openssl.stack_of_x509_extension");
-        lua_setfield(L,-2,"extensions");
+        AUXILIAR_SETOBJECT(L,req->extensions,"openssl.stack_of_x509_extension",-1,"extensions");
     }
 
 
@@ -485,11 +480,10 @@ static LUA_FUNCTION(openssl_ts_resp_parse) {
 
     {
         lua_newtable(L);
+		AUXILIAR_SETOBJECT(L,res->status_info->status, "openssl.asn1_string", -1, "status");
 
-        ADD_ASSOC_ASN1(ASN1_INTEGER,bio,res->status_info->status,"status");
         if(res->status_info->failure_info) {
-            lua_pushlstring(L,(const char*)res->status_info->failure_info->data,res->status_info->failure_info->length);
-            lua_setfield(L,-2,"failure_info");
+			AUXILIAR_SETLSTR(L, -1, "failure_info", (const char*)res->status_info->failure_info->data,res->status_info->failure_info->length);
         }
 
         if(res->status_info->text)
@@ -511,8 +505,7 @@ static LUA_FUNCTION(openssl_ts_resp_parse) {
 
 
     if(res->token) {
-        PUSH_OBJECT(PKCS7_dup(res->token),"openssl.pkcs7");
-        lua_setfield(L, -2, "token");
+        AUXILIAR_SETOBJECT(L,PKCS7_dup(res->token),"openssl.pkcs7",-1, "token");
     }
 
 
@@ -521,25 +514,20 @@ static LUA_FUNCTION(openssl_ts_resp_parse) {
         TS_TST_INFO *info = res->tst_info;
         lua_newtable(L);
 
-        ADD_ASSOC_ASN1(ASN1_INTEGER, bio, info->version, "version");
-        ADD_ASSOC_ASN1(ASN1_INTEGER, bio, info->serial, "serial");
-        ADD_ASSOC_ASN1(ASN1_INTEGER, bio, info->nonce, "nonce");
-        ADD_ASSOC_ASN1_TIME(bio,info->time,"time");
-        lua_pushboolean(L,info->ordering);
-        lua_setfield(L,-2,"ordering");
-
-        ADD_ASSOC_ASN1(ASN1_OBJECT,bio,info->policy_id,"policy_id");
+		AUXILIAR_SETOBJECT(L, info->version, "openssl.asn1_string", -1, "version");
+		AUXILIAR_SETOBJECT(L, info->serial, "openssl.asn1_string", -1, "serial");
+		AUXILIAR_SETOBJECT(L, info->nonce, "openssl.asn1_string", -1, "nonce");
+		AUXILIAR_SETOBJECT(L,info->time,"openssl.asn1_time",-1, "time");
+		AUXILIAR_SETOBJECT(L, info->policy_id, "openssl.asn1_object", -1, "policy_id");
+		AUXILIAR_SET(L, -1, "ordering", info->ordering, boolean);
 
         if(info->msg_imprint)
         {
             ASN1_OCTET_STRING *os = info->msg_imprint->hashed_msg;
             lua_newtable(L);
 
-            lua_pushlstring(L,(const char*)os->data, os->length);
-            lua_setfield(L,-2,"content");
-
-            PUSH_OBJECT(info->msg_imprint->hash_algo,"openssl.x509_algor");
-            lua_setfield(L,-2,"hash_algo");
+			AUXILIAR_SETLSTR(L, -1, "content", (const char*)os->data, os->length);
+            AUXILIAR_SETOBJECT(L,info->msg_imprint->hash_algo,"openssl.x509_algor",-1,"hash_algo");
 
             lua_setfield(L,-2,"msg_imprint");
         }
@@ -547,9 +535,9 @@ static LUA_FUNCTION(openssl_ts_resp_parse) {
         if(info->accuracy)
         {
             lua_newtable(L);
-            ADD_ASSOC_ASN1(ASN1_INTEGER, bio, info->accuracy->micros, "micros");
-            ADD_ASSOC_ASN1(ASN1_INTEGER, bio, info->accuracy->millis, "millis");
-            ADD_ASSOC_ASN1(ASN1_INTEGER, bio, info->accuracy->seconds, "seconds");
+			AUXILIAR_SETOBJECT(L,info->accuracy->micros, "openssl.asn1_string", -1, "micros");
+			AUXILIAR_SETOBJECT(L,info->accuracy->millis, "openssl.asn1_string", -1, "millis");
+			AUXILIAR_SETOBJECT(L,info->accuracy->seconds, "openssl.asn1_string", -1, "seconds");
             lua_setfield(L,-2,"accuracy");
         }
         if(info->tsa)
@@ -558,8 +546,7 @@ static LUA_FUNCTION(openssl_ts_resp_parse) {
 
         if(info->extensions)
         {
-            PUSH_OBJECT(info->extensions,"openssl.stack_of_x509_extension");
-            lua_setfield(L,-2,"extensions");
+            AUXILIAR_SETOBJECT(L,info->extensions,"openssl.stack_of_x509_extension", -1,"extensions");
         }
 
         lua_setfield(L,-2,"tst_info");
