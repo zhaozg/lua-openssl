@@ -1,12 +1,14 @@
 /*=========================================================================*\
-* x509 name routines
+* xname.c
+* * x509 name routines for lua-openssl binding
 *
-* This product includes PHP software, freely available from <http://www.php.net/software/>
 * Author:  george zhao <zhaozg(at)gmail.com>
 \*=========================================================================*/
-#include "openssl.h"
 
-int lo_lt2name(lua_State*L,
+#include "openssl.h"
+#include "compat.h"
+
+int XNAME_from_ltable(lua_State*L,
     X509_NAME* name,
     int dn)
 {
@@ -32,4 +34,39 @@ int lo_lt2name(lua_State*L,
         lua_pop(L, 1);
     }
     return 0;
+}
+
+int XNAME_to_ltable(lua_State*L, X509_NAME * xname,int idx, int shortname){
+	int i;
+	int n = X509_NAME_entry_count(xname);
+	for (i = 0; i < n; i++) {
+        X509_NAME_ENTRY* ne = X509_NAME_get_entry(xname, i);
+        ASN1_OBJECT * obj = X509_NAME_ENTRY_get_object(ne);
+		ASN1_STRING * str = X509_NAME_ENTRY_get_data(ne);
+        int nid = OBJ_obj2nid(obj);
+		const char* name = shortname ? OBJ_nid2sn(nid) : OBJ_nid2ln(nid);
+
+		lua_pushlstring(L, ASN1_STRING_data(str), ASN1_STRING_length(str));
+		lua_setfield(L, idx, name);
+
+		lua_pushstring(L,name);
+		lua_rawseti(L, idx, i+1);
+    }
+	return i;
+}
+
+void add_assoc_name_entry(lua_State*L,const  char * key, X509_NAME * xname, int shortname)  
+{
+	char* p = X509_NAME_oneline(xname,NULL,0);
+    lua_newtable(L);
+
+	lua_pushstring(L, p);
+	lua_rawseti(L, -2, 0);
+
+	XNAME_to_ltable(L,xname, lua_absindex(L, -1), shortname);
+    OPENSSL_free(p);
+	
+    if (key != NULL) {
+        lua_setfield(L,-2,key);
+    }
 }

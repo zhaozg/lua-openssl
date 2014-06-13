@@ -357,7 +357,7 @@ static LUA_FUNCTION(openssl_pkcs7_parse)
         if(!PKCS7_is_detached(p7)) {
 #if 0
             BIO  *bio = BIO_new(BIO_s_mem());
-            ADD_ASSOC_ASN1_STRING(ASN1_OCTET_STRING, bio, PKCS7_get_octet_string(p7->d.sign->contents), "content");
+            ADD_ASSOC_ASN1_STRING(ASN1_OCTET_STRING, bio, PKCS7_get_octet_string(p7->d.sign->contents), "content", lua_absindex(L,-2));
             BIO_free(bio);
 #else
             ASN1_OCTET_STRING *os = PKCS7_get_octet_string(p7->d.sign->contents);

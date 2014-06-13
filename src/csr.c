@@ -24,10 +24,10 @@ static int openssl_make_REQ(lua_State*L,
 
         subj = X509_REQ_get_subject_name(csr);
         /* apply values from the dn table */
-        lo_lt2name(L,subj,dn);
+        XNAME_from_ltable(L,subj,dn);
 
         if (attribs) {
-            lo_lt2attrs(L, &csr->req_info->attributes, attribs);
+            XATTRS_from_ltable(L, &csr->req_info->attributes, attribs);
         }
 
         if(extensions) {
@@ -35,7 +35,7 @@ static int openssl_make_REQ(lua_State*L,
             X509V3_CTX ctx;
             STACK_OF(X509_EXTENSION) *exts = sk_X509_EXTENSION_new_null();
             X509V3_set_ctx_test(&ctx);
-            lo_lt2extensions(L,exts,&ctx,extensions);
+            XEXTS_from_ltable(L,exts,&ctx,extensions);
             X509_REQ_add_extensions(csr, exts);
             sk_X509_EXTENSION_pop_free(exts,X509_EXTENSION_free);
         }
@@ -243,7 +243,7 @@ static LUA_FUNCTION(openssl_csr_sign)
             exts = sk_X509_EXTENSION_new_null();
 
         X509V3_set_ctx_test(&ctx);
-        lo_lt2extensions(L,exts,&ctx,extension);
+        XEXTS_from_ltable(L,exts,&ctx,extension);
         new_cert->cert_info->extensions = exts;
     }       
 

@@ -1,12 +1,13 @@
 /*=========================================================================*\
-* x509 name routines
+* xattrs.c
+* x509 attributes routines for lua-openssl binding
 *
-* This product includes PHP software, freely available from <http://www.php.net/software/>
 * Author:  george zhao <zhaozg(at)gmail.com>
 \*=========================================================================*/
+
 #include "openssl.h"
 
-int lo_lt2attrs(lua_State*L,
+int XATTRS_from_ltable(lua_State*L,
     STACK_OF(X509_ATTRIBUTE) **attributes,
     int attr)
 {

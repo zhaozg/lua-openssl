@@ -5,6 +5,7 @@
 * Author:  george zhao <zhaozg(at)gmail.com>
 \*=========================================================================*/
 #include "openssl.h"
+#include "private.h"
 
 #define MYNAME		"ts"
 #define MYVERSION	MYNAME " library for " LUA_VERSION " / Nov 2014 / "\

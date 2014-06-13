@@ -165,12 +165,12 @@ void openssl_add_method(const OBJ_NAME *name, void *arg);
 	lua_setfield(L, -2, key); BIO_reset(bio);	\
 	MULTI_LINE_MACRO_END
 
-#define ADD_ASSOC_ASN1_STRING(type, bio, asn1,  key ) MULTI_LINE_MACRO_BEGIN \
+#define ADD_ASSOC_ASN1_STRING(type, bio, asn1,  key, idx ) MULTI_LINE_MACRO_BEGIN \
 	BUF_MEM *buf;					\
 	i2a_ASN1_STRING(bio,asn1, V_##type);		\
 	BIO_get_mem_ptr(bio, &buf);			\
 	lua_pushlstring(L, buf->data, buf->length);	\
-	lua_setfield(L, -2, key); BIO_reset(bio);	\
+	lua_setfield(L, idx, key); BIO_reset(bio);	\
 	MULTI_LINE_MACRO_END
 
 #define ADD_ASSOC_ASN1_TIME(bio, atime, key ) MULTI_LINE_MACRO_BEGIN	\
@@ -180,12 +180,6 @@ void openssl_add_method(const OBJ_NAME *name, void *arg);
 	lua_pushinteger(L, (lua_Integer)asn1_time_to_time_t(atime));	\
 	lua_settable (L,-3);    \
 	MULTI_LINE_MACRO_END
-
-
-void add_assoc_name_entry(lua_State*L, const  char *key, X509_NAME *name, int shortname);
-void add_assoc_x509_extension(lua_State*L, const char* key, STACK_OF(X509_EXTENSION)* ext, BIO* bio);
-
-time_t asn1_time_to_time_t(ASN1_UTCTIME * timestr);
 
 int openssl_register_x509(lua_State* L);
 int openssl_register_sk_x509(lua_State* L);

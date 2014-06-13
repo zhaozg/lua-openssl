@@ -5,6 +5,7 @@
 * Author:  george zhao <zhaozg(at)gmail.com>
 \*=========================================================================*/
 #include "openssl.h"
+#include "private.h"
 #include "openssl/ocsp.h"
 
 #define MYNAME		"ocsp"

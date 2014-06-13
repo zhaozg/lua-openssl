@@ -6,7 +6,7 @@
 \*=========================================================================*/
 #include <ctype.h>
 #include "openssl.h"
-
+#include "compat.h"
 
 static X509_EXTENSION *do_ext_i2d(const X509V3_EXT_METHOD *method, int ext_nid,
     int crit, void *ext_struc)
@@ -195,7 +195,7 @@ static X509_EXTENSION *do_ext_nconf(X509V3_CTX *ctx, int ext_nid,
     return ext;
 }
 
-int lo_lt2extensions(lua_State*L,
+int XEXTS_from_ltable(lua_State*L,
     STACK_OF(X509_EXTENSION) *exts,
     X509V3_CTX* ctx,
     int extensions)
@@ -237,4 +237,45 @@ int lo_lt2extensions(lua_State*L,
         lua_pop(L, 1);
     }
     return 0;
+}
+
+int XEXTS_to_ltable(lua_State*L, STACK_OF(X509_EXTENSION) *exts, int idx)
+{
+	int i;
+	char buf[256];
+	const char*extname;
+	BIO* bio = BIO_new(BIO_s_mem());
+	int n = sk_X509_EXTENSION_num(exts);
+	for (i=0; i < n; i++) {
+		X509_EXTENSION* ext = sk_X509_EXTENSION_value(exts,i);
+
+		if (OBJ_obj2nid(X509_EXTENSION_get_object(ext)) != NID_undef) {
+			extname = (char *)OBJ_nid2sn(OBJ_obj2nid(X509_EXTENSION_get_object(ext)));
+		} else {
+			OBJ_obj2txt(buf, sizeof(buf)-1, X509_EXTENSION_get_object(ext), 1);
+			extname = buf;
+		}
+		if (X509V3_EXT_print(bio, ext, 0, 0)) {
+			BUF_MEM *mem;
+			BIO_get_mem_ptr(bio, &mem);
+			lua_pushlstring(L,mem->data, mem->length);
+			lua_setfield(L,idx,extname);
+		} else {
+			ADD_ASSOC_ASN1_STRING(ASN1_OCTET_STRING, bio, X509_EXTENSION_get_data(ext), extname, idx);
+		}
+		lua_pushstring(L,extname);
+		lua_rawseti(L,idx,i+1);
+		BIO_reset(bio);
+	};
+	return i;
+}
+
+void add_assoc_x509_extension(lua_State*L, const char* key, STACK_OF(X509_EXTENSION)* exts, BIO* bio)
+{
+	lua_newtable(L);
+	XEXTS_to_ltable(L,exts,lua_absindex(L, -1));
+	if(key)
+	{
+		lua_setfield(L,-2,key);
+	}
 }

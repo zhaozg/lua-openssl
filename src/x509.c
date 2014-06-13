@@ -6,6 +6,7 @@
 \*=========================================================================*/
 
 #include "openssl.h"
+#include "private.h"
 #include "sk.h"
 
 #define MYNAME		"x509"
@@ -42,41 +43,6 @@ static LUA_FUNCTION(openssl_x509_extension_parse) {
 }
 
 /**********************************************************/
-
-void add_assoc_x509_extension(lua_State*L, const char* key, STACK_OF(X509_EXTENSION)* exts, BIO* bio)
-{
-    const char*extname;
-    char buf[256];
-    int n = exts ? sk_X509_EXTENSION_num(exts) : 0 ;
-    int i;
-
-    if( n > 0 )
-    {
-        lua_newtable(L);
-
-        for (i = 0; i < n; i++) {
-            X509_EXTENSION* ext = sk_X509_EXTENSION_value(exts,i);
-
-            if (OBJ_obj2nid(X509_EXTENSION_get_object(ext)) != NID_undef) {
-                extname = (char *)OBJ_nid2sn(OBJ_obj2nid(X509_EXTENSION_get_object(ext)));
-            } else {
-                OBJ_obj2txt(buf, sizeof(buf)-1, X509_EXTENSION_get_object(ext), 1);
-                extname = buf;
-            }
-            if (X509V3_EXT_print(bio, ext, 0, 0)) {
-                BUF_MEM *mem;
-                BIO_get_mem_ptr(bio, &mem);
-                lua_pushlstring(L,mem->data, mem->length);
-                lua_setfield(L,-2,extname);
-            } else {
-                ADD_ASSOC_ASN1_STRING(ASN1_OCTET_STRING, bio, X509_EXTENSION_get_data(ext), extname);
-            }
-            BIO_reset(bio);
-        }
-
-        lua_setfield(L,-2,key);
-    }
-}
 
 
 /* {{{ check_cert */
