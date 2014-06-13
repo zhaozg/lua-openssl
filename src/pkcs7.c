@@ -13,37 +13,6 @@
 	"based on OpenSSL " SHLIB_VERSION_NUMBER
 #define MYTYPE			"openssl.pkcs7"
 
-static BIO* load_bio_object(lua_State* L, int idx) {
-	BIO* bio = NULL;
-	if(lua_isstring(L, idx))
-	{
-		size_t l = 0;
-		const char* ctx = lua_tolstring(L, idx, &l);
-		bio = BIO_new_mem_buf((void*)ctx, l);
-	}else if(auxiliar_isclass(L,"openssl.bio", idx))
-	{
-		bio = CHECK_OBJECT(idx,BIO, "openssl.bio");
-		bio->references++;
-	}else
-		luaL_argerror(L, idx, "only support string or openssl.bio");
-	return bio;
-}
-enum {
-	FORMAT_AUTO = 0,
-	FORMAT_DER,
-	FORMAT_PEM,
-	FORMAT_SMIME,
-	FORMAT_NUM
-};
-
-static const char* format[] = {
-	"auto",
-	"der",
-	"pem",
-	"smime",
-	NULL
-};
-
 static LUA_FUNCTION(openssl_pkcs7_read) {
 	BIO* bio = load_bio_object(L, 1);
 	int fmt = luaL_checkoption(L, 2, "auto", format);
@@ -146,7 +115,7 @@ static LUA_FUNCTION(openssl_pkcs7_verify)
 		dataout = CHECK_OBJECT(6, BIO, "openssl.bio");
 
 	flags = flags & ~PKCS7_DETACHED;
-	store = setup_verify(cainfo);
+	store = skX509_to_store(cainfo,NULL,NULL);
 
 	if (!store) {
 		luaL_error(L, "can't setup veirfy cainfo");

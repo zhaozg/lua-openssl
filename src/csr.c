@@ -6,6 +6,7 @@
 \*=========================================================================*/
 #include "openssl.h"
 #include "private.h"
+
 #define MYNAME		"csr"
 #define MYVERSION	MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
 	"based on OpenSSL " SHLIB_VERSION_NUMBER
@@ -19,10 +20,9 @@ static int openssl_make_REQ(lua_State*L,
                             int extensions)
 {
     /* setup the version number: version 1 */
-    if (X509_REQ_set_version(csr, 0L)) {
-        X509_NAME * subj;
-
-        subj = X509_REQ_get_subject_name(csr);
+    if (X509_REQ_set_version(csr, 0L)) 
+	{
+        X509_NAME * subj = X509_REQ_get_subject_name(csr);
         /* apply values from the dn table */
         XNAME_from_ltable(L,subj,dn);
 
@@ -46,30 +46,28 @@ static int openssl_make_REQ(lua_State*L,
 
 static LUA_FUNCTION(openssl_csr_read)
 {
-    X509_REQ * csr = NULL;
-    BIO * in = NULL;
-    size_t dlen;
-    const char*data;
-
-    data = luaL_checklstring(L,1,&dlen);
-
-    in = BIO_new_mem_buf((void*)data, dlen);
-    if (in == NULL) {
-        return 0;
-    }
-    csr = PEM_read_bio_X509_REQ(in, NULL,NULL,NULL);
-    if(!csr)
+    BIO * in = load_bio_object(L, 1);
+	int fmt = luaL_checkoption(L, 2, "auto", format);
+	X509_REQ * csr = NULL;
+	
+	if( fmt==FORMAT_AUTO || fmt==FORMAT_PEM){
+		PEM_read_bio_X509_REQ(in, NULL,NULL,NULL);
+		BIO_reset(in);
+	}
+	if ((fmt==FORMAT_AUTO && in==NULL) || fmt==FORMAT_DER)
     {
-        BIO_reset(in);
         csr = d2i_X509_REQ_bio(in,NULL);
+		BIO_reset(in);
     }
+
     BIO_free(in);
 
     if(csr)
     {
         PUSH_OBJECT(csr,"openssl.x509_req");
         return 1;
-    }
+    }else
+		luaL_error(L,"read openssl.x509_req content fail");
 
     return 0;
 }
@@ -77,24 +75,20 @@ static LUA_FUNCTION(openssl_csr_read)
 static LUA_FUNCTION(openssl_csr_export)
 {
     X509_REQ * csr = CHECK_OBJECT(1,X509_REQ,"openssl.x509_req");
-    int pem, notext;
-    BIO * bio_out;
-    int top = lua_gettop(L);
+	int fmt = luaL_checkoption(L, 2, "auto", format); 
+	int notext = lua_isnoneornil(L, 3) ? 1 : lua_toboolean(L,3);
 
-    pem = lua_gettop(L)>1 ? lua_toboolean(L,2) : 1;
-    notext = (pem && top>2) ? lua_toboolean(L,3) : 1;
-
-    bio_out = BIO_new(BIO_s_mem());
-    if(pem)
+    BIO *out  = BIO_new(BIO_s_mem());
+    if(fmt==FORMAT_PEM)
     {
         if (!notext) {
-            X509_REQ_print(bio_out, csr);
+            X509_REQ_print(out, csr);
         }
 
-        if (PEM_write_bio_X509_REQ(bio_out, csr)) {
+        if (PEM_write_bio_X509_REQ(out, csr)) {
             BUF_MEM *bio_buf;
 
-            BIO_get_mem_ptr(bio_out, &bio_buf);
+            BIO_get_mem_ptr(out, &bio_buf);
             lua_pushlstring(L,bio_buf->data, bio_buf->length);
         } else
         {
@@ -102,22 +96,21 @@ static LUA_FUNCTION(openssl_csr_export)
         }
     } else
     {
-        if(i2d_X509_REQ_bio(bio_out, csr)) {
+        if(i2d_X509_REQ_bio(out, csr)) {
             BUF_MEM *bio_buf;
 
-            BIO_get_mem_ptr(bio_out, &bio_buf);
+            BIO_get_mem_ptr(out, &bio_buf);
             lua_pushlstring(L,bio_buf->data, bio_buf->length);
         } else
         {
             lua_pushnil(L);
         }
     }
-    BIO_free(bio_out);
+    BIO_free(out);
     return 1;
 }
 
-int openssl_conf_load_idx(lua_State*L, int idx);
-
+/* TODO:clean */
 static LUA_FUNCTION(openssl_csr_sign)
 {
     X509 * cert = NULL, *new_cert = NULL;
@@ -281,7 +274,7 @@ cleanup:
 
     return ret;
 }
-
+/* TODO:clean */
 static LUA_FUNCTION(openssl_csr_new)
 {
     X509_REQ *csr = NULL;
@@ -351,124 +344,70 @@ static LUA_FUNCTION(openssl_csr_new)
 static LUA_FUNCTION(openssl_csr_parse)
 {
     X509_REQ * csr = CHECK_OBJECT(1,X509_REQ,"openssl.x509_req");
-    int  shortnames = lua_gettop(L)==1?1:lua_toboolean(L,2);
+    int  shortnames = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L,2);
 
     X509_NAME * subject = X509_REQ_get_subject_name(csr);
-    EVP_PKEY* pubkey=X509_REQ_get_pubkey(csr);
     STACK_OF(X509_EXTENSION) *exts  = X509_REQ_get_extensions(csr);
-    STACK_OF(X509_ATTRIBUTE) *attrs = csr->req_info->attributes;
-    BIO* out = BIO_new(BIO_s_mem());
-    char *name = NULL;
+	
 
     lua_newtable(L);
-    AUXILIAR_SET(L,-1,"version",ASN1_INTEGER_get(csr->req_info->version),integer);
+    
+	AUXILIAR_SETOBJECT(L, csr->signature, "openssl.asn1_string",-1,"signature");
+	AUXILIAR_SETOBJECT(L, csr->sig_alg, "openssl.x509_algor",-1,"sig_alg");
+
+	lua_newtable(L);
+	AUXILIAR_SET(L,-1,"version",ASN1_INTEGER_get(csr->req_info->version),integer);
     add_assoc_name_entry(L, "subject", subject, shortnames);
+	add_assoc_x509_extension(L, "extensions", exts);
 
-
-    {
-        X509_REQ_INFO* ri=csr->req_info;
-        lua_newtable(L);
+	{
+		X509_REQ_INFO* ri=csr->req_info;
+		STACK_OF(X509_ATTRIBUTE) *attrs = ri->attributes;
+		lua_newtable(L);
 
 		AUXILIAR_SETOBJECT(L, ri->pubkey->algor->algorithm, "openssl.asn1_object", -1, "algorithm");
-		AUXILIAR_SETOBJECT(L,pubkey,"openssl.evp_pkey",-1,"pubkey");
+		AUXILIAR_SETOBJECT(L, X509_REQ_get_pubkey(csr), "openssl.evp_pkey",-1,"pubkey");
+		lua_setfield(L,-2,"pubkey");
 
-        lua_setfield(L,-2,"pubkey");
-    }
+		if(attrs && X509at_get_attr_count(attrs))
+		{
+			int i;
 
-    if(attrs && X509at_get_attr_count(attrs))
-    {
-        int i, attr_nid;
+			lua_newtable(L);
 
-        lua_newtable(L);
+			for (i=0; i< X509at_get_attr_count(attrs); i++) {
+				X509_ATTRIBUTE *attr = X509at_get_attr(attrs,i);
+				lua_newtable(L);
+				AUXILIAR_SET(L,-1,"single",attr->single,boolean);
 
-        for (i=0; i< X509at_get_attr_count(attrs); i++) {
-            X509_ATTRIBUTE *attr = X509at_get_attr(attrs,i);
-            ASN1_TYPE *av;
-#if 0
-            {
-                char* dat = NULL;
-                int i = i2d_X509_ATTRIBUTE(attr,&dat);
-                if(i>0) {
-                    lua_pushlstring(L,dat,i);
-                    OPENSSL_free(dat);
-                } else
-                    lua_pushnil(L);
-
-                lua_rawseti(L,-2,i+1);
-
-            }
-#else
-            lua_newtable(L);
-
-            if(attr->single)
-            {
-				AUXILIAR_SET(L, -1, "type",attr->value.single->type,integer);
-				AUXILIAR_SETLSTR(L,-1,"bit_string",(const char *)attr->value.single->value.bit_string->data,attr->value.single->value.bit_string->length);
-            } else
-            {
-                attr_nid = OBJ_obj2nid(attr->object);
-                if(attr_nid == NID_undef) {
+				if(attr->single)
+				{
 					AUXILIAR_SETOBJECT(L, attr->object, "openssl.asn1_object", -1, "object");
-                    name = NULL;
-                } else
-                    name  = shortnames ? (char*)OBJ_nid2sn(attr_nid) : (char*)OBJ_nid2ln(attr_nid) ;
+					PUSH_OBJECT(attr->value.single,"openssl.asn1_type");
+				} else
+				{
+					AUXILIAR_SETOBJECT(L, attr->object, "openssl.asn1_object", -1, "object");
 
-                if(sk_ASN1_TYPE_num(attr->value.set)) {
-                    av = sk_ASN1_TYPE_value(attr->value.set, 0);
-                    switch(av->type) {
-                    case V_ASN1_BMPSTRING:
-                    {
-#if OPENSSL_VERSION_NUMBER > 0x10000000L
-                        char *value = OPENSSL_uni2asc(av->value.bmpstring->data,av->value.bmpstring->length);
-                        AUXILIAR_SET(L,-1, name?name:"bmpstring", value,string);
-                        OPENSSL_free(value);
-#else
-						AUXILIAR_SETLSTR(L,-1,name?name:"bmpstring",
-							(const char*)av->value.bmpstring->data,av->value.bmpstring->length);
-#endif
-                    }
-                    break;
+					if(sk_ASN1_TYPE_num(attr->value.set)) {
+						int j;
+						lua_newtable(L);
+						for(j=0;j<sk_ASN1_TYPE_num(attr->value.set);j++)
+						{
+							ASN1_TYPE *av = sk_ASN1_TYPE_value(attr->value.set, 0);
+							PUSH_OBJECT(av,"openssl.asn1_type");
+							lua_rawseti(L,-2, j+1);
+						}
+						lua_setfield(L, -2, "set");
+					}
+				}
 
-                    case V_ASN1_OCTET_STRING:
-						AUXILIAR_SETLSTR(L,-1,name?name:"octet_string",
-							(const char *)av->value.octet_string->data, av->value.octet_string->length);
-                        break;
+				lua_rawseti(L,-2,i+1);
+			}
+			lua_setfield(L,-2,"attributes");
+		}
+	}
 
-                    case V_ASN1_BIT_STRING:
-						AUXILIAR_SETLSTR(L,-1,name?name:"bit_string",
-							(const char *)av->value.bit_string->data, av->value.bit_string->length);
-                        break;
-
-                    default:
-                        if(name)
-                            lua_pushstring(L,name);
-                        else
-                            lua_pushfstring(L,"tag:%d",av->type);
-
-                        {
-                            unsigned char* dat = NULL;
-                            int i = i2d_ASN1_TYPE(av,&dat);
-                            if(i>0) {
-                                lua_pushlstring(L,(const char *)dat,i);
-                                OPENSSL_free(dat);
-                            } else
-                                lua_pushnil(L);
-
-                        }
-                        lua_settable(L,-3);
-                        break;
-                    }
-                }
-            }
-
-            lua_rawseti(L,-2,i+1);
-#endif
-        }
-        lua_setfield(L,-2,"attributes");
-
-    }
-    add_assoc_x509_extension(L, "extensions", exts, out);
-    BIO_free(out);
+	lua_setfield(L,-2,"req_info");
 
     return 1;
 }

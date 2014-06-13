@@ -61,11 +61,9 @@ void add_assoc_name_entry(lua_State*L,const  char * key, X509_NAME * xname, int 
 
 	lua_pushstring(L, p);
 	lua_rawseti(L, -2, 0);
+	OPENSSL_free(p);
 
 	XNAME_to_ltable(L,xname, lua_absindex(L, -1), shortname);
-    OPENSSL_free(p);
 	
-    if (key != NULL) {
-        lua_setfield(L,-2,key);
-    }
+	lua_setfield(L,-2,key);
 }

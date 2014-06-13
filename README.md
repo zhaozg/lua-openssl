@@ -319,11 +319,14 @@ flags is flag information as described above.
 
 ##X509 certificate
 
-* ***openssl.x509.read*** (string val) => x509
- * val is a string containing the data from the certificate file
+* ***openssl.x509.read*** (string cert|bio cert [,format='auto']) => x509
+ * Return openssl.x509 object
+ * cert is a string or bio object containing the data from the certificate file
+ * format support 'auto', 'der' or 'pem', default with 'auto'
 
-* ***x509:export*** ([bool notext=true]) -> string
- * export x509 as certificate content data
+* ***x509:export*** ([string format='pem'[,bool notext=true]]) -> string
+ * Export x509 as certificate content data
+ * format only 'pem'(default) or 'der'
 
 * ***x509:parse*** ([bool shortnames=true]) -> table
  * returns a table which contains all x509 information
@@ -331,6 +334,7 @@ flags is flag information as described above.
 * ***x509:get_public*** () => evp_pkey
 
 * ***x509:check*** (evp_pkey pkey) -> boolean
+ * Return true if  private key match with cert
 
 * ***x509:check*** (sk_x509 ca [,sk_x509 untrusted[,string purpose]])->boolean
  * purpose can be one of: ssl_client, ssl_server, ns_ssl_server, smime_sign, smime_encrypt, crl_sign, any, ocsp_helper, timestamp_sign
@@ -339,7 +343,7 @@ flags is flag information as described above.
 
 ***openssl.stack_of_x509*** is an important object in lua-openssl, it can be used as a certchain, trusted CA files or unstrust certs.
 
-* ***openssl.sk_x509_read*** (filename) => sk_x509
+* ***openssl.sk_x509_read*** (string|bio certs_in_pems) => sk_x509
 * ***openssl.sk_x509_new*** ([table array={}]} =>sk_x509
 
 * ***sk_x509:push*** (openssl.x509 cert) => sk_x509
@@ -358,12 +362,14 @@ flags is flag information as described above.
 
 * ***openssl.csr.new*** (evp_pkey privkey, table dn={} [,table args = nil]) => x509_req
  * Generates CSR with gived private key, dn, and extraattribs */
-* ***openssl.csr.read*** (string data) => x509_req
+* ***openssl.csr.read*** (string data|BIO in,[string format='auto']) => x509_req
+ * format support 'auto','pem','der',default use 'auto'
+
 * ***x509_req:sign*** (x509 cert, evp_pkey privkey, table arg={serialNumber=,num_days=}) => x509
  * args must have serialNumber as hexecoded string, num_days as number
-* ***x509_req:export*** ([boolean pem=true [, boolean noext=true]])->string
+* ***x509_req:export*** ([string format='pem' [, boolean noext=true]])->string
 * ***x509_req:get_public*** () -> evp_pkey
-* ***x509_req:parse() -> table
+* ***x509_req:parse([boolean shortname=true]) -> table
 
 ##Certificate revocked list
 
@@ -380,7 +386,7 @@ flags is flag information as described above.
 * ***crl:set_issuer*** (x509 cacert) -> boolean
 * ***crl:add_revocked*** (string hexserial [,number time=now() [, string reason|number reason = 0]) -> boolean
 
-* ***crl:parse*** () -> table
+* ***crl:parse*** ([boolean shortname=true]) -> table
  * Below you can find an example of table content.
 
 ```

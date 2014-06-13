@@ -65,9 +65,6 @@ __pragma(warning(pop))
 #endif
 #endif
 
-
-X509_STORE * setup_verify(STACK_OF(X509)* calist);
-
 #define LUA_FUNCTION(X) int X(lua_State *L)
 
 
@@ -112,11 +109,7 @@ void openssl_add_method(const OBJ_NAME *name, void *arg);
 	auxiliar_setclass(L,tname,-1);	\
 	MULTI_LINE_MACRO_END
 
-int openssl_register_x509(lua_State* L);
-int openssl_register_sk_x509(lua_State* L);
-int openssl_register_conf(lua_State* L);
-
-
+int openssl_register_lhash(lua_State* L);
 int openssl_register_engine(lua_State* L);
 
 #endif

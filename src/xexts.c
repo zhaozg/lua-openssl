@@ -272,12 +272,9 @@ int XEXTS_to_ltable(lua_State*L, STACK_OF(X509_EXTENSION) *exts, int idx)
 	return i;
 }
 
-void add_assoc_x509_extension(lua_State*L, const char* key, STACK_OF(X509_EXTENSION)* exts, BIO* bio)
+void add_assoc_x509_extension(lua_State*L, const char* key, STACK_OF(X509_EXTENSION)* exts)
 {
 	lua_newtable(L);
 	XEXTS_to_ltable(L,exts,lua_absindex(L, -1));
-	if(key)
-	{
-		lua_setfield(L,-2,key);
-	}
+	lua_setfield(L,-2,key);
 }

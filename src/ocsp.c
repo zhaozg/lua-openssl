@@ -175,7 +175,7 @@ static int openssl_ocsp_request_parse(lua_State*L){
 	lua_setfield(L, -2, "requestList");
 
 	if(inf->requestExtensions)
-		add_assoc_x509_extension(L, "extensions", inf->requestExtensions, bio);
+		add_assoc_x509_extension(L, "extensions", inf->requestExtensions);
 
 	if (sig)
 	{

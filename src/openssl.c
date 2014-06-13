@@ -160,10 +160,6 @@ static const luaL_Reg eay_functions[] = {
 
 	{"engine",			openssl_engine},
 
-
-	/* conf handle */
-	{"loadconf",		openssl_conf_load	},
-
     {NULL, NULL}
 };
 
@@ -188,7 +184,7 @@ LUA_API int luaopen_openssl(lua_State*L)
 	LOAD_ENGINE_CUSTOM();
 #endif
     
-    openssl_register_conf(L);
+    openssl_register_lhash(L);
     openssl_register_engine(L);
 
 #if LUA_VERSION_NUM==501

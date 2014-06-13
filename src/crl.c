@@ -6,6 +6,7 @@
 \*=========================================================================*/
 #include "openssl.h"
 #include "private.h"
+
 #define MYNAME		"crl"
 #define MYVERSION	MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
 	"based on OpenSSL " SHLIB_VERSION_NUMBER
@@ -43,7 +44,7 @@ int openssl_get_revoke_reason(const char*s){
 	}
 	return reason;
 }
-
+/* TODO:clean */
 static X509_REVOKED *openssl_X509_REVOKED(lua_State*L, int snidx, int timeidx, int reasonidx) {
     X509_REVOKED *revoked = X509_REVOKED_new();
     const char* serial = luaL_checkstring(L, snidx);
@@ -131,7 +132,7 @@ end:
     BN_free(bn);
     return NULL;
 }
-
+/* TODO:clean */
 static LUA_FUNCTION(openssl_crl_new) {
     X509* x509 = CHECK_OBJECT(1, X509, "openssl.x509");
     time_t lastUpdate = luaL_checkinteger(L,2);
@@ -306,10 +307,8 @@ static LUA_FUNCTION(openssl_crl_add_revocked) {
 
 static LUA_FUNCTION(openssl_crl_parse) {
     X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
-    int useshortnames = lua_isnoneornil(L,2)?0:lua_toboolean(L,2);
-    BIO* bio = BIO_new(BIO_s_mem());
-    int i,n;
-    ASN1_INTEGER *crlnum;
+    int useshortnames = lua_isnoneornil(L,2) ? 0 : lua_toboolean(L,2);
+	int n,i;
 
     lua_newtable(L);
 	AUXILIAR_SET(L, -1, "version", X509_CRL_get_version(crl), integer);
@@ -320,83 +319,68 @@ static LUA_FUNCTION(openssl_crl_parse) {
         snprintf(buf, sizeof(buf), "%08lx", X509_NAME_hash(X509_CRL_get_issuer(crl)));
 		AUXILIAR_SET(L, -1, "hash", buf, string);
     }
-#if 1
+
     {
-	const EVP_MD *digest = EVP_get_digestbyname("SHA1");
+		const EVP_MD *digest = EVP_get_digestbyname("sha1");
         unsigned char md[EVP_MAX_MD_SIZE];
-	n = sizeof(md);
+		int n = sizeof(md);
 
         if (X509_CRL_digest(crl,digest,md,(unsigned int*)&n))
         {
-		lua_newtable(L);
-		AUXILIAR_SET(L, -1, "alg", OBJ_nid2sn(EVP_MD_type(digest)), string);
-		AUXILIAR_SETLSTR(L,-1,"hash",(const char*)md,n);
+			lua_newtable(L);
+			AUXILIAR_SET(L, -1, "alg", OBJ_nid2sn(EVP_MD_type(digest)), string);
+			AUXILIAR_SETLSTR(L,-1,"hash",(const char*)md,n);
 
-		lua_setfield(L,-2,"fingerprint");
+			lua_setfield(L,-2,"fingerprint");
         }
     }
-#endif
 
     add_assoc_name_entry(L, "issuer", 	X509_CRL_get_issuer(crl), useshortnames);
 
 	AUXILIAR_SETOBJECT(L,X509_CRL_get_lastUpdate(crl),"openssl.asn1_time",-1,"lastUpdate");
-
 	AUXILIAR_SETOBJECT(L,X509_CRL_get_nextUpdate(crl),"openssl.asn1_time",-1, "nextUpdate");
+	AUXILIAR_SETOBJECT(L,crl->crl->sig_alg,"openssl.x509_algor",-1, "sig_alg");
 
-    i = OBJ_obj2nid(crl->crl->sig_alg->algorithm);
-	AUXILIAR_SET(L, -1, "sig_alg", i==NID_undef ? "NONE": OBJ_nid2ln(i), string);
+	AUXILIAR_SETOBJECT(L, X509_CRL_get_ext_d2i(crl, NID_crl_number,NULL, NULL),
+		"openssl.asn1_string",-1,"crl_number");
 
-    crlnum = X509_CRL_get_ext_d2i(crl, NID_crl_number,NULL, NULL);
-	AUXILIAR_SETOBJECT(L, crlnum,"openssl.asn1_string",-1,"crl_number");
+    add_assoc_x509_extension(L, "extensions", crl->crl->extensions);
 
-    add_assoc_x509_extension(L, "extensions", crl->crl->extensions, bio);
-
-        n = sk_X509_REVOKED_num(crl->crl->revoked);
-        lua_newtable(L);
-        for (i=0; i<n; i++)
-        {
-            X509_REVOKED *revoked = sk_X509_REVOKED_value(crl->crl->revoked,i);
-            lua_newtable(L);
+    n = sk_X509_REVOKED_num(crl->crl->revoked);
+    lua_newtable(L);
+	for (i=0; i<n; i++)
+	{
+		X509_REVOKED *revoked = sk_X509_REVOKED_value(crl->crl->revoked,i);
+		lua_newtable(L);
 
 #if OPENSSL_VERSION_NUMBER > 0x10000000L
-			AUXILIAR_SET(L, -1, "CRLReason", reason_flags[revoked->reason].lname, string);
+		AUXILIAR_SET(L, -1, "CRLReason", reason_flags[revoked->reason].lname, string);
 #else
-            {
-                int crit = 0;
-                void* reason = X509_REVOKED_get_ext_d2i(revoked, NID_crl_reason,&crit, NULL);
+		{
+			int crit = 0;
+			void* reason = X509_REVOKED_get_ext_d2i(revoked, NID_crl_reason,&crit, NULL);
 
-				AUXILIAR_SET(L, -1, "CRLReason", reason_flags[ASN1_ENUMERATED_get(reason)].lname, string);
-                ASN1_ENUMERATED_free(reason);
-            }
+			AUXILIAR_SET(L, -1, "CRLReason", reason_flags[ASN1_ENUMERATED_get(reason)].lname, string);
+			ASN1_ENUMERATED_free(reason);
+		}
 #endif
-			AUXILIAR_SETOBJECT(L, revoked->serialNumber, "openssl.asn1_string", -1, "serialNumber");
-			AUXILIAR_SETOBJECT(L, revoked->revocationDate, "openssl.asn1_string", -1, "revocationDate");
+		AUXILIAR_SETOBJECT(L, revoked->serialNumber, "openssl.asn1_string", -1, "serialNumber");
+		AUXILIAR_SETOBJECT(L, revoked->revocationDate, "openssl.asn1_string", -1, "revocationDate");
 
-            add_assoc_x509_extension(L, "extensions", revoked->extensions, bio);
+		add_assoc_x509_extension(L, "extensions", revoked->extensions);
 
-            lua_rawseti(L, -2, i+1);
-        }
+		lua_rawseti(L, -2, i+1);
+	}
 
-        lua_setfield(L,-2, "revoked");
-
-    BIO_free(bio);
-
+	lua_setfield(L,-2, "revoked");
     return 1;
 }
-
-static LUA_FUNCTION(openssl_crl_tostring) {
-    X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
-    lua_pushfstring(L,"openssl.x509_crl:%p",crl);
-    return 1;
-}
-
 
 static LUA_FUNCTION(openssl_crl_free) {
     X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
     X509_CRL_free(crl);
     return 0;
 }
-
 
 static LUA_FUNCTION(openssl_crl_export)
 {
@@ -448,7 +432,7 @@ static luaL_Reg crl_funcs[] = {
     {"parse",			openssl_crl_parse			},
 
 
-    {"__tostring",		openssl_crl_tostring	},
+    {"__tostring",		auxiliar_tostring	},
     {"__gc",			openssl_crl_free	},
 
     {NULL,	NULL}
