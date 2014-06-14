@@ -12,9 +12,11 @@ lua-openssl toolkit - A free, MIT-licensed OpenSSL binding for Lua (Work in prog
 8. [SSL](#8-ssl)
 9. [Misc](#9-misc-functions)
 
-* A [Howto](#a-howto)
-* B [Examples](#b-example-usage)
-* C [Contact](#c-contact)
+
+.A [Howto](#a-howto)
+.B [Examples](#b-example-usage)
+.C [Contact](#c-contact)
+
 
 
 #1. Introduction
@@ -360,31 +362,34 @@ flags is flag information as described above.
 
 ##certificate sign request
 
-* ***openssl.csr.new*** (evp_pkey privkey, table dn={} [,table args = nil]) => x509_req
- * Generates CSR with gived private key, dn, and extraattribs */
+* ***openssl.csr.new*** (evp_pkey privkey, table dn[, table attribs[,table extensions[,string digest='sha1WithRSAEncryption'|digest md]]]]) => x509_req
+ * Generates CSR with gived private key, dn, attribs and extensions
+
 * ***openssl.csr.read*** (string data|BIO in,[string format='auto']) => x509_req
  * format support 'auto','pem','der',default use 'auto'
 
-* ***x509_req:sign*** (x509 cert, evp_pkey privkey, table arg={serialNumber=,num_days=}) => x509
+* ***x509_req:sign*** (x509 cacert=nil, evp_pkey caprivkey, table arg={serialNumber=,num_days=,version=,}[,table extensions]) => x509
  * args must have serialNumber as hexecoded string, num_days as number
 * ***x509_req:export*** ([string format='pem' [, boolean noext=true]])->string
 * ***x509_req:get_public*** () -> evp_pkey
-* ***x509_req:parse([boolean shortname=true]) -> table
+* ***x509_req:parse***([boolean shortname=true]) -> table
 
 ##Certificate revocked list
 
 * ***openssl.crl_read*** (string data) => x509_crl
-* ***openssl.crl_new*** (number version, x509 cacert,number lastUpdate, number nextUpdate, table revoked{hexserial=time,...}) => x509_crl
+* ***openssl.crl_new*** (x509 cacert, table revoked={{sn=,revoketime=,reason=0},{}},[number lastUpdate[, number nextUpdate[,number version]]]) => x509_crl
  * Create a new X509 CRL object, lastUpdate and nextUpdate is time_t value,
  * Revoked is a table on which hex cert serial is key, and time_t revocked time.
 
+* ***crl:export***[string format='pem' [, boolean noext=true]] -> string
+* ***crl:parse***([boolean shortname=true]) -> table
 * ***crl:verify*** (x509 cacert) -> boolean
 * ***crl:sign*** (evp_pkey privkey, [string alg=sha1WithRSAEncryption|digest md]) -> boolean
 * ***crl:sort*** ()
 * ***crl:set_version*** (number version=0) -> boolean
 * ***crl:set_update_time*** ([number lastUpdate=date() [, number nextUpdate=last+7d]]) -> boolean
 * ***crl:set_issuer*** (x509 cacert) -> boolean
-* ***crl:add_revocked*** (string hexserial [,number time=now() [, string reason|number reason = 0]) -> boolean
+* ***crl:add_revocked*** (string|number|bn serial, number revoketime [, string reason|number reason = 0]}) -> boolean
 
 * ***crl:parse*** ([boolean shortname=true]) -> table
  * Below you can find an example of table content.
@@ -592,8 +597,9 @@ test_x509()
 For more examples, please see test lua script file.
 
 #C. Contact
-------------
 
+
+--------------------------------------------------------------------
 ***lua-openssl License***
 
 Copyright (c) 2011 - 2014 zhaozg, zhaozg(at)gmail.com

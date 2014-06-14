@@ -552,8 +552,7 @@ static LUA_FUNCTION(openssl_pkey_export)
 					ret = i2b_PrivateKey_bio(bio_out,key);
 #else
 					unsigned char* p;
-					int l;
-					l = i2d_PrivateKey(key,NULL);
+					int l = i2d_PrivateKey(key,NULL);
 					if(l>0){
 						p = malloc(l);
 						l = i2d_PrivateKey(key,&p);

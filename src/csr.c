@@ -13,7 +13,7 @@
 #define MYTYPE			"openssl.csr"
 
 static int openssl_make_REQ(lua_State*L,
-                            X509_REQ * csr,
+                            X509_REQ *csr,
                             EVP_PKEY *pkey,
                             int dn,
                             int attribs,
@@ -24,7 +24,8 @@ static int openssl_make_REQ(lua_State*L,
 	{
         X509_NAME * subj = X509_REQ_get_subject_name(csr);
         /* apply values from the dn table */
-        XNAME_from_ltable(L,subj,dn);
+		if(dn)
+			XNAME_from_ltable(L,subj,dn);
 
         if (attribs) {
             XATTRS_from_ltable(L, &csr->req_info->attributes, attribs);
@@ -75,10 +76,13 @@ static LUA_FUNCTION(openssl_csr_read)
 static LUA_FUNCTION(openssl_csr_export)
 {
     X509_REQ * csr = CHECK_OBJECT(1,X509_REQ,"openssl.x509_req");
-	int fmt = luaL_checkoption(L, 2, "auto", format); 
+	int fmt = luaL_checkoption(L, 2, "pem", format); 
 	int notext = lua_isnoneornil(L, 3) ? 1 : lua_toboolean(L,3);
+    BIO *out  = NULL;
 
-    BIO *out  = BIO_new(BIO_s_mem());
+	luaL_argcheck(L, fmt!=FORMAT_DER && fmt!=FORMAT_PEM,2,
+		"only accept der or pem");
+	out = BIO_new(BIO_s_mem());
     if(fmt==FORMAT_PEM)
     {
         if (!notext) {
@@ -110,235 +114,168 @@ static LUA_FUNCTION(openssl_csr_export)
     return 1;
 }
 
-/* TODO:clean */
 static LUA_FUNCTION(openssl_csr_sign)
 {
-    X509 * cert = NULL, *new_cert = NULL;
-    X509_REQ * csr;
-    BIGNUM *bn = NULL;
-    const EVP_MD* md = NULL;
-    EVP_PKEY * key = NULL, *priv_key = NULL;
-    int i;
-    int ret = 0;
-    int digest, num_days,version,extension;
- 
-    digest = extension = 0;
-    version = 2;
-    num_days = 365;
+	X509_REQ *csr = CHECK_OBJECT(1,X509_REQ,"openssl.x509_req");
+	EVP_PKEY * self_key = X509_REQ_get_pubkey(csr);
 
-    csr = CHECK_OBJECT(1,X509_REQ,"openssl.x509_req");
-    cert = lua_isnil(L,2) ? NULL: CHECK_OBJECT(2,X509,"openssl.x509");
-    priv_key = CHECK_OBJECT(3,EVP_PKEY,"openssl.evp_pkey");
-    luaL_checktype(L,4,LUA_TTABLE);
+	X509 *cacert = lua_isnil(L,2) ? NULL: CHECK_OBJECT(2,X509,"openssl.x509");
+	EVP_PKEY *priv_key = CHECK_OBJECT(3,EVP_PKEY,"openssl.evp_pkey");
 
+	X509 *new_cert = NULL;
+	const EVP_MD* md = NULL;
+	int	num_days = 365;
+
+	luaL_checktype(L,4,LUA_TTABLE);
+   
+	if(X509_REQ_verify(csr, self_key)<=0)
+		luaL_error(L,"CSR Signature verification fail");
+	if (cacert && !X509_check_private_key(cacert, priv_key)) 
+		luaL_error(L,"private key does not correspond to signing cert");
+	
+	/* Now we go on make it */
+	/* 1) */
     {
-	    lua_getfield(L, 4, "serialNumber");
-	    if(lua_isnil(L,-1))
-		    luaL_error(L,"paramater #4 as table must have serialNumber key and value must be string or number type");
+		BIGNUM *bn = NULL;
 
-	    BN_dec2bn(&bn,lua_tostring(L,-1));
+		int version = 2;
+
+
+	    lua_getfield(L, 4, "serialNumber");
+	    if(lua_isnil(L,-1) || (bn=BN_get(L, -1))==NULL)
+		    luaL_argerror(L,4, "must have serialNumber key and value must be string or number type");
+		lua_pop(L, 1);
+
 	    BN_set_negative(bn,0);
-	    lua_pop(L, 1);
 
 	    lua_getfield(L, 4, "digest");
-	    if(lua_isstring(L, -1) || auxiliar_isclass(L,"openssl.evp_digest", -1))
-	    {
-		    digest = lua_gettop(L);
-	    } else if(!lua_isnoneornil(L, -1))
-		    luaL_error(L, "paramater #4 if have digest key, it's value must be string type or openssl.evp_digest object");
+	    md = lua_isnil(L, -1)? EVP_get_digestbyname("sha1WithRSAEncryption") : get_digest(L, -1);
+		if(md==NULL)
+			luaL_argerror(L,4, "must have digest key and value must can be converto evp_digest");
+		lua_pop(L, 1);
 
 	    lua_getfield(L,4, "num_days");
-	    if(!lua_isnoneornil(L,-1))
-		    num_days = luaL_checkint(L, -1);
+	    num_days = luaL_optint(L, -1, num_days);
+		lua_pop(L, 1);
 
 	    lua_getfield(L, 4,"version");
-	    if (lua_isnil(L,-1)) {
-		    version = 2;
-	    } else {
-		    version = lua_tointeger(L,-1);
-	    }
-	    lua_pop(L,1);
+		version = luaL_optint(L, -1, version);
+		lua_pop(L, 1);
 
-	    lua_getfield(L, 4, "extensions");
-	    if ( !lua_isnil (L, -1) ) {
-		    luaL_checktype(L,-1,LUA_TTABLE);
-		    extension = lua_gettop(L);
-	    }
-	    else 
-		    lua_pop(L,1);
+		new_cert = X509_new();
+
+		if (new_cert == NULL) {
+			luaL_error(L, "out of memory");
+		}
+
+		/* Version 2 cert */
+		if (!X509_set_version(new_cert, version))
+			luaL_error(L, "fail X509_set_version");
+
+		/* 3) */
+		X509_set_serialNumber(new_cert, BN_to_ASN1_INTEGER(bn,X509_get_serialNumber(new_cert)));
+		X509_set_subject_name(new_cert, X509_REQ_get_subject_name(csr));
     }
 
-    if (cert && !X509_check_private_key(cert, priv_key)) {
-        luaL_error(L,"private key does not correspond to signing cert");
-    }
-
-    /* Check that the request matches the signature */
-    key = X509_REQ_get_pubkey(csr);
-    if (key == NULL) {
-        luaL_error(L,"error unpacking public key");
-        goto cleanup;
-    }
-    i = X509_REQ_verify(csr, key);
-
-    if (i < 0) {
-        luaL_error(L,"Signature verification problems");
-        goto cleanup;
-    }
-    else if (i == 0) {
-        luaL_error(L,"Signature did not match the certificate request");
-        goto cleanup;
-    }
-
-    /* Now we can get on with it */
-    /* 1) */
-    new_cert = X509_new();
-    if (new_cert == NULL) {
-        luaL_error(L, "No memory");
-        goto cleanup;
-    }
-
-    /* Version 3 cert */
-    if (!X509_set_version(new_cert, version))
-	    goto cleanup;
-
-    /* 3) */
-    X509_set_serialNumber(new_cert, BN_to_ASN1_INTEGER(bn,X509_get_serialNumber(new_cert)));
-    X509_set_subject_name(new_cert, X509_REQ_get_subject_name(csr));
 
     /* 4) */
-    if (cert == NULL) {
-        cert = new_cert;
-    }
-    if (!X509_set_issuer_name(new_cert, X509_get_subject_name(cert))) {
-        goto cleanup;
-    }
+	cacert = cacert ? cacert : new_cert;
+
+    if (!X509_set_issuer_name(new_cert, X509_get_subject_name(cacert)))  
+        luaL_error(L, "fail X509_set_issuer_name");
 
     /* 5 */
     X509_gmtime_adj(X509_get_notBefore(new_cert), 0);
 #if OPENSSL_VERSION_NUMBER > 0x10000002L
     if (!X509_time_adj_ex(X509_get_notAfter(new_cert), num_days, 0, NULL))
-        goto cleanup;
+        luaL_error(L, "fail X509_time_adj_ex");
 #else
     X509_gmtime_adj(X509_get_notAfter(new_cert), (long)60*60*24*num_days);
 #endif
 
     /* 6 */
-    if (!X509_set_pubkey(new_cert, key)) {
-        goto cleanup;
-    }
+    if (!X509_set_pubkey(new_cert, self_key))  
+        luaL_error(L, "fail X509_set_pubkey");
 
     new_cert->cert_info->extensions = X509_REQ_get_extensions(csr);
-    if(extension)
+    if(lua_isnoneornil(L, 5))
     {
         X509V3_CTX ctx;
-        STACK_OF(X509_EXTENSION)* exts = new_cert->cert_info->extensions;
+        STACK_OF(X509_EXTENSION)* exts = NULL;
+
+		luaL_checktable(L, 5);
+
+		exts =  new_cert->cert_info->extensions;
         if(exts==NULL)
             exts = sk_X509_EXTENSION_new_null();
 
         X509V3_set_ctx_test(&ctx);
-        XEXTS_from_ltable(L,exts,&ctx,extension);
+        XEXTS_from_ltable(L,exts,&ctx,5);
         new_cert->cert_info->extensions = exts;
     }       
 
     /* Now sign it */
-    if(digest)
-    {
-	    if (lua_isuserdata(L,digest)) {
-		    md = CHECK_OBJECT(digest,EVP_MD,"openssl.evp_digest");
-	    }
-	    else if(lua_isstring(L,digest)) {
-		    md = EVP_get_digestbyname(luaL_checkstring(L,digest));
-		    if(!md) luaL_error(L,"EVP_get_digestbyname(%s) failed",luaL_checkstring(L,digest));
-	    }
-    }
     if(!md)
             md = EVP_get_digestbyname("sha1WithRSAEncryption");
 
     if (!X509_sign(new_cert, priv_key, md)) {
 	    luaL_error(L,"failed to sign it");
-	    goto cleanup;
     }
-
 
     /* Succeeded; lets return the cert */
     PUSH_OBJECT(new_cert,"openssl.x509");
-    ret = 1;
-
-    new_cert = NULL;
-
-cleanup:
-
-    if (cert == new_cert) {
-        cert = NULL;
-    }
-
-    return ret;
+	return 1;
 }
-/* TODO:clean */
+
 static LUA_FUNCTION(openssl_csr_new)
 {
     X509_REQ *csr = NULL;
 
     EVP_PKEY *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
-    int dn, attribs, extensions , digest;
+    int dn = 2, attribs = 3, extensions = 4, digest = 5;
 
-    luaL_checktype(L, 2, LUA_TTABLE);
-    dn = 2;
-    attribs = extensions  = digest = 0;
-    if(!lua_isnoneornil(L,3))
-    {
-	    luaL_checktype(L, 3, LUA_TTABLE);
-	    lua_getfield(L,3, "digest");
-	    if(lua_isstring(L, -1) || auxiliar_isclass(L,"openssl.evp_digest", -1))
-	    {
-		    digest = lua_gettop(L);
-	    } else if(!lua_isnoneornil(L, -1))
-		    luaL_error(L, "paramater #3 if have digest key, it's value must be string type or openssl.evp_digest object");
+	luaL_checktable(L, dn);
+	
+	if(lua_isnoneornil(L, attribs))
+		attribs = 0;
+	else
+		luaL_checktable(L, attribs);
+	
+	if(lua_isnoneornil(L,extensions))
+		extensions = 0;
+	else
+		luaL_checktable(L,extensions);
 
-	    lua_getfield(L,3,"attribs");
-	    if (lua_isnil(L,-1)) {
-		    lua_pop(L,1);
-	    } else {
-		    luaL_checktype(L, -1, LUA_TTABLE);
-		    attribs = lua_gettop(L);
-	    }
+	if(!lua_isnoneornil(L, digest))
+	{
+		luaL_argcheck(L,
+			!lua_isstring(L,digest) && !auxiliar_isclass(L, "openssl.evp_digest", digest),
+			digest,
+			"only accept string or openssl.evp_digest"
+			);
+	}else
+		digest = 0;
 
-	    lua_getfield(L,3, "extensions");
-	    if (lua_isnil(L, -1)) {;
-		    lua_pop(L,1);
-	    } else {
-		    luaL_checktype(L, -1, LUA_TTABLE);
-		    extensions = lua_gettop(L);
-	    }
-    }
-    csr = X509_REQ_new();
-    if(!csr) luaL_error(L,"out of memory!");
+	csr = X509_REQ_new();
+	if(csr) {
+		if(openssl_make_REQ(L, csr, pkey, dn, attribs, extensions))
+		{
+			const EVP_MD*  md = digest 
+				? get_digest(L, digest)
+				: EVP_get_digestbyname("sha1WithRSAEncryption");
 
-    if (openssl_make_REQ(L, csr, pkey, dn, attribs, extensions)) {
-        const EVP_MD* md = NULL;
-		if(digest) {
-			if (lua_isuserdata(L,digest)) {
-				md = CHECK_OBJECT(digest,EVP_MD,"openssl.evp_digest");
-			}else{
-				md = EVP_get_digestbyname(luaL_checkstring(L,digest));
-			} 
-		}
-		else
-			md = EVP_get_digestbyname("sha1WithRSAEncryption");
+			if (X509_REQ_sign(csr, pkey, md)) {
+				PUSH_OBJECT(csr,"openssl.x509_req");
+				return 1;
+			} else {
+				luaL_error(L,"Error sign cert request");
+			}
+		}else
+			luaL_error(L,"Error create cert request");
+	}else
+		luaL_error(L, "out of memory");
 
-		if(!md) 
-			luaL_error(L,"get_digest with(%s) failed",lua_tostring(L,digest));
-
-        if (X509_REQ_sign(csr, pkey, md)) {
-            PUSH_OBJECT(csr,"openssl.x509_req");
-        } else {
-            luaL_error(L,"Error signing cert request");
-        }
-    }else{
-		luaL_error(L,"Error make cert request");
-	}
-
-    return 1;
+    return 0;
 }
 
 static LUA_FUNCTION(openssl_csr_parse)

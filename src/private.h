@@ -19,6 +19,8 @@ enum {
 extern const char* format[];
 
 BIO* load_bio_object(lua_State* L, int idx);
+const EVP_MD* get_digest(lua_State* L, int idx);
+BIGNUM *BN_get(lua_State *L, int i);
 
 int XNAME_from_ltable(lua_State*L, X509_NAME* name, int dn);
 int XATTRS_from_ltable(lua_State*L,STACK_OF(X509_ATTRIBUTE) **attributes,int attr);

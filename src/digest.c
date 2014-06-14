@@ -21,18 +21,7 @@ static LUA_FUNCTION(openssl_digest_list) {
 };
 
 static LUA_FUNCTION(openssl_digest_get) {
-    const EVP_MD* md = NULL;
-
-	if (lua_isstring(L,1))
-        md = EVP_get_digestbyname(lua_tostring(L,1));
-    else if(lua_isnumber(L,1))
-        md = EVP_get_digestbynid(lua_tointeger(L,1));
-    else if(auxiliar_isclass(L,"openssl.asn1_object",1))
-        md = EVP_get_digestbyobj(CHECK_OBJECT(1,ASN1_OBJECT,"openssl.asn1_object"));
-    else
-    {
-		luaL_error(L, "argument #1 must be a string, NID number or ans1_object identify digest method");
-    }
+    const EVP_MD* md = get_digest(L, 1);
 
 	if(md)
 		PUSH_OBJECT((void*)md,"openssl.evp_digest");

@@ -30,4 +30,6 @@ void luaL_requiref (lua_State* L, const char* modname, lua_CFunction openf, int 
 #define luaG_registerlibfuncs( L, _funcs) luaL_setfuncs( L, _funcs, 0)
 #endif // LUA_VERSION_NUM == 502
 
+#define luaL_checktable(L, n) luaL_checktype(L, n, LUA_TTABLE)
+
 #endif // __COMPAT_H__
