@@ -101,7 +101,7 @@ LUA_API LUA_FUNCTION(luaopen_ec);
 void openssl_add_method_or_alias(const OBJ_NAME *name, void *arg) ;
 void openssl_add_method(const OBJ_NAME *name, void *arg);
 
-#define CHECK_OBJECT(n,type,name) *(type**)luaL_checkudata(L,n,name)
+#define CHECK_OBJECT(n,type,name) *(type**)auxiliar_checkclass(L,name,n)
 
 #define PUSH_OBJECT(o, tname)		\
 	MULTI_LINE_MACRO_BEGIN		\

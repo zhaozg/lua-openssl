@@ -10,7 +10,7 @@
 #include <openssl/asn1.h>
 #include <openssl/engine.h>
 #include <openssl/opensslconf.h>
-
+#include "private.h"
 static int openssl_version(lua_State*L)
 {
 		lua_pushstring(L, LOPENSSL_VERSION_STR);
@@ -77,15 +77,20 @@ static LUA_FUNCTION(openssl_error_string)
 
 static LUA_FUNCTION(openssl_random_bytes)
 {
+	static int seed = 0;
 	long length = luaL_checkint(L,1);
 	int strong = lua_isnil(L,2) ? 0 : lua_toboolean(L,2);
 
 	char *buffer = NULL;
 	int ret = 0;
+	if(!seed){
+		seed = RAND_init(NULL);
+	}
+	if (!seed)
+		luaL_error(L, "Fail to init random routines");
 
 	if (length <= 0) {
-		luaL_argerror(L, 1, "must ge");
-		luaL_error(L,"paramater 1 must not be nego");
+		luaL_argerror(L, 1, "must greater than 0");
 	}
 
 	buffer = malloc(length + 1);
@@ -183,9 +188,9 @@ LUA_API int luaopen_openssl(lua_State*L)
 #ifdef LOAD_ENGINE_CUSTOM
 	LOAD_ENGINE_CUSTOM();
 #endif
-    
-    openssl_register_lhash(L);
-    openssl_register_engine(L);
+#ifdef OPENSSL_SYS_WINDOWS
+	RAND_screen();
+#endif
 
 #if LUA_VERSION_NUM==501
     luaL_register(L,"openssl",eay_functions);
@@ -193,6 +198,8 @@ LUA_API int luaopen_openssl(lua_State*L)
     lua_newtable(L);
     luaL_setfuncs(L, eay_functions, 0);
 #endif
+	openssl_register_lhash(L);
+	openssl_register_engine(L);
 
 	luaopen_bio(L);
 	lua_setfield(L, -2, "bio");

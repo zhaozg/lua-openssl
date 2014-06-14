@@ -389,22 +389,21 @@ static LUA_FUNCTION(openssl_cipher_info)
 static LUA_FUNCTION(openssl_evp_BytesToKey)
 {
     EVP_CIPHER* c = CHECK_OBJECT(1,EVP_CIPHER, "openssl.evp_cipher");
-    EVP_MD* m = CHECK_OBJECT(2,EVP_MD, "openssl.evp_digest");
-    const char* salt, *k;  /* PKCS5_SALT_LEN */
-    size_t lsalt, lk;
+	size_t lsalt, lk;
+	const char* k = luaL_checklstring(L, 2, &lk);
+	const char* salt = luaL_optlstring(L, 3, NULL, &lsalt);
+    const EVP_MD* m = lua_isnoneornil(L,4) ? EVP_get_digestbyname("sha1") : get_digest(L, 4);
 
     char key[EVP_MAX_KEY_LENGTH],iv[EVP_MAX_IV_LENGTH];
 
-    salt = luaL_checklstring(L, 3, &lsalt);
-    if(lsalt < PKCS5_SALT_LEN)
-        luaL_error(L, "salt must not shorter than %d",PKCS5_SALT_LEN);
-
-    k = luaL_checklstring(L, 4, &lk);
-
+    if(salt!=NULL && lsalt < PKCS5_SALT_LEN){
+		lua_pushfstring(L,"salt must not shorter than %d",PKCS5_SALT_LEN);
+        luaL_argerror(L, 3, lua_tostring(L,-1));
+	}
 
     EVP_BytesToKey(c,m,(unsigned char*)salt, (unsigned char*)k, lk,1,(unsigned char*)key,(unsigned char*)iv);
-    lua_pushlstring(L, key, EVP_MAX_KEY_LENGTH);
-    lua_pushlstring(L, iv, EVP_MAX_IV_LENGTH);
+    lua_pushlstring(L, key, c->key_len);
+    lua_pushlstring(L, iv, c->iv_len);
     return 2;
 }
 

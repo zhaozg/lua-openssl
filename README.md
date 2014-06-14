@@ -13,16 +13,16 @@ lua-openssl toolkit - A free, MIT-licensed OpenSSL binding for Lua (Work in prog
 9. [Misc](#9-misc-functions)
 
 
-.A [Howto](#a-howto)
-.B [Examples](#b-example-usage)
-.C [Contact](#c-contact)
++ A [Howto](#a-howto)
++ B [Examples](#b-example-usage)
++ C [Contact](#c-contact)
 
 
 
 #1. Introduction
 
-I needed a full OpenSSL binding for Lua and, after I googled, I couldn't find a version that could fit my needs.
-I studied the PHP openssl binding, which is a good implementation, and it inspired me.
+I needed a full OpenSSL binding for Lua, after googled, I couldn't find a version to fit my needs.
+I found the PHP openssl binding is a good implementation, and it inspired me.
 So I decided to write this OpenSSL toolkit for Lua.
 
 Below you can find the development progress of lua-openssl. The goal is to fully support the listed items.
@@ -33,9 +33,8 @@ Below you can find the development progress of lua-openssl. The goal is to fully
 * X509 and PKCS. (UNFINISHED)
 * SSL/TLS. (UNFINISHED)
 
-Most of the lua-openssl functions require a key or a certificate as a parameter; to make
-things easy for you to use OpenSSL, this extension allows you to specify
-certificates or a key in the following ways:
+Most of the lua-openssl functions require a key or certificate as argument; to make things easy to use OpenSSL,
+This rule allow you to specify certificates or keys in the following ways:
 
 1. As an openssl.x509 object returned from openssl.x509_read
 2. As an openssl.evp_pkey object return from openssl.pkey_read or openssl.pkey_new
@@ -43,7 +42,7 @@ certificates or a key in the following ways:
 Similarly, you can also specify a public key as a key object returned from object:get_public.
 
 ## lua-openssl modules
-digest, cipher be write as modules.
+digest,cipher, x509 and so on, be write as modules.
 ```
    local digest = require'openssl'digest
    local cipher = require'openssl'cipher
@@ -68,7 +67,7 @@ The following are some important lua-openssl object types:
 	...
 ```
 
-They are shortened as bio, x509, sk_x509, x509_req, evp_pkey,evp_digest, evp_cipher,
+They are shortened as bio, x509, sk_x509, csr, pkey, digest,  cipher,
 	engine (not used yet!), cipher_ctx, and digest_ctx.
 
 Please note that in the next sections of this document:
@@ -144,7 +143,7 @@ lua_openssl_version, lua_version, openssl_version = openssl.version()
  * return evp_cipher_ctx object to encrypt
 * ***evp_cipher:info***() ->table
  * return table result with name, block_size,key_length,iv_length,flags,mode keys
-* ***evp_cipher:BytesToKey***(string bytes) -> string key,string iv
+* ***evp_cipher:BytesToKey***(string data[, string salt=nil [evp_digest|string md='sha1']}) -> string key,string iv
  * raturn key and iv according to input bytes
 * ***evp_cipher:encrypt***(string input_msg, string key
   [,string iv[,boolean pad=true[,openssl.engine e]]]) -> string
@@ -395,28 +394,29 @@ flags is flag information as described above.
  * Below you can find an example of table content.
 
 ```
-    {
-	sig_alg=sha1WithRSAEncryption
-	lastUpdate=110627103001Z
-	issuer={
-		CN=CA
-		C=CN
-	}
-	nextUpdate=110707110000Z
-	nextUpdate_time_t=1310032800
-	lastUpdate_time_t=1309167001
-	crl_number=1008
-	version=1
-	hash=258a7571
-	revoked={
-		1={
-			time=1225869543
-			serial=4130323030303030303030314632
-			reason=Superseded
-		},
-		...
-	}
-    }
+
+{
+ sig_alg=sha1WithRSAEncryption
+ lastUpdate=110627103001Z
+ issuer={
+     CN=CA
+     C=CN
+ }
+ nextUpdate=110707110000Z
+ nextUpdate_time_t=1310032800
+ lastUpdate_time_t=1309167001
+ crl_number=1008
+ version=1
+ hash=258a7571
+ revoked={
+     1={
+         time=1225869543
+         serial=4130323030303030303030314632
+         reason=Superseded
+     },
+     ...
+ }
+}
 ```
 
 #8. SSL
