@@ -168,3 +168,9 @@ void *auxiliar_getgroupudata(lua_State *L, const char *groupname, int objidx) {
 void *auxiliar_getclassudata(lua_State *L, const char *classname, int objidx) {
     return luaL_checkudata(L, objidx, classname);
 }
+
+int auxiliar_checkoption(lua_State*L, int objidx, const char* def, const char* const slist[], const int ival[])
+{
+	int at = luaL_checkoption(L, objidx, def, slist);
+	return ival[at];
+}

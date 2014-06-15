@@ -12,7 +12,6 @@ lua-openssl toolkit - A free, MIT-licensed OpenSSL binding for Lua (Work in prog
 8. [SSL](#8-ssl)
 9. [Misc](#9-misc-functions)
 
-
 + A [Howto](#a-howto)
 + B [Examples](#b-example-usage)
 + C [Contact](#c-contact)
@@ -184,25 +183,20 @@ lua_openssl_version, lua_version, openssl_version = openssl.version()
  when arg is dh, table may with key p,g,priv_key,pub_key,both are string value
  when arg is ec, table may with D,X,Y,Z,both are string value
 ```
-* private key should has it factor named n,q,e and so on, value is hex encoded string
+ * private key should has it factor named n,q,e and so on, value is hex encoded string
+
+* ***openssl.pkey.get_public***(evp_pkey private) => evp_pkey
+ * Return public key for private key
 
 * ***openssl.pkey.read*** (string data|x509 cert [,bool public_key=true [,string passphrase]]) => evp_pkey
  * Read from a file or a data, coerce it into a EVP_PKEY object.
   It can be:
-  *1. X509 object -> public key will be extracted from it
-  *2. the key pem/der file data```
+  +1. X509 object -> public key will be extracted from it
+  +2. the key pem/der file data
 
-* ***openssl.pkey.seal***(table pubkeys, string data[, cipher enc|string alg='RC4']) -> string,table
- * Encrypts data using pubkeys in table, so that only owners of the respective private keys and ekeys can decrypt and read the data.
- * Returns the sealed data and table containing encrypted keys, hold envelope keys on success, else nil.
+### About padding
 
-* ***openssl.pkey.seal***(evp_pkey pkey, string data[, cipher enc|string alg='RC4']) -> string,table
- * Encrypts data using pubkeys, so that only owners of the respective private keys and ekeys can decrypt and read the data.
- * Return sealed data,and encrypt key success, else nil.
-
-* ***openssl.pkey.open*** (evp_pkey key, string data, string ekey [, evp_cipher enc|string md_alg=RC4]) -> string
- * Open/decrypt sealed data using private key,and the corresponding envelope key.
- * Returns decrypted data on success and nil on failure.
+Currently supports 6 padding modes. They are: pkcs1, sslv23, no, oaep, x931, pss.
 
 * ***openssl.pkey.sign*** (evp_pkey key, string data [, evp_digest md|string md_alg=SHA1]) ->string
  * Uses key to create signature for data, returns signed result
@@ -215,6 +209,18 @@ lua_openssl_version, lua_version, openssl_version = openssl.version()
 
 * ***openssl.pkey.decrypt*** (evp_pkey key, string data [,string padding=pkcs1]) -> string
  * Use key to decrypt data, default padding use 'pkcs1', data length must equals with key size.
+
+* ***openssl.pkey.seal***(table pubkeys, string data[, cipher enc|string alg='RC4']) -> string,table
+ * Encrypts data using pubkeys in table, so that only owners of the respective private keys and ekeys can decrypt and read the data.
+ * Returns the sealed data and table containing encrypted keys, hold envelope keys on success, else nil.
+
+* ***openssl.pkey.seal***(evp_pkey pkey, string data[, cipher enc|string alg='RC4']) -> string,table
+ * Encrypts data using pubkeys, so that only owners of the respective private keys and ekeys can decrypt and read the data.
+ * Return sealed data,and encrypt key success, else nil.
+
+* ***openssl.pkey.open*** (evp_pkey key, string data, string ekey [, evp_cipher enc|string md_alg=RC4]) -> string
+ * Open/decrypt sealed data using private key,and the corresponding envelope key.
+ * Returns decrypted data on success and nil on failure.
 
 * ***evp_pkey:export*** ([boolean only_public = false [,boolean raw_key=false [,boolean pem=true,[, string passphrase]]]]) -> string
  * If only_public is true, will export public key
@@ -231,20 +237,6 @@ lua_openssl_version, lua_version, openssl_version = openssl.version()
 * ***evp_pkey:compute_key***(string remote_public_key) -> string
  * Compute shared secret for remote public key and local private key,Only for DH key.
 
-### About padding
-
-Currently supports 6 padding modes. They are:
-
-```
-	pkcs1:	RSA_PKCS1_PADDING	1
-	sslv23:	RSA_SSLV23_PADDING	2
-	no:	RSA_NO_PADDING		3
-	oaep:	RSA_PKCS1_OAEP_PADDING	4
-	x931:	RSA_X931_PADDING	5
-	pss:	RSA_PKCS1_PSS_PADDING	6
-```
-
-If a padding string value other than above is used as input (ignore capital), it will raise a Lua error.
 
 * ***evp_pkey:encrypt*** (string data [,string padding=pkcs1]) -> string
 * ***evp_pkey:decrypt*** (string data [,string padding=pkcs1]) -> string

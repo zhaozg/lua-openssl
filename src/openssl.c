@@ -46,10 +46,10 @@ static LUA_FUNCTION(openssl_list){
 		OBJ_NAME_TYPE_PKEY_METH,
 		OBJ_NAME_TYPE_COMP_METH
 	};
-	static const char *names[] = {"digests","ciphers", "pkeys", "comps"};
-	int idx = luaL_checkoption (L, 1, NULL, names);
+	static const char *names[] = {"digests","ciphers", "pkeys", "comps", NULL};
+	int type = auxiliar_checkoption (L, 1, NULL, names, options);
 	lua_createtable(L, 0, 0);
-	OBJ_NAME_do_all_sorted(options[idx], list_callback, L);
+	OBJ_NAME_do_all_sorted(type, list_callback, L);
 	return 1;
 }
 

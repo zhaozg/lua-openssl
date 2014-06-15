@@ -8,6 +8,19 @@
 #include <openssl/engine.h>
 #include "openssl.h"
 
+enum {
+	TYPE_RSA,
+	TYPE_DSA,
+	TYPE_ECDH,
+	TYPE_ECDSA,
+	TYPE_DH,
+	TYPE_RAND,
+	TYPE_STORE,
+	TYPE_CIPHERS,
+	TYPE_DIGESTS,
+	TYPE_COMPLETE
+};
+
 static const char* const list[] = {
 	"RSA",	/* 0 */
 	"DSA",
@@ -100,61 +113,61 @@ static int openssl_engine_register(lua_State*L){
 	while(first<=top){
 		int c = luaL_checkoption(L, first, "RSA",list);
 		switch(c){
-		case 0:
+		case TYPE_RSA:
 			if(unregister)
 				ENGINE_unregister_RSA(eng);
 			else
 				ENGINE_register_RSA(eng);
 			break;
-		case 1:
+		case TYPE_DSA:
 			if(unregister)
 				ENGINE_unregister_DSA(eng);
 			else
 				ENGINE_register_DSA(eng);
 			break;
-		case 2:
+		case TYPE_ECDH:
 			if(unregister)
 				ENGINE_unregister_ECDH(eng);
 			else
 				ENGINE_register_ECDH(eng);
 			break;
-		case 3:
+		case TYPE_ECDSA:
 			if(unregister)
 				ENGINE_unregister_ECDSA(eng);
 			else
 				ENGINE_register_ECDSA(eng);
 			break;
-		case 4:
+		case TYPE_DH:
 			if(unregister)
 				ENGINE_unregister_DH(eng);
 			else
 				ENGINE_register_DH(eng);
 			break;
-		case 5:
+		case TYPE_RAND:
 			if(unregister)
 				ENGINE_unregister_RAND(eng);
 			else
 				ENGINE_register_RAND(eng);
 			break;
-		case 6:
+		case TYPE_STORE:
 			if(unregister)
 				ENGINE_unregister_STORE(eng);
 			else
 				ENGINE_register_STORE(eng);
 			break;
-		case 7:
+		case TYPE_CIPHERS:
 			if(unregister)
 				ENGINE_unregister_ciphers(eng);
 			else
 				ENGINE_register_ciphers(eng);
 			break;
-		case 8:
+		case TYPE_DIGESTS:
 			if(unregister)
 				ENGINE_unregister_digests(eng);
 			else
 				ENGINE_register_digests(eng);
 			break;
-		case 9:{
+		case TYPE_COMPLETE:{
 			int ret = ENGINE_register_complete(eng);
 			lua_pushboolean(L, ret);
 			return 1;
@@ -294,33 +307,32 @@ static int openssl_engine_set_default(lua_State*L){
 	while(first<=top){
 		int c = luaL_checkoption(L, first, "RSA",list);
 		switch(c){
-		case 0:
+		case TYPE_RSA:
 			ret = ENGINE_set_default_RSA(eng);
 			break;
-		case 1:
+		case TYPE_DSA:
 			ret = ENGINE_set_default_DSA(eng);
 			break;
-		case 2:
+		case TYPE_ECDH:
 			ret = ENGINE_set_default_ECDH(eng);
 			break;
-		case 3:
+		case TYPE_ECDSA:
 			ret = ENGINE_set_default_ECDSA(eng);
 			break;
-		case 4:
+		case TYPE_DH:
 			ret = ENGINE_set_default_DH(eng);
 			break;
-		case 5:
+		case TYPE_RAND:
 			ret = ENGINE_set_default_RAND(eng);
 			break;
-		case 7:
+		case TYPE_CIPHERS:
 			ret = ENGINE_set_default_ciphers(eng);
 			break;
-		case 8:
+		case TYPE_DIGESTS:
 			ret = ENGINE_set_default_digests(eng);
 			break;
-		case 6:
 		default:
-			luaL_error(L,"not support %d for %s",c, list[c]);
+			luaL_error(L,"not support '%s' to set default",c, list[c]);
 			break;
 		}
 		first++;

@@ -277,7 +277,7 @@ static LUA_FUNCTION(openssl_x509_check)
 	}else{
 		STACK_OF(X509)* cert_stack =  CHECK_OBJECT(2,STACK_OF(X509),"openssl.stack_of_x509");
 		STACK_OF(X509)* untrustedchain = lua_isnoneornil(L,3) ?  NULL : CHECK_OBJECT(3,STACK_OF(X509),"openssl.stack_of_x509");
-		int purpose = luaL_checkoption(L,4, "NONE", sPurpose);
+		int purpose = auxiliar_checkoption(L,4, "NONE", sPurpose,iPurpose);
 
 		X509_STORE * cainfo = skX509_to_store(cert_stack,NULL,NULL);
 

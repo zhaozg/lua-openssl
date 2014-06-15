@@ -69,6 +69,7 @@ int auxiliar_isgroup(lua_State *L, const char *groupname, int objidx);
 void *auxiliar_getclassudata(lua_State *L, const char *groupname, int objidx);
 void *auxiliar_getgroupudata(lua_State *L, const char *groupname, int objidx);
 int auxiliar_checkboolean(lua_State *L, int objidx);
+int auxiliar_checkoption(lua_State*L, int objidx, const char* def, const char* const slist[],const int ival[]);
 int auxiliar_tostring(lua_State *L);
 
 #endif /* AUXILIAR_H */

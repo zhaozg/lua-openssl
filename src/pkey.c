@@ -646,7 +646,7 @@ static LUA_FUNCTION(openssl_pkey_parse)
     lua_newtable(L);
 
 	AUXILIAR_SET(L, -1, "bits",EVP_PKEY_bits(pkey), integer);
-
+	AUXILIAR_SET(L, -1, "size",EVP_PKEY_size(pkey), integer); 
     /*TODO: Use the real values once the openssl constants are used
     * See the enum at the top of this file
     */
@@ -664,10 +664,11 @@ static LUA_FUNCTION(openssl_pkey_parse)
             OPENSSL_PKEY_GET_BN(rsa->dmp1, dmp1);
             OPENSSL_PKEY_GET_BN(rsa->dmq1, dmq1);
             OPENSSL_PKEY_GET_BN(rsa->iqmp, iqmp);
+
 			PUSH_OBJECT(rsa,"openssl.rsa");
 			lua_rawseti(L,-2, 0);
-            lua_setfield(L,-2, "rsa");
 
+			lua_setfield(L,-2, "rsa");
             AUXILIAR_SET(L,-1,"type","rsa",string);
         }
 
@@ -684,11 +685,11 @@ static LUA_FUNCTION(openssl_pkey_parse)
             OPENSSL_PKEY_GET_BN(dsa->g, g);
             OPENSSL_PKEY_GET_BN(dsa->priv_key, priv_key);
             OPENSSL_PKEY_GET_BN(dsa->pub_key, pub_key);
+
 			PUSH_OBJECT(dsa,"openssl.dsa");
 			lua_rawseti(L,-2, 0);
 
             lua_setfield(L,-2, "dsa");
-
 			AUXILIAR_SET(L, -1, "type","dsa", string);
         }
         break;
@@ -700,10 +701,11 @@ static LUA_FUNCTION(openssl_pkey_parse)
             OPENSSL_PKEY_GET_BN(dh->g, g);
             OPENSSL_PKEY_GET_BN(dh->priv_key, priv_key);
             OPENSSL_PKEY_GET_BN(dh->pub_key, pub_key);
+
 			PUSH_OBJECT(dh,"openssl.dh");
 			lua_rawseti(L,-2, 0);
-            lua_setfield(L,-2, "dh");
-
+            
+			lua_setfield(L,-2, "dh");
 			AUXILIAR_SET(L, -1, "type","dh", string);
         }
 
@@ -725,7 +727,10 @@ static LUA_FUNCTION(openssl_pkey_parse)
 
 			OPENSSL_PKEY_GET_BN(ec->priv_key, priv_key);
 
-			AUXILIAR_SETOBJECT(L,ec,"openssl.ec_key",-1,"ec");
+			PUSH_OBJECT(ec,"openssl.ec_key");
+			lua_rawseti(L,-2, 0);
+
+			lua_setfield(L,-2, "ec");
 			AUXILIAR_SET(L, -1, "type", "ec", string);
         }
 
@@ -739,31 +744,35 @@ static LUA_FUNCTION(openssl_pkey_parse)
 };
 /* }}} */
 
-static int get_padding(const char* padding) {
-
-    if(padding==NULL || strcasecmp(padding,"pkcs1")==0)
-        return RSA_PKCS1_PADDING;
-    else if(strcasecmp(padding,"sslv23")==0)
-        return RSA_SSLV23_PADDING;
-    else if(strcasecmp(padding,"no")==0)
-        return RSA_NO_PADDING;
-    else if(strcasecmp(padding,"oaep")==0)
-        return RSA_PKCS1_OAEP_PADDING;
-    else if(strcasecmp(padding,"x931")==0)
-        return RSA_X931_PADDING;
+static const char* sPadding[] = {
+	"pkcs1",
+	"sslv23",
+	"no",
+	"oaep",
+	"x931",
 #if OPENSSL_VERSION_NUMBER > 0x10000000L
-    else if(strcasecmp(padding,"pss")==0)
-        return  RSA_PKCS1_PSS_PADDING;
+	"pss",
 #endif
-    return 0;
-}
+	NULL,
+};
+
+static int iPadding[] = {
+	RSA_PKCS1_PADDING,
+	RSA_SSLV23_PADDING,
+	RSA_NO_PADDING,
+	RSA_PKCS1_OAEP_PADDING,
+	RSA_X931_PADDING,
+#if OPENSSL_VERSION_NUMBER > 0x10000000L
+	RSA_PKCS1_PSS_PADDING
+#endif
+};
 
 static LUA_FUNCTION(openssl_pkey_encrypt)
 {
     size_t dlen = 0;
     EVP_PKEY *pkey = CHECK_OBJECT(1,EVP_PKEY,"openssl.evp_pkey");
     const char *data = luaL_checklstring(L,2,&dlen);
-    int padding = get_padding(luaL_optstring(L,3,"pkcs1"));
+    int padding = auxiliar_checkoption(L,3,"pkcs1",sPadding,iPadding);
     int clen = EVP_PKEY_size(pkey);
     int private = openssl_is_private_key(pkey);
     luaL_Buffer buf;
@@ -810,7 +819,7 @@ static LUA_FUNCTION(openssl_pkey_decrypt)
     size_t dlen = 0;
     EVP_PKEY *pkey = CHECK_OBJECT(1,EVP_PKEY,"openssl.evp_pkey");
     const char *data = luaL_checklstring(L,2,&dlen);
-    int padding = get_padding(luaL_optstring(L,3,"pkcs1"));
+    int padding = auxiliar_checkoption(L,3,"pkcs1",sPadding,iPadding);
     int private = openssl_is_private_key(pkey);
     luaL_Buffer buf;
     int ret = 0;
@@ -865,6 +874,24 @@ static LUA_FUNCTION(openssl_pkey_is_private)
     return 1;
 }
 
+static LUA_FUNCTION(openssl_pkey_get_public)
+{
+	EVP_PKEY *pkey = CHECK_OBJECT(1,EVP_PKEY,"openssl.evp_pkey");
+	int private = openssl_is_private_key(pkey);
+	int ret = 0;
+	if (private==0)
+		luaL_argerror(L,1,"alreay public key");
+	else{
+		BIO* bio = BIO_new(BIO_s_mem());
+		if(i2d_PUBKEY_bio(bio,pkey)){
+			EVP_PKEY *pub = d2i_PUBKEY_bio(bio,NULL);
+			PUSH_OBJECT(pub,"openssl.evp_pkey");
+			ret = 1;
+		}
+		BIO_free(bio);
+	}
+	return ret;
+}
 
 static LUA_FUNCTION(openssl_dh_compute_key)
 {
@@ -965,7 +992,7 @@ static LUA_FUNCTION(openssl_verify)
 		EVP_VerifyUpdate (&md_ctx, data, data_len);
 		result = EVP_VerifyFinal (&md_ctx, (unsigned char *)signature, signature_len, pkey);
 		EVP_MD_CTX_cleanup(&md_ctx);
-		lua_pushinteger(L,result);
+		lua_pushboolean(L,result);
 
 		return 1;
 	}else
@@ -1138,6 +1165,8 @@ static LUA_FUNCTION(openssl_open)
 
 static luaL_Reg pkey_funcs[] = {
 	{"is_private",		openssl_pkey_is_private},
+	{"get_public",		openssl_pkey_get_public},
+
 	{"export",			openssl_pkey_export},
 	{"parse",			openssl_pkey_parse},
 	{"bits",			openssl_pkey_bits},
@@ -1166,6 +1195,7 @@ static const luaL_Reg R[] =
 	{"seal",		openssl_seal},
 	{"open",		openssl_open},
 
+	{"get_public",		openssl_pkey_get_public},
 	{"is_private",		openssl_pkey_is_private},
 	{"export",			openssl_pkey_export},
 	{"parse",			openssl_pkey_parse},
