@@ -80,7 +80,7 @@ static LUA_FUNCTION(openssl_csr_export)
 	int notext = lua_isnoneornil(L, 3) ? 1 : lua_toboolean(L,3);
     BIO *out  = NULL;
 
-	luaL_argcheck(L, fmt!=FORMAT_DER && fmt!=FORMAT_PEM,2,
+	luaL_argcheck(L, fmt==FORMAT_DER || fmt==FORMAT_PEM, 2,
 		"only accept der or pem");
 	out = BIO_new(BIO_s_mem());
     if(fmt==FORMAT_PEM)

@@ -306,8 +306,8 @@ Currently supports 6 padding modes. They are: pkcs1, sslv23, no, oaep, x931, pss
 
 ##Certificate revocked list
 
-* ***openssl.crl_read*** (string data) => x509_crl
-* ***openssl.crl_new*** (x509 cacert, table revoked={{sn=,revoketime=,reason=0},{}},[number lastUpdate[, number nextUpdate[,number version]]]) => x509_crl
+* ***openssl.crl.read*** (string data) => x509_crl
+* ***openssl.crl.new*** (x509 cacert [,table revoked={{sn=,revoketime=,reason=0},{}},[number lastUpdate[, number nextUpdate[,number version]]]]) => x509_crl
  * Create a new X509 CRL object, lastUpdate and nextUpdate is time_t value,
  * Revoked is a table on which hex cert serial is key, and time_t revocked time.
 
@@ -319,7 +319,7 @@ Currently supports 6 padding modes. They are: pkcs1, sslv23, no, oaep, x931, pss
 * ***crl:set_version*** (number version=0) -> boolean
 * ***crl:set_update_time*** ([number lastUpdate=date() [, number nextUpdate=last+7d]]) -> boolean
 * ***crl:set_issuer*** (x509 cacert) -> boolean
-* ***crl:add_revocked*** (string|number|bn serial, number revoketime [, string reason|number reason = 0]}) -> boolean
+* ***crl:add*** (string|number|bn serial, number revoketime [, string reason|number reason = 0]}) -> boolean
 
 * ***crl:parse*** ([boolean shortname=true]) -> table
  * Below you can find an example of table content.
@@ -473,8 +473,7 @@ flags is flag information as described above.
 * ***bio:type*** () -> string
 * ***bio:reset*** ()
 
-###openssl.asn1_string***
-
+###openssl.asn1_string
 * ***openssl.asn1.string_new***([string type='octet']) => asn1_string
  * Create asn1_string, default will be 'octet' string.
  * type must be in:	"bit", "octet","utf8","numeric","printable","t61","teletex",
@@ -497,6 +496,7 @@ flags is flag information as described above.
 
 ###openssl.bn
 * ***openssl.bn*** come from [http://www.tecgraf.puc-rio.br/~lhf/ftp/lua/](http://www.tecgraf.puc-rio.br/~lhf/ftp/lua/),thanks.
+
 ###openssl.engine
  ***openssl.engine*** is a help object, it can change openssl default action.
 

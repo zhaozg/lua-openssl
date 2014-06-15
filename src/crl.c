@@ -47,7 +47,7 @@ int openssl_get_revoke_reason(const char*s){
 
 static int reason_get(lua_State*L, int reasonidx){
 	int reason = 0;
-	
+
 	if(lua_isnumber(L, reasonidx))
 	{
 		reason = lua_tointeger(L, reasonidx);
@@ -55,9 +55,12 @@ static int reason_get(lua_State*L, int reasonidx){
 	{
 		const char* s = lua_tostring(L, reasonidx);
 		reason = openssl_get_revoke_reason(s);
-	}
-	
-	luaL_argcheck(L, reason < 0 || reason >= reason_num, reasonidx, "fail convert to revoke reason");
+	}else if(lua_isnoneornil(L, reasonidx))
+		reason = 0;
+	else
+		luaL_argerror(L, reasonidx, "invalid revoke reason");
+
+	luaL_argcheck(L, reason >=0 && reason < reason_num, reasonidx, "fail convert to revoke reason");
 
 	return reason;
 }
@@ -109,20 +112,21 @@ static LUA_FUNCTION(openssl_crl_add_revocked) {
 }
 
 static LUA_FUNCTION(openssl_crl_new) {
-    X509* x509 = CHECK_OBJECT(1, X509, "openssl.x509");
+    X509* x509 = lua_isnoneornil(L,1) ? NULL :CHECK_OBJECT(1, X509, "openssl.x509");
     time_t lastUpdate = luaL_optinteger(L,3,time(&lastUpdate));
     time_t nextUpdate = luaL_optinteger(L,4,lastUpdate+7*24*3600);
 	long version = luaL_optint(L, 5, 1);
 
     X509_CRL * crl = NULL;
     ASN1_TIME *ltm,*ntm;
-	int i,n;
 
-    luaL_checktype(L, 2, LUA_TTABLE);
+    if(!lua_isnoneornil(L,2))
+		luaL_checktype(L, 2, LUA_TTABLE);
 
     crl = X509_CRL_new();
     X509_CRL_set_version(crl, version);
-    X509_CRL_set_issuer_name(crl, x509->cert_info->issuer);
+	if(x509)
+		X509_CRL_set_issuer_name(crl, X509_get_subject_name(x509));
 
     ltm = ASN1_TIME_new();
     ntm = ASN1_TIME_new();
@@ -131,25 +135,31 @@ static LUA_FUNCTION(openssl_crl_new) {
     X509_CRL_set_lastUpdate(crl, ltm);
     X509_CRL_set_nextUpdate(crl, ntm);
     
-	n = lua_objlen(L, 2);
-	for (i=1; i<=n; i++)
+	if(lua_istable(L,2) && lua_objlen(L, 2)>0)
 	{
-		lua_rawgeti(L, 2, i);
-		if(lua_istable(L, -1)) {
-			X509_REVOKED *revoked;
+		int i;
+		int n = lua_objlen(L, 2);
 
-			lua_getfield(L, -1, "reason");
-			lua_getfield(L, -2, "time");
-			lua_getfield(L, -3, "sn");
+		for (i=1; i<=n; i++)
+		{
+			lua_rawgeti(L, 2, i);
+			if(lua_istable(L, -1)) {
+				X509_REVOKED *revoked;
 
-			revoked = create_revoked(L, BN_get(L, -1), lua_tointeger(L, -2), reason_get(L, -3));
-			if(revoked) {
-				X509_CRL_add0_revoked(crl,revoked);
+				lua_getfield(L, -1, "reason");
+				lua_getfield(L, -2, "time");
+				lua_getfield(L, -3, "sn");
+
+				revoked = create_revoked(L, BN_get(L, -1), lua_tointeger(L, -2), reason_get(L, -3));
+				if(revoked) {
+					X509_CRL_add0_revoked(crl,revoked);
+				}
+				lua_pop(L, 3);
 			}
-			lua_pop(L, 3);
+			lua_pop(L,1);
 		}
-		lua_pop(L,1);
 	}
+		
 
 	ASN1_TIME_free(ltm);
     ASN1_TIME_free(ntm);
@@ -339,7 +349,7 @@ static LUA_FUNCTION(openssl_crl_export)
 	int notext = lua_isnoneornil(L, 3) ? 1 : lua_toboolean(L,3);
 	BIO *out  = NULL;
 
-	luaL_argcheck(L, fmt!=FORMAT_DER && fmt!=FORMAT_PEM,2,
+	luaL_argcheck(L, fmt==FORMAT_DER || fmt==FORMAT_PEM, 2,
 		"only accept der or pem");
 
 	out	 = BIO_new(BIO_s_mem());
@@ -377,7 +387,7 @@ static luaL_Reg crl_funcs[] = {
     {"set_version",		openssl_crl_set_version		},
     {"set_update_time",	openssl_crl_set_updatetime	},
     {"set_issuer",		openssl_crl_set_issuer		},
-    {"add_revocked",	openssl_crl_add_revocked	},
+    {"add",		openssl_crl_add_revocked	},
 
     {"parse",			openssl_crl_parse			},
 
