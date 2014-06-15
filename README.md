@@ -495,8 +495,10 @@ flags is flag information as described above.
 * ***asn1_string:equals***(asn1_string another) or ***asn1_string a==asn1_string b*** -> boolean
  * Return true if equals or false
 
+###openssl.bn
+* ***openssl.bn*** come from [http://www.tecgraf.puc-rio.br/~lhf/ftp/lua/](http://www.tecgraf.puc-rio.br/~lhf/ftp/lua/),thanks.
 ###openssl.engine
-***openssl.engine*** is a help object, it can change openssl default action.
+ ***openssl.engine*** is a help object, it can change openssl default action.
 
 
 #A.   Howto
