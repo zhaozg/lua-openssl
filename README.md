@@ -6,9 +6,9 @@ lua-openssl toolkit - A free, MIT-licensed OpenSSL binding for Lua (Work in prog
 2. [Message Digest](#2-message-digest)
 3. [Cipher](#3-cipher)
 4. [Public/Private Key](#4-publicprivate-key-functions)
-5. [PKCS7 SMIME](#5-pkcs7-smime-signverifyencryptdecrypt-functions)
-6. [Pkcs12](#6-pkcs12-function)
-7. [Certificate](#7-certificate)
+5. [Certificate](#7-certificate)
+6. [PKCS7 SMIME](#5-pkcs7-smime-signverifyencryptdecrypt-functions)
+7. [Pkcs12](#6-pkcs12-function)
 8. [SSL](#8-ssl)
 9. [Misc](#9-misc-functions)
 
@@ -246,69 +246,7 @@ Currently supports 6 padding modes. They are: pkcs1, sslv23, no, oaep, x931, pss
 * ***evp_pkey.open***(string data, string ekey [, evp_cipher enc|string md_alg=RC4]) -> string
 
 
-#5. PKCS7 (S/MIME)
-
-* ***openssl.pkcs7.read***(bio|string in[,string format='auto']) => openssl.pkcs7,string
- * Read string or bio object, which include pkcs7 content, if success will return pkcs7 object or nil
- * format allow "auto","der","pem","smime", default is "auto" will try all method until load ok
- * when format is "smime", second return maybe content,if include.
-
-* ***openssl.pkcs7.sign***(string|bio msg, x509 signcert, evp_pkey signkey[, int flags [,stack_of_x509 extracerts]]) => openssl.pkcs7
- * Signs message with signcert/signkey and return signed pkcs7 object.
-
-* ***openssl.pkcs7.verify*** (pkcs7 in[, string flags [, stack_of_x509 signerscerts [, stack_of_x509 cacerts,
-   [, stack_of_x509 extracerts [,bio content]]]}]) ->boolean, openssl.sk_x509
- * Verify signed pkcs7 object, the signer is who they say they are, and returns the verify result,follow by signers.
-
-* ***openssl.pkcs7.encrypt*** (string|bio msg, stack_of_x509 recipcerts, [, string flags [,evp_cipher cipher]]) => openssl.pkcs7
- * Encrypts message with the certificates in recipcerts and output the return pkcs7 object.
-
-* ***openssl.pkcs7.decrypt*** (pkcs7 in, x509 recipcert [,evp_pkey recipkey]) -> string
- * Decrypt pkcs7 message
-
-* ***pkcs7:verify*** ([string flags [, stack_of_x509 signerscerts [, stack_of_x509 cacerts,
-   [, stack_of_x509 extracerts [,bio content]]]}]) ->boolean, openssl.sk_x509
- * Verify signed pkcs7 object, the signer is who they say they are, and returns the verify result,follow by signers.
-
-* ***pkcs7:decrypt*** (pkcs7 in, x509 recipcert [,evp_pkey recipkey]) -> string
- * Decrypt pkcs7 message
-
-* ***pkcs7:export*** (boolean pem) -> string
- * export pkcs7 as a string, which can be to read
-
-* ***pkcs7:parse***() -> table
- * Return a table has pkcs7 infomation, include type,and other things relate to types
-
-
-They are based on apps/smime.c from the OpenSSL dist, so for more information,
-see the documentation for OpenSSL.
-
-Strings "detached", "nodetached", "text", "nointern", "noverify",  "nochain",
-"nocerts", "noattr", "binary", "nosigs" are supported.
-
-Decrypts the S/MIME message in the BIO object and output the results to
-BIO object. recipcert is a CERT for one of the recipients. recipkey
-specifies the private key matching recipcert.
-
-headers is an array of headers to prepend to the message: they will
-not be included in the encoded section.
-
-flags is flag information as described above.
-
-
-#6. PKCS12 Function
-
-* ***openssl.pkcs12.read*** (string pkcs12data, string pass) -> table
- * Parses a PKCS12 data to a table
- * Returns a table containing cert, pkey, and extracerts keys
-
-* ***openssl.pkcs12.export*** (x509 cert, evp_pkey pkey, string pass [[, string friendname ], table extracerts])) -> string
- * Creates and exports a PKCS12 data
- * friendname is optional, if supplied, must be as 4th parameter
- * extracerts is optional, it can be as 4th or 5th parameter (if friendname is supplied)
-
-
-#7. Certificate
+#5. Certificate
 
 ##X509 certificate
 
@@ -359,11 +297,12 @@ flags is flag information as described above.
 * ***openssl.csr.read*** (string data|BIO in,[string format='auto']) => x509_req
  * format support 'auto','pem','der',default use 'auto'
 
-* ***x509_req:sign*** (x509 cacert=nil, evp_pkey caprivkey, table arg={serialNumber=,num_days=,version=,}[,table extensions]) => x509
+* ***csr:export*** ([string format='pem' [, boolean noext=true]])->string
+* ***csr:get_public*** () -> evp_pkey
+* ***csr:parse***([boolean shortname=true]) -> table
+
+* ***csr:sign*** (x509 cacert=nil, evp_pkey caprivkey, table arg={serialNumber=,num_days=,version=,}[,table extensions]) => x509
  * args must have serialNumber as hexecoded string, num_days as number
-* ***x509_req:export*** ([string format='pem' [, boolean noext=true]])->string
-* ***x509_req:get_public*** () -> evp_pkey
-* ***x509_req:parse***([boolean shortname=true]) -> table
 
 ##Certificate revocked list
 
@@ -410,6 +349,68 @@ flags is flag information as described above.
  }
 }
 ```
+
+#6. PKCS7 (S/MIME)
+
+* ***openssl.pkcs7.read***(bio|string in[,string format='auto']) => openssl.pkcs7,string
+ * Read string or bio object, which include pkcs7 content, if success will return pkcs7 object or nil
+ * format allow "auto","der","pem","smime", default is "auto" will try all method until load ok
+ * when format is "smime", second return maybe content,if include.
+
+* ***openssl.pkcs7.sign***(string|bio msg, x509 signcert, evp_pkey signkey[, int flags [,stack_of_x509 extracerts]]) => openssl.pkcs7
+ * Signs message with signcert/signkey and return signed pkcs7 object.
+
+* ***openssl.pkcs7.verify*** (pkcs7 in[, string flags [, stack_of_x509 signerscerts [, stack_of_x509 cacerts,
+   [, stack_of_x509 extracerts [,bio content]]]}]) ->boolean, openssl.sk_x509
+ * Verify signed pkcs7 object, the signer is who they say they are, and returns the verify result,follow by signers.
+
+* ***openssl.pkcs7.encrypt*** (string|bio msg, stack_of_x509 recipcerts, [, string flags [,evp_cipher cipher]]) => openssl.pkcs7
+ * Encrypts message with the certificates in recipcerts and output the return pkcs7 object.
+
+* ***openssl.pkcs7.decrypt*** (pkcs7 in, x509 recipcert [,evp_pkey recipkey]) -> string
+ * Decrypt pkcs7 message
+
+* ***pkcs7:verify*** ([string flags [, stack_of_x509 signerscerts [, stack_of_x509 cacerts,
+   [, stack_of_x509 extracerts [,bio content]]]}]) ->boolean, openssl.sk_x509
+ * Verify signed pkcs7 object, the signer is who they say they are, and returns the verify result,follow by signers.
+
+* ***pkcs7:decrypt*** (pkcs7 in, x509 recipcert [,evp_pkey recipkey]) -> string
+ * Decrypt pkcs7 message
+
+* ***pkcs7:export*** (boolean pem) -> string
+ * export pkcs7 as a string, which can be to read
+
+* ***pkcs7:parse***() -> table
+ * Return a table has pkcs7 infomation, include type,and other things relate to types
+
+
+They are based on apps/smime.c from the OpenSSL dist, so for more information,
+see the documentation for OpenSSL.
+
+Strings "detached", "nodetached", "text", "nointern", "noverify",  "nochain",
+"nocerts", "noattr", "binary", "nosigs" are supported.
+
+Decrypts the S/MIME message in the BIO object and output the results to
+BIO object. recipcert is a CERT for one of the recipients. recipkey
+specifies the private key matching recipcert.
+
+headers is an array of headers to prepend to the message: they will
+not be included in the encoded section.
+
+flags is flag information as described above.
+
+
+#7. PKCS12 Function
+
+* ***openssl.pkcs12.read*** (string pkcs12data, string pass) -> table
+ * Parses a PKCS12 data to a table
+ * Returns a table containing cert, pkey, and extracerts keys
+
+* ***openssl.pkcs12.export*** (x509 cert, evp_pkey pkey, string pass [[, string friendname ], table extracerts])) -> string
+ * Creates and exports a PKCS12 data
+ * friendname is optional, if supplied, must be as 4th parameter
+ * extracerts is optional, it can be as 4th or 5th parameter (if friendname is supplied)
+
 
 #8. SSL
 

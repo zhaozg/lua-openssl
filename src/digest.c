@@ -11,7 +11,7 @@
 #define MYNAME		"digest"
 #define MYVERSION	MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
 	"based on OpenSSL " SHLIB_VERSION_NUMBER
-#define MYTYPE			"openssl.digest"
+#define MYTYPE			"digest"
 
 static LUA_FUNCTION(openssl_digest_list) {
 	int aliases = lua_isnoneornil(L,1)?1:lua_toboolean(L,1);

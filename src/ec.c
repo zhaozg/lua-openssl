@@ -10,7 +10,7 @@
 #define MYNAME		"ec"
 #define MYVERSION	MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
 	"based on OpenSSL " SHLIB_VERSION_NUMBER
-#define MYTYPE			"openssl.ec"
+#define MYTYPE			"ec"
 
 #define lua_boxpointer(L,u) \
 	(*(void **)(lua_newuserdata(L, sizeof(void *))) = (u))

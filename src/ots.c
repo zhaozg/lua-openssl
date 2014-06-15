@@ -10,7 +10,7 @@
 #define MYNAME		"ts"
 #define MYVERSION	MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
 	"based on OpenSSL " SHLIB_VERSION_NUMBER
-#define MYTYPE			"openssl.ts"
+#define MYTYPE			"ts"
 
 #ifdef OPENSSL_HAVE_TS
 

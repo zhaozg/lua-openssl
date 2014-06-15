@@ -11,7 +11,7 @@
 #define MYNAME		"cipher"
 #define MYVERSION	MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
 	"based on OpenSSL " SHLIB_VERSION_NUMBER
-#define MYTYPE			"openssl.cipher"
+#define MYTYPE			"cipher"
 
 
 static LUA_FUNCTION(openssl_cipher_list) {

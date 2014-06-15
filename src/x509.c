@@ -12,7 +12,7 @@
 #define MYNAME		"x509"
 #define MYVERSION	MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
 	"based on OpenSSL " SHLIB_VERSION_NUMBER
-#define MYTYPE			"openssl.x509"
+#define MYTYPE			"x509"
 
 /*** openssl.x509_algor object ***/
 static LUA_FUNCTION(openssl_x509_algo_parse) {
@@ -210,7 +210,8 @@ static LUA_FUNCTION(openssl_x509_parse)
         if(set)
         {
 			lua_pushfstring(L,"%s CA",pname);
-            AUXILIAR_SET(L,-2, lua_tostring(L, -1), 1,boolean);
+			pname = lua_tostring(L, -1);
+            AUXILIAR_SET(L,-2, pname, 1,boolean);
 			lua_pop(L,1);
 		}
     }
@@ -358,6 +359,7 @@ static luaL_Reg x509_funcs[] = {
 	{"check",		openssl_x509_check},
 	{"get_public",	openssl_x509_public_key},
 	{"__gc",		openssl_x509_free},
+
 	{"__tostring",	auxiliar_tostring},
 
 	{NULL,			NULL},
@@ -377,7 +379,7 @@ LUALIB_API int luaopen_x509(lua_State *L)
 	auxiliar_newclass(L,"openssl.x509_extension",	x509_extension_funs);
 	auxiliar_newclass(L,"openssl.x509", x509_funcs);
 
-	openssl_register_sk_x509(L);
+	//openssl_register_sk_x509(L);
 	luaL_newmetatable(L,MYTYPE);
 	lua_setglobal(L,MYNAME);
 	luaL_register(L,MYNAME,R);

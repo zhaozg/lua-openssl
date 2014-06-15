@@ -11,7 +11,7 @@
 #define MYNAME		"ocsp"
 #define MYVERSION	MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
 	"based on OpenSSL " SHLIB_VERSION_NUMBER
-#define MYTYPE			"openssl.ocsp"
+#define MYTYPE			"ocsp"
 
 static int openssl_ocsp_request_new(lua_State*L){
 	OCSP_REQUEST *req = NULL;

@@ -9,7 +9,7 @@
 #define MYNAME		"ssl"
 #define MYVERSION	MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
 	"based on OpenSSL " SHLIB_VERSION_NUMBER
-#define MYTYPE			"openssl.ssl"
+#define MYTYPE			"ssl"
 
 #include <openssl/ssl.h>
 

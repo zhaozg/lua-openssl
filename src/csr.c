@@ -10,7 +10,7 @@
 #define MYNAME		"csr"
 #define MYVERSION	MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
 	"based on OpenSSL " SHLIB_VERSION_NUMBER
-#define MYTYPE			"openssl.csr"
+#define MYTYPE			"csr"
 
 static int openssl_make_REQ(lua_State*L,
                             X509_REQ *csr,
@@ -50,9 +50,9 @@ static LUA_FUNCTION(openssl_csr_read)
     BIO * in = load_bio_object(L, 1);
 	int fmt = luaL_checkoption(L, 2, "auto", format);
 	X509_REQ * csr = NULL;
-	
+
 	if( fmt==FORMAT_AUTO || fmt==FORMAT_PEM){
-		PEM_read_bio_X509_REQ(in, NULL,NULL,NULL);
+		csr = PEM_read_bio_X509_REQ(in, NULL,NULL,NULL);
 		BIO_reset(in);
 	}
 	if ((fmt==FORMAT_AUTO && in==NULL) || fmt==FORMAT_DER)
@@ -114,6 +114,55 @@ static LUA_FUNCTION(openssl_csr_export)
     return 1;
 }
 
+
+static int copy_extensions(X509 *x, X509_REQ *req,int all)
+{
+	STACK_OF(X509_EXTENSION) *exts = NULL;
+	X509_EXTENSION *ext, *tmpext;
+	ASN1_OBJECT *obj;
+	int i, idx, ret = 0;
+
+	exts = X509_REQ_get_extensions(req);
+	if(exts==NULL)
+		return 0;
+	for(i = 0; i < sk_X509_EXTENSION_num(exts); i++) {
+		ext = sk_X509_EXTENSION_value(exts, i);
+		obj = X509_EXTENSION_get_object(ext);
+		idx = X509_get_ext_by_OBJ(x, obj, -1);
+		/* Does extension exist? */
+		if (idx != -1) {
+			/* If normal copy don't override existing extension */
+			if (!all)
+				continue;
+			/* Delete all extensions of same type */
+			do {
+				tmpext = X509_get_ext(x, idx);
+				X509_delete_ext(x, idx);
+				X509_EXTENSION_free(tmpext);
+				idx = X509_get_ext_by_OBJ(x, obj, -1);
+			} while (idx != -1);
+		}
+		if (!X509_add_ext(x, ext, -1))
+			goto end;
+	}
+
+	ret = 1;
+
+end:
+
+	sk_X509_EXTENSION_pop_free(exts, X509_EXTENSION_free);
+
+	return ret;
+}
+
+static LUA_FUNCTION(openssl_csr_verify)
+{
+	X509_REQ *csr = CHECK_OBJECT(1,X509_REQ,"openssl.x509_req");
+	EVP_PKEY * self_key = X509_REQ_get_pubkey(csr);
+	lua_pushboolean(L, X509_REQ_verify(csr, self_key));
+	return 1;
+};
+
 static LUA_FUNCTION(openssl_csr_sign)
 {
 	X509_REQ *csr = CHECK_OBJECT(1,X509_REQ,"openssl.x509_req");
@@ -130,6 +179,7 @@ static LUA_FUNCTION(openssl_csr_sign)
    
 	if(X509_REQ_verify(csr, self_key)<=0)
 		luaL_error(L,"CSR Signature verification fail");
+
 	if (cacert && !X509_check_private_key(cacert, priv_key)) 
 		luaL_error(L,"private key does not correspond to signing cert");
 	
@@ -143,7 +193,7 @@ static LUA_FUNCTION(openssl_csr_sign)
 
 	    lua_getfield(L, 4, "serialNumber");
 	    if(lua_isnil(L,-1) || (bn=BN_get(L, -1))==NULL)
-		    luaL_argerror(L,4, "must have serialNumber key and value must be string or number type");
+		    luaL_argerror(L,4, "must have serialNumber key and value is string or number type");
 		lua_pop(L, 1);
 
 	    BN_set_negative(bn,0);
@@ -151,7 +201,7 @@ static LUA_FUNCTION(openssl_csr_sign)
 	    lua_getfield(L, 4, "digest");
 	    md = lua_isnil(L, -1)? EVP_get_digestbyname("sha1WithRSAEncryption") : get_digest(L, -1);
 		if(md==NULL)
-			luaL_argerror(L,4, "must have digest key and value must can be converto evp_digest");
+			luaL_argerror(L,4, "must have digest key and value can convert to evp_digest");
 		lua_pop(L, 1);
 
 	    lua_getfield(L,4, "num_days");
@@ -197,21 +247,18 @@ static LUA_FUNCTION(openssl_csr_sign)
     if (!X509_set_pubkey(new_cert, self_key))  
         luaL_error(L, "fail X509_set_pubkey");
 
-    new_cert->cert_info->extensions = X509_REQ_get_extensions(csr);
-    if(lua_isnoneornil(L, 5))
+	copy_extensions(new_cert,csr, 1);
+    if(!lua_isnoneornil(L, 5))
     {
         X509V3_CTX ctx;
-        STACK_OF(X509_EXTENSION)* exts = NULL;
 
 		luaL_checktable(L, 5);
 
-		exts =  new_cert->cert_info->extensions;
-        if(exts==NULL)
-            exts = sk_X509_EXTENSION_new_null();
+        if(new_cert->cert_info->extensions==NULL)
+            new_cert->cert_info->extensions = sk_X509_EXTENSION_new_null();
 
         X509V3_set_ctx_test(&ctx);
-        XEXTS_from_ltable(L,exts,&ctx,5);
-        new_cert->cert_info->extensions = exts;
+        XEXTS_from_ltable(L,new_cert->cert_info->extensions,&ctx,5);
     }       
 
     /* Now sign it */
@@ -249,7 +296,7 @@ static LUA_FUNCTION(openssl_csr_new)
 	if(!lua_isnoneornil(L, digest))
 	{
 		luaL_argcheck(L,
-			!lua_isstring(L,digest) && !auxiliar_isclass(L, "openssl.evp_digest", digest),
+			lua_isstring(L,digest) || auxiliar_isclass(L, "openssl.evp_digest", digest),
 			digest,
 			"only accept string or openssl.evp_digest"
 			);
@@ -285,7 +332,6 @@ static LUA_FUNCTION(openssl_csr_parse)
 
     X509_NAME * subject = X509_REQ_get_subject_name(csr);
     STACK_OF(X509_EXTENSION) *exts  = X509_REQ_get_extensions(csr);
-	
 
     lua_newtable(L);
     
@@ -300,12 +346,6 @@ static LUA_FUNCTION(openssl_csr_parse)
 	{
 		X509_REQ_INFO* ri=csr->req_info;
 		STACK_OF(X509_ATTRIBUTE) *attrs = ri->attributes;
-		lua_newtable(L);
-
-		AUXILIAR_SETOBJECT(L, ri->pubkey->algor->algorithm, "openssl.asn1_object", -1, "algorithm");
-		AUXILIAR_SETOBJECT(L, X509_REQ_get_pubkey(csr), "openssl.evp_pkey",-1,"pubkey");
-		lua_setfield(L,-2,"pubkey");
-
 		if(attrs && X509at_get_attr_count(attrs))
 		{
 			int i;
@@ -342,6 +382,12 @@ static LUA_FUNCTION(openssl_csr_parse)
 			}
 			lua_setfield(L,-2,"attributes");
 		}
+
+
+		lua_newtable(L);
+		AUXILIAR_SETOBJECT(L, ri->pubkey->algor->algorithm, "openssl.asn1_object", -1, "algorithm");
+		AUXILIAR_SETOBJECT(L, X509_REQ_get_pubkey(csr), "openssl.evp_pkey",-1,"pubkey");
+		lua_setfield(L,-2,"pubkey");
 	}
 
 	lua_setfield(L,-2,"req_info");
@@ -357,7 +403,8 @@ static LUA_FUNCTION(openssl_csr_free) {
 
 static LUA_FUNCTION(openssl_csr_get_public) {
     X509_REQ *csr = CHECK_OBJECT(1,X509_REQ,"openssl.x509_req");
-    PUSH_OBJECT(csr->req_info->pubkey,"openssl.evp_pkey");
+	EVP_PKEY *pkey = X509_REQ_get_pubkey(csr);
+    PUSH_OBJECT(pkey,"openssl.evp_pkey");
     return 1;
 }
 
@@ -365,6 +412,7 @@ static luaL_reg csr_cfuns[] = {
 	{"export",			openssl_csr_export	},
 	{"parse",			openssl_csr_parse	},
 	{"sign",			openssl_csr_sign	},
+	{"verify",			openssl_csr_verify },
 	{"get_public",		openssl_csr_get_public	},
 
 	{"__tostring",		auxiliar_tostring	},

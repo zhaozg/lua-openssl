@@ -11,7 +11,7 @@
 #define MYNAME		"pkcs7"
 #define MYVERSION	MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
 	"based on OpenSSL " SHLIB_VERSION_NUMBER
-#define MYTYPE			"openssl.pkcs7"
+#define MYTYPE			"pkcs7"
 
 static LUA_FUNCTION(openssl_pkcs7_read) {
 	BIO* bio = load_bio_object(L, 1);

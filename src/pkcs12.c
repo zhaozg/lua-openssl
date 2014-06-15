@@ -10,7 +10,7 @@
 #define MYNAME		"pkcs12"
 #define MYVERSION	MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
 	"based on OpenSSL " SHLIB_VERSION_NUMBER
-#define MYTYPE			"openssl.pkcs12"
+#define MYTYPE			"pkcs12"
 
 static LUA_FUNCTION(openssl_pkcs12_export)
 {

@@ -11,7 +11,7 @@
 #define MYNAME		"pkey"
 #define MYVERSION	MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
 	"based on OpenSSL " SHLIB_VERSION_NUMBER
-#define MYTYPE			"openssl.pkey"
+#define MYTYPE			"pkey"
 
 #ifndef OPENSSL_NO_EC
 #include "ec_lcl.h"

@@ -22,6 +22,7 @@ int XNAME_from_ltable(lua_State*L,
         if (strindex) {
             int nid = OBJ_txt2nid(strindex);
             if (nid != NID_undef) {
+				/* FIXME: more flexable*/
                 if (!X509_NAME_add_entry_by_NID(name, nid, MBSTRING_ASC, (unsigned char*)strval, -1, -1, 0))
                 {
                     luaL_error(L, "dn: add_entry_by_NID %d(%s) -> %s (failed)", nid, strindex, strval);

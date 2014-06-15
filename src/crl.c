@@ -6,15 +6,15 @@
 \*=========================================================================*/
 #include "openssl.h"
 #include "private.h"
+#include <openssl/x509v3.h>
 
 #define MYNAME		"crl"
 #define MYVERSION	MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
 	"based on OpenSSL " SHLIB_VERSION_NUMBER
-#define MYTYPE			"openssl.crl"
+#define MYTYPE			"crl"
 
 int		X509_CRL_cmp(const X509_CRL *a, const X509_CRL *b);
 int		X509_CRL_match(const X509_CRL *a, const X509_CRL *b);
-
 
 static const BIT_STRING_BITNAME reason_flags[] = {
 	{0, "Unused", "unused"},

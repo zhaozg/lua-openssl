@@ -9,7 +9,7 @@
 #define MYNAME		"bio"
 #define MYVERSION	MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
 	"based on OpenSSL " SHLIB_VERSION_NUMBER
-#define MYTYPE			"openssl.bio"
+#define MYTYPE			"bio"
 
 static LUA_FUNCTION(openssl_bio_new_mem) {
     size_t l = 0;

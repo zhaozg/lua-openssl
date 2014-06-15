@@ -69,8 +69,7 @@ BIGNUM *BN_get(lua_State *L, int i)
 	{
 		BN_free(x);
 		x = NULL;
-	}else
-		luaL_argerror(L, i, "fail convert to openssl.bn");
+	}		
 
 	return x;
 }
