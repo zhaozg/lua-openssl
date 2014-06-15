@@ -379,7 +379,7 @@ LUALIB_API int luaopen_x509(lua_State *L)
 	auxiliar_newclass(L,"openssl.x509_extension",	x509_extension_funs);
 	auxiliar_newclass(L,"openssl.x509", x509_funcs);
 
-	//openssl_register_sk_x509(L);
+	openssl_register_sk_x509(L);
 	luaL_newmetatable(L,MYTYPE);
 	lua_setglobal(L,MYNAME);
 	luaL_register(L,MYNAME,R);

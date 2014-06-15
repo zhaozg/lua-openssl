@@ -55,22 +55,17 @@ static LUA_FUNCTION(openssl_pkcs7_sign)
 {
 	X509 * cert = NULL;
 	EVP_PKEY * privkey = NULL;
-	long flags = 0;//PKCS7_DETACHED;
+	long flags = 0; //PKCS7_DETACHED;
 	PKCS7 * p7 = NULL;
-	BIO * in = NULL;
 	STACK_OF(X509) *others = NULL;
 
-
-	int top = lua_gettop(L);
 	int ret = 0;
 
-	in = load_bio_object(L, 1);
+	BIO * in  = load_bio_object(L, 1);
 	cert = CHECK_OBJECT(2,X509,"openssl.x509");
 	privkey = CHECK_OBJECT(3, EVP_PKEY,"openssl.evp_pkey");
-	if(top>3)
-		flags = luaL_checkint(L,4);
-	if(top>4)
-		others = CHECK_OBJECT(5, STACK_OF(X509), "openssl.stack_of_x509");
+	flags = lua_isnoneornil(L, 4) ? 0 : luaL_checkint(L,4);
+	others = lua_isnoneornil(L, 5) ? 0 : CHECK_OBJECT(5, STACK_OF(X509), "openssl.stack_of_x509");
 
 	p7 = PKCS7_sign(cert, privkey, others, in, flags);
 	if (p7 == NULL) {
@@ -102,17 +97,11 @@ static LUA_FUNCTION(openssl_pkcs7_verify)
 	int top = lua_gettop(L);
 
 	p7 = CHECK_OBJECT(1,PKCS7,"openssl.pkcs7");
-	if(top>1)
-		flags = luaL_checkinteger(L,2);
-	if(top>2)
-		signers = CHECK_OBJECT(3, STACK_OF(X509),"openssl.stack_of_x509");
-	if(top>3)
-		cainfo = CHECK_OBJECT(4, STACK_OF(X509),"openssl.stack_of_x509");
-	if(top>4)
-		others = CHECK_OBJECT(5, STACK_OF(X509),"openssl.stack_of_x509");
-
-	if(top>5)
-		dataout = CHECK_OBJECT(6, BIO, "openssl.bio");
+	flags = luaL_optint(L, 2, 0);
+	signers = lua_isnoneornil(L,3) ? NULL :CHECK_OBJECT(3, STACK_OF(X509),"openssl.stack_of_x509");
+	cainfo = lua_isnoneornil(L,4) ? NULL :CHECK_OBJECT(4, STACK_OF(X509),"openssl.stack_of_x509");
+	others = lua_isnoneornil(L,5) ? NULL : CHECK_OBJECT(5, STACK_OF(X509),"openssl.stack_of_x509");
+	dataout = lua_isnoneornil(L,6) ? NULL : load_bio_object(L, 6);
 
 	flags = flags & ~PKCS7_DETACHED;
 	store = skX509_to_store(cainfo,NULL,NULL);
@@ -455,7 +444,7 @@ static const luaL_Reg R[] =
 {
 	{"read",			openssl_pkcs7_read},
 	{"sign",			openssl_pkcs7_sign},
-	{"sign",			openssl_pkcs7_verify},
+	{"verify",			openssl_pkcs7_verify},
 	{"encrypt",			openssl_pkcs7_encrypt},
 	{"decrypt",			openssl_pkcs7_decrypt},
 

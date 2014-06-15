@@ -50,11 +50,6 @@ STACK_OF(TYPE)* sk_##type##_fromtable(lua_State*L, int idx) { \
 	return 0; \
 }
 
-#define SK_TOSTRING(TYPE, type) static int sk_##type##_tostring(lua_State* L) { \
-	STACK_OF(TYPE)* sk = CHECK_OBJECT(1, STACK_OF(TYPE), "openssl.stack_of_"#type); \
-	lua_pushfstring(L,"openssl.stack_of_"#type":%p",sk); \
-	return 1; \
-}
 
 #define SK_PUSH(TYPE, type) static int sk_##type##_push(lua_State* L) { \
 	STACK_OF(TYPE) * sk = CHECK_OBJECT(1,STACK_OF(TYPE), "openssl.stack_of_"#type); \
@@ -131,7 +126,6 @@ SK2TAB(TYPE,type);	\
 			\
 SK_TOTABLE(TYPE,type);	\
 SK_FREE(TYPE,type);	\
-SK_TOSTRING(TYPE,type);	\
 SK_PUSH(TYPE,type);	\
 SK_POP(TYPE,type);	\
 SK_INSERT(TYPE,type);	\
@@ -155,7 +149,7 @@ static luaL_Reg sk_##type##_funcs[] = { 	\
 	{"totable",	sk_##type##_totable},	\
 	{"parse",	sk_##type##_totable},	\
 	{"__len",	sk_##type##_length },	\
-	{"__tostring",	sk_##type##_tostring },	\
+	{"__tostring",	auxiliar_tostring },	\
 	{"__gc",	sk_##type##_free },	\
 	{NULL,		NULL}	\
 }; \
