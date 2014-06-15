@@ -360,11 +360,11 @@ Currently supports 6 padding modes. They are: pkcs1, sslv23, no, oaep, x931, pss
 * ***openssl.pkcs7.sign***(string|bio msg, x509 signcert, evp_pkey signkey[, int flags [,stack_of_x509 extracerts]]) => openssl.pkcs7
  * Signs message with signcert/signkey and return signed pkcs7 object.
 
-* ***openssl.pkcs7.verify*** (pkcs7 in[, string flags [, stack_of_x509 signerscerts [, stack_of_x509 cacerts,
-   [, stack_of_x509 extracerts [,bio content]]]}]) ->boolean, openssl.sk_x509
+* ***openssl.pkcs7.verify*** (pkcs7 in[, stack_of_x509 signerscerts [, stack_of_x509 cacerts,[, string|bio msg[,int flag]]]])
+  ->string|boolean,openssl.sk_x509
  * Verify signed pkcs7 object, the signer is who they say they are, and returns the verify result,follow by signers.
 
-* ***openssl.pkcs7.encrypt*** (string|bio msg, stack_of_x509 recipcerts, [, string flags [,evp_cipher cipher]]) => openssl.pkcs7
+* ***openssl.pkcs7.encrypt*** (string|bio msg, stack_of_x509 recipcerts, [, evp_cipher cipher[,string flags ]]) => openssl.pkcs7
  * Encrypts message with the certificates in recipcerts and output the return pkcs7 object.
 
 * ***openssl.pkcs7.decrypt*** (pkcs7 in, x509 recipcert [,evp_pkey recipkey]) -> string

@@ -53,103 +53,82 @@ static LUA_FUNCTION(openssl_pkcs7_read) {
 
 static LUA_FUNCTION(openssl_pkcs7_sign)
 {
-	X509 * cert = NULL;
-	EVP_PKEY * privkey = NULL;
-	long flags = 0; //PKCS7_DETACHED;
-	PKCS7 * p7 = NULL;
-	STACK_OF(X509) *others = NULL;
+	BIO *in  = load_bio_object(L, 1);
+	X509 *cert = CHECK_OBJECT(2,X509,"openssl.x509");
+	EVP_PKEY *privkey = CHECK_OBJECT(3, EVP_PKEY,"openssl.evp_pkey");
+	STACK_OF(X509) *others = lua_isnoneornil(L, 4) ? 0 : CHECK_OBJECT(4, STACK_OF(X509), "openssl.stack_of_x509");
+	long flags =  lua_isnoneornil(L, 5) ? 0 : luaL_checkint(L,5);
 
-	int ret = 0;
-
-	BIO * in  = load_bio_object(L, 1);
-	cert = CHECK_OBJECT(2,X509,"openssl.x509");
-	privkey = CHECK_OBJECT(3, EVP_PKEY,"openssl.evp_pkey");
-	flags = lua_isnoneornil(L, 4) ? 0 : luaL_checkint(L,4);
-	others = lua_isnoneornil(L, 5) ? 0 : CHECK_OBJECT(5, STACK_OF(X509), "openssl.stack_of_x509");
+	PKCS7 *p7 = NULL;
+	if(!X509_check_private_key(cert,privkey))
+		luaL_error(L,"sigcert and private key not match");
 
 	p7 = PKCS7_sign(cert, privkey, others, in, flags);
-	if (p7 == NULL) {
-		luaL_error(L,"error creating PKCS7 structure!");
-	}
-
 	BIO_free(in);
-
-	if(p7) {
+	if (p7){
 		PUSH_OBJECT(p7,"openssl.pkcs7");
 		return 1;
-	}else
+	}else{
 		luaL_error(L,"error creating PKCS7 structure!");
+	}
 
 	return 0;
 }
 
 static LUA_FUNCTION(openssl_pkcs7_verify)
 {
-	X509_STORE * store = NULL;
-	STACK_OF(X509) *signers = NULL;
-	STACK_OF(X509) *cainfo = NULL;
-	STACK_OF(X509) *others = NULL;
-	PKCS7 * p7 = NULL;
-	BIO* dataout = NULL;
-	long flags = 0;
-
 	int ret = 0;
-	int top = lua_gettop(L);
+	PKCS7 *p7 = CHECK_OBJECT(1,PKCS7,"openssl.pkcs7");
+	STACK_OF(X509) *signers = lua_isnoneornil(L,2) ? NULL :CHECK_OBJECT(2, STACK_OF(X509),"openssl.stack_of_x509");
+	STACK_OF(X509) *cainfo = lua_isnoneornil(L,3) ? NULL :CHECK_OBJECT(3, STACK_OF(X509),"openssl.stack_of_x509");
+	BIO* in = lua_isnoneornil(L,4) ? NULL : load_bio_object(L, 4);
+	long flags = luaL_optint(L, 5, 0);
+	X509_STORE * store = skX509_to_store(cainfo,NULL,NULL);
+	BIO* out = BIO_new(BIO_s_mem());
 
-	p7 = CHECK_OBJECT(1,PKCS7,"openssl.pkcs7");
-	flags = luaL_optint(L, 2, 0);
-	signers = lua_isnoneornil(L,3) ? NULL :CHECK_OBJECT(3, STACK_OF(X509),"openssl.stack_of_x509");
-	cainfo = lua_isnoneornil(L,4) ? NULL :CHECK_OBJECT(4, STACK_OF(X509),"openssl.stack_of_x509");
-	others = lua_isnoneornil(L,5) ? NULL : CHECK_OBJECT(5, STACK_OF(X509),"openssl.stack_of_x509");
-	dataout = lua_isnoneornil(L,6) ? NULL : load_bio_object(L, 6);
-
-	flags = flags & ~PKCS7_DETACHED;
-	store = skX509_to_store(cainfo,NULL,NULL);
+	//flags = flags & ~PKCS7_DETACHED;
 
 	if (!store) {
 		luaL_error(L, "can't setup veirfy cainfo");
 	}
 
-	if (PKCS7_verify(p7, others, store, NULL, dataout, flags)) {
+	if (PKCS7_verify(p7, signers, store, in, out, flags)) 
+	{
 		STACK_OF(X509) *signers1 = PKCS7_get0_signers(p7, NULL, flags);
-		ret = 2;
-		lua_pushboolean(L,1);
+		if(in)
+			lua_pushboolean(L,1);
+		else
+		{
+			BUF_MEM *bio_buf;
+
+			BIO_get_mem_ptr(out, &bio_buf);
+			lua_pushlstring(L,bio_buf->data, bio_buf->length);
+		}
+		
 		PUSH_OBJECT(signers1,"openssl.sk_x509");
+		ret = 2;
 	} else {
-		lua_pushboolean(L,0);
+		lua_pushnil(L);
 		ret = 1;
 	}
 	if(store)
 		X509_STORE_free(store);
-	if(dataout)
-		BIO_free(dataout);
+	if(out)
+		BIO_free(out);
 
-	return 1;
+	return ret;
 }
 
 static LUA_FUNCTION(openssl_pkcs7_encrypt)
 {
-	STACK_OF(X509) * recipcerts = NULL;
-	BIO * infile = NULL;
-	long flags = 0;
 	PKCS7 * p7 = NULL;
-	const EVP_CIPHER *cipher = NULL;
-	int ret = 0;
-	int top = lua_gettop(L);
+	BIO *infile = load_bio_object(L, 1);
+	STACK_OF(X509) *recipcerts = CHECK_OBJECT(2,STACK_OF(X509),"openssl.stack_of_x509");
+	const EVP_CIPHER *cipher = lua_isnoneornil(L,3) ? EVP_get_cipherbyname("des3") 
+		:CHECK_OBJECT(3,EVP_CIPHER,"openssl.evp_cipher");
+	long flags = luaL_optint(L, 4, 0);
 
-	infile = load_bio_object(L, 1);
-	recipcerts = CHECK_OBJECT(2,STACK_OF(X509),"openssl.stack_of_x509");
-	if (top>2)
-		flags = luaL_checkinteger(L,3);
-	if(top>3)
-	{
-		cipher = CHECK_OBJECT(4,EVP_CIPHER,"openssl.evp_cipher");
-	}else
-		cipher = EVP_get_cipherbyname("DES-EDE-CBC");
-
-	/* sanity check the cipher */
 	if (cipher == NULL) {
-		/* shouldn't happen */
 		luaL_error(L, "Failed to get cipher");
 	}
 
@@ -166,20 +145,13 @@ static LUA_FUNCTION(openssl_pkcs7_encrypt)
 
 static LUA_FUNCTION(openssl_pkcs7_decrypt)
 {
-	X509 * cert = NULL;
-	EVP_PKEY * key = NULL;
+	PKCS7 *p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
+	X509 *cert = CHECK_OBJECT(2,X509,"openssl.x509");
+	EVP_PKEY *key = lua_isnoneornil(L,3)?NULL: CHECK_OBJECT(3,EVP_PKEY,"openssl.evp_pkey");
+	long flags = luaL_optint(L, 4, 0);
+	BIO *out = BIO_new(BIO_s_mem());
 
-	BIO * out = NULL, * datain = NULL;
-	PKCS7 * p7 = NULL;
-
-	int ret = 0;
-
-	p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
-	cert = CHECK_OBJECT(2,X509,"openssl.x509");
-	key = lua_isnoneornil(L,3)?NULL: CHECK_OBJECT(3,EVP_PKEY,"openssl.evp_pkey");
-	out = BIO_new(BIO_s_mem());
-
-	if (PKCS7_decrypt(p7, key, cert, out, PKCS7_DETACHED)) {
+	if (PKCS7_decrypt(p7, key, cert, out, flags)) {
 		BUF_MEM* mem;
 		BIO_get_mem_ptr(out, &mem);
 		lua_pushlstring(L,mem->data, mem->length);
