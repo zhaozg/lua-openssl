@@ -1,22 +1,22 @@
 local openssl = require('openssl')
+local print_r = require('function.print_r')
+require 'l-io'
 
-length = 64
-print('伪随机数生成', string.rep('-',40))
-print(openssl.random_bytes(length))
+print('load openssl.cnf', string.rep('-',40))
+data = io.loaddata('.\\openssl.cnf')
+conf = openssl.conf.load(data)
+print(conf)
+print(conf:parse(false))
+print('parse openssl.cnf as table', string.rep('-',40))
+dump(conf:parse(),0)
+print('parse openssl.cnf as table', string.rep('-',40))
 
-print('强随机数生成', string.rep('-',40))
-print(openssl.random_bytes(length, true))
+print(conf:get_string('ca','default_ca'))
 
+print(conf:get_string('CA_default','default_days'))
 
-secret_key = "secret"
-cipher = openssl.get_cipher("RC4")
-
-num = 10
-i = 1
-while i <= num do
-        i = i+1
-
-        id = "something"
-
-        encrypted = cipher:encrypt(id, secret_key);
-end
+print('从表中载入配置', string.rep('-',40))
+io.read('*l')
+c1 = openssl.conf_load(conf:parse())
+print(c1)
+dump(c1:parse(),0)

@@ -254,17 +254,8 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_gc) {
     return 0;
 }
 
-static LUA_FUNCTION(openssl_ts_resp_ctx_tostring) {
-    TS_RESP_CTX *ctx = CHECK_OBJECT(1,TS_RESP_CTX,"openssl.ts_resp_ctx");
-    lua_pushfstring(L,"openssl.ts_resp_ctx:%p",ctx);
-    return 1;
-}
-
 //////////////////////////////////////////////////////////////////////////
 
-
-/*  openssl:ts_req_new(string req,string digest_alg[,table option={version=1,policy=,nonce=,cert_req=}] ) -> ts_req{{{1
-*/
 
 static LUA_FUNCTION(openssl_ts_req_new) {
     size_t l;
@@ -367,11 +358,6 @@ static LUA_FUNCTION(openssl_ts_req_gc) {
     return 0;
 }
 
-static LUA_FUNCTION(openssl_ts_req_tostring) {
-    TS_REQ *req = CHECK_OBJECT(1,TS_REQ,"openssl.ts_req");
-    lua_pushfstring(L,"openssl.ts_req:%p",req);
-    return 1;
-}
 
 static LUA_FUNCTION(openssl_ts_req_to_verify_ctx) {
     TS_REQ *req = CHECK_OBJECT(1,TS_REQ,"openssl.ts_req");
@@ -584,11 +570,6 @@ static LUA_FUNCTION(openssl_ts_resp_tst_info) {
     return 1;
 }
 
-static LUA_FUNCTION(openssl_ts_resp_tostring) {
-    TS_RESP *resp = CHECK_OBJECT(1,TS_RESP,"openssl.ts_resp");
-    lua_pushfstring(L,"openssl.ts_resp:%p",resp);
-    return 1;
-}
 
 //////////////////////////////////////////////////////////////////////////
 static X509_STORE* Stack2Store(STACK_OF(X509)* sk)
@@ -628,27 +609,27 @@ static LUA_FUNCTION(openssl_ts_verify_ctx_new) {
         TS_REQ* req = CHECK_OBJECT(1,TS_REQ,"openssl.ts_req");
         ctx = TS_REQ_to_TS_VERIFY_CTX(req, NULL);
     }else if(lua_isstring(L, 1)){
-	size_t l;
-	const char*data = luaL_checklstring(L,1,&l);
+		size_t l;
+		const char*data = luaL_checklstring(L,1,&l);
 
-	BIO* bio = BIO_new_mem_buf((void*)data,l);
-	TS_REQ* req = d2i_TS_REQ_bio(bio, NULL);
-	ctx = TS_REQ_to_TS_VERIFY_CTX(req, NULL);
+		BIO* bio = BIO_new_mem_buf((void*)data,l);
+		TS_REQ* req = d2i_TS_REQ_bio(bio, NULL);
+		ctx = TS_REQ_to_TS_VERIFY_CTX(req, NULL);
     } else if(lua_istable(L,1))
     {
         ctx = TS_VERIFY_CTX_new();
         TS_VERIFY_CTX_init(ctx);
-	ctx->flags = TS_VFY_VERSION;
-	lua_getfield(L,1,"digest");
-	if(!lua_isnil(L,-1)) {
-		size_t l;
-		const char*data = luaL_checklstring(L,-1,&l);
-		ctx->flags |= TS_VFY_IMPRINT;
-		ctx->imprint_len = l;
-		ctx->imprint = (unsigned char*)data;
+		ctx->flags = TS_VFY_VERSION;
+		lua_getfield(L,1,"digest");
+		if(!lua_isnil(L,-1)) {
+			size_t l;
+			const char*data = luaL_checklstring(L,-1,&l);
+			ctx->flags |= TS_VFY_IMPRINT;
+			ctx->imprint_len = l;
+			ctx->imprint = (unsigned char*)data;
 
-	}
-	lua_pop(L,1);
+		}
+		lua_pop(L,1);
 
         lua_getfield(L,1,"source");
         if(!lua_isnil(L,-1))
@@ -722,15 +703,9 @@ static LUA_FUNCTION(openssl_ts_verify_ctx_token) {
     return 1;
 }
 
-static LUA_FUNCTION(openssl_ts_verify_ctx_tostring) {
-    TS_RESP *resp = CHECK_OBJECT(1,TS_RESP,"openssl.ts_verify_ctx");
-    lua_pushfstring(L,"openssl.ts_verify_ctx:%p",resp);
-    return 1;
-}
-
 //////////////////////////////////////////////////////////////////////////
 static luaL_Reg ts_req_funs[] = {
-    {"__tostring", openssl_ts_req_tostring},
+    {"__tostring", auxiliar_tostring},
     {"parse", openssl_ts_req_parse},
     {"i2d", openssl_ts_req_i2d},
     {"__gc", openssl_ts_req_gc},
@@ -740,7 +715,7 @@ static luaL_Reg ts_req_funs[] = {
 };
 
 static luaL_Reg ts_resp_funs[] = {
-    {"__tostring", openssl_ts_resp_tostring},
+    {"__tostring", auxiliar_tostring},
     {"i2d", openssl_ts_resp_i2d},
     {"parse", openssl_ts_resp_parse},
     {"__gc", openssl_ts_resp_gc},
@@ -750,7 +725,7 @@ static luaL_Reg ts_resp_funs[] = {
 };
 
 static luaL_Reg ts_resp_ctx_funs[] = {
-    {"__tostring", openssl_ts_resp_ctx_tostring},
+    {"__tostring", auxiliar_tostring},
     {"__gc", openssl_ts_resp_ctx_gc},
     {"sign", openssl_ts_sign},
 
@@ -758,7 +733,7 @@ static luaL_Reg ts_resp_ctx_funs[] = {
 };
 
 static luaL_Reg ts_verify_ctx_funs[] = {
-    {"__tostring",	openssl_ts_verify_ctx_tostring},
+    {"__tostring",	auxiliar_tostring},
     {"__gc",		openssl_ts_verify_ctx_gc},
     {"verify_response",		openssl_ts_verify_ctx_response},
     {"verify_token",		openssl_ts_verify_ctx_token},
@@ -771,7 +746,6 @@ static luaL_reg R[] = {
 	{"req_d2i",		openssl_ts_req_d2i	},
 	{"resp_d2i",		openssl_ts_resp_d2i	},
 	{"resp_ctx_new",		openssl_ts_resp_ctx_new	},
-	
 	{"verify_ctx_new",	openssl_ts_verify_ctx_new	},
 
 	{NULL,		NULL}

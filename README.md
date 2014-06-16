@@ -349,6 +349,34 @@ Currently supports 6 padding modes. They are: pkcs1, sslv23, no, oaep, x931, pss
  }
 }
 ```
+##timestamp
+
+lua-openssl timestamp modules has four object, ts_req,ts_resp,ts_resp_ctx,ts_verify_ctx
+
+* ***openssl.ts.req_new***(string req, string|digest md
+  [,table option={version=1,policy=,nonce=,cert_req=}] ) => openssl.ts_req
+* ***openssl.ts.req_d2i***(string der) => openssl.ts_req
+* ***openssl.ts.resp_d2i***(string der) => openssl.ts_resp
+* ***openssl.ts.resp_ctx_new***(openssl.ts_req obj|string req_der,sk_x509 certs) => ts_resp_ctx
+* ***openssl.ts.verify_ctx_new***() => ts_verify_ctx
+
+* ***ts_req:i2d***() ->string
+* ***ts_req:parse***() -> table
+ * Returns table with key status_info,token and tst_info
+* ***ts_req:to_verify_ctx***() => ts_verify_ctx
+
+* ***ts_resp:i2d***() ->string
+* ***ts_resp:parse***() -> table
+ * Returns table with key version,cert_req and msg_imprint
+* ***ts_req:tst_info***() => table
+
+
+* ***ts_resp_ctx:sign***(string req_der) => openssl.ts_resp
+* ***ts_resp_ctx:sign***(ts_req obj) => openssl.ts_resp
+
+* ***ts_verify_ctx:verify_response***(openssl.ts_resp obj) -> boolean
+* ***ts_verify_ctx:verify_token***() -> boolean
+
 
 #6. PKCS7 (S/MIME)
 
