@@ -418,13 +418,11 @@ flags is flag information as described above.
 
 ##Funcions
 
-* ***openssl.hex*** (string bin) -> hex string
- * Returns a hex string.
- * this is a compat API with LuaCrypto
+* ***openssl.hex*** (string bin[, boolean encode=true]) -> hex string
+ * Returns a string thant encode or decode from string.
 
 * ***openssl.list*** (string 'digests'|'ciphers'|'pkeys'|'comps') -> array
  * Returns a method name array.
- * this is a compat API with LuaCrypto
 
 * ***openssl.error***([boolean verbose=false]) -> number, errmsg[, verbose]
  * Return openssl error message, should be call fellow fail method.

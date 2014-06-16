@@ -22,12 +22,19 @@ static int openssl_version(lua_State*L)
 static LUA_FUNCTION(openssl_hex){
 	size_t l = 0;
 	const char* s = luaL_checklstring(L, 1, &l);
-	char* h;
-	BIGNUM *bn = BN_new();
-	BN_bin2bn((const unsigned char*)s, (int)l, bn);
-	h = BN_bn2hex(bn);
-	lua_pushstring(L, h);
+	long hl = 2*l+1;
+	int encode = lua_isnoneornil(L,2) ? 1 : lua_toboolean(L,2);
+	char* h = NULL;
+	if(encode){
+		h = string_to_hex(s,&hl);
+	}
+	else{
+		h = hex_to_string(s, l);
+		hl = strlen(h);
+	};
+	lua_pushlstring(L, h,hl);
 	OPENSSL_free(h);
+
 	return 1;
 }
 
