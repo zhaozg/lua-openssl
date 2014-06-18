@@ -177,22 +177,26 @@ lua_openssl_version, lua_version, openssl_version = openssl.version()
 
 * ***openssl.pkey.new*** ({alg='rsa|dsa|dh|ec', ... }) => evp_pkey
  * this pattern pkey.new need table as pkey argument, and key 'alg' must be given.
+
  ```
  when arg is rsa, table may with key n,e,d,p,q,dmp1,dmq1,iqmp,both are string value
  when arg is dsa, table may with key p,q,g,priv_key,pub_key,both are string value
  when arg is dh, table may with key p,g,priv_key,pub_key,both are string value
  when arg is ec, table may with D,X,Y,Z,both are string value
 ```
+
  * private key should has it factor named n,q,e and so on, value is hex encoded string
 
 * ***openssl.pkey.get_public***(evp_pkey private) => evp_pkey
  * Return public key for private key
 
-* ***openssl.pkey.read*** (string data|x509 cert [,bool public_key=true [,string passphrase]]) => evp_pkey
- * Read from a file or a data, coerce it into a EVP_PKEY object.
+* ***openssl.pkey.read*** (string|bio data [,bool public_key=false[,string fmt='auto [,string passphrase]]]}) => evp_pkey
+ * Read from string or bio data,  return a EVP_PKEY object.
   It can be:
-  +1. X509 object -> public key will be extracted from it
-  +2. the key pem/der file data
+  +1. data can be string or bio
+  +2. set public_key to true will load as public key.
+  +3. format support 'auto','pem' or 'der'
+  +4. if read private key, you may need to #4arg  passphrase 
 
 ### About padding
 
@@ -325,7 +329,6 @@ Currently supports 6 padding modes. They are: pkcs1, sslv23, no, oaep, x931, pss
  * Below you can find an example of table content.
 
 ```
-
 {
  sig_alg=sha1WithRSAEncryption
  lastUpdate=110627103001Z

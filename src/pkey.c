@@ -80,61 +80,31 @@ static int openssl_is_private_key(EVP_PKEY* pkey)
 static int openssl_pkey_read(lua_State*L)
 {
     EVP_PKEY * key = NULL;
-    int public_key = 1;
-    const char * passphrase = NULL;
+	BIO* in = load_bio_object(L, 1);
+	int pub = lua_isnoneornil(L,2) ? 0 : auxiliar_checkboolean(L, 2);
+	int fmt = luaL_checkoption(L, 3, "auto", format);
 
-    int top = lua_gettop(L);
-    public_key = top > 1 ? lua_toboolean(L,2) : 1;
-    passphrase = top > 2 ? luaL_checkstring(L, 3) : NULL;
-
-    if(auxiliar_isclass(L,"openssl.x509", 1)) {
-        X509 * cert = NULL;
-        if (!public_key)
-            luaL_error(L,"x509 object not have a private key");
-        cert = CHECK_OBJECT(1, X509, "openssl.x509");
-        key = X509_get_pubkey(cert);
-    }
-
-    if (auxiliar_isclass(L,"openssl.evp_pkey", 1)) {
-        int is_priv;
-        key = CHECK_OBJECT(1, EVP_PKEY,"openssl.evp_pkey");
-
-        is_priv = openssl_is_private_key(key);
-        if(public_key) {
-            if(is_priv)
-                luaL_error(L,"evp_pkey object is not a public key, NYI read from private");
-        }
-		key->references++;
-    }
-
-    if(lua_isstring(L,1))
-    {
-        size_t len;
-        const char *str = luaL_checklstring(L,1,&len);
-
-        /* it's an X509 file/cert of some kind, and we need to extract the data from that */
-        if (public_key) {
-            /* not a X509 certificate, try to retrieve public key */
-            BIO* in = BIO_new_mem_buf((void*)str, len);
-            key = PEM_read_bio_PUBKEY(in, NULL,NULL, NULL);
-            if (!key) {
-                BIO_reset(in);
-                key = d2i_PUBKEY_bio(in,NULL);
-            }
-            BIO_free(in);
-        } else {
-            BIO *in = BIO_new_mem_buf((void*)str, len);
-
-            key = PEM_read_bio_PrivateKey(in, NULL,NULL, (void*)passphrase);
-            if(!key)
-            {
-                BIO_reset(in);
-                d2i_PrivateKey_bio(in, &key);
-            }
-            BIO_free(in);
-        }
-    }
-
+	if(pub){
+		if(fmt==FORMAT_AUTO || fmt==FORMAT_PEM){
+			key = PEM_read_bio_PUBKEY(in, NULL,NULL, NULL);
+			BIO_reset(in);
+		}
+		if((fmt==FORMAT_AUTO && key==NULL) || fmt==FORMAT_DER){
+			key = d2i_PUBKEY_bio(in,NULL);
+			BIO_reset(in);
+		}
+	}else{
+		if(fmt==FORMAT_AUTO || fmt==FORMAT_PEM){
+			const char* passphrase = luaL_optstring(L, 4, NULL);
+			key = PEM_read_bio_PrivateKey(in, NULL,NULL, (void*)passphrase);
+			BIO_reset(in);
+		}
+		if((fmt==FORMAT_AUTO && key==NULL) || fmt==FORMAT_DER){
+			d2i_PrivateKey_bio(in, &key);
+			BIO_reset(in);
+		}
+	}
+	BIO_free(in);
     if (key)
         PUSH_OBJECT(key,"openssl.evp_pkey");
     else
