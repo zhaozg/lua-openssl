@@ -397,9 +397,7 @@ static int openssl_ssl_session_new(lua_State*L){
 }
 
 static int openssl_ssl_session_read(lua_State*L){
-	size_t size;
-	const char* dat = luaL_checklstring(L, 1, &size);
-	BIO *in = BIO_new_mem_buf((void*)dat, size);
+	BIO *in = load_bio_object(L, 1);
 	SSL_SESSION* ss = PEM_read_bio_SSL_SESSION(in,NULL,NULL,NULL);
 	if(!ss){
 		BIO_reset(in);

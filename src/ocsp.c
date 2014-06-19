@@ -17,9 +17,7 @@ static int openssl_ocsp_request_new(lua_State*L){
 	OCSP_REQUEST *req = NULL;
 	BIO* bio = NULL;
 	if (lua_isstring(L,1)){
-		size_t len;
-		const char* dat = lua_tolstring(L,1, &len);
-		bio = BIO_new_mem_buf((void*)dat,len);
+		bio = load_bio_object(L, 1);
 		req = d2i_OCSP_REQUEST_bio(bio, NULL);
 		if (!req) {
 			BIO_reset(bio);
@@ -49,7 +47,9 @@ static int openssl_ocsp_request_new(lua_State*L){
 					size_t len;
 					char *serial = (char *)luaL_checklstring(L,-1, &len);
 					ASN1_INTEGER *sno = ASN1_INTEGER_new();
-					bio = BIO_new_mem_buf(serial, len);
+					bio = BIO_new(BIO_s_mem());
+					BIO_set_close(bio, BIO_NOCLOSE);
+					BIO_write(bio, serial, len);
 					if(a2i_ASN1_INTEGER(bio,sno,buf, 1024)==1)
 					{
 						id = OCSP_cert_id_new(EVP_sha1(),iname,ikey,sno);
@@ -64,11 +64,9 @@ static int openssl_ocsp_request_new(lua_State*L){
 			id = OCSP_cert_to_id(NULL,cert,issuer);
 			one = OCSP_request_add0_id(req,id);
 		}else{
-			size_t len;
-			const char *serial = (char *)luaL_checklstring(L,2, &len);
 			ASN1_INTEGER *sno = ASN1_INTEGER_new();
-
-			bio = BIO_new_mem_buf((unsigned char*)serial, len);
+			bio = load_bio_object(L, 2);
+			
 
 			if(a2i_ASN1_INTEGER(bio, sno, buf, 1024)==1)
 			{
@@ -196,16 +194,14 @@ static int openssl_ocsp_response(lua_State *L){
 	OCSP_RESPONSE *res = NULL;
 
 	if (lua_isstring(L,1)){
-		size_t len;
-		const char* dat = lua_tolstring(L,1, &len);
-		const char **p = &dat;
-		res = d2i_OCSP_RESPONSE(NULL, (const unsigned char**)p, len);
+		BIO* bio = load_bio_object(L, 1);
+		res = d2i_OCSP_RESPONSE_bio(bio, NULL);
+		BIO_reset(bio);
 		if (!res) {
-			BIO *bio = BIO_new_mem_buf((void*)dat,len);
-			p = &dat;
 			res = PEM_read_bio_OCSP_RESPONSE(bio, NULL, NULL);
-			BIO_free(bio);
 		}
+
+		BIO_free(bio);
 	}else{
 		ASN1_TIME* thispnd,*nextpnd;
 		OCSP_CERTID *ca_id, *cid;
@@ -229,6 +225,7 @@ static int openssl_ocsp_response(lua_State *L){
 			luaL_error(L, "#5 must be a table or function that to get status of certificate");
 		}
 		bio = BIO_new(BIO_s_mem());
+		BIO_set_close(bio, BIO_NOCLOSE);
 		ca_id = OCSP_cert_to_id(EVP_sha1(),NULL,ca);
 		bs = OCSP_BASICRESP_new();
 		thispnd = X509_gmtime_adj(NULL,0);

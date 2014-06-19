@@ -27,6 +27,7 @@ static int openssl_ecpoint_affine_coordinates(lua_State *L){
 	EC_GROUP* g = CHECK_OBJECT(1,EC_GROUP,"openssl.ec_group");
 	EC_POINT* p = CHECK_OBJECT(2,EC_POINT,"openssl.ec_point");
 	BN_CTX* ctx = BN_CTX_new();
+	int ret = 0;
 	if(lua_gettop(L)==2){
 		BIGNUM* x = BN_new();
 		BIGNUM* y = BN_new();
@@ -34,18 +35,18 @@ static int openssl_ecpoint_affine_coordinates(lua_State *L){
 		{
 			PUSH_BN(x);
 			PUSH_BN(y);
-			BN_CTX_free(ctx);
-			return 2;
+			ret = 2;
 		};
 	}else{
 		BIGNUM* x = CHECK_OBJECT(3,BIGNUM,"openssl.bn");
 		BIGNUM* y = CHECK_OBJECT(4,BIGNUM,"openssl.bn");
-		int ret = EC_POINT_set_affine_coordinates_GFp(g,p,x,y,ctx);
-		BN_CTX_free(ctx);
-		if(ret!=-1)
+		ret = EC_POINT_set_affine_coordinates_GFp(g,p,x,y,ctx);
+		if(ret==0)
 			luaL_error(L,"EC_POINT_set_affine_coordinates_GFp fail");
+		ret = 0;
 	}
-	return 0;
+	BN_CTX_free(ctx);
+	return ret;
 }
 
 static int openssl_eckey_group(lua_State *L){
@@ -65,13 +66,17 @@ static int openssl_eckey_group(lua_State *L){
 		}else if(auxiliar_isclass(L,"openssl.ec_key",1)){
 			EC_KEY* ec_key = CHECK_OBJECT(1,EC_KEY,"openssl.ec_key");
 			g = EC_KEY_get0_group(ec_key);
+
 		}
+		if(g)
+			g = EC_GROUP_dup(g);
 	}
 	if(nid!=NID_undef)
 		g = EC_GROUP_new_by_curve_name(nid);
 
 	if(g){
 		const EC_POINT* p = EC_GROUP_get0_generator(g);
+		p = EC_POINT_dup(p,g);
 		PUSH_OBJECT(g,"openssl.ec_group");
 		PUSH_OBJECT(p,"openssl.ec_point");
 		return 2;
@@ -89,6 +94,7 @@ static int openssl_ec_group_parse(lua_State*L)
 	lua_newtable(L);
 	if(generator)
 	{
+		generator = EC_POINT_dup(generator,group);
 		AUXILIAR_SETOBJECT(L, generator,"openssl.ec_point", -1, "generator");
 	}
 
@@ -119,13 +125,20 @@ static int openssl_ec_group_parse(lua_State*L)
 	}
 	lua_setfield(L,-2,"curve");
 	BN_CTX_free(ctx);
+
 	return 1;
+}
+static int openssl_ec_group_free(lua_State*L){
+	EC_GROUP* group = CHECK_OBJECT(1,EC_GROUP,"openssl.ec_group");
+	EC_GROUP_free(group);
+	return 0;
 }
 
 static luaL_Reg ec_group_funs[] = {
 	{"__tostring", auxiliar_tostring},
 	{"affine_coordinates", openssl_ecpoint_affine_coordinates},
 	{"parse", openssl_ec_group_parse},
+	{"__gc", openssl_ec_group_free},
 	
 	{ NULL, NULL }
 };
@@ -146,14 +159,14 @@ static int openssl_ecdsa_sign(lua_State*L){
 }
 
 static int openssl_ecdsa_verify(lua_State*L){
-	EC_KEY* ec = CHECK_OBJECT(1,EC_KEY, "openssl.ec_key");
 	size_t l;
-	const char* dgst = luaL_checklstring(L,2,&l);
-	ECDSA_SIG* sig = ECDSA_SIG_new();
-	BIGNUM *r,*s;
 	int ret;
-	r = CHECK_OBJECT(3,BIGNUM,"openssl.bn");
-	s = CHECK_OBJECT(4,BIGNUM,"openssl.bn");
+	EC_KEY* ec = CHECK_OBJECT(1,EC_KEY, "openssl.ec_key");
+	const char* dgst = luaL_checklstring(L,2,&l);
+	BIGNUM *r = CHECK_OBJECT(3,BIGNUM,"openssl.bn");
+	BIGNUM *s = CHECK_OBJECT(4,BIGNUM,"openssl.bn");
+
+	ECDSA_SIG* sig = ECDSA_SIG_new();
 	BN_copy(sig->r,r);
 	BN_copy(sig->s,s);
 
@@ -166,6 +179,12 @@ static int openssl_ecdsa_verify(lua_State*L){
 	return 1;
 }
 
+static int openssl_ec_point_free(lua_State*L){
+	EC_POINT* p = CHECK_OBJECT(1,EC_POINT, "openssl.ec_point");
+	EC_POINT_free(p);
+	return 0;
+}
+
 static luaL_Reg ec_key_funs[] = {
 	{"__tostring", auxiliar_tostring},
 	{"sign", openssl_ecdsa_sign},
@@ -176,6 +195,7 @@ static luaL_Reg ec_key_funs[] = {
 
 static luaL_Reg ec_point_funs[] = {
 	{"__tostring", auxiliar_tostring},
+	{"__gc", openssl_ec_point_free},
 
 	{ NULL, NULL }
 };

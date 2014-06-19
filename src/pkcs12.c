@@ -84,7 +84,9 @@ static LUA_FUNCTION(openssl_pkcs12_read)
 	if(!lua_isnoneornil(L,4))
 		olb64 = auxiliar_checkboolean(L,4);
 
-    bio_in = BIO_new_mem_buf((void*)zp12, zp12_len);
+    bio_in = BIO_new(BIO_s_mem());
+	BIO_write(bio_in, (void*)zp12, zp12_len);
+	BIO_set_close(bio_in, BIO_NOCLOSE);
     if(base64)
     {
         if ((b64=BIO_new(BIO_f_base64())) == NULL)

@@ -240,7 +240,7 @@ static LUA_FUNCTION(openssl_pkey_new)
             int bits = luaL_optint(L,2,512);
             int generator = luaL_optint(L,3,2);
 
-            DH* dh = DH_new(); //dh = DH_generate_parameters(bits,generator,NULL,NULL);
+            DH* dh = DH_new();
             if(!DH_generate_parameters_ex(dh, bits, generator, NULL))
             {
                 DH_free(dh);
@@ -692,7 +692,9 @@ static LUA_FUNCTION(openssl_pkey_parse)
 			AUXILIAR_SET(L, -1, "enc_flag", EC_KEY_get_enc_flags(ec), integer);
 			AUXILIAR_SET(L, -1, "conv_form", EC_KEY_get_conv_form(ec), integer);
 
-			AUXILIAR_SETOBJECT(L,point,"openssl.ec_point",-1, "pub_key");			
+			point = EC_POINT_dup(point,group);
+			AUXILIAR_SETOBJECT(L,point,"openssl.ec_point",-1, "pub_key");
+			group = EC_GROUP_dup(group);
 			AUXILIAR_SETOBJECT(L,group, "openssl.ec_group",-1, "group");
 
 			OPENSSL_PKEY_GET_BN(ec->priv_key, priv_key);

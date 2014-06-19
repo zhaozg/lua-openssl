@@ -14,7 +14,9 @@
 static LUA_FUNCTION(openssl_bio_new_mem) {
     size_t l = 0;
     char* d = (char*)luaL_optlstring(L,1,NULL, &l);
-    BIO *bio = d ? BIO_new_mem_buf(d, l) : BIO_new(BIO_s_mem());
+    BIO *bio = BIO_new(BIO_s_mem());
+	if(d) BIO_write(bio,d,l);
+	BIO_set_close(bio, BIO_NOCLOSE);
     PUSH_OBJECT(bio, "openssl.bio");
     return 1;
 }

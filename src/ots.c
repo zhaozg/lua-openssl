@@ -227,13 +227,11 @@ static LUA_FUNCTION(openssl_ts_sign) {
     TS_RESP * resp;
     if(lua_isstring(L,2))
     {
-        size_t l = 0;
-        const char* buf = luaL_checklstring(L,2,&l);
-
-        bio = BIO_new_mem_buf((void*)buf, l);
+		bio = load_bio_object(L, 2);
     } else {
         TS_REQ *req = CHECK_OBJECT(2,TS_REQ,"openssl.ts_req");
         bio = BIO_new(BIO_s_mem());
+		BIO_set_close(bio, BIO_NOCLOSE);
         i2d_TS_REQ_bio(bio,req);
     }
 
@@ -414,12 +412,12 @@ static LUA_FUNCTION(openssl_ts_req_i2d) {
     TS_REQ *req = CHECK_OBJECT(1, TS_REQ,"openssl.ts_req");
 
     BIO *bio = BIO_new(BIO_s_mem());
+	BIO_set_close(bio, BIO_NOCLOSE);
 
     if (i2d_TS_REQ_bio(bio, req)) {
         BUF_MEM *bptr = NULL;
         BIO_get_mem_ptr(bio, &bptr);
         lua_pushlstring(L,bptr->data,bptr->length);
-        BIO_set_close(bio, BIO_NOCLOSE);
         BIO_free(bio);
         return 1;
     }
@@ -609,12 +607,10 @@ static LUA_FUNCTION(openssl_ts_verify_ctx_new) {
         TS_REQ* req = CHECK_OBJECT(1,TS_REQ,"openssl.ts_req");
         ctx = TS_REQ_to_TS_VERIFY_CTX(req, NULL);
     }else if(lua_isstring(L, 1)){
-		size_t l;
-		const char*data = luaL_checklstring(L,1,&l);
-
-		BIO* bio = BIO_new_mem_buf((void*)data,l);
+		BIO* bio = load_bio_object(L, 1);
 		TS_REQ* req = d2i_TS_REQ_bio(bio, NULL);
 		ctx = TS_REQ_to_TS_VERIFY_CTX(req, NULL);
+		BIO_free(bio);
     } else if(lua_istable(L,1))
     {
         ctx = TS_VERIFY_CTX_new();
@@ -634,10 +630,8 @@ static LUA_FUNCTION(openssl_ts_verify_ctx_new) {
         lua_getfield(L,1,"source");
         if(!lua_isnil(L,-1))
         {
-            size_t l;
-            const char*data = luaL_checklstring(L,-1,&l);
             ctx->flags |= TS_VFY_DATA;
-            ctx->data = BIO_new_mem_buf((void*)data,l);
+            ctx->data = load_bio_object(L, -1);
         }
         lua_pop(L,1);
     }
