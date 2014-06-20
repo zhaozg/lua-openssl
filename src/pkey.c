@@ -219,7 +219,7 @@ static LUA_FUNCTION(openssl_pkey_new)
 			if(bits==0 || rsa->n==0)
 				rsa->n = BN_new();
             pkey = EVP_PKEY_new();
-			EVP_PKEY_set1_RSA(pkey,rsa);
+			EVP_PKEY_assign_RSA(pkey,rsa);
         } else if(strcasecmp(alg,"dsa")==0)
         {
             int bits = luaL_optint(L,2,1024);
@@ -233,7 +233,7 @@ static LUA_FUNCTION(openssl_pkey_new)
                 luaL_error(L,"DSA_generate_key failed");
             }
             pkey = EVP_PKEY_new();
-            EVP_PKEY_set1_DSA(pkey, dsa);
+            EVP_PKEY_assign_DSA(pkey, dsa);
 
         } else if(strcasecmp(alg,"dh")==0)
         {
@@ -248,7 +248,7 @@ static LUA_FUNCTION(openssl_pkey_new)
             }
             DH_generate_key(dh);
             pkey = EVP_PKEY_new();
-            EVP_PKEY_set1_DH(pkey,dh);
+            EVP_PKEY_assign_DH(pkey,dh);
         }
 #ifndef OPENSSL_NO_EC
         else if(strcasecmp(alg,"ec")==0)
@@ -263,7 +263,9 @@ static LUA_FUNCTION(openssl_pkey_new)
             } else if(lua_isstring(L, 2)) {
                 const char* name = luaL_checkstring(L,2);
                 ec_name = OBJ_sn2nid(name);
-            }
+            }else
+				luaL_argerror(L, 2, "must be ec_name string or nid");
+
 			flag = lua_isnoneornil(L, 3)? flag : lua_toboolean(L, 3);
             ec = EC_KEY_new();
 			if(ec_name!=NID_undef){
@@ -272,6 +274,7 @@ static LUA_FUNCTION(openssl_pkey_new)
 					luaL_error(L,"not support curve_name %d:%s!!!!", ec_name, OBJ_nid2sn(ec_name));
 				}
 				EC_KEY_set_group(ec, group);
+				EC_GROUP_free(group);
 				if(!EC_KEY_generate_key(ec))
 				{
 					EC_KEY_free(ec);
@@ -282,7 +285,7 @@ static LUA_FUNCTION(openssl_pkey_new)
 			EC_KEY_set_asn1_flag(ec, flag);
 
             pkey = EVP_PKEY_new();
-            EVP_PKEY_set1_EC_KEY(pkey, ec);
+			EVP_PKEY_assign_EC_KEY(pkey, ec);
         }
 #endif
         else
@@ -308,7 +311,7 @@ static LUA_FUNCTION(openssl_pkey_new)
                     OPENSSL_PKEY_SET_BN(1, rsa, dmq1);
                     OPENSSL_PKEY_SET_BN(1, rsa, iqmp);
                     if (rsa->n) {
-                        if (!EVP_PKEY_set1_RSA(pkey, rsa)) {
+                        if (!EVP_PKEY_assign_RSA(pkey, rsa)) {
                             EVP_PKEY_free(pkey);
                             pkey = NULL;
                         }
@@ -330,7 +333,7 @@ static LUA_FUNCTION(openssl_pkey_new)
 						if (!dsa->priv_key && !dsa->pub_key) {
 							DSA_generate_key(dsa);
 						}
-						if (!EVP_PKEY_set1_DSA(pkey, dsa)) {
+						if (!EVP_PKEY_assign_DSA(pkey, dsa)) {
 							EVP_PKEY_free(pkey);
 							pkey = NULL;
 						}
@@ -352,7 +355,7 @@ static LUA_FUNCTION(openssl_pkey_new)
 						if (!dh->pub_key) {
 							DH_generate_key(dh);
 						}
-						if (!EVP_PKEY_set1_DH(pkey, dh)) {
+						if (!EVP_PKEY_assign_DH(pkey, dh)) {
 							EVP_PKEY_free(pkey);
 							pkey = NULL;
 						}
@@ -433,7 +436,7 @@ static LUA_FUNCTION(openssl_pkey_new)
 						EC_KEY_set_public_key(ec,pnt);
 					}
 					
-					if (!EVP_PKEY_set1_EC_KEY(pkey, ec)) {
+					if (!EVP_PKEY_assign_EC_KEY(pkey, ec)) {
 						EC_KEY_free(ec);
 						EVP_PKEY_free(pkey);
 						pkey = NULL;
@@ -613,106 +616,111 @@ static LUA_FUNCTION(openssl_pkey_free)
 static LUA_FUNCTION(openssl_pkey_parse)
 {
     EVP_PKEY *pkey = CHECK_OBJECT(1,EVP_PKEY,"openssl.evp_pkey");
-    lua_newtable(L);
+	if(pkey->pkey.ptr){
+		lua_newtable(L);
 
-	AUXILIAR_SET(L, -1, "bits",EVP_PKEY_bits(pkey), integer);
-	AUXILIAR_SET(L, -1, "size",EVP_PKEY_size(pkey), integer); 
-    /*TODO: Use the real values once the openssl constants are used
-    * See the enum at the top of this file
-    */
-    switch (EVP_PKEY_type(pkey->type)) {
-    case EVP_PKEY_RSA:
-    case EVP_PKEY_RSA2:
-        if (pkey->pkey.rsa != NULL) {
-            RSA* rsa = pkey->pkey.rsa;
-            lua_newtable(L);
-            OPENSSL_PKEY_GET_BN(rsa->n, n);
-            OPENSSL_PKEY_GET_BN(rsa->e, e);
-            OPENSSL_PKEY_GET_BN(rsa->d, d);
-            OPENSSL_PKEY_GET_BN(rsa->p, p);
-            OPENSSL_PKEY_GET_BN(rsa->q, q);
-            OPENSSL_PKEY_GET_BN(rsa->dmp1, dmp1);
-            OPENSSL_PKEY_GET_BN(rsa->dmq1, dmq1);
-            OPENSSL_PKEY_GET_BN(rsa->iqmp, iqmp);
+		AUXILIAR_SET(L, -1, "bits",EVP_PKEY_bits(pkey), integer);
+		AUXILIAR_SET(L, -1, "size",EVP_PKEY_size(pkey), integer); 
+		/*TODO: Use the real values once the openssl constants are used
+		* See the enum at the top of this file
+		*/
 
-			PUSH_OBJECT(rsa,"openssl.rsa");
-			lua_rawseti(L,-2, 0);
+		switch (EVP_PKEY_type(pkey->type)) {
+		case EVP_PKEY_RSA:
+		case EVP_PKEY_RSA2:
+			{
+				RSA* rsa = EVP_PKEY_get1_RSA(pkey);
+				lua_newtable(L);
+				OPENSSL_PKEY_GET_BN(rsa->n, n);
+				OPENSSL_PKEY_GET_BN(rsa->e, e);
+				OPENSSL_PKEY_GET_BN(rsa->d, d);
+				OPENSSL_PKEY_GET_BN(rsa->p, p);
+				OPENSSL_PKEY_GET_BN(rsa->q, q);
+				OPENSSL_PKEY_GET_BN(rsa->dmp1, dmp1);
+				OPENSSL_PKEY_GET_BN(rsa->dmq1, dmq1);
+				OPENSSL_PKEY_GET_BN(rsa->iqmp, iqmp);
 
-			lua_setfield(L,-2, "rsa");
-            AUXILIAR_SET(L,-1,"type","rsa",string);
-        }
+				PUSH_OBJECT(rsa,"openssl.rsa");
+				lua_rawseti(L,-2, 0);
 
-        break;
-    case EVP_PKEY_DSA:
-    case EVP_PKEY_DSA2:
-    case EVP_PKEY_DSA3:
-    case EVP_PKEY_DSA4:
-        if (pkey->pkey.dsa != NULL) {
-            DSA* dsa = pkey->pkey.dsa;
-            lua_newtable(L);
-            OPENSSL_PKEY_GET_BN(dsa->p, p);
-            OPENSSL_PKEY_GET_BN(dsa->q, q);
-            OPENSSL_PKEY_GET_BN(dsa->g, g);
-            OPENSSL_PKEY_GET_BN(dsa->priv_key, priv_key);
-            OPENSSL_PKEY_GET_BN(dsa->pub_key, pub_key);
+				lua_setfield(L,-2, "rsa");
+				AUXILIAR_SET(L,-1,"type","rsa",string);
+			}
 
-			PUSH_OBJECT(dsa,"openssl.dsa");
-			lua_rawseti(L,-2, 0);
+			break;
+		case EVP_PKEY_DSA:
+		case EVP_PKEY_DSA2:
+		case EVP_PKEY_DSA3:
+		case EVP_PKEY_DSA4:
+			{
+				DSA* dsa = EVP_PKEY_get1_DSA(pkey);
+				lua_newtable(L);
+				OPENSSL_PKEY_GET_BN(dsa->p, p);
+				OPENSSL_PKEY_GET_BN(dsa->q, q);
+				OPENSSL_PKEY_GET_BN(dsa->g, g);
+				OPENSSL_PKEY_GET_BN(dsa->priv_key, priv_key);
+				OPENSSL_PKEY_GET_BN(dsa->pub_key, pub_key);
 
-            lua_setfield(L,-2, "dsa");
-			AUXILIAR_SET(L, -1, "type","dsa", string);
-        }
-        break;
-    case EVP_PKEY_DH:
-        if (pkey->pkey.dh != NULL) {
-            DH* dh = pkey->pkey.dh;
-            lua_newtable(L);
-            OPENSSL_PKEY_GET_BN(dh->p, p);
-            OPENSSL_PKEY_GET_BN(dh->g, g);
-            OPENSSL_PKEY_GET_BN(dh->priv_key, priv_key);
-            OPENSSL_PKEY_GET_BN(dh->pub_key, pub_key);
+				PUSH_OBJECT(dsa,"openssl.dsa");
+				lua_rawseti(L,-2, 0);
 
-			PUSH_OBJECT(dh,"openssl.dh");
-			lua_rawseti(L,-2, 0);
-            
-			lua_setfield(L,-2, "dh");
-			AUXILIAR_SET(L, -1, "type","dh", string);
-        }
+				lua_setfield(L,-2, "dsa");
+				AUXILIAR_SET(L, -1, "type","dsa", string);
+			}
+			break;
+		case EVP_PKEY_DH:
+			{
+				DH* dh = EVP_PKEY_get1_DH(pkey);
+				lua_newtable(L);
+				OPENSSL_PKEY_GET_BN(dh->p, p);
+				OPENSSL_PKEY_GET_BN(dh->g, g);
+				OPENSSL_PKEY_GET_BN(dh->priv_key, priv_key);
+				OPENSSL_PKEY_GET_BN(dh->pub_key, pub_key);
 
-        break;
+				PUSH_OBJECT(dh,"openssl.dh");
+				lua_rawseti(L,-2, 0);
+
+				lua_setfield(L,-2, "dh");
+				AUXILIAR_SET(L, -1, "type","dh", string);
+			}
+
+			break;
 #ifndef OPENSSL_NO_EC
-    case EVP_PKEY_EC:
-        if(pkey->pkey.ec != NULL)
-        {
-			const EC_KEY* ec = EVP_PKEY_get1_EC_KEY(pkey);
-            const EC_POINT* point = EC_KEY_get0_public_key(ec);
-			const EC_GROUP* group = EC_KEY_get0_group(ec);
-            lua_newtable(L);
+		case EVP_PKEY_EC:
+			{
+				const EC_KEY* ec = EVP_PKEY_get1_EC_KEY(pkey);
+				const EC_POINT* point = EC_KEY_get0_public_key(ec);
+				const EC_GROUP* group = EC_KEY_get0_group(ec);
+				const BIGNUM *priv = EC_KEY_get0_private_key(ec);
+				lua_newtable(L);
 
-			AUXILIAR_SET(L, -1, "enc_flag", EC_KEY_get_enc_flags(ec), integer);
-			AUXILIAR_SET(L, -1, "conv_form", EC_KEY_get_conv_form(ec), integer);
+				AUXILIAR_SET(L, -1, "enc_flag", EC_KEY_get_enc_flags(ec), integer);
+				AUXILIAR_SET(L, -1, "conv_form", EC_KEY_get_conv_form(ec), integer);
 
-			point = EC_POINT_dup(point,group);
-			AUXILIAR_SETOBJECT(L,point,"openssl.ec_point",-1, "pub_key");
-			group = EC_GROUP_dup(group);
-			AUXILIAR_SETOBJECT(L,group, "openssl.ec_group",-1, "group");
+				point = EC_POINT_dup(point,group);
+				AUXILIAR_SETOBJECT(L,point,"openssl.ec_point",-1, "pub_key");
+				group = EC_GROUP_dup(group);
+				AUXILIAR_SETOBJECT(L,group, "openssl.ec_group",-1, "group");
 
-			OPENSSL_PKEY_GET_BN(ec->priv_key, priv_key);
+				priv = BN_dup(priv);
+				OPENSSL_PKEY_GET_BN(priv, priv_key);
 
-			PUSH_OBJECT(ec,"openssl.ec_key");
-			lua_rawseti(L,-2, 0);
+				PUSH_OBJECT(ec,"openssl.ec_key");
+				lua_rawseti(L,-2, 0);
 
-			lua_setfield(L,-2, "ec");
-			AUXILIAR_SET(L, -1, "type", "ec", string);
-        }
+				lua_setfield(L,-2, "ec");
+				AUXILIAR_SET(L, -1, "type", "ec", string);
+			}
 
-        break;
+			break;
 #endif
-    default:
-        break;
-    };
-
-    return 1;
+		default:
+			break;
+		};
+		return 1;
+	}else
+		luaL_argerror(L, 1, "not assign any keypair");
+	return 0;
 };
 /* }}} */
 

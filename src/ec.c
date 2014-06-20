@@ -62,11 +62,13 @@ static int openssl_eckey_group(lua_State *L){
 		if(auxiliar_isclass(L,"openssl.evp_pkey",1)){
 			EVP_PKEY* pkey = CHECK_OBJECT(1,EVP_PKEY,"openssl.evp_pkey");
 			EC_KEY* ec_key = EVP_PKEY_get1_EC_KEY(pkey);
-			g = EC_KEY_get0_group(ec_key);
+			if(ec_key){
+				g = EC_KEY_get0_group(ec_key);
+				EC_KEY_free(ec_key);
+			}
 		}else if(auxiliar_isclass(L,"openssl.ec_key",1)){
 			EC_KEY* ec_key = CHECK_OBJECT(1,EC_KEY,"openssl.ec_key");
 			g = EC_KEY_get0_group(ec_key);
-
 		}
 		if(g)
 			g = EC_GROUP_dup(g);
@@ -185,10 +187,17 @@ static int openssl_ec_point_free(lua_State*L){
 	return 0;
 }
 
+static int openssl_ec_key_free(lua_State*L){
+	EC_KEY* p = CHECK_OBJECT(1,EC_KEY, "openssl.ec_key");
+	EC_KEY_free(p);
+	return 0;
+}
+
 static luaL_Reg ec_key_funs[] = {
 	{"__tostring", auxiliar_tostring},
 	{"sign", openssl_ecdsa_sign},
 	{"verify", openssl_ecdsa_verify},
+	{"__gc", openssl_ec_key_free},
 
 	{ NULL, NULL }
 };
