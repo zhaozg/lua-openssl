@@ -113,6 +113,18 @@ lua_openssl_version, lua_version, openssl_version = openssl.version()
 * ***digest_ctx:reset*** () ->boolean
  * Cleanup evp_message_ctx to make it reusable.
 
+* ***openssl.hmac*** (digest md, string key, string msg[, engine e=nil]) -> string
+** Return a hash value for msg, if raw is true, it will be hex encoded
+* ***openssl.hmac.hmac*** (digest md, string key, string msg[, engine e=nil]) -> string
+** Return a hash value for msg, if raw is true, it will be hex encoded
+
+* ***openssl.hmac.new*** (digest md, string key[, engine e=nil]) => openssl.hmac_ctx
+ * Return a hmac_ctx object
+ 
+* ***hmac_ctx:update*** (string data) 
+* ***hmac_ctx:final*** ([string last]) -> string
+ * Return a hmac value
+
 #3. Cipher
 
 * ***openssl.cipher.list*** ([boolean alias=true])  -> array

@@ -221,6 +221,9 @@ LUA_API int luaopen_openssl(lua_State*L)
 	luaopen_cipher(L);
 	lua_setfield(L, -2, "cipher");
 
+	luaopen_hmac(L);
+	lua_setfield(L, -2, "hmac");
+	
 	luaopen_pkey(L);
 	lua_setfield(L, -2, "pkey");
 

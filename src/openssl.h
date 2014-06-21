@@ -81,6 +81,7 @@ LUA_FUNCTION(openssl_conf_load);
 
 
 LUA_API LUA_FUNCTION(luaopen_digest);
+LUA_API LUA_FUNCTION(luaopen_hmac);
 LUA_API LUA_FUNCTION(luaopen_cipher);
 LUA_API LUA_FUNCTION(luaopen_bn);
 LUA_API LUA_FUNCTION(luaopen_pkey);
