@@ -21,23 +21,6 @@ static LUA_FUNCTION(openssl_bio_new_mem) {
     return 1;
 }
 
-static LUA_FUNCTION(openssl_bio_new_accept) {
-	const char* port = lua_tostring(L,1);
-	BIO* b = BIO_new_accept((char*)port);
-	int ret;
-	/* First call to BIO_accept() sets up accept BIO */
-	ret = BIO_do_accept(b);
-	if( ret <= 0) {
-		lua_pushboolean(L, 0);
-		lua_pushinteger(L, ret);
-		BIO_free(b);
-		return 2;
-	}
-
-	PUSH_OBJECT(b, "openssl.bio");
-	return 1;
-}
-
 static LUA_FUNCTION(openssl_bio_new_file) {
     const char* f = luaL_checkstring(L,1);
     const char* m = luaL_optstring(L,2,"r");
@@ -48,23 +31,55 @@ static LUA_FUNCTION(openssl_bio_new_file) {
     return 1;
 }
 
-/* bio object method */
-static LUA_FUNCTION(openssl_accept){
-	BIO* bio = CHECK_OBJECT(1,BIO,"openssl.bio");
-	int ret = BIO_do_accept(bio);
-	BIO *nb;
-	if (ret<=0)
-	{
-		lua_pushnil(L);
-		lua_pushinteger(L, ret);
-		return 2;
-	}
+static LUA_FUNCTION(openssl_bio_new_accept) {
+	const char* port = lua_tostring(L,1);
+	BIO* b = BIO_new_accept((char*)port);
 
-	nb = BIO_pop(bio);
-	PUSH_OBJECT(nb,"openssl.bio");
+	PUSH_OBJECT(b, "openssl.bio");
 	return 1;
 }
 
+static int openssl_bio_new_connect(lua_State *L)
+{
+	const char *host = luaL_checkstring(L, 1);
+	BIO* bio = BIO_new_connect((char*)host);
+	int doconn = 1;
+	if(lua_isstring(L,2))
+	{
+		if(BIO_set_conn_port(bio,lua_tostring(L,2))<=0)
+		{
+			BIO_free(bio);
+			bio = NULL;
+		}else{
+			doconn = lua_isnoneornil(L, 3)? doconn : auxiliar_checkboolean(L, 3);
+		}
+	}else
+		doconn = auxiliar_checkboolean(L, 2);
+
+	if(bio){
+			int ret = 1;
+
+			if(doconn)
+			{
+				ret = BIO_do_connect(bio);
+			}
+
+			if (ret == 1){
+				PUSH_OBJECT(bio, "openssl.bio");
+				return 1;
+			}else{
+				BIO_free(bio);
+				luaL_error(L, "Error creating connection to remote machine");
+			}
+	}
+
+
+	if(!bio)
+		luaL_error(L, "Error creating connection BIO");
+		
+	return 0;
+}
+/* bio object method */
 static LUA_FUNCTION(openssl_bio_read) {
     BIO* bio = CHECK_OBJECT(1,BIO,"openssl.bio");
     int len = luaL_optint(L,2, 2048);
@@ -154,20 +169,6 @@ static LUA_FUNCTION(openssl_bio_flush) {
 	return 1;
 }
 
-static LUA_FUNCTION(openssl_bio_get_mem) {
-    BIO* bio = CHECK_OBJECT(1,BIO,"openssl.bio");
-    if(BIO_method_type(bio)==BIO_TYPE_MEM)
-    {
-        BUF_MEM* mem;
-        BIO_get_mem_ptr(bio, &mem);
-        lua_pushlstring(L,mem->data, mem->length);
-        return 1;
-    }
-    luaL_error(L,"#1 BIO must be memory type");
-    return 0;
-}
-
-
 static LUA_FUNCTION(openssl_bio_close) {
     BIO* bio = CHECK_OBJECT(1,BIO,"openssl.bio");
     BIO_shutdown_wr(bio);
@@ -197,13 +198,47 @@ static LUA_FUNCTION(openssl_bio_reset) {
     return 0;
 }
 
-
-static LUA_FUNCTION(openssl_bio_tostring) {
-    BIO* bio = CHECK_OBJECT(1,BIO,"openssl.bio");
-    lua_pushfstring(L, "openssl.bio:%p",bio);
-    return 1;
+/* mem */
+static LUA_FUNCTION(openssl_bio_get_mem) {
+	BIO* bio = CHECK_OBJECT(1,BIO,"openssl.bio");
+	if(BIO_method_type(bio)==BIO_TYPE_MEM)
+	{
+		BUF_MEM* mem;
+		BIO_get_mem_ptr(bio, &mem);
+		lua_pushlstring(L,mem->data, mem->length);
+		return 1;
+	}
+	luaL_error(L,"#1 BIO must be memory type");
+	return 0;
 }
 
+/* network socket */
+
+static LUA_FUNCTION(openssl_bio_accept){
+	BIO* bio = CHECK_OBJECT(1,BIO,"openssl.bio");
+	int ret = BIO_do_accept(bio);
+	if(ret==1){
+		BIO *nb = BIO_pop(bio);
+
+		PUSH_OBJECT(nb,"openssl.bio");
+		return 1;
+	}else
+		luaL_error(L,"BIO_do_accept fail");
+
+	return 0;
+}
+
+static LUA_FUNCTION(openssl_bio_connect){
+	BIO* bio = CHECK_OBJECT(1,BIO,"openssl.bio");
+	int ret = BIO_do_connect(bio);
+	if(ret==1){
+		PUSH_OBJECT(bio,"openssl.bio");
+		return 1;
+	}else
+		luaL_error(L,"BIO_do_connect fail");
+
+	return 0;
+}
 static LUA_FUNCTION(openssl_bio_fd) {
 	BIO* bio = CHECK_OBJECT(1,BIO,"openssl.bio");
 	int typ = BIO_method_type(bio);
@@ -220,6 +255,8 @@ static LUA_FUNCTION(openssl_bio_fd) {
 	return 1;
 }
 
+
+
 static LUA_FUNCTION(openssl_bio_accept_port) {
 	BIO* bio = CHECK_OBJECT(1,BIO,"openssl.bio");
 	int typ = BIO_method_type(bio);
@@ -230,6 +267,7 @@ static LUA_FUNCTION(openssl_bio_accept_port) {
 	return 1;
 }
 
+
 int BIO_socket_ioctl(int fd, long type, void *arg);
 int BIO_socket_nbio(int fd,int mode);
 int BIO_get_port(const char *str, unsigned short *port_ptr);
@@ -237,31 +275,33 @@ int BIO_get_host_ip(const char *str, unsigned char *ip);
 int BIO_get_accept_socket(char *host_port,int mode);
 
 static luaL_reg bio_funs[] = {
+	/* generate operation */
     {"read",	openssl_bio_read	},
     {"gets",	openssl_bio_gets	},
     {"write",	openssl_bio_write	},
     {"puts",	openssl_bio_puts	},
 	{"flush",	openssl_bio_flush	},
+	{"close",	openssl_bio_close	},
+	{"type",	openssl_bio_type	},
 
-	{"accept",	openssl_accept		},
-    {"get_mem",	openssl_bio_get_mem	},
-
-    {"close",	openssl_bio_close	},
-    {"type",	openssl_bio_type	},
     {"reset",	openssl_bio_reset	},
-
+	{"get_mem",	openssl_bio_get_mem	},
+	/* network socket */
+	{"accept",	openssl_bio_accept },
+	{"connect",	openssl_bio_connect },
 	{"accept_port",		openssl_bio_accept_port	},
 	
-    {"__tostring",	openssl_bio_tostring	},
+    {"__tostring",	auxiliar_tostring	},
     {"__gc",	openssl_bio_free	},
 
     {NULL,		NULL}
 };
 
 static luaL_reg R[] = {
-	{"file",		openssl_bio_new_file	},
+	{"file",		openssl_bio_new_file   },
 	{"mem",			openssl_bio_new_mem	   },
 	{"accept",		openssl_bio_new_accept },
+	{"connect",		openssl_bio_new_connect},
 	{ "__call",		openssl_bio_new_mem},
 	{NULL,		NULL}
 };

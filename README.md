@@ -489,9 +489,15 @@ flags is flag information as described above.
 * ***openssl.bio*** ([string data]) => bio
  * same with ***bio.mem***, implicaion by metatable "__call"
 
-* ***openssl.file*** (string file [,string mode='r']) => bio
+* ***openssl.bio.file*** (string file [,string mode='r']) => bio
  * Create a file bio, if mode not given, the default is 'r'
 
+* ***openssl.bio.connect***(string host_port[, boolean connect=true])
+ * Create network bio with 'host:port' address, if connect set true, will connect immediately.
+ 
+* ***openssl.bio.accept***(string host_port[, boolean accept=true])
+* Create network bio with 'host:port' address, if accept set true, will accept immediately, or you need accept.
+ 
 * ***bio:read*** (number len) -> string
 * ***bio:gets*** ([number len=256]) -> string
 * ***bio:write*** (string data) -> number
@@ -560,7 +566,7 @@ TODO
 ### Example 1: short encrypt/decrypt
 
 ```lua
-local evp_cipher = openssl.get_cipher('des')
+local evp_cipher = openssl.cipher.get('des')
 m = 'abcdefghick'
 key = m
 cdata = evp_cipher:encrypt(m,key)
@@ -571,7 +577,7 @@ assert(cdata==m1)
 ### Example 2: quick evp_digest
 
 ```lua
-md = openssl.get_digest('md5')
+md = openssl.digest.get('md5')
 m = 'abcd'
 aa = md:evp_digest(m)
 
@@ -590,7 +596,7 @@ for i=1, n do
 end
 ```
 
-Example 4: read and parse certificate
+### Example 4: read and parse certificate
 
 ```lua
 local openssl = require('openssl')
@@ -608,7 +614,7 @@ function dump(t,i)
 end
 
 function test_x509()
-	local x = openssl.x509_read(certasstring)
+	local x = openssl.x509.read(certasstring)
 	print(x)
 	t = x:parse()
 	dump(t,0)
@@ -616,6 +622,54 @@ function test_x509()
 end
 
 test_x509()
+```
+
+###Example 5: bio network handle(TCP)
+
+ * server
+ 
+```lua
+local openssl = require'openssl'
+local bio = openssl.bio
+
+host = host or "127.0.0.1"; --only ip
+port = port or "8383";
+
+local srv = assert(bio.accept(host..':'..port))
+print('listen at:'..port)
+local cli = assert(srv:accept())
+while 1 do
+    cli = assert(srv:accept())
+    print('CLI:',cli)
+    while cli do
+        local s = assert(cli:read())
+        print(s)
+        assert(cli:write(s))
+    end
+    print(openssl.error(true))
+end
+```
+
+ * client
+```lua
+local openssl = require'openssl'
+local bio = openssl.bio
+io.read()
+
+host = host or "127.0.0.1"; --only ip
+port = port or "8383";
+
+local cli = assert(bio.connect(host..':'..port,true))
+
+    while cli do
+        s = io.read()
+        if(#s>0) then
+            print(cli:write(s))
+            ss = cli:read()
+            assert(#s==#ss)
+        end
+    end
+    print(openssl.error(true))
 ```
 
 For more examples, please see test lua script file.
