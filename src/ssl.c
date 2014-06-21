@@ -18,6 +18,7 @@ static int openssl_ssl_ctx_new(lua_State*L)
 {
 	const char* meth = luaL_optstring(L, 1, "TLSv1");
 	const SSL_METHOD* method = NULL;
+	const char* ciphers;
 	SSL_CTX* ctx;
 	if(strcmp(meth,"SSLv3")==0)
 		method = SSLv3_method();		/* SSLv3 */
@@ -56,13 +57,15 @@ static int openssl_ssl_ctx_new(lua_State*L)
 						"Maybe SSLv3 SSLv23 TLSv1 DTLSv1 [SSLv2], option followed by -client or -server\n",
 						"default is SSLv3",
 						meth);
+	ciphers = luaL_optstring(L, 2, "DHE-RSA-DES-CBC3-SHA");
 	ctx = SSL_CTX_new(method);
 	if(!ctx)
 		luaL_error(L,	"#1:%s not supported\n"
 			"Maybe SSLv3 SSLv23 TLSv1 DTLSv1 [SSLv2], option followed by -client or -server\n",
 			"default is SSLv3",
 			meth);
-
+	SSL_CTX_set_cipher_list(ctx, ciphers);
+	SSL_CTX_set_tmp_dh(ctx,DH_new());
 	PUSH_OBJECT(ctx,"openssl.ssl_ctx");
 	return 1;
 }
@@ -330,10 +333,14 @@ static int openssl_ssl_ctx_add_extra_chain_cert(lua_State*L){
 
 static int openssl_ssl_ctx_new_ssl(lua_State*L){
 	SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
+	int server = 0;
+	
+
 	SSL *ssl = SSL_new(ctx);
 	int ret = 0;
 	if(auxiliar_isclass(L,"openssl.bio",2)){
 		BIO *b = CHECK_OBJECT(2,BIO,"openssl.bio");
+		b->references++;
 		SSL_set_bio(ssl,b,b);
 		ret = 1;
 	}else if(lua_isnumber(L, 2))
@@ -343,6 +350,12 @@ static int openssl_ssl_ctx_new_ssl(lua_State*L){
 		ssl = NULL;
 		luaL_argerror(L, 2, "only accept network bio object or network fd");
 	}
+	server = auxiliar_checkboolean(L, 3);
+	if(server)
+		SSL_set_accept_state(ssl);
+	else
+		SSL_set_connect_state(ssl);
+
 	if(ret==1)
 		PUSH_OBJECT(ssl,"openssl.ssl");
 	else{
@@ -377,6 +390,7 @@ static luaL_Reg ssl_ctx_funcs[] = {
 	{"verify_mode",		openssl_ssl_ctx_verify_mode},
 	{"verify_depth",	openssl_ssl_ctx_verify_depth},
 	{"check_private_key",	openssl_ssl_ctx_check_private_key},
+
 	{"use_PrivateKey",		openssl_ssl_ctx_use_PrivateKey},
 	{"use_RSAPrivateKey",	openssl_ssl_ctx_use_RSAPrivateKey},
 	{"use_certificate",		openssl_ssl_ctx_use_certificate},

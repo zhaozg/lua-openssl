@@ -44,6 +44,7 @@ static int openssl_bio_new_connect(lua_State *L)
 	const char *host = luaL_checkstring(L, 1);
 	BIO* bio = BIO_new_connect((char*)host);
 	int doconn = 1;
+
 	if(lua_isstring(L,2))
 	{
 		if(BIO_set_conn_port(bio,lua_tostring(L,2))<=0)
