@@ -115,3 +115,23 @@ int RAND_init(const char *file)
 
 	return 1;
 }
+
+int openssl_pushresult(lua_State*L, int result)
+{
+	if(result==1)
+	{
+		lua_pushboolean(L, 1);
+		return 1;
+	}else{
+		unsigned val = ERR_get_error();
+		if (val) {
+			luaL_Buffer B = {0};
+			lua_pushnil(L);
+			ERR_error_string_n(val, B.buffer,sizeof(B.buffer));
+			lua_pushstring(L, B.buffer);
+			lua_pushinteger(L,val);
+			return 3;
+		}
+	}
+	return 0;
+}

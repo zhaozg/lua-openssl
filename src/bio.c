@@ -11,14 +11,92 @@
 	"based on OpenSSL " SHLIB_VERSION_NUMBER
 #define MYTYPE			"bio"
 
+/*
+static const int* iMethods[] = {
+	BIO_TYPE_NONE,
+	BIO_TYPE_MEM,
+	BIO_TYPE_SOCKET,
+	BIO_TYPE_CONNECT,
+	BIO_TYPE_ACCEPT,
+	BIO_TYPE_FD,
+	BIO_TYPE_BIO,
+	BIO_TYPE_DGRAM,
+
+	BIO_TYPE_BUFFER,
+
+	-1
+};
+static const char* sMethods[] = {
+	"none",
+	"mem",
+	"socket",
+	"connect",
+	"accept",
+	"fd",
+	"bio",
+	"datagram",
+
+	"buffer",
+	NULL
+};
+
+static LUA_FUNCTION(openssl_bio_new) {
+
+const char* f = luaL_checkstring(L,1);
+const char* m = luaL_optstring(L,2,"r");
+BIO *bio = BIO_new_file(f,m);
+BIO_f_base64()
+if(!bio)
+luaL_error(L, "error opening the file(%s) for mode (%s)", f, m);
+PUSH_OBJECT(bio,"openssl.bio");
+return 1;
+}
+
+*/
+
+static const char* close_flags[] = {
+	"noclose",	/* #define BIO_NOCLOSE		0x00 */
+	"close",	/* #define BIO_CLOSE		0x01 */
+	NULL
+};
+
 static LUA_FUNCTION(openssl_bio_new_mem) {
     size_t l = 0;
     char* d = (char*)luaL_optlstring(L,1,NULL, &l);
-    BIO *bio = BIO_new(BIO_s_mem());
-	if(d) BIO_write(bio,d,l);
-	BIO_set_close(bio, BIO_NOCLOSE);
+	int closeflag = luaL_checkoption(L, 2, "close", close_flags);
+	BIO *bio = BIO_new(BIO_s_mem());
+	if(d) 
+		BIO_write(bio,d,l);
+
+	BIO_set_close(bio, closeflag);
     PUSH_OBJECT(bio, "openssl.bio");
     return 1;
+}
+
+static LUA_FUNCTION(openssl_bio_new_socket) {
+	int s = luaL_checkint(L, 1);
+	int closeflag = luaL_checkoption(L, 2, "noclose", close_flags);
+	BIO *bio = BIO_new_socket(s,closeflag);
+
+	PUSH_OBJECT(bio, "openssl.bio");
+	return 1;
+}
+
+static LUA_FUNCTION(openssl_bio_new_dgram) {
+	int s = luaL_checkint(L, 1);
+	int closeflag = luaL_checkoption(L, 2, "noclose", close_flags);
+	BIO *bio = BIO_new_dgram(s,closeflag);
+	PUSH_OBJECT(bio, "openssl.bio");
+	return 1;
+}
+
+static LUA_FUNCTION(openssl_bio_new_fd) {
+	int fd = luaL_checkint(L, 1);
+	int closeflag = luaL_checkoption(L, 2, "noclose", close_flags);
+	BIO *bio = BIO_new_fd(fd,closeflag);
+
+	PUSH_OBJECT(bio, "openssl.bio");
+	return 1;
 }
 
 static LUA_FUNCTION(openssl_bio_new_file) {
@@ -80,6 +158,7 @@ static int openssl_bio_new_connect(lua_State *L)
 		
 	return 0;
 }
+
 /* bio object method */
 static LUA_FUNCTION(openssl_bio_read) {
     BIO* bio = CHECK_OBJECT(1,BIO,"openssl.bio");
@@ -284,9 +363,11 @@ static luaL_reg bio_funs[] = {
 	{"flush",	openssl_bio_flush	},
 	{"close",	openssl_bio_close	},
 	{"type",	openssl_bio_type	},
-
     {"reset",	openssl_bio_reset	},
+
+
 	{"get_mem",	openssl_bio_get_mem	},
+
 	/* network socket */
 	{"accept",	openssl_bio_accept },
 	{"connect",	openssl_bio_connect },
@@ -299,11 +380,16 @@ static luaL_reg bio_funs[] = {
 };
 
 static luaL_reg R[] = {
-	{"file",		openssl_bio_new_file   },
 	{"mem",			openssl_bio_new_mem	   },
+	{"socket",		openssl_bio_new_socket   },
+	{"dgram",		openssl_bio_new_dgram	   },
+	{"fd",			openssl_bio_new_fd	   },
+	{"file",		openssl_bio_new_file   },
+
 	{"accept",		openssl_bio_new_accept },
 	{"connect",		openssl_bio_new_connect},
-	{ "__call",		openssl_bio_new_mem},
+
+	{"__call",		openssl_bio_new_mem},
 	{NULL,		NULL}
 };
 

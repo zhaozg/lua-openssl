@@ -12,6 +12,7 @@ lua-openssl toolkit - A free, MIT-licensed OpenSSL binding for Lua (Work in prog
 8. [SSL](#8-ssl)
 9. [Misc](#9-misc-functions)
 
+
 + A [Howto](#a-howto)
 + B [Examples](#b-example-usage)
 + C [Contact](#c-contact)
@@ -42,10 +43,12 @@ Similarly, you can also specify a public key as a key object returned from objec
 
 ## lua-openssl modules
 digest,cipher, x509 and so on, be write as modules.
+
 ```
    local digest = require'openssl'digest
    local cipher = require'openssl'cipher
 ```
+
 digest() equals with digest.digest(), same cipher() equals with cipher.cipher()
 
 ## lua-openssl Objects
@@ -75,6 +78,7 @@ Please note that in the next sections of this document:
     => means return of a lua-openssl object
     -> means return of a basic Lua type (eg, string, boolean, etc)
 ```
+
 
 If a function returns nil, it will be followed by an error number and string.
 
@@ -364,6 +368,7 @@ Currently supports 6 padding modes. They are: pkcs1, sslv23, no, oaep, x931, pss
  }
 }
 ```
+
 ##timestamp
 
 lua-openssl timestamp modules has four object, ts_req,ts_resp,ts_resp_ctx,ts_verify_ctx
@@ -456,7 +461,102 @@ flags is flag information as described above.
 
 
 #8. SSL
+* ***openssl.ctx_new***(string SSL_protocol[, string support_ciphers]) => ssl_ctx
+ * ssl_protocol can be SSLv3,SSLv23,SSLv2,TLSv1,DTLSv1, and can be follow by -server or -client
+ * If not given support_ciphers, default of openssl will be used.
+ 
+## ssl_ctx Object
+ * ***ssl_ctx:use***(evp_pkey pkey,x509 cert) -> boolean[,string errmsg[,number errval]]
+  * Tell ssl_ctx use private key and certificate, and check private key
+  * Return true for ok, or return nil, follow by errmsg and errval
 
+ * ***ssl_ctx:add***(x509 clientca[,table extra_chain_cert_array]) -> boolean
+  * Add client ca cert and option extra chian cert
+  
+ * ***ssl_ctx:mode***([boolean clear=nil] string mode ...) -> string ...
+  * If clear set true, given mode list will be clear, or will be set
+  * Return new mode list
+  * mode support: 'enable_partial_write','accept_moving_write_buffer','auto_retry','no_auto_chain','release_buffers'
+     eg: modes = {ssl_ctx:mode('enable_partial_write','accept_moving_write_buffer','auto_retry')},
+     modes should include 'enable_partial_write','accept_moving_write_buffer','auto_retry'
+   
+  * ***ssl_ctx:options***([boolean clear=nil] string options ...) -> string ...
+  * If clear set true, given option list will be clear, or will be set
+  * Return new options list
+  * option support: 
+
+```
+    "microsoft_sess_id_bug",
+	"netscape_challenge_bug",
+	"netscape_reuse_cipher_change_bug",
+	"sslref2_reuse_cert_type_bug",
+	"microsoft_big_sslv3_buffer",
+	"msie_sslv3_rsa_padding",
+	"ssleay_080_client_dh_bug",
+	"tls_d5_bug",
+	"tls_block_padding_bug",
+	"dont_insert_empty_fragments",
+	"all",
+```
+
+  * ***ssl_ctx:timeout***([number timeout]) -> number
+ * If not give arg timeout, will return current, or use new timeout value and return previous.
+ 
+ * ***ssl_ctx:quiet_shutdown***([boolean mode]) -> [boolean]
+Normally when a SSL connection is finished, the parties must send out
+"close notify" alert messages using ***SSL:shutdown"*** for a clean shutdown.
+
+When setting the "quiet shutdown" flag to 1, ***SSL:shutdown*** will set the internal flags
+to SSL_SENT_SHUTDOWN|SSL_RECEIVED_SHUTDOWN. ***SSL:shutdown*** then behaves like
+***SSL:set_shutdown*** called with SSL_SENT_SHUTDOWN|SSL_RECEIVED_SHUTDOWN.
+
+The session is thus considered to be shutdown, but no "close notify" alert
+is sent to the peer. This behaviour violates the TLS standard.
+
+The default is normal shutdown behaviour as described by the TLS standard.
+
+* ***ssl_ctx:verify_locations***(string CAfile[, string CAPath]) -> boolean
+ssl_ctx:verify_locations specifies the locations for *ctx*, at
+which CA certificates for verification purposes are located. The certificates
+available via *CAfile* and *CApath* are trusted.
+
+* ***ssl_ctx:cert_store***([openssl.x509_store store]) => [openssl.x509_store]
+ * Given certstore sets/replaces the certificate verification storage of ***ctx*** to/with store.
+ * If store is nil or none, another X509_STORE object is currently
+set in ***ctx***, willl be return.
+
+* ***ssl_ctx:verify_depth***([number depth]) -> number
+ * Get verify depth when cert chain veirition, If given new depth, it will be used.
+
+* ***ssl_ctx:verify_mode***() -> number, string
+ * Return verify_mode number and string description
+ ```
+  none: not verify client cert
+  peer: verify client cert
+  fail: if client not have cert, will failure
+  once: verify client only once.
+ ```
+ * ***ssl_ctx:set_verify***(string mode=[none|peer][,function verifycb]) -> boolean
+  * mode same with  ***ssl_ctx:mode***
+  * verifycb should like int function(int preverify_ok,X509_STORE_CTX ctx)
+    return 0 to end,1 to continue
+  
+ 
+## SSL Object
+
+* ***ssl:want***() -> string,number
+ * Return want operation,should be: nothing,reading,writing,x509_lookup
+
+* ***ssl:cipher***() -> table
+ * Return current cipher info,table has key name,version,id,bits,description
+ 
+ * ***ssl:pending***() -> number
+  * Return the number of bytes which are available inside ***SSL*** for immediate read. 
+ 
+ * ***ssl:ctx***([ssl_ctx ctx]) => ssl_ctx
+  * Return ssl_ctx for SSL object, or set new SSL_CTX
+  
+  
 #9. Misc Functions and Objects
 
 ##Funcions
@@ -494,12 +594,22 @@ flags is flag information as described above.
 
 ***openssl.bio*** is a help object, it is useful, but rarely use.
 
+* ***openssl.bio*** ([string data]) => bio
+ * same with ***bio.mem***, implicaion by metatable "__call"
+
 * ***openssl.bio.mem*** ([string data]) => bio
  * Create a memory bio, if data given, it will be memory buffer data
  * It can be input or output object.
 
-* ***openssl.bio*** ([string data]) => bio
- * same with ***bio.mem***, implicaion by metatable "__call"
+* ***openssl.bio.socket*** (number socket[,string flag='noclose']) => bio
+ * Create a socket bio, default not do socket close
+
+* ***openssl.bio.dgram*** (number socket[,string flag='noclose']) => bio
+ * Create a udp socket bio, default not do socket close
+
+* ***openssl.bio.fd*** (number socket[,string flag='noclose']) => bio
+ * Create a socket or file bio, default not do socket close
+
 
 * ***openssl.bio.file*** (string file [,string mode='r']) => bio
  * Create a file bio, if mode not given, the default is 'r'
@@ -507,14 +617,15 @@ flags is flag information as described above.
 * ***openssl.bio.connect***(string host_port[, boolean connect=true])
  * Create network bio with 'host:port' address, if connect set true, will connect immediately.
  
-* ***openssl.bio.accept***(string host_port[, boolean accept=true])
-* Create network bio with 'host:port' address, if accept set true, will accept immediately, or you need accept.
+* ***openssl.bio.accept***(string host_port)
+* Create network bio with 'host:port' address
  
 * ***bio:read*** (number len) -> string
 * ***bio:gets*** ([number len=256]) -> string
 * ***bio:write*** (string data) -> number
 * ***bio:puts*** (string data) -> number
 * ***bio:get_mem***() -> string
+
  * only supports bio mem
 * ***bio:close*** ()
 * ***bio:type*** () -> string

@@ -31,3 +31,4 @@ X509_STORE* skX509_to_store(STACK_OF(X509)* calist,const char* files,const char*
 
 void add_assoc_name_entry(lua_State*L, const  char *key, X509_NAME *name, int shortname);
 void add_assoc_x509_extension(lua_State*L, const char* key, STACK_OF(X509_EXTENSION)* ext);
+int openssl_pushresult(lua_State*L,int result);
