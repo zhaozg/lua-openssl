@@ -536,11 +536,13 @@ set in ***ctx***, willl be return.
   fail: if client not have cert, will failure
   once: verify client only once.
  ```
- * ***ssl_ctx:set_verify***(string mode=[none|peer][,function verifycb]) -> boolean
-  * mode same with  ***ssl_ctx:mode***
-  * verifycb should like int function(int preverify_ok,X509_STORE_CTX ctx)
-    return 0 to end,1 to continue
-  
+* ***ssl_ctx:set_verify***(string mode=[none|peer][,function verifycb]) -> boolean
+ * mode same with  ***ssl_ctx:mode***
+ * verifycb should like int function(int preverify_ok,X509_STORE_CTX ctx)
+   return 0 to end,1 to continue
+
+* ***ssl_ctx:bio**(string host_addr[, boolean server=true[, boolean autoretry=true]]) => bio,ssl
+ * Create bio and ssl object, if server is true,host_addr is listen bind address,
  
 ## SSL Object
 

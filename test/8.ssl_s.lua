@@ -21,7 +21,6 @@ while 1 do
 end
 --]]
 
-
 --SSL Server
 
 local function get_cert_pkey()
@@ -44,8 +43,9 @@ end
 
 local ctx = openssl.ssl.ctx_new('SSLv23','ALL')
 local cert,pkey = get_cert_pkey()
-ctx:use_PrivateKey(pkey)
-ctx:use_certificate(cert)
+
+ctx:use(pkey, cert)
+--[[
 local srv = assert(bio.accept(host..':'..port))
 print('listen at:'..port)
 local cli = assert(srv:accept())
@@ -62,6 +62,26 @@ while cli do
     end
     print(openssl.error(true))
 end
+--]]
+
+
+local srv,ssl = assert(ctx:bio(host..':'..port,true,true))
+print('listen at:'..port)
+local cli = assert(srv:accept())
+
+while cli do
+    cli = assert(srv:accept()) --tcp
+    cli = assert(ctx:new(cli,true))
+    assert(cli:accept()) --ssl
+    print('CLI:',cli)
+    while cli do
+        local s = assert(cli:read())
+        print(s)
+        assert(cli:write(s))
+    end
+    print(openssl.error(true))
+end
+
 
 --[[
 

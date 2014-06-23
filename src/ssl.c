@@ -352,6 +352,40 @@ static int openssl_ssl_ctx_new_ssl(lua_State*L){
 	return 1;
 }
 
+
+static int openssl_ssl_ctx_new_bio(lua_State*L){
+	SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
+	const char* host_addr = luaL_checkstring(L, 2);
+	int server = lua_isnoneornil(L,3) ? 0 : auxiliar_checkboolean(L,3);
+	int autoretry = lua_isnoneornil(L,4) ? 1 : auxiliar_checkboolean(L,4);
+
+	SSL *ssl = NULL;
+	BIO *bio = server ? BIO_new_ssl(ctx,server) : BIO_new_ssl_connect(ctx);
+	int ret = 0;
+	ret = BIO_get_ssl(bio, &ssl);
+	if(ssl) {
+		if(autoretry)
+			SSL_set_mode(ssl, SSL_MODE_AUTO_RETRY);
+		if(server){
+			BIO* b1 = BIO_new_accept(host_addr);
+			bio = BIO_push(b1,bio);
+		}else{
+			ret = BIO_set_conn_hostname(bio,host_addr);
+		}
+		if(ret==1){
+			PUSH_OBJECT(bio,"openssl.bio");
+			PUSH_OBJECT(ssl,"openssl.ssl");
+			return 2;
+		}else
+			return openssl_pushresult(L,ret);
+	}else
+	{
+		BIO_free(bio);
+		bio = NULL;
+		return 0;
+	}
+}
+
 static int verify_cb(int preverify_ok, X509_STORE_CTX *xctx){
 	
 	lua_State*L = CRYPTO_get_ex_data(&xctx->ctx->ex_data,1);
@@ -432,6 +466,7 @@ static int openssl_ssl_ctx_sessions(lua_State*L){
 
 static luaL_Reg ssl_ctx_funcs[] = {
 	{"new",				openssl_ssl_ctx_new_ssl},
+	{"bio",				openssl_ssl_ctx_new_bio},
 
 	{"use",				openssl_ssl_ctx_use},
 	{"add",				openssl_ssl_ctx_add},

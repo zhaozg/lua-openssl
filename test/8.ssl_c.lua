@@ -21,6 +21,7 @@ print(openssl.error(true))
 --]]
 
 --SSL Client
+--[[
 local ctx = openssl.ssl.ctx_new('SSLv23','ALL')
 
 local cli = assert(bio.connect(host..':'..port,true)) --tcp
@@ -37,7 +38,25 @@ while cli do
     end
 end
 print(openssl.error(true))
-    
+--]]
+
+--SSL BIO Client
+local ctx = openssl.ssl.ctx_new('SSLv23','ALL')
+
+local cli,ssl = assert(ctx:bio(host..':'..port,false,true))
+print(cli:connect() )--ssl
+print(openssl.error(true))
+ 
+while cli do
+    s = io.read()
+    if(#s>0) then
+        print(cli:write(s))
+        ss = cli:read()
+        assert(#s==#ss)
+    end
+end
+print(openssl.error(true))
+
 --[[
 local socket = require("socket")
 ssl = require'openssl'.ssl

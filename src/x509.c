@@ -94,11 +94,7 @@ static LUA_FUNCTION(openssl_x509_read)
 	}
 	if((fmt==FORMAT_AUTO && cert==NULL) || fmt == FORMAT_PEM)
 	{
-#ifdef TYPEDEF_D2I_OF
-		cert = (X509 *) PEM_ASN1_read_bio((d2i_of_void *)d2i_X509, PEM_STRING_X509, in, NULL, NULL, NULL);
-#else
-		cert = (X509 *) PEM_ASN1_read_bio((char *(*)())d2i_X509, PEM_STRING_X509, in, NULL, NULL, NULL);
-#endif
+		cert = PEM_read_bio_X509(in, NULL, NULL,NULL);
 		BIO_reset(in);
 	}
 
