@@ -21,25 +21,9 @@ static LUA_FUNCTION(openssl_cipher_list) {
 	return 1;
 }
 
-static const EVP_CIPHER* cipher_get(lua_State*L, int idx)
-{
-	const EVP_CIPHER* cipher = NULL;
-	if(lua_isstring(L, idx))
-		cipher = EVP_get_cipherbyname(lua_tostring(L,idx));
-	else if(lua_isnumber(L, idx))
-		cipher = EVP_get_cipherbynid(lua_tointeger(L,idx));
-	else if(auxiliar_isclass(L,"openssl.asn1_object",idx))
-		cipher = EVP_get_cipherbyobj(CHECK_OBJECT(1,ASN1_OBJECT,"openssl.asn1_object"));
-	else if(auxiliar_isclass(L,"openssl.evp_cipher",idx))
-		cipher = CHECK_OBJECT(idx,EVP_CIPHER,"openssl.evp_cipher");
-	else
-		luaL_error(L, "argument #1 must be a string, NID number or ans1_object identify cipher method");
-
-	return cipher;
-}
 
 static LUA_FUNCTION(openssl_cipher_get) {
-    const EVP_CIPHER* cipher = cipher_get(L, 1);
+    const EVP_CIPHER* cipher = get_cipher(L, 1);
 
     if(cipher)
         PUSH_OBJECT((void*)cipher,"openssl.evp_cipher");
@@ -59,7 +43,7 @@ static LUA_FUNCTION(openssl_evp_encrypt) {
 			luaL_error(L,"call function with invalid state");
 	}
 
-	cipher = cipher_get(L,1);
+	cipher = get_cipher(L,1);
 	if(cipher){
 		size_t input_len = 0;
 		const char *input = luaL_checklstring(L, 2, &input_len);
@@ -118,7 +102,7 @@ static LUA_FUNCTION(openssl_evp_decrypt) {
 		}else
 			luaL_error(L,"call function with invalid state");
 	}
-	cipher = cipher_get(L,1);
+	cipher = get_cipher(L,1);
 	if(cipher)
 	{
 		size_t input_len = 0;
@@ -179,7 +163,7 @@ static LUA_FUNCTION(openssl_evp_cipher) {
 			luaL_error(L,"call function with invalid state");
 	}
 
-	cipher = cipher_get(L, 1);
+	cipher = get_cipher(L, 1);
 	
 	if(cipher)
 	{
@@ -238,7 +222,7 @@ typedef enum {
 }CIPHER_MODE;
 
 static LUA_FUNCTION(openssl_cipher_new) {
-	const EVP_CIPHER* cipher = cipher_get(L,1);
+	const EVP_CIPHER* cipher = get_cipher(L,1);
 	if(cipher)
 	{
 		int enc = lua_toboolean(L, 2);
@@ -283,7 +267,7 @@ static LUA_FUNCTION(openssl_cipher_new) {
 }
 
 static LUA_FUNCTION(openssl_cipher_encrypt_new) {
-	const EVP_CIPHER* cipher  = cipher_get(L,1);
+	const EVP_CIPHER* cipher  = get_cipher(L,1);
 	if(cipher)
 	{
 		size_t key_len = 0;
@@ -327,7 +311,7 @@ static LUA_FUNCTION(openssl_cipher_encrypt_new) {
 }
 
 static LUA_FUNCTION(openssl_cipher_decrypt_new) {
-	const EVP_CIPHER* cipher = cipher_get(L,1);
+	const EVP_CIPHER* cipher = get_cipher(L,1);
 	if(cipher)
 	{
 		size_t key_len = 0;

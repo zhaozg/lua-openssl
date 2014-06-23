@@ -610,7 +610,6 @@ set in ***ctx***, willl be return.
 * ***openssl.bio.fd*** (number socket[,string flag='noclose']) => bio
  * Create a socket or file bio, default not do socket close
 
-
 * ***openssl.bio.file*** (string file [,string mode='r']) => bio
  * Create a file bio, if mode not given, the default is 'r'
 
@@ -619,14 +618,33 @@ set in ***ctx***, willl be return.
  
 * ***openssl.bio.accept***(string host_port)
 * Create network bio with 'host:port' address
- 
+
+* ***openssl.bio.filter***(string 'base64'|'buffer') => bio
+* Create base64 or buffer bio, which can append to an io BIO object
+
+* ***openssl.bio.filter***(string 'digest', digest md) => bio
+* Create digest bio, which can append to an io BIO object
+
+* ***openssl.bio.filter***(string 'ssl', ssl s[, string closeflag='noclose']) => bio
+* Create digest bio
+
+* ***openssl.bio.filter***(string 'cipher', string key, stirng iv, boolean encrypt=true) => bio
+* Create cipher bio, which can append to an io BIO object
+
 * ***bio:read*** (number len) -> string
 * ***bio:gets*** ([number len=256]) -> string
 * ***bio:write*** (string data) -> number
 * ***bio:puts*** (string data) -> number
 * ***bio:get_mem***() -> string
-
  * only supports bio mem
+ 
+ * ***bio:push(bio append)*** => bio
+  * return end of chain bio object, if want to free a bio chain, use ***bio:free_all***()
+ * ***bio:pop(bio b)***
+  * remove bio b from chian 
+  * ***bio:free_all()***
+   * free a object chian
+   
 * ***bio:close*** ()
 * ***bio:type*** () -> string
 * ***bio:reset*** ()

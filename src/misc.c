@@ -49,6 +49,22 @@ const EVP_MD* get_digest(lua_State* L, int idx){
 
 	return md;
 }
+const EVP_CIPHER* get_cipher(lua_State*L, int idx)
+{
+	const EVP_CIPHER* cipher = NULL;
+	if(lua_isstring(L, idx))
+		cipher = EVP_get_cipherbyname(lua_tostring(L,idx));
+	else if(lua_isnumber(L, idx))
+		cipher = EVP_get_cipherbynid(lua_tointeger(L,idx));
+	else if(auxiliar_isclass(L,"openssl.asn1_object",idx))
+		cipher = EVP_get_cipherbyobj(CHECK_OBJECT(1,ASN1_OBJECT,"openssl.asn1_object"));
+	else if(auxiliar_isclass(L,"openssl.evp_cipher",idx))
+		cipher = CHECK_OBJECT(idx,EVP_CIPHER,"openssl.evp_cipher");
+	else
+		luaL_error(L, "argument #1 must be a string, NID number or ans1_object identify cipher method");
+
+	return cipher;
+}
 
 BIGNUM *BN_get(lua_State *L, int i)
 {
