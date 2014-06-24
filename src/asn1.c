@@ -72,7 +72,7 @@ static int openssl_ans1string_length(lua_State* L){
 static int openssl_ans1string_data(lua_State* L){
 	ASN1_STRING* s = CHECK_OBJECT(1,ASN1_STRING,"openssl.asn1_string");
 	if(lua_isnone(L,1))
-		lua_pushlstring(L,ASN1_STRING_data(s),ASN1_STRING_length(s));
+		lua_pushlstring(L,(const char*)ASN1_STRING_data(s),ASN1_STRING_length(s));
 	else{
 		size_t l;
 		const char*data = luaL_checklstring(L,2,&l);
@@ -93,7 +93,7 @@ static int openssl_ans1string_toutf8(lua_State* L){
 	ASN1_STRING* s = CHECK_OBJECT(1,ASN1_STRING,"openssl.asn1_string");
 	unsigned char* out = NULL;
 	int len =  ASN1_STRING_to_UTF8(&out, s);	
-	lua_pushlstring(L,out,len);
+	lua_pushlstring(L,(const char*)out,len);
 	OPENSSL_free(out);
 	return 1;
 }

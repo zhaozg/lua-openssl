@@ -234,9 +234,6 @@ static LUA_FUNCTION(openssl_cipher_new) {
 		ENGINE *e = lua_isnoneornil(L,6) ? NULL : CHECK_OBJECT(6, ENGINE, "openssl.engine");
 		EVP_CIPHER_CTX *c = NULL;
 
-		int output_len = 0;
-		int len = 0;
-		char *buffer = NULL;
 		char evp_key[EVP_MAX_KEY_LENGTH] = {0};
 		char evp_iv[EVP_MAX_IV_LENGTH] = {0};
 		if (key)
@@ -278,9 +275,6 @@ static LUA_FUNCTION(openssl_cipher_encrypt_new) {
 		ENGINE *e = lua_isnoneornil(L,5) ? NULL : CHECK_OBJECT(5, ENGINE, "openssl.engine");
 		EVP_CIPHER_CTX *c = NULL;
 
-		int output_len = 0;
-		int len = 0;
-		char *buffer = NULL;
 		char evp_key[EVP_MAX_KEY_LENGTH] = {0};
 		char evp_iv[EVP_MAX_IV_LENGTH] = {0};
 		if (key)
@@ -322,9 +316,6 @@ static LUA_FUNCTION(openssl_cipher_decrypt_new) {
 		ENGINE *e = lua_isnoneornil(L,5) ? NULL : CHECK_OBJECT(5, ENGINE, "openssl.engine");
 		EVP_CIPHER_CTX *c = NULL;
 
-		int output_len = 0;
-		int len = 0;
-		char *buffer = NULL;
 		char evp_key[EVP_MAX_KEY_LENGTH] = {0};
 		char evp_iv[EVP_MAX_IV_LENGTH] = {0};
 		if (key)

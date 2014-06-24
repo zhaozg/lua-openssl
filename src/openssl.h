@@ -70,16 +70,6 @@ __pragma(warning(pop))
 
 int openssl_get_revoke_reason(const char*s);
 
-LUA_FUNCTION(openssl_list);
-LUA_FUNCTION(openssl_hex);
-LUA_FUNCTION(openssl_engine);
-LUA_FUNCTION(openssl_error_string);
-LUA_FUNCTION(openssl_random_bytes);
-
-
-LUA_FUNCTION(openssl_conf_load);
-
-
 LUA_API LUA_FUNCTION(luaopen_digest);
 LUA_API LUA_FUNCTION(luaopen_hmac);
 LUA_API LUA_FUNCTION(luaopen_cipher);

@@ -174,3 +174,4 @@ int auxiliar_checkoption(lua_State*L, int objidx, const char* def, const char* c
 	int at = luaL_checkoption(L, objidx, def, slist);
 	return ival[at];
 }
+

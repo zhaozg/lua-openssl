@@ -11,6 +11,7 @@
 #include <openssl/engine.h>
 #include <openssl/opensslconf.h>
 #include "private.h"
+
 static int openssl_version(lua_State*L)
 {
 		lua_pushstring(L, LOPENSSL_VERSION_STR);
@@ -26,10 +27,10 @@ static LUA_FUNCTION(openssl_hex){
 	int encode = lua_isnoneornil(L,2) ? 1 : lua_toboolean(L,2);
 	char* h = NULL;
 	if(encode){
-		h = string_to_hex(s,&hl);
+		h = (char*)string_to_hex((char*)s,&hl);
 	}
 	else{
-		h = hex_to_string(s, l);
+		h = hex_to_string((unsigned char*)s, l);
 		hl = strlen(h);
 	};
 	lua_pushlstring(L, h,hl);

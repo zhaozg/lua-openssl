@@ -124,7 +124,7 @@ if (bn != NULL) {						\
 	    size_t l = 0;									\
 		const char* bn = luaL_checklstring(L,-1,&l);	\
 		if(_type->_name==NULL)  _type->_name = BN_new();\
-	    BN_bin2bn(bn,l,_type->_name);					\
+	    BN_bin2bn((const unsigned char *)bn,l,_type->_name);					\
 	}else if(auxiliar_isclass(L,"openssl.bn",n)) {		\
 		const BIGNUM* bn = CHECK_OBJECT(n,BIGNUM,"openssl.bn");	\
 		if(_type->_name==NULL)  _type->_name = BN_new();\
@@ -197,7 +197,7 @@ err:
 	if(lua_isstring(L, n)){							\
 	size_t l =0;								\
 	const char* s = luaL_checklstring(L,n,&l);	\
-	BN_bin2bn(s,l,b);							\
+	BN_bin2bn((const unsigned char *)s,l,b);							\
 	}else {											\
 	const BIGNUM* bn = CHECK_OBJECT(n, BIGNUM, "openssl.bn");	\
 	BN_copy(b,bn);								\

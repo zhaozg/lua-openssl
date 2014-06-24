@@ -17,7 +17,7 @@
 static int openssl_ssl_ctx_new(lua_State*L)
 {
 	const char* meth = luaL_optstring(L, 1, "TLSv1");
-	const SSL_METHOD* method = NULL;
+	SSL_METHOD* method = NULL;
 	const char* ciphers;
 	SSL_CTX* ctx;
 	if(strcmp(meth,"SSLv3")==0)
@@ -178,7 +178,7 @@ static int openssl_ssl_ctx_mode(lua_State*L)
 };
 
 
-static const long iOptions_options[] = {
+static const int iOptions_options[] = {
 	SSL_OP_MICROSOFT_SESS_ID_BUG,
 	SSL_OP_NETSCAPE_CHALLENGE_BUG,
 	SSL_OP_NETSCAPE_REUSE_CIPHER_CHANGE_BUG,
@@ -367,7 +367,7 @@ static int openssl_ssl_ctx_new_bio(lua_State*L){
 		if(autoretry)
 			SSL_set_mode(ssl, SSL_MODE_AUTO_RETRY);
 		if(server){
-			BIO* b1 = BIO_new_accept(host_addr);
+			BIO* b1 = BIO_new_accept((char*)host_addr);
 			bio = BIO_push(b1,bio);
 		}else{
 			ret = BIO_set_conn_hostname(bio,host_addr);
@@ -1179,6 +1179,7 @@ static int openssl_ssl_alert_type_string(lua_State*L)
 	int v = luaL_checkint(L, 2);
 	int _long = lua_isnoneornil(L,3)?0:auxiliar_checkboolean(L, 3);
 	const char* val;
+	(void*)s;
 	if(_long)
 		val = SSL_alert_type_string_long(v);
 	else
@@ -1192,6 +1193,8 @@ static int openssl_ssl_alert_desc_string(lua_State*L)
 	int v = luaL_checkint(L, 2);
 	int _long = lua_isnoneornil(L,3)?0:auxiliar_checkboolean(L, 3);
 	const char* val;
+	(void*)s;
+
 	if(_long)
 		val = SSL_alert_desc_string_long(v);
 	else

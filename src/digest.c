@@ -80,14 +80,14 @@ static LUA_FUNCTION(openssl_digest)
 	if(md)
 	{
 		size_t inl;
-		char buf[MAX_PATH];
+		unsigned char buf[MAX_PATH];
 		unsigned int  blen = MAX_PATH;
 		const char* in = luaL_checklstring(L,2,&inl);
 		int raw = (lua_isnoneornil(L,3)) ? 0 : lua_toboolean(L,3);
-		int status = EVP_Digest(in, inl, (unsigned char*)buf, &blen, md, NULL);
+		int status = EVP_Digest(in, inl, buf, &blen, md, NULL);
 		if (status) {
 			if(raw)
-				lua_pushlstring(L,buf,blen);
+				lua_pushlstring(L,(const char*)buf,blen);
 			else{
 				BIGNUM *B = BN_new();
 				BN_bin2bn(buf,blen,B);
@@ -182,7 +182,7 @@ static LUA_FUNCTION(openssl_evp_digest_final)
 {
     EVP_MD_CTX* c = CHECK_OBJECT(1,EVP_MD_CTX, "openssl.evp_digest_ctx");
     unsigned int outl = EVP_MAX_MD_SIZE;
-    char out[EVP_MAX_MD_SIZE];
+    unsigned char out[EVP_MAX_MD_SIZE];
 	int ret;
 	int raw = 0;
 	if(lua_isstring(L,2)){
@@ -198,7 +198,7 @@ static LUA_FUNCTION(openssl_evp_digest_final)
     if(EVP_DigestFinal_ex(c,(byte*)out,&outl) && outl)
     {
 		if(raw){
-			lua_pushlstring(L,out,outl);
+			lua_pushlstring(L,(const char*)out,outl);
 		}else{
 			char* in;
 			BIGNUM *B = BN_new();

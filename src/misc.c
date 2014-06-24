@@ -21,7 +21,7 @@ BIO* load_bio_object(lua_State* L, int idx) {
 		size_t l = 0;
 		const char* ctx = lua_tolstring(L, idx, &l);
 		/* read only */
-		bio = (BIO*)BIO_new_mem_buf(ctx, l);
+		bio = (BIO*)BIO_new_mem_buf((void*)ctx, l);
 		BIO_set_close(bio, BIO_NOCLOSE);
 		/* read write
 		bio = BIO_new(BIO_s_mem());
@@ -114,7 +114,6 @@ void openssl_add_method(const OBJ_NAME *name, void *arg)
 
 int RAND_init(const char *file)
 {
-	int consider_randfile = (file == NULL);
 	char buffer[200];
 	
 #ifdef OPENSSL_SYS_WINDOWS

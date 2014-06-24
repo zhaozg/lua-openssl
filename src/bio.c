@@ -447,7 +447,8 @@ static luaL_reg bio_funs[] = {
 	/* network socket */
 	{"accept",	openssl_bio_accept },
 	{"connect",	openssl_bio_connect },
-	
+	{"fd",	openssl_bio_fd },
+
     {"__tostring",	auxiliar_tostring	},
     {"__gc",	openssl_bio_free	},
 

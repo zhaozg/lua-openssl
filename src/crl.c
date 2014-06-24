@@ -68,7 +68,7 @@ static int reason_get(lua_State*L, int reasonidx){
 static X509_REVOKED *create_revoked(lua_State*L,const BIGNUM* bn, time_t t, int reason) {
     X509_REVOKED *revoked = X509_REVOKED_new();
     ASN1_TIME *tm = ASN1_TIME_new();
-    ASN1_INTEGER *it =  BN_to_ASN1_INTEGER(bn,NULL);;
+    ASN1_INTEGER *it =  BN_to_ASN1_INTEGER((BIGNUM*)bn,NULL);;
 
 	ASN1_TIME_set(tm,t);
     

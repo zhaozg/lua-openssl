@@ -150,7 +150,7 @@ static int openssl_ecdsa_sign(lua_State*L){
 	EC_KEY* ec = CHECK_OBJECT(1,EC_KEY, "openssl.ec_key");
 	size_t l;
 	const char* s = luaL_checklstring(L,2,&l);
-	ECDSA_SIG* sig = ECDSA_do_sign(s,l,ec);
+	ECDSA_SIG* sig = ECDSA_do_sign((const unsigned char*)s,l,ec);
 	if(sig){
 		PUSH_BN(BN_dup(sig->r));
 		PUSH_BN(BN_dup(sig->s));
@@ -172,7 +172,7 @@ static int openssl_ecdsa_verify(lua_State*L){
 	BN_copy(sig->r,r);
 	BN_copy(sig->s,s);
 
-	ret = ECDSA_do_verify(dgst,l,sig,ec);
+	ret = ECDSA_do_verify((const unsigned char*)dgst,l,sig,ec);
 	if(ret==-1)
 		lua_pushnil(L);
 	else
@@ -243,7 +243,8 @@ static LUA_FUNCTION(openssl_ec_list_curve_name) {
 
 static luaL_Reg R[] = {
 	{"list", openssl_ec_list_curve_name},
-
+	{"group", openssl_eckey_group},
+	
 	{ NULL, NULL }
 };
 

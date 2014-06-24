@@ -47,7 +47,7 @@
 #define AUXILIAR_SETLSTR(L,tidx, lvar, cval,len)	\
 	do {									\
 	int n = tidx < 0 ? tidx-1 : tidx;		\
-	lua_pushlstring(L, (cval),len);				\
+	lua_pushlstring(L, (const char*)(cval),len);				\
 	lua_setfield(L, n, lvar);				\
 	} while(0)
 

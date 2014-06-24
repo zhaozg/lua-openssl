@@ -356,14 +356,10 @@ static LUA_FUNCTION(openssl_pkcs7_parse)
 }
 
 #if 0
-/*
 
-#if 0
 int headers = 5;
 , * outfile = NULL
 outfile = CHECK_OBJECT(2, BIO, "openssl.bio");
-/* tack on extra headers */
-/* table is in the stack at index 't' */
 lua_pushnil(L);  /* first key */
 while (lua_next(L, headers) != 0) {
 	/* uses 'key' (at index -2) and 'value' (at index -1) */
@@ -394,11 +390,8 @@ while (lua_next(L, headers) != 0) {
 	/* removes 'value'; keeps 'key' for next iteration */
 	lua_pop(L, 1);
 }
-*/
+
 #endif
-
-
-
 
 static luaL_Reg pkcs7_funcs[] = {
 	{"parse",				openssl_pkcs7_parse},
