@@ -17,7 +17,11 @@
 static int openssl_ssl_ctx_new(lua_State*L)
 {
 	const char* meth = luaL_optstring(L, 1, "TLSv1");
+#if OPENSSL_VERSION_NUMBER >= 0x01000000L
+	const 
+#endif
 	SSL_METHOD* method = NULL;
+
 	const char* ciphers;
 	SSL_CTX* ctx;
 	if(strcmp(meth,"SSLv3")==0)
@@ -575,6 +579,9 @@ static int openssl_ssl_session_peer(lua_State*L){
 }
 #endif
 static int openssl_ssl_session_id(lua_State*L){
+#if OPENSSL_VERSION_NUMBER > 0x10000000L
+	const
+#endif
 	SSL_SESSION* session = CHECK_OBJECT(1, SSL_SESSION, "openssl.ssl_session");
 	
 	if(lua_isnoneornil(L,2)){
@@ -586,7 +593,7 @@ static int openssl_ssl_session_id(lua_State*L){
 #if OPENSSL_VERSION_NUMBER > 0x10000000L
 		size_t len;
 		const char* id = luaL_checklstring(L, 2, &len);
-		int ret = SSL_SESSION_set1_id_context(session, id, len);
+		int ret = SSL_SESSION_set1_id_context((SSL_SESSION*)session, (const unsigned char*)id, len);
 		lua_pushboolean(L, ret);
 		return 1;
 #else
@@ -626,6 +633,7 @@ static luaL_Reg ssl_session_funcs[] = {
 	{"timeout",			openssl_ssl_session_timeout},
 #if OPENSSL_VERSION_NUMBER > 0x10000000L
 	{"compress_id",		openssl_ssl_session_compress_id},
+	{"peer",		openssl_ssl_session_peer},
 #endif
 	{"export",			openssl_ssl_session_export},
 

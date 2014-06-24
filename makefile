@@ -13,7 +13,8 @@ src/pkcs12.o src/pkcs7.o src/pkey.o src/ssl.o src/x509.o src/xname.o src/xexts.o
 all: $T.so
 
 $T.so: $(OBJS)
-	MACOSX_DEPLOYMENT_TARGET="10.3"; export MACOSX_DEPLOYMENT_TARGET; $(CC) $(CFLAGS) $(LIB_OPTION) -o $T.so $(OBJS) -lcrypto -lssl -lrt -ldl
+	MACOSX_DEPLOYMENT_TARGET="10.3"; export MACOSX_DEPLOYMENT_TARGET; $(CC) $(CFLAGS) $(LIB_OPTION) -o $T.so $(OBJS) $(STATIC_LIBS) -lrt -ldl
+	chcon -t texrel_shlib_t  $T.so
 
 install: all
 	mkdir -p $(LUA_LIBDIR)
