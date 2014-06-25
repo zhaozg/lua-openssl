@@ -461,29 +461,32 @@ flags is flag information as described above.
 
 
 #8. SSL
-* ***openssl.ctx_new***(string SSL_protocol[, string support_ciphers]) => ssl_ctx
+* ***openssl.ssl.ctx_new***(string SSL_protocol[, string support_ciphers]) => ssl_ctx
  * ssl_protocol can be SSLv3,SSLv23,SSLv2,TLSv1,DTLSv1, and can be follow by -server or -client
  * If not given support_ciphers, default of openssl will be used.
- 
-## ssl_ctx Object
- * ***ssl_ctx:use***(evp_pkey pkey,x509 cert) -> boolean[,string errmsg[,number errval]]
-  * Tell ssl_ctx use private key and certificate, and check private key
-  * Return true for ok, or return nil, follow by errmsg and errval
 
- * ***ssl_ctx:add***(x509 clientca[,table extra_chain_cert_array]) -> boolean
-  * Add client ca cert and option extra chian cert
-  
- * ***ssl_ctx:mode***([boolean clear=nil] string mode ...) -> string ...
-  * If clear set true, given mode list will be clear, or will be set
-  * Return new mode list
-  * mode support: 'enable_partial_write','accept_moving_write_buffer','auto_retry','no_auto_chain','release_buffers'
-     eg: modes = {ssl_ctx:mode('enable_partial_write','accept_moving_write_buffer','auto_retry')},
-     modes should include 'enable_partial_write','accept_moving_write_buffer','auto_retry'
-   
-  * ***ssl_ctx:options***([boolean clear=nil] string options ...) -> string ...
-  * If clear set true, given option list will be clear, or will be set
-  * Return new options list
-  * option support: 
+* ***openssl.ssl.alert_string***(number alter[,boolean long = false]) -> string, string
+ * Return alter type string and alter desc string, if long set to long will return long info
+
+## ssl_ctx Object
+* ***ssl_ctx:use***(evp_pkey pkey,x509 cert) -> boolean[,string errmsg[,number errval]]
+ * Tell ssl_ctx use private key and certificate, and check private key
+ * Return true for ok, or return nil, follow by errmsg and errval
+
+* ***ssl_ctx:add***(x509 clientca[,table extra_chain_cert_array]) -> boolean
+ * Add client ca cert and option extra chian cert
+
+* ***ssl_ctx:mode***([boolean clear=nil] string mode ...) -> string ...
+ * If clear set true, given mode list will be clear, or will be set
+ * Return new mode list
+ * mode support: 'enable_partial_write','accept_moving_write_buffer','auto_retry','no_auto_chain','release_buffers'
+   eg: modes = {ssl_ctx:mode('enable_partial_write','accept_moving_write_buffer','auto_retry')},
+   modes should include 'enable_partial_write','accept_moving_write_buffer','auto_retry'
+
+* ***ssl_ctx:options***([boolean clear=nil] string options ...) -> string ...
+ * If clear set true, given option list will be clear, or will be set
+ * Return new options list
+ * option support: 
 
 ```
     "microsoft_sess_id_bug",
@@ -568,6 +571,52 @@ set in ***ctx***, willl be return.
  * If mode set true, return true for false for quiet,
  * Or return  'read' or 'write' for shutdown direction. 
 
+* ***ssl:get***(string what,....) -> value,....
+ * Return value according to what, args can be a list. arg must be in below list:
+
+```
+  certificate:  return SSL certificates
+  fd: return file or network connect fd
+  rfd:
+  wfd:
+  client_CA_list
+  read_ahead: -> boolean
+  shared_ciphers: string
+  cipher_list -> string
+  verify_mode: number
+  verify_depth
+  state_string
+  state_string_long
+  rstate_string
+  rstate_string_long
+  iversion
+  version
+  default_timeout,
+  certificates
+  verify_result
+  state
+  state_string
+  
+```
+
+* ***ssl:set***(string what,value val,....) -> value,....
+ * Set what with value, args must be key value pair
+
+```
+  certificate:  return SSL certificates
+  fd: return file or network connect fd
+  rfd:
+  wfd:
+  client_CA:
+  read_ahead
+  cipher_list
+  verify_depth
+  purpose:
+  trust:
+  verify_result
+  state
+```
+
 #9. Misc Functions and Objects
 
 ##Funcions
@@ -648,14 +697,13 @@ set in ***ctx***, willl be return.
 * ***bio:puts*** (string data) -> number
 * ***bio:get_mem***() -> string
  * only supports bio mem
- 
- * ***bio:push(bio append)*** => bio
-  * return end of chain bio object, if want to free a bio chain, use ***bio:free_all***()
- * ***bio:pop(bio b)***
-  * remove bio b from chian 
-  * ***bio:free_all()***
-   * free a object chian
-   
+* ***bio:push(bio append)*** => bio
+ * return end of chain bio object, if want to free a bio chain, use ***bio:free_all***()
+* ***bio:pop(bio b)***
+ * remove bio b from chian 
+* ***bio:free_all()***
+ * free a object chian
+
 * ***bio:close*** ()
 * ***bio:type*** () -> string
 * ***bio:reset*** ()
