@@ -499,10 +499,10 @@ flags is flag information as described above.
 	"all",
 ```
 
-  * ***ssl_ctx:timeout***([number timeout]) -> number
+* ***ssl_ctx:timeout***([number timeout]) -> number
  * If not give arg timeout, will return current, or use new timeout value and return previous.
- 
- * ***ssl_ctx:quiet_shutdown***([boolean mode]) -> [boolean]
+
+* ***ssl_ctx:quiet_shutdown***([boolean mode]) -> [boolean]
 Normally when a SSL connection is finished, the parties must send out
 "close notify" alert messages using ***SSL:shutdown"*** for a clean shutdown.
 
@@ -551,14 +551,23 @@ set in ***ctx***, willl be return.
 
 * ***ssl:cipher***() -> table
  * Return current cipher info,table has key name,version,id,bits,description
+
+* ***ssl:pending***() -> number
+ * Return the number of bytes which are available inside ***SSL*** for immediate read. 
+
+* ***ssl:ctx***([ssl_ctx ctx]) => ssl_ctx
+ * Return ssl_ctx for SSL object, or set new SSL_CTX
+
+* ***ssl:shutdown***()
+ * Shutdown SSL connection
+
+* ***ssl:shutdown***(string mode='read'|'write'|'quiet'|'nonoquiet')
+ * Set shutdown mode, disable read or write, enable or disable quiet shutdown.
  
- * ***ssl:pending***() -> number
-  * Return the number of bytes which are available inside ***SSL*** for immediate read. 
- 
- * ***ssl:ctx***([ssl_ctx ctx]) => ssl_ctx
-  * Return ssl_ctx for SSL object, or set new SSL_CTX
-  
-  
+* ***ssl:shutdown***(boolean mode) -> string
+ * If mode set true, return true for false for quiet,
+ * Or return  'read' or 'write' for shutdown direction. 
+
 #9. Misc Functions and Objects
 
 ##Funcions

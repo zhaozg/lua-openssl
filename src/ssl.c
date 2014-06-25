@@ -714,7 +714,82 @@ static int openssl_ssl_bio(lua_State*L){
 	return 2;
 }
 
-/*********************************************/
+
+static int openssl_ssl_use(lua_State*L){
+	SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
+	X509* x = CHECK_OBJECT(2, X509, "openssl.x509");
+	EVP_PKEY* pkey = CHECK_OBJECT(3, EVP_PKEY, "openssl.evp_pkey");
+	int ret = SSL_use_PrivateKey(s, pkey);
+	if (ret==1){
+		ret = SSL_use_certificate(s, x);
+		if(ret==1){
+			ret = SSL_check_private_key(s);
+		}
+	}
+	return openssl_pushresult(L, ret);
+}
+
+static int openssl_ssl_peer(lua_State*L){
+	SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
+	X509* x = SSL_get_peer_certificate(s);
+	STACK_OF(X509) *sk = SSL_get_peer_cert_chain(s);
+	PUSH_OBJECT(x,"openssl.x509");
+	if(sk)
+	{
+		PUSH_OBJECT(x,"openssl.stack_of_x509");
+		return 2;
+	}
+	return 1;
+}
+
+
+static int openssl_ssl_alert_type_string(lua_State*L)
+{
+	SSL* s =  CHECK_OBJECT(1, SSL,  "openssl.ssl");
+	int v = luaL_checkint(L, 2);
+	int _long = lua_isnoneornil(L,3)?0:auxiliar_checkboolean(L, 3);
+	const char* val;
+	(void*)s;
+	if(_long)
+		val = SSL_alert_type_string_long(v);
+	else
+		val = SSL_alert_type_string(v);
+	lua_pushstring(L, val);
+	return 1;
+}
+static int openssl_ssl_alert_desc_string(lua_State*L)
+{
+	SSL* s =  CHECK_OBJECT(1, SSL,  "openssl.ssl");
+	int v = luaL_checkint(L, 2);
+	int _long = lua_isnoneornil(L,3)?0:auxiliar_checkboolean(L, 3);
+	const char* val;
+	(void*)s;
+
+	if(_long)
+		val = SSL_alert_desc_string_long(v);
+	else
+		val = SSL_alert_desc_string(v);
+	lua_pushstring(L, val);
+	return 1;
+}
+
+
+
+static int openssl_ssl_add(lua_State*L){
+	SSL* s =  CHECK_OBJECT(1, SSL,  "openssl.ssl");
+	X509* x = CHECK_OBJECT(2, X509, "openssl.x509");
+	int ret = SSL_add_client_CA(s, x);
+
+	return openssl_pushresult(L, ret);
+};
+
+static int openssl_ssl_get_client_CA_list(lua_State*L){
+	SSL* s =  CHECK_OBJECT(1, SSL,  "openssl.ssl");
+	STACK_OF(X509_NAME)* ns = SSL_get_client_CA_list(s);
+	PUSH_OBJECT(ns,"openssl.stack_of_x509_name");
+	return 1;
+};
+
 static int openssl_ssl_gc(lua_State*L){
 	SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
 	SSL_free(s);
@@ -768,6 +843,7 @@ static int openssl_ssl_pending(lua_State*L){
 	return 1;
 }
 
+/*********************************************/
 static int openssl_ssl_read_ahead(lua_State*L){
 	SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
 	if(lua_isnoneornil(L,2)){
@@ -819,60 +895,6 @@ static int openssl_ssl_verify_depth(lua_State*L){
 	}
 }
 
-static int openssl_ssl_use_RSAPrivateKey(lua_State*L){
-	SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
-	int ret;
-	if(lua_isstring(L,2)){
-		size_t size;
-		unsigned char* d = (unsigned char*)luaL_checklstring(L, 2, &size);
-		ret = SSL_use_RSAPrivateKey_ASN1(s, d, size);
-	}else{
-		RSA* rsa = CHECK_OBJECT(2, RSA, "openssl.rsa");
-		ret = SSL_use_RSAPrivateKey(s, rsa);
-	}
-	lua_pushboolean(L, ret);
-	return 1;
-}
-
-static int openssl_ssl_use_PrivateKey(lua_State*L){
-	SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
-	int ret;
-	if(lua_isstring(L,2)){
-		size_t size;
-		const char* d = luaL_checklstring(L, 2, &size);
-		int pk = luaL_checkint(L, 3);
-		ret = SSL_use_PrivateKey_ASN1(pk, s, (unsigned char*)d, size);
-	}else{
-		EVP_PKEY* pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
-		ret = SSL_use_PrivateKey(s, pkey);
-	}
-	lua_pushboolean(L, ret);
-	return 1;
-}
-
-static int openssl_ssl_use_certificate(lua_State*L){
-	SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
-	int ret;
-	if(lua_isstring(L,2)){
-		size_t size;
-		const char* d = luaL_checklstring(L, 2, &size);
-		ret = SSL_use_certificate_ASN1(s, (unsigned char*)d, (int)size);
-	}else{
-		X509* x = CHECK_OBJECT(2, X509, "openssl.x509");
-		ret = SSL_use_certificate(s, x);
-	}
-	lua_pushboolean(L, ret);
-	return 1;
-}
-
-
-static int openssl_ssl_check_private_key(lua_State*L){
-	SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
-	int ret = SSL_check_private_key(s);
-	lua_pushboolean(L, ret);
-	return 1;
-}
-
 static int openssl_ssl_state_string(lua_State*L){
 	SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
 	int l = lua_isnoneornil(L,2)?auxiliar_checkboolean(L,2):0;
@@ -895,19 +917,6 @@ static int openssl_ssl_rstate_string(lua_State*L){
 	return 1;
 }
 
-static int openssl_ssl_peer_certificate(lua_State*L){
-	SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
-	X509* x = SSL_get_peer_certificate(s);
-	PUSH_OBJECT(x,"openssl.x509");
-	return 1;
-}
-
-static int openssl_ssl_peer_cert_chain(lua_State*L){
-	SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
-	STACK_OF(X509) *x = SSL_get_peer_cert_chain(s);
-	PUSH_OBJECT(x,"openssl.stack_of_x509");
-	return 1;
-}
 
 static int openssl_ssl_set_purpose(lua_State*L){
 	SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
@@ -982,18 +991,6 @@ static int openssl_ssl_write(lua_State*L){
 	return 0;
 }
 
-static int openssl_ssl_ctrl(lua_State*L){
-	SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
-	(void*)s;
-	/*
-	int trust = luaL_checkint(L, 2);
-	int ret = SSL_ctrl(s); (SSL *ssl,void *buf,int num);
-	lua_pushboolean(L, ret);
-	return 1;
-	*/
-	return 0;
-}
-
 static int openssl_ssl_error(lua_State*L){
 	SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
 	int ret = luaL_checkint(L,2);
@@ -1042,10 +1039,42 @@ static int openssl_ssl_renegotiate_pending(lua_State*L){
 
 static int openssl_ssl_shutdown(lua_State*L){
 	SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
-	int ret = SSL_shutdown(s);
-	lua_pushboolean(L, ret);
-	return 1;
-}
+	int ret = 0;
+	if(lua_isnoneornil(L, 2)) {
+		ret = SSL_shutdown(s);
+		return openssl_pushresult(L, ret);
+	}else if(lua_isstring(L, 2)){
+		const static char* sMode[]  = {"read", "write", "quiet","noquiet", NULL};
+		int mode = luaL_checkoption(L, 2, NULL, sMode);
+		if(mode==0)
+			SSL_set_shutdown(s, SSL_RECEIVED_SHUTDOWN);
+		else if(mode==1)
+			SSL_set_shutdown(s, SSL_SENT_SHUTDOWN);
+		else if(mode==2)
+			SSL_set_quiet_shutdown(s, 1);
+		else if(mode==3)
+			SSL_set_quiet_shutdown(s, 0);
+	}else if(lua_isboolean(L, 2)){
+		int quiet = lua_toboolean(L, 2);
+		if(quiet)
+			lua_pushboolean(L, SSL_get_quiet_shutdown(s));
+		else{
+			int shut = SSL_get_shutdown(s);
+			if(shut==SSL_RECEIVED_SHUTDOWN)
+				lua_pushstring(L, "read");
+			else if(shut==SSL_SENT_SHUTDOWN)
+				lua_pushstring(L, "write");
+			else if(shut==0)
+				lua_pushnil(L);
+			else
+				luaL_error(L, "Can't understand SSL_get_shutdown result");	
+		}
+		return 1;
+	}else
+		luaL_argerror(L, 2, "should be boolean or string[read|write|quiet|noquite]");
+
+	return 0;
+};
 
 static int openssl_ssl_set_connect_state(lua_State*L){
 	SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
@@ -1139,78 +1168,6 @@ static int openssl_ssl_state(lua_State*L){
 	}
 }
 
-static int openssl_ssl_quiet_shutdown(lua_State*L){
-	SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
-	if(lua_isnoneornil(L, 2)){
-		int m = SSL_get_quiet_shutdown(s);
-		lua_pushinteger(L, m);
-		return 1;
-	}else{
-		int m = luaL_checkint(L, 2);
-		SSL_set_quiet_shutdown(s, m);
-		return 0;
-	}
-};
-
-static int openssl_ssl_get_shutdown(lua_State*L){
-	SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
-	int m = SSL_get_shutdown(s);
-	lua_pushinteger(L, m);
-	return 1;
-};
-
-static int openssl_ssl_set_shutdown(lua_State*L){
-	SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
-	int m = luaL_checkint(L, 2);
-	SSL_set_shutdown(s, m);
-	return 0;
-};
-
-static int openssl_ssl_add_client_CA(lua_State*L){
-	SSL* s =  CHECK_OBJECT(1, SSL,  "openssl.ssl");
-	X509* x = CHECK_OBJECT(2, X509, "openssl.x509");
-	int ret = SSL_add_client_CA(s, x);
-	lua_pushboolean(L, ret);
-	return 1;
-};
-
-static int openssl_ssl_get_client_CA_list(lua_State*L){
-	SSL* s =  CHECK_OBJECT(1, SSL,  "openssl.ssl");
-	STACK_OF(X509_NAME)* ns = SSL_get_client_CA_list(s);
-	PUSH_OBJECT(ns,"openssl.stack_of_x509_name");
-	return 1;
-};
-
-static int openssl_ssl_alert_type_string(lua_State*L)
-{
-	SSL* s =  CHECK_OBJECT(1, SSL,  "openssl.ssl");
-	int v = luaL_checkint(L, 2);
-	int _long = lua_isnoneornil(L,3)?0:auxiliar_checkboolean(L, 3);
-	const char* val;
-	(void*)s;
-	if(_long)
-		val = SSL_alert_type_string_long(v);
-	else
-		val = SSL_alert_type_string(v);
-	lua_pushstring(L, val);
-	return 1;
-}
-static int openssl_ssl_alert_desc_string(lua_State*L)
-{
-	SSL* s =  CHECK_OBJECT(1, SSL,  "openssl.ssl");
-	int v = luaL_checkint(L, 2);
-	int _long = lua_isnoneornil(L,3)?0:auxiliar_checkboolean(L, 3);
-	const char* val;
-	(void*)s;
-
-	if(_long)
-		val = SSL_alert_desc_string_long(v);
-	else
-		val = SSL_alert_desc_string(v);
-	lua_pushstring(L, val);
-	return 1;
-}
-
 
 static int openssl_ssl_session(lua_State*L){
 	SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
@@ -1258,20 +1215,19 @@ static luaL_Reg ssl_funcs[] = {
 	{"bio",				openssl_ssl_bio},
 	{"fd",				openssl_ssl_fd},
 
+	{"use",				openssl_ssl_use},
+	{"peer",			openssl_ssl_peer},
+
+	{"add_client_CA",	openssl_ssl_add},
+
 	{"verify_mode",		openssl_ssl_verify_mode},
 	{"verify_depth",	openssl_ssl_verify_depth},
-	{"use_PrivateKey",		openssl_ssl_use_PrivateKey},
-	{"use_RSAPrivateKey",	openssl_ssl_use_RSAPrivateKey},
-	{"use_certificate",		openssl_ssl_use_certificate},
-	{"check_private_key",	openssl_ssl_check_private_key},
+
 
 	{"state_string",		openssl_ssl_state_string},
 	{"rstate_string",		openssl_ssl_rstate_string},
 	{"session",				openssl_ssl_session},
-	{"peer_cert_chain",		openssl_ssl_peer_cert_chain},
-	{"peer_certificate",	openssl_ssl_peer_certificate},
 	{"get_certificate",		openssl_ssl_get_certificate},
-	{"quiet_shutdown",		openssl_ssl_quiet_shutdown},
 	{"alert_type",			openssl_ssl_alert_type_string},
 	{"alert_desc",			openssl_ssl_alert_desc_string},
 
@@ -1288,32 +1244,33 @@ static luaL_Reg ssl_funcs[] = {
 	{"read",			openssl_ssl_read},
 	{"peek",			openssl_ssl_peek},
 	{"write",			openssl_ssl_write},
-	{"ctrl",			openssl_ssl_ctrl},
+
 	{"error",			openssl_ssl_error},
 	{"version",			openssl_ssl_version},
 	{"state",			openssl_ssl_state},
+
+	{"renegotiate",				openssl_ssl_renegotiate},
+	{"handshake",			openssl_ssl_do_handshake},
+
+	{"shutdown",			openssl_ssl_shutdown},
+	{"version",				openssl_ssl_version},
+
 #if OPENSSL_VERSION_NUMBER > 0x10000000L	
 	{"set_debug",		openssl_ssl_set_debug},
 	{"cache_hit",		openssl_ssl_cache_hit},	
 	{"renegotiate_abbreviated",	openssl_ssl_renegotiate_abbreviated},
 #endif
-	{"shutdown",			openssl_ssl_shutdown},
-	{"set_shutdown",		openssl_ssl_set_shutdown},
-	{"get_shutdown",		openssl_ssl_get_shutdown},
-	{"version",				openssl_ssl_version},
 
 	{"set_purpose",			openssl_ssl_set_purpose},
 	{"set_trust",			openssl_ssl_set_trust},
 	{"verify_result",		openssl_ssl_verify_result},
 
 	{"renegotiate_pending",		openssl_ssl_renegotiate_pending},
-	{"renegotiate",				openssl_ssl_renegotiate},
-	{"do_handshake",			openssl_ssl_do_handshake},
+
 
 	{"set_connect_state",	openssl_ssl_set_connect_state},
 	{"set_accept_state",	openssl_ssl_set_accept_state},
 	{"get_default_timeout",	openssl_ssl_get_default_timeout},
-	{"add_client_CA",		openssl_ssl_add_client_CA},
 	{"get_client_CA_list",	openssl_ssl_get_client_CA_list},
 	
 	{"__gc",			openssl_ssl_gc},
