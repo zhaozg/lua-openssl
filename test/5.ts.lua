@@ -41,14 +41,15 @@ function TestCompat:testAll()
 
     ctx = assert(openssl.ts.resp_ctx_new(x509,pkey,nil,'1.1.2',{digest={'md5','sha1'},policy={'1.1.3','1.1.4'} }))
     t = x:parse()
-    --print_r(t)
+    print_r(t)
     assertEquals(type(t),'table')
 
     res = ctx:sign(req)
     t = assert(res:parse())
+    
     print_r(t)
     info = res:tst_info()
-    print_r(info)
+    print(info)
 
 
     skx = openssl.x509.sk_x509_new({x509})

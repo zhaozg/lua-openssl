@@ -497,12 +497,17 @@ static LUA_FUNCTION(openssl_ts_resp_parse) {
     {
         TS_TST_INFO *info = res->tst_info;
         lua_newtable(L);
+		if(info->version)
+			AUXILIAR_SETOBJECT(L, info->version, "openssl.asn1_string", -1, "version");
+		if(info->serial)
+			AUXILIAR_SETOBJECT(L, info->serial, "openssl.asn1_string", -1, "serial");
+		if(info->nonce)
+			AUXILIAR_SETOBJECT(L, info->nonce, "openssl.asn1_string", -1, "nonce");
+		if(info->time)
+			AUXILIAR_SETOBJECT(L, info->time,"openssl.asn1_string",-1, "time");
+		if(info->policy_id)
+			AUXILIAR_SETOBJECT(L, info->policy_id, "openssl.asn1_object", -1, "policy_id");
 
-		AUXILIAR_SETOBJECT(L, info->version, "openssl.asn1_string", -1, "version");
-		AUXILIAR_SETOBJECT(L, info->serial, "openssl.asn1_string", -1, "serial");
-		AUXILIAR_SETOBJECT(L, info->nonce, "openssl.asn1_string", -1, "nonce");
-		AUXILIAR_SETOBJECT(L,info->time,"openssl.asn1_time",-1, "time");
-		AUXILIAR_SETOBJECT(L, info->policy_id, "openssl.asn1_object", -1, "policy_id");
 		AUXILIAR_SET(L, -1, "ordering", info->ordering, boolean);
 
         if(info->msg_imprint)

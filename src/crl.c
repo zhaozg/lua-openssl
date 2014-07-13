@@ -297,8 +297,8 @@ static LUA_FUNCTION(openssl_crl_parse) {
 
     add_assoc_name_entry(L, "issuer", 	X509_CRL_get_issuer(crl), useshortnames);
 
-	AUXILIAR_SETOBJECT(L,X509_CRL_get_lastUpdate(crl),"openssl.asn1_time",-1,"lastUpdate");
-	AUXILIAR_SETOBJECT(L,X509_CRL_get_nextUpdate(crl),"openssl.asn1_time",-1, "nextUpdate");
+	AUXILIAR_SETOBJECT(L,X509_CRL_get_lastUpdate(crl),"openssl.asn1_string",-1,"lastUpdate");
+	AUXILIAR_SETOBJECT(L,X509_CRL_get_nextUpdate(crl),"openssl.asn1_string",-1, "nextUpdate");
 	AUXILIAR_SETOBJECT(L,crl->crl->sig_alg,"openssl.x509_algor",-1, "sig_alg");
 
 	AUXILIAR_SETOBJECT(L, X509_CRL_get_ext_d2i(crl, NID_crl_number,NULL, NULL),

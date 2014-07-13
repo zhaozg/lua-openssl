@@ -107,7 +107,6 @@ static int openssl_ans1string_type(lua_State* L){
 		lua_pushstring(L, string_type[i]);
 	else
 		lua_pushnil(L);
-
 	return 1;
 }
 
@@ -121,10 +120,43 @@ static int openssl_ans1string_eq(lua_State* L){
 	return 1;
 }
 
-
 static int openssl_ans1string_free(lua_State* L){
 	ASN1_STRING* s = CHECK_OBJECT(1,ASN1_STRING,"openssl.asn1_string");
 	ASN1_STRING_free(s);
+	return 0;
+}
+
+static int openssl_ans1string_tostring(lua_State* L){
+	ASN1_STRING* s = CHECK_OBJECT(1,ASN1_STRING,"openssl.asn1_string");
+	if(s){
+		int type = ASN1_STRING_type(s);
+		int i;
+		for(i=0; str_type[i] && str_type[i]!=type; i++);
+
+		if(str_type[i])
+			lua_pushstring(L, string_type[i]);
+		else
+			lua_pushstring(L,"unknown");
+		lua_pushstring(L,":");
+		switch(type){
+		case V_ASN1_INTEGER:
+		case V_ASN1_BIT_STRING:
+			{
+				BIGNUM *bn = BN_bin2bn((const char*)ASN1_STRING_data(s),ASN1_STRING_length(s),NULL);
+				const char* s = BN_bn2hex(bn);
+				lua_pushstring(L,s);
+				OPENSSL_free(s);
+				break;
+			}
+		default:
+			lua_pushlstring(L,(const char*)ASN1_STRING_data(s),ASN1_STRING_length(s));
+			break;
+		}
+
+
+		lua_concat(L,3);
+		return 1;
+	}
 	return 0;
 }
 
@@ -133,14 +165,14 @@ static luaL_reg asn1str_funcs[] = {
 	{"__len",		openssl_ans1string_length	},
 
 	{"data",		openssl_ans1string_data	},
-	{"__tostring",	auxiliar_tostring	},
+	{"__tostring",	openssl_ans1string_tostring	},
 
 	{"dup",		openssl_ans1string_dup	},
 	{"toutf8",	openssl_ans1string_toutf8	},
 	{"type",	openssl_ans1string_type	},
 	{"__eq",	openssl_ans1string_eq	},
 	{"equals",	openssl_ans1string_eq	},
-	{"__gc",	openssl_ans1string_free	},
+	//{"__gc",	openssl_ans1string_free	},
 
 	{NULL,		NULL}
 };
@@ -167,110 +199,12 @@ static int openssl_ans1object_free(lua_State* L){
 
 static luaL_reg asn1obj_funcs[] = {
 	{"data",		openssl_ans1object_data},
-	{"__gc",		openssl_ans1object_free},
+	//{"__gc",		openssl_ans1object_free},
 	{"__tostring",	auxiliar_tostring},
 
 	{NULL,		NULL}
 };
 
-/*** asn1_time routines ***/
-
-#if 0
-
-time_t asn1_time_to_time_t(ASN1_UTCTIME * timestr) /* {{{ */
-{
-    /*
-    	This is how the time string is formatted:
-
-       snprintf(p, sizeof(p), "%02d%02d%02d%02d%02d%02dZ",ts->tm_year%100,
-          ts->tm_mon+1,ts->tm_mday,ts->tm_hour,ts->tm_min,ts->tm_sec);
-    */
-
-    time_t ret;
-    struct tm thetime;
-    char * strbuf;
-    char * thestr;
-    long gmadjust = 0;
-
-    if (timestr->length < 13) {
-        return (time_t)-1;
-    }
-
-    strbuf = strdup((char *)timestr->data);
-
-    memset(&thetime, 0, sizeof(thetime));
-
-    /* we work backwards so that we can use atoi more easily */
-
-    thestr = strbuf + timestr->length - 3;
-
-    thetime.tm_sec = atoi(thestr);
-    *thestr = '\0';
-    thestr -= 2;
-    thetime.tm_min = atoi(thestr);
-    *thestr = '\0';
-    thestr -= 2;
-    thetime.tm_hour = atoi(thestr);
-    *thestr = '\0';
-    thestr -= 2;
-    thetime.tm_mday = atoi(thestr);
-    *thestr = '\0';
-    thestr -= 2;
-    thetime.tm_mon = atoi(thestr)-1;
-    *thestr = '\0';
-    thestr -= 2;
-    thetime.tm_year = atoi(thestr);
-
-    if (thetime.tm_year < 68) {
-        thetime.tm_year += 100;
-    }
-
-    thetime.tm_isdst = -1;
-    ret = mktime(&thetime);
-
-#if HAVE_TM_GMTOFF
-    gmadjust = thetime.tm_gmtoff;
-#else
-    /*
-    ** If correcting for daylight savings time, we set the adjustment to
-    ** the value of timezone - 3600 seconds. Otherwise, we need to overcorrect and
-    ** set the adjustment to the main timezone + 3600 seconds.
-    */
-    gmadjust = -(thetime.tm_isdst ? (long)timezone - 3600 : (long)timezone + 3600);
-#endif
-    ret += gmadjust;
-
-    free(strbuf);
-
-    return ret;
-}
-
-static int openssl_ans1time_data(lua_State* L){
-	ASN1_TIME* s = CHECK_OBJECT(1,ASN1_TIME,"openssl.asn1_time");
-	BIO* bio = BIO_new(BIO_s_mem());
-	BUF_MEM *buf;
-
-	i2a_ASN1_OBJECT(bio,s);
-	BIO_get_mem_ptr(bio, &buf);
-	lua_pushlstring(L, buf->data, buf->length);
-	BIO_free(bio);
-	return 1;
-}
-#endif
-
-static int openssl_ans1time_free(lua_State* L){
-	ASN1_TIME* s = CHECK_OBJECT(1,ASN1_TIME,"openssl.asn1_time");
-	ASN1_TIME_free(s);
-	return 0;
-}
-
-static luaL_reg asn1time_funcs[] = {
-	/*{"data",		openssl_ans1time_data},*/
-	{"__gc",		openssl_ans1time_free},
-	{"__tostring",	auxiliar_tostring},
-
-	{NULL,		NULL}
-};
 
 /*** asn1_type object */
 
@@ -337,6 +271,11 @@ static luaL_reg asn1type_funcs[] = {
 };
 
 /*** modules function ***/
+int openssl_push_ans1string_asstring(lua_State* L, ASN1_STRING* s){
+	lua_pushlstring(L,(const char*)ASN1_STRING_data(s),ASN1_STRING_length(s));
+	return 1;
+}
+
 static int openssl_ans1object_new(lua_State* L){
 	ASN1_OBJECT* o = ASN1_OBJECT_new();
 	PUSH_OBJECT(o,"openssl.asn1_object");
@@ -351,8 +290,10 @@ static int openssl_ans1string_new(lua_State* L){
 }
 
 static luaL_reg R[] = {
+	/*
 	{"object_new",	openssl_ans1object_new},
 	{"string_new",	openssl_ans1string_new	},
+	*/
 
 	{NULL,		NULL}
 };
@@ -361,7 +302,6 @@ LUALIB_API int luaopen_asn1(lua_State *L)
 {
 	auxiliar_newclass(L,"openssl.asn1_object",asn1obj_funcs);
 	auxiliar_newclass(L,"openssl.asn1_type", asn1type_funcs);
-	auxiliar_newclass(L,"openssl.asn1_time", asn1time_funcs);
 	auxiliar_newclass(L,"openssl.asn1_string",asn1str_funcs);
 	
 
@@ -378,4 +318,3 @@ LUALIB_API int luaopen_asn1(lua_State *L)
 	lua_settable(L,-3);
 	return 1;
 }
-

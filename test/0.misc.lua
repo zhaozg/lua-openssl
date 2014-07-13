@@ -4,11 +4,12 @@ require 'l-io'
 
 print('load openssl.cnf', string.rep('-',40))
 data = io.loaddata('.\\openssl.cnf')
-conf = openssl.conf.load(data)
+conf = openssl.lhash_read(data)
 print(conf)
 print(conf:parse(false))
 print('parse openssl.cnf as table', string.rep('-',40))
-dump(conf:parse(),0)
+print(io.hex_dump(conf:parse()))
+
 print('parse openssl.cnf as table', string.rep('-',40))
 
 print(conf:get_string('ca','default_ca'))
@@ -17,6 +18,6 @@ print(conf:get_string('CA_default','default_days'))
 
 print('从表中载入配置', string.rep('-',40))
 io.read('*l')
-c1 = openssl.conf_load(conf:parse())
+c1 = openssl.lhash_load(conf:export())
 print(c1)
-dump(c1:parse(),0)
+print(io.hex_dump(c1:parse()))

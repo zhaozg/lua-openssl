@@ -178,8 +178,8 @@ static LUA_FUNCTION(openssl_x509_parse)
     }
 
 	AUXILIAR_SETOBJECT(L, cert->cert_info->serialNumber, "openssl.asn1_string", -1, "serialNumber");
-	AUXILIAR_SETOBJECT(L,X509_get_notBefore(cert),"openssl.asn1_time", -1, "notBefore");
-	AUXILIAR_SETOBJECT(L,X509_get_notAfter(cert),"openssl.asn1_time",-1, "notAfter");
+	AUXILIAR_SETOBJECT(L,X509_get_notBefore(cert),"openssl.asn1_string", -1, "notBefore");
+	AUXILIAR_SETOBJECT(L,X509_get_notAfter(cert),"openssl.asn1_string",-1, "notAfter");
 
 	{
 		int l=0;
