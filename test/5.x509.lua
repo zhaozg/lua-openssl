@@ -9,7 +9,8 @@ TestCompat = {}
     function TestCompat:setUp()
         self.alg='sha1'
 
-        self.dn = {commonName='zhaozg'}
+        self.cadn = {commonName='CA'}
+        self.dn = {commonName='DEMO'}
 --[[
         self.attribs = {}
         self.extentions = {}
@@ -19,10 +20,10 @@ TestCompat = {}
 
 function TestCompat:testNew()
         local pkey = assert(openssl.pkey.new())
-        local req = assert(csr.new(pkey,self.dn))
-        req = assert(csr.new(pkey,self.dn,self.attribs))
-        req = assert(csr.new(pkey,self.dn,self.attribs,self.extentions))
-        req = assert(csr.new(pkey,self.dn,self.attribs,self.extentions,self.digest))
+        local req = assert(csr.new(pkey,self.cadn))
+        req = assert(csr.new(pkey,self.cadn,self.attribs))
+        req = assert(csr.new(pkey,self.cadn,self.attribs,self.extentions))
+        req = assert(csr.new(pkey,self.cadn,self.attribs,self.extentions,self.digest))
         t = req:parse()
         print_r(t)
 
@@ -51,23 +52,34 @@ function TestCompat:testNew()
         d = pkey:decrypt(c)
         assert(d=='abcd')
 
-        print('sign by cacert',string.rep('-',60))
+        assert(cert:check(pkey),'self sign check failed')
+        assert(cert:check(openssl.x509.sk_x509_new({cert}) ))
+        
 
+        print('sign by cacert',string.rep('-',60))
         args.serialNumber = 2
         local pkey1 = assert(openssl.pkey.new())
         local req1 = assert(csr.new(pkey1,self.dn))
         cert1 = assert(req1:sign(cert,pkey,args))
 
-        local c = pkey:encrypt('abcd')
-        local d = cert:get_public():decrypt(c)
+        local c = pkey1:encrypt('abcd')
+        local d = cert1:get_public():decrypt(c)
         assert(d=='abcd')
 
-        local c = cert:get_public():encrypt('abcd')
-        d = pkey:decrypt(c)
+        local c = cert1:get_public():encrypt('abcd')
+        d = pkey1:decrypt(c)
         assert(d=='abcd')
-
-
         print_r(cert1:parse());
+        
+        assert(cert1:check(pkey1),'self sign check failed')
+        assert(cert1:check(openssl.x509.sk_x509_new({cert}) ))
+        
+
+        local check = cert1:check(openssl.x509.sk_x509_new({cert}) )
+        if(check~=true) then
+                print(openssl.error())
+                assert(false,"check verify ca")
+        end
 end
 
 function TestCompat:testIO()

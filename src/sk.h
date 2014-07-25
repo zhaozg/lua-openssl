@@ -9,6 +9,7 @@
 
 #define TAB2SK(TYPE, type) \
 STACK_OF(TYPE)* sk_##type##_fromtable(lua_State*L, int idx) { \
+	luaL_checktype(L, idx, LUA_TTABLE);	\
 	if (lua_istable(L,idx)) { \
 		STACK_OF(TYPE) * sk = SKM_sk_new_null(TYPE); \
 		int n = lua_objlen(L, idx); \

@@ -9,7 +9,7 @@
 #include "private.h"
 
 static int openssl_xext_parse(lua_State* L){
-	X509_EXTENSION *x = CHECK_OBJECT(1,X509_EXTENSION,"openssl.x509_ext");
+	X509_EXTENSION *x = CHECK_OBJECT(1,X509_EXTENSION,"openssl.x509_extension");
 	lua_newtable(L);
 	AUXILIAR_SETOBJECT(L, x->object,"openssl.asn1_object", -1, "object");
 	AUXILIAR_SETOBJECT(L, x->value, "openssl.asn1_string", -1, "value");
@@ -264,7 +264,7 @@ int XEXTS_to_ltable(lua_State*L, STACK_OF(X509_EXTENSION) *exts, int idx)
 			extname = buf;
 		}
 		
-		AUXILIAR_SETOBJECT(L, ext,"openssl.x509_ext",idx,extname);
+		AUXILIAR_SETOBJECT(L, ext,"openssl.x509_extension",idx,extname);
 
 		lua_pushstring(L,extname);
 		lua_rawseti(L,idx,i+1);

@@ -12,12 +12,9 @@ lua-openssl toolkit - A free, MIT-licensed OpenSSL binding for Lua (Work in prog
 8. [SSL](#8-ssl)
 9. [Misc](#9-misc-functions)
 
-
 + A [Howto](#a-howto)
 + B [Examples](#b-example-usage)
 + C [Contact](#c-contact)
-
-
 
 #1. Introduction
 

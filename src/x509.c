@@ -67,19 +67,21 @@ X509_STORE * skX509_to_store(STACK_OF(X509)* calist, const char* files,const cha
 static int check_cert(lua_State*L, X509_STORE *ca, X509 *x, STACK_OF(X509) *untrustedchain, int purpose)
 {
     int ret=0;
-    X509_STORE_CTX *csc;
-
-    csc = X509_STORE_CTX_new();
+    X509_STORE_CTX *csc = X509_STORE_CTX_new();
 	if(csc){
-		X509_STORE_CTX_init(csc, ca, x, untrustedchain);
-		if(purpose > 0) {
-			X509_STORE_CTX_set_purpose(csc, purpose);
+		X509_STORE_set_flags(ca, X509_V_FLAG_CHECK_SS_SIGNATURE);
+		if(X509_STORE_CTX_init(csc, ca, x, untrustedchain)==1)
+		{
+			if(purpose > 0) {
+				X509_STORE_CTX_set_purpose(csc, purpose);
+			}
+			ret = X509_verify_cert(csc);
 		}
-		ret = X509_verify_cert(csc);
-	}
-
-    X509_STORE_CTX_free(csc);
-    return ret;
+		X509_STORE_CTX_free(csc);
+		return ret;
+	}else
+		luaL_error(L, "lua-openssl inner error");
+	return 0;
 }
 
 static LUA_FUNCTION(openssl_x509_read)
@@ -265,6 +267,55 @@ const static char* sPurpose[] = {
 	NULL
 };
 
+static int verify_cb(int ok, X509_STORE_CTX *ctx) 
+{
+	char buf[256];
+
+	if (!ok)
+	{
+		if (ctx->current_cert)
+		{
+			X509_NAME_oneline(
+				X509_get_subject_name(ctx->current_cert),buf,
+				sizeof buf);
+			printf("%s\n",buf);
+		}
+		printf("error %d at %d depth lookup:%s\n",ctx->error,
+			ctx->error_depth,
+			X509_verify_cert_error_string(ctx->error));
+
+		if (ctx->error == X509_V_ERR_CERT_HAS_EXPIRED) ok=1;
+		/* since we are just checking the certificates, it is
+		 * ok if they are self signed. But we should still warn
+		 * the user.
+ 		 */
+		if (ctx->error == X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT) ok=1;
+
+		/* Continue after extension errors too */
+		if (ctx->error == X509_V_ERR_INVALID_CA) ok=1;
+		if (ctx->error == X509_V_ERR_INVALID_NON_CA) ok=1;
+		if (ctx->error == X509_V_ERR_PATH_LENGTH_EXCEEDED) ok=1;
+		if (ctx->error == X509_V_ERR_INVALID_PURPOSE) ok=1;
+		
+		if (ctx->error == X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT) ok=1;
+		if (ctx->error == X509_V_ERR_CRL_HAS_EXPIRED) ok=1;
+		if (ctx->error == X509_V_ERR_CRL_NOT_YET_VALID) ok=1;
+		if (ctx->error == X509_V_ERR_UNHANDLED_CRITICAL_EXTENSION) ok=1;
+		/*
+		if (ctx->error == X509_V_ERR_NO_EXPLICIT_POLICY)
+			policies_print(NULL, ctx);
+		*/
+		return ok;
+
+	}
+	/*
+	if ((ctx->error == X509_V_OK) && (ok == 2))
+		policies_print(NULL, ctx);
+	*/
+	return(ok);
+}
+
+
 static LUA_FUNCTION(openssl_x509_check)
 {
     X509 * cert = CHECK_OBJECT(1,X509,"openssl.x509");
@@ -277,8 +328,11 @@ static LUA_FUNCTION(openssl_x509_check)
 		int purpose = auxiliar_checkoption(L,4, "NONE", sPurpose,iPurpose);
 
 		X509_STORE * cainfo = skX509_to_store(cert_stack,NULL,NULL);
-
-		int ret = check_cert(L,cainfo, cert, untrustedchain, purpose);
+		int ret = 0;
+		/*
+		X509_STORE_set_verify_cb_func(cainfo,verify_cb);
+		*/
+		ret = check_cert(L,cainfo, cert, untrustedchain, purpose);
 		lua_pushboolean(L,ret);
 		X509_STORE_free(cainfo);
     }

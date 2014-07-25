@@ -143,7 +143,7 @@ static int openssl_ans1string_tostring(lua_State* L){
 		case V_ASN1_BIT_STRING:
 			{
 				BIGNUM *bn = BN_bin2bn((const char*)ASN1_STRING_data(s),ASN1_STRING_length(s),NULL);
-				const char* s = BN_bn2hex(bn);
+				char* s = BN_bn2hex(bn);
 				lua_pushstring(L,s);
 				OPENSSL_free(s);
 				break;
