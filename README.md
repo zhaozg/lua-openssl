@@ -374,7 +374,7 @@ lua-openssl timestamp modules has four object, ts_req,ts_resp,ts_resp_ctx,ts_ver
   [,table option={version=1,policy=,nonce=,cert_req=}] ) => openssl.ts_req
 * ***openssl.ts.req_d2i***(string der) => openssl.ts_req
 * ***openssl.ts.resp_d2i***(string der) => openssl.ts_resp
-* ***openssl.ts.resp_ctx_new***(openssl.ts_req obj|string req_der,sk_x509 certs) => ts_resp_ctx
+* ***openssl.ts.resp_ctx_new***(x509 tscert, evp_pkey tspkey, sk_x509 extra_certs,string default_policy,table options[, function serial_cb]) => ts_resp_ctx
 * ***openssl.ts.verify_ctx_new***() => ts_verify_ctx
 
 * ***ts_req:i2d***() ->string

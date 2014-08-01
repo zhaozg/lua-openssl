@@ -218,9 +218,6 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_new) {
     return 1;
 }
 
-
-/*  ts_resp_ctx:ts_sign(string req|ts_req res ) -> ts_resp{{{1
-*/
 static LUA_FUNCTION(openssl_ts_sign) {
     TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX,"openssl.ts_resp_ctx");
     BIO *bio = NULL;
@@ -244,16 +241,12 @@ static LUA_FUNCTION(openssl_ts_sign) {
 
     return 1;
 }
-/* }}} */
 
 static LUA_FUNCTION(openssl_ts_resp_ctx_gc) {
     TS_RESP_CTX *ctx = CHECK_OBJECT(1,TS_RESP_CTX,"openssl.ts_resp_ctx");
     TS_RESP_CTX_free(ctx);
     return 0;
 }
-
-//////////////////////////////////////////////////////////////////////////
-
 
 static LUA_FUNCTION(openssl_ts_req_new) {
     size_t l;
