@@ -58,6 +58,11 @@
 	lua_pop(L, 1);							\
 	} while(0)
 
+typedef struct {
+	const char* name;
+	int val;
+}LuaL_Enum;
+
 int auxiliar_open(lua_State *L);
 void auxiliar_newclass(lua_State *L, const char *classname, const luaL_reg *func);
 void auxiliar_add2group(lua_State *L, const char *classname, const char *group);

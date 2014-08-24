@@ -85,6 +85,7 @@ LUA_API LUA_FUNCTION(luaopen_ts);
 LUA_API LUA_FUNCTION(luaopen_csr);
 LUA_API LUA_FUNCTION(luaopen_crl);
 LUA_API LUA_FUNCTION(luaopen_ocsp);
+LUA_API LUA_FUNCTION(luaopen_cms);
 LUA_API LUA_FUNCTION(luaopen_ssl);
 LUA_API LUA_FUNCTION(luaopen_ec);
 

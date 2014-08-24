@@ -6,12 +6,11 @@ lua-openssl toolkit - A free, MIT-licensed OpenSSL binding for Lua (Work in prog
 2. [Message Digest](#2-message-digest)
 3. [Cipher](#3-cipher)
 4. [Public/Private Key](#4-publicprivate-key-functions)
-5. [Certificate](#7-certificate)
-6. [PKCS7 SMIME](#5-pkcs7-smime-signverifyencryptdecrypt-functions)
+5. [Certificate](#5-certificate)
+6. [PKCS7/CMS](#6-pkcs7cms)
 7. [Pkcs12](#6-pkcs12-function)
 8. [SSL](#8-ssl)
 9. [Misc](#9-misc-functions)
-
 + A [Howto](#a-howto)
 + B [Examples](#b-example-usage)
 + C [Contact](#c-contact)
@@ -254,7 +253,6 @@ Currently supports 6 padding modes. They are: pkcs1, sslv23, no, oaep, x931, pss
 * ***evp_pkey:compute_key***(string remote_public_key) -> string
  * Compute shared secret for remote public key and local private key,Only for DH key.
 
-
 * ***evp_pkey:encrypt*** (string data [,string padding=pkcs1]) -> string
 * ***evp_pkey:decrypt*** (string data [,string padding=pkcs1]) -> string
 * ***evp_pkey:sign***(string data[,digest md|string alg='sha1']) -> string
@@ -395,7 +393,7 @@ lua-openssl timestamp modules has four object, ts_req,ts_resp,ts_resp_ctx,ts_ver
 * ***ts_verify_ctx:verify_token***() -> boolean
 
 
-#6. PKCS7 (S/MIME)
+#6. PKCS7/CMS
 
 * ***openssl.pkcs7.read***(bio|string in[,string format='auto']) => openssl.pkcs7,string
  * Read string or bio object, which include pkcs7 content, if success will return pkcs7 object or nil
@@ -444,6 +442,9 @@ not be included in the encoded section.
 
 flags is flag information as described above.
 
+* ***openssl.cms.encrypt***(sk_x509 encerts,bio in,cipher cipher,int flags[, table options]) =>cms object
+ * options may have key,keyid,password field,which must be string type  
+* ***openssl.cms.decrypt***(cms cms,pkey pkey, x509 recipt, bio dcout,bio out, int flags[,table options]) -> boolean
 
 #7. PKCS12 Function
 

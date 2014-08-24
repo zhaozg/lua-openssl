@@ -265,6 +265,9 @@ LUA_API int luaopen_openssl(lua_State*L)
 	lua_setfield(L, -2, "ts");
 #endif
 
+	luaopen_cms(L);
+	lua_setfield(L, -2, "cms");
+
 	luaopen_ssl(L);
 	lua_setfield(L, -2, "ssl");
 
