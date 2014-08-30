@@ -21,31 +21,32 @@ I needed a full OpenSSL binding for Lua, after googled, I couldn't find a versio
 I found the PHP openssl binding is a good implementation, and it inspired me.
 So I decided to write this OpenSSL toolkit for Lua.
 
-Below you can find the development progress of lua-openssl. The goal is to fully support the listed items.
+The goal is to fully support the listed items.Below you can find the development progress of lua-openssl. 
 
 * Symmetrical encrypt/decrypt. (Finished)
 * Message digest. (Finished)
 * Asymmetrical encrypt/decrypt/sign/verify/seal/open. (Finished)
-* X509 and PKCS. (UNFINISHED)
-* SSL/TLS. (UNFINISHED)
+* X509 certificate. (Finished)
+* PKCS7/CMS. (Developing)
+* SSL/TLS. (Finished)
 
 Most of the lua-openssl functions require a key or certificate as argument; to make things easy to use OpenSSL,
 This rule allow you to specify certificates or keys in the following ways:
 
-1. As an openssl.x509 object returned from openssl.x509_read
-2. As an openssl.evp_pkey object return from openssl.pkey_read or openssl.pkey_new
+1. As an openssl.x509 object returned from openssl.x509.read
+2. As an openssl.evp_pkey object return from openssl.pkey.read or openssl.pkey.new
 
-Similarly, you can also specify a public key as a key object returned from object:get_public.
+Similarly, you can also specify a public key as a key object returned from x509:get_public().
 
 ## lua-openssl modules
-digest,cipher, x509 and so on, be write as modules.
+digest,cipher, x509, cms and so on, be write as modules.
 
-```
+```lua
    local digest = require'openssl'digest
    local cipher = require'openssl'cipher
 ```
 
-digest() equals with digest.digest(), same cipher() equals with cipher.cipher()
+digest() equals with digest.digest(), same cipher() equals with cipher.cipher().
 
 ## lua-openssl Objects
 
@@ -59,14 +60,16 @@ The following are some important lua-openssl object types:
 	openssl.evp_pkey,
 	openssl.evp_digest,
 	openssl.evp_cipher,
-	openssl.engine
-	openssl.evp_cipher_ctx
+	openssl.engine,
+  openssl.pkcs7,
+  openssl.cms,
+	openssl.evp_cipher_ctx,
 	openssl.evp_digest_ctx
 	...
 ```
 
-They are shortened as bio, x509, sk_x509, csr, pkey, digest,  cipher,
-	engine (not used yet!), cipher_ctx, and digest_ctx.
+They are shortened as bio, x509, sk_x509, csr, pkey, digest, cipher,
+	engine, cipher_ctx, and digest_ctx.
 
 Please note that in the next sections of this document:
 
@@ -80,7 +83,8 @@ If a function returns nil, it will be followed by an error number and string.
 
 ## Version
 
-This lua-openssl toolkit works with Lua 5.1 or 5.2, and OpenSSL (0.9.8 or above 1.0.0). It is recommended to use the most up-to-date OpenSSL version because of the recent security fixes.
+This lua-openssl toolkit works with Lua 5.1 or 5.2, and OpenSSL (0.9.8 or above 1.0.0). 
+It is recommended to use the most up-to-date OpenSSL version because of the recent security fixes.
 
 If you want to get the lua-openssl and OpenSSL versions from a Lua script, here is how:
 
@@ -93,35 +97,47 @@ lua_openssl_version, lua_version, openssl_version = openssl.version()
 
 * ***openssl.digest.list*** ([boolean alias=true])  -> array
  * Return all md methods default with alias
+
 * ***openssl.digest.get***(string alg|int alg_id|openssl.asn1_object obj) => openssl.evp_digest
  * Return a evp_digest object
+
 * ***openssl.digest.new*** (string alg|int alg_id|openssl.asn1_object obj) => openssl.evp_digest_ctx
  * Return a evp_digest_ctx object
+
 * ***openssl.digest*** (string alg|openssl.evp_digest obj, string msg [,boolean raw=false]) -> string
  * Return a hash value for msg, if raw is true, it will be hex encoded
+
 * ***evp_digest:new*** ([openssl.engine e]) => openssl.evp_digest_ctx
  * Return an evp_digest_ctx object
+
 * ***evp_digest:info*** () -> table
  * Return a table with key nid, name, size, block_size, pkey_type, and flags
+
 * ***evp_digest:digest*** (string msg[, openssl.engine e]) -> string
  * Return a binary hash value for msg
+
 * ***digest_ctx:info*** () -> table
  * Return a table with key block_size, size, type and digest
+
 * ***digest_ctx:update*** (string data) -> boolean
+
 * ***digest_ctx:final*** ([string last [,boolean raw=true]) -> string
  * Return a hash value,default is binaray
+
 * ***digest_ctx:reset*** () ->boolean
  * Cleanup evp_message_ctx to make it reusable.
 
 * ***openssl.hmac*** (digest md, string key, string msg[, engine e=nil]) -> string
-** Return a hash value for msg, if raw is true, it will be hex encoded
+ * Return a hash value for msg, if raw is true, it will be hex encoded
+
 * ***openssl.hmac.hmac*** (digest md, string key, string msg[, engine e=nil]) -> string
-** Return a hash value for msg, if raw is true, it will be hex encoded
+ * Return a hash value for msg, if raw is true, it will be hex encoded
 
 * ***openssl.hmac.new*** (digest md, string key[, engine e=nil]) => openssl.hmac_ctx
  * Return a hmac_ctx object
  
-* ***hmac_ctx:update*** (string data) 
+* ***hmac_ctx:update*** (string data)
+ 
 * ***hmac_ctx:final*** ([string last]) -> string
  * Return a hmac value
 
@@ -129,52 +145,71 @@ lua_openssl_version, lua_version, openssl_version = openssl.version()
 
 * ***openssl.cipher.list*** ([boolean alias=true])  -> array
  *  return all cipher methods default with alias
+
 * ***openssl.cipher.get*** (string alg|int alg_id|asn1_object obj) => evp_cipher
  *  return a evp_cipher method object
+
 * ***openssl.cipher.encrypt***(string alg|int alg_id|asn1_object obj, string input_msg,
    string key [,string iv[,boolean pad=true[,openssl.engine e]]]) -> string
  * return encrypted message,defualt with pad but without iv
+
 * ***openssl.cipher.decrypt***(string alg|int alg_id|asn1_object obj, string input_msg,
-   string key[,string iv[,boolean pad=true[,openssl.engine e]]]) -> string
+ string key[,string iv[,boolean pad=true[,openssl.engine e]]]) -> string
  * return decrypt message
+
 * ***openssl.cipher.cipher***(string alg|int alg_id|asn1_object obj, boolean encrypt,string input_msg,
   string key[,string iv[,boolean pad=true[,openssl.engine e]]]) -> string
  * return encrypted or decrypted message
+
 * ***openssl.cipher***(string alg|int alg_id|openssl.asn1_object obj,boolean encrypt,string input_msg,
   string key[,string iv[,boolean pad=true[,openssl.engine e]]]) -> string
  * return encrypted or decrypted message, this API implicated with metatable `__call` function.
+
 * ***openssl.cipher.new***(string alg|int alg_id|openssl.asn1_object obj, boolean encrypt,
   string key[,string iv[,boolean pad=true[,openssl.engine e]]]) => openssl.evp_cipher_ctx
  * return evp_cipher_ctx object to encrypt or decrypt
+
 * ***openssl.cipher.encrypt_new***(string alg|int alg_id|openssl.asn1_object obj,
   string key[,string iv[,boolean pad=true[,openssl.engine e]]]) => openssl.evp_cipher_ctx
  * return evp_cipher_ctx object to encrypt
+
 * ***openssl.cipher.decrypt_new***(string alg|int alg_id|openssl.asn1_object obj,
    string key[,string iv[,boolean pad=true[,openssl.engine e]]]) => openssl.evp_cipher_ctx
  * return evp_cipher_ctx object to encrypt
+
 * ***evp_cipher:info***() ->table
  * return table result with name, block_size,key_length,iv_length,flags,mode keys
+
 * ***evp_cipher:BytesToKey***(string data[, string salt=nil [evp_digest|string md='sha1']}) -> string key,string iv
  * raturn key and iv according to input bytes
+
 * ***evp_cipher:encrypt***(string input_msg, string key
   [,string iv[,boolean pad=true[,openssl.engine e]]]) -> string
  * encrypt input_msg with key and return result
+
 * ***evp_cipher:decrypt***(string input_msg, string key
  [,string iv[,boolean pad=true[,openssl.engine e]]]) -> string
  * decrypt input_msg with key and return result
+
 * ***evp_cipher:cipher***(boolean encrypt, string msg, string key,
  [,string iv[,boolean pad=true[,openssl.engine e]]]) -> string
  * encrypt or decrypt input msg and return result
+
 * ***evp_cipher:new***(boolean encrypt, string key[,string iv[,boolean pad=true[,openssl.engine e]]]) => openssl.evp_cipher_ctx
  * create encrypt or decrypt evp_cipher_ctx object with key,iv ...., and return it
+
 * ***evp_cipher:encrypt_new***(string key[,string iv[,boolean pad=true[,openssl.engine e]]])  => openssl.evp_cipher_ctx
  * create encrypt evp_cipher_ctx object, and return it
+
 * ***evp_cipher:decrypt_new***(string key[,string iv[,boolean pad=true[,openssl.engine e]]])  => openssl.evp_cipher_ctx
  * create decrypt evp_cipher_ctx object, and return it
+
 * ***cipher_ctx:info***() ->table
   * return table with block_size,key_length,iv_length,flags,mode,nid,type and evp_cipher(object) keys
+
 * ***cipher_ctx:update***(string data) -> string
   * return result string, may be 0 length
+
 * ***cipher_ctx:final()*** -> string
   * return result string, may be 0 length
 
@@ -188,7 +223,9 @@ lua_openssl_version, lua_version, openssl_version = openssl.version()
  * ec, with ec_name, and option flag
 
 * ***openssl.pkey.new*** ({alg='rsa|dsa|dh|ec', ... }) => evp_pkey
- * this pattern pkey.new need table as pkey argument, and key 'alg' must be given.
+ * contruct or generate a keypair object
+ * private key should has it factor named n,q,e and so on, value is hex encoded string
+ * The pattern pkey.new need table as pkey argument, and key 'alg' must be given.
 
  ```
  when arg is rsa, table may with key n,e,d,p,q,dmp1,dmq1,iqmp,both are string value
@@ -197,7 +234,6 @@ lua_openssl_version, lua_version, openssl_version = openssl.version()
  when arg is ec, table may with D,X,Y,Z,both are string value
 ```
 
- * private key should has it factor named n,q,e and so on, value is hex encoded string
 
 * ***openssl.pkey.get_public***(evp_pkey private) => evp_pkey
  * Return public key for private key
@@ -212,7 +248,7 @@ lua_openssl_version, lua_version, openssl_version = openssl.version()
 
 ### About padding
 
-Currently supports 6 padding modes. They are: pkcs1, sslv23, no, oaep, x931, pss.
+  Currently supports 6 padding modes. They are: pkcs1, sslv23, no, oaep, x931, pss.
 
 * ***openssl.pkey.sign*** (evp_pkey key, string data [, evp_digest md|string md_alg=SHA1]) ->string
  * Uses key to create signature for data, returns signed result
@@ -254,10 +290,15 @@ Currently supports 6 padding modes. They are: pkcs1, sslv23, no, oaep, x931, pss
  * Compute shared secret for remote public key and local private key,Only for DH key.
 
 * ***evp_pkey:encrypt*** (string data [,string padding=pkcs1]) -> string
+
 * ***evp_pkey:decrypt*** (string data [,string padding=pkcs1]) -> string
+
 * ***evp_pkey:sign***(string data[,digest md|string alg='sha1']) -> string
+
 * ***evp_pkey:verify***(string data,string sig[,digest md|string alg='sha1']) -> boolean
+
 * ***evp_pkey:seal***(string data[, cipher enc|string alg='RC4']) -> string,table
+
 * ***evp_pkey.open***(string data, string ekey [, evp_cipher enc|string md_alg=RC4]) -> string
 
 
@@ -290,19 +331,28 @@ Currently supports 6 padding modes. They are: pkcs1, sslv23, no, oaep, x931, pss
 ***openssl.stack_of_x509*** is an important object in lua-openssl, it can be used as a certchain, trusted CA files or unstrust certs.
 
 * ***openssl.sk_x509_read*** (string|bio certs_in_pems) => sk_x509
+
 * ***openssl.sk_x509_new*** ([table array={}]} =>sk_x509
 
 * ***sk_x509:push*** (openssl.x509 cert) => sk_x509
+
 * ***sk_x509:pop*** () => x509
+
 * ***sk_x509:set*** (number i, x509 cert) =>sk_x509
+
 * ***sk_x509:get*** (number i) => x509
+
 * ***sk_x509:insert*** (x509 cert,number i, ) =>sk_x509
+
 * ***sk_x509:delete*** (number i) => x509
+
 * ***sk_x509:totable*** () -> table
  * table as array contain x509 from index 1
+
 * ***sk_x509:sort*** ()
 
-`#sk_x509` returns the number of certs in stack_of_x509
+* ***`#sk_x509`***
+ * returns the number of certs in stack_of_x509
 
 ##certificate sign request
 
@@ -313,7 +363,9 @@ Currently supports 6 padding modes. They are: pkcs1, sslv23, no, oaep, x931, pss
  * format support 'auto','pem','der',default use 'auto'
 
 * ***csr:export*** ([string format='pem' [, boolean noext=true]])->string
+
 * ***csr:get_public*** () -> evp_pkey
+
 * ***csr:parse***([boolean shortname=true]) -> table
 
 * ***csr:sign*** (x509 cacert=nil, evp_pkey caprivkey, table arg={serialNumber=,num_days=,version=,}[,table extensions]) => x509
@@ -322,18 +374,27 @@ Currently supports 6 padding modes. They are: pkcs1, sslv23, no, oaep, x931, pss
 ##Certificate revocked list
 
 * ***openssl.crl.read*** (string data) => x509_crl
+
 * ***openssl.crl.new*** (x509 cacert [,table revoked={{sn=,revoketime=,reason=0},{}},[number lastUpdate[, number nextUpdate[,number version]]]]) => x509_crl
  * Create a new X509 CRL object, lastUpdate and nextUpdate is time_t value,
  * Revoked is a table on which hex cert serial is key, and time_t revocked time.
 
 * ***crl:export***[string format='pem' [, boolean noext=true]] -> string
+
 * ***crl:parse***([boolean shortname=true]) -> table
+
 * ***crl:verify*** (x509 cacert) -> boolean
+
 * ***crl:sign*** (evp_pkey privkey, [string alg=sha1WithRSAEncryption|digest md]) -> boolean
+
 * ***crl:sort*** ()
+
 * ***crl:set_version*** (number version=0) -> boolean
+
 * ***crl:set_update_time*** ([number lastUpdate=date() [, number nextUpdate=last+7d]]) -> boolean
+
 * ***crl:set_issuer*** (x509 cacert) -> boolean
+
 * ***crl:add*** (string|number|bn serial, number revoketime [, string reason|number reason = 0]}) -> boolean
 
 * ***crl:parse*** ([boolean shortname=true]) -> table
@@ -370,31 +431,40 @@ lua-openssl timestamp modules has four object, ts_req,ts_resp,ts_resp_ctx,ts_ver
 
 * ***openssl.ts.req_new***(string req, string|digest md
   [,table option={version=1,policy=,nonce=,cert_req=}] ) => openssl.ts_req
+
 * ***openssl.ts.req_d2i***(string der) => openssl.ts_req
+
 * ***openssl.ts.resp_d2i***(string der) => openssl.ts_resp
+
 * ***openssl.ts.resp_ctx_new***(x509 tscert, evp_pkey tspkey, sk_x509 extra_certs,string default_policy,table options[, function serial_cb]) => ts_resp_ctx
+
 * ***openssl.ts.verify_ctx_new***() => ts_verify_ctx
 
 * ***ts_req:i2d***() ->string
+
 * ***ts_req:parse***() -> table
  * Returns table with key status_info,token and tst_info
+
 * ***ts_req:to_verify_ctx***() => ts_verify_ctx
 
 * ***ts_resp:i2d***() ->string
+
 * ***ts_resp:parse***() -> table
  * Returns table with key version,cert_req and msg_imprint
+
 * ***ts_req:tst_info***() => table
 
-
 * ***ts_resp_ctx:sign***(string req_der) => openssl.ts_resp
+
 * ***ts_resp_ctx:sign***(ts_req obj) => openssl.ts_resp
 
 * ***ts_verify_ctx:verify_response***(openssl.ts_resp obj) -> boolean
-* ***ts_verify_ctx:verify_token***() -> boolean
 
+* ***ts_verify_ctx:verify_token***() -> boolean
 
 #6. PKCS7/CMS
 
+## PKCS7
 * ***openssl.pkcs7.read***(bio|string in[,string format='auto']) => openssl.pkcs7,string
  * Read string or bio object, which include pkcs7 content, if success will return pkcs7 object or nil
  * format allow "auto","der","pem","smime", default is "auto" will try all method until load ok
@@ -426,25 +496,57 @@ lua-openssl timestamp modules has four object, ts_req,ts_resp,ts_resp_ctx,ts_ver
 * ***pkcs7:parse***() -> table
  * Return a table has pkcs7 infomation, include type,and other things relate to types
 
-
-They are based on apps/smime.c from the OpenSSL dist, so for more information,
+## CMS
+CMS are based on apps/cms.c from the OpenSSL dist, so for more information,
 see the documentation for OpenSSL.
 
-Strings "detached", "nodetached", "text", "nointern", "noverify",  "nochain",
-"nocerts", "noattr", "binary", "nosigs" are supported.
+### API flags(string)
 
-Decrypts the S/MIME message in the BIO object and output the results to
-BIO object. recipcert is a CERT for one of the recipients. recipkey
-specifies the private key matching recipcert.
+```
+  "detached",
+  "nodetached",
+  "text",
+  "nointern",
+  "noverify",
+  "nochain",
+  "nocerts",
+  "noattr",
+  "binary",
+  "nosigs"
+```
 
-headers is an array of headers to prepend to the message: they will
-not be included in the encoded section.
+Decrypts the S/MIME message in the BIO object and output the results to BIO object. 
+recipcert is a CERT for one of the recipients. recipkey specifies the private key matching recipcert.
 
-flags is flag information as described above.
+Headers is an array of headers to prepend to the message, they will not be included in the encoded section.
 
 * ***openssl.cms.encrypt***(sk_x509 encerts,bio in,cipher cipher,int flags[, table options]) =>cms object
  * options may have key,keyid,password field,which must be string type  
+
 * ***openssl.cms.decrypt***(cms cms,pkey pkey, x509 recipt, bio dcout,bio out, int flags[,table options]) -> boolean
+ * options may have key,keyid,password field,which must be string type  
+
+* ***openssl.cms.read***(bio in[, string format='auto'[,...]]) => cms object
+ * format support auto,smime,der,pem
+ * if format is 'smime', need supply extra paramater bio object which have content
+
+* ***openssl.cms.write***(cms obj, bio out, bio in[,number flags=0[,string fmt='smime']]) -> boolean
+
+* ***openssl.cms.i2d***(cms obj) => bio object
+
+* ***openssl.cms.d2i***(bio data) => cms object
+
+* ***openssl.cms.bio_new***() TODO: more think
+
+* ***openssl.cms.create***(bio in[,int flags=0[,string which=nil[|digest|data]]])
+
+* ***openssl.cms.compress***(bio in[,string alg=zlib|rle[,int flags=0]])=> cms object
+
+* ***openssl.cms.uncompress***(cms c,bio in,bio out[,int flags=0]) -> boolean result
+
+* ***openssl.cms.sign***()
+
+* ***openssl.cms.verify***()
 
 #7. PKCS12 Function
 
@@ -457,8 +559,8 @@ flags is flag information as described above.
  * friendname is optional, if supplied, must be as 4th parameter
  * extracerts is optional, it can be as 4th or 5th parameter (if friendname is supplied)
 
-
 #8. SSL
+
 * ***openssl.ssl.ctx_new***(string SSL_protocol[, string support_ciphers]) => ssl_ctx
  * ssl_protocol can be SSLv3,SSLv23,SSLv2,TLSv1,DTLSv1, and can be follow by -server or -client
  * If not given support_ciphers, default of openssl will be used.
@@ -467,6 +569,7 @@ flags is flag information as described above.
  * Return alter type string and alter desc string, if long set to long will return long info
 
 ## ssl_ctx Object
+
 * ***ssl_ctx:use***(evp_pkey pkey,x509 cert) -> boolean[,string errmsg[,number errval]]
  * Tell ssl_ctx use private key and certificate, and check private key
  * Return true for ok, or return nil, follow by errmsg and errval
@@ -531,12 +634,16 @@ set in ***ctx***, willl be return.
 
 * ***ssl_ctx:verify_mode***() -> number, string
  * Return verify_mode number and string description
- ```
+
+verify_mode list:
+ 
+```
   none: not verify client cert
   peer: verify client cert
   fail: if client not have cert, will failure
   once: verify client only once.
- ```
+```
+
 * ***ssl_ctx:set_verify***(string mode=[none|peer][,function verifycb]) -> boolean
  * mode same with  ***ssl_ctx:mode***
  * verifycb should like int function(int preverify_ok,X509_STORE_CTX ctx)
@@ -648,6 +755,7 @@ set in ***ctx***, willl be return.
 
 
 ##Objects
+
 ###openssl.bio
 
 ***openssl.bio*** is a help object, it is useful, but rarely use.
@@ -675,38 +783,48 @@ set in ***ctx***, willl be return.
  * Create network bio with 'host:port' address, if connect set true, will connect immediately.
  
 * ***openssl.bio.accept***(string host_port)
-* Create network bio with 'host:port' address
+ * Create network bio with 'host:port' address
 
 * ***openssl.bio.filter***(string 'base64'|'buffer') => bio
-* Create base64 or buffer bio, which can append to an io BIO object
+ * Create base64 or buffer bio, which can append to an io BIO object
 
 * ***openssl.bio.filter***(string 'digest', digest md) => bio
-* Create digest bio, which can append to an io BIO object
+ * Create digest bio, which can append to an io BIO object
 
 * ***openssl.bio.filter***(string 'ssl', ssl s[, string closeflag='noclose']) => bio
-* Create digest bio
+ * Create digest bio
 
 * ***openssl.bio.filter***(string 'cipher', string key, stirng iv, boolean encrypt=true) => bio
-* Create cipher bio, which can append to an io BIO object
+ * Create cipher bio, which can append to an io BIO object
 
 * ***bio:read*** (number len) -> string
+
 * ***bio:gets*** ([number len=256]) -> string
+
 * ***bio:write*** (string data) -> number
+
 * ***bio:puts*** (string data) -> number
+
 * ***bio:get_mem***() -> string
  * only supports bio mem
+
 * ***bio:push(bio append)*** => bio
  * return end of chain bio object, if want to free a bio chain, use ***bio:free_all***()
+
 * ***bio:pop(bio b)***
  * remove bio b from chian 
+
 * ***bio:free_all()***
  * free a object chian
 
 * ***bio:close*** ()
+
 * ***bio:type*** () -> string
+
 * ***bio:reset*** ()
 
 ###openssl.asn1_string
+
 * ***openssl.asn1.string_new***([string type='octet']) => asn1_string
  * Create asn1_string, default will be 'octet' string.
  * type must be in:	"bit", "octet","utf8","numeric","printable","t61","teletex",
@@ -722,8 +840,11 @@ set in ***ctx***, willl be return.
  * Set raw data to asn1_string
 
 * ***asn1_string:dup***() => asn1_string
+
 * ***asn1_string:toutf8***() -> string
+
 * ***asn1_string:type*** => string
+
 * ***asn1_string:equals***(asn1_string another) or ***asn1_string a==asn1_string b*** -> boolean
  * Return true if equals or false
 
