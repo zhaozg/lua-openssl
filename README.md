@@ -520,11 +520,24 @@ recipcert is a CERT for one of the recipients. recipkey specifies the private ke
 
 Headers is an array of headers to prepend to the message, they will not be included in the encoded section.
 
+* ***openssl.cms.create***(...) => cms object
+ * none paramater will create new cms
+ * bio in[, number flags=0] will return data cms object
+ * bio in, digest alg[, number flags=0] will return digest cms object
+  
 * ***openssl.cms.encrypt***(sk_x509 encerts,bio in,cipher cipher,int flags[, table options]) =>cms object
  * options may have key,keyid,password field,which must be string type  
 
 * ***openssl.cms.decrypt***(cms cms,pkey pkey, x509 recipt, bio dcout,bio out, int flags[,table options]) -> boolean
  * options may have key,keyid,password field,which must be string type  
+
+* ***openssl.cms.sign***(x509 cert, evp_pkey pkey, bio data[,number flags=0]) => cms object
+
+* ***openssl.cms.verify***(cms obj,string verify_mode,...) -> boolean result
+ * verify_mode must be verify,digest,receipt, default is verify.
+ * 'verify' must followed by sk_x509, bio in, bio out, option flag (default is 0)
+ * 'digest' must followed by bio in, bio out and option flags
+ * 'receipt' must followed by source cms object, sk_x509 certs, x509_store and option falgs
 
 * ***openssl.cms.read***(bio in[, string format='auto'[,...]]) => cms object
  * format support auto,smime,der,pem
@@ -532,21 +545,13 @@ Headers is an array of headers to prepend to the message, they will not be inclu
 
 * ***openssl.cms.write***(cms obj, bio out, bio in[,number flags=0[,string fmt='smime']]) -> boolean
 
-* ***openssl.cms.i2d***(cms obj) => bio object
-
-* ***openssl.cms.d2i***(bio data) => cms object
-
-* ***openssl.cms.bio_new***() TODO: more think
-
-* ***openssl.cms.create***(bio in[,int flags=0[,string which=nil[|digest|data]]])
-
 * ***openssl.cms.compress***(bio in[,string alg=zlib|rle[,int flags=0]])=> cms object
 
-* ***openssl.cms.uncompress***(cms c,bio in,bio out[,int flags=0]) -> boolean result
+* ***openssl.cms.uncompress***(cms obj,bio in,bio out[,int flags=0]) -> boolean result
 
-* ***openssl.cms.sign***()
+* ***openssl.cms.EncryptedData_encrypt***(bio in, cipher alg, string key[,number flags=0]) => cms object
 
-* ***openssl.cms.verify***()
+* ***openssl.cms.EncryptedData_decrypt***(cms obj, string key, bio out[,number flags=0]) -> boolean result
 
 #7. PKCS12 Function
 
