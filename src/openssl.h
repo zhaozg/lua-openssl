@@ -26,7 +26,7 @@
 #include <openssl/pkcs12.h>
 #include <openssl/opensslv.h>
 
-#define LOPENSSL_VERSION_STR	"0.0.5"
+#define LOPENSSL_VERSION_STR  "0.0.5"
 
 #if OPENSSL_VERSION_NUMBER >= 0x10000000L
 #include <openssl/lhash.h>
@@ -35,13 +35,13 @@
 #endif
 typedef unsigned char byte;
 
-#define MULTI_LINE_MACRO_BEGIN do {  
+#define MULTI_LINE_MACRO_BEGIN do {
 #ifdef _MSC_VER
-#define MULTI_LINE_MACRO_END	\
-__pragma(warning(push))		\
+#define MULTI_LINE_MACRO_END  \
+__pragma(warning(push))   \
 __pragma(warning(disable:4127)) \
-} while(0)			\
-__pragma(warning(pop)) 
+} while(0)      \
+__pragma(warning(pop))
 #else
 #define MULTI_LINE_MACRO_END \
 } while(0)
@@ -54,7 +54,7 @@ __pragma(warning(pop))
 #endif
 
 #ifdef NETWARE
-#define timezone _timezone	/* timezone is called _timezone in LibC */
+#define timezone _timezone  /* timezone is called _timezone in LibC */
 #endif
 
 
@@ -95,11 +95,11 @@ void openssl_add_method(const OBJ_NAME *name, void *arg);
 
 #define CHECK_OBJECT(n,type,name) *(type**)auxiliar_checkclass(L,name,n)
 
-#define PUSH_OBJECT(o, tname)		\
-	MULTI_LINE_MACRO_BEGIN		\
-	*(void **)(lua_newuserdata(L, sizeof(void *))) = (void*)(o);	\
-	auxiliar_setclass(L,tname,-1);	\
-	MULTI_LINE_MACRO_END
+#define PUSH_OBJECT(o, tname)   \
+  MULTI_LINE_MACRO_BEGIN    \
+  *(void **)(lua_newuserdata(L, sizeof(void *))) = (void*)(o);  \
+  auxiliar_setclass(L,tname,-1);  \
+  MULTI_LINE_MACRO_END
 
 int openssl_register_lhash(lua_State* L);
 int openssl_register_engine(lua_State* L);
