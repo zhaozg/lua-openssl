@@ -94,7 +94,7 @@ static int openssl_hmac(lua_State *L)
 
     HMAC_Update(c, (unsigned char *)dat, len);
     len = EVP_MAX_MD_SIZE;
-    HMAC_Final(c, digest, &len);
+    HMAC_Final(c, digest, (unsigned int*)&len);
 
     HMAC_CTX_cleanup(c);
 
