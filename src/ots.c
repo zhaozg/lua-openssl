@@ -6,6 +6,7 @@
 \*=========================================================================*/
 #include "openssl.h"
 #include "private.h"
+#include <stdint.h>
 
 #define MYNAME    "ts"
 #define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
@@ -21,7 +22,7 @@ static ASN1_INTEGER *tsa_serial_cb(TS_RESP_CTX *ctx, void *data)
   lua_State *L = (lua_State*) data;
   ASN1_INTEGER *serial = NULL;
 
-  lua_rawgeti(L, LUA_REGISTRYINDEX, (int)ctx);
+  lua_rawgeti(L, LUA_REGISTRYINDEX, (int)(intptr_t)ctx);
   if (lua_isnil(L, -1))
   {
     TS_RESP_CTX_set_status_info(ctx, TS_STATUS_REJECTION,
@@ -219,7 +220,7 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_new)
   if (lua_isfunction(L, 6))
   {
     lua_pushvalue(L, 6);
-    lua_rawseti(L, LUA_REGISTRYINDEX, (int)ctx);
+    lua_rawseti(L, LUA_REGISTRYINDEX, (int)(intptr_t)ctx);
     TS_RESP_CTX_set_serial_cb(ctx, tsa_serial_cb, L);
   }
 
@@ -638,7 +639,6 @@ static X509_STORE* Stack2Store(STACK_OF(X509)* sk)
 static LUA_FUNCTION(openssl_ts_verify_ctx_new)
 {
   TS_VERIFY_CTX *ctx = NULL;
-  int top = lua_gettop(L);
 
   if (auxiliar_isclass(L, "openssl.ts_req", 1))
   {

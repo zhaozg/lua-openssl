@@ -6,6 +6,7 @@
 \*=========================================================================*/
 #include "openssl.h"
 #include "private.h"
+#include <stdint.h>
 #define MYNAME    "ssl"
 #define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
   "based on OpenSSL " SHLIB_VERSION_NUMBER
@@ -456,7 +457,7 @@ static int verify_cb(int preverify_ok, X509_STORE_CTX *xctx)
   lua_State*L = CRYPTO_get_ex_data(&xctx->ctx->ex_data, 1);
   if (L)
   {
-    lua_rawgeti(L, LUA_REGISTRYINDEX, (int)xctx->ctx);
+    lua_rawgeti(L, LUA_REGISTRYINDEX, (int)(intptr_t)xctx->ctx);
     lua_pushnumber(L, preverify_ok);
     PUSH_OBJECT(xctx, "openssl.x509_store_ctx");
     if (lua_pcall(L, 2, 1, 0) == LUA_OK)
@@ -483,7 +484,7 @@ static int openssl_ssl_ctx_set_verify(lua_State*L)
       if (ret == 1)
       {
         lua_pushvalue(L, 3);
-        lua_rawseti(L, LUA_REGISTRYINDEX, (int)xctx);
+        lua_rawseti(L, LUA_REGISTRYINDEX, (int)(intptr_t)xctx);
         SSL_CTX_set_verify(ctx, mode, verify_cb);
       }
       else
