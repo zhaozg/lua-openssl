@@ -124,22 +124,26 @@ lua_openssl_version, lua_version, openssl_version = openssl.version()
 * ***digest_ctx:final*** ([string last [,boolean raw=true]) -> string
  * Return a hash value,default is binaray
 
-* ***digest_ctx:reset*** () ->boolean
+* ***digest_ctx:reset*** ()
  * Cleanup evp_message_ctx to make it reusable.
 
-* ***openssl.hmac*** (digest md, string key, string msg[, engine e=nil]) -> string
+* ***openssl.hmac*** (digest md, string msg,string key[, engine e=nil]) -> string
  * Return a hash value for msg, if raw is true, it will be hex encoded
 
-* ***openssl.hmac.hmac*** (digest md, string key, string msg[, engine e=nil]) -> string
+* ***openssl.hmac.hmac*** (digest md, string msg,string key[, boolean raw=false[,engine e=nil]]) -> string
  * Return a hash value for msg, if raw is true, it will be hex encoded
+
+* ***openssl.hmac.digest*** just a alias of ***openssl.hmac.hmac***
 
 * ***openssl.hmac.new*** (digest md, string key[, engine e=nil]) => openssl.hmac_ctx
  * Return a hmac_ctx object
  
 * ***hmac_ctx:update*** (string data)
  
-* ***hmac_ctx:final*** ([string last]) -> string
+* ***hmac_ctx:final*** ([string last[,boolean raw=false]]) -> string
  * Return a hmac value
+
+* ***hmac_ctx:reset*** ()
 
 #3. Cipher
 

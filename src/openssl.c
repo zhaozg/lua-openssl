@@ -33,6 +33,7 @@ static LUA_FUNCTION(openssl_hex)
   {
     B = BN_bin2bn((const unsigned char*)s, (int)l, NULL);
     h = BN_bn2hex(B);
+    strlwr(h);
     hl = strlen(h);
   }
   else

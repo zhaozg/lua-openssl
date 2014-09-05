@@ -12,7 +12,8 @@ function M.hex(s)
     local s = openssl.hex(s)
     return string.lower(s)
 end
-
+M.digest = openssl.digest
+M.hmac = openssl.hmac
 -----------crypto encrypt/decrypt compat----------
 local cipher = openssl.cipher
 local C = {}

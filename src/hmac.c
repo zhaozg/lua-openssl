@@ -44,17 +44,38 @@ static int openssl_hmac_final(lua_State *L)
   HMAC_CTX *c = CHECK_OBJECT(1, HMAC_CTX, "openssl.hmac_ctx");
   unsigned char digest[EVP_MAX_MD_SIZE];
   unsigned int len = 0;
+  int raw = 0;
 
   if (lua_isstring(L, 2))
   {
     size_t l;
     const char *s = luaL_checklstring(L, 2, &l);
     HMAC_Update(c, (unsigned char *)s, l);
-  }
+    raw = (lua_isnoneornil(L, 3)) ? 0 : lua_toboolean(L, 3);
+  }else
+    raw = (lua_isnoneornil(L, 2)) ? 0 : lua_toboolean(L, 2);
 
   HMAC_Final(c, digest, &len);
-  lua_pushlstring(L, (char *)digest, len);
+  if (raw) {
+    lua_pushlstring(L, (char *)digest, len);
+  }else{
+    char* in;
+    BIGNUM *B = BN_new();
+    BN_bin2bn(digest, len, B);
+    in = BN_bn2hex(B);
+    strlwr(in);
+    lua_pushstring(L, in);
+    OPENSSL_free((void*)in);
+    BN_free(B);
+  }
   return 1;
+}
+
+static int openssl_hmac_reset(lua_State*L)
+{
+  HMAC_CTX *c = CHECK_OBJECT(1, HMAC_CTX, "openssl.hmac_ctx");
+  int ret = HMAC_Init_ex(c, NULL, 0, NULL, NULL);
+  return openssl_pushresult(L, ret);
 }
 
 static int openssl_hmac_free(lua_State *L)
@@ -80,13 +101,15 @@ static int openssl_hmac(lua_State *L)
   {
 
     const EVP_MD *type = get_digest(L, 1);
-    size_t l;
-    const char *k = luaL_checklstring(L, 2, &l);
     size_t len;
-    const char *dat = luaL_checklstring(L, 3, &len);
-    ENGINE* e = lua_isnoneornil(L, 4) ? NULL : CHECK_OBJECT(4, ENGINE, "openssl.engine");
+    const char *dat = luaL_checklstring(L, 2, &len);
+    size_t l;
+    const char *k = luaL_checklstring(L, 3, &l);
+    int raw = (lua_isnoneornil(L, 4)) ? 0 : lua_toboolean(L, 4);
+    ENGINE* e = lua_isnoneornil(L, 5) ? NULL : CHECK_OBJECT(5, ENGINE, "openssl.engine");
 
     unsigned char digest[EVP_MAX_MD_SIZE];
+
     HMAC_CTX ctx;
     HMAC_CTX *c = &ctx;
     HMAC_CTX_init(c);
@@ -98,7 +121,18 @@ static int openssl_hmac(lua_State *L)
 
     HMAC_CTX_cleanup(c);
 
-    lua_pushlstring(L, (char *)digest, len);
+    if(raw)
+      lua_pushlstring(L, (char *)digest, len);
+    else{
+      char* in;
+      BIGNUM *B = BN_new();
+      BN_bin2bn(digest, len, B);
+      in = BN_bn2hex(B);
+      strlwr(in);
+      lua_pushstring(L, in);
+      OPENSSL_free((void*)in);
+      BN_free(B);
+    }
 
   }
   return 1;
@@ -106,9 +140,10 @@ static int openssl_hmac(lua_State *L)
 
 static luaL_Reg hmac_ctx_funs[] =
 {
-  {"update",    openssl_hmac_update},
+  {"update",  openssl_hmac_update},
   {"final",   openssl_hmac_final},
-
+  {"reset",   openssl_hmac_reset},
+  
   {"__tostring",  auxiliar_tostring},
   {"__gc",    openssl_hmac_free},
   {NULL, NULL}
@@ -116,9 +151,10 @@ static luaL_Reg hmac_ctx_funs[] =
 
 static const luaL_Reg R[] =
 {
-  { "__call",  openssl_hmac},
-  { "new",   openssl_hmac_new},
-  { "hmac",  openssl_hmac},
+  { "__call",   openssl_hmac},
+  { "new",      openssl_hmac_new},
+  { "hmac",     openssl_hmac},
+  { "digest",   openssl_hmac},
 
   {NULL,  NULL}
 };
