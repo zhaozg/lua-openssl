@@ -37,6 +37,7 @@ static LUA_FUNCTION(openssl_cipher_get)
 static LUA_FUNCTION(openssl_evp_encrypt)
 {
   const EVP_CIPHER* cipher = NULL;
+  int ret = 0;
   if (lua_istable(L, 1))
   {
     if (lua_getmetatable(L, 1) && lua_equal(L, 1, -1))
@@ -79,29 +80,37 @@ static LUA_FUNCTION(openssl_evp_encrypt)
     }
 
     EVP_CIPHER_CTX_init(&c);
-    EVP_CIPHER_CTX_set_padding(&c, pad);
+    if (!pad)
+      EVP_CIPHER_CTX_set_padding(&c, 0);
 
-    if (!EVP_EncryptInit_ex(&c, cipher, e, key ? (const byte*)evp_key : NULL, iv ? (const byte*)evp_iv : NULL ))
+    if (!EVP_EncryptInit_ex(&c, cipher, e, (const byte*)evp_key, iv ? (const byte*)evp_iv : NULL ))
     {
       luaL_error(L, "EVP_EncryptInit_ex failed, please check openssl error");
     }
     buffer = malloc(input_len + EVP_CIPHER_CTX_block_size(&c));
-    EVP_EncryptUpdate(&c, (byte*) buffer, &len, (const byte*)input, input_len);
-    output_len += len;
-    EVP_EncryptFinal(&c, (byte*)buffer + len, &len);
-    output_len += len;
-    lua_pushlstring(L, (char*) buffer, output_len);
+    ret = EVP_EncryptUpdate(&c, (byte*) buffer, &len, (const byte*)input, input_len);
+    if ( ret==1 ) {
+      output_len += len;
+      ret = EVP_EncryptFinal(&c, (byte*)buffer + len, &len);
+      if (ret == 1) {
+        output_len += len;
+        lua_pushlstring(L, (char*) buffer, output_len);
+      }
+    }
     EVP_CIPHER_CTX_cleanup(&c);
     free(buffer);
   }
   else
     luaL_error(L, "argument #1 is not a valid cipher algorithm or openssl.evp_cipher object");
+  if (ret==0)
+    return openssl_pushresult(L, 0);
   return 1;
 }
 
 static LUA_FUNCTION(openssl_evp_decrypt)
 {
   const EVP_CIPHER* cipher;
+  int ret = 0;
   if (lua_istable(L, 1))
   {
     if (lua_getmetatable(L, 1) && lua_equal(L, 1, -1))
@@ -149,17 +158,22 @@ static LUA_FUNCTION(openssl_evp_decrypt)
     }
 
     buffer = malloc(input_len);
-    EVP_DecryptUpdate(&c, (byte*)buffer, &len, (const byte*)input, input_len);
-    output_len += len;
-    EVP_DecryptFinal(&c, (byte*)buffer + len, &len);
-    output_len += len;
-    lua_pushlstring(L, (char*) buffer, output_len);
+    ret = EVP_DecryptUpdate(&c, (byte*)buffer, &len, (const byte*)input, input_len);
+    if (ret==1) {
+      output_len += len;
+      ret = EVP_DecryptFinal(&c, (byte*)buffer + len, &len);
+      if (ret==1) {
+        output_len += len;
+        lua_pushlstring(L, (char*) buffer, output_len);
+      }
+    }
     EVP_CIPHER_CTX_cleanup(&c);
     free(buffer);
   }
   else
     luaL_error(L, "argument #1 is not a valid cipher algorithm or openssl.evp_cipher object");
-
+  if (ret==0)
+    return openssl_pushresult(L, 0);
   return 1;
 }
 

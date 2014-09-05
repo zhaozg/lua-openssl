@@ -1,22 +1,21 @@
 T=openssl
 
-
 PREFIX=/usr/local
 LUA_LIBDIR= $(PREFIX)/lib/lua/5.1
-LIB_OPTION= -shared #for Linux
+LIB_OPTION= -shared 
 
 #Lua auto detect
 LUA_VERSION = $(shell pkg-config luajit --print-provides)
-ifeq ($(LUA_VERSION),)
+ifeq ($(LUA_VERSION),)                         ############ Not use luajit
 LUA_VERSION = $(shell pkg-config lua --print-provides)
-ifeq ($(LUA_VERSION,)
+ifeq ($(LUA_VERSION),)
 LUA_CFLAGS=$(shell pkg-config lua --cflags)
 LUA_LIBS=$(shell pkg-config lua --libs)
 else
 LUA_CFLAGS=-I$(PREFIX)/include/lua5.2
 LUA_LIBS=-L$(PREFIX)/lib -llua5.2
 endif
-else
+else                                          ############ Use luajit
 LUA_CFLAGS=$(shell pkg-config luajit --cflags)
 LUA_LIBS=$(shell pkg-config luajit --libs)
 endif
@@ -53,4 +52,3 @@ install: all
 
 clean:
 	rm -f $T.so $(OBJS) 
-

@@ -1141,6 +1141,8 @@ static LUA_FUNCTION(openssl_seal)
     int i;
     int len1, len2;
     unsigned char *buf;
+    char iv[EVP_MAX_MD_SIZE] = {0};
+    int ivlen = 0;
 
     pkeys = malloc(nkeys * sizeof(*pkeys));
     eksl = malloc(nkeys * sizeof(*eksl));
@@ -1172,7 +1174,7 @@ static LUA_FUNCTION(openssl_seal)
       eksl[0] = EVP_PKEY_size(pkeys[0]);
       eks[0] = malloc(eksl[0]);
     }
-
+    EVP_CIPHER_CTX_init(&ctx);
     if (!EVP_EncryptInit(&ctx, cipher, NULL, NULL))
     {
       luaL_error(L, "EVP_EncryptInit failed");
@@ -1182,7 +1184,7 @@ static LUA_FUNCTION(openssl_seal)
     len1 = data_len + EVP_CIPHER_CTX_block_size(&ctx) + 1;
     buf = malloc(data_len + EVP_CIPHER_CTX_block_size(&ctx));
 
-    if (!EVP_SealInit(&ctx, cipher, eks, eksl, NULL, pkeys, nkeys) || !EVP_SealUpdate(&ctx, buf, &len1, (unsigned char *)data, data_len))
+    if (!EVP_SealInit(&ctx, cipher, eks, eksl, iv, pkeys, nkeys) || !EVP_SealUpdate(&ctx, buf, &len1, (unsigned char *)data, data_len))
     {
       free(buf);
       luaL_error(L, "EVP_SealInit failed");
@@ -1209,14 +1211,16 @@ static LUA_FUNCTION(openssl_seal)
         lua_pushlstring(L, (const char*)eks[0], eksl[0]);
         free(eks[0]);
       }
-
-      ret = 2;
+      lua_pushlstring(L, iv, EVP_CIPHER_CTX_iv_length(&ctx));
+      
+      ret = 3;
     }
 
     free(buf);
     free(eks);
     free(eksl);
     free(pkeys);
+    EVP_CIPHER_CTX_cleanup(&ctx);
     return ret;
   }
   else
@@ -1227,57 +1231,61 @@ static LUA_FUNCTION(openssl_seal)
 static LUA_FUNCTION(openssl_open)
 {
   EVP_PKEY *pkey =  CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
-  size_t data_len, ekey_len;
-  const char * data = luaL_checklstring(L, 2, &data_len);
-  const char * ekey = luaL_checklstring(L, 3, &ekey_len);
+  size_t data_len, ekey_len,iv_len;
+  const char *data = luaL_checklstring(L, 2, &data_len);
+  const char *ekey = luaL_checklstring(L, 3, &ekey_len);
+  const char *iv = luaL_checklstring(L, 4, &iv_len);
   int top = lua_gettop(L);
-
+  int ret = 0;
   int len1, len2 = 0;
   unsigned char *buf;
 
   EVP_CIPHER_CTX ctx;
   const EVP_CIPHER *cipher = NULL;
 
-  if (top > 3)
+  if (top > 4)
   {
-    if (lua_isstring(L, 4))
-      cipher = EVP_get_cipherbyname(lua_tostring(L, 4));
-    else if (lua_isuserdata(L, 4))
+    if (lua_isstring(L, 5))
+      cipher = EVP_get_cipherbyname(lua_tostring(L, 5));
+    else if (lua_isuserdata(L, 5))
       cipher = CHECK_OBJECT(4, EVP_CIPHER, "openssl.evp_cipher");
     else
-      luaL_error(L, "#4 argument must be nil, string, or openssl.evp_cipher object");
+      luaL_error(L, "#5 argument must be nil, string, or openssl.evp_cipher object");
   }
   else
     cipher = EVP_get_cipherbyname("rc4");
+
   if (cipher)
   {
     len1 = data_len + 1;
     buf = malloc(len1);
 
-    if (EVP_OpenInit(&ctx, cipher, (unsigned char *)ekey, ekey_len, NULL, pkey) && EVP_OpenUpdate(&ctx, buf, &len1, (unsigned char *)data, data_len))
+    EVP_CIPHER_CTX_init(&ctx);
+    if (EVP_OpenInit(&ctx, cipher, (unsigned char *)ekey, ekey_len, iv, pkey) && EVP_OpenUpdate(&ctx, buf, &len1, (unsigned char *)data, data_len))
     {
       len2 = data_len - len1;
       if (!EVP_OpenFinal(&ctx, buf + len1, &len2) || (len1 + len2 == 0))
       {
         luaL_error(L, "EVP_OpenFinal() failed.");
         free(buf);
-        return 0;
+        ret = 0;
       }
     }
     else
     {
       luaL_error(L, "EVP_OpenInit() failed.");
       free(buf);
-      return 0;
+      ret = 0;
     }
-
+    EVP_CIPHER_CTX_cleanup(&ctx);
     lua_pushlstring(L, (const char*)buf, len1 + len2);
     free(buf);
-    return 1;
+    ret = 1;
   }
   else
-    luaL_argerror(L, 4, "Not support cipher alg");
-  return 0;
+    luaL_argerror(L, 5, "Not support cipher alg");
+
+  return ret;
 }
 
 static luaL_Reg pkey_funcs[] =

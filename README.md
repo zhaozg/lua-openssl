@@ -263,7 +263,7 @@ lua_openssl_version, lua_version, openssl_version = openssl.version()
 * ***openssl.pkey.decrypt*** (evp_pkey key, string data [,string padding=pkcs1]) -> string
  * Use key to decrypt data, default padding use 'pkcs1', data length must equals with key size.
 
-* ***openssl.pkey.seal***(table pubkeys, string data[, cipher enc|string alg='RC4']) -> string,table
+* ***openssl.pkey.seal***(table pubkeys, string data[, cipher enc|string alg='RC4']) -> string,table|ekey,iv
  * Encrypts data using pubkeys in table, so that only owners of the respective private keys and ekeys can decrypt and read the data.
  * Returns the sealed data and table containing encrypted keys, hold envelope keys on success, else nil.
 
@@ -271,7 +271,7 @@ lua_openssl_version, lua_version, openssl_version = openssl.version()
  * Encrypts data using pubkeys, so that only owners of the respective private keys and ekeys can decrypt and read the data.
  * Return sealed data,and encrypt key success, else nil.
 
-* ***openssl.pkey.open*** (evp_pkey key, string data, string ekey [, evp_cipher enc|string md_alg=RC4]) -> string
+* ***openssl.pkey.open*** (evp_pkey key, string data, string ekey,string iv[, evp_cipher enc|string md_alg=RC4]) -> string
  * Open/decrypt sealed data using private key,and the corresponding envelope key.
  * Returns decrypted data on success and nil on failure.
 
@@ -298,9 +298,9 @@ lua_openssl_version, lua_version, openssl_version = openssl.version()
 
 * ***evp_pkey:verify***(string data,string sig[,digest md|string alg='sha1']) -> boolean
 
-* ***evp_pkey:seal***(string data[, cipher enc|string alg='RC4']) -> string,table
+* ***evp_pkey:seal***(string data[, cipher enc|string alg='RC4']) -> string,string,string
 
-* ***evp_pkey.open***(string data, string ekey [, evp_cipher enc|string md_alg=RC4]) -> string
+* ***evp_pkey.open***(string data, string ekey,string iv [, evp_cipher enc|string md_alg=RC4]) -> string
 
 
 #5. Certificate

@@ -9,14 +9,96 @@ M["_DESCRIPTION"]   = "crypto is a high level Lua wrapper for OpenSSL based on l
 
 -----------crypto------------------
 function M.hex(s)
-    return openssl.hex(s)
+    local s = openssl.hex(s)
+    return string.lower(s)
 end
 
+-----------crypto encrypt/decrypt compat----------
 local cipher = openssl.cipher
-function M.encrypt(alg,input,key,iv)
+local C = {}
+
+C.__index = {
+    new = function(alg,key,iv)
+        local c = cipher.encrypt_new(alg,key,iv)
+        if c then
+            local I = c:info()
+            if (iv and #iv>I.iv_length) then
+                error('invalid iv')
+            end
+            if(#key>I.key_length) then
+                error('invalid key')
+            end        
+            local t = {}
+            t.ctx = c
+            setmetatable(t,C)
+            return t
+        end
+    end,
+    update = function(self,input)
+        return self.ctx:update(input)
+    end,
+    final = function(self)
+        return self.ctx:final()
+    end
+}
+
+C.__call = function(self,alg,input,key,iv)
     local c = cipher.get(alg)
-    return c:encrypt(input,key,iv)
+    local I = c:info()
+    if (iv and #iv>I.iv_length) then
+        error('invalid iv')
+    end
+    if(#key>I.key_length) then
+        error('invalid key')
+    end
+    return cipher.encrypt(alg,input,key,iv)
 end
+
+setmetatable(C,C)
+M.encrypt = C 
+
+local D = {}
+
+D.__index = {
+    new = function(alg,key,iv)
+        local c = cipher.decrypt_new(alg,key,iv)
+        if c then
+            local I = c:info()
+            if (iv and #iv>I.iv_length) then
+                error('invalid iv')
+            end
+            if(#key>I.key_length) then
+                error('invalid key')
+            end        
+            local t = {}
+            t.ctx = c
+            setmetatable(t,D)
+            return t
+        end
+    end,
+    update = function(self,input)
+        return self.ctx:update(input)
+    end,
+    final = function(self)
+        return self.ctx:final()
+    end
+}
+
+D.__call = function(self,alg,input,key,iv)
+    local c = cipher.get(alg)
+    local I = c:info()
+    if (iv and #iv>I.iv_length) then
+        error('invalid iv')
+    end
+    if(#key>I.key_length) then
+        error('invalid key')
+    end        
+    local r,s =  cipher.decrypt(alg,input,key,iv)
+    return r,s
+end
+
+setmetatable(D,D)
+M.decrypt = D
 
 -----------crypto random compat------------------
 local R = {}
@@ -109,6 +191,16 @@ end
 function M.verify(alg,input,sig,pubkey)
     local pk = pubkey.evp_pkey
     return pkey.verify(pk,input,sig,alg)
+end
+
+function M.seal(alg,input,pubkey)
+    local msg, key,iv = pkey.seal(pubkey.evp_pkey, input, alg) 
+    return msg,key,iv
+end
+
+
+function M.open(alg,input,prikey,ek,iv)
+    return pkey.open(prikey.evp_pkey,input,ek,iv,alg)
 end
 
 M.pkey = P
