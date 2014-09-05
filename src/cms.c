@@ -159,7 +159,7 @@ static int openssl_cms_sign(lua_State *L)
 {
   X509* signcert = CHECK_OBJECT(1, X509, "openssl.x509");
   EVP_PKEY* pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
-  STACK_OF(X509)* certs = CHECK_OBJECT(3, STACK_OF(X509), "openssl.sk_of_x509");
+  STACK_OF(X509)* certs = CHECK_OBJECT(3, STACK_OF(X509), "openssl.stack_of_x509");
   BIO* data = load_bio_object(L, 4);
   unsigned int flags = 0;
   CMS_ContentInfo *cms = CMS_sign(signcert, pkey, certs, data, flags);

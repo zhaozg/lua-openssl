@@ -8,36 +8,37 @@
 #include "openssl.h"
 
 #define TAB2SK(TYPE, type) \
-STACK_OF(TYPE)* sk_##type##_fromtable(lua_State*L, int idx) { \
-  luaL_checktype(L, idx, LUA_TTABLE); \
-  if (lua_istable(L,idx)) { \
-    STACK_OF(TYPE) * sk = SKM_sk_new_null(TYPE); \
-    int n = lua_objlen(L, idx); \
-    int i; \
-    for ( i=0; i<n; i++ ) { \
-      TYPE *x;  \
-      lua_rawgeti(L, idx, i+1);  \
-      x = CHECK_OBJECT(-1,TYPE,"openssl." #type);  \
-      SKM_sk_push(TYPE, sk, x); \
-      CRYPTO_add(&x->references,1,CRYPTO_LOCK_##TYPE);  \
-      lua_pop(L,1); \
-    } \
-    return sk;  \
-  } \
-  return NULL; \
+STACK_OF(TYPE)* sk_##type##_fromtable(lua_State*L, int idx) {     \
+  STACK_OF(TYPE) * sk;                                            \
+  luaL_argcheck(L, lua_isnoneornil(L, idx)||lua_istable(L, idx),  \
+    idx, "must be a table as array or nil");                      \
+  sk = SKM_sk_new_null(TYPE);                                     \
+  if (lua_istable(L,idx)) {                                       \
+    int n = lua_objlen(L, idx);                                   \
+    int i;                                                        \
+    for ( i=0; i<n; i++ ) {                                       \
+      TYPE *x;                                                    \
+      lua_rawgeti(L, idx, i+1);                                   \
+      x = CHECK_OBJECT(-1,TYPE,"openssl." #type);                 \
+      SKM_sk_push(TYPE, sk, x);                                   \
+      CRYPTO_add(&x->references,1,CRYPTO_LOCK_##TYPE);            \
+      lua_pop(L,1);                                               \
+    }                                                             \
+  }                                                               \
+  return sk;                                                      \
 }
 
 
-#define SK2TAB(TYPE,type)  int _sk_##type##_totable(lua_State* L, STACK_OF(TYPE) *sk)  { \
-  int i=0, n=0;  \
-  lua_newtable(L); \
-  n = SKM_sk_num(TYPE, sk); \
-  for(i=0;i<n;i++) { \
-    TYPE *x =  SKM_sk_value(TYPE, sk, i); \
-    PUSH_OBJECT(TYPE##_dup(x),"openssl."#type); \
-    lua_rawseti(L,-2, i+1); \
-  }  \
-  return 1; \
+#define SK2TAB(TYPE,type)  int _sk_##type##_totable(lua_State* L, STACK_OF(TYPE) *sk)  {  \
+  int i=0, n=0;                                                                           \
+  lua_newtable(L);                                                                        \
+  n = SKM_sk_num(TYPE, sk);                                                               \
+  for(i=0;i<n;i++) {                                                                      \
+    TYPE *x =  SKM_sk_value(TYPE, sk, i);                                                 \
+    PUSH_OBJECT(TYPE##_dup(x),"openssl."#type);                                           \
+    lua_rawseti(L,-2, i+1);                                                               \
+  }                                                                                       \
+  return 1;                                                                               \
 }
 
 #define SK_TOTABLE(TYPE, type) static int sk_##type##_totable(lua_State* L)  { \

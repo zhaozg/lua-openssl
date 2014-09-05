@@ -204,5 +204,34 @@ function M.open(alg,input,prikey,ek,iv)
 end
 
 M.pkey = P
+
+----------------crypto pki compat------------
+local X = {}
+X.__index = {
+    add_pem = function(self,pem)
+        local ret,x = pcall(openssl.x509.read,pem)
+        if ret then
+            self.sk_x509:push(x)
+            return x
+        end
+        return nil
+    end,
+    verify_pem = function(self,pem)
+        local ret,x = pcall(openssl.x509.read,pem)
+        if ret then
+            return x:check(self.sk_x509)
+        end
+        return false    
+    end
+}
+
+function M.x509_ca()
+    local ca = openssl.x509.sk_x509_new()
+    local t = {}
+    t.sk_x509 = ca
+    setmetatable(t,X)
+    return t
+end
+
 ----------------------------------------------
 return M
