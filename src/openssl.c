@@ -97,20 +97,65 @@ static LUA_FUNCTION(openssl_error_string)
   return ret;
 }
 
+static int openssl_random_load(lua_State*L)
+{
+  const char *file = luaL_optstring(L, 1, NULL);
+  char buffer[MAX_PATH];
+
+  if (file == NULL)
+    file = RAND_file_name(buffer, sizeof buffer);
+  else if (RAND_egd(file) > 0)
+  {
+    /* we try if the given filename is an EGD socket.
+       if it is, we don't write anything back to the file. */;
+    lua_pushboolean(L, 1);
+    return 1;
+  }
+
+  if (file == NULL || !RAND_load_file(file, 2048))
+  {
+    return openssl_pushresult(L, 0);
+  }
+
+  lua_pushboolean(L, RAND_status());
+  return 1;
+}
+
+static int openssl_random_write(lua_State *L)
+{
+  const char *file = luaL_optstring(L, 1, NULL);
+  char buffer[MAX_PATH];
+  int n;
+
+  if (!file && !(file = RAND_file_name(buffer, sizeof buffer)))
+    return openssl_pushresult(L, 0);
+
+  n = RAND_write_file(file);
+  return openssl_pushresult(L, 1);
+}
+
+static int openssl_random_status(lua_State *L)
+{
+  lua_pushboolean(L, RAND_status());
+  return 1;
+}
+
+static int openssl_random_cleanup(lua_State *L)
+{
+  RAND_cleanup();
+  return 0;
+}
+
 static LUA_FUNCTION(openssl_random_bytes)
 {
-  static int seed = 0;
   long length = luaL_checkint(L, 1);
   int strong = lua_isnil(L, 2) ? 0 : lua_toboolean(L, 2);
 
   char *buffer = NULL;
   int ret = 0;
-  if (!seed)
-  {
-    seed = RAND_init(NULL);
-  }
-  if (!seed)
+  if(!RAND_status()) {
     luaL_error(L, "Fail to init random routines");
+  }
 
   if (length <= 0)
   {
@@ -196,10 +241,16 @@ static int openssl_object(lua_State* L)
 static const luaL_Reg eay_functions[] =
 {
   {"version",     openssl_version},
-  {"list",      openssl_list},
-  {"hex",       openssl_hex},
+  {"list",        openssl_list},
+  {"hex",         openssl_hex},
+  
+  {"rand_status", openssl_random_status},
+  {"rand_load",   openssl_random_load},
+  {"rand_write",  openssl_random_write},
+  {"rand_cleanup",openssl_random_cleanup},
   {"random",      openssl_random_bytes},
-  {"error",     openssl_error_string},
+
+  {"error",       openssl_error_string},
   {"object",      openssl_object},
 
   {"engine",      openssl_engine},

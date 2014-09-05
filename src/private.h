@@ -23,7 +23,6 @@ BIO* load_bio_object(lua_State* L, int idx);
 const EVP_MD* get_digest(lua_State* L, int idx);
 const EVP_CIPHER* get_cipher(lua_State* L, int idx);
 BIGNUM *BN_get(lua_State *L, int i);
-int RAND_init(const char *file);
 int openssl_engine(lua_State *L);
 
 int XNAME_from_ltable(lua_State*L, X509_NAME* name, int dn);

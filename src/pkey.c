@@ -87,10 +87,10 @@ static int openssl_pkey_read(lua_State*L)
 {
   EVP_PKEY * key = NULL;
   BIO* in = load_bio_object(L, 1);
-  int pub = lua_isnoneornil(L, 2) ? 0 : auxiliar_checkboolean(L, 2);
+  int priv = lua_isnoneornil(L, 2) ? 0 : auxiliar_checkboolean(L, 2);
   int fmt = luaL_checkoption(L, 3, "auto", format);
 
-  if (pub)
+  if (!priv)
   {
     if (fmt == FORMAT_AUTO || fmt == FORMAT_PEM)
     {
@@ -516,7 +516,7 @@ static LUA_FUNCTION(openssl_pkey_new)
 static LUA_FUNCTION(openssl_pkey_export)
 {
   EVP_PKEY * key;
-  int expub = 0;
+  int exppriv = 0;
   int exraw = 0;
   int expem = 1;
   size_t passphrase_len = 0;
@@ -528,7 +528,7 @@ static LUA_FUNCTION(openssl_pkey_export)
 
   key = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
   if (!lua_isnoneornil(L, 2))
-    expub = lua_toboolean(L, 2);
+    exppriv = lua_toboolean(L, 2);
   if (!lua_isnoneornil(L, 3))
     exraw = lua_toboolean(L, 3);
   if (!lua_isnoneornil(L, 4))
@@ -538,7 +538,7 @@ static LUA_FUNCTION(openssl_pkey_export)
   is_priv = openssl_is_private_key(key);
   bio_out = BIO_new(BIO_s_mem());
   if (!is_priv)
-    expub = 1;
+    exppriv = 0;
 
   if (passphrase)
   {
@@ -552,7 +552,7 @@ static LUA_FUNCTION(openssl_pkey_export)
   if (!exraw)
   {
     /* export with EVP format */
-    if (expub)
+    if (!exppriv)
     {
       if (expem)
         ret = PEM_write_bio_PUBKEY(bio_out, key);
@@ -626,12 +626,12 @@ static LUA_FUNCTION(openssl_pkey_export)
     case EVP_PKEY_RSA2:
       if (expem)
       {
-        ret = !expub ? PEM_write_bio_RSAPrivateKey(bio_out, key->pkey.rsa, cipher, (unsigned char *)passphrase, passphrase_len, NULL, NULL)
+        ret = exppriv ? PEM_write_bio_RSAPrivateKey(bio_out, key->pkey.rsa, cipher, (unsigned char *)passphrase, passphrase_len, NULL, NULL)
               : PEM_write_bio_RSAPublicKey(bio_out, key->pkey.rsa);
       }
       else
       {
-        ret = !expub ? i2d_RSAPrivateKey_bio(bio_out, key->pkey.rsa)
+        ret = exppriv ? i2d_RSAPrivateKey_bio(bio_out, key->pkey.rsa)
               : i2d_RSA_PUBKEY_bio(bio_out, key->pkey.rsa);
       }
       break;
@@ -641,12 +641,12 @@ static LUA_FUNCTION(openssl_pkey_export)
     case EVP_PKEY_DSA4:
       if (expem)
       {
-        ret = !expub ? PEM_write_bio_DSAPrivateKey(bio_out, key->pkey.dsa, cipher, (unsigned char *)passphrase, passphrase_len, NULL, NULL)
+        ret = exppriv ? PEM_write_bio_DSAPrivateKey(bio_out, key->pkey.dsa, cipher, (unsigned char *)passphrase, passphrase_len, NULL, NULL)
               : PEM_write_bio_DSA_PUBKEY(bio_out, key->pkey.dsa);
       }
       else
       {
-        ret = !expub ? i2d_DSAPrivateKey_bio(bio_out, key->pkey.dsa)
+        ret = exppriv ? i2d_DSAPrivateKey_bio(bio_out, key->pkey.dsa)
               : i2d_DSA_PUBKEY_bio(bio_out, key->pkey.dsa);
       }
       break;
@@ -659,10 +659,10 @@ static LUA_FUNCTION(openssl_pkey_export)
 #ifndef OPENSSL_NO_EC
     case EVP_PKEY_EC:
       if (expem)
-        ret = !expub ? PEM_write_bio_ECPrivateKey(bio_out, key->pkey.ec, cipher, (unsigned char *)passphrase, passphrase_len, NULL, NULL)
+        ret = exppriv ? PEM_write_bio_ECPrivateKey(bio_out, key->pkey.ec, cipher, (unsigned char *)passphrase, passphrase_len, NULL, NULL)
               : PEM_write_bio_EC_PUBKEY(bio_out, key->pkey.ec);
       else
-        ret = !expub ? i2d_ECPrivateKey_bio(bio_out, key->pkey.ec)
+        ret = exppriv ? i2d_ECPrivateKey_bio(bio_out, key->pkey.ec)
               : i2d_EC_PUBKEY_bio(bio_out, key->pkey.ec);
 
       break;

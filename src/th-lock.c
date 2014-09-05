@@ -87,10 +87,10 @@
 void CRYPTO_thread_setup(void);
 void CRYPTO_thread_cleanup(void);
 
-static void irix_locking_callback(int mode, int type, char *file, int line);
-static void solaris_locking_callback(int mode, int type, char *file, int line);
-static void win32_locking_callback(int mode, int type, char *file, int line);
-static void pthreads_locking_callback(int mode, int type, char *file, int line);
+static void irix_locking_callback(int mode, int type, const char *file, int line);
+static void solaris_locking_callback(int mode, int type, const char *file, int line);
+static void win32_locking_callback(int mode, int type, const char *file, int line);
+static void pthreads_locking_callback(int mode, int type, const char *file, int line);
 
 static unsigned long irix_thread_id(void );
 static unsigned long solaris_thread_id(void );
@@ -118,9 +118,8 @@ void CRYPTO_thread_setup(void)
     lock_cs[i] = CreateMutex(NULL, FALSE, NULL);
   }
 
-  CRYPTO_set_locking_callback((void (*)(int, int, char *, int))win32_locking_callback);
+  CRYPTO_set_locking_callback(win32_locking_callback);
   /* id callback defined */
-  return (1);
 }
 
 static void CRYPTO_thread_cleanup(void)
@@ -133,7 +132,7 @@ static void CRYPTO_thread_cleanup(void)
   OPENSSL_free(lock_cs);
 }
 
-void win32_locking_callback(int mode, int type, char *file, int line)
+void win32_locking_callback(int mode, int type,const char *file, int line)
 {
   if (mode & CRYPTO_LOCK)
   {
@@ -199,7 +198,7 @@ void CRYPTO_thread_cleanup(void)
   OPENSSL_free(lock_count);
 }
 
-void solaris_locking_callback(int mode, int type, char *file, int line)
+void solaris_locking_callback(int mode, int type,const char *file, int line)
 {
 #if 0
   fprintf(stderr, "thread=%4d mode=%s lock=%s %s:%d\n",

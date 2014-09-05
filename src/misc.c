@@ -119,30 +119,6 @@ void openssl_add_method(const OBJ_NAME *name, void *arg)
   }
 }
 
-int RAND_init(const char *file)
-{
-  char buffer[200];
-
-#ifdef OPENSSL_SYS_WINDOWS
-  RAND_screen();
-#endif
-
-  if (file == NULL)
-    file = RAND_file_name(buffer, sizeof buffer);
-  else if (RAND_egd(file) > 0)
-  {
-    /* we try if the given filename is an EGD socket.
-       if it is, we don't write anything back to the file. */;
-    return 1;
-  }
-  if (file == NULL || !RAND_load_file(file, -1))
-  {
-    return RAND_status();
-  }
-
-  return 1;
-}
-
 int openssl_pushresult(lua_State*L, int result)
 {
   if (result == 1)
