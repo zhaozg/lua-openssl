@@ -61,8 +61,8 @@ The following are some important lua-openssl object types:
 	openssl.evp_digest,
 	openssl.evp_cipher,
 	openssl.engine,
-  openssl.pkcs7,
-  openssl.cms,
+	openssl.pkcs7,
+	openssl.cms,
 	openssl.evp_cipher_ctx,
 	openssl.evp_digest_ctx
 	...
@@ -227,7 +227,7 @@ lua_openssl_version, lua_version, openssl_version = openssl.version()
  * private key should has it factor named n,q,e and so on, value is hex encoded string
  * The pattern pkey.new need table as pkey argument, and key 'alg' must be given.
 
- ```
+```
  when arg is rsa, table may with key n,e,d,p,q,dmp1,dmq1,iqmp,both are string value
  when arg is dsa, table may with key p,q,g,priv_key,pub_key,both are string value
  when arg is dh, table may with key p,g,priv_key,pub_key,both are string value
@@ -241,10 +241,11 @@ lua_openssl_version, lua_version, openssl_version = openssl.version()
 * ***openssl.pkey.read*** (string|bio data [,bool public_key=false[,string fmt='auto [,string passphrase]]]}) => evp_pkey
  * Read from string or bio data,  return a EVP_PKEY object.
   It can be:
-  +1. data can be string or bio
-  +2. set public_key to true will load as public key.
-  +3. format support 'auto','pem' or 'der'
-  +4. if read private key, you may need to #4arg  passphrase 
+
+  1. data can be string or bio
+  2. set public_key to true will load as public key.
+  3. format support 'auto','pem' or 'der'
+  4. if read private key, you may need to #4arg  passphrase 
 
 ### About padding
 
@@ -595,7 +596,7 @@ Headers is an array of headers to prepend to the message, they will not be inclu
  * option support: 
 
 ```
-    "microsoft_sess_id_bug",
+	"microsoft_sess_id_bug",
 	"netscape_challenge_bug",
 	"netscape_reuse_cipher_change_bug",
 	"sslref2_reuse_cert_type_bug",
