@@ -184,6 +184,9 @@ function P.generate(alg,bits)
     end    
 end
 
+M.pkey = P
+
+------------------------------------------
 function M.sign(alg,input,prikey)
     local pk = prikey.evp_pkey
     return pkey.sign(pk,input,alg)
@@ -194,17 +197,66 @@ function M.verify(alg,input,sig,pubkey)
     return pkey.verify(pk,input,sig,alg)
 end
 
-function M.seal(alg,input,pubkey)
+
+-----------------crypto seal/open compat
+local S = {}
+S.__index = {
+    new = function(alg,pubkey)  
+        local c,key,iv = pkey.seal_init(pubkey.evp_pkey,alg)
+        if c then
+            local t = {}
+            t.ctx = c
+            t.key = key 
+            t.iv = iv
+            setmetatable(t,S)
+            return t
+        end
+    end,
+    update = function(self,data)
+        return pkey.seal_update(self.ctx,data)
+    end,
+    final = function(self)
+        local s =  pkey.seal_final(self.ctx)
+        return s,self.key,self.iv
+    end,
+}
+S.__call = function(self,alg,input,pubkey)
     local msg, key,iv = pkey.seal(pubkey.evp_pkey, input, alg) 
     return msg,key,iv
 end
+   
+setmetatable(S,S)
 
+M.seal = S
 
-function M.open(alg,input,prikey,ek,iv)
+local O = {}
+O.__index = {
+    new = function(alg,privkey, ekey, iv)
+        local c,key,iv = pkey.open_init(privkey.evp_pkey,ekey,iv,alg)
+        if c then
+            local t = {}
+            t.ctx = c
+            t.key = key 
+            t.iv = iv
+            setmetatable(t,O)
+            return t
+        end
+    end,
+    update = function(self,data)
+        return pkey.open_update(self.ctx,data)
+    end,
+    final = function(self)
+        local s =  pkey.open_final(self.ctx)
+        return s
+    end,
+}
+O.__call = function(self,alg,input,prikey,ek,iv)
     return pkey.open(prikey.evp_pkey,input,ek,iv,alg)
 end
+   
+setmetatable(O,O)
 
-M.pkey = P
+M.open = O
 
 ----------------crypto pki compat------------
 local X = {}

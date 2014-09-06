@@ -1,0 +1,15 @@
+#!/bin/sh
+
+LUA_PATH=../../lib/?.lua:$LUA_PATH
+LUA_CPATH=../../?.so:$LUA_CPATH
+
+DIR=`dirname $0`
+
+for i in $DIR/*.lua; do
+  echo "Running: $i"
+  lua $i
+  if [ $? -ne 0 ]; then
+    echo "ERROR: $i failed"
+    exit 1
+  fi
+done
