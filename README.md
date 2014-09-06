@@ -44,7 +44,11 @@ digest,cipher, x509, cms and so on, be write as modules.
 ```lua
    local digest = require'openssl'digest
    local cipher = require'openssl'cipher
+   local crypto = require'crypto'
 ```
+
+**crypto** is a compat module with [LuaCrypto](https://github.com/mkottman/luacrypto),
+document should to [reference](http://mkottman.github.io/luacrypto/manual.html#reference)
 
 digest() equals with digest.digest(), same cipher() equals with cipher.cipher().
 
@@ -74,8 +78,8 @@ They are shortened as bio, x509, sk_x509, csr, pkey, digest, cipher,
 Please note that in the next sections of this document:
 
 ```
-    => means return of a lua-openssl object
-    -> means return of a basic Lua type (eg, string, boolean, etc)
+   => means return of a lua-openssl object
+   -> means return of a basic Lua type (eg, string, boolean, etc)
 ```
 
 
@@ -92,6 +96,10 @@ If you want to get the lua-openssl and OpenSSL versions from a Lua script, here 
 openssl = require "openssl"
 lua_openssl_version, lua_version, openssl_version = openssl.version()
 ```
+
+## Bugs
+
+Lua-Openssl is heavily updated, if you find bug, please report to [here](https://github.com/zhaozg/lua-openssl/issues/)
 
 #2. Message Digest
 
@@ -237,7 +245,6 @@ lua_openssl_version, lua_version, openssl_version = openssl.version()
  when arg is dh, table may with key p,g,priv_key,pub_key,both are string value
  when arg is ec, table may with D,X,Y,Z,both are string value
 ```
-
 
 * ***openssl.pkey.get_public***(evp_pkey private) => evp_pkey
  * Return public key for private key
