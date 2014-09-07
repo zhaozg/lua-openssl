@@ -46,10 +46,10 @@ STACK_OF(TYPE)* sk_##type##_fromtable(lua_State*L, int idx) {     \
   return _sk_##type##_totable(L, sk);      \
 }
 
-#define SK_FREE(TYPE,type) static int sk_##type##_free(lua_State* L) { \
+#define SK_FREE(TYPE,type) static int sk_##type##_free(lua_State* L) {            \
   STACK_OF(TYPE)* sk = CHECK_OBJECT(1, STACK_OF(TYPE), "openssl.stack_of_"#type); \
-  SKM_sk_free(TYPE, sk); \
-  return 0; \
+  if (sk) { SKM_sk_free(TYPE, sk); }                                              \
+  return 0;                                                                       \
 }
 
 

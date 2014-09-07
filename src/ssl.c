@@ -36,12 +36,28 @@ static int openssl_ssl_ctx_new(lua_State*L)
     method = SSLv23_server_method();  /* SSLv3 but can rollback to v2 */
   else if (strcmp(meth, "SSLv23_client") == 0)
     method = SSLv23_client_method();  /* SSLv3 but can rollback to v2 */
+
+  else if (strcmp(meth, "TLSv1_1") == 0)
+    method = TLSv1_1_method();    /* TLSv1.0 */
+  else if (strcmp(meth, "TLSv1_1_server") == 0)
+    method = TLSv1_1_server_method(); /* TLSv1.0 */
+  else if (strcmp(meth, "TLSv1_1_client") == 0)
+    method = TLSv1_1_client_method(); /* TLSv1.0 */
+
+  else if (strcmp(meth, "TLSv1_2") == 0)
+    method = TLSv1_2_method();    /* TLSv1.0 */
+  else if (strcmp(meth, "TLSv1_2_server") == 0)
+    method = TLSv1_2_server_method(); /* TLSv1.0 */
+  else if (strcmp(meth, "TLSv1_2_client") == 0)
+    method = TLSv1_2_client_method(); /* TLSv1.0 */
+
   else if (strcmp(meth, "TLSv1") == 0)
     method = TLSv1_method();    /* TLSv1.0 */
   else if (strcmp(meth, "TLSv1_server") == 0)
     method = TLSv1_server_method(); /* TLSv1.0 */
   else if (strcmp(meth, "TLSv1_client") == 0)
     method = TLSv1_client_method(); /* TLSv1.0 */
+
   else if (strcmp(meth, "DTLSv1") == 0)
     method = DTLSv1_method();   /* DTLSv1.0 */
   else if (strcmp(meth, "DTLSv1_server") == 0)
@@ -345,14 +361,39 @@ static const char* sVerifyMode_Options[] =
 static int openssl_ssl_ctx_verify_mode(lua_State*L)
 {
   SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
-  int mode = SSL_CTX_get_verify_mode(ctx);
-  lua_pushinteger(L, mode);
-  if (mode >= 0 && mode <= SSL_VERIFY_CLIENT_ONCE)
-    lua_pushstring(L, sVerifyMode_Options[mode]);
-  else
-    lua_pushstring(L, "ERROR");
-
-  return 2;
+  if(lua_gettop(L)>1) {
+    size_t i;
+    int mode = 0;
+    luaL_checktable(L, 2);
+    for(i=0; i < lua_objlen(L, 2); i++) {
+      lua_rawgeti(L, 2, i+1);
+      mode |= auxiliar_checkoption(L, -1, NULL, sVerifyMode_Options, iVerifyMode_Options);
+    }
+    SSL_CTX_set_verify(ctx,mode, NULL);
+  }else{
+    int mode = SSL_CTX_get_verify_mode(ctx);
+    if (mode ==  SSL_VERIFY_NONE) {
+      lua_pushstring(L, "none");
+      return 1;
+    } else {
+      int i = 0;
+      if (mode & SSL_VERIFY_PEER) {
+        lua_pushstring(L, "peer");
+        i += 1;
+      }
+      if (mode & SSL_VERIFY_FAIL_IF_NO_PEER_CERT) {
+        lua_pushstring(L, "fail");
+        i += 1;
+      }
+      if (mode & SSL_VERIFY_CLIENT_ONCE)
+      {
+        lua_pushstring(L, "once");
+        i += 1;
+      }
+      return i;
+    }
+  }
+  return 0;
 }
 
 
@@ -377,7 +418,7 @@ static int openssl_ssl_ctx_new_ssl(lua_State*L)
   int server = 0;
 
   SSL *ssl = SSL_new(ctx);
-  int ret = 0;
+  int ret = 1;
   if (auxiliar_isclass(L, "openssl.bio", 2))
   {
     BIO *b = CHECK_OBJECT(2, BIO, "openssl.bio");
@@ -387,17 +428,14 @@ static int openssl_ssl_ctx_new_ssl(lua_State*L)
   }
   else if (lua_isnumber(L, 2))
     ret = SSL_set_fd(ssl, luaL_checkint(L, 2));
-  else
-  {
-    SSL_free(ssl);
-    ssl = NULL;
-    luaL_argerror(L, 2, "only accept network bio object or network fd");
+
+  if(!lua_isnoneornil(L, 3)) {
+    server = auxiliar_checkboolean(L, 3);
+    if (server)
+      SSL_set_accept_state(ssl);
+    else
+      SSL_set_connect_state(ssl);
   }
-  server = auxiliar_checkboolean(L, 3);
-  if (server)
-    SSL_set_accept_state(ssl);
-  else
-    SSL_set_connect_state(ssl);
 
   if (ret == 1)
     PUSH_OBJECT(ssl, "openssl.ssl");
@@ -543,28 +581,28 @@ static int openssl_ssl_ctx_sessions(lua_State*L)
 
 static luaL_Reg ssl_ctx_funcs[] =
 {
-  {"new",       openssl_ssl_ctx_new_ssl},
-  {"bio",       openssl_ssl_ctx_new_bio},
+  {"new",             openssl_ssl_ctx_new_ssl},
+  {"bio",             openssl_ssl_ctx_new_bio},
 
-  {"use",       openssl_ssl_ctx_use},
-  {"add",       openssl_ssl_ctx_add},
-  {"mode",      openssl_ssl_ctx_mode},
-  {"timeout",     openssl_ssl_ctx_timeout},
-  {"options",     openssl_ssl_ctx_options},
+  {"use",             openssl_ssl_ctx_use},
+  {"add",             openssl_ssl_ctx_add},
+  {"mode",            openssl_ssl_ctx_mode},
+  {"timeout",         openssl_ssl_ctx_timeout},
+  {"options",         openssl_ssl_ctx_options},
   {"quiet_shutdown",  openssl_ssl_ctx_quiet_shutdown},
-  {"verify_locations",  openssl_ssl_ctx_load_verify_locations},
-  {"cert_store",    openssl_ssl_ctx_cert_store},
+  {"verify_locations",openssl_ssl_ctx_load_verify_locations},
+  {"cert_store",      openssl_ssl_ctx_cert_store},
 
-  {"verify_mode",   openssl_ssl_ctx_verify_mode},
-  {"verify_depth",  openssl_ssl_ctx_verify_depth},
+  {"verify_mode",     openssl_ssl_ctx_verify_mode},
+  {"verify_depth",    openssl_ssl_ctx_verify_depth},
 
-  {"set_verify",    openssl_ssl_ctx_set_verify},
+  {"set_verify",      openssl_ssl_ctx_set_verify},
 
   {"flush_sessions",  openssl_ssl_ctx_flush_sessions},
-  {"session",     openssl_ssl_ctx_sessions},
+  {"session",         openssl_ssl_ctx_sessions},
 
-  {"__gc",      openssl_ssl_ctx_gc},
-  {"__tostring",    auxiliar_tostring},
+  {"__gc",            openssl_ssl_ctx_gc},
+  {"__tostring",      auxiliar_tostring},
 
   {NULL,      NULL},
 };
@@ -786,7 +824,8 @@ static int openssl_ssl_peer(lua_State*L)
   PUSH_OBJECT(x, "openssl.x509");
   if (sk)
   {
-    PUSH_OBJECT(x, "openssl.stack_of_x509");
+    sk = sk_X509_dup(sk);
+    PUSH_OBJECT(sk, "openssl.stack_of_x509");
     return 2;
   }
   return 1;
@@ -851,6 +890,52 @@ static int openssl_ssl_pending(lua_State*L)
 }
 
 /*********************************************/
+static int openssl_ssl_pushresult(lua_State* L,SSL*ssl, int ret_code)
+{
+  int err = SSL_get_error(ssl, ret_code);
+  switch(err)
+  {
+  case SSL_ERROR_NONE:
+    lua_pushboolean(L, 1);
+    return 1;
+  case SSL_ERROR_SSL:
+    lua_pushnil(L);
+    lua_pushstring(L,"ssl");
+    return 2;
+  case SSL_ERROR_WANT_READ:
+    lua_pushboolean(L, 0);
+    lua_pushstring(L, "want_read");
+    return 2;
+  case SSL_ERROR_WANT_WRITE:
+    lua_pushboolean(L, 0);
+    lua_pushstring(L, "want_write");
+    return 2;
+  case SSL_ERROR_WANT_X509_LOOKUP:
+    lua_pushboolean(L, 0);
+    lua_pushstring(L,"want_x509_lookup");
+    return 2;
+  case SSL_ERROR_SYSCALL:
+    lua_pushnil(L);
+    lua_pushstring(L, "syscall");
+    return 2;
+  case SSL_ERROR_ZERO_RETURN:
+    lua_pushboolean(L, 0);
+    lua_pushstring(L, "zero_return");
+    return 2;
+  case SSL_ERROR_WANT_CONNECT:
+    lua_pushboolean(L, 0);
+    lua_pushstring(L, "want_connect");
+    return 2;
+  case SSL_ERROR_WANT_ACCEPT:
+    lua_pushboolean(L, 0);
+    lua_pushstring(L, "want_accept");
+    return 2;
+  default:
+    lua_pushnil(L);
+    return 1;
+  }
+}
+
 
 
 static int openssl_ssl_get(lua_State*L)
@@ -1112,14 +1197,11 @@ static int openssl_ssl_error(lua_State*L)
   return 1;
 }
 
-
-
 static int openssl_ssl_do_handshake(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
   int ret = SSL_do_handshake(s);
-  lua_pushboolean(L, ret);
-  return 1;
+  return openssl_ssl_pushresult(L, s, ret);
 }
 
 static int openssl_ssl_renegotiate(lua_State*L)
@@ -1342,7 +1424,7 @@ static luaL_Reg ssl_funcs[] =
 
 static luaL_reg R[] =
 {
-  {"ctx_new",     openssl_ssl_ctx_new },
+  {"ctx_new",       openssl_ssl_ctx_new },
   {"alert_string",  openssl_ssl_alert_string },
 
   {"session_new",   openssl_ssl_session_new},
@@ -1355,9 +1437,9 @@ LUALIB_API int luaopen_ssl(lua_State *L)
   SSL_load_error_strings();
   SSLeay_add_ssl_algorithms();
 
-  auxiliar_newclass(L, "openssl.ssl_ctx",    ssl_ctx_funcs);
-  auxiliar_newclass(L, "openssl.ssl_session",  ssl_session_funcs);
-  auxiliar_newclass(L, "openssl.ssl",      ssl_funcs);
+  auxiliar_newclass(L, "openssl.ssl_ctx",       ssl_ctx_funcs);
+  auxiliar_newclass(L, "openssl.ssl_session",   ssl_session_funcs);
+  auxiliar_newclass(L, "openssl.ssl",           ssl_funcs);
 
   luaL_newmetatable(L, MYTYPE);
   lua_setglobal(L, MYNAME);

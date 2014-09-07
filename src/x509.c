@@ -441,15 +441,29 @@ static luaL_Reg x509_extension_funs[] =
   { NULL, NULL }
 };
 
+#include "x509_compat.c"
+
 static luaL_Reg x509_funcs[] =
 {
-  {"parse",   openssl_x509_parse},
-  {"export",    openssl_x509_export},
-  {"check",   openssl_x509_check},
+  {"parse",       openssl_x509_parse},
+  {"export",      openssl_x509_export},
+  {"check",       openssl_x509_check},
   {"get_public",  openssl_x509_public_key},
-  {"__gc",    openssl_x509_free},
 
+  {"__gc",        openssl_x509_free},
   {"__tostring",  auxiliar_tostring},
+
+  /* compat with luasec */
+  {"digest",     meth_digest},
+  {"extensions", meth_extensions},
+  {"issuer",     meth_issuer},
+  {"notbefore",  meth_notbefore},
+  {"notafter",   meth_notafter},
+  {"pem",        meth_pem},
+  {"pubkey",     meth_pubkey},
+  {"serial",     meth_serial},
+  {"subject",    meth_subject},
+  {"validat",    meth_valid_at},
 
   {NULL,      NULL},
 };

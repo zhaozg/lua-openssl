@@ -597,9 +597,27 @@ Headers is an array of headers to prepend to the message, they will not be inclu
 * ***ssl_ctx:mode***([boolean clear=nil] string mode ...) -> string ...
  * If clear set true, given mode list will be clear, or will be set
  * Return new mode list
- * mode support: 'enable_partial_write','accept_moving_write_buffer','auto_retry','no_auto_chain','release_buffers'
-   eg: modes = {ssl_ctx:mode('enable_partial_write','accept_moving_write_buffer','auto_retry')},
-   modes should include 'enable_partial_write','accept_moving_write_buffer','auto_retry'
+ * mode support: 
+
+```
+ 'enable_partial_write',
+ 'accept_moving_write_buffer',
+ 'auto_retry',
+ 'no_auto_chain',
+ 'release_buffers'
+```
+  
+  eg:
+
+```
+ modes = { ssl_ctx:mode('enable_partial_write','accept_moving_write_buffer','auto_retry') },
+ 
+ for  i, v in ipairs(modes)
+  print(v)
+ end
+
+ #output 'enable_partial_write','accept_moving_write_buffer','auto_retry'
+```
 
 * ***ssl_ctx:options***([boolean clear=nil] string options ...) -> string ...
  * If clear set true, given option list will be clear, or will be set
@@ -622,6 +640,15 @@ Headers is an array of headers to prepend to the message, they will not be inclu
 
 * ***ssl_ctx:timeout***([number timeout]) -> number
  * If not give arg timeout, will return current, or use new timeout value and return previous.
+
+* ***ssl_ctx:verify_mode***() -> ...
+ * return mode list, please see below
+
+* ***ssl_ctx:verify_mode***(...) 
+ * args must be in "none", "peer", "fail", "once"
+ * you can pass more than one mode at same time
+
+## SSL object
 
 * ***ssl_ctx:quiet_shutdown***([boolean mode]) -> [boolean]
 Normally when a SSL connection is finished, the parties must send out
