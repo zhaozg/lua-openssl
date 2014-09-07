@@ -24,6 +24,7 @@ local params = {
    options = {"all", "no_sslv2"},
 }
 --]]
+    if params.mode=='client' then io.read() end
     local protocol = string.upper(string.sub(params.protocol,1,3))
         ..string.sub(params.protocol,4,-1)
     local ctx = ssl.ctx_new(protocol,params.ciphers)
@@ -70,6 +71,12 @@ S.__index = {
                 return ret,msg
             end
         end
+        if ret then
+            local b = assert(openssl.bio.filter('buffer'))
+            local s = assert(openssl.bio.filter('ssl',self.ssl,'noclose'))
+
+            self.bio = assert(b:push(s))
+        end
         return ret
     end,
     getpeercertificate = function(self)
@@ -87,6 +94,35 @@ S.__index = {
     close = function(self)
         self.ssl:shutdown()
         self.ssl = nil
+    end,
+    send = function(self,msg,i,j)
+        local m = msg
+        if i then
+            j = j or -1
+            m = string.sub(msg,i,j)
+        end
+        return self.bio:write(m) and self.bio:flush()
+    end,
+    receive = function(self,fmt)
+        if type(fmt)=='number' then
+            return self.bio:read(fmt)
+        end
+        fmt = fmt and string.sub(fmt,1,2) or '*a'
+        if (fmt=='*l') then
+            local r, m = self.bio:gets()
+            while m==-1 do
+                local r,rd,wr,sp = self.bio:retry()
+                if r then
+                    r,m = self.bio:gets()
+                    if r then
+                        return r
+                    end
+                end
+            end
+            return r,msg
+        end
+        
+        local n = self.bio:read(65535)
     end
 }
 

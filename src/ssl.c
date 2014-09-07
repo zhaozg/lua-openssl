@@ -1180,9 +1180,7 @@ static int openssl_ssl_write(lua_State*L)
   }
   else
   {
-    lua_pushnil(L);
-    lua_pushinteger(L, ret);
-    return 2;
+    return openssl_ssl_pushresult(L, s, ret);
   }
   return 0;
 }

@@ -211,11 +211,12 @@ static int openssl_bio_new_filter(lua_State *L)
   }
   case 4:
   {
-    const SSL* ssl = CHECK_OBJECT(1, SSL, "openssl.ssl");
-    int closeflag = luaL_checkoption(L, 2, "noclose", close_flags);
+    const SSL* ssl = CHECK_OBJECT(2, SSL, "openssl.ssl");
+    int closeflag = luaL_checkoption(L, 3, "noclose", close_flags);
     bio = BIO_new(BIO_f_ssl());
     ret = BIO_set_ssl(bio, ssl, closeflag);
   }
+  break;
   default:
     ret = 0;
   }
@@ -223,9 +224,12 @@ static int openssl_bio_new_filter(lua_State *L)
   {
     PUSH_OBJECT(bio, "openssl.bio");
     return 1;
+  }else
+  {
+    if (bio)
+      BIO_free(bio);
+    return openssl_pushresult(L, 0);
   }
-  if (bio)
-    BIO_free(bio);
   return 0;
 }
 
@@ -358,6 +362,23 @@ static LUA_FUNCTION(openssl_bio_type)
   return 1;
 }
 
+static LUA_FUNCTION(openssl_bio_retry)
+{
+  BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
+  int retry = BIO_should_retry(bio);
+  if (retry) {
+    lua_pushboolean(L, 1);
+    lua_pushboolean(L, BIO_should_read(bio));
+    lua_pushboolean(L, BIO_should_write(bio));
+    lua_pushboolean(L, BIO_should_io_special(bio));
+    return 4;
+  }else
+    lua_pushboolean(L, 0);
+  return 1;
+}
+
+
+
 static LUA_FUNCTION(openssl_bio_reset)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
@@ -369,7 +390,7 @@ static LUA_FUNCTION(openssl_bio_reset)
 static LUA_FUNCTION(openssl_bio_push)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
-  BIO* append = CHECK_OBJECT(1, BIO, "openssl.bio");
+  BIO* append = CHECK_OBJECT(2, BIO, "openssl.bio");
   BIO* end = BIO_push(bio, append);
   assert(bio == end);
   lua_pushvalue(L, 1);
@@ -487,10 +508,11 @@ static luaL_reg bio_funs[] =
   {"close", openssl_bio_close },
   {"type",  openssl_bio_type  },
   {"reset", openssl_bio_reset },
+  {"retry", openssl_bio_retry },
 
   /* for filter bio */
-  {"push",  openssl_bio_push},
-  {"pop",   openssl_bio_pop},
+  {"push",  openssl_bio_push  },
+  {"pop",   openssl_bio_pop   },
   {"free_all",    openssl_bio_free_all},
 
   /* for mem */
@@ -499,7 +521,7 @@ static luaL_reg bio_funs[] =
   /* network socket */
   {"accept",  openssl_bio_accept },
   {"connect", openssl_bio_connect },
-  {"fd",  openssl_bio_fd },
+  {"fd",      openssl_bio_fd },
 
   {"__tostring",  auxiliar_tostring },
   {"__gc",  openssl_bio_free  },
@@ -510,11 +532,11 @@ static luaL_reg bio_funs[] =
 static luaL_reg R[] =
 {
   {"mem",     openssl_bio_new_mem    },
-  {"socket",    openssl_bio_new_socket   },
+  {"socket",  openssl_bio_new_socket   },
   {"dgram",   openssl_bio_new_dgram    },
   {"fd",      openssl_bio_new_fd     },
   {"file",    openssl_bio_new_file   },
-  {"filter",    openssl_bio_new_filter   },
+  {"filter",  openssl_bio_new_filter   },
 
   {"accept",    openssl_bio_new_accept },
   {"connect",   openssl_bio_new_connect},
