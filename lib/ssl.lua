@@ -63,21 +63,25 @@ local S = {}
 S.__index = {
     dohandshake = function(self)
         local ret,msg = self.ssl:handshake()
-        while not ret do
-            if (msg=='want_read' or msg=='want_write') then
-                ret,msg = self.ssl:handshake()
-            else
-                print(ret,msg)
-                return ret,msg
-            end
+        if not self.timeout then
+            while not ret do
+                if (msg=='want_read' or msg=='want_write') then
+                    ret,msg = self.ssl:handshake()
+                else
+                    print(ret,msg)
+                    return ret,msg
+                end
+            end           
         end
         if ret then
             local b = assert(openssl.bio.filter('buffer'))
             local s = assert(openssl.bio.filter('ssl',self.ssl,'noclose'))
 
             self.bio = assert(b:push(s))
+        else
+            msg = msg and string.gsub(msg,'_','') or msg
         end
-        return ret
+        return ret,msg
     end,
     getpeercertificate = function(self)
         self.peer,self.peerchain = self.ssl:peer()
@@ -123,6 +127,10 @@ S.__index = {
         end
         
         local n = self.bio:read(65535)
+    end,
+    settimeout = function(self,n,b)
+        self.timeout = n
+        return self.socket:settimeout(n,b)
     end
 }
 
@@ -145,6 +153,7 @@ function M.wrap(sock, cfg)
       end
       local t = {}
       t.ssl = s
+      t.socket = sock
       setmetatable(t,S)
       return t
    end

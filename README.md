@@ -47,10 +47,15 @@ digest,cipher, x509, cms and so on, be write as modules.
    local crypto = require'crypto'
 ```
 
+digest() equals with digest.digest(), same cipher() equals with cipher.cipher().
+
 **crypto** is a compat module with [LuaCrypto](https://github.com/mkottman/luacrypto),
 document should to [reference](http://mkottman.github.io/luacrypto/manual.html#reference)
 
-digest() equals with digest.digest(), same cipher() equals with cipher.cipher().
+**ssl** is a compat module with [luasec](https://github.com/brunoos/luasec),
+document should to [refrence](https://github.com/brunoos/luasec/wiki/LuaSec-0.5).
+NYI list: conn:settimeout,...
+
 
 ## lua-openssl Objects
 
