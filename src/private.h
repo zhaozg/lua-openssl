@@ -35,3 +35,8 @@ void add_assoc_name_entry(lua_State*L, const  char *key, X509_NAME *name, int sh
 void add_assoc_x509_extension(lua_State*L, const char* key, STACK_OF(X509_EXTENSION)* ext);
 int openssl_pushresult(lua_State*L, int result);
 int openssl_push_ans1string_asstring(lua_State* L, ASN1_STRING* s);
+
+int openssl_newvalue(lua_State*L, void*p);
+int openssl_freevalue(lua_State*L, void*p);
+int openssl_setvalue(lua_State*L, void*p, const char*field);
+int openssl_getvalue(lua_State*L, void*p, const char*field);

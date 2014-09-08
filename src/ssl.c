@@ -84,6 +84,7 @@ static int openssl_ssl_ctx_new(lua_State*L)
                "Maybe SSLv3 SSLv23 TLSv1 DTLSv1 [SSLv2], option followed by -client or -server\n",
                "default is SSLv3",
                meth);
+  openssl_newvalue(L, ctx);
   SSL_CTX_set_cipher_list(ctx, ciphers);
   SSL_CTX_set_tmp_dh(ctx, DH_new());
   PUSH_OBJECT(ctx, "openssl.ssl_ctx");
@@ -156,6 +157,7 @@ static int openssl_ssl_ctx_add(lua_State*L)
 static int openssl_ssl_ctx_gc(lua_State*L)
 {
   SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
+  openssl_freevalue(L, ctx);
   SSL_CTX_free(ctx);
   return 0;
 }
@@ -545,6 +547,64 @@ static int openssl_ssl_ctx_set_verify(lua_State*L)
 
 }
 
+/**
+ * Call Lua user function to get the DH key.
+ */
+static DH *dhparam_cb(SSL *ssl, int is_export, int keylength)
+{
+  BIO *bio;
+  DH *dh_tmp = NULL;
+  SSL_CTX *ctx = SSL_get_SSL_CTX(ssl);
+  lua_State *L = SSL_CTX_get_app_data(ctx);
+  int ret = 0;
+  /* get callback function */
+  openssl_getvalue(L, ctx, "dhparam_cb");
+
+  /* Invoke the callback */
+  lua_pushboolean(L, is_export);
+  lua_pushnumber(L, keylength);
+  ret = lua_pcall(L, 2, 1, 0);
+  if (ret==0)
+  {
+    /* Load parameters from returned value */
+    if (lua_type(L, -1) != LUA_TSTRING) {
+      lua_pop(L, 2);  /* Remove values from stack */
+      return NULL;
+    }
+    bio = BIO_new_mem_buf((void*)lua_tostring(L, -1), 
+      lua_rawlen(L, -1));
+    if (bio) {
+      dh_tmp = PEM_read_bio_DHparams(bio, NULL, NULL, NULL);
+      BIO_free(bio);
+    }
+  }else
+  {
+    lua_error(L);
+  }
+
+
+  lua_pop(L, 2);    /* Remove values from stack */
+  return dh_tmp;
+}
+
+static int openssl_ssl_ctx_set_dhparam(lua_State *L)
+{
+  SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
+  if(lua_isfunction(L,2)) {
+    lua_pushvalue(L, 2);
+    openssl_setvalue(L,ctx,"dhparam_cb");
+    SSL_CTX_set_app_data(ctx,L);
+    SSL_CTX_set_tmp_dh_callback(ctx, dhparam_cb);
+  }else if(lua_isuserdata(L, 2))
+  {
+    luaL_argerror(L,2,"userdata arg NYI");
+    /* SSL_CTX_set_tmp_dh(ctx,dh); */
+  }else
+    luaL_argerror(L,2,"NYI");
+
+  return 0;
+}
+
 /* TODO */
 static int openssl_ssl_ctx_flush_sessions(lua_State*L)
 {
@@ -600,7 +660,7 @@ static luaL_Reg ssl_ctx_funcs[] =
   {"verify_depth",    openssl_ssl_ctx_verify_depth},
 
   {"set_verify",      openssl_ssl_ctx_set_verify},
-
+  {"set_dhparam",     openssl_ssl_ctx_set_dhparam},
   {"flush_sessions",  openssl_ssl_ctx_flush_sessions},
   {"session",         openssl_ssl_ctx_sessions},
 
