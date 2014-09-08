@@ -22,16 +22,30 @@ local params = {
    cafile = "../certs/rootA.pem",
    verify = {"peer", "fail_if_no_peer_cert"},
    options = {"all", "no_sslv2"},
+   password = 'password'
 }
 --]]
     if params.mode=='client' then io.read() end
     local protocol = string.upper(string.sub(params.protocol,1,3))
         ..string.sub(params.protocol,4,-1)
     local ctx = ssl.ctx_new(protocol,params.ciphers)
-    if (params.key and params.certificate) then
-        assert(ctx:use( assert(pkey.read(load(params.key),true)),
-                        assert(x509.read(load(params.certificate)))))
+    local xkey = nil
+    if (type(params.password)=='nil') then
+        xkey = assert(pkey.read(load(params.key),true,'pem'))
+    elseif (type(params.password)=='string')  then
+        xkey = assert(pkey.read(load(params.key),true,'pem',params.password))
+    elseif (type(params.password)=='function') then
+        local p = assert(params.password())
+        xkey = assert(pkey.read(load(params.key),true,'pem',p))
     end
+
+    assert(xkey)
+    local xcert = nil
+    if (params.certificate) then
+        xcert = assert(x509.read(load(params.certificate)))
+    end
+    assert(ctx:use( xkey, xcert))
+
     if(params.cafile or params.capath) then
         ctx:verify_locations(params.cafile,params.capath)
     end

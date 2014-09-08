@@ -83,6 +83,16 @@ static int openssl_is_private_key(EVP_PKEY* pkey)
   return 1;
 }
 
+int pkey_read_pass_cb(char *buf, int size, int rwflag, void *u)
+{
+  int len = size;
+
+  if (len <= 0) return 0;
+  strncpy(buf, (const char*)u, size);
+  len = strlen(buf);
+  return len;
+}
+
 static int openssl_pkey_read(lua_State*L)
 {
   EVP_PKEY * key = NULL;
@@ -108,7 +118,7 @@ static int openssl_pkey_read(lua_State*L)
     if (fmt == FORMAT_AUTO || fmt == FORMAT_PEM)
     {
       const char* passphrase = luaL_optstring(L, 4, NULL);
-      key = PEM_read_bio_PrivateKey(in, NULL, NULL, (void*)passphrase);
+      key = PEM_read_bio_PrivateKey(in, NULL, passphrase ? pkey_read_pass_cb : NULL, (void*)passphrase);
       BIO_reset(in);
     }
     if ((fmt == FORMAT_AUTO && key == NULL) || fmt == FORMAT_DER)
