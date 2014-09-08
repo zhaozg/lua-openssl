@@ -22,7 +22,6 @@ static LUA_FUNCTION(openssl_cipher_list)
   return 1;
 }
 
-
 static LUA_FUNCTION(openssl_cipher_get)
 {
   const EVP_CIPHER* cipher = get_cipher(L, 1);
@@ -392,7 +391,6 @@ static LUA_FUNCTION(openssl_cipher_info)
   AUXILIAR_SET(L, -1, "iv_length", EVP_CIPHER_iv_length(cipher), integer);
   AUXILIAR_SET(L, -1, "flags", EVP_CIPHER_flags(cipher), integer);
   AUXILIAR_SET(L, -1, "mode", EVP_CIPHER_mode(cipher), integer);
-
   return 1;
 }
 
@@ -513,7 +511,7 @@ static LUA_FUNCTION(openssl_cipher_ctx_free)
 static luaL_Reg cipher_funs[] =
 {
   {"info",      openssl_cipher_info},
-  { "new",     openssl_cipher_new},
+  {"new",       openssl_cipher_new},
   { "encrypt_new", openssl_cipher_encrypt_new},
   { "decrypt_new", openssl_cipher_decrypt_new},
 

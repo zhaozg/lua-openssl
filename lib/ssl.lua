@@ -145,6 +145,40 @@ S.__index = {
     settimeout = function(self,n,b)
         self.timeout = n
         return self.socket:settimeout(n,b)
+    end,
+    info = function(self,field)
+        --[[
+        algbits
+        authentication
+        bits
+        cipher
+        compression
+        encryption
+        export
+        key
+        mac
+        protocol
+        --]]
+        local cc = self.ssl:current_cipher()
+        if cc then
+            local info = {
+                bits = cc.bits,
+                algbits = cc.algbits,
+                protocol = cc.protocol
+            }
+            if cc.description then
+                info.cipher, info.protocol, info.key,
+                info.authentication, info.encryption, info.mac =
+                    string.match(cc.description, 
+                      "^(%S+)%s+(%S+)%s+Kx=(%S+)%s+Au=(%S+)%s+Enc=(%S+)%s+Mac=(%S+)")
+                info.export = (string.match(cc.description, "%sexport%s*$") ~= nil)
+            end
+            self.compression = self.ssl:current_compression()
+            if field then
+                return info[field]
+            end
+            return info    
+        end
     end
 }
 

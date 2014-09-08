@@ -919,30 +919,41 @@ static int openssl_ssl_want(lua_State*L)
   lua_pushinteger(L, st);
   return 2;
 }
+static int openssl_ssl_current_compression(lua_State *L){
+  SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
+  const COMP_METHOD *comp = SSL_get_current_compression(s);
+  if (comp)
+    lua_pushstring(L, SSL_COMP_get_name(comp));
+  else
+    lua_pushnil(L);
+  return 1;
+}
 
-static int openssl_ssl_current_cipher(lua_State*L)
+static int openssl_ssl_current_cipher(lua_State *L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
   const SSL_CIPHER* c = SSL_get_current_cipher(s);
-  int bits;
-  luaL_Buffer B = {0};
+  if (c) {
+    int bits, algbits;
+    luaL_Buffer B = {0};
 
-  lua_newtable(L);
+    lua_newtable(L);
 
-  AUXILIAR_SET(L, -1, "name", SSL_CIPHER_get_name(c), string);
-  AUXILIAR_SET(L, -1, "version", SSL_CIPHER_get_version(c), string);
+    AUXILIAR_SET(L, -1, "name",     SSL_CIPHER_get_name(c), string);
+    AUXILIAR_SET(L, -1, "version",  SSL_CIPHER_get_version(c), string);
 
 #if OPENSSL_VERSION_NUMBER > 0x10000000L
-  AUXILIAR_SET(L, -1, "id", SSL_CIPHER_get_id(c), integer);
+    AUXILIAR_SET(L, -1, "id", SSL_CIPHER_get_id(c), integer);
 #endif
-  if (SSL_CIPHER_get_bits(c, &bits) == 1)
-  {
+    bits = SSL_CIPHER_get_bits(c, &algbits);
     AUXILIAR_SET(L, -1, "bits", bits, integer);
-  };
+    AUXILIAR_SET(L, -1, "algbits", algbits, integer);
 
-  AUXILIAR_SET(L, -1, "description", SSL_CIPHER_description((SSL_CIPHER*)c, B.buffer, sizeof(B.buffer)), string);
+    AUXILIAR_SET(L, -1, "description", SSL_CIPHER_description((SSL_CIPHER*)c, B.buffer, sizeof(B.buffer)), string);
 
-  return 1;
+    return 1;
+  }
+  return 0;
 }
 
 static int openssl_ssl_pending(lua_State*L)
@@ -1086,16 +1097,12 @@ static int openssl_ssl_get(lua_State*L)
       long l = SSL_get_verify_result(s);
       lua_pushinteger(L, l);
     }
-    else if (strcmp(what, "verify_result") == 0)
+
+    else if (strcmp(what, "version") == 0)
     {
-      long l = SSL_get_verify_result(s);
-      lua_pushinteger(L, l);
+      lua_pushstring(L, SSL_get_version(s));
     }
-    else if (strcmp(what, "verify_result") == 0)
-    {
-      long l = SSL_get_verify_result(s);
-      lua_pushinteger(L, l);
-    }
+
     else if (strcmp(what, "state") == 0)
     {
       lua_pushinteger(L, SSL_state(s));
@@ -1446,9 +1453,10 @@ static luaL_Reg ssl_funcs[] =
   {"use",       openssl_ssl_use},
   {"peer",      openssl_ssl_peer},
 
-  {"current_cipher",  openssl_ssl_current_cipher},
-  {"session",       openssl_ssl_session},
-
+  {"current_cipher",        openssl_ssl_current_cipher},
+  {"current_compression",   openssl_ssl_current_compression},
+  
+  {"session",    openssl_ssl_session},
 
   {"dup",       openssl_ssl_dup},
 #if OPENSSL_VERSION_NUMBER >= 0x0090819fL
