@@ -599,6 +599,10 @@ Headers is an array of headers to prepend to the message, they will not be inclu
 * ***ssl_ctx:add***(x509 clientca[,table extra_chain_cert_array]) -> boolean
  * Add client ca cert and option extra chian cert
 
+* ***ssl_ctx:set_tmp***(string type=dh|ecdh|rsa, function tmp_cb,...)
+* ***ssl_ctx:set_tmp***(string type=dh|ecdh|rsa, string key_pem)
+* ***ssl_ctx:set_tmp***(string type=ecdh, string curvename)
+
 * ***ssl_ctx:mode***([boolean clear=nil] string mode ...) -> string ...
  * If clear set true, given mode list will be clear, or will be set
  * Return new mode list
@@ -624,7 +628,7 @@ Headers is an array of headers to prepend to the message, they will not be inclu
  #output 'enable_partial_write','accept_moving_write_buffer','auto_retry'
 ```
 
-* ***ssl_ctx:options***([boolean clear=nil] string options ...) -> string ...
+* ***ssl_ctx:options***([boolean clear=nil] int options) -> string ...
  * If clear set true, given option list will be clear, or will be set
  * Return new options list
  * option support: 
