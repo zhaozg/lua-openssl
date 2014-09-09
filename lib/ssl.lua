@@ -72,6 +72,12 @@ local params = {
         end
         ctx:set_cert_verify(params.verifyext)
     end
+    if params.dhparam then
+        ctx:set_tmp('dh',params.dhparam)
+    end
+    if params.curve then
+        ctx:set_tmp('ecdh',params.curve)
+    end
     local t = {}
     t.ctx = ctx 
     t.mode = params.mode
