@@ -25,7 +25,8 @@ local params = {
    password = 'password'
 }
 --]]
-    if params.mode=='client' then io.read() end
+    if params.mode=='server' then io.read() end
+    
     local protocol = string.upper(string.sub(params.protocol,1,3))
         ..string.sub(params.protocol,4,-1)
     local ctx = ssl.ctx_new(protocol,params.ciphers)
@@ -54,9 +55,9 @@ local params = {
     if(params.verify) then
         local args = {}
         for i=1,#params.verify do
-            table.insert(args, string.sub(params.verify[i],1,4))
+            table.insert(args, params.verify[i])
         end
-        ctx:verify_mode(args)
+        ctx:set_verify(args)
     end
     if params.options then
         local args = {}
@@ -64,6 +65,12 @@ local params = {
             table.insert(arg,params.options[i])
         end
         ctx:options(unpack(args))
+    end
+    if params.verifyext then
+        for k,v in pairs(params.verifyext) do
+            params.verifyext[k] = string.gsub(v,'lsec_','')        
+        end
+        ctx:set_cert_verify(params.verifyext)
     end
     local t = {}
     t.ctx = ctx 
@@ -100,6 +107,18 @@ S.__index = {
     getpeercertificate = function(self)
         self.peer,self.peerchain = self.ssl:peer()
         return self.peer
+    end,
+    getpeerverification = function(self)
+        local r, t = self.ssl:getpeerverification()
+        if not r then
+            local tt = {}
+            for i,err in pairs(t) do
+                tt[i] = {}
+                tt[i][1] = string.format('error=%d string=%s level=%s',err.error,err.error_string,err.error_level)
+            end
+            return r,tt
+        end        
+        return r        
     end,
     getpeerchain = function(self)
         self.peer,self.peerchain = self.ssl:peer()
