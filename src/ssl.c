@@ -819,6 +819,50 @@ static int openssl_ssl_ctx_set_tmp(lua_State *L)
   return 0;
 }
 
+static int tlsext_servername_callback(SSL *ssl, int *ad, void *arg)
+{
+  SSL_CTX *newctx = NULL;
+  SSL_CTX *ctx = SSL_get_SSL_CTX(ssl);
+  lua_State *L = SSL_CTX_get_app_data(ctx);
+  const char *name = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
+
+  /* No name, use default context */
+  if (!name)
+    return SSL_TLSEXT_ERR_NOACK;
+
+  /* Search for the name in the map */
+  openssl_getvalue(L, ctx, "tlsext_servername");
+  if (lua_istable(L,-1))
+  {
+    lua_getfield(L, -1, name);
+    if (auxiliar_isclass(L,"openssl.ssl_ctx", -1))
+    {
+      newctx = CHECK_OBJECT(-1, SSL_CTX, "openssl.ssl_ctx");
+      SSL_set_SSL_CTX(ssl, newctx);
+      lua_pop(L, 2);
+      return SSL_TLSEXT_ERR_OK;
+    }
+  }else if(lua_isfunction(L, -1))
+  {
+  }else
+  {
+  }
+
+  lua_pop(L, 1);
+  return SSL_TLSEXT_ERR_ALERT_FATAL;
+} 
+
+static int openssl_ssl_ctx_set_servername_callback(lua_State*L)
+{
+  SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
+  luaL_argcheck(L, lua_istable(L, 2)||lua_isfunction(L,2), 2, "must be table or function");
+
+  lua_pushvalue(L, 2);
+  openssl_setvalue(L, ctx, "tlsext_servername");
+  SSL_CTX_set_tlsext_servername_callback(ctx, tlsext_servername_callback);
+  return 0;
+}
+
 static int openssl_ssl_ctx_flush_sessions(lua_State*L)
 {
   SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
@@ -871,7 +915,8 @@ static luaL_Reg ssl_ctx_funcs[] =
 
   {"set_verify",         openssl_ssl_ctx_set_verify},
   {"set_cert_verify",    openssl_ssl_ctx_set_cert_verify},
-
+  {"set_servername_callback",    openssl_ssl_ctx_set_servername_callback},
+  
   {"verify_depth",    openssl_ssl_ctx_verify_depth},  
   {"set_tmp",         openssl_ssl_ctx_set_tmp},
   {"flush_sessions",  openssl_ssl_ctx_flush_sessions},
@@ -1378,7 +1423,6 @@ static int openssl_ssl_set(lua_State*L)
       //FIX
       int purpose = luaL_checkint(L, i + 1);
       ret = SSL_set_purpose(s, purpose);
-
     }
     else if (strcmp(what, "trust") == 0)
     {
@@ -1391,6 +1435,12 @@ static int openssl_ssl_set(lua_State*L)
       int result = luaL_checkint(L, i + 1);
       SSL_set_verify_result(s, result);
     }
+    else if (strcmp(what, "hostname") == 0)
+    {
+      const char* hostname =luaL_checkstring(L, i+1);
+      SSL_set_tlsext_host_name(s,hostname);
+    }
+    
 #if OPENSSL_VERSION_NUMBER > 0x10000000L
     else if (strcmp(what, "state") == 0)
     {

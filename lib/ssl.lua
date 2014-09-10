@@ -26,8 +26,8 @@ local params = {
    password = 'password'
 }
 --]]    
-    local protocol = string.upper(string.sub(params.protocol,1,3))
-        ..string.sub(params.protocol,4,-1)
+    local protocol = params.protocol and string.upper(string.sub(params.protocol,1,3))
+        ..string.sub(params.protocol,4,-1) or 'SSLv3'
     local ctx = ssl.ctx_new(protocol,params.ciphers)
     local xkey = nil
     if (type(params.password)=='nil') then
@@ -211,6 +211,18 @@ S.__index = {
             self.buff = ''
         end
     end,
+    sni = function(self,arg)
+        if type(arg) =='string'  then
+            self.ssl:set('hostname',arg)
+        elseif type(arg)=='table' then
+            local t = {}
+            for k,v in pairs(arg) do
+                t[k] = v.ctx
+            end
+            self.ssl:ctx():set_servername_callback(t)
+        end
+    end,
+    
     settimeout = function(self,n,b)
         self.timeout = n
     end,
