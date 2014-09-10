@@ -120,7 +120,7 @@ S.__index = {
             local tt = {}
             for i,err in pairs(t) do
                 tt[i] = {}
-                tt[i][1] = string.format('error=%d string=%s level=%s',err.error,err.error_string,err.error_level)
+                tt[i][1] = string.format('error=%d string=%s depth=%s',err.error,err.error_string,err.error_depth)
             end
             return r,tt
         end        
