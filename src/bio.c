@@ -176,7 +176,7 @@ static int openssl_bio_new_connect(lua_State *L)
   return 0;
 }
 
-static int openssl_bio_new_filter(lua_State *L)
+static LUA_FUNCTION(openssl_bio_new_filter)
 {
   /* 0         1        2      3      4    5 */
   static const char* sType[] = {"base64", "buffer", "cipher", "md", "ssl", NULL};

@@ -1,4 +1,5 @@
 local openssl = require'openssl'
+local socket = require'socket'
 local ssl,pkey,x509 = openssl.ssl,openssl.pkey,openssl.x509
 
 local M = {}
@@ -24,9 +25,7 @@ local params = {
    options = {"all", "no_sslv2"},
    password = 'password'
 }
---]]
-    if params.mode=='server' then io.read() end
-    
+--]]    
     local protocol = string.upper(string.sub(params.protocol,1,3))
         ..string.sub(params.protocol,4,-1)
     local ctx = ssl.ctx_new(protocol,params.ciphers)
@@ -89,22 +88,26 @@ local S = {}
 
 S.__index = {
     dohandshake = function(self)
-        local ret,msg = self.ssl:handshake()
-        if not self.timeout then
-            while not ret do
-                if (msg=='want_read' or msg=='want_write') then
-                    ret,msg = self.ssl:handshake()
-                else
-                    print(ret,msg)
-                    return ret,msg
-                end
-            end           
-        end
+        local ret,msg
+        
+        socket.select({self.ssl}, {self.ssl}, self.timeout)
+    
+        ret,msg = self.ssl:handshake()
+        while not ret do
+            if (msg=='want_read' or msg=='want_write') then
+                ret,msg = self.ssl:handshake()
+            else
+                print(ret,msg)
+                return ret,msg
+            end
+        end           
+
         if ret then
             local b = assert(openssl.bio.filter('buffer'))
             local s = assert(openssl.bio.filter('ssl',self.ssl,'noclose'))
 
             self.bio = assert(b:push(s))
+            
         else
             msg = msg and string.gsub(msg,'_','') or msg
         end
@@ -125,6 +128,10 @@ S.__index = {
             return r,tt
         end        
         return r        
+    end,
+    getfd = function(self)
+        local fd = self.ssl:getfd()
+        return fd
     end,
     getpeerchain = function(self)
         self.peer,self.peerchain = self.ssl:peer()
@@ -147,29 +154,65 @@ S.__index = {
         return self.bio:write(m) and self.bio:flush()
     end,
     receive = function(self,fmt)
-        if type(fmt)=='number' then
-            return self.bio:read(fmt)
-        end
-        fmt = fmt and string.sub(fmt,1,2) or '*a'
-        if (fmt=='*l') then
-            local r, m = self.bio:gets()
-            while m==-1 do
-                local r,rd,wr,sp = self.bio:retry()
-                if r then
-                    r,m = self.bio:gets()
-                    if r then
-                        return r
-                    end
-                end
-            end
-            return r,msg
+        self.buff = self.buff or ''
+        local r,m = socket.select({self.ssl},nil,self.timeout)
+        if #r==0 then
+            return nil,'timeout'
         end
         
-        local n = self.bio:read(65535)
+        local s = nil
+        if type(fmt)=='number' then
+            if len > #self.buf then
+                s = self.bio:read(len-#self.buf)
+                if s == nil then
+                    return nil, 'closed'
+                else
+                    self.buff = self.buff..s
+                end
+            else
+                s = self.bio:gets()
+                if s == nil then
+                    return nil,'closed'
+                else
+                    self.buf = self.buf..s
+                end
+            end
+            
+            if #self.buf>=len then
+                s = string.sub(self.buf,1,len)
+                self.buf = string.sub(self.buf,len+1,-1)
+            else
+                s = self.buff 
+                self.buff = ''
+            end
+            return s
+        end
+        
+        fmt = fmt and string.sub(fmt,1,2) or '*a'
+        if (fmt=='*l') then
+            local r, m = self.bio:read(245)
+            if r then
+                self.buff = self.buff .. r
+            elseif(m==-2) then
+                return nil,'closed'                
+            end
+            _,_,s, s1 = string.find(self.buff,'(.-)\n(.*)')
+            if s then
+                self.buff = s1
+                return s
+            else
+                return nil, 'wantread',self.buff
+            end
+        end
+        
+        s = self.bio:read(65535)
+        if s then
+            s = self.buff .. s
+            self.buff = ''
+        end
     end,
     settimeout = function(self,n,b)
         self.timeout = n
-        return self.socket:settimeout(n,b)
     end,
     info = function(self,field)
         --[[
@@ -227,6 +270,7 @@ function M.wrap(sock, cfg)
       local t = {}
       t.ssl = s
       t.socket = sock
+      t.timeout = type(cfg)=='table' and cfg.timeout or nil
       setmetatable(t,S)
       return t
    end

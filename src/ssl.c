@@ -88,7 +88,6 @@ static int openssl_ssl_ctx_new(lua_State*L)
                meth);
   openssl_newvalue(L, ctx);
   SSL_CTX_set_cipher_list(ctx, ciphers);
-  SSL_CTX_set_tmp_dh(ctx, DH_new());
   PUSH_OBJECT(ctx, "openssl.ssl_ctx");
   SSL_CTX_set_app_data(ctx,L);
 
@@ -1224,7 +1223,12 @@ static int openssl_ssl_pushresult(lua_State* L,SSL*ssl, int ret_code)
   }
 }
 
-
+static int openssl_ssl_getfd(lua_State*L)
+{
+  SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
+  lua_pushinteger(L, SSL_get_fd(s));
+  return 1;
+}
 
 static int openssl_ssl_get(lua_State*L)
 {
@@ -1666,7 +1670,8 @@ static luaL_Reg ssl_funcs[] =
   {"get",       openssl_ssl_get},
   {"use",       openssl_ssl_use},
   {"peer",      openssl_ssl_peer},
-
+  {"getfd",     openssl_ssl_getfd},
+  
   {"current_cipher",        openssl_ssl_current_cipher},
   {"current_compression",   openssl_ssl_current_compression},
   {"getpeerverification",   openssl_ssl_getpeerverification},
