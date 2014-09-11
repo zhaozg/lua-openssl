@@ -318,28 +318,37 @@ static int openssl_ssl_ctx_new_ssl(lua_State*L)
 {
   SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
   int server = 0;
-
+  int mode_idx = 2;
   SSL *ssl = SSL_new(ctx);
   int ret = 1;
+
   if (auxiliar_isclass(L, "openssl.bio", 2))
   {
-    BIO *b = CHECK_OBJECT(2, BIO, "openssl.bio");
-    b->references++;
-    SSL_set_bio(ssl, b, b);
+    BIO *bi = CHECK_OBJECT(2, BIO, "openssl.bio");
+    BIO *bo = CHECK_OBJECT(3, BIO, "openssl.bio");
+    bi->references++;
+    bo->references++;
+    mode_idx = 4;
+
+    SSL_set_bio(ssl, bi, bo);
     ret = 1;
   }
   else if (lua_isnumber(L, 2))
+  {
     ret = SSL_set_fd(ssl, luaL_checkint(L, 2));
+    mode_idx = 3;
+  }
 
-  if(!lua_isnoneornil(L, 3)) {
-    server = auxiliar_checkboolean(L, 3);
+  if(ret==1 && !lua_isnoneornil(L, mode_idx)) {
+    server = auxiliar_checkboolean(L, mode_idx);
+  }
+
+  if (ret == 1) {
     if (server)
       SSL_set_accept_state(ssl);
     else
       SSL_set_connect_state(ssl);
-  }
 
-  if (ret == 1) {
     PUSH_OBJECT(ssl, "openssl.ssl");
     openssl_newvalue(L,ssl);
   }else
@@ -349,7 +358,6 @@ static int openssl_ssl_ctx_new_ssl(lua_State*L)
   }
   return 1;
 }
-
 
 static int openssl_ssl_ctx_new_bio(lua_State*L)
 {
@@ -1544,10 +1552,12 @@ static int openssl_ssl_renegotiate(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
   int ret = SSL_renegotiate(s);
-  SSL_do_handshake(s);
-  lua_pushboolean(L, ret);
-  return 1;
+  if (ret) {
+    ret = SSL_do_handshake(s);
+  }
+  return openssl_ssl_pushresult(L, s, ret);
 }
+
 #if OPENSSL_VERSION_NUMBER > 0x10000000L
 static int openssl_ssl_renegotiate_abbreviated(lua_State*L)
 {

@@ -354,12 +354,19 @@ static LUA_FUNCTION(openssl_bio_free)
   return 0;
 }
 
-
 static LUA_FUNCTION(openssl_bio_type)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
   lua_pushstring(L, BIO_method_name(bio));
   return 1;
+}
+
+static LUA_FUNCTION(openssl_bio_nbio)
+{
+  BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
+  int nbio = lua_toboolean(L, 2);
+  int ret = BIO_set_nbio(bio,nbio);
+  return openssl_pushresult(L, ret);
 }
 
 static LUA_FUNCTION(openssl_bio_retry)
@@ -490,12 +497,106 @@ static LUA_FUNCTION(openssl_bio_fd)
   return 1;
 }
 
+long BIO_info_callback(BIO *bio, int cmd, const char *argp,
+  int argi, long argl, long ret)
+{
+  BIO *b;
+  char buf[256];
+  char *p;
+  long r=1;
+  size_t p_maxlen;
 
-int BIO_socket_ioctl(int fd, long type, void *arg);
-int BIO_socket_nbio(int fd, int mode);
-int BIO_get_port(const char *str, unsigned short *port_ptr);
-int BIO_get_host_ip(const char *str, unsigned char *ip);
-int BIO_get_accept_socket(char *host_port, int mode);
+  if (BIO_CB_RETURN & cmd)
+    r=ret;
+
+  BIO_snprintf(buf,sizeof buf,"BIO[%08lX]:",(unsigned long)bio);
+  p= &(buf[14]);
+  p_maxlen = sizeof buf - 14;
+  switch (cmd)
+  {
+  case BIO_CB_FREE:
+    BIO_snprintf(p,p_maxlen,"Free - %s\n",bio->method->name);
+    break;
+  case BIO_CB_READ:
+    if (bio->method->type & BIO_TYPE_DESCRIPTOR)
+      BIO_snprintf(p,p_maxlen,"read(%d,%lu) - %s fd=%d\n",
+      bio->num,(unsigned long)argi,
+      bio->method->name,bio->num);
+    else
+      BIO_snprintf(p,p_maxlen,"read(%d,%lu) - %s\n",
+      bio->num,(unsigned long)argi,
+      bio->method->name);
+    break;
+  case BIO_CB_WRITE:
+    if (bio->method->type & BIO_TYPE_DESCRIPTOR)
+      BIO_snprintf(p,p_maxlen,"write(%d,%lu) - %s fd=%d\n",
+      bio->num,(unsigned long)argi,
+      bio->method->name,bio->num);
+    else
+      BIO_snprintf(p,p_maxlen,"write(%d,%lu) - %s\n",
+      bio->num,(unsigned long)argi,
+      bio->method->name);
+    break;
+  case BIO_CB_PUTS:
+    BIO_snprintf(p,p_maxlen,"puts() - %s\n",bio->method->name);
+    break;
+  case BIO_CB_GETS:
+    BIO_snprintf(p,p_maxlen,"gets(%lu) - %s\n",(unsigned long)argi,bio->method->name);
+    break;
+  case BIO_CB_CTRL:
+    BIO_snprintf(p,p_maxlen,"ctrl(%lu) - %s\n",(unsigned long)argi,bio->method->name);
+    break;
+  case BIO_CB_RETURN|BIO_CB_READ:
+    BIO_snprintf(p,p_maxlen,"read return %ld\n",ret);
+    break;
+  case BIO_CB_RETURN|BIO_CB_WRITE:
+    BIO_snprintf(p,p_maxlen,"write return %ld\n",ret);
+    break;
+  case BIO_CB_RETURN|BIO_CB_GETS:
+    BIO_snprintf(p,p_maxlen,"gets return %ld\n",ret);
+    break;
+  case BIO_CB_RETURN|BIO_CB_PUTS:
+    BIO_snprintf(p,p_maxlen,"puts return %ld\n",ret);
+    break;
+  case BIO_CB_RETURN|BIO_CB_CTRL:
+    BIO_snprintf(p,p_maxlen,"ctrl return %ld\n",ret);
+    break;
+  default:
+    BIO_snprintf(p,p_maxlen,"bio callback - unknown type (%d)\n",cmd);
+    break;
+  }
+
+  b=(BIO *)bio->cb_arg;
+  if (b != NULL)
+    BIO_write(b,buf,strlen(buf));
+#if !defined(OPENSSL_NO_STDIO) && !defined(OPENSSL_SYS_WIN16)
+  else
+    fputs(buf,stderr);
+#endif
+  return(r);
+}
+
+static LUA_FUNCTION(openssl_bio_set_callback)
+{
+  BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
+  int ret;
+  luaL_argcheck(L, lua_isfunction(L, 2), 2, "need function");
+  lua_pushvalue(L, 2);
+  lua_rawseti(L,LUA_REGISTRYINDEX,(int)bio);
+  ret = BIO_set_info_callback(bio, BIO_info_callback);
+  return openssl_pushresult(L,ret);
+}
+
+static LUA_FUNCTION(openssl_bio_pending)
+{
+  BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
+
+  int pending = BIO_pending(bio);
+  int wpending = BIO_wpending(bio);
+  lua_pushinteger(L, pending);
+  lua_pushinteger(L, wpending);
+  return 2;
+}
 
 static luaL_reg bio_funs[] =
 {
@@ -507,8 +608,11 @@ static luaL_reg bio_funs[] =
   {"flush", openssl_bio_flush },
   {"close", openssl_bio_close },
   {"type",  openssl_bio_type  },
+  {"nbio",  openssl_bio_nbio  },
   {"reset", openssl_bio_reset },
   {"retry", openssl_bio_retry },
+  {"pending", openssl_bio_pending },
+  {"set_callback", openssl_bio_set_callback },
 
   /* for filter bio */
   {"push",  openssl_bio_push  },
