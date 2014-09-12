@@ -109,7 +109,8 @@ S.__index = {
                 end)
                 return
 			end
-
+            if (ret==false) then return end
+            
 			self.connected = true
 			self.connecting = nil
 
