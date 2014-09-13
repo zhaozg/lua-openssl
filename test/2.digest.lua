@@ -7,8 +7,6 @@ TestCompat = {}
     function TestCompat:setUp()
         self.msg='abcd'
         self.alg='sha1'
-        print('digest',digest)
-        print('metatable',getmetatable(digest))
     end
 
     function TestCompat:tearDown()
@@ -63,13 +61,11 @@ TestMY = {}
         t = md:info()
         assert(t.size==20)
 
-        print_r(t)
+        --print_r(t)
         ctx1 = md:new()
         t1 = ctx1:info()
-        print(ctx1,t1)
         local ctx = digest.new('sha1')
         t2 = ctx:info()
-        print(ctx,t2)
         for k,_ in pairs(t1) do
             if(k~='digest') then
                 assert(t1[k]==t2[k])
@@ -79,5 +75,5 @@ TestMY = {}
     end
 
 local lu = LuaUnit
-lu:setVerbosity( 1 )
+lu:setVerbosity( 0 )
 lu:run()

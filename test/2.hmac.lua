@@ -9,8 +9,6 @@ TestCompat = {}
         self.msg='abcd'
         self.alg='sha1'
         self.key = 'abcdefg'
-        print('digest',digest)
-        print('metatable',getmetatable(digest))
     end
 
     function TestCompat:tearDown()
@@ -19,30 +17,23 @@ TestCompat = {}
 
     function TestCompat:testDigest()
         local a,b,c
-        a = hmac(self.alg,self.key,self.msg)
+        a = hmac(self.alg,self.msg,self.key,true)
         assertEquals(#a,20)
 
-        b = hmac.hmac(self.alg,self.key,self.msg)
-        assertEquals(#b,20)
-        assertEquals(a,b)
-    end
-    
-    function TestCompat:testObject()
-        local a,b,c,aa,bb,cc
-        local obj,obj1
-        obj = hmac.new(self.alg,self.key)
-        obj:update(self.msg)
-        a = obj:final()
+        b = hmac.hmac(self.alg,self.msg,self.key,false)
+        assertEquals(#b,40)
+        assertEquals(openssl.hex(a),b)
 
-        b = hmac(self.alg,self.key,self.msg)
-        assert(a==b)
+        a = hmac.new(self.alg,self.key)
+        a:update(self.msg)
+        a = a:final()
+        assertEquals(a,b)
         
-        obj = hmac.new(self.alg,self.key)
-        c = obj:final(self.msg)
-        assertEquals(c,a)
-        
+        c = hmac.new(self.alg,self.key)
+        c = c:final(self.msg)
+        assertEquals(c,b)        
     end
 
 local lu = LuaUnit
-lu:setVerbosity( 1 )
+lu:setVerbosity( 0 )
 lu:run()

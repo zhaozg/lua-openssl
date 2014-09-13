@@ -56,6 +56,7 @@ static int openssl_hmac_final(lua_State *L)
     raw = (lua_isnoneornil(L, 2)) ? 0 : lua_toboolean(L, 2);
 
   HMAC_Final(c, digest, &len);
+
   if (raw) {
     lua_pushlstring(L, (char *)digest, len);
   }else{
@@ -133,7 +134,6 @@ static int openssl_hmac(lua_State *L)
       OPENSSL_free((void*)in);
       BN_free(B);
     }
-
   }
   return 1;
 }
