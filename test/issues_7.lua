@@ -11,4 +11,3 @@ while i <= num do
         encrypted = cipher:encrypt(id, secret_key);
 end
 print('DONE')
-

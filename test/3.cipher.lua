@@ -13,8 +13,7 @@ TestCompat = {}
         self.key=self.key..string.reverse(self.key)
         self.iv = string.rep(string.char(00),32)
 
-        print('cipher',cipher)
-        print('metatable',getmetatable(cipher))
+        assertEquals('table',type(getmetatable(cipher)))
     end
     function TestCompat:tearDown()
         print('Test END')
@@ -60,6 +59,7 @@ TestCompat = {}
         assert(#self.msg < #aa)
     end
 
+
 TestMY = {}
 
     function TestMY:setUp()
@@ -69,9 +69,6 @@ TestMY = {}
         self.key=string.char(01,02,03,04,05,06,07,08,09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f)
         self.key=self.key..string.reverse(self.key)
         self.iv = string.rep(string.char(00),32)
-
-        print('cipher',cipher)
-        print('metatable',getmetatable(cipher))
     end
     function TestMY:testList()
 
@@ -107,9 +104,10 @@ TestMY = {}
         assertEquals(self.msg,bb)
         assert(#self.msg < #aa)
 
-        print_r(C:info())
-        print_r(obj:info())
-
+        if false then
+            print_r(C:info())
+            print_r(obj:info())
+        end
 
         local r = openssl.random(16)
         local k,i = C:BytesToKey(r)
@@ -123,8 +121,7 @@ TestMY = {}
 
     end
 
-io.read()
 local lu = LuaUnit
-lu:setVerbosity( 1 )
+lu:setVerbosity( 0 )
 lu:run()
 
