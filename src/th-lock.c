@@ -75,7 +75,9 @@
 #include <sys/prctl.h>
 #endif
 #ifdef PTHREADS
+#ifndef OPENSSL_SYS_WIN32
 #include <pthread.h>
+#endif
 #endif
 #include <openssl/lhash.h>
 #include <openssl/crypto.h>
@@ -122,7 +124,7 @@ void CRYPTO_thread_setup(void)
   /* id callback defined */
 }
 
-static void CRYPTO_thread_cleanup(void)
+void CRYPTO_thread_cleanup(void)
 {
   int i;
 
@@ -132,7 +134,7 @@ static void CRYPTO_thread_cleanup(void)
   OPENSSL_free(lock_cs);
 }
 
-void win32_locking_callback(int mode, int type,const char *file, int line)
+static void win32_locking_callback(int mode, int type,const char *file, int line)
 {
   if (mode & CRYPTO_LOCK)
   {
@@ -198,7 +200,7 @@ void CRYPTO_thread_cleanup(void)
   OPENSSL_free(lock_count);
 }
 
-void solaris_locking_callback(int mode, int type,const char *file, int line)
+static void solaris_locking_callback(int mode, int type,const char *file, int line)
 {
 #if 0
   fprintf(stderr, "thread=%4d mode=%s lock=%s %s:%d\n",
@@ -291,7 +293,7 @@ void CRYPTO_thread_cleanup(void)
   OPENSSL_free(lock_cs);
 }
 
-void irix_locking_callback(int mode, int type, char *file, int line)
+static void irix_locking_callback(int mode, int type, char *file, int line)
 {
   if (mode & CRYPTO_LOCK)
   {
@@ -314,7 +316,7 @@ unsigned long irix_thread_id(void)
 
 /* Linux and a few others */
 #ifdef PTHREADS
-
+#ifndef OPENSSL_SYS_WIN32
 static pthread_mutex_t *lock_cs;
 static long *lock_count;
 
@@ -347,7 +349,7 @@ void thread_cleanup(void)
   OPENSSL_free(lock_count);
 }
 
-void pthreads_locking_callback(int mode, int type, char *file,
+static void pthreads_locking_callback(int mode, int type, char *file,
                                int line)
 {
 #if 0
@@ -380,6 +382,6 @@ unsigned long pthreads_thread_id(void)
   ret = (unsigned long)pthread_self();
   return (ret);
 }
-
+#endif
 #endif /* PTHREADS */
 

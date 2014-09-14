@@ -219,7 +219,7 @@ static int openssl_cms_verify(lua_State *L)
 static int openssl_cms_EncryptedData_encrypt(lua_State*L)
 {
   BIO* in = load_bio_object(L, 1);
-  const EVP_CIPHER* ciphers = get_cipher(L, 2);
+  const EVP_CIPHER* ciphers = get_cipher(L, 2, NULL);
   size_t klen;
   const char* key = luaL_checklstring(L, 3, &klen);
   unsigned int flags = luaL_optint(L, 4, 0);
@@ -281,7 +281,7 @@ static int openssl_cms_encrypt(lua_State *L)
 {
   STACK_OF(X509)* encerts =  CHECK_OBJECT(1, STACK_OF(X509), "openssl.stack_of_x509");
   BIO* in = load_bio_object(L, 2);
-  const EVP_CIPHER* ciphers = get_cipher(L, 3);
+  const EVP_CIPHER* ciphers = get_cipher(L, 3, NULL);
   unsigned int flags = luaL_optint(L, 4, 0);
 
   int ret = 1;

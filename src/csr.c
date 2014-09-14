@@ -174,6 +174,7 @@ static LUA_FUNCTION(openssl_csr_verify)
   X509_REQ *csr = CHECK_OBJECT(1, X509_REQ, "openssl.x509_req");
   EVP_PKEY * self_key = X509_REQ_get_pubkey(csr);
   lua_pushboolean(L, X509_REQ_verify(csr, self_key));
+  EVP_PKEY_free(self_key);
   return 1;
 };
 
@@ -240,6 +241,7 @@ static LUA_FUNCTION(openssl_csr_sign)
     /* 3) */
     X509_set_serialNumber(new_cert, BN_to_ASN1_INTEGER(bn, X509_get_serialNumber(new_cert)));
     X509_set_subject_name(new_cert, X509_REQ_get_subject_name(csr));
+    BN_free(bn);
   }
 
 

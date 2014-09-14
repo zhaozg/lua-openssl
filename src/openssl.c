@@ -154,9 +154,6 @@ static LUA_FUNCTION(openssl_random_bytes)
 
   char *buffer = NULL;
   int ret = 0;
-  if(!RAND_status()) {
-    luaL_error(L, "Fail to init random routines");
-  }
 
   if (length <= 0)
   {
@@ -167,35 +164,29 @@ static LUA_FUNCTION(openssl_random_bytes)
   if (strong)
   {
     ret = RAND_bytes((byte*)buffer, length);
-    if (ret)
+    if (ret == 1)
     {
       lua_pushlstring(L, buffer, length);
-      lua_pushboolean(L, 1);
-      ret = 2;
     }
     else
     {
       lua_pushboolean(L, 0);
-      ret = 1;
     }
   }
   else
   {
     ret = RAND_pseudo_bytes((byte*)buffer, length);
-    if (ret >= 0)
+    if (ret == 1)
     {
       lua_pushlstring(L, buffer, length);
-      lua_pushboolean(L, ret);
-      ret = 2;
     }
     else
     {
       lua_pushboolean(L, 0);
-      ret = 1;
     }
   }
   free(buffer);
-  return ret;
+  return 1;
 }
 
 static int openssl_object(lua_State* L)
@@ -239,12 +230,25 @@ static int openssl_object(lua_State* L)
   return 1;
 }
 
+static int openssl_mem_leaks(lua_State*L)
+{
+  BIO *bio = BIO_new(BIO_s_mem());
+  BUF_MEM* mem;
+
+  CRYPTO_mem_leaks(bio);
+  BIO_get_mem_ptr(bio, &mem);
+  lua_pushlstring(L, mem->data, mem->length);
+  BIO_free(bio);
+  return 1;
+}
+
 static const luaL_Reg eay_functions[] =
 {
   {"version",     openssl_version},
   {"list",        openssl_list},
   {"hex",         openssl_hex},
-  
+  {"mem_leaks",   openssl_mem_leaks},
+
   {"rand_status", openssl_random_status},
   {"rand_load",   openssl_random_load},
   {"rand_write",  openssl_random_write},
@@ -349,6 +353,8 @@ LUA_API int luaopen_openssl(lua_State*L)
   /* third part */
   luaopen_bn(L);
   lua_setfield(L, -2, "bn");
+
+  luaopen_rsa(L);
 
   return 1;
 }

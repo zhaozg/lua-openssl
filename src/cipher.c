@@ -24,7 +24,7 @@ static LUA_FUNCTION(openssl_cipher_list)
 
 static LUA_FUNCTION(openssl_cipher_get)
 {
-  const EVP_CIPHER* cipher = get_cipher(L, 1);
+  const EVP_CIPHER* cipher = get_cipher(L, 1, NULL);
 
   if (cipher)
     PUSH_OBJECT((void*)cipher, "openssl.evp_cipher");
@@ -48,7 +48,7 @@ static LUA_FUNCTION(openssl_evp_encrypt)
       luaL_error(L, "call function with invalid state");
   }
 
-  cipher = get_cipher(L, 1);
+  cipher = get_cipher(L, 1, NULL);
   if (cipher)
   {
     size_t input_len = 0;
@@ -120,7 +120,7 @@ static LUA_FUNCTION(openssl_evp_decrypt)
     else
       luaL_error(L, "call function with invalid state");
   }
-  cipher = get_cipher(L, 1);
+  cipher = get_cipher(L, 1, NULL);
   if (cipher)
   {
     size_t input_len = 0;
@@ -190,7 +190,7 @@ static LUA_FUNCTION(openssl_evp_cipher)
       luaL_error(L, "call function with invalid state");
   }
 
-  cipher = get_cipher(L, 1);
+  cipher = get_cipher(L, 1, NULL);
 
   if (cipher)
   {
@@ -252,7 +252,7 @@ typedef enum
 
 static LUA_FUNCTION(openssl_cipher_new)
 {
-  const EVP_CIPHER* cipher = get_cipher(L, 1);
+  const EVP_CIPHER* cipher = get_cipher(L, 1, NULL);
   if (cipher)
   {
     int enc = lua_toboolean(L, 2);
@@ -295,7 +295,7 @@ static LUA_FUNCTION(openssl_cipher_new)
 
 static LUA_FUNCTION(openssl_cipher_encrypt_new)
 {
-  const EVP_CIPHER* cipher  = get_cipher(L, 1);
+  const EVP_CIPHER* cipher  = get_cipher(L, 1, NULL);
   if (cipher)
   {
     size_t key_len = 0;
@@ -337,7 +337,7 @@ static LUA_FUNCTION(openssl_cipher_encrypt_new)
 
 static LUA_FUNCTION(openssl_cipher_decrypt_new)
 {
-  const EVP_CIPHER* cipher = get_cipher(L, 1);
+  const EVP_CIPHER* cipher = get_cipher(L, 1, NULL);
   if (cipher)
   {
     size_t key_len = 0;

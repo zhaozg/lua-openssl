@@ -193,7 +193,7 @@ static LUA_FUNCTION(openssl_bio_new_filter)
     break;
   case 2:
   {
-    const EVP_CIPHER* c = get_cipher(L, 2);
+    const EVP_CIPHER* c = get_cipher(L, 2, NULL);
     size_t kl, il;
     const char* k = luaL_checklstring(L, 3, &kl);
     const char* v = luaL_checklstring(L, 4, &il);
@@ -350,7 +350,12 @@ static LUA_FUNCTION(openssl_bio_close)
 static LUA_FUNCTION(openssl_bio_free)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
-  BIO_free(bio);
+  if(bio) {
+    BIO_free(bio);
+    lua_pushnil(L);
+    lua_replace(L, 1);
+    bio = NULL;
+  }
   return 0;
 }
 

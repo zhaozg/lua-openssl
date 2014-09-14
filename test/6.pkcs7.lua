@@ -1,4 +1,4 @@
-
+io.read()
 local csr = require'openssl'.csr
 local print_r = require'function.print_r'
 
@@ -62,6 +62,8 @@ end
 
 io.read()
 local lu = LuaUnit
-lu:setVerbosity( 1 )
+lu:setVerbosity( 0 )
+for i=1,1000000 do
 lu:run()
+end
 print(openssl.error(true))

@@ -1,6 +1,6 @@
 local uv = require('luv')
 local ssl = require('luv.ssl')
-
+io.read()
 -----------------------------------------------
 local count = 0
 local ncount = 20000
@@ -17,6 +17,8 @@ end
 
 setInterval(function()
 	print(os.date(),count)
+	print(ssl.error())
+	collectgarbage()
 end,
 1000)
 --------------------------------------------------------------
@@ -44,33 +46,33 @@ local ctx = ssl.new_ctx({
 local new_connection
 
 function new_connection(i)
-	local scli = ssl.connect(address.address,address.port,ctx, function(scli)
+	local scli = ssl.connect(address.address,address.port,ctx, function(self)
 		count = count + 1
-		
-		--scli:write('GET / HTTP/1.0\r\n\r\n')
+		self:close()		
+		--self:write('GET / HTTP/1.0\r\n\r\n')
 		if count <= ncount then
 			new_connection(i)
 		end
 		--]]
 	end)
 
-		
-		function scli:ondata(chunk)
-			--print(chunk)
-		end
-		
-		function scli:onerror(err)
-			print('onerror',err)
-		end
-		
-		function scli:onend()
-			--print('onend********8')
-			--count = count -1
-			scli:close()
-		end
-		function scli:onclose()
-			scli:close()
-		end
+	function scli:ondata(chunk)
+		--print(chunk)
+	end
+	
+	function scli:onerror(err)
+		print('onerror',err)
+	end
+	
+	function scli:onend()
+		--print('onend********8')
+		--count = count -1
+		scli:close()
+	end
+	function scli:onclose()
+		count = count -1
+		--print('closed')
+	end
 	return scli
 end
 

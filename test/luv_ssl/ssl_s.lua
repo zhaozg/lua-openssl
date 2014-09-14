@@ -16,6 +16,8 @@ end
 
 setInterval(function()
 	print(os.date(),count)
+	print(ssl.error())
+	collectgarbage()
 end,
 1000)
 --]]
@@ -55,34 +57,38 @@ end
 local p = print
 local server = create_server(address.address, address.port, function (client)
 
-	local srv = ssl.new_ssl(ctx,client,true)
-	srv:handshake(function(self)
+	uv.read_start(client)
+	local scli = ssl.new_ssl(ctx,client,true)
+	scli:handshake(function(self)
 		count = count + 1
+		self:close()
 	end)
 
-	function srv:ondata(chunk)
+	function scli:ondata(chunk)
 		print("ondata", chunk)
 		uv.write(client, chunk, function ()
 		  print("written", chunk)
 		end)
 	end
-	
-	function srv:onend()
+	function scli:onerror(err)
+		print('onerr',err,ssl.error())
+	end
+
+	--[[
+	function scli:onend()
 		print("onend")
 		uv.shutdown(client, function ()
 		  print("onshutdown")
 		  uv.close(client)
 		end)
 	end
-	
-	function srv:onclose()
+	--]]
+	--[[
+	function scli:onclose()
 		print("client onclose")
+		srv:close()
 	end
-
-	function srv:onerror(err)
-		print('onerr',err,ssl.error())
-	end
-	uv.read_start(client)
+	--]]
 end)
 function server:onclose()
   p("server closed")

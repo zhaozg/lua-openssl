@@ -1163,7 +1163,13 @@ static int openssl_ssl_peer(lua_State*L)
 static int openssl_ssl_gc(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
-  SSL_free(s);
+  if (s) {
+    openssl_freevalue(L, s);
+    SSL_free(s);
+    lua_pushnil(L);
+    lua_replace(L,1);
+  }
+
   return 0;
 }
 
@@ -1765,6 +1771,7 @@ static luaL_Reg ssl_funcs[] =
   {"set_connect_state", openssl_ssl_set_connect_state},
   {"set_accept_state",  openssl_ssl_set_accept_state},
 
+  {"free",      openssl_ssl_gc},
   {"__gc",      openssl_ssl_gc},
   {"__tostring",    auxiliar_tostring},
 

@@ -59,7 +59,7 @@ const EVP_MD* get_digest(lua_State* L, int idx)
 
   return md;
 }
-const EVP_CIPHER* get_cipher(lua_State*L, int idx)
+const EVP_CIPHER* get_cipher(lua_State*L, int idx,const char* def_alg)
 {
   const EVP_CIPHER* cipher = NULL;
   if (lua_isstring(L, idx))
@@ -70,8 +70,12 @@ const EVP_CIPHER* get_cipher(lua_State*L, int idx)
     cipher = EVP_get_cipherbyobj(CHECK_OBJECT(1, ASN1_OBJECT, "openssl.asn1_object"));
   else if (auxiliar_isclass(L, "openssl.evp_cipher", idx))
     cipher = CHECK_OBJECT(idx, EVP_CIPHER, "openssl.evp_cipher");
+  else if (lua_isnoneornil(L, idx) && def_alg)
+    cipher = EVP_get_cipherbyname(def_alg);
   else
-    luaL_error(L, "argument #1 must be a string, NID number or ans1_object identify cipher method");
+    luaL_argerror(L, idx, "must be a string, NID number or ans1_object identify cipher method");
+  if (cipher==NULL)
+    luaL_argerror(L, idx, "not valid cipher alg");
 
   return cipher;
 }

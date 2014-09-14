@@ -88,6 +88,7 @@ LUA_API LUA_FUNCTION(luaopen_ocsp);
 LUA_API LUA_FUNCTION(luaopen_cms);
 LUA_API LUA_FUNCTION(luaopen_ssl);
 LUA_API LUA_FUNCTION(luaopen_ec);
+LUA_API LUA_FUNCTION(luaopen_rsa);
 
 
 void openssl_add_method_or_alias(const OBJ_NAME *name, void *arg) ;
