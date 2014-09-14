@@ -3,6 +3,7 @@ local openssl=require'openssl'
 local ssl = openssl.ssl
 local bio = openssl.bio
 local bit = require'bit'
+local print = print
 
 local M = {}
 
@@ -88,6 +89,13 @@ S.__index = {
                     self:close()
                 end
             end
+            function self.socket.onend()
+                if self.onend then
+                    self:onend()
+                else
+                    self:close()
+                end
+            end
             uv.read_start(self.socket)
             self.connecting = true
 		end
@@ -141,19 +149,25 @@ S.__index = {
 
 		return self.connected
 	end,
-    shutdown = function(self,both)
-        self.ssl:shutdown()
+    shutdown = function(self,callback)
+        if not self.shutdown then
+            self.ssl:shutdown()
+            self.socket:shutdown()
+            if callback then
+                callback(self)
+            end
+            self.shutdown = true
+        end
     end,
     close = function(self)
         if self.connected then
-            self.connected = nil
-            if (self.onclose) then
-                self.onclose(self)
-            end
+            self:shutdown()
+            self.ssl:free()
             self.inp:close()
             self.out:close()
-            self.inp = nil
-            self.out = nil
+            self.out,self.inp = nil,nil
+            uv.close(self.socket)
+            self.connected = nil
         end
     end,
     write = function(self,data,cb)
