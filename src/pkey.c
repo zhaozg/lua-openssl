@@ -694,9 +694,6 @@ static LUA_FUNCTION(openssl_pkey_parse)
 
     AUXILIAR_SET(L, -1, "bits", EVP_PKEY_bits(pkey), integer);
     AUXILIAR_SET(L, -1, "size", EVP_PKEY_size(pkey), integer);
-    /*TODO: Use the real values once the openssl constants are used
-    * See the enum at the top of this file
-    */
 
     switch (EVP_PKEY_type(pkey->type))
     {
@@ -717,33 +714,18 @@ static LUA_FUNCTION(openssl_pkey_parse)
     case EVP_PKEY_DSA4:
     {
       DSA* dsa = EVP_PKEY_get1_DSA(pkey);
-      lua_newtable(L);
-      OPENSSL_PKEY_GET_BN(dsa->p, p);
-      OPENSSL_PKEY_GET_BN(dsa->q, q);
-      OPENSSL_PKEY_GET_BN(dsa->g, g);
-      OPENSSL_PKEY_GET_BN(dsa->priv_key, priv_key);
-      OPENSSL_PKEY_GET_BN(dsa->pub_key, pub_key);
-
       PUSH_OBJECT(dsa, "openssl.dsa");
-      lua_rawseti(L, -2, 0);
-
       lua_setfield(L, -2, "dsa");
+
       AUXILIAR_SET(L, -1, "type", "dsa", string);
     }
     break;
     case EVP_PKEY_DH:
     {
       DH* dh = EVP_PKEY_get1_DH(pkey);
-      lua_newtable(L);
-      OPENSSL_PKEY_GET_BN(dh->p, p);
-      OPENSSL_PKEY_GET_BN(dh->g, g);
-      OPENSSL_PKEY_GET_BN(dh->priv_key, priv_key);
-      OPENSSL_PKEY_GET_BN(dh->pub_key, pub_key);
-
       PUSH_OBJECT(dh, "openssl.dh");
       lua_rawseti(L, -2, 0);
 
-      lua_setfield(L, -2, "dh");
       AUXILIAR_SET(L, -1, "type", "dh", string);
     }
 
@@ -752,25 +734,9 @@ static LUA_FUNCTION(openssl_pkey_parse)
     case EVP_PKEY_EC:
     {
       const EC_KEY* ec = EVP_PKEY_get1_EC_KEY(pkey);
-      const EC_POINT* point = EC_KEY_get0_public_key(ec);
-      const EC_GROUP* group = EC_KEY_get0_group(ec);
-      const BIGNUM *priv = EC_KEY_get0_private_key(ec);
-      lua_newtable(L);
-
-      AUXILIAR_SET(L, -1, "enc_flag", EC_KEY_get_enc_flags(ec), integer);
-      AUXILIAR_SET(L, -1, "conv_form", EC_KEY_get_conv_form(ec), integer);
-
-      point = EC_POINT_dup(point, group);
-      AUXILIAR_SETOBJECT(L, point, "openssl.ec_point", -1, "pub_key");
-      group = EC_GROUP_dup(group);
-      AUXILIAR_SETOBJECT(L, group, "openssl.ec_group", -1, "group");
-
-      OPENSSL_PKEY_GET_BN(priv, priv_key);
-
       PUSH_OBJECT(ec, "openssl.ec_key");
-      lua_rawseti(L, -2, 0);
-
       lua_setfield(L, -2, "ec");
+
       AUXILIAR_SET(L, -1, "type", "ec", string);
     }
 
@@ -1082,11 +1048,11 @@ static LUA_FUNCTION(openssl_seal)
     char iv[EVP_MAX_MD_SIZE] = {0};
     int ivlen = 0;
 
-    pkeys = malloc(nkeys * sizeof(*pkeys));
-    eksl = malloc(nkeys * sizeof(*eksl));
-    eks = malloc(nkeys * sizeof(*eks));
+    pkeys = malloc(nkeys * sizeof(EVP_PKEY *));
+    eksl = malloc(nkeys * sizeof(int));
+    eks = malloc(nkeys * sizeof(char*));
 
-    memset(eks, 0, sizeof(*eks) * nkeys);
+    memset(eks, 0, sizeof(char*) * nkeys);
 
     /* get the public keys we are using to seal this data */
     if (lua_istable(L, 1))
@@ -1113,14 +1079,11 @@ static LUA_FUNCTION(openssl_seal)
       eks[0] = malloc(eksl[0]);
     }
     EVP_CIPHER_CTX_init(&ctx);
-    if (!EVP_EncryptInit(&ctx, cipher, NULL, NULL))
-    {
-      luaL_error(L, "EVP_EncryptInit failed");
-    }
 
     /* allocate one byte extra to make room for \0 */
-    len1 = data_len + EVP_CIPHER_CTX_block_size(&ctx) + 1;
-    buf = malloc(data_len + EVP_CIPHER_CTX_block_size(&ctx));
+    len1 = data_len + EVP_CIPHER_block_size(cipher) + 1;
+    buf = malloc(len1);
+
 
     if (!EVP_SealInit(&ctx, cipher, eks, eksl, iv, pkeys, nkeys) || !EVP_SealUpdate(&ctx, buf, &len1, (unsigned char *)data, data_len))
     {
@@ -1334,14 +1297,12 @@ static LUA_FUNCTION(openssl_open)
       if (!EVP_OpenFinal(&ctx, buf + len1, &len2) || (len1 + len2 == 0))
       {
         luaL_error(L, "EVP_OpenFinal() failed.");
-        free(buf);
         ret = 0;
       }
     }
     else
     {
       luaL_error(L, "EVP_OpenInit() failed.");
-      free(buf);
       ret = 0;
     }
     EVP_CIPHER_CTX_cleanup(&ctx);

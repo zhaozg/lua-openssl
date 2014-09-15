@@ -209,15 +209,38 @@ static int openssl_ec_key_free(lua_State*L)
 {
   EC_KEY* p = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
   EC_KEY_free(p);
+  lua_pushnil(L);
+  lua_setmetatable(L, 1);
   return 0;
 }
 
+static int openssl_ec_key_parse(lua_State*L){
+  EC_KEY* ec = CHECK_OBJECT(1,EC_KEY,"openssl.ec_key");
+
+  const EC_POINT* point = EC_KEY_get0_public_key(ec);
+  const EC_GROUP* group = EC_KEY_get0_group(ec);
+  const BIGNUM *priv = EC_KEY_get0_private_key(ec);
+  lua_newtable(L);
+
+  AUXILIAR_SET(L, -1, "enc_flag", EC_KEY_get_enc_flags(ec), integer);
+  AUXILIAR_SET(L, -1, "conv_form", EC_KEY_get_conv_form(ec), integer);
+
+  point = EC_POINT_dup(point, group);
+  AUXILIAR_SETOBJECT(L, point, "openssl.ec_point", -1, "pub_key");
+  group = EC_GROUP_dup(group);
+  AUXILIAR_SETOBJECT(L, group, "openssl.ec_group", -1, "group");
+
+  OPENSSL_PKEY_GET_BN(priv, priv_key);
+  return 1;
+};
+
 static luaL_Reg ec_key_funs[] =
 {
-  {"__tostring", auxiliar_tostring},
-  {"sign", openssl_ecdsa_sign},
-  {"verify", openssl_ecdsa_verify},
-  {"__gc", openssl_ec_key_free},
+  {"parse",       openssl_ec_key_parse},
+  {"sign",        openssl_ecdsa_sign},
+  {"verify",      openssl_ecdsa_verify},
+  {"__gc",        openssl_ec_key_free},
+  {"__tostring",  auxiliar_tostring},
 
   { NULL, NULL }
 };

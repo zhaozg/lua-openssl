@@ -355,6 +355,8 @@ LUA_API int luaopen_openssl(lua_State*L)
   lua_setfield(L, -2, "bn");
 
   luaopen_rsa(L);
+  luaopen_dsa(L);
+  luaopen_dh(L);
 
   return 1;
 }
