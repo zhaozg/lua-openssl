@@ -20,8 +20,8 @@ TestCompat = {}
 function TestCompat:testNew()
         local pkey = assert(openssl.pkey.new())
         local req = assert(csr.new(pkey,self.dn))
-        t = req:parse()
-        print_r(t)
+        --t = req:parse()
+        --print_r(t)
 
         assert(req:verify());
 
@@ -38,9 +38,7 @@ function TestCompat:testNew()
         args.serialNumber = 1
         cacert = assert(req:sign(nil,pkey,args))
 
-        print('Self Sign Cert',string.rep('-',60))
-        print_r(cacert:parse());
-
+        --print_r(cacert:parse());
         local list = assert(crl.new(cacert))
 
         assert(list:add('1234',os.time()))
@@ -55,10 +53,13 @@ function TestCompat:testNew()
         assert(list:sign(pkey))
         assert(list:verify(cacert))
         assert(list:export())
+
 end
 
 io.read()
 local lu = LuaUnit
-lu:setVerbosity( 1 )
+lu:setVerbosity( 0 )
+for i=1,1000000 do
 lu:run()
+end
 
