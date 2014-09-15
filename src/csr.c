@@ -181,18 +181,17 @@ static LUA_FUNCTION(openssl_csr_verify)
 static LUA_FUNCTION(openssl_csr_sign)
 {
   X509_REQ *csr = CHECK_OBJECT(1, X509_REQ, "openssl.x509_req");
-  EVP_PKEY * self_key = X509_REQ_get_pubkey(csr);
+  EVP_PKEY *self_key = X509_REQ_get_pubkey(csr);
 
   X509 *cacert = lua_isnil(L, 2) ? NULL : CHECK_OBJECT(2, X509, "openssl.x509");
   EVP_PKEY *priv_key = CHECK_OBJECT(3, EVP_PKEY, "openssl.evp_pkey");
 
   X509 *new_cert = NULL;
-  const EVP_MD* md = NULL;
+  const EVP_MD *md = NULL;
   int num_days = 365;
 
-  luaL_checktype(L, 4, LUA_TTABLE);
 
-  if (X509_REQ_verify(csr, self_key) <= 0)
+  if (X509_REQ_verify(csr, self_key) == 0)
     luaL_error(L, "CSR Signature verification fail");
 
   if (cacert && !X509_check_private_key(cacert, priv_key))
@@ -200,17 +199,16 @@ static LUA_FUNCTION(openssl_csr_sign)
 
   /* Now we go on make it */
   /* 1) */
+  luaL_checktype(L, 4, LUA_TTABLE);
   {
     BIGNUM *bn = NULL;
 
     int version = 2;
-
-
     lua_getfield(L, 4, "serialNumber");
-    if (lua_isnil(L, -1) || (bn = BN_get(L, -1)) == NULL)
+    bn = BN_get(L, -1);
+    if (bn == NULL)
       luaL_argerror(L, 4, "must have serialNumber key and value is string or number type");
     lua_pop(L, 1);
-
     BN_set_negative(bn, 0);
 
     lua_getfield(L, 4, "digest");
@@ -241,7 +239,6 @@ static LUA_FUNCTION(openssl_csr_sign)
     /* 3) */
     X509_set_serialNumber(new_cert, BN_to_ASN1_INTEGER(bn, X509_get_serialNumber(new_cert)));
     X509_set_subject_name(new_cert, X509_REQ_get_subject_name(csr));
-    BN_free(bn);
   }
 
 
@@ -263,6 +260,7 @@ static LUA_FUNCTION(openssl_csr_sign)
   /* 6 */
   if (!X509_set_pubkey(new_cert, self_key))
     luaL_error(L, "fail X509_set_pubkey");
+  EVP_PKEY_free(self_key);
 
   copy_extensions(new_cert, csr, 1);
   if (!lua_isnoneornil(L, 5))

@@ -17,12 +17,10 @@ TestMY = {}
     function TestMY:setUp()
         self.genalg = {
                 {nil}, --default to create rsa 1024 bits with 65537
---[[
-                {'rsa',2048,3}, --create rsa with give bits length and e
+                {'rsa',1024,3}, --create rsa with give bits length and e
                 {'dsa',512},
                 {'dh',512},
                 {'ec','prime256v1'}
---]]
         }
 
     end
@@ -44,13 +42,11 @@ TestMY = {}
 
                         assertEquals(len,#out)
                         assertEquals(msg,raw)
-                        BUG local out,sk,iv = pkey.seal(k1,msg)
-                        --[[
+
+                        local out,sk,iv = pkey.seal(k1,msg)
                         local raw = pkey.open(k,out,sk,iv)
                         assertEquals(msg,raw)
-                        --]]
                 end
---[[
                 if t.type ~='dh' then
                         local sig = pkey.sign(k,msg)
                         assert(true==pkey.verify(k1,msg,sig))
@@ -60,10 +56,9 @@ TestMY = {}
                         local sig = k:sign(msg)
                         assert(true==k1:verify(msg,sig))
                 end
---]]
+
                 assert(k1:export())
                 assert(k:export())
-
 
                 assertEquals(k1:export(),k:export())
                 assertEquals(k1:export(false),k:export())
@@ -91,7 +86,6 @@ TestMY = {}
 io.read()
 local lu = LuaUnit
 lu:setVerbosity( 0 )
-for i=1,100000 do
+
 lu:run()
-end
 print(openssl.mem_leaks())

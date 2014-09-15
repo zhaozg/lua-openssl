@@ -124,7 +124,8 @@ static LUA_FUNCTION(openssl_pkcs7_verify)
     X509_STORE_free(store);
   if (out)
     BIO_free(out);
-
+  if (in)
+    BIO_free(in);
   return ret;
 }
 
@@ -133,8 +134,7 @@ static LUA_FUNCTION(openssl_pkcs7_encrypt)
   PKCS7 * p7 = NULL;
   BIO *infile = load_bio_object(L, 1);
   STACK_OF(X509) *recipcerts = CHECK_OBJECT(2, STACK_OF(X509), "openssl.stack_of_x509");
-  const EVP_CIPHER *cipher = lua_isnoneornil(L, 3) ? EVP_get_cipherbyname("des3")
-                             : CHECK_OBJECT(3, EVP_CIPHER, "openssl.evp_cipher");
+  const EVP_CIPHER *cipher = get_cipher(L, 3, "des3");
   long flags = luaL_optint(L, 4, 0);
 
   if (cipher == NULL)
@@ -142,8 +142,8 @@ static LUA_FUNCTION(openssl_pkcs7_encrypt)
     luaL_error(L, "Failed to get cipher");
   }
 
-  p7 = PKCS7_encrypt(recipcerts, infile, (EVP_CIPHER*)cipher, flags);
-  BIO_reset(infile);
+  p7 = PKCS7_encrypt(recipcerts, infile, cipher, flags);
+  BIO_free(infile);
 
   if (p7 == NULL)
   {
@@ -153,6 +153,7 @@ static LUA_FUNCTION(openssl_pkcs7_encrypt)
   {
     PUSH_OBJECT(p7, "openssl.pkcs7");
   }
+
   return 1;
 }
 
