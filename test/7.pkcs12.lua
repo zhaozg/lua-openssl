@@ -30,7 +30,6 @@ function TestCompat:testNew()
         cacert = assert(req:sign(nil,pkey,args))
         args.serialNumber = 2
 
---[[
         local pkey1 = assert(openssl.pkey.new())
         local req1 = assert(csr.new(pkey1,{CN='user'}))
         cert1 = assert(req1:sign(cert,pkey,args))
@@ -39,8 +38,8 @@ function TestCompat:testNew()
 
         local ss = assert(openssl.pkcs12.export(cert1,pkey1,'secret','USER'))
         local tt = assert(openssl.pkcs12.read(ss,'secret'))
-        print_r(tt)
---]]        
+--        print_r(tt)
+
 end
 
 io.read()

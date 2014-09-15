@@ -23,6 +23,7 @@ static LUA_FUNCTION(openssl_pkcs12_export)
   PKCS12 * p12 = NULL;
   const char * friendly_name = NULL;
   STACK_OF(X509) *ca = NULL;
+  int ret = 0;
 
   if (top > 3)
   {
@@ -58,38 +59,33 @@ static LUA_FUNCTION(openssl_pkcs12_export)
 
     BIO_get_mem_ptr(bio_out, &bio_buf);
     lua_pushlstring(L, bio_buf->data, bio_buf->length);
-    BIO_free(bio_out);
-    PKCS12_free(p12);
-    return 1;
+    ret = 1;
   }
+  BIO_free(bio_out);
   PKCS12_free(p12);
 
-  return 0;
+  return ret;
 }
 
 static LUA_FUNCTION(openssl_pkcs12_read)
 {
-  const char *pass, *zp12;
-  size_t zp12_len;
   PKCS12 * p12 = NULL;
   EVP_PKEY * pkey = NULL;
   X509 * cert = NULL;
   STACK_OF(X509) * ca = NULL;
-  BIO * bio_in = NULL;
+  int ret = 0;
+
   int base64 = 0;
   int olb64 = 0;
   BIO * b64 = NULL;
 
-  zp12 = luaL_checklstring(L, 1, &zp12_len);
-  pass = luaL_checkstring(L, 2);
+  BIO * bio_in = load_bio_object(L, 1);
+  const char *pass = luaL_checkstring(L, 2);
   if (!lua_isnoneornil(L, 3))
     base64 = auxiliar_checkboolean(L, 3);
   if (!lua_isnoneornil(L, 4))
     olb64 = auxiliar_checkboolean(L, 4);
 
-  bio_in = BIO_new(BIO_s_mem());
-  BIO_write(bio_in, (void*)zp12, zp12_len);
-  BIO_set_close(bio_in, BIO_NOCLOSE);
   if (base64)
   {
     if ((b64 = BIO_new(BIO_f_base64())) == NULL)
@@ -106,9 +102,13 @@ static LUA_FUNCTION(openssl_pkcs12_read)
     AUXILIAR_SETOBJECT(L, pkey, "openssl.evp_pkey" , -1, "pkey");
     AUXILIAR_SETOBJECT(L, ca, "openssl.stack_of_x509" , -1, "extracerts");
 
-    return 1;
+    ret = 1;
   }
-  return 0;
+  if(b64)
+    BIO_free(b64);
+  BIO_free(bio_in);
+  PKCS12_free(p12);
+  return ret;
 }
 
 static luaL_reg R[] =
