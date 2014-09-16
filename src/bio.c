@@ -151,7 +151,6 @@ static int openssl_bio_new_connect(lua_State *L)
   if (bio)
   {
     int ret = 1;
-
     if (doconn)
     {
       ret = BIO_do_connect(bio);
@@ -168,7 +167,6 @@ static int openssl_bio_new_connect(lua_State *L)
       luaL_error(L, "Error creating connection to remote machine");
     }
   }
-
 
   if (!bio)
     luaL_error(L, "Error creating connection BIO");
@@ -237,18 +235,24 @@ static LUA_FUNCTION(openssl_bio_new_filter)
 static LUA_FUNCTION(openssl_bio_read)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
-  int len = luaL_optint(L, 2, 2048);
-  char* buf = malloc(len);
+  int len = luaL_optint(L, 2, BIO_pending(bio));
+  char* buf = NULL;
   int ret = 1;
 
+  len = len>0 ? len : 4096;
+  buf = malloc(len);
   len = BIO_read(bio, buf, len);
-  if (len >= 0)
+
+  if (len>0)
   {
     lua_pushlstring(L, buf, len);
     ret = 1;
   }
-  else
+  else if(BIO_should_retry(bio))
   {
+    lua_pushlstring(L, buf, 0);
+    ret = 1;
+  }else{
     lua_pushnil(L);
     lua_pushinteger(L, len);
     ret = 2;
@@ -260,21 +264,23 @@ static LUA_FUNCTION(openssl_bio_read)
 static LUA_FUNCTION(openssl_bio_gets)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
-  int len = luaL_optint(L, 2, 256);
+  int len = luaL_optint(L, 2, BIO_pending(bio));
   char* buf;
   int ret = 1;
+  len = len > 0 ? len : 1024;
 
-  if (len <= 0)
-    luaL_error(L, "#2 paramater msut be positive number");
   buf = malloc(len);
   len = BIO_gets(bio, buf, len);
-  if (len >= 0)
+  if (len > 0)
   {
     lua_pushlstring(L, buf, len);
     ret = 1;
   }
-  else
+  else if(BIO_should_retry(bio))
   {
+    lua_pushstring(L,"");
+    ret = 1;
+  }else{
     lua_pushnil(L);
     lua_pushinteger(L, len);
     ret = 2;
@@ -293,9 +299,13 @@ static LUA_FUNCTION(openssl_bio_write)
   int len = luaL_optint(L, 3, size);
 
   len = BIO_write(bio, d, len);
-  if (len >= 0)
+  if (len > 0)
   {
     lua_pushinteger(L, len);
+    ret = 1;
+  }else if(BIO_should_retry(bio))
+  {
+    lua_pushinteger(L, 0);
     ret = 1;
   }
   else
@@ -314,13 +324,16 @@ static LUA_FUNCTION(openssl_bio_puts)
   int ret = 1;
   int len = BIO_puts(bio, s);
 
-  if (len >= 0)
+  if (len > 0)
   {
     lua_pushinteger(L, len);
     ret = 1;
   }
-  else
+  else if(BIO_should_retry(bio))
   {
+    lua_pushinteger(L, 0);
+    ret = 1;
+  } else {
     lua_pushnil(L);
     lua_pushinteger(L, len);
     ret = 2;
@@ -341,8 +354,9 @@ static LUA_FUNCTION(openssl_bio_close)
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
   BIO_shutdown_wr(bio);
   BIO_set_close(bio, 1);
+  BIO_free(bio);
   lua_pushnil(L);
-  lua_replace(L, 1);
+  lua_setmetatable(L,1);
   return 0;
 }
 
@@ -350,12 +364,9 @@ static LUA_FUNCTION(openssl_bio_close)
 static LUA_FUNCTION(openssl_bio_free)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
-  if(bio) {
-    BIO_free(bio);
-    lua_pushnil(L);
-    lua_replace(L, 1);
-    bio = NULL;
-  }
+  BIO_free(bio);
+  lua_pushnil(L);
+  lua_setmetatable(L,1);
   return 0;
 }
 
