@@ -354,9 +354,6 @@ static LUA_FUNCTION(openssl_bio_close)
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
   BIO_shutdown_wr(bio);
   BIO_set_close(bio, 1);
-  BIO_free(bio);
-  lua_pushnil(L);
-  lua_setmetatable(L,1);
   return 0;
 }
 
@@ -364,7 +361,22 @@ static LUA_FUNCTION(openssl_bio_close)
 static LUA_FUNCTION(openssl_bio_free)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
-  BIO_free(bio);
+  int all = 0;
+  
+  if(lua_isboolean(L,2))
+    all = lua_toboolean(L, 2);
+  else
+  {
+    openssl_getvalue(L, bio, "free_all");
+    all = lua_toboolean(L, -1);
+    lua_pop(L,1);
+  }
+
+  if(all)
+    BIO_free_all(bio);
+  else
+    BIO_free(bio);
+
   lua_pushnil(L);
   lua_setmetatable(L,1);
   return 0;
@@ -436,14 +448,6 @@ static LUA_FUNCTION(openssl_bio_pop)
   return 1;
 }
 
-static LUA_FUNCTION(openssl_bio_free_all)
-{
-  BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
-  BIO_free_all(bio);
-
-  return 0;
-}
-
 /* mem */
 static LUA_FUNCTION(openssl_bio_get_mem)
 {
@@ -475,6 +479,17 @@ static LUA_FUNCTION(openssl_bio_accept)
   else
     luaL_error(L, "BIO_do_accept fail");
 
+  return 0;
+}
+
+static LUA_FUNCTION(openssl_bio_ssl_shutdown){
+  BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
+
+  if (BIO_method_type(bio) & BIO_TYPE_SSL){
+    BIO_ssl_shutdown(bio);
+  }else if(BIO_method_type(bio) & (BIO_TYPE_SOCKET|BIO_TYPE_FD)) {
+    BIO_shutdown_wr(bio);
+  }
   return 0;
 }
 
@@ -633,14 +648,15 @@ static luaL_reg bio_funs[] =
   /* for filter bio */
   {"push",  openssl_bio_push  },
   {"pop",   openssl_bio_pop   },
-  {"free_all",    openssl_bio_free_all},
+  {"free",    openssl_bio_free},
 
   /* for mem */
   {"get_mem", openssl_bio_get_mem },
 
   /* network socket */
-  {"accept",  openssl_bio_accept },
-  {"connect", openssl_bio_connect },
+  {"accept",   openssl_bio_accept },
+  {"connect",  openssl_bio_connect },
+  {"shutdown", openssl_bio_ssl_shutdown},
   {"fd",      openssl_bio_fd },
 
   {"__tostring",  auxiliar_tostring },
