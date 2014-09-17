@@ -482,31 +482,41 @@ static LUA_FUNCTION(openssl_bio_accept)
   return 0;
 }
 
-static LUA_FUNCTION(openssl_bio_ssl_shutdown){
+static LUA_FUNCTION(openssl_bio_shutdown){
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
 
   if (BIO_method_type(bio) & BIO_TYPE_SSL){
     BIO_ssl_shutdown(bio);
   }else if(BIO_method_type(bio) & (BIO_TYPE_SOCKET|BIO_TYPE_FD)) {
-    BIO_shutdown_wr(bio);
+    BIO_shutdown_wr(bio);;
+  }else
+    luaL_error(L, "don't know how to shutdown");
+  return 0;
+}
+
+
+static LUA_FUNCTION(openssl_bio_get_ssl){
+  BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
+  SSL* ssl = NULL;
+  int ret = BIO_get_ssl(bio,&ssl);
+  if (ret==1)
+  {
+    PUSH_OBJECT(ssl,"openssl.ssl");
+    ssl->references++;
+    openssl_newvalue(L, ssl);
+    return 1;
   }
   return 0;
+
 }
 
 static LUA_FUNCTION(openssl_bio_connect)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
   int ret = BIO_do_connect(bio);
-  if (ret == 1)
-  {
-    PUSH_OBJECT(bio, "openssl.bio");
-    return 1;
-  }
-  else
-    luaL_error(L, "BIO_do_connect fail");
-
-  return 0;
+  return openssl_pushresult(L,ret);
 }
+
 static LUA_FUNCTION(openssl_bio_fd)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
@@ -654,10 +664,11 @@ static luaL_reg bio_funs[] =
   {"get_mem", openssl_bio_get_mem },
 
   /* network socket */
-  {"accept",   openssl_bio_accept },
-  {"connect",  openssl_bio_connect },
-  {"shutdown", openssl_bio_ssl_shutdown},
-  {"fd",      openssl_bio_fd },
+  {"accept",    openssl_bio_accept },
+  {"connect",   openssl_bio_connect },
+  {"shutdown",  openssl_bio_shutdown},
+  {"fd",        openssl_bio_fd },
+  {"ssl",       openssl_bio_get_ssl},
 
   {"__tostring",  auxiliar_tostring },
   {"__gc",  openssl_bio_free  },
