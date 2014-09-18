@@ -24,8 +24,8 @@ function TestCompat:testNew()
         req = assert(csr.new(pkey,self.cadn,self.attribs))
         req = assert(csr.new(pkey,self.cadn,self.attribs,self.extentions))
         req = assert(csr.new(pkey,self.cadn,self.attribs,self.extentions,self.digest))
-        t = req:parse()
-        print_r(t)
+        --t = req:parse()
+        --print_r(t)
 
         assert(req:verify());
 
@@ -42,12 +42,6 @@ function TestCompat:testNew()
         args.serialNumber = 1
         cert = assert(req:sign(nil,pkey,args))
 
-        print('Self Sign Cert',string.rep('-',60))
-
-        local c = pkey:encrypt('abcd')
-        local d = cert:get_public():decrypt(c)
-        assert(d=='abcd')
-
         local c = cert:get_public():encrypt('abcd')
         d = pkey:decrypt(c)
         assert(d=='abcd')
@@ -62,14 +56,10 @@ function TestCompat:testNew()
         local req1 = assert(csr.new(pkey1,self.dn))
         cert1 = assert(req1:sign(cert,pkey,args))
 
-        local c = pkey1:encrypt('abcd')
-        local d = cert1:get_public():decrypt(c)
-        assert(d=='abcd')
-
         local c = cert1:get_public():encrypt('abcd')
         d = pkey1:decrypt(c)
         assert(d=='abcd')
-        print_r(cert1:parse());
+        --print_r(cert1:parse());
         
         assert(cert1:check(pkey1),'self sign check failed')
         assert(cert1:check(openssl.x509.sk_x509_new({cert}) ))
@@ -80,6 +70,7 @@ function TestCompat:testNew()
                 print(openssl.error())
                 assert(false,"check verify ca")
         end
+        --]]
 end
 
 function TestCompat:testIO()
@@ -97,15 +88,16 @@ sggwDQYJKoZIhvcNAQEEBQADQQCU5SSgapJSdRXJoX+CpCvFy+JVh9HpSjCpSNKO
 -----END CERTIFICATE-----
 ]]
 
-        local x = x509.read(raw_data)
-        print(x)
-        t = x:parse()
-        print_r(t)
-        assert(x:get_public())
+        local x = assert(x509.read(raw_data))
+        --t = x:parse()
+        --print_r(t)
+        --assert(x:get_public())
 end
 
 io.read()
 local lu = LuaUnit
-lu:setVerbosity( 1 )
+lu:setVerbosity( 0 )
+for i=1,1000000 do
 lu:run()
+end
 

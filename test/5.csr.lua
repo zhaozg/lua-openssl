@@ -25,8 +25,8 @@ function TestCompat:testNew()
         req = assert(csr.new(pkey,self.dn,self.attribs))
         req = assert(csr.new(pkey,self.dn,self.attribs,self.extentions))
         req = assert(csr.new(pkey,self.dn,self.attribs,self.extentions,self.digest))
-        t = req:parse()
-        print_r(t)
+        --t = req:parse()
+        --print_r(t)
 
         assert(req:verify());
 
@@ -42,13 +42,7 @@ function TestCompat:testNew()
 
         args.serialNumber = 1
         cert = assert(req:sign(nil,pkey,args))
-
-        print('产生自签名证书',string.rep('-',60))
-        print_r(cert:parse());
-
-        local c = pkey:encrypt('abcd')
-        local d = cert:get_public():decrypt(c)
-        assert(d=='abcd')
+        --print_r(cert:parse());
 
         local c = cert:get_public():encrypt('abcd')
         d = pkey:decrypt(c)
@@ -71,13 +65,14 @@ wSpxg0VN6+i6u9C9n4xwCe1VyteOC2In0LbxMAGL3rVFm9yDFRU3LDy3EWG6DIg/
 -----END CERTIFICATE REQUEST-----
 ]]
 
-        local x = csr.read(csr_data)
-        print(x)
-        t = x:parse()
-        print_r(t)
+        local x = assert(csr.read(csr_data))
+        --t = x:parse()
+        --print_r(t)
 end
 
 io.read()
 local lu = LuaUnit
-lu:setVerbosity( 1 )
+lu:setVerbosity( 0 )
+for i=1,10000 do
 lu:run()
+end

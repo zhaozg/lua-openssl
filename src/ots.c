@@ -241,7 +241,6 @@ static LUA_FUNCTION(openssl_ts_sign)
   {
     TS_REQ *req = CHECK_OBJECT(2, TS_REQ, "openssl.ts_req");
     bio = BIO_new(BIO_s_mem());
-    BIO_set_close(bio, BIO_NOCLOSE);
     i2d_TS_REQ_bio(bio, req);
   }
 
@@ -433,7 +432,6 @@ static LUA_FUNCTION(openssl_ts_req_i2d)
   TS_REQ *req = CHECK_OBJECT(1, TS_REQ, "openssl.ts_req");
 
   BIO *bio = BIO_new(BIO_s_mem());
-  BIO_set_close(bio, BIO_NOCLOSE);
 
   if (i2d_TS_REQ_bio(bio, req))
   {
