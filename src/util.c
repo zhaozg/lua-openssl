@@ -17,6 +17,7 @@ int openssl_setvalue(lua_State*L, void*p, const char*field){
   lua_pushvalue(L, -2);
   lua_remove(L, -3);
   lua_setfield(L, -2, field);
+  lua_pop(L,1);
   return 0;
 }
 
