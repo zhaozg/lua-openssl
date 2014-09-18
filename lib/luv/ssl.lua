@@ -76,11 +76,7 @@ S.__index = {
 				self:handshake(connected_cb)
 			end
             function self.socket.onclose()
-                if self.onclose then
-                    self:onclose()
-                else
-                    self:close()
-                end
+                self:close()
             end
             function self.socket.onerror()
                 if self.onerror then
@@ -161,16 +157,27 @@ S.__index = {
     end,
     close = function(self)
         if self.connected then
+            if self.onclose then
+                self.onclose(self)
+            end
             self:shutdown()
-            self.ssl:free()
-            self.inp:close()
-            self.out:close()
+            if self.ssl then
+                self.ssl:shutdown()
+            end
+            self.ssl = nil
+            if self.inp then self.inp:close() end
+            if self.out then self.out:close() end
+
             self.out,self.inp = nil,nil
             uv.close(self.socket)
             self.connected = nil
+            self.socket = nil
         end
     end,
     write = function(self,data,cb)
+        if not self.ssl then
+            return
+        end
         local ret,err = self.ssl:write(data)
         if ret==nil then
             if self.onerror then
@@ -192,10 +199,10 @@ S.__index = {
 
 function M.new_ssl(ctx,socket,server)
     local s = {}
-    s.inp,s.out  =  bio.mem(),bio.mem()
+    s.inp,s.out  =  bio.mem(8192),bio.mem(8192)
     s.socket    =  socket
     s.mode = server and server or false
-    s.ssl = ctx:new(s.inp,s.out,s.mode)
+    s.ssl = ctx:ssl(s.inp,s.out,s.mode)
 	uv.tcp_nodelay(socket,true)
     
     setmetatable(s,S)
@@ -208,7 +215,7 @@ function M.connect(host,port,ctx,connected_cb)
     end
     local socket = uv.new_tcp()
     local scli = M.new_ssl(ctx, socket) 
-    
+
     uv.tcp_connect(socket, host, port, function(err)
 		scli:handshake(function(scli)
             if connected_cb then
@@ -221,7 +228,8 @@ function M.connect(host,port,ctx,connected_cb)
             scli:onend()
         end
     end
-    return scli    
+
+    return scli   
 end
 
 function M.error()

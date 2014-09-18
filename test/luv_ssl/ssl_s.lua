@@ -61,20 +61,16 @@ local server = create_server(address.address, address.port, function (client)
 	local scli = ssl.new_ssl(ctx,client,true)
 	scli:handshake(function(self)
 		count = count + 1
-		self:close()
 	end)
 
 	function scli:ondata(chunk)
 		print("ondata", chunk)
-		uv.write(client, chunk, function ()
-		  print("written", chunk)
-		end)
+		self:close()
 	end
 	function scli:onerror(err)
 		print('onerr',err,ssl.error())
 	end
 
-	--[[
 	function scli:onend()
 		print("onend")
 		uv.shutdown(client, function ()
@@ -82,14 +78,9 @@ local server = create_server(address.address, address.port, function (client)
 		  uv.close(client)
 		end)
 	end
-	--]]
-	--[[
-	function scli:onclose()
-		print("client onclose")
-		srv:close()
-	end
-	--]]
+
 end)
+
 function server:onclose()
   p("server closed")
 end

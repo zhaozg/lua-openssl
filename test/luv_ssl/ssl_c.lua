@@ -1,10 +1,11 @@
 local uv = require('luv')
 local ssl = require('luv.ssl')
-io.read()
 -----------------------------------------------
 local count = 0
-local ncount = 20000
+local ncount = arg[3] and tonumber(arg[3]) or 40000
+ncount = ncount or 40000
 local step = 1000/2
+local tmp = false
 
 local function setInterval(fn, ms)
   local handle = uv.new_timer()
@@ -23,19 +24,10 @@ end,
 1000)
 --------------------------------------------------------------
 local address = {
-	port = 4433,
-	address = '192.168.0.248'
+	port = arg[2] and tonumber(arg[2]) or 12456,
+	address = arg[1] and arg[1] or '127.0.0.1'
 }
-local address = {
-	port = 4433,
-	address = '192.168.0.155'
-}
----[[
-local address = {
-	port = 12456,
-	address = '127.0.0.1'
-}
---]]
+
 local ctx = ssl.new_ctx({
    protocol = "SSLv3_client",
    verify = {"none"},
@@ -46,14 +38,16 @@ local ctx = ssl.new_ctx({
 local new_connection
 
 function new_connection(i)
+
 	local scli = ssl.connect(address.address,address.port,ctx, function(self)
 		count = count + 1
-		self:close()		
-		--self:write('GET / HTTP/1.0\r\n\r\n')
+		self:write('GET / HTTP/1.0\r\n\r\n')
+		if tmp then
+			self:close()
+		end
 		if count <= ncount then
 			new_connection(i)
 		end
-		--]]
 	end)
 
 	function scli:ondata(chunk)
@@ -67,7 +61,7 @@ function new_connection(i)
 	function scli:onend()
 		--print('onend********8')
 		--count = count -1
-		scli:close()
+		self:close()
 	end
 	function scli:onclose()
 		count = count -1
@@ -78,8 +72,7 @@ end
 
 local conns = {}
 for i=1, step do 
-	conns[i] = new_connection(i)
---	print('create ',i,conns[i])
+	new_connection(i)
 end
 
 uv.run('default')
