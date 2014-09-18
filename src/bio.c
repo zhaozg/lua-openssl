@@ -67,13 +67,17 @@ static const char* close_flags[] =
 static LUA_FUNCTION(openssl_bio_new_mem)
 {
   size_t l = 0;
-  char* d = (char*)luaL_optlstring(L, 1, NULL, &l);
-  int closeflag = luaL_checkoption(L, 2, "close", close_flags);
   BIO *bio = BIO_new(BIO_s_mem());
-  if (d)
-    BIO_write(bio, d, l);
+  if(lua_isnumber(L,1))
+  {
+    l = lua_tointeger(L, 1);
+    BIO_set_buffer_size(bio,l);
+  }else if (lua_isstring(L,1)){
+    const char* d = (char*)luaL_checklstring(L, 1, &l);
+    BIO_write(bio,d,l);
+  } 
 
-  BIO_set_close(bio, closeflag);
+  BIO_set_close(bio, BIO_CLOSE);
   PUSH_OBJECT(bio, "openssl.bio");
   return 1;
 }

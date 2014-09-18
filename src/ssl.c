@@ -1497,8 +1497,11 @@ static int openssl_ssl_read(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
   int num = luaL_optint(L, 2, SSL_pending(s));
-  void* buf = malloc(num);
-  int ret = SSL_read(s, buf, num);
+  void* buf;
+  int ret;
+  num = num ? num : 4096;
+  buf = malloc(num);
+  ret = SSL_read(s, buf, num);
   if (ret > 0)
   {
     lua_pushlstring(L, buf, ret);
@@ -1517,9 +1520,14 @@ static int openssl_ssl_read(lua_State*L)
 static int openssl_ssl_peek(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
-  int num = luaL_optint(L, 2, 4096);
-  void* buf = malloc(num);
-  int ret = SSL_peek(s, buf, num);
+  int num = luaL_optint(L, 2, SSL_pending(s));
+  void* buf;
+  int ret;
+  
+  num = num ? num : 4096;
+  buf = malloc(num);
+  ret = SSL_peek(s, buf, num);
+  free(buf);
   lua_pushinteger(L, ret);
   return 1;
 }
@@ -1546,7 +1554,6 @@ static int openssl_ssl_error(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
   int ret = luaL_checkint(L, 2);
-  //FIX
   ret = SSL_get_error(s, ret);
   lua_pushinteger(L, ret);
   return 1;
@@ -1563,9 +1570,6 @@ static int openssl_ssl_renegotiate(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
   int ret = SSL_renegotiate(s);
-  if (ret) {
-    ret = SSL_do_handshake(s);
-  }
   return openssl_ssl_pushresult(L, s, ret);
 }
 
@@ -1574,16 +1578,14 @@ static int openssl_ssl_renegotiate_abbreviated(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
   int ret = SSL_renegotiate_abbreviated(s);
-  lua_pushboolean(L, ret);
-  return 1;
+  return openssl_ssl_pushresult(L, s, ret);
 }
 #endif
 static int openssl_ssl_renegotiate_pending(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
   int ret = SSL_renegotiate_pending(s);
-  lua_pushboolean(L, ret);
-  return 1;
+  return openssl_ssl_pushresult(L, s, ret);
 }
 
 static int openssl_ssl_shutdown(lua_State*L)
@@ -1679,6 +1681,7 @@ static int openssl_ssl_ctx(lua_State*L)
   if (lua_isnoneornil(L, 2))
   {
     SSL_CTX *ctx = SSL_get_SSL_CTX(s);
+    ctx->references++;
     PUSH_OBJECT(ctx, "openssl.ssl_ctx");
   }
   else
