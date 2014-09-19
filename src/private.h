@@ -61,6 +61,7 @@ void push_asn1_string(lua_State* L, ASN1_STRING *string, int utf8);
 int push_asn1_time(lua_State *L, ASN1_UTCTIME *tm);
 
 int push_x509_name(lua_State* L, X509_NAME *name, int encode);
+int openssl_push_asn1type(lua_State* L, const ASN1_TYPE* type);
 int openssl_push_asn1object(lua_State* L, const ASN1_OBJECT* obj);
 int openssl_push_x509_algor(lua_State*L,const X509_ALGOR* alg);
 

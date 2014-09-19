@@ -19,7 +19,8 @@ int openssl_push_x509_algor(lua_State*L, const X509_ALGOR* alg) {
   lua_newtable(L);
   openssl_push_asn1object(L, alg->algorithm);
   lua_setfield(L, -2, "algorithm");
-  AUXILIAR_SETOBJECT(L, alg->parameter, "openssl.asn1_type",   -1, "parameter");
+  openssl_push_asn1type(L, alg->parameter);
+  lua_setfield(L, -2, "parameter");
   return 1;
 };
 

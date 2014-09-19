@@ -386,7 +386,8 @@ static LUA_FUNCTION(openssl_csr_parse)
         {
           openssl_push_asn1object(L, attr->object);
           lua_setfield(L, -2, "object");
-          PUSH_OBJECT(attr->value.single, "openssl.asn1_type");
+          openssl_push_asn1type(L, attr->value.single);
+          lua_setfield(L, -2, "single");
         }
         else
         {
@@ -400,7 +401,7 @@ static LUA_FUNCTION(openssl_csr_parse)
             for (j = 0; j < sk_ASN1_TYPE_num(attr->value.set); j++)
             {
               ASN1_TYPE *av = sk_ASN1_TYPE_value(attr->value.set, 0);
-              PUSH_OBJECT(av, "openssl.asn1_type");
+              openssl_push_asn1type(L, av);
               lua_rawseti(L, -2, j + 1);
             }
             lua_setfield(L, -2, "set");
