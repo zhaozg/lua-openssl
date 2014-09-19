@@ -358,8 +358,11 @@ static LUA_FUNCTION(openssl_csr_parse)
 
   lua_newtable(L);
 
-  AUXILIAR_SETOBJECT(L, csr->signature, "openssl.asn1_string", -1, "signature");
-  AUXILIAR_SETOBJECT(L, csr->sig_alg, "openssl.x509_algor", -1, "sig_alg");
+  openssl_push_asn1string(L, csr->signature, 0);
+  lua_setfield(L,-2, "signature");
+
+  openssl_push_x509_algor(L, csr->sig_alg);
+  lua_setfield(L, -2, "sig_alg");
 
   lua_newtable(L);
   AUXILIAR_SET(L, -1, "version", ASN1_INTEGER_get(csr->req_info->version), integer);

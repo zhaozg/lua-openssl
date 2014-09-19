@@ -319,12 +319,16 @@ static LUA_FUNCTION(openssl_crl_parse)
   openssl_push_xname(L, X509_CRL_get_issuer(crl));
   lua_setfield(L, -2, "issuer");
 
-  AUXILIAR_SETOBJECT(L, X509_CRL_get_lastUpdate(crl), "openssl.asn1_string", -1, "lastUpdate");
-  AUXILIAR_SETOBJECT(L, X509_CRL_get_nextUpdate(crl), "openssl.asn1_string", -1, "nextUpdate");
-  AUXILIAR_SETOBJECT(L, crl->crl->sig_alg, "openssl.x509_algor", -1, "sig_alg");
+  openssl_push_asn1string(L,X509_CRL_get_lastUpdate(crl),0);
+  lua_setfield(L, -2, "lastUpdate");
+  openssl_push_asn1string(L,X509_CRL_get_nextUpdate(crl),0);
+  lua_setfield(L, -2, "nextUpdate");
 
-  AUXILIAR_SETOBJECT(L, X509_CRL_get_ext_d2i(crl, NID_crl_number, NULL, NULL),
-                     "openssl.asn1_string", -1, "crl_number");
+  openssl_push_x509_algor(L, crl->crl->sig_alg);
+  lua_setfield(L, -2, "sig_alg");
+  
+  openssl_push_asn1string(L, X509_CRL_get_ext_d2i(crl, NID_crl_number, NULL, NULL),0);
+  lua_setfield(L, -2, "crl_number");
 
   add_assoc_x509_extension(L, "extensions", crl->crl->extensions);
 
@@ -346,8 +350,11 @@ static LUA_FUNCTION(openssl_crl_parse)
       ASN1_ENUMERATED_free(reason);
     }
 #endif
-    AUXILIAR_SETOBJECT(L, revoked->serialNumber, "openssl.asn1_string", -1, "serialNumber");
-    AUXILIAR_SETOBJECT(L, revoked->revocationDate, "openssl.asn1_string", -1, "revocationDate");
+    openssl_push_asn1string(L, revoked->serialNumber, 0);
+    lua_setfield(L,-2, "serialNumber");
+
+    openssl_push_asn1string(L, revoked->revocationDate, 0);
+    lua_setfield(L,-2, "revocationDate");
 
     add_assoc_x509_extension(L, "extensions", revoked->extensions);
 

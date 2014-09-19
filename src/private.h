@@ -63,6 +63,7 @@ int push_asn1_time(lua_State *L, ASN1_UTCTIME *tm);
 int push_x509_name(lua_State* L, X509_NAME *name, int encode);
 int openssl_push_asn1type(lua_State* L, const ASN1_TYPE* type);
 int openssl_push_asn1object(lua_State* L, const ASN1_OBJECT* obj);
+int openssl_push_asn1string(lua_State* L, ASN1_STRING* string, int type);
 int openssl_push_x509_algor(lua_State*L,const X509_ALGOR* alg);
 
 int openssl_push_xname(lua_State*L, X509_NAME* xname);
@@ -72,7 +73,6 @@ int openssl_x509_extensions(lua_State* L);
 
 void add_assoc_x509_extension(lua_State*L, const char* key, STACK_OF(X509_EXTENSION)* ext);
 int openssl_pushresult(lua_State*L, int result);
-int openssl_push_ans1string_asstring(lua_State* L, ASN1_STRING* s);
 
 int openssl_newvalue(lua_State*L, void*p);
 int openssl_freevalue(lua_State*L, void*p);

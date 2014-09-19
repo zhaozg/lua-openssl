@@ -117,45 +117,6 @@ const int isTypes[] =
   0
 };
 
-static int openssl_ans1string_length(lua_State* L)
-{
-  ASN1_STRING* s = CHECK_OBJECT(1, ASN1_STRING, "openssl.asn1_string");
-  lua_pushinteger(L, ASN1_STRING_length(s));
-  return 1;
-}
-
-static int openssl_ans1string_data(lua_State* L)
-{
-  ASN1_STRING* s = CHECK_OBJECT(1, ASN1_STRING, "openssl.asn1_string");
-  if (lua_isnone(L, 1))
-    lua_pushlstring(L, (const char*)ASN1_STRING_data(s), ASN1_STRING_length(s));
-  else
-  {
-    size_t l;
-    const char*data = luaL_checklstring(L, 2, &l);
-    int ret = ASN1_STRING_set(s, data, l);
-    lua_pushboolean(L, ret);
-  }
-  return 1;
-}
-
-static int openssl_ans1string_dup(lua_State* L)
-{
-  ASN1_STRING* s = CHECK_OBJECT(1, ASN1_STRING, "openssl.asn1_string");
-  ASN1_STRING* ss = ASN1_STRING_dup(s);
-  PUSH_OBJECT(ss, "openssl.asn1_string");
-  return 1;
-}
-
-static int openssl_ans1string_toutf8(lua_State* L)
-{
-  ASN1_STRING* s = CHECK_OBJECT(1, ASN1_STRING, "openssl.asn1_string");
-  unsigned char* out = NULL;
-  int len =  ASN1_STRING_to_UTF8(&out, s);
-  lua_pushlstring(L, (const char*)out, len);
-  OPENSSL_free(out);
-  return 1;
-}
 
 static int openssl_ans1string_type(lua_State* L)
 {
@@ -166,7 +127,30 @@ static int openssl_ans1string_type(lua_State* L)
   if (isTypes[i])
     lua_pushstring(L, asTypes[i]);
   else
-    lua_pushnil(L);
+    lua_pushstring(L, "unknown");
+
+  return 1;
+}
+
+static int openssl_ans1string_length(lua_State* L)
+{
+  ASN1_STRING* s = CHECK_OBJECT(1, ASN1_STRING, "openssl.asn1_string");
+  lua_pushinteger(L, ASN1_STRING_length(s));
+  return 1;
+}
+
+static int openssl_ans1string_data(lua_State* L)
+{
+  ASN1_STRING* s = CHECK_OBJECT(1, ASN1_STRING, "openssl.asn1_string");
+  if (lua_isnone(L, 2))
+    lua_pushlstring(L, (const char*)ASN1_STRING_data(s), ASN1_STRING_length(s));
+  else
+  {
+    size_t l;
+    const char*data = luaL_checklstring(L, 2, &l);
+    int ret = ASN1_STRING_set(s, data, l);
+    lua_pushboolean(L, ret);
+  }
   return 1;
 }
 
@@ -225,22 +209,56 @@ static int openssl_ans1string_tostring(lua_State* L)
   return 0;
 }
 
+static int openssl_ans1string_print(lua_State* L)
+{
+  ASN1_STRING* s = CHECK_OBJECT(1, ASN1_STRING, "openssl.asn1_string");
+  unsigned long flags = luaL_optint(L,2,0);
+  BIO* out = BIO_new(BIO_s_mem());
+  BUF_MEM *mem;
+
+  BIO_get_mem_ptr(out, &mem);
+  ASN1_STRING_print_ex(out,s,flags);
+  lua_pushlstring(L,mem->data,mem->length);
+  BIO_free(out);
+  return 1;
+}
+
+static int openssl_ans1string_toutf8(lua_State* L)
+{
+  ASN1_STRING* s = CHECK_OBJECT(1, ASN1_STRING, "openssl.asn1_string");
+  unsigned char* out = NULL;
+  int len =  ASN1_STRING_to_UTF8(&out, s);
+  lua_pushlstring(L, (const char*)out, len);
+  OPENSSL_free(out);
+  return 1;
+}
+
+static int openssl_ans1string_dup(lua_State* L)
+{
+  ASN1_STRING* s = CHECK_OBJECT(1, ASN1_STRING, "openssl.asn1_string");
+  ASN1_STRING* ss = ASN1_STRING_dup(s);
+  PUSH_OBJECT(ss, "openssl.asn1_string");
+  return 1;
+}
+
 static luaL_reg asn1str_funcs[] =
 {
-  {"len",   openssl_ans1string_length },
-  {"__len",   openssl_ans1string_length },
+  {"length",    openssl_ans1string_length},
+  {"type",      openssl_ans1string_type },
+  {"data",      openssl_ans1string_data },
 
-  {"data",    openssl_ans1string_data },
-  {"__tostring",  openssl_ans1string_tostring },
+  {"dup",       openssl_ans1string_dup  },
+  {"equals",    openssl_ans1string_eq  },
+  
+  {"toutf8",    openssl_ans1string_toutf8 },
+  {"print",     openssl_ans1string_print },
 
-  {"dup",   openssl_ans1string_dup  },
-  {"toutf8",  openssl_ans1string_toutf8 },
-  {"type",  openssl_ans1string_type },
-  {"__eq",  openssl_ans1string_eq },
-  {"equals",  openssl_ans1string_eq },
-  //{"__gc",  openssl_ans1string_free },
+  {"__len",     openssl_ans1string_length },
+  {"__tostring",openssl_ans1string_tostring },
+  {"__eq",      openssl_ans1string_eq },
+  {"__gc",      openssl_ans1string_free },
 
-  {NULL,    NULL}
+  {NULL,        NULL}
 };
 
 /*** asn1_object routines ***/
@@ -341,6 +359,32 @@ static luaL_reg asn1obj_funcs[] =
   {NULL,    NULL}
 };
 
+static luaL_reg R[] =
+{
+  {NULL,    NULL}
+};
+
+LUALIB_API int luaopen_asn1(lua_State *L)
+{
+  auxiliar_newclass(L, "openssl.asn1_object", asn1obj_funcs);
+  auxiliar_newclass(L, "openssl.asn1_string", asn1str_funcs);
+
+
+  luaL_newmetatable(L, MYTYPE);
+  lua_setglobal(L, MYNAME);
+  luaL_register(L, MYNAME, R);
+  lua_pushvalue(L, -1);
+  lua_setmetatable(L, -2);
+  lua_pushliteral(L, "version");    /** version */
+  lua_pushliteral(L, MYVERSION);
+  lua_settable(L, -3);
+  lua_pushliteral(L, "__index");
+  lua_pushvalue(L, -2);
+  lua_settable(L, -3);
+  return 1;
+}
+
+
 int openssl_push_asn1object(lua_State* L, const ASN1_OBJECT* obj)
 {
   luaL_Buffer B;
@@ -350,8 +394,6 @@ int openssl_push_asn1object(lua_State* L, const ASN1_OBJECT* obj)
   luaL_pushresult(&B);
   return 1;
 }
-
-/*** asn1_type routines */
 
 int openssl_push_asn1type(lua_State* L, ASN1_TYPE* type)
 {
@@ -406,46 +448,10 @@ int openssl_push_asn1type(lua_State* L, ASN1_TYPE* type)
   return 1;
 }
 
-/*** modules function ***/
-int openssl_push_ans1string_asstring(lua_State* L, ASN1_STRING* s)
+int openssl_push_asn1string(lua_State* L, ASN1_STRING* string, int type)
 {
-  lua_pushlstring(L, (const char*)ASN1_STRING_data(s), ASN1_STRING_length(s));
+  if(string->type==type) {
+
+  }
   return 1;
-}
-
-static int openssl_ans1string_new(lua_State* L)
-{
-  int type = auxiliar_checkoption(L, 1, "octet", asTypes, isTypes);
-  ASN1_STRING* s = ASN1_STRING_type_new(type);
-  PUSH_OBJECT(s, "openssl.asn1_string");
-  return 1;
-}
-
-static luaL_reg R[] =
-{
-  /*
-  {"string_new",  openssl_ans1string_new  },
-  */
-
-  {NULL,    NULL}
 };
-
-LUALIB_API int luaopen_asn1(lua_State *L)
-{
-  auxiliar_newclass(L, "openssl.asn1_object", asn1obj_funcs);
-  auxiliar_newclass(L, "openssl.asn1_string", asn1str_funcs);
-
-
-  luaL_newmetatable(L, MYTYPE);
-  lua_setglobal(L, MYNAME);
-  luaL_register(L, MYNAME, R);
-  lua_pushvalue(L, -1);
-  lua_setmetatable(L, -2);
-  lua_pushliteral(L, "version");    /** version */
-  lua_pushliteral(L, MYVERSION);
-  lua_settable(L, -3);
-  lua_pushliteral(L, "__index");
-  lua_pushvalue(L, -2);
-  lua_settable(L, -3);
-  return 1;
-}

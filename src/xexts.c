@@ -15,7 +15,9 @@ static int openssl_xext_parse(lua_State* L)
   openssl_push_asn1object(L, x->object);
   lua_setfield(L, -2, "object");
 
-  AUXILIAR_SETOBJECT(L, x->value, "openssl.asn1_string", -1, "value");
+  openssl_push_asn1string(L, x->value, 0);
+  lua_setfield(L,-2, "value");
+
   AUXILIAR_SET(L, -1, "critical", x->critical, boolean);
   return 1;
 };

@@ -14,7 +14,6 @@
   "based on OpenSSL " SHLIB_VERSION_NUMBER
 #define MYTYPE      "x509"
 
-/*** openssl.x509_algor object ***/
 int openssl_push_x509_algor(lua_State*L, const X509_ALGOR* alg) {
   lua_newtable(L);
   openssl_push_asn1object(L, alg->algorithm);
@@ -23,12 +22,6 @@ int openssl_push_x509_algor(lua_State*L, const X509_ALGOR* alg) {
   lua_setfield(L, -2, "parameter");
   return 1;
 };
-
-static LUA_FUNCTION(openssl_x509_algo_parse)
-{
-  const X509_ALGOR *algo = CHECK_OBJECT(1, X509_ALGOR, "openssl.x509_algor");
-  return openssl_push_x509_algor(L, algo);
-}
 
 /*** openssl.x509_extension object ***/
 static LUA_FUNCTION(openssl_x509_extension_parse)
@@ -39,7 +32,8 @@ static LUA_FUNCTION(openssl_x509_extension_parse)
   openssl_push_asn1object(L, ext->object);
   lua_setfield(L, -2, "object");
 
-  AUXILIAR_SETOBJECT(L, ext->value, "openssl.asn1_string", -1, "value");
+  openssl_push_asn1string(L, ext->value, 0);
+  lua_setfield(L,-2, "value");
 
   return 1;
 }
@@ -209,9 +203,12 @@ static LUA_FUNCTION(openssl_x509_parse)
     AUXILIAR_SET(L, -1, "hash", buf, string);
   }
 
-  AUXILIAR_SETOBJECT(L, cert->cert_info->serialNumber, "openssl.asn1_string", -1, "serialNumber");
-  AUXILIAR_SETOBJECT(L, X509_get_notBefore(cert), "openssl.asn1_string", -1, "notBefore");
-  AUXILIAR_SETOBJECT(L, X509_get_notAfter(cert), "openssl.asn1_string", -1, "notAfter");
+  openssl_push_asn1string(L, cert->cert_info->serialNumber, 0);
+  lua_setfield(L,-2, "serialNumber");
+  openssl_push_asn1string(L, X509_get_notBefore(cert), 0);
+  lua_setfield(L,-2, "notBefore");
+  openssl_push_asn1string(L, X509_get_notAfter(cert), 0);
+  lua_setfield(L,-2, "notAfter");
 
   {
     int l = 0;
@@ -435,14 +432,6 @@ int openssl_sk_x509_read(lua_State*L)
  * public_key()
  */
 
-static luaL_Reg x509_algo_funs[] =
-{
-  {"__tostring", auxiliar_tostring},
-  {"parse", openssl_x509_algo_parse},
-
-  { NULL, NULL }
-};
-
 static luaL_Reg x509_extension_funs[] =
 {
   {"__tostring", auxiliar_tostring},
@@ -570,7 +559,6 @@ static luaL_reg R[] =
 
 LUALIB_API int luaopen_x509(lua_State *L)
 {
-  auxiliar_newclass(L, "openssl.x509_algor",   x509_algo_funs);
   auxiliar_newclass(L, "openssl.x509_extension", x509_extension_funs);
   auxiliar_newclass(L, "openssl.x509", x509_funcs);
 
