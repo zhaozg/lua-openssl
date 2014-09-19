@@ -12,7 +12,9 @@ static int openssl_xext_parse(lua_State* L)
 {
   X509_EXTENSION *x = CHECK_OBJECT(1, X509_EXTENSION, "openssl.x509_extension");
   lua_newtable(L);
-  AUXILIAR_SETOBJECT(L, x->object, "openssl.asn1_object", -1, "object");
+  openssl_push_asn1object(L, x->object);
+  lua_setfield(L, -2, "object");
+
   AUXILIAR_SETOBJECT(L, x->value, "openssl.asn1_string", -1, "value");
   AUXILIAR_SET(L, -1, "critical", x->critical, boolean);
   return 1;

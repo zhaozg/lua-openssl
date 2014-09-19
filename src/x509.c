@@ -15,14 +15,18 @@
 #define MYTYPE      "x509"
 
 /*** openssl.x509_algor object ***/
+int openssl_push_x509_algor(lua_State*L, const X509_ALGOR* alg) {
+  lua_newtable(L);
+  openssl_push_asn1object(L, alg->algorithm);
+  lua_setfield(L, -2, "algorithm");
+  AUXILIAR_SETOBJECT(L, alg->parameter, "openssl.asn1_type",   -1, "parameter");
+  return 1;
+};
+
 static LUA_FUNCTION(openssl_x509_algo_parse)
 {
   const X509_ALGOR *algo = CHECK_OBJECT(1, X509_ALGOR, "openssl.x509_algor");
-  lua_newtable(L);
-  AUXILIAR_SETOBJECT(L, algo->parameter, "openssl.asn1_type",   -1, "parameter");
-  AUXILIAR_SETOBJECT(L, algo->algorithm, "openssl.asn1_object", -1, "algorithm");
-
-  return 1;
+  return openssl_push_x509_algor(L, algo);
 }
 
 /*** openssl.x509_extension object ***/
@@ -31,7 +35,9 @@ static LUA_FUNCTION(openssl_x509_extension_parse)
   X509_EXTENSION *ext = CHECK_OBJECT(1, X509_EXTENSION, "openssl.x509_extension");
   lua_newtable(L);
   AUXILIAR_SET(L, -1, "critical", ext->critical, boolean);
-  AUXILIAR_SETOBJECT(L, ext->object, "openssl.asn1_object", -1, "object");
+  openssl_push_asn1object(L, ext->object);
+  lua_setfield(L, -2, "object");
+
   AUXILIAR_SETOBJECT(L, ext->value, "openssl.asn1_string", -1, "value");
 
   return 1;

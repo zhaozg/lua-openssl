@@ -244,6 +244,56 @@ static luaL_reg asn1str_funcs[] =
 };
 
 /*** asn1_object routines ***/
+static int openssl_ans1object_nid(lua_State* L)
+{
+  ASN1_OBJECT* o = CHECK_OBJECT(1, ASN1_OBJECT, "openssl.asn1_object");
+  lua_pushinteger(L, o->nid);
+  return 1;
+}
+
+static int openssl_ans1object_name(lua_State* L)
+{
+  ASN1_OBJECT* o = CHECK_OBJECT(1, ASN1_OBJECT, "openssl.asn1_object");
+  lua_pushstring(L, o->sn);
+  lua_pushstring(L, o->ln);
+  return 2;
+}
+
+static int openssl_ans1object_ln(lua_State* L)
+{
+  ASN1_OBJECT* o = CHECK_OBJECT(1, ASN1_OBJECT, "openssl.asn1_object");
+  lua_pushstring(L, o->sn);
+  return 1;
+}
+
+static int openssl_ans1object_sn(lua_State* L)
+{
+  ASN1_OBJECT* o = CHECK_OBJECT(1, ASN1_OBJECT, "openssl.asn1_object");
+  lua_pushstring(L, o->ln);
+  return 1;
+}
+
+static int openssl_ans1object_txt(lua_State* L)
+{
+  ASN1_OBJECT* o = CHECK_OBJECT(1, ASN1_OBJECT, "openssl.asn1_object");
+  int no_name = lua_isnoneornil(L, 2) ? 0 : lua_toboolean(L, 2);
+
+  luaL_Buffer B;
+  luaL_buffinit(L, &B);
+
+  luaL_addsize(&B, OBJ_obj2txt(luaL_prepbuffer(&B), LUAL_BUFFERSIZE, o, 0));
+  luaL_pushresult(&B);
+  return 1;
+}
+
+static int openssl_ans1object_equals(lua_State* L)
+{
+  ASN1_OBJECT* o = CHECK_OBJECT(1, ASN1_OBJECT, "openssl.asn1_object");
+  ASN1_OBJECT* a = CHECK_OBJECT(2, ASN1_OBJECT, "openssl.asn1_object");
+  
+  lua_pushboolean(L,OBJ_cmp(o,a)==0);
+  return 1;
+}
 
 static int openssl_ans1object_data(lua_State* L)
 {
@@ -265,15 +315,41 @@ static int openssl_ans1object_free(lua_State* L)
   return 0;
 }
 
+static int openssl_ans1object_dup(lua_State* L)
+{
+  ASN1_OBJECT* o = CHECK_OBJECT(1, ASN1_OBJECT, "openssl.asn1_object");
+  ASN1_OBJECT* a = OBJ_dup(o);
+
+  PUSH_OBJECT(a, "openssl.asn1_object");
+  return 1;
+}
+
 static luaL_reg asn1obj_funcs[] =
 {
-  {"data",    openssl_ans1object_data},
-  //{"__gc",    openssl_ans1object_free},
+  {"nid",         openssl_ans1object_nid},
+  {"name",        openssl_ans1object_name},
+  {"ln",          openssl_ans1object_ln},
+  {"sn",          openssl_ans1object_sn},
+  {"txt",         openssl_ans1object_txt},
+  {"dup",         openssl_ans1object_dup},
+  {"data",        openssl_ans1object_data},
+
+  {"__eq",        openssl_ans1object_equals},
+  {"__gc",        openssl_ans1object_free},
   {"__tostring",  auxiliar_tostring},
 
   {NULL,    NULL}
 };
 
+int openssl_push_asn1object(lua_State* L, const ASN1_OBJECT* obj)
+{
+  luaL_Buffer B;
+  luaL_buffinit(L, &B);
+
+  luaL_addsize(&B, OBJ_obj2txt(luaL_prepbuffer(&B), LUAL_BUFFERSIZE, obj, 0));
+  luaL_pushresult(&B);
+  return 1;
+}
 
 /*** asn1_type object */
 
@@ -350,13 +426,6 @@ int openssl_push_ans1string_asstring(lua_State* L, ASN1_STRING* s)
   return 1;
 }
 
-static int openssl_ans1object_new(lua_State* L)
-{
-  ASN1_OBJECT* o = ASN1_OBJECT_new();
-  PUSH_OBJECT(o, "openssl.asn1_object");
-  return 1;
-}
-
 static int openssl_ans1string_new(lua_State* L)
 {
   int type = auxiliar_checkoption(L, 1, "octet", string_type, str_type);
@@ -368,7 +437,6 @@ static int openssl_ans1string_new(lua_State* L)
 static luaL_reg R[] =
 {
   /*
-  {"object_new",  openssl_ans1object_new},
   {"string_new",  openssl_ans1string_new  },
   */
 

@@ -403,8 +403,10 @@ static LUA_FUNCTION(openssl_ts_req_parse)
 
   AUXILIAR_SET(L, -1, "cert_req", req->cert_req, boolean);
 
-  if (req->policy_id)
-    AUXILIAR_SETOBJECT(L, req->policy_id, "openssl.asn1_object", -1, "policy_id");
+  if (req->policy_id){
+    openssl_push_asn1object(L, req->policy_id);
+    lua_setfield(L, -2, "policy_id");
+  }
   if (req->nonce)
     AUXILIAR_SETOBJECT(L, req->nonce, "openssl.asn1_string", -1, "nonce");
   lua_newtable(L);
@@ -533,8 +535,10 @@ static LUA_FUNCTION(openssl_ts_resp_parse)
       AUXILIAR_SETOBJECT(L, info->nonce, "openssl.asn1_string", -1, "nonce");
     if (info->time)
       AUXILIAR_SETOBJECT(L, info->time, "openssl.asn1_string", -1, "time");
-    if (info->policy_id)
-      AUXILIAR_SETOBJECT(L, info->policy_id, "openssl.asn1_object", -1, "policy_id");
+    if (info->policy_id){
+      openssl_push_asn1object(L, info->policy_id);
+      lua_setfield(L, -2, "policy_id");
+    }
 
     AUXILIAR_SET(L, -1, "ordering", info->ordering, boolean);
 

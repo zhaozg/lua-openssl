@@ -59,6 +59,7 @@ const EVP_MD* get_digest(lua_State* L, int idx)
 
   return md;
 }
+
 const EVP_CIPHER* get_cipher(lua_State*L, int idx,const char* def_alg)
 {
   const EVP_CIPHER* cipher = NULL;

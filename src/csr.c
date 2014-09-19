@@ -384,12 +384,14 @@ static LUA_FUNCTION(openssl_csr_parse)
 
         if (attr->single)
         {
-          AUXILIAR_SETOBJECT(L, attr->object, "openssl.asn1_object", -1, "object");
+          openssl_push_asn1object(L, attr->object);
+          lua_setfield(L, -2, "object");
           PUSH_OBJECT(attr->value.single, "openssl.asn1_type");
         }
         else
         {
-          AUXILIAR_SETOBJECT(L, attr->object, "openssl.asn1_object", -1, "object");
+          openssl_push_asn1object(L, attr->object);
+          lua_setfield(L, -2, "object");
 
           if (sk_ASN1_TYPE_num(attr->value.set))
           {
@@ -412,7 +414,9 @@ static LUA_FUNCTION(openssl_csr_parse)
 
 
     lua_newtable(L);
-    AUXILIAR_SETOBJECT(L, ri->pubkey->algor->algorithm, "openssl.asn1_object", -1, "algorithm");
+    openssl_push_asn1object(L, ri->pubkey->algor->algorithm);
+    lua_setfield(L, -2, "algorithm");
+
     AUXILIAR_SETOBJECT(L, X509_REQ_get_pubkey(csr), "openssl.evp_pkey", -1, "pubkey");
     lua_setfield(L, -2, "pubkey");
   }
