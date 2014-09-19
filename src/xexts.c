@@ -287,3 +287,118 @@ void add_assoc_x509_extension(lua_State*L, const char* key, STACK_OF(X509_EXTENS
   XEXTS_to_ltable(L, exts, lua_absindex(L, -1));
   lua_setfield(L, -2, key);
 }
+
+static int push_subtable(lua_State* L, int idx)
+{
+  lua_pushvalue(L, -1);
+  lua_gettable(L, idx-1);
+  if (lua_isnil(L, -1)) {
+    lua_pop(L, 1);
+    lua_newtable(L);
+    lua_pushvalue(L, -2);
+    lua_pushvalue(L, -2);
+    lua_settable(L, idx-3);
+    lua_replace(L, -2); /* Replace key with table */
+    return 1;
+  }
+  lua_replace(L, -2); /* Replace key with table */
+  return 0;
+}
+
+int openssl_x509_extensions(lua_State* L)
+{
+  int j;
+  int i = -1;
+  int n_general_names;
+  OTHERNAME *otherName;
+  X509_EXTENSION *extension;
+  GENERAL_NAME *general_name;
+  STACK_OF(GENERAL_NAME) *values;
+  X509 *peer = CHECK_OBJECT(1, X509, "openssl.x509");
+  int utf8 = lua_isnoneornil(L, 2) ? 0 : lua_toboolean(L, 2);
+
+  /* Return (ret) */
+  lua_newtable(L);
+
+  while ((i = X509_get_ext_by_NID(peer, NID_subject_alt_name, i)) != -1) {
+    extension = X509_get_ext(peer, i);
+    if (extension == NULL)
+      break;
+    values = X509V3_EXT_d2i(extension);
+    if (values == NULL)
+      break;
+
+    /* Push ret[oid] */
+    push_asn1_objname(L, extension->object, 1);
+    push_subtable(L, -2);
+
+    /* Set ret[oid].name = name */
+    push_asn1_objname(L, extension->object, 0);
+    lua_setfield(L, -2, "name");
+
+    n_general_names = sk_GENERAL_NAME_num(values);
+    for (j = 0; j < n_general_names; j++) {
+      general_name = sk_GENERAL_NAME_value(values, j);
+      switch (general_name->type) {
+      case GEN_OTHERNAME:
+        otherName = general_name->d.otherName;
+        push_asn1_objname(L, otherName->type_id, 1);
+        if (push_subtable(L, -2)) {
+          push_asn1_objname(L, otherName->type_id, 0);
+          lua_setfield(L, -2, "name");
+        }
+        push_asn1_string(L, otherName->value->value.asn1_string, utf8);
+        lua_rawseti(L, -2, lua_rawlen(L, -2) + 1);
+        lua_pop(L, 1);
+        break;
+      case GEN_DNS:
+        lua_pushstring(L, "dNSName");
+        push_subtable(L, -2);
+        push_asn1_string(L, general_name->d.dNSName, utf8);
+        lua_rawseti(L, -2, lua_rawlen(L, -2) + 1);
+        lua_pop(L, 1);
+        break;
+      case GEN_EMAIL:
+        lua_pushstring(L, "rfc822Name");
+        push_subtable(L, -2);
+        push_asn1_string(L, general_name->d.rfc822Name, utf8);
+        lua_rawseti(L, -2, lua_rawlen(L, -2) + 1);
+        lua_pop(L, 1);
+        break;
+      case GEN_URI:
+        lua_pushstring(L, "uniformResourceIdentifier");
+        push_subtable(L, -2);
+        push_asn1_string(L, general_name->d.uniformResourceIdentifier, utf8);
+        lua_rawseti(L, -2, lua_rawlen(L, -2)+1);
+        lua_pop(L, 1);
+        break;
+      case GEN_IPADD:
+        lua_pushstring(L, "iPAddress");
+        push_subtable(L, -2);
+        push_asn1_string(L, general_name->d.iPAddress, utf8);
+        lua_rawseti(L, -2, lua_rawlen(L, -2)+1);
+        lua_pop(L, 1);
+        break;
+      case GEN_X400:
+        /* x400Address   */
+        /* not supported */
+        break;
+      case GEN_DIRNAME:
+        /* directoryName */
+        /* not supported */
+        break;
+      case GEN_EDIPARTY:
+        /* ediPartyName */
+        /* not supported */
+        break;
+      case GEN_RID:
+        /* registeredID  */
+        /* not supported */
+        break;
+      }
+    }
+    lua_pop(L, 1); /* ret[oid] */
+    i++;           /* Next extension */
+  }
+  return 1;
+}

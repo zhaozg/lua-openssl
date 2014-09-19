@@ -191,8 +191,11 @@ static LUA_FUNCTION(openssl_x509_parse)
   AUXILIAR_SET(L, -1, "valid", cert->valid, boolean);
   AUXILIAR_SET(L, -1, "version", X509_get_version(cert), integer);
 
-  add_assoc_name_entry(L, "subject",    X509_get_subject_name(cert), useshortnames);
-  add_assoc_name_entry(L, "issuer",     X509_get_issuer_name(cert), useshortnames);
+  openssl_push_xname(L, X509_get_subject_name(cert));
+  lua_setfield(L, -2, "subject");
+  openssl_push_xname(L, X509_get_issuer_name(cert));
+  lua_setfield(L, -2, "issuer");
+
   {
     char buf[32];
     snprintf(buf, sizeof(buf), "%08lx", X509_subject_name_hash(cert));
@@ -441,7 +444,90 @@ static luaL_Reg x509_extension_funs[] =
   { NULL, NULL }
 };
 
-#include "x509_compat.c"
+
+static int openssl_x509_subject(lua_State* L)
+{
+  X509* cert = CHECK_OBJECT(1, X509, "openssl.x509");
+  int utf8 = lua_isnoneornil(L, 2) ? 0 : lua_toboolean(L, 2);
+  return push_x509_name(L, X509_get_subject_name(cert), utf8);
+}
+
+static int openssl_x509_issuer(lua_State* L)
+{
+  X509* cert = CHECK_OBJECT(1, X509, "openssl.x509");
+  int utf8 = lua_isnoneornil(L, 2) ? 0 : lua_toboolean(L, 2);
+  return push_x509_name(L, X509_get_issuer_name(cert), utf8);
+}
+
+static int openssl_x509_digest(lua_State* L)
+{
+  unsigned int bytes;
+  const EVP_MD *digest = NULL;
+  unsigned char buffer[EVP_MAX_MD_SIZE];
+  char hex_buffer[EVP_MAX_MD_SIZE*2];
+  X509 *cert = CHECK_OBJECT(1, X509, "openssl.x509");
+  const char *str = luaL_optstring(L, 2, NULL);
+  if (!str)
+    digest = EVP_sha1();
+  else {
+    if (!strcmp(str, "sha1"))
+      digest = EVP_sha1();
+    else if (!strcmp(str, "sha256"))
+      digest = EVP_sha256();
+    else if (!strcmp(str, "sha512"))
+      digest = EVP_sha512();
+  }
+  if (!digest) {
+    lua_pushnil(L);
+    lua_pushfstring(L, "digest algorithm not supported (%s)", str);
+    return 2;
+  }
+  if (!X509_digest(cert, digest, buffer, &bytes)) {
+    lua_pushnil(L);
+    lua_pushfstring(L, "error processing the certificate (%s)",
+      ERR_reason_error_string(ERR_get_error()));
+    return 2;
+  }
+  to_hex((char*)buffer, bytes, hex_buffer);
+  lua_pushlstring(L, hex_buffer, bytes*2);
+  return 1;
+}
+
+static int openssl_x509_valid_at(lua_State* L)
+{
+  X509* cert = CHECK_OBJECT(1, X509, "openssl.x509");
+  time_t time = luaL_checkinteger(L, 2);
+  lua_pushboolean(L, (X509_cmp_time(X509_get_notAfter(cert), &time)     >= 0
+                      && X509_cmp_time(X509_get_notBefore(cert), &time) <= 0));
+  return 1;
+}
+
+static int openssl_x509_serial(lua_State *L)
+{
+  char *tmp;
+  BIGNUM *bn;
+  ASN1_INTEGER *serial;
+  X509* cert = CHECK_OBJECT(1, X509, "openssl.x509");
+  serial = X509_get_serialNumber(cert);
+  bn = ASN1_INTEGER_to_BN(serial, NULL);
+  tmp = BN_bn2hex(bn);
+  lua_pushstring(L, tmp);
+  BN_free(bn);
+  OPENSSL_free(tmp);
+  return 1;
+}
+
+static int openssl_x509_notbefore(lua_State *L)
+{
+  X509* cert = CHECK_OBJECT(1, X509, "openssl.x509");
+  return push_asn1_time(L, X509_get_notBefore(cert));
+}
+
+static int openssl_x509_notafter(lua_State *L)
+{
+  X509* cert = CHECK_OBJECT(1, X509, "openssl.x509");
+  return push_asn1_time(L, X509_get_notAfter(cert));
+}
 
 static luaL_Reg x509_funcs[] =
 {
@@ -454,16 +540,14 @@ static luaL_Reg x509_funcs[] =
   {"__tostring",  auxiliar_tostring},
 
   /* compat with luasec */
-  {"digest",     meth_digest},
-  {"extensions", meth_extensions},
-  {"issuer",     meth_issuer},
-  {"notbefore",  meth_notbefore},
-  {"notafter",   meth_notafter},
-  {"pem",        meth_pem},
-  {"pubkey",     meth_pubkey},
-  {"serial",     meth_serial},
-  {"subject",    meth_subject},
-  {"validat",    meth_valid_at},
+  {"digest",     openssl_x509_digest},
+  {"extensions", openssl_x509_extensions},
+  {"issuer",     openssl_x509_issuer},
+  {"notbefore",  openssl_x509_notbefore},
+  {"notafter",   openssl_x509_notafter},
+  {"serial",     openssl_x509_serial},
+  {"subject",    openssl_x509_subject},
+  {"validat",    openssl_x509_valid_at},
 
   {NULL,      NULL},
 };
@@ -487,6 +571,8 @@ LUALIB_API int luaopen_x509(lua_State *L)
   luaL_newmetatable(L, MYTYPE);
   lua_setglobal(L, MYNAME);
   luaL_register(L, MYNAME, R);
+  openssl_register_xname(L);
+  lua_setfield(L, -2, "name");
   lua_pushvalue(L, -1);
   lua_setmetatable(L, -2);
   lua_pushliteral(L, "version");    /** version */

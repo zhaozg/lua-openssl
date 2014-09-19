@@ -11,6 +11,58 @@
   "based on OpenSSL " SHLIB_VERSION_NUMBER
 #define MYTYPE      "asn1"
 
+
+static const char* hex_tab = "0123456789abcdef";
+
+void to_hex(const char* in, int length, char* out)
+{
+  int i;
+  for (i = 0; i < length; i++) {
+    out[i*2] = hex_tab[(in[i] >> 4) & 0xF];
+    out[i*2+1] = hex_tab[(in[i]) & 0xF];
+  }
+  out[i*2] = '\0';
+}
+
+void push_asn1_objname(lua_State* L, ASN1_OBJECT *object, int no_name)
+{
+  char buffer[256];
+  int len = OBJ_obj2txt(buffer, sizeof(buffer), object, no_name);
+  len = (len < sizeof(buffer)) ? len : sizeof(buffer);
+  lua_pushlstring(L, buffer, len);
+}
+
+void push_asn1_string(lua_State* L, ASN1_STRING *string, int utf8)
+{
+  int len;
+  unsigned char *data;
+  if (!string)
+    lua_pushnil(L);
+  if (utf8) {
+    len = ASN1_STRING_to_UTF8(&data, string);
+    if (len >= 0) {
+      lua_pushlstring(L, (char*)data, len);
+      OPENSSL_free(data);
+    }else
+      lua_pushnil(L);
+  } else {
+    lua_pushlstring(L, (char*)ASN1_STRING_data(string),
+      ASN1_STRING_length(string));
+  }
+}
+
+int push_asn1_time(lua_State *L, ASN1_UTCTIME *tm)
+{
+  char *tmp;
+  long size;
+  BIO *out = BIO_new(BIO_s_mem());
+  ASN1_TIME_print(out, tm);
+  size = BIO_get_mem_data(out, &tmp);
+  lua_pushlstring(L, tmp, size);
+  BIO_free(out);
+  return 1;
+}
+
 /*** asn1_string routines ***/
 const static char* string_type[] =
 {

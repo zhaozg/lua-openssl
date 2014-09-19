@@ -557,8 +557,10 @@ static LUA_FUNCTION(openssl_ts_resp_parse)
       AUXILIAR_SETOBJECT(L, info->accuracy->seconds, "openssl.asn1_string", -1, "seconds");
       lua_setfield(L, -2, "accuracy");
     }
-    if (info->tsa)
-      add_assoc_name_entry(L, "tsa", info->tsa->d.dirn, 0);
+    if (info->tsa){
+      openssl_push_xname(L, info->tsa->d.dirn);
+      lua_setfield(L, -2, "tsa");
+    }
 
 
     if (info->extensions)

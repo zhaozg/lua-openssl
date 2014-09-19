@@ -316,7 +316,8 @@ static LUA_FUNCTION(openssl_crl_parse)
     }
   }
 
-  add_assoc_name_entry(L, "issuer",   X509_CRL_get_issuer(crl), useshortnames);
+  openssl_push_xname(L, X509_CRL_get_issuer(crl));
+  lua_setfield(L, -2, "issuer");
 
   AUXILIAR_SETOBJECT(L, X509_CRL_get_lastUpdate(crl), "openssl.asn1_string", -1, "lastUpdate");
   AUXILIAR_SETOBJECT(L, X509_CRL_get_nextUpdate(crl), "openssl.asn1_string", -1, "nextUpdate");

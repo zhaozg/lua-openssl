@@ -7,71 +7,168 @@
 
 #include "openssl.h"
 #include "compat.h"
+#include "private.h"
 
-int XNAME_from_ltable(lua_State*L,
-                      X509_NAME* name,
-                      int dn)
+#define MYNAME "x509.name"
+
+static int openssl_xname_gc(lua_State* L)
 {
-  /* table is in the stack at index 't' */
-  lua_pushnil(L);  /* first key */
-  while (lua_next(L, dn) != 0)
-  {
-    /* uses 'key' (at index -2) and 'value' (at index -1) */
-    const char * strindex = lua_tostring(L, -2);
-    const char * strval = lua_tostring(L, -1);
+  X509_NAME* xn = CHECK_OBJECT(1, X509_NAME, "openssl.x509_name");
+  lua_pushnil(L);
+  lua_setmetatable(L,1);
+  X509_NAME_free(xn);
+  return 0;
+}
 
-    if (strindex)
-    {
-      int nid = OBJ_txt2nid(strindex);
-      if (nid != NID_undef)
-      {
-        /* FIXME: more flexable*/
-        if (!X509_NAME_add_entry_by_NID(name, nid, MBSTRING_ASC, (unsigned char*)strval, -1, -1, 0))
-        {
-          luaL_error(L, "dn: add_entry_by_NID %d(%s) -> %s (failed)", nid, strindex, strval);
-        }
-      }
-      else
-      {
-        luaL_error(L, "dn: %s is not a recognized name", strindex);
-      }
-    }
-    /* removes 'value'; keeps 'key' for next iteration */
+static int openssl_xname2table(lua_State*L, const X509_NAME* xn)
+{
+  return 0;
+};
+
+static int openssl_xname_oneline(lua_State*L)
+{
+  X509_NAME* xname = CHECK_OBJECT(1, X509_NAME, "openssl.x509_name");
+  char* p = X509_NAME_oneline(xname, NULL, 0);
+
+  lua_pushstring(L, p);;
+  OPENSSL_free(p);
+  return 1;
+};
+
+int push_x509_name(lua_State* L, X509_NAME *name, int encode)
+{
+  int i;
+  int n_entries;
+  ASN1_OBJECT *object;
+  X509_NAME_ENTRY *entry;
+  lua_newtable(L);
+  n_entries = X509_NAME_entry_count(name);
+  for (i = 0; i < n_entries; i++) {
+    entry = X509_NAME_get_entry(name, i);
+    object = X509_NAME_ENTRY_get_object(entry);
+    lua_newtable(L);
+    push_asn1_objname(L, object, 1);
+    lua_setfield(L, -2, "oid");
+    push_asn1_objname(L, object, 0);
+    lua_setfield(L, -2, "name");
+    push_asn1_string(L, X509_NAME_ENTRY_get_data(entry), encode);
+    lua_setfield(L, -2, "value");
+    lua_rawseti(L, -2, i+1);
+  }
+  return 1;
+}
+
+static int openssl_xname_info(lua_State*L)
+{
+  X509_NAME* xn = CHECK_OBJECT(1, X509_NAME, "openssl.x509_name");
+  int utf8 = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L, 2);
+  return push_x509_name(L, xn, utf8);
+};
+
+static int openssl_xname_dup(lua_State*L)
+{
+  X509_NAME* xn = CHECK_OBJECT(1, X509_NAME, "openssl.x509_name");
+  X509_NAME* dup = X509_NAME_dup(xn);
+  PUSH_OBJECT(dup,"openssl.x509_name");
+  return 1;
+};
+
+static luaL_Reg xname_funcs[] =
+{
+  {"oneline",           openssl_xname_oneline},
+  {"info",              openssl_xname_info},
+  {"dup",               openssl_xname_dup},
+
+  {"__tostring",        openssl_xname_oneline},
+  {"__gc",              openssl_xname_gc},
+
+  {NULL,          NULL},
+};
+
+int openssl_push_xname(lua_State*L, X509_NAME* xname)
+{
+  X509_NAME* dup = X509_NAME_dup(xname);
+  PUSH_OBJECT(dup,"openssl.x509_name");
+  return 1;
+}
+
+int openssl_new_xname(lua_State*L, X509_NAME* xname, int idx, int utf8)
+{
+  int i,n;
+  luaL_checktable(L, idx);
+  luaL_argcheck(L, lua_istable(L,idx) && lua_objlen(L,idx)>0, idx,
+    "must be not empty table as array");
+
+  n = lua_objlen(L, idx);
+  for (i=0; i<n; i++){
+    size_t size;
+    const char *oid, *name, *value;
+    int nid = NID_undef;
+    ASN1_OBJECT *obj;
+    int ret;
+    
+    lua_rawgeti(L, idx, i+1);
+    lua_getfield(L, -1, "name");
+    name = lua_tostring(L, -1);
     lua_pop(L, 1);
+    lua_getfield(L, -1, "value");
+    value = luaL_checklstring(L, -1, &size);
+    lua_pop(L, 1);
+    lua_getfield(L, -1, "oid");
+    oid = lua_tostring(L, -1);
+    lua_pop(L, 1);
+    lua_pop(L, 1);
+
+    if((name || oid) && value) {
+      lua_pushfstring(L, "node at %d must have name or oid, and value", i+1);
+      luaL_argerror(L, idx, lua_tostring(L, -1));
+    }
+    if (oid) {
+      obj = OBJ_txt2obj(oid, 1);
+    }else
+    {
+      obj = OBJ_txt2obj(name, 0);
+    }
+    
+    if (!obj) {
+      lua_pushfstring(L, "node at %d with name(%s) value(%s) is not a valid object id", 
+        i+1,(oid?"oid":"name"),(oid?oid:name));
+      luaL_argerror(L, idx, lua_tostring(L, -1));
+    }
+
+    ret = X509_NAME_add_entry_by_OBJ(xname, obj, utf8?MBSTRING_UTF8:MBSTRING_ASC, (unsigned char*)value, (int)size,-1, 0);
+    ASN1_OBJECT_free(obj);
+    if (ret!=1)
+    {
+      lua_pushfstring(L, "node at %d with  %s:%s [%s] can't add to X509 name", 
+        i+1,(oid?"oid":"name"),(oid?oid:name),value);
+      luaL_argerror(L, idx, lua_tostring(L, -1));
+    }
   }
   return 0;
 }
 
-int XNAME_to_ltable(lua_State*L, X509_NAME * xname, int idx, int shortname)
+static int openssl_xname_new(lua_State*L) {
+  X509_NAME* xn;
+  int utf8;
+  luaL_checktable(L,1);
+  utf8 = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L, 2);
+  xn = X509_NAME_new();
+  openssl_new_xname(L, xn, 1, utf8);
+  PUSH_OBJECT(xn,"openssl.x509_name");
+  return 1;
+};
+
+static luaL_Reg R[] =
 {
-  int i;
-  int n = X509_NAME_entry_count(xname);
-  for (i = 0; i < n; i++)
-  {
-    X509_NAME_ENTRY* ne = X509_NAME_get_entry(xname, i);
-    ASN1_OBJECT * obj = X509_NAME_ENTRY_get_object(ne);
-    ASN1_STRING * str = X509_NAME_ENTRY_get_data(ne);
-    int nid = OBJ_obj2nid(obj);
-    const char* name = shortname ? OBJ_nid2sn(nid) : OBJ_nid2ln(nid);
+  {"new",           openssl_xname_new},
+                    
+  {NULL,          NULL},
+};
 
-    AUXILIAR_SETLSTR(L, idx, name, ASN1_STRING_data(str), ASN1_STRING_length(str));
-
-    lua_pushstring(L, name);
-    lua_rawseti(L, idx, i + 1);
-  }
-  return i;
-}
-
-void add_assoc_name_entry(lua_State*L, const  char * key, X509_NAME * xname, int shortname)
+int openssl_register_xname(lua_State*L)
 {
-  char* p = X509_NAME_oneline(xname, NULL, 0);
-  lua_newtable(L);
-
-  lua_pushstring(L, p);
-  lua_rawseti(L, -2, 0);
-  OPENSSL_free(p);
-
-  XNAME_to_ltable(L, xname, lua_absindex(L, -1), shortname);
-
-  lua_setfield(L, -2, key);
+  auxiliar_newclass(L, "openssl.x509_name",xname_funcs);
+  luaL_register(L, MYNAME, R);
+  return 1;
 }

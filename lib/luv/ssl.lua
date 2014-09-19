@@ -169,6 +169,10 @@ S.__index = {
             if self.out then self.out:close() end
 
             self.out,self.inp = nil,nil
+            if self.mode then
+                --server mode
+                uv.unref(self.socket)
+            end
             uv.close(self.socket)
             self.connected = nil
             self.socket = nil

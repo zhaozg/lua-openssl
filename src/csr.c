@@ -25,7 +25,7 @@ static int openssl_make_REQ(lua_State*L,
     X509_NAME * subj = X509_REQ_get_subject_name(csr);
     /* apply values from the dn table */
     if (dn)
-      XNAME_from_ltable(L, subj, dn);
+      openssl_new_xname(L, subj, dn, 1);
 
     if (attribs)
     {
@@ -363,7 +363,8 @@ static LUA_FUNCTION(openssl_csr_parse)
 
   lua_newtable(L);
   AUXILIAR_SET(L, -1, "version", ASN1_INTEGER_get(csr->req_info->version), integer);
-  add_assoc_name_entry(L, "subject", subject, shortnames);
+  openssl_push_xname(L, subject);
+  lua_setfield(L, -2, "subject");
   add_assoc_x509_extension(L, "extensions", exts);
 
   {

@@ -50,13 +50,22 @@ const EVP_CIPHER* get_cipher(lua_State* L, int idx, const char* def_alg);
 BIGNUM *BN_get(lua_State *L, int i);
 int openssl_engine(lua_State *L);
 
-int XNAME_from_ltable(lua_State*L, X509_NAME* name, int dn);
 int XATTRS_from_ltable(lua_State*L, STACK_OF(X509_ATTRIBUTE) **attributes, int attr);
 int XEXTS_from_ltable(lua_State*L, STACK_OF(X509_EXTENSION) *exts, X509V3_CTX* ctx, int extensions);
 
 X509_STORE* skX509_to_store(STACK_OF(X509)* calist, const char* files, const char* dirs);
 
-void add_assoc_name_entry(lua_State*L, const  char *key, X509_NAME *name, int shortname);
+void to_hex(const char* in, int length, char* out);
+void push_asn1_objname(lua_State* L, ASN1_OBJECT *object, int no_name);
+void push_asn1_string(lua_State* L, ASN1_STRING *string, int utf8);
+int push_asn1_time(lua_State *L, ASN1_UTCTIME *tm);
+
+int push_x509_name(lua_State* L, X509_NAME *name, int encode);
+int openssl_push_xname(lua_State*L, X509_NAME* xname);
+int openssl_new_xname(lua_State*L, X509_NAME* xname, int idx, int utf8);
+int openssl_register_xname(lua_State*L);
+int openssl_x509_extensions(lua_State* L);
+
 void add_assoc_x509_extension(lua_State*L, const char* key, STACK_OF(X509_EXTENSION)* ext);
 int openssl_pushresult(lua_State*L, int result);
 int openssl_push_ans1string_asstring(lua_State* L, ASN1_STRING* s);

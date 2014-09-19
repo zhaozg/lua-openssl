@@ -102,11 +102,12 @@ static LUA_FUNCTION(openssl_digest)
       else
       {
         BIGNUM *B = BN_new();
+        char* hex;
         BN_bin2bn(buf, blen, B);
-        in = BN_bn2hex(B);
-        strlwr(in);
-        lua_pushstring(L, in);
-        OPENSSL_free((void*)in);
+        hex = BN_bn2hex(B);
+        strlwr(hex);
+        lua_pushstring(L, hex);
+        OPENSSL_free(hex);
         BN_free(B);
       }
     }
