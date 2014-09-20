@@ -23,21 +23,6 @@ int openssl_push_x509_algor(lua_State*L, const X509_ALGOR* alg) {
   return 1;
 };
 
-/*** openssl.x509_extension object ***/
-static LUA_FUNCTION(openssl_x509_extension_parse)
-{
-  X509_EXTENSION *ext = CHECK_OBJECT(1, X509_EXTENSION, "openssl.x509_extension");
-  lua_newtable(L);
-  AUXILIAR_SET(L, -1, "critical", ext->critical, boolean);
-  openssl_push_asn1object(L, ext->object);
-  lua_setfield(L, -2, "object");
-
-  PUSH_ASN1_OCTET_STRING(L, ext->value);
-  lua_setfield(L,-2, "value");
-
-  return 1;
-}
-
 /*** openssl.x509 object methods ***/
 
 X509_STORE * skX509_to_store(STACK_OF(X509)* calist, const char* files, const char* dirs)
@@ -180,7 +165,8 @@ static LUA_FUNCTION(openssl_x509_parse)
 {
   int i;
   X509 * cert = CHECK_OBJECT(1, X509, "openssl.x509");
-  int useshortnames = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L, 2);
+  int utf8 = lua_isnoneornil(L, 2) ? 0 : lua_toboolean(L, 2);
+  int useshortnames = lua_isnoneornil(L, 3) ? 0 : lua_toboolean(L, 3);
 
   lua_newtable(L);
 
@@ -245,7 +231,8 @@ static LUA_FUNCTION(openssl_x509_parse)
   }
   lua_setfield(L, -2, "purposes");
 
-  add_assoc_x509_extension(L, "extensions", cert->cert_info->extensions);
+  openssl_push_x509_exts(L, cert->cert_info->extensions, utf8);
+  lua_setfield(L,-2, "extensions");
 
   return 1;
 }
@@ -421,26 +408,6 @@ int openssl_sk_x509_read(lua_State*L)
   return 1;
 }
 
-
-/* X509 module for the Lua/OpenSSL binding.
- *
- * The functions in this module can be used to load, parse, export, verify... functions.
- * parse()
- * export()
- * check_private_key()
- * checkpurpose()
- * public_key()
- */
-
-static luaL_Reg x509_extension_funs[] =
-{
-  {"__tostring", auxiliar_tostring},
-  {"parse", openssl_x509_extension_parse},
-
-  { NULL, NULL }
-};
-
-
 static int openssl_x509_subject(lua_State* L)
 {
   X509* cert = CHECK_OBJECT(1, X509, "openssl.x509");
@@ -559,9 +526,8 @@ static luaL_reg R[] =
 
 LUALIB_API int luaopen_x509(lua_State *L)
 {
-  auxiliar_newclass(L, "openssl.x509_extension", x509_extension_funs);
   auxiliar_newclass(L, "openssl.x509", x509_funcs);
-
+  openssl_register_xextension(L);
   openssl_register_sk_x509(L);
   luaL_newmetatable(L, MYTYPE);
   lua_setglobal(L, MYNAME);

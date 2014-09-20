@@ -426,11 +426,6 @@ int openssl_push_asn1(lua_State* L, ASN1_STRING* string, int type, int utf8)
   }
 
   switch(string->type){
-  case V_ASN1_BOOLEAN:
-    {
-      lua_pushnil(L);
-      return 1;
-    }
   case V_ASN1_INTEGER:
     {
       ASN1_INTEGER *ai = (ASN1_INTEGER *)string;

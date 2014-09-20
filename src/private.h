@@ -73,9 +73,10 @@ int openssl_push_x509_algor(lua_State*L,const X509_ALGOR* alg);
 int openssl_push_xname(lua_State*L, X509_NAME* xname);
 int openssl_new_xname(lua_State*L, X509_NAME* xname, int idx, int utf8);
 int openssl_register_xname(lua_State*L);
+int openssl_register_xextension(lua_State*L);
 int openssl_x509_extensions(lua_State* L);
+int openssl_push_x509_exts(lua_State*L, STACK_OF(X509_EXTENSION) *exts, int utf8);
 
-void add_assoc_x509_extension(lua_State*L, const char* key, STACK_OF(X509_EXTENSION)* ext);
 int openssl_pushresult(lua_State*L, int result);
 
 int openssl_newvalue(lua_State*L, void*p);

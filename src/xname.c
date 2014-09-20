@@ -20,11 +20,6 @@ static int openssl_xname_gc(lua_State* L)
   return 0;
 }
 
-static int openssl_xname2table(lua_State*L, const X509_NAME* xn)
-{
-  return 0;
-};
-
 static int openssl_xname_oneline(lua_State*L)
 {
   X509_NAME* xname = CHECK_OBJECT(1, X509_NAME, "openssl.x509_name");
@@ -48,9 +43,8 @@ int push_x509_name(lua_State* L, X509_NAME *name, int encode)
     object = X509_NAME_ENTRY_get_object(entry);
     lua_newtable(L);
     openssl_push_asn1object(L, object);
-    lua_setfield(L, -2, "name");
     PUSH_ASN1_STRING(L, X509_NAME_ENTRY_get_data(entry), encode);
-    lua_setfield(L, -2, "value");
+    lua_settable(L, -3);
     lua_rawseti(L, -2, i+1);
   }
   return 1;
@@ -100,47 +94,33 @@ int openssl_new_xname(lua_State*L, X509_NAME* xname, int idx, int utf8)
   n = lua_objlen(L, idx);
   for (i=0; i<n; i++){
     size_t size;
-    const char *oid, *name, *value;
+    const char *key, *value;
     int nid = NID_undef;
     ASN1_OBJECT *obj;
     int ret;
     
     lua_rawgeti(L, idx, i+1);
-    lua_getfield(L, -1, "name");
-    name = lua_tostring(L, -1);
-    lua_pop(L, 1);
-    lua_getfield(L, -1, "value");
-    value = luaL_checklstring(L, -1, &size);
-    lua_pop(L, 1);
-    lua_getfield(L, -1, "oid");
-    oid = lua_tostring(L, -1);
-    lua_pop(L, 1);
-    lua_pop(L, 1);
 
-    if((name || oid) && value) {
-      lua_pushfstring(L, "node at %d must have name or oid, and value", i+1);
-      luaL_argerror(L, idx, lua_tostring(L, -1));
-    }
-    if (oid) {
-      obj = OBJ_txt2obj(oid, 1);
-    }else
-    {
-      obj = OBJ_txt2obj(name, 0);
-    }
-    
-    if (!obj) {
-      lua_pushfstring(L, "node at %d with name(%s) value(%s) is not a valid object id", 
-        i+1,(oid?"oid":"name"),(oid?oid:name));
-      luaL_argerror(L, idx, lua_tostring(L, -1));
-    }
+    lua_pushnil(L);
+    while (lua_next(L, -2) != 0) {
+      key = luaL_checkstring(L, -2);
+      value = luaL_checklstring(L, -1, &size);
 
-    ret = X509_NAME_add_entry_by_OBJ(xname, obj, utf8?MBSTRING_UTF8:MBSTRING_ASC, (unsigned char*)value, (int)size,-1, 0);
-    ASN1_OBJECT_free(obj);
-    if (ret!=1)
-    {
-      lua_pushfstring(L, "node at %d with  %s:%s [%s] can't add to X509 name", 
-        i+1,(oid?"oid":"name"),(oid?oid:name),value);
-      luaL_argerror(L, idx, lua_tostring(L, -1));
+      obj = OBJ_txt2obj(key, 0);
+      if (!obj) {
+        lua_pushfstring(L, "node at %d which key (%s) is not a valid object identity", 
+          i+1, key);
+        luaL_argerror(L, idx, lua_tostring(L, -1));
+      }
+      ret = X509_NAME_add_entry_by_OBJ(xname, obj, utf8? MBSTRING_UTF8 : MBSTRING_ASC, (unsigned char*)value, (int)size,-1, 0);
+      ASN1_OBJECT_free(obj);
+      if (ret!=1)
+      {
+        lua_pushfstring(L, "node at %d which  %s=%s can't add to X509 name", 
+          i+1,key,value);
+        luaL_argerror(L, idx, lua_tostring(L, -1));
+      }
+      lua_pop(L, 1);
     }
   }
   return 0;

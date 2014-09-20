@@ -351,6 +351,7 @@ static LUA_FUNCTION(openssl_csr_new)
 static LUA_FUNCTION(openssl_csr_parse)
 {
   X509_REQ * csr = CHECK_OBJECT(1, X509_REQ, "openssl.x509_req");
+  int utf8 = lua_isnoneornil(L, 3) ? 0 : lua_toboolean(L, 3);
   int  shortnames = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L, 2);
 
   X509_NAME * subject = X509_REQ_get_subject_name(csr);
@@ -368,7 +369,10 @@ static LUA_FUNCTION(openssl_csr_parse)
   AUXILIAR_SET(L, -1, "version", ASN1_INTEGER_get(csr->req_info->version), integer);
   openssl_push_xname(L, subject);
   lua_setfield(L, -2, "subject");
-  add_assoc_x509_extension(L, "extensions", exts);
+  if(exts){
+    openssl_push_x509_exts(L, exts, utf8);
+    lua_setfield(L, -2, "extensions");
+  }
 
   {
     X509_REQ_INFO* ri = csr->req_info;
