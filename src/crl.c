@@ -121,8 +121,8 @@ static LUA_FUNCTION(openssl_crl_add_revocked)
 static LUA_FUNCTION(openssl_crl_new)
 {
   X509* x509 = lua_isnoneornil(L, 1) ? NULL : CHECK_OBJECT(1, X509, "openssl.x509");
-  time_t lastUpdate = luaL_optinteger(L, 3, time(&lastUpdate));
-  time_t nextUpdate = luaL_optinteger(L, 4, lastUpdate + 7 * 24 * 3600);
+  time_t lastUpdate = luaL_optinteger(L, 3, (lua_Integer)time(&lastUpdate));
+  time_t nextUpdate = luaL_optinteger(L, 4, (lua_Integer)(lastUpdate + 7 * 24 * 3600));
   long version = luaL_optint(L, 5, 1);
 
   X509_CRL * crl = NULL;
