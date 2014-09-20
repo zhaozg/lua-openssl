@@ -15,7 +15,7 @@ static int openssl_xext_parse(lua_State* L)
   openssl_push_asn1object(L, x->object);
   lua_setfield(L, -2, "object");
 
-  openssl_push_asn1string(L, x->value, 0);
+  PUSH_ASN1_OCTET_STRING(L, x->value);
   lua_setfield(L,-2, "value");
 
   AUXILIAR_SET(L, -1, "critical", x->critical, boolean);
@@ -333,53 +333,45 @@ int openssl_x509_extensions(lua_State* L)
       break;
 
     /* Push ret[oid] */
-    push_asn1_objname(L, extension->object, 1);
-    push_subtable(L, -2);
-
-    /* Set ret[oid].name = name */
-    push_asn1_objname(L, extension->object, 0);
-    lua_setfield(L, -2, "name");
-
+    openssl_push_asn1object(L, extension->object);
+    lua_newtable(L);
     n_general_names = sk_GENERAL_NAME_num(values);
     for (j = 0; j < n_general_names; j++) {
       general_name = sk_GENERAL_NAME_value(values, j);
       switch (general_name->type) {
       case GEN_OTHERNAME:
         otherName = general_name->d.otherName;
-        push_asn1_objname(L, otherName->type_id, 1);
-        if (push_subtable(L, -2)) {
-          push_asn1_objname(L, otherName->type_id, 0);
-          lua_setfield(L, -2, "name");
-        }
-        push_asn1_string(L, otherName->value->value.asn1_string, utf8);
+        openssl_push_asn1object(L, otherName->type_id);
+        lua_setfield(L, -2, "name");
+        PUSH_ASN1_STRING(L, otherName->value->value.asn1_string, utf8);
         lua_rawseti(L, -2, lua_rawlen(L, -2) + 1);
         lua_pop(L, 1);
         break;
       case GEN_DNS:
         lua_pushstring(L, "dNSName");
         push_subtable(L, -2);
-        push_asn1_string(L, general_name->d.dNSName, utf8);
+        PUSH_ASN1_STRING(L, general_name->d.dNSName, utf8);
         lua_rawseti(L, -2, lua_rawlen(L, -2) + 1);
         lua_pop(L, 1);
         break;
       case GEN_EMAIL:
         lua_pushstring(L, "rfc822Name");
         push_subtable(L, -2);
-        push_asn1_string(L, general_name->d.rfc822Name, utf8);
+        PUSH_ASN1_STRING(L, general_name->d.rfc822Name, utf8);
         lua_rawseti(L, -2, lua_rawlen(L, -2) + 1);
         lua_pop(L, 1);
         break;
       case GEN_URI:
         lua_pushstring(L, "uniformResourceIdentifier");
         push_subtable(L, -2);
-        push_asn1_string(L, general_name->d.uniformResourceIdentifier, utf8);
+        PUSH_ASN1_STRING(L, general_name->d.uniformResourceIdentifier, utf8);
         lua_rawseti(L, -2, lua_rawlen(L, -2)+1);
         lua_pop(L, 1);
         break;
       case GEN_IPADD:
         lua_pushstring(L, "iPAddress");
         push_subtable(L, -2);
-        push_asn1_string(L, general_name->d.iPAddress, utf8);
+        PUSH_ASN1_OCTET_STRING(L, general_name->d.iPAddress);
         lua_rawseti(L, -2, lua_rawlen(L, -2)+1);
         lua_pop(L, 1);
         break;

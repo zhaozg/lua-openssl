@@ -32,7 +32,7 @@ static LUA_FUNCTION(openssl_x509_extension_parse)
   openssl_push_asn1object(L, ext->object);
   lua_setfield(L, -2, "object");
 
-  openssl_push_asn1string(L, ext->value, 0);
+  PUSH_ASN1_OCTET_STRING(L, ext->value);
   lua_setfield(L,-2, "value");
 
   return 1;
@@ -203,11 +203,11 @@ static LUA_FUNCTION(openssl_x509_parse)
     AUXILIAR_SET(L, -1, "hash", buf, string);
   }
 
-  openssl_push_asn1string(L, cert->cert_info->serialNumber, 0);
+  PUSH_ASN1_INTEGER(L, cert->cert_info->serialNumber);
   lua_setfield(L,-2, "serialNumber");
-  openssl_push_asn1string(L, X509_get_notBefore(cert), 0);
+  PUSH_ASN1_TIME(L, X509_get_notBefore(cert));
   lua_setfield(L,-2, "notBefore");
-  openssl_push_asn1string(L, X509_get_notAfter(cert), 0);
+  PUSH_ASN1_TIME(L, X509_get_notAfter(cert));
   lua_setfield(L,-2, "notAfter");
 
   {
@@ -516,13 +516,13 @@ static int openssl_x509_serial(lua_State *L)
 static int openssl_x509_notbefore(lua_State *L)
 {
   X509* cert = CHECK_OBJECT(1, X509, "openssl.x509");
-  return push_asn1_time(L, X509_get_notBefore(cert));
+  return PUSH_ASN1_TIME(L, X509_get_notBefore(cert));
 }
 
 static int openssl_x509_notafter(lua_State *L)
 {
   X509* cert = CHECK_OBJECT(1, X509, "openssl.x509");
-  return push_asn1_time(L, X509_get_notAfter(cert));
+  return PUSH_ASN1_TIME(L, X509_get_notAfter(cert));
 }
 
 static luaL_Reg x509_funcs[] =

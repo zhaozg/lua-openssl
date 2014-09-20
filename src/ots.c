@@ -399,7 +399,7 @@ static LUA_FUNCTION(openssl_ts_req_parse)
     STACK_OF(X509_EXTENSION) *extensions; /* [0] OPTIONAL */
   } TS_REQ;
 #endif
-  openssl_push_asn1string(L, req->version, 0);
+  PUSH_ASN1_INTEGER(L, req->version);
   lua_setfield(L, -2, "version");
 
   AUXILIAR_SET(L, -1, "cert_req", req->cert_req, boolean);
@@ -409,7 +409,7 @@ static LUA_FUNCTION(openssl_ts_req_parse)
     lua_setfield(L, -2, "policy_id");
   }
   if (req->nonce){
-    openssl_push_asn1string(L, req->nonce, 0);
+    PUSH_ASN1_INTEGER(L, req->nonce);
     lua_setfield(L, -2, "nonce");
   }
   lua_newtable(L);
@@ -495,12 +495,12 @@ static LUA_FUNCTION(openssl_ts_resp_parse)
 
   {
     lua_newtable(L);
-    openssl_push_asn1string(L, res->status_info->status, 0);
+    PUSH_ASN1_INTEGER(L, res->status_info->status);
     lua_setfield(L, -2, "status");
 
     if (res->status_info->failure_info)
     {
-      openssl_push_asn1string(L, res->status_info->failure_info, 0);
+      PUSH_ASN1_BIT_STRING(L, res->status_info->failure_info);
       lua_setfield(L, -2, "failure_info");
     }
 
@@ -534,19 +534,19 @@ static LUA_FUNCTION(openssl_ts_resp_parse)
     TS_TST_INFO *info = res->tst_info;
     lua_newtable(L);
     if (info->version){
-      openssl_push_asn1string(L, info->version, 0);
+      PUSH_ASN1_INTEGER(L, info->version);
       lua_setfield(L, -2, "version");
     }
     if (info->serial){
-      openssl_push_asn1string(L, info->serial, 0);
+      PUSH_ASN1_INTEGER(L, info->serial);
       lua_setfield(L, -2, "serial");
     }
     if (info->nonce){
-      openssl_push_asn1string(L, info->nonce, 0);
+      PUSH_ASN1_INTEGER(L, info->nonce);
       lua_setfield(L, -2, "nonce");
     }
     if (info->time){
-      openssl_push_asn1string(L, info->time, 0);
+      PUSH_ASN1_GENERALIZEDTIME(L, info->time);
       lua_setfield(L, -2, "time");
     }
     if (info->policy_id){
@@ -571,11 +571,11 @@ static LUA_FUNCTION(openssl_ts_resp_parse)
     if (info->accuracy)
     {
       lua_newtable(L);
-      openssl_push_asn1string(L, info->accuracy->micros, 0);
+      PUSH_ASN1_INTEGER(L, info->accuracy->micros);
       lua_setfield(L, -2, "micros");
-      openssl_push_asn1string(L, info->accuracy->millis, 0);
+      PUSH_ASN1_INTEGER(L, info->accuracy->millis);
       lua_setfield(L, -2, "millis");
-      openssl_push_asn1string(L, info->accuracy->seconds, 0);
+      PUSH_ASN1_INTEGER(L, info->accuracy->seconds);
       lua_setfield(L, -2, "seconds");
 
       lua_setfield(L, -2, "accuracy");

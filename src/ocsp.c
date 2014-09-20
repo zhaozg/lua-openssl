@@ -192,13 +192,13 @@ static int openssl_ocsp_request_parse(lua_State*L)
       openssl_push_x509_algor(L, a->hashAlgorithm);
       lua_setfield(L, -2, "hashAlgorithm");
 
-      openssl_push_asn1string(L,a->issuerNameHash,0);
+      PUSH_ASN1_OCTET_STRING(L, a->issuerNameHash);
       lua_setfield(L, -2, "issuerNameHash");
 
-      openssl_push_asn1string(L,a->issuerKeyHash,0);
+      PUSH_ASN1_OCTET_STRING(L, a->issuerKeyHash);
       lua_setfield(L, -2, "issuerKeyHash");
 
-      openssl_push_asn1string(L,a->serialNumber,0);
+      PUSH_ASN1_INTEGER(L, a->serialNumber);
       lua_setfield(L, -2, "serialNumber");
     }
     lua_rawseti(L, -2, i + 1);

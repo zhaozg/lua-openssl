@@ -56,15 +56,19 @@ int XEXTS_from_ltable(lua_State*L, STACK_OF(X509_EXTENSION) *exts, X509V3_CTX* c
 X509_STORE* skX509_to_store(STACK_OF(X509)* calist, const char* files, const char* dirs);
 
 void to_hex(const char* in, int length, char* out);
-void push_asn1_objname(lua_State* L, ASN1_OBJECT *object, int no_name);
-void push_asn1_string(lua_State* L, ASN1_STRING *string, int utf8);
-int push_asn1_time(lua_State *L, ASN1_UTCTIME *tm);
 
 int push_x509_name(lua_State* L, X509_NAME *name, int encode);
 int openssl_push_asn1type(lua_State* L, const ASN1_TYPE* type);
 int openssl_push_asn1object(lua_State* L, const ASN1_OBJECT* obj);
-int openssl_push_asn1string(lua_State* L, ASN1_STRING* string, int type);
+int openssl_push_asn1(lua_State* L, ASN1_STRING* string, int type, int utf8);
 int openssl_push_x509_algor(lua_State*L,const X509_ALGOR* alg);
+
+#define PUSH_ASN1_TIME(L, tm)             openssl_push_asn1(L, (ASN1_STRING*)tm, V_ASN1_UTCTIME, 0)
+#define PUSH_ASN1_GENERALIZEDTIME(L, tm)  openssl_push_asn1(L, (ASN1_STRING*)tm, V_ASN1_GENERALIZEDTIME, 0)
+#define PUSH_ASN1_INTEGER(L, i)           openssl_push_asn1(L, (ASN1_STRING*)i,  V_ASN1_INTEGER, 0)
+#define PUSH_ASN1_OCTET_STRING(L, s)      openssl_push_asn1(L, (ASN1_STRING*)s,  V_ASN1_OCTET_STRING, 0)
+#define PUSH_ASN1_BIT_STRING(L, s)        openssl_push_asn1(L, (ASN1_STRING*)s,  V_ASN1_BIT_STRING, 0)
+#define PUSH_ASN1_STRING(L, s, utf)       openssl_push_asn1(L, (ASN1_STRING*)s,  0,  utf)
 
 int openssl_push_xname(lua_State*L, X509_NAME* xname);
 int openssl_new_xname(lua_State*L, X509_NAME* xname, int idx, int utf8);

@@ -24,45 +24,6 @@ void to_hex(const char* in, int length, char* out)
   out[i*2] = '\0';
 }
 
-void push_asn1_objname(lua_State* L, ASN1_OBJECT *object, int no_name)
-{
-  char buffer[256];
-  int len = OBJ_obj2txt(buffer, sizeof(buffer), object, no_name);
-  len = (len < sizeof(buffer)) ? len : sizeof(buffer);
-  lua_pushlstring(L, buffer, len);
-}
-
-void push_asn1_string(lua_State* L, ASN1_STRING *string, int utf8)
-{
-  int len;
-  unsigned char *data;
-  if (!string)
-    lua_pushnil(L);
-  if (utf8) {
-    len = ASN1_STRING_to_UTF8(&data, string);
-    if (len >= 0) {
-      lua_pushlstring(L, (char*)data, len);
-      OPENSSL_free(data);
-    }else
-      lua_pushnil(L);
-  } else {
-    lua_pushlstring(L, (char*)ASN1_STRING_data(string),
-      ASN1_STRING_length(string));
-  }
-}
-
-int push_asn1_time(lua_State *L, ASN1_UTCTIME *tm)
-{
-  char *tmp;
-  long size;
-  BIO *out = BIO_new(BIO_s_mem());
-  ASN1_TIME_print(out, tm);
-  size = BIO_get_mem_data(out, &tmp);
-  lua_pushlstring(L, tmp, size);
-  BIO_free(out);
-  return 1;
-}
-
 /*** asn1_string routines ***/
 const static char* asTypes[] =
 {
@@ -117,6 +78,14 @@ const int isTypes[] =
   0
 };
 
+static const char* asn1_typestring(int type){
+  int i;
+  for (i = 0; isTypes[i] && isTypes[i] != type; i++);
+  if (isTypes[i])
+    return asTypes[i];
+  else
+    return "unknown";
+}
 
 static int openssl_ans1string_type(lua_State* L)
 {
@@ -448,10 +417,65 @@ int openssl_push_asn1type(lua_State* L, ASN1_TYPE* type)
   return 1;
 }
 
-int openssl_push_asn1string(lua_State* L, ASN1_STRING* string, int type)
+int openssl_push_asn1(lua_State* L, ASN1_STRING* string, int type, int utf8)
 {
-  if(string->type==type) {
-
+  if(type && string->type!=type)
+  {
+    luaL_error(L, "need %s asn1, but get %s",asn1_typestring(type),asn1_typestring(string->type));
+    return 0;
   }
-  return 1;
+
+  switch(string->type){
+  case V_ASN1_BOOLEAN:
+    {
+      return 1;
+    }
+  case V_ASN1_INTEGER:
+    {
+      ASN1_INTEGER *ai = (ASN1_INTEGER *)string;
+      BIGNUM *bn = ASN1_INTEGER_to_BN(ai, NULL);
+      char *tmp = BN_bn2hex(bn);
+      lua_pushstring(L, tmp);
+      BN_free(bn);
+      OPENSSL_free(tmp);
+      return 1;
+    }
+  case V_ASN1_UTCTIME:
+  case V_ASN1_GENERALIZEDTIME:
+    {
+      char *tmp;
+      long size;
+      ASN1_TIME *tm = (ASN1_TIME*)string;
+      BIO *out = BIO_new(BIO_s_mem());
+      ASN1_TIME_print(out, tm);
+      size = BIO_get_mem_data(out, &tmp);
+      lua_pushlstring(L, tmp, size);
+      BIO_free(out);
+      return 1;
+    }
+  case V_ASN1_OCTET_STRING:
+  case V_ASN1_BIT_STRING:
+    {
+      lua_pushlstring(L, (char*)ASN1_STRING_data(string), ASN1_STRING_length(string));
+      return 1;
+    }
+  default:
+    {
+      int len;
+      unsigned char *data;
+      if (utf8) {
+        len = ASN1_STRING_to_UTF8(&data, string);
+        if (len >= 0) {
+          lua_pushlstring(L, (char*)data, len);
+          OPENSSL_free(data);
+        }else
+          lua_pushnil(L);
+      } else {
+        lua_pushlstring(L, (char*)ASN1_STRING_data(string), ASN1_STRING_length(string));
+      }
+      return 1;
+    }
+  }
+
+  return 0;
 };

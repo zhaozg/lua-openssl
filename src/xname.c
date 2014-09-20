@@ -47,11 +47,9 @@ int push_x509_name(lua_State* L, X509_NAME *name, int encode)
     entry = X509_NAME_get_entry(name, i);
     object = X509_NAME_ENTRY_get_object(entry);
     lua_newtable(L);
-    push_asn1_objname(L, object, 1);
-    lua_setfield(L, -2, "oid");
-    push_asn1_objname(L, object, 0);
+    openssl_push_asn1object(L, object);
     lua_setfield(L, -2, "name");
-    push_asn1_string(L, X509_NAME_ENTRY_get_data(entry), encode);
+    PUSH_ASN1_STRING(L, X509_NAME_ENTRY_get_data(entry), encode);
     lua_setfield(L, -2, "value");
     lua_rawseti(L, -2, i+1);
   }
