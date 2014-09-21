@@ -366,10 +366,10 @@ static LUA_FUNCTION(openssl_csr_parse)
 
   lua_newtable(L);
   AUXILIAR_SET(L, -1, "version", ASN1_INTEGER_get(csr->req_info->version), integer);
-  openssl_push_xname(L, subject);
+  openssl_push_xname_asobject(L, subject);
   lua_setfield(L, -2, "subject");
   if(exts){
-    openssl_push_x509_exts(L, exts, utf8);
+    openssl_push_xexts_astable(L, exts, utf8);
     lua_setfield(L, -2, "extensions");
   }
 
@@ -379,7 +379,7 @@ static LUA_FUNCTION(openssl_csr_parse)
 
     lua_newtable(L);
     if(attrs) {
-      openssl_push_x509_attrs(L, attrs, utf8);
+      openssl_push_xattrs_astable(L, attrs, utf8);
       lua_setfield(L, -2, "attributes");
     }
 

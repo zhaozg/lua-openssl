@@ -8,6 +8,8 @@
 #include "openssl.h"
 #include "private.h"
 
+#define MYNAME "x509.attribute"
+
 static int openssl_xattr_totable(lua_State*L, X509_ATTRIBUTE *attr, int utf8) {
   lua_newtable(L);
   openssl_push_asn1object(L,attr->object);
@@ -38,6 +40,13 @@ static int openssl_xattr_info(lua_State*L) {
   return openssl_xattr_totable(L, attr, utf8);
 }
 
+static int openssl_xattr_dup(lua_State*L) {
+  X509_ATTRIBUTE* attr = CHECK_OBJECT(1,X509_ATTRIBUTE, "openssl.x509_attribute");
+  X509_ATTRIBUTE* dup = X509_ATTRIBUTE_dup(attr);
+  PUSH_OBJECT(dup,"openssl.x509_attribute");
+  return 1;
+}
+
 static int openssl_xattr_free(lua_State*L) {
   X509_ATTRIBUTE* attr = CHECK_OBJECT(1,X509_ATTRIBUTE, "openssl.x509_attribute");
   lua_pushnil(L);
@@ -49,33 +58,12 @@ static int openssl_xattr_free(lua_State*L) {
 static luaL_Reg x509_attribute_funs[] =
 {
   {"info",          openssl_xattr_info},
-
+  {"dup",           openssl_xattr_dup},
+  
   {"__gc",          openssl_xattr_free},
   {"__tostring",    auxiliar_tostring},
 
   { NULL, NULL }
-};
-
-int openssl_register_xattribute(lua_State*L)
-{
-  auxiliar_newclass(L, "openssl.x509_attribute", x509_attribute_funs);
-  return 0;
-}
-
-int openssl_push_x509_attrs(lua_State*L, STACK_OF(X509_ATTRIBUTE) *attrs, int utf8)
-{
-  int i;
-  int n = sk_X509_ATTRIBUTE_num(attrs);
-  lua_newtable(L);
-
-  for (i = 0; i < n; i++)
-  {
-    X509_ATTRIBUTE* attr = sk_X509_ATTRIBUTE_value(attrs, i);
-
-    openssl_xattr_totable(L, attr, utf8);
-    lua_rawseti(L, -2, i+1);
-  };
-  return 1;
 };
 
 static X509_ATTRIBUTE* openssl_new_xattribute(lua_State*L, X509_ATTRIBUTE** a, int idx, int utf8)
@@ -105,6 +93,48 @@ static X509_ATTRIBUTE* openssl_new_xattribute(lua_State*L, X509_ATTRIBUTE** a, i
 
   return X509_ATTRIBUTE_create_by_NID(a, nid, arttype, data, len);
 }
+
+
+static int openssl_xattr_new(lua_State*L) {
+  X509_ATTRIBUTE *x=NULL;
+  int utf8;
+  luaL_checktable(L,1);
+  utf8 = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L, 2);
+
+  x = openssl_new_xattribute(L, &x, 1, utf8);
+  PUSH_OBJECT(x,"openssl.x509_attribute");
+  return 1;
+}
+
+static luaL_Reg R[] =
+{
+  {"new",         openssl_xattr_new},
+
+  {NULL,          NULL},
+};
+
+int openssl_register_xattribute(lua_State*L)
+{
+  auxiliar_newclass(L, "openssl.x509_attribute", x509_attribute_funs);
+  luaL_register(L, MYNAME, R);
+  return 0;
+}
+
+int openssl_push_xattrs_astable(lua_State*L, STACK_OF(X509_ATTRIBUTE) *attrs, int utf8)
+{
+  int i;
+  int n = sk_X509_ATTRIBUTE_num(attrs);
+  lua_newtable(L);
+
+  for (i = 0; i < n; i++)
+  {
+    X509_ATTRIBUTE* attr = sk_X509_ATTRIBUTE_value(attrs, i);
+
+    openssl_xattr_totable(L, attr, utf8);
+    lua_rawseti(L, -2, i+1);
+  };
+  return 1;
+};
 
 int openssl_new_xattrs(lua_State*L, STACK_OF(X509_ATTRIBUTE) *attrs, int idx, int utf8)
 {

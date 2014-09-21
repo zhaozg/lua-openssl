@@ -11,7 +11,7 @@
 
 #define MYNAME "x509.extension"
 
-static int openssl_xext_totable(lua_State* L, X509_EXTENSION *x, int utf8)
+int openssl_xext_totable(lua_State* L, X509_EXTENSION *x, int utf8)
 {
   lua_newtable(L);
   openssl_push_asn1object(L, x->object);
@@ -80,7 +80,7 @@ static int openssl_xext_totable(lua_State* L, X509_EXTENSION *x, int utf8)
           break;
         case GEN_DIRNAME:
           lua_newtable(L);
-          push_x509_name(L, general_name->d.directoryName, utf8);
+          openssl_push_xname_astable(L, general_name->d.directoryName, utf8);
           lua_setfield(L, -2, "directoryName");
           lua_pushstring(L, "directoryName");
           lua_rawseti(L, -2, i+1);
@@ -128,32 +128,6 @@ static int openssl_xext_totable(lua_State* L, X509_EXTENSION *x, int utf8)
   return 1;
 };
 
-int openssl_x509_extensions(lua_State* L)
-{
-  int i = -1;
-  
-  X509 *peer = CHECK_OBJECT(1, X509, "openssl.x509");
-  int utf8 = lua_isnoneornil(L, 2) ? 0 : lua_toboolean(L, 2);
-
-  /* Return (ret) */
-  lua_newtable(L);
-
-  while ((i = X509_get_ext_by_NID(peer, NID_subject_alt_name, i)) != -1) {
-    X509_EXTENSION *extension = X509_get_ext(peer, i);
-    STACK_OF(GENERAL_NAME) *values;
-    if (extension == NULL)
-      break;
-    values = X509V3_EXT_d2i(extension);
-    if (values == NULL)
-      break;
-
-    openssl_xext_totable(L, extension, utf8);
-    lua_rawseti(L, -2, i+1);
-    i++;           /* Next extension */
-  }
-  return 1;
-}
-
 static int openssl_xext_info(lua_State* L)
 {
   X509_EXTENSION *x = CHECK_OBJECT(1, X509_EXTENSION, "openssl.x509_extension");
@@ -161,9 +135,29 @@ static int openssl_xext_info(lua_State* L)
   return openssl_xext_totable(L,x,utf8);
 };
 
+static int openssl_xext_dup(lua_State* L)
+{
+  X509_EXTENSION *x = CHECK_OBJECT(1, X509_EXTENSION, "openssl.x509_extension");
+  X509_EXTENSION *d = X509_EXTENSION_dup(x);
+  PUSH_OBJECT(d, "openssl.x509_extension");
+  return 1;
+};
+
+static int openssl_xext_free(lua_State* L)
+{
+  X509_EXTENSION *x = CHECK_OBJECT(1, X509_EXTENSION, "openssl.x509_extension");
+  lua_pushnil(L);
+  lua_setmetatable(L, 1);
+  X509_EXTENSION_free(x);
+  return 0;
+};
+
 static luaL_Reg x509_extension_funs[] =
 {
   {"info",          openssl_xext_info},
+  {"dup",           openssl_xext_dup},
+
+  {"__gc",          openssl_xext_free},
   {"__tostring",    auxiliar_tostring},
 
   { NULL, NULL }
@@ -216,7 +210,7 @@ int openssl_register_xextension(lua_State*L)
   return 1;
 }
 
-int openssl_push_x509_exts(lua_State*L, STACK_OF(X509_EXTENSION) *exts, int utf8)
+int openssl_push_xexts_astable(lua_State*L, STACK_OF(X509_EXTENSION) *exts, int utf8)
 {
   int i;
   int n = sk_X509_EXTENSION_num(exts);

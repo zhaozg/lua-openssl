@@ -581,7 +581,7 @@ static LUA_FUNCTION(openssl_ts_resp_parse)
       lua_setfield(L, -2, "accuracy");
     }
     if (info->tsa){
-      openssl_push_xname(L, info->tsa->d.dirn);
+      openssl_push_xname_asobject(L, info->tsa->d.dirn);
       lua_setfield(L, -2, "tsa");
     }
 

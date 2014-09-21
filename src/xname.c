@@ -30,7 +30,7 @@ static int openssl_xname_oneline(lua_State*L)
   return 1;
 };
 
-int push_x509_name(lua_State* L, X509_NAME *name, int encode)
+int openssl_push_xname_astable(lua_State* L, X509_NAME *name, int encode)
 {
   int i;
   int n_entries;
@@ -54,7 +54,7 @@ static int openssl_xname_info(lua_State*L)
 {
   X509_NAME* xn = CHECK_OBJECT(1, X509_NAME, "openssl.x509_name");
   int utf8 = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L, 2);
-  return push_x509_name(L, xn, utf8);
+  return openssl_push_xname_astable(L, xn, utf8);
 };
 
 static int openssl_xname_dup(lua_State*L)
@@ -77,7 +77,7 @@ static luaL_Reg xname_funcs[] =
   {NULL,          NULL},
 };
 
-int openssl_push_xname(lua_State*L, X509_NAME* xname)
+int openssl_push_xname_asobject(lua_State*L, X509_NAME* xname)
 {
   X509_NAME* dup = X509_NAME_dup(xname);
   PUSH_OBJECT(dup,"openssl.x509_name");
