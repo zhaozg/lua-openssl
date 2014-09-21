@@ -75,8 +75,6 @@ int openssl_push_xname(lua_State*L, X509_NAME* xname);
 int openssl_push_x509_exts(lua_State*L, STACK_OF(X509_EXTENSION) *exts, int utf8);
 int openssl_push_x509_attrs(lua_State*L, STACK_OF(X509_ATTRIBUTE) *attrs, int utf8);
 
-int XATTRS_from_ltable(lua_State*L, STACK_OF(X509_ATTRIBUTE) **attributes, int attr);
-
 int openssl_get_nid(lua_State*L, int idx);
 int openssl_get_asn1type(lua_State*L, int idx);
 
