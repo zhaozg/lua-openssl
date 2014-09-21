@@ -51,7 +51,6 @@ BIGNUM *BN_get(lua_State *L, int i);
 int openssl_engine(lua_State *L);
 
 int XATTRS_from_ltable(lua_State*L, STACK_OF(X509_ATTRIBUTE) **attributes, int attr);
-int XEXTS_from_ltable(lua_State*L, STACK_OF(X509_EXTENSION) *exts, X509V3_CTX* ctx, int extensions);
 
 X509_STORE* skX509_to_store(STACK_OF(X509)* calist, const char* files, const char* dirs);
 
@@ -70,12 +69,15 @@ int openssl_push_x509_algor(lua_State*L,const X509_ALGOR* alg);
 #define PUSH_ASN1_BIT_STRING(L, s)        openssl_push_asn1(L, (ASN1_STRING*)s,  V_ASN1_BIT_STRING, 0)
 #define PUSH_ASN1_STRING(L, s, utf)       openssl_push_asn1(L, (ASN1_STRING*)s,  0,  utf)
 
-int openssl_push_xname(lua_State*L, X509_NAME* xname);
 int openssl_new_xname(lua_State*L, X509_NAME* xname, int idx, int utf8);
+int openssl_new_xexts(lua_State* L, STACK_OF(X509_EXTENSION) *exts, int idx, int utf8);
+int openssl_push_xname(lua_State*L, X509_NAME* xname);
+int openssl_push_x509_exts(lua_State*L, STACK_OF(X509_EXTENSION) *exts, int utf8);
+int openssl_push_x509_attrs(lua_State*L, STACK_OF(X509_ATTRIBUTE) *attrs, int utf8);
+
 int openssl_register_xname(lua_State*L);
 int openssl_register_xextension(lua_State*L);
 int openssl_x509_extensions(lua_State* L);
-int openssl_push_x509_exts(lua_State*L, STACK_OF(X509_EXTENSION) *exts, int utf8);
 
 int openssl_pushresult(lua_State*L, int result);
 

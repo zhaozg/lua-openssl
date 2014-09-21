@@ -475,3 +475,16 @@ int openssl_push_asn1(lua_State* L, ASN1_STRING* string, int type, int utf8)
 
   return 0;
 };
+/*
+static unsigned char *generic_asn1(char *value, X509V3_CTX *ctx, long *ext_len)
+{
+  ASN1_TYPE *typ;
+  unsigned char *ext_der = NULL;
+  typ = ASN1_generate_v3(value, ctx);
+  if (typ == NULL)
+    return NULL;
+  *ext_len = i2d_ASN1_TYPE(typ, &ext_der);
+  ASN1_TYPE_free(typ);
+  return ext_der;
+}
+*/

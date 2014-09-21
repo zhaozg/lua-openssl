@@ -17,7 +17,8 @@ static int openssl_make_REQ(lua_State*L,
                             EVP_PKEY *pkey,
                             int dn,
                             int attribs,
-                            int extensions)
+                            int extensions,
+                            int utf8)
 {
   /* setup the version number: version 1 */
   if (X509_REQ_set_version(csr, 0L))
@@ -34,11 +35,8 @@ static int openssl_make_REQ(lua_State*L,
 
     if (extensions)
     {
-      /* Check syntax of file */
-      X509V3_CTX ctx;
       STACK_OF(X509_EXTENSION) *exts = sk_X509_EXTENSION_new_null();
-      X509V3_set_ctx_test(&ctx);
-      XEXTS_from_ltable(L, exts, &ctx, extensions);
+      openssl_new_xexts(L, exts, extensions, utf8);
       X509_REQ_add_extensions(csr, exts);
       sk_X509_EXTENSION_pop_free(exts, X509_EXTENSION_free);
     }
@@ -265,15 +263,13 @@ static LUA_FUNCTION(openssl_csr_sign)
   copy_extensions(new_cert, csr, 1);
   if (!lua_isnoneornil(L, 5))
   {
-    X509V3_CTX ctx;
-
+    int utf8 = lua_isnoneornil(L, 6) ? 1 : lua_toboolean(L, 6);
     luaL_checktable(L, 5);
 
     if (new_cert->cert_info->extensions == NULL)
       new_cert->cert_info->extensions = sk_X509_EXTENSION_new_null();
 
-    X509V3_set_ctx_test(&ctx);
-    XEXTS_from_ltable(L, new_cert->cert_info->extensions, &ctx, 5);
+    openssl_new_xexts(L, new_cert->cert_info->extensions, 5, utf8);  
   }
 
   /* Now sign it */
@@ -296,6 +292,7 @@ static LUA_FUNCTION(openssl_csr_new)
 
   EVP_PKEY *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
   int dn = 2, attribs = 3, extensions = 4, digest = 5;
+  int utf8 = 1;
 
   luaL_checktable(L, dn);
 
@@ -323,7 +320,7 @@ static LUA_FUNCTION(openssl_csr_new)
   csr = X509_REQ_new();
   if (csr)
   {
-    if (openssl_make_REQ(L, csr, pkey, dn, attribs, extensions))
+    if (openssl_make_REQ(L, csr, pkey, dn, attribs, extensions, utf8))
     {
       const EVP_MD*  md = digest
                           ? get_digest(L, digest)
@@ -377,49 +374,12 @@ static LUA_FUNCTION(openssl_csr_parse)
   {
     X509_REQ_INFO* ri = csr->req_info;
     STACK_OF(X509_ATTRIBUTE) *attrs = ri->attributes;
-    if (attrs && X509at_get_attr_count(attrs))
-    {
-      int i;
 
-      lua_newtable(L);
-
-      for (i = 0; i < X509at_get_attr_count(attrs); i++)
-      {
-        X509_ATTRIBUTE *attr = X509at_get_attr(attrs, i);
-        lua_newtable(L);
-        AUXILIAR_SET(L, -1, "single", attr->single, boolean);
-
-        if (attr->single)
-        {
-          openssl_push_asn1object(L, attr->object);
-          lua_setfield(L, -2, "object");
-          openssl_push_asn1type(L, attr->value.single);
-          lua_setfield(L, -2, "single");
-        }
-        else
-        {
-          openssl_push_asn1object(L, attr->object);
-          lua_setfield(L, -2, "object");
-
-          if (sk_ASN1_TYPE_num(attr->value.set))
-          {
-            int j;
-            lua_newtable(L);
-            for (j = 0; j < sk_ASN1_TYPE_num(attr->value.set); j++)
-            {
-              ASN1_TYPE *av = sk_ASN1_TYPE_value(attr->value.set, 0);
-              openssl_push_asn1type(L, av);
-              lua_rawseti(L, -2, j + 1);
-            }
-            lua_setfield(L, -2, "set");
-          }
-        }
-
-        lua_rawseti(L, -2, i + 1);
-      }
+    lua_newtable(L);
+    if(attrs) {
+      openssl_push_x509_attrs(L, attrs, utf8);
       lua_setfield(L, -2, "attributes");
     }
-
 
     lua_newtable(L);
     openssl_push_asn1object(L, ri->pubkey->algor->algorithm);
@@ -427,9 +387,9 @@ static LUA_FUNCTION(openssl_csr_parse)
 
     AUXILIAR_SETOBJECT(L, X509_REQ_get_pubkey(csr), "openssl.evp_pkey", -1, "pubkey");
     lua_setfield(L, -2, "pubkey");
-  }
 
-  lua_setfield(L, -2, "req_info");
+    lua_setfield(L, -2, "req_info");
+  }
 
   return 1;
 }
