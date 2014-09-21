@@ -78,36 +78,48 @@ int openssl_push_x509_attrs(lua_State*L, STACK_OF(X509_ATTRIBUTE) *attrs, int ut
   return 1;
 };
 
-int XATTRS_from_ltable(lua_State*L,
-  STACK_OF(X509_ATTRIBUTE) **attributes,
-  int attr)
+static X509_ATTRIBUTE* openssl_new_xattribute(lua_State*L, X509_ATTRIBUTE** a, int idx, int utf8)
 {
-  /* table is in the stack at index 't' */
-  lua_pushnil(L);  /* first key */
-  while (lua_next(L, attr) != 0)
-  {
-    /* uses 'key' (at index -2) and 'value' (at index -1) */
-    const char * strindex = lua_tostring(L, -2);
-    const char * strval = lua_tostring(L, -1);
+  int arttype;
+  size_t len;
+  int nid;
+  const char* data;
 
-    if (strindex)
-    {
-      int nid = OBJ_txt2nid(strindex);
-      if (nid != NID_undef)
-      {
-        if (!X509at_add1_attr_by_NID(attributes, nid,
-          MBSTRING_ASC, (unsigned char*)strval, -1))
-        {
-          luaL_error(L, "attrib: X509at_add1_attr_by_NID %d(%s) -> %s (failed)", nid, strindex, strval);
-        }
-      }
-      else
-      {
-        luaL_error(L, "attrib: %s is not a recognized name", strindex);
-      }
+  lua_getfield(L, idx, "object");
+  nid = openssl_get_nid(L, -1);
+  lua_pop(L, 1);
+
+  lua_getfield(L, idx, "type");
+  arttype = openssl_get_asn1type(L, -1);
+  lua_pop(L, 1);
+
+  lua_getfield(L, idx, "value");
+  if(lua_isuserdata(L, -1))
+  {
+    ASN1_STRING* value = CHECK_OBJECT(-1, ASN1_STRING, "openssl.asn1_string");
+    data = ASN1_STRING_data(value);
+    len  = ASN1_STRING_length(value);
+  }else
+    data = luaL_checklstring(L, idx, &len);
+  lua_pop(L, 1);
+
+  return X509_ATTRIBUTE_create_by_NID(a, nid, arttype, data, len);
+}
+
+int openssl_new_xattrs(lua_State*L, STACK_OF(X509_ATTRIBUTE) *attrs, int idx, int utf8)
+{
+  size_t i;
+  luaL_checktable(L, idx);
+
+  for(i=0; i<lua_rawlen(L, idx); i++)
+  {
+    X509_ATTRIBUTE* a = NULL;
+    lua_rawgeti(L, idx, i+1);
+    a = openssl_new_xattribute(L, &a, -1,utf8);
+    if(a) {
+      sk_X509_ATTRIBUTE_push(attrs,a);
     }
-    /* removes 'value'; keeps 'key' for next iteration */
-    lua_pop(L, 1);
+    lua_pop(L,1);
   }
   return 0;
 }

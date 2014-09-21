@@ -1,15 +1,15 @@
 /*=========================================================================*\
-* x509 name routines
+* xexts.c
+* * x509 extension routines for lua-openssl binding
 *
-* This product includes PHP software, freely available from <http://www.php.net/software/>
 * Author:  george zhao <zhaozg(at)gmail.com>
 \*=========================================================================*/
+
 #include <ctype.h>
 #include "openssl.h"
 #include "private.h"
 
 #define MYNAME "x509.extension"
-
 
 static int openssl_xext_totable(lua_State* L, X509_EXTENSION *x, int utf8)
 {
@@ -171,21 +171,23 @@ static luaL_Reg x509_extension_funs[] =
 
 static X509_EXTENSION* openssl_new_xextension(lua_State*L, X509_EXTENSION** x, int idx, int utf8)
 {
-  ASN1_OBJECT* obj;
+  int nid;
   ASN1_OCTET_STRING* value;
   int critical;
 
-  lua_setfield(L, idx, "object");
-  obj = CHECK_OBJECT(-1, ASN1_OBJECT, "openssl.asn1_object");
+  lua_getfield(L, idx, "object");
+  nid = openssl_get_nid(L, -1);
   lua_pop(L, 1);
-  lua_setfield(L, idx, "value");
+
+  lua_getfield(L, idx, "value");
   value = CHECK_OBJECT(-1, ASN1_STRING, "openssl.asn1_string");
   lua_pop(L, 1);
-  lua_setfield(L, idx, "critical");
+
+  lua_getfield(L, idx, "critical");
   critical = lua_isnil(L,-1) ? 0 : lua_toboolean(L, -1);
   lua_pop(L, 1);
 
-  return X509_EXTENSION_create_by_NID(x, obj->nid, critical, ASN1_STRING_dup(value));
+  return X509_EXTENSION_create_by_NID(x, nid, critical, ASN1_STRING_dup(value));
 }
 
 static int openssl_xext_new(lua_State* L)

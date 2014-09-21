@@ -338,7 +338,6 @@ LUALIB_API int luaopen_asn1(lua_State *L)
   auxiliar_newclass(L, "openssl.asn1_object", asn1obj_funcs);
   auxiliar_newclass(L, "openssl.asn1_string", asn1str_funcs);
 
-
   luaL_newmetatable(L, MYTYPE);
   lua_setglobal(L, MYNAME);
   luaL_register(L, MYNAME, R);
@@ -353,6 +352,36 @@ LUALIB_API int luaopen_asn1(lua_State *L)
   return 1;
 }
 
+int openssl_get_nid(lua_State*L, int idx) {
+  if (lua_isnumber(L,idx)){
+    return luaL_checkint(L, idx);
+  }else if(lua_isstring(L, idx)) {
+    return OBJ_txt2nid(lua_tostring(L, idx));
+  }else if(lua_isuserdata(L, idx)) {
+    ASN1_OBJECT* obj = CHECK_OBJECT(idx, ASN1_OBJECT, "openssl.asn1_object");
+    int nid = obj->nid;
+    ASN1_OBJECT_free(obj);
+    return nid;
+  }
+  return NID_undef;
+}
+
+int openssl_get_asn1type(lua_State*L, int idx) {
+  if (lua_isnumber(L, idx)) {
+    return luaL_checkint(L, idx);
+  }else if(lua_isstring(L, idx))
+  {
+    int i;
+    const char* st = lua_tostring(L, idx);
+    for (i = 0; stricmp(st, asTypes[i]); i++);
+    return isTypes[i];
+  }else if(lua_isuserdata(L, idx))
+  {
+    ASN1_TYPE* atype = CHECK_OBJECT(idx, ASN1_TYPE, "openssl.asn1_type");
+    return atype->type;
+  }
+  return 0;
+}
 
 int openssl_push_asn1object(lua_State* L, const ASN1_OBJECT* obj)
 {

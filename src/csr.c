@@ -30,7 +30,9 @@ static int openssl_make_REQ(lua_State*L,
 
     if (attribs)
     {
-      XATTRS_from_ltable(L, &csr->req_info->attributes, attribs);
+      if(csr->req_info->attributes==NULL)
+        csr->req_info->attributes = sk_X509_ATTRIBUTE_new_null();
+      openssl_new_xattrs(L, csr->req_info->attributes, attribs, utf8);
     }
 
     if (extensions)
