@@ -395,11 +395,7 @@ int openssl_push_asn1object(lua_State* L, const ASN1_OBJECT* obj)
 
 int openssl_push_asn1type(lua_State* L, ASN1_TYPE* type)
 {
-  int itype = type->type;
-  int i;
-  for (i = 0; isTypes[i] && isTypes[i] != itype; i++);
-
-  lua_pushfstring(L, "%s:",isTypes[i] ? asTypes[i] : "unknown");
+  lua_newtable(L);
   switch (type->type)
   {
   case V_ASN1_BMPSTRING:
@@ -430,12 +426,16 @@ int openssl_push_asn1type(lua_State* L, ASN1_TYPE* type)
     break;
 
   default:
-    AUXILIAR_SET(L, -1, "type", type->type, integer);
-    AUXILIAR_SET(L, -1, "format", "der", string);
-
     {
+      int i;
       unsigned char* dat = NULL;
-      int i = i2d_ASN1_TYPE(type, &dat);
+
+      for (i = 0; isTypes[i] && isTypes[i] != type->type; i++);
+      lua_pushstring(L, isTypes[i] ? asTypes[i] : "unknown");
+      lua_setfield(L, -2, "type");
+
+      AUXILIAR_SET(L, -1, "format", "der", string);
+      i = i2d_ASN1_TYPE(type, &dat);
       if (i > 0)
       {
         AUXILIAR_SETLSTR(L, -1, "value", (const char *)dat, i);
