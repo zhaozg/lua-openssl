@@ -11,7 +11,7 @@ TestCompat = {}
     function TestCompat:setUp()
         self.alg='sha1'
 
-        self.dn = {commonName='zhaozg'}
+        self.dn = {{commonName='zhaozg'},{C='CN'}}
 --[[
         self.attribs = {}
         self.extentions = {}
@@ -42,7 +42,7 @@ function TestCompat:testNew()
 
         args.serialNumber = 1
         cert = assert(req:sign(nil,pkey,args))
-        --print_r(cert:parse());
+        cert:parse();
 
         local c = cert:get_public():encrypt('abcd')
         d = pkey:decrypt(c)
@@ -66,7 +66,7 @@ wSpxg0VN6+i6u9C9n4xwCe1VyteOC2In0LbxMAGL3rVFm9yDFRU3LDy3EWG6DIg/
 ]]
 
         local x = assert(csr.read(csr_data))
-        --t = x:parse()
+        t = x:parse()
         --print_r(t)
 end
 

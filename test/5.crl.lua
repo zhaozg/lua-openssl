@@ -9,7 +9,7 @@ TestCompat = {}
     function TestCompat:setUp()
         self.alg='sha1'
 
-        self.dn = {commonName='zhaozg'}
+        self.dn = {{commonName='zhaozg'},{C='CN'}}
 --[[
         self.attribs = {}
         self.extentions = {}
@@ -20,7 +20,7 @@ TestCompat = {}
 function TestCompat:testNew()
         local pkey = assert(openssl.pkey.new())
         local req = assert(csr.new(pkey,self.dn))
-        --t = req:parse()
+        t = req:parse()
         --print_r(t)
 
         assert(req:verify());
@@ -38,7 +38,7 @@ function TestCompat:testNew()
         args.serialNumber = 1
         cacert = assert(req:sign(nil,pkey,args))
 
-        --print_r(cacert:parse());
+        cacert:parse()
         local list = assert(crl.new(cacert))
 
         assert(list:add('1234',os.time()))

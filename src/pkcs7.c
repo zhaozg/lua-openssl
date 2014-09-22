@@ -11,7 +11,6 @@
 #define MYNAME    "pkcs7"
 #define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
   "based on OpenSSL " SHLIB_VERSION_NUMBER
-#define MYTYPE      "pkcs7"
 
 static LUA_FUNCTION(openssl_pkcs7_read)
 {
@@ -450,18 +449,11 @@ LUALIB_API int luaopen_pkcs7(lua_State *L)
 {
   auxiliar_newclass(L, "openssl.pkcs7", pkcs7_funcs);
 
-  luaL_newmetatable(L, MYTYPE);
-  lua_setglobal(L, MYNAME);
   luaL_register(L, MYNAME, R);
-  lua_pushvalue(L, -1);
-  lua_setmetatable(L, -2);
+
   lua_pushliteral(L, "version");    /** version */
   lua_pushliteral(L, MYVERSION);
   lua_settable(L, -3);
-  lua_pushliteral(L, "__index");
-  lua_pushvalue(L, -2);
-  lua_settable(L, -3);
+
   return 1;
 }
-
-

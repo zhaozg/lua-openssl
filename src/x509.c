@@ -12,7 +12,6 @@
 #define MYNAME    "x509"
 #define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
   "based on OpenSSL " SHLIB_VERSION_NUMBER
-#define MYTYPE      "x509"
 
 int openssl_push_x509_algor(lua_State*L, const X509_ALGOR* alg) {
   lua_newtable(L);
@@ -546,8 +545,7 @@ LUALIB_API int luaopen_x509(lua_State *L)
 {
   auxiliar_newclass(L, "openssl.x509", x509_funcs);
   openssl_register_sk_x509(L);
-  luaL_newmetatable(L, MYTYPE);
-  lua_setglobal(L, MYNAME);
+
   luaL_register(L, MYNAME, R);
 
   openssl_register_xname(L);
@@ -557,13 +555,9 @@ LUALIB_API int luaopen_x509(lua_State *L)
   openssl_register_xextension(L);
   lua_setfield(L, -2, "extension");
 
-  lua_pushvalue(L, -1);
-  lua_setmetatable(L, -2);
   lua_pushliteral(L, "version");    /** version */
   lua_pushliteral(L, MYVERSION);
   lua_settable(L, -3);
-  lua_pushliteral(L, "__index");
-  lua_pushvalue(L, -2);
-  lua_settable(L, -3);
+
   return 1;
 }

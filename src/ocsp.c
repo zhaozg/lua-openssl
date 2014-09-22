@@ -11,7 +11,6 @@
 #define MYNAME    "ocsp"
 #define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
   "based on OpenSSL " SHLIB_VERSION_NUMBER
-#define MYTYPE      "ocsp"
 
 static int openssl_ocsp_request_new(lua_State*L)
 {
@@ -470,16 +469,11 @@ LUALIB_API int luaopen_ocsp(lua_State *L)
   auxiliar_newclass(L, "openssl.ocsp_request",   ocsp_req_cfuns);
   auxiliar_newclass(L, "openssl.ocsp_response",  ocsp_res_cfuns);
 
-  luaL_newmetatable(L, MYTYPE);
-  lua_setglobal(L, MYNAME);
   luaL_register(L, MYNAME, R);
-  lua_pushvalue(L, -1);
-  lua_setmetatable(L, -2);
+
   lua_pushliteral(L, "version");    /** version */
   lua_pushliteral(L, MYVERSION);
   lua_settable(L, -3);
-  lua_pushliteral(L, "__index");
-  lua_pushvalue(L, -2);
-  lua_settable(L, -3);
+
   return 1;
 }

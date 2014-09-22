@@ -5,7 +5,7 @@ local count = 0
 local ncount = arg[3] and tonumber(arg[3]) or 40000
 ncount = ncount or 40000
 local step = 1000/2
-local tmp = false
+local tmp = true
 
 local function setInterval(fn, ms)
   local handle = uv.new_timer()

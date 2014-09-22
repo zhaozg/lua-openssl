@@ -9,8 +9,6 @@
 #define MYNAME    "asn1"
 #define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
   "based on OpenSSL " SHLIB_VERSION_NUMBER
-#define MYTYPE      "asn1"
-
 
 static const char* hex_tab = "0123456789abcdef";
 
@@ -85,6 +83,11 @@ static const char* asn1_typestring(int type){
     return asTypes[i];
   else
     return "unknown";
+}
+
+static int openssl_ans1string_new(lua_State* L)
+{
+  return 0;
 }
 
 static int openssl_ans1string_type(lua_State* L)
@@ -338,17 +341,12 @@ LUALIB_API int luaopen_asn1(lua_State *L)
   auxiliar_newclass(L, "openssl.asn1_object", asn1obj_funcs);
   auxiliar_newclass(L, "openssl.asn1_string", asn1str_funcs);
 
-  luaL_newmetatable(L, MYTYPE);
-  lua_setglobal(L, MYNAME);
   luaL_register(L, MYNAME, R);
-  lua_pushvalue(L, -1);
-  lua_setmetatable(L, -2);
+
   lua_pushliteral(L, "version");    /** version */
   lua_pushliteral(L, MYVERSION);
   lua_settable(L, -3);
-  lua_pushliteral(L, "__index");
-  lua_pushvalue(L, -2);
-  lua_settable(L, -3);
+
   return 1;
 }
 

@@ -1,13 +1,13 @@
 local openssl = require'openssl'
 local print_r = require'function.print_r'
-io.read()
+
 require('luaunit')
 
 TestCompat = {}
     function TestCompat:setUp()
         self.alg='sha1'
 
-        self.cadn = {commonName='CA'}
+        self.cadn = {{commonName='CA'},{C='CN'}}
         self.digest = 'sha1WithRSAEncryption'
         self.md = openssl.digest.get('sha1WithRSAEncryption')
         self.dat=[[
@@ -32,35 +32,33 @@ function TestCompat:testAll()
     args.serialNumber = 1
 
     local cacert = assert(careq:sign(nil,cakey,args))
-
-    --x = openssl.csr.new(pkey,{commonName='zhaozg'},nil,{basicConstraints='CA:FALSE',extendedKeyUsage = 'critical,timeStamping',nsCertType='client, email, objsign'})
+--[[
+    --x = openssl.csr.new(pkey,{{commonName='zhaozg'},{C='CN'}},nil,{basicConstraints='CA:FALSE',extendedKeyUsage = 'critical,timeStamping',nsCertType='client, email, objsign'})
     local pkey = assert(openssl.pkey.new())
-
-    x = openssl.csr.new(pkey,{commonName='zhaozg'},nil,{basicConstraints='CA:FALSE',extendedKeyUsage = 'critical,timeStamping'})
-    --t = assert(x:parse())
+    x = openssl.csr.new(pkey,{{commonName='zhaozg'},{C='CN'}},nil,{{basicConstraints='CA:FALSE'},{extendedKeyUsage = 'critical,timeStamping'}})
+    t = assert(x:parse())
     --assertEquals(type(t),'table')
 
     x509 = x:sign(cacert,cakey,{serialNumber=1,digest='md5',num_days=365})
-    --t = assert(x509:parse())
+    t = assert(x509:parse())
     --assertEquals(type(t),'table')
     local req = assert(openssl.ts.req_new(self.hash,"sha1",{cert_req=1}))
---[[
+
     local der = assert(req:i2d())
---]]
-    --req = assert(openssl.ts.d2i(der)) bugs
-    --assert(type(req:parse())=='table')
-    --assertEquals(type(req:parse()),'table')
 
-    --ctx = assert(openssl.ts.resp_ctx_new(x509,pkey,nil,'1.1.2',{digest={'md5','sha1'},policy={'1.1.3','1.1.4'} }))
-    --t = x:parse()
+    req = assert(openssl.ts.d2i(der)) 
+    assertEquals(type(req:parse()),'table')
+
+    ctx = assert(openssl.ts.resp_ctx_new(x509,pkey,nil,'1.1.2',{digest={'md5','sha1'},policy={'1.1.3','1.1.4'} }))
+    t = x:parse()
+    print_r(t)
+    assertEquals(type(t),'table')
+
+    res = ctx:sign(req)
+    t = assert(res:parse())
+
     --print_r(t)
-    --assertEquals(type(t),'table')
 
-    --res = ctx:sign(req)
-    --t = assert(res:parse())
-
-    --print_r(t)
-    --[[
     info = res:tst_info()
     print(info)
     if t then
@@ -69,8 +67,7 @@ function TestCompat:testAll()
       print(apr.base64_encode(res:i2d()) )
       print(string.rep('-',78))
     end
-    --]]
-    --[[
+
     skx = openssl.x509.sk_x509_new({cacert})
     ctx = assert(openssl.ts.verify_ctx_new(req,skx))
     assert(x509:check(skx,nil,'timestamp_sign'))
@@ -87,7 +84,7 @@ function TestCompat:testAll()
     ctx = assert(openssl.ts.verify_ctx_new({source=self.dat},skx))
 
     assertEquals(true,ctx:verify_response(res))
-    --]]
+--]]
 end
 
 io.read()

@@ -117,7 +117,7 @@ int openssl_register_xattribute(lua_State*L)
 {
   auxiliar_newclass(L, "openssl.x509_attribute", x509_attribute_funs);
   luaL_register(L, MYNAME, R);
-  return 0;
+  return 1;
 }
 
 int openssl_push_xattrs_astable(lua_State*L, STACK_OF(X509_ATTRIBUTE) *attrs, int utf8)

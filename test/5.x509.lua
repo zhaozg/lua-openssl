@@ -9,8 +9,8 @@ TestCompat = {}
     function TestCompat:setUp()
         self.alg='sha1'
 
-        self.cadn = {commonName='CA'}
-        self.dn = {commonName='DEMO'}
+        self.cadn = {{commonName='CA'},{C='CN'}}
+        self.dn = {{commonName='DEMO'},{C='CN'}}
 --[[
         self.attribs = {}
         self.extentions = {}
@@ -24,9 +24,10 @@ function TestCompat:testNew()
         req = assert(csr.new(pkey,self.cadn,self.attribs))
         req = assert(csr.new(pkey,self.cadn,self.attribs,self.extentions))
         req = assert(csr.new(pkey,self.cadn,self.attribs,self.extentions,self.digest))
-        --t = req:parse()
-        --print_r(t)
+        local t = req:parse()
+        assertEquals(type(t),'table')
 
+        --print_r(t)
         assert(req:verify());
 
 
@@ -70,7 +71,7 @@ function TestCompat:testNew()
                 print(openssl.error())
                 assert(false,"check verify ca")
         end
-        --]]
+--]]
 end
 
 function TestCompat:testIO()
@@ -89,15 +90,17 @@ sggwDQYJKoZIhvcNAQEEBQADQQCU5SSgapJSdRXJoX+CpCvFy+JVh9HpSjCpSNKO
 ]]
 
         local x = assert(x509.read(raw_data))
-        --t = x:parse()
-        --print_r(t)
-        --assert(x:get_public())
+        t = x:parse()
+        assertEquals(type(t),'table')
+        --print_r(table)
+        assert(x:get_public())
 end
 
-io.read()
+
 local lu = LuaUnit
 lu:setVerbosity( 0 )
+io.read()
 for i=1,1000000 do
-lu:run()
+        lu:run()
 end
 

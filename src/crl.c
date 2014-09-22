@@ -11,7 +11,6 @@
 #define MYNAME    "crl"
 #define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
   "based on OpenSSL " SHLIB_VERSION_NUMBER
-#define MYTYPE      "crl"
 
 int   X509_CRL_cmp(const X509_CRL *a, const X509_CRL *b);
 int   X509_CRL_match(const X509_CRL *a, const X509_CRL *b);
@@ -421,21 +420,19 @@ static LUA_FUNCTION(openssl_crl_export)
 
 static luaL_Reg crl_funcs[] =
 {
-  {"sort",  openssl_crl_sort},
-  {"verify",  openssl_crl_verify},
-  {"sign",  openssl_crl_sign},
-  {"export",  openssl_crl_export},
+  {"sort",            openssl_crl_sort},
+  {"verify",          openssl_crl_verify},
+  {"sign",            openssl_crl_sign},
+  {"export",          openssl_crl_export},
 
-  {"set_version",   openssl_crl_set_version   },
-  {"set_update_time", openssl_crl_set_updatetime  },
-  {"set_issuer",    openssl_crl_set_issuer    },
-  {"add",   openssl_crl_add_revocked  },
+  {"set_version",     openssl_crl_set_version},
+  {"set_update_time", openssl_crl_set_updatetime},
+  {"set_issuer",      openssl_crl_set_issuer},
+  {"add",             openssl_crl_add_revocked},
+  {"parse",           openssl_crl_parse},
 
-  {"parse",     openssl_crl_parse     },
-
-
-  {"__tostring",    auxiliar_tostring },
-  {"__gc",      openssl_crl_free  },
+  {"__tostring",      auxiliar_tostring},
+  {"__gc",            openssl_crl_free  },
 
   {NULL,  NULL}
 };
@@ -451,16 +448,11 @@ LUALIB_API int luaopen_crl(lua_State *L)
 {
   auxiliar_newclass(L, "openssl.x509_crl", crl_funcs);
 
-  luaL_newmetatable(L, MYTYPE);
-  lua_setglobal(L, MYNAME);
   luaL_register(L, MYNAME, R);
-  lua_pushvalue(L, -1);
-  lua_setmetatable(L, -2);
+
   lua_pushliteral(L, "version");    /** version */
   lua_pushliteral(L, MYVERSION);
   lua_settable(L, -3);
-  lua_pushliteral(L, "__index");
-  lua_pushvalue(L, -2);
-  lua_settable(L, -3);
+
   return 1;
 }
