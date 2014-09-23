@@ -287,7 +287,7 @@ LUA_FUNCTION(openssl_crl_sign)
 static LUA_FUNCTION(openssl_crl_parse)
 {
   X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
-  int utf8 = lua_isnoneornil(L, 2) ? 0 : lua_toboolean(L, 2);
+  int utf8 = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L, 2);
   int n, i;
 
   lua_newtable(L);

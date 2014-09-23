@@ -164,7 +164,7 @@ static int openssl_ocsp_request_sign(lua_State*L)
 static int openssl_ocsp_request_parse(lua_State*L)
 {
   OCSP_REQUEST *req = CHECK_OBJECT(1, OCSP_REQUEST, "openssl.ocsp_request");
-  int utf8 = lua_isnoneornil(L, 2) ? 0 : lua_toboolean(L, 2);
+  int utf8 = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L, 2);
   OCSP_REQINFO *inf = req->tbsRequest;
   OCSP_SIGNATURE *sig = req->optionalSignature;
 

@@ -87,7 +87,13 @@ static const char* asn1_typestring(int type){
 
 static int openssl_ans1string_new(lua_State* L)
 {
-  return 0;
+  size_t size = 0;
+  const char* data = luaL_checklstring(L, 1, &size);
+  int type = auxiliar_checkoption(L, 2, "utf8", asTypes, isTypes);
+  ASN1_STRING *s = ASN1_STRING_type_new(type);
+  ASN1_STRING_set(s, data, size);
+  PUSH_OBJECT(s, "openssl.asn1_string");
+  return 1;
 }
 
 static int openssl_ans1string_type(lua_State* L)
@@ -331,9 +337,79 @@ static luaL_reg asn1obj_funcs[] =
   {NULL,    NULL}
 };
 
+
+static int openssl_asn1object_new(lua_State* L)
+{
+  if (lua_isnumber(L, 1))
+  {
+    int nid = luaL_checkint(L, 1);
+    ASN1_OBJECT* obj = OBJ_nid2obj(nid);
+    if (obj)
+      PUSH_OBJECT(obj, "openssl.asn1_object");
+    else
+      lua_pushnil(L);
+  }
+  else if(lua_isstring(L, 1)) 
+  {
+    const char* txt = luaL_checkstring(L, 1);
+    int no_name = lua_isnoneornil(L, 2) ? 0 : lua_toboolean(L, 2);
+
+    ASN1_OBJECT* obj = OBJ_txt2obj(txt, no_name);
+    if (obj)
+      PUSH_OBJECT(obj, "openssl.asn1_object");
+    else
+      lua_pushnil(L);
+  }
+  else if(lua_istable(L, 1))
+  {
+    const char *oid, *sn, *ln;
+    ASN1_OBJECT* obj;
+    int nid;
+
+    lua_getfield(L, 1, "oid");
+    oid = luaL_checkstring(L, -1);
+    lua_pop(L, 1);
+
+    lua_getfield(L, 1, "sn");
+    sn = luaL_checkstring(L, -1);
+    lua_pop(L, 1);
+
+    lua_getfield(L, 1, "ln");
+    ln = luaL_checkstring(L, -1);
+    lua_pop(L, 1);
+
+    obj = OBJ_txt2obj(oid, 1);
+    if(obj) {
+      luaL_argerror(L,1,"oid already exist");
+    }
+    ASN1_OBJECT_free(obj);
+
+    if(OBJ_sn2nid(sn)!=NID_undef) {
+      luaL_argerror(L,1,"sn already exist");
+    }
+
+    if(OBJ_ln2nid(ln)!=NID_undef) {
+      luaL_argerror(L,1,"ln already exist");
+    }
+
+    nid = OBJ_create(oid, sn, ln);
+    if (nid!=NID_undef){
+      obj = OBJ_nid2obj(nid);
+      PUSH_OBJECT(obj, "openssl.asn1_object");
+    }
+    else
+      luaL_argerror(L,1,"create object fail");
+  };
+
+  return 1;
+}
+
 static luaL_reg R[] =
 {
-  {NULL,    NULL}
+  {"new_string",    openssl_ans1string_new},
+  {"new_object",    openssl_asn1object_new},
+  
+  {NULL,            NULL}
 };
 
 LUALIB_API int luaopen_asn1(lua_State *L)
@@ -502,16 +578,3 @@ int openssl_push_asn1(lua_State* L, ASN1_STRING* string, int type, int utf8)
 
   return 0;
 };
-/*
-static unsigned char *generic_asn1(char *value, X509V3_CTX *ctx, long *ext_len)
-{
-  ASN1_TYPE *typ;
-  unsigned char *ext_der = NULL;
-  typ = ASN1_generate_v3(value, ctx);
-  if (typ == NULL)
-    return NULL;
-  *ext_len = i2d_ASN1_TYPE(typ, &ext_der);
-  ASN1_TYPE_free(typ);
-  return ext_der;
-}
-*/

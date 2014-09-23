@@ -189,72 +189,6 @@ static LUA_FUNCTION(openssl_random_bytes)
   return 1;
 }
 
-static int openssl_object(lua_State* L)
-{
-  if (lua_isnumber(L, 1))
-  {
-    int nid = luaL_checkint(L, 1);
-    ASN1_OBJECT* obj = OBJ_nid2obj(nid);
-    if (obj)
-      PUSH_OBJECT(obj, "openssl.asn1_object");
-    else
-      lua_pushnil(L);
-  }
-  else if(lua_isstring(L, 1)) 
-  {
-    const char* txt = luaL_checkstring(L, 1);
-    int no_name = lua_isnoneornil(L, 2) ? 0 : lua_toboolean(L, 2);
-
-    ASN1_OBJECT* obj = OBJ_txt2obj(txt, no_name);
-    if (obj)
-      PUSH_OBJECT(obj, "openssl.asn1_object");
-    else
-      lua_pushnil(L);
-  }
-  else if(lua_istable(L, 1))
-  {
-    const char *oid, *sn, *ln;
-    ASN1_OBJECT* obj;
-    int nid;
-
-    lua_getfield(L, 1, "oid");
-    oid = luaL_checkstring(L, -1);
-    lua_pop(L, 1);
-
-    lua_getfield(L, 1, "sn");
-    sn = luaL_checkstring(L, -1);
-    lua_pop(L, 1);
-
-    lua_getfield(L, 1, "ln");
-    ln = luaL_checkstring(L, -1);
-    lua_pop(L, 1);
-
-    obj = OBJ_txt2obj(oid, 1);
-    if(obj) {
-      luaL_argerror(L,1,"oid already exist");
-    }
-    ASN1_OBJECT_free(obj);
-
-    if(OBJ_sn2nid(sn)!=NID_undef) {
-      luaL_argerror(L,1,"sn already exist");
-    }
-
-    if(OBJ_ln2nid(ln)!=NID_undef) {
-      luaL_argerror(L,1,"ln already exist");
-    }
-
-    nid = OBJ_create(oid, sn, ln);
-    if (nid!=NID_undef){
-      obj = OBJ_nid2obj(nid);
-      PUSH_OBJECT(obj, "openssl.asn1_object");
-    }
-    else
-      luaL_argerror(L,1,"create object fail");
-  };
-
-  return 1;
-}
-
 static int openssl_mem_leaks(lua_State*L)
 {
   BIO *bio = BIO_new(BIO_s_mem());
@@ -282,7 +216,6 @@ static const luaL_Reg eay_functions[] =
   {"random",      openssl_random_bytes},
 
   {"error",       openssl_error_string},
-  {"object",      openssl_object},
 
   {"engine",      openssl_engine},
 

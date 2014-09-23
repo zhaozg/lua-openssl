@@ -131,7 +131,7 @@ int openssl_xext_totable(lua_State* L, X509_EXTENSION *x, int utf8)
 static int openssl_xext_info(lua_State* L)
 {
   X509_EXTENSION *x = CHECK_OBJECT(1, X509_EXTENSION, "openssl.x509_extension");
-  int utf8 = lua_isnoneornil(L, 2) ? 0 : lua_toboolean(L, 2);
+  int utf8 = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L, 2);
   return openssl_xext_totable(L,x,utf8);
 };
 
@@ -172,7 +172,10 @@ static X509_EXTENSION* openssl_new_xextension(lua_State*L, X509_EXTENSION** x, i
   lua_getfield(L, idx, "object");
   nid = openssl_get_nid(L, -1);
   lua_pop(L, 1);
-
+  if (nid==NID_undef) {
+    lua_pushfstring(L, "%s is not valid object id",lua_tostring(L, -1));
+    luaL_argerror(L, idx, lua_tostring(L,-1));
+  }
   lua_getfield(L, idx, "value");
   value = CHECK_OBJECT(-1, ASN1_STRING, "openssl.asn1_string");
   lua_pop(L, 1);
@@ -233,8 +236,8 @@ int openssl_new_xexts(lua_State* L, STACK_OF(X509_EXTENSION) *exts, int idx, int
   luaL_checktable(L,idx);
   for (i=0; i<lua_objlen(L, idx); i++)
   {
-    lua_rawget(L, i+1);
-    x = openssl_new_xextension(L, NULL, 1, utf8);
+    lua_rawgeti(L,idx, i+1);
+    x = openssl_new_xextension(L, NULL, -1, utf8);
     sk_X509_EXTENSION_push(exts, x);
   }
 

@@ -36,7 +36,7 @@ static int openssl_xattr_totable(lua_State*L, X509_ATTRIBUTE *attr, int utf8) {
 
 static int openssl_xattr_info(lua_State*L) {
   X509_ATTRIBUTE* attr = CHECK_OBJECT(1,X509_ATTRIBUTE, "openssl.x509_attribute");
-  int utf8 = lua_isnoneornil(L, 2) ? 0 : lua_toboolean(L, 2);
+  int utf8 = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L, 2);
   return openssl_xattr_totable(L, attr, utf8);
 }
 

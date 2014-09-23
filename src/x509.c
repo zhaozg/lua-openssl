@@ -164,7 +164,7 @@ static LUA_FUNCTION(openssl_x509_parse)
 {
   int i;
   X509 * cert = CHECK_OBJECT(1, X509, "openssl.x509");
-  int utf8 = lua_isnoneornil(L, 2) ? 0 : lua_toboolean(L, 2);
+  int utf8 = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L, 2);
   int useshortnames = lua_isnoneornil(L, 3) ? 0 : lua_toboolean(L, 3);
 
   lua_newtable(L);
@@ -410,14 +410,14 @@ int openssl_sk_x509_read(lua_State*L)
 static int openssl_x509_subject(lua_State* L)
 {
   X509* cert = CHECK_OBJECT(1, X509, "openssl.x509");
-  int utf8 = lua_isnoneornil(L, 2) ? 0 : lua_toboolean(L, 2);
+  int utf8 = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L, 2);
   return openssl_push_xname_astable(L, X509_get_subject_name(cert), utf8);
 }
 
 static int openssl_x509_issuer(lua_State* L)
 {
   X509* cert = CHECK_OBJECT(1, X509, "openssl.x509");
-  int utf8 = lua_isnoneornil(L, 2) ? 0 : lua_toboolean(L, 2);
+  int utf8 = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L, 2);
   return openssl_push_xname_astable(L, X509_get_issuer_name(cert), utf8);
 }
 
@@ -488,7 +488,7 @@ int openssl_x509_extensions(lua_State* L)
   int i = -1;
 
   X509 *peer = CHECK_OBJECT(1, X509, "openssl.x509");
-  int utf8 = lua_isnoneornil(L, 2) ? 0 : lua_toboolean(L, 2);
+  int utf8 = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L, 2);
 
   /* Return (ret) */
   lua_newtable(L);
