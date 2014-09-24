@@ -408,7 +408,9 @@ static luaL_reg R[] =
 {
   {"new_string",    openssl_ans1string_new},
   {"new_object",    openssl_asn1object_new},
-  
+  /*
+  {"create_object", openssl_asn1object_create},
+  */
   {NULL,            NULL}
 };
 
