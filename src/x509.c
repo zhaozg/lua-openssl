@@ -7,6 +7,7 @@
 
 #include "openssl.h"
 #include "private.h"
+#define CRYPTO_LOCK_REF
 #include "sk.h"
 
 #define MYNAME    "x509"
@@ -230,7 +231,7 @@ static LUA_FUNCTION(openssl_x509_parse)
   }
   lua_setfield(L, -2, "purposes");
 
-  openssl_push_xexts_astable(L, cert->cert_info->extensions, utf8);
+  PUSH_OBJECT(sk_X509_EXTENSION_dup(cert->cert_info->extensions),"openssl.stack_of_x509_extension");
   lua_setfield(L,-2, "extensions");
 
   return 1;
@@ -410,15 +411,17 @@ int openssl_sk_x509_read(lua_State*L)
 static int openssl_x509_subject(lua_State* L)
 {
   X509* cert = CHECK_OBJECT(1, X509, "openssl.x509");
-  int utf8 = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L, 2);
-  return openssl_push_xname_astable(L, X509_get_subject_name(cert), utf8);
+  X509_NAME* xn = X509_get_subject_name(cert);
+  PUSH_OBJECT(X509_NAME_dup(xn), "openssl.x509_name");
+  return 1;
 }
 
 static int openssl_x509_issuer(lua_State* L)
 {
   X509* cert = CHECK_OBJECT(1, X509, "openssl.x509");
-  int utf8 = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L, 2);
-  return openssl_push_xname_astable(L, X509_get_issuer_name(cert), utf8);
+  X509_NAME* xn = X509_get_issuer_name(cert);
+  PUSH_OBJECT(X509_NAME_dup(xn), "openssl.x509_name");
+  return 1;
 }
 
 static int openssl_x509_digest(lua_State* L)
@@ -485,28 +488,15 @@ static int openssl_x509_notafter(lua_State *L)
 
 int openssl_x509_extensions(lua_State* L)
 {
-  int i = -1;
-
   X509 *peer = CHECK_OBJECT(1, X509, "openssl.x509");
-  int utf8 = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L, 2);
-
-  /* Return (ret) */
-  lua_newtable(L);
-
-  while ((i = X509_get_ext_by_NID(peer, NID_subject_alt_name, i)) != -1) {
-    X509_EXTENSION *extension = X509_get_ext(peer, i);
-    STACK_OF(GENERAL_NAME) *values;
-    if (extension == NULL)
-      break;
-    values = X509V3_EXT_d2i(extension);
-    if (values == NULL)
-      break;
-
-    openssl_xext_totable(L, extension, utf8);
-    lua_rawseti(L, -2, i+1);
-    i++;           /* Next extension */
+  if(lua_isnone(L,2))
+  {
+    STACK_OF(X509_EXTENSION) *exts = peer->cert_info->extensions;
+    exts = sk_X509_EXTENSION_dup(exts);
+    PUSH_OBJECT(exts,"openssl.stack_of_x509_extension");
+    return 1;
   }
-  return 1;
+  return 0;
 }
 
 static luaL_Reg x509_funcs[] =

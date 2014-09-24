@@ -206,7 +206,7 @@ static int openssl_ocsp_request_parse(lua_State*L)
   lua_setfield(L, -2, "requestList");
 
   if (inf->requestExtensions){
-    openssl_push_xexts_astable(L, inf->requestExtensions, utf8);
+    PUSH_OBJECT(sk_X509_EXTENSION_dup(inf->requestExtensions),"openssl.stack_of_x509_extension");
     lua_setfield(L,-2, "extensions");
   }
 

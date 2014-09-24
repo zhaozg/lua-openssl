@@ -329,7 +329,7 @@ static LUA_FUNCTION(openssl_crl_parse)
   PUSH_ASN1_INTEGER(L, X509_CRL_get_ext_d2i(crl, NID_crl_number, NULL, NULL));
   lua_setfield(L, -2, "crl_number");
 
-  openssl_push_xexts_astable(L, crl->crl->extensions, utf8);
+  PUSH_OBJECT(sk_X509_EXTENSION_dup(crl->crl->extensions),"openssl.stack_of_x509_extension");
   lua_setfield(L, -2, "extensions");
 
   n = sk_X509_REVOKED_num(crl->crl->revoked);
@@ -356,7 +356,7 @@ static LUA_FUNCTION(openssl_crl_parse)
     PUSH_ASN1_TIME(L, revoked->revocationDate);
     lua_setfield(L,-2, "revocationDate");
 
-    openssl_push_xexts_astable(L, revoked->extensions, utf8);
+    PUSH_OBJECT(sk_X509_EXTENSION_dup(revoked->extensions),"openssl.stack_of_x509_extension");
     lua_setfield(L,-2, "extensions");
 
     lua_rawseti(L, -2, i + 1);

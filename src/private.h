@@ -66,10 +66,7 @@ int openssl_push_x509_algor(lua_State*L,const X509_ALGOR* alg);
 #define PUSH_ASN1_BIT_STRING(L, s)        openssl_push_asn1(L, (ASN1_STRING*)s,  V_ASN1_BIT_STRING, 0)
 #define PUSH_ASN1_STRING(L, s, utf)       openssl_push_asn1(L, (ASN1_STRING*)s,  0,  utf)
 
-int openssl_new_xattrs(lua_State*L, STACK_OF(X509_ATTRIBUTE) *attrs, int idx, int utf8);
-
 int openssl_push_xname_asobject(lua_State*L, X509_NAME* xname);
-int openssl_push_xattrs_astable(lua_State*L, STACK_OF(X509_ATTRIBUTE) *attrs, int utf8);
 
 int openssl_get_nid(lua_State*L, int idx);
 int openssl_get_asn1type(lua_State*L, int idx);

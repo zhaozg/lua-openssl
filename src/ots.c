@@ -74,9 +74,7 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_new)
   }
   if (!TS_RESP_CTX_set_signer_cert(ctx, signer))
   {
-    lua_pushnil(L);
-    lua_pushstring(L, "signer cert don't support timestamp sign");
-    return 2;
+    return openssl_pushresult(L,0);
   }
   TS_RESP_CTX_set_signer_key(ctx, pkey);
   if (certs) TS_RESP_CTX_set_certs(ctx, certs);
