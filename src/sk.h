@@ -7,6 +7,12 @@
 
 #include "openssl.h"
 
+#ifdef CRYPTO_LOCK_REF
+  #define REF_OR_DUP(TYPE, x)  CRYPTO_add(&x->references,1,CRYPTO_LOCK_##TYPE)
+#else
+  #define REF_OR_DUP(TYPE, x) x = ##TYPE##_dup(x)
+#endif 
+
 #define TAB2SK(TYPE, type)                                        \
 STACK_OF(TYPE)* sk_##type##_fromtable(lua_State*L, int idx) {     \
   STACK_OF(TYPE) * sk;                                            \
@@ -20,8 +26,8 @@ STACK_OF(TYPE)* sk_##type##_fromtable(lua_State*L, int idx) {     \
       TYPE *x;                                                    \
       lua_rawgeti(L, idx, i+1);                                   \
       x = CHECK_OBJECT(-1,TYPE,"openssl." #type);                 \
+      REF_OR_DUP(TYPE, x);                                        \
       SKM_sk_push(TYPE, sk, x);                                   \
-      CRYPTO_add(&x->references,1,CRYPTO_LOCK_##TYPE);            \
       lua_pop(L,1);                                               \
     }                                                             \
   }                                                               \
@@ -35,8 +41,7 @@ STACK_OF(TYPE)* sk_##type##_fromtable(lua_State*L, int idx) {     \
   n = SKM_sk_num(TYPE, sk);                                                               \
   for(i=0;i<n;i++) {                                                                      \
     TYPE *x =  SKM_sk_value(TYPE, sk, i);                                                 \
-    CRYPTO_add(&x->references,1,CRYPTO_LOCK_##TYPE);                                      \
-    PUSH_OBJECT(x,"openssl."#type);                                                       \
+    REF_OR_DUP(TYPE, x);                                                                  \
     lua_rawseti(L,-2, i+1);                                                               \
   }                                                                                       \
   return 1;                                                                               \
@@ -61,9 +66,9 @@ STACK_OF(TYPE)* sk_##type##_fromtable(lua_State*L, int idx) {     \
 
 #define SK_PUSH(TYPE, type) static int sk_##type##_push(lua_State* L) {           \
   STACK_OF(TYPE) * sk = CHECK_OBJECT(1,STACK_OF(TYPE), "openssl.stack_of_"#type); \
-  TYPE* val = CHECK_OBJECT(2,TYPE, "openssl."#type);                              \
-  CRYPTO_add(&val->references,1,CRYPTO_LOCK_##TYPE);                              \
-  SKM_sk_push(TYPE, sk, val);                                                     \
+  TYPE* x = CHECK_OBJECT(2,TYPE, "openssl."#type);                                \
+  REF_OR_DUP(TYPE, x);                                                            \
+  SKM_sk_push(TYPE, sk, x);                                                       \
   lua_pushvalue(L,1);                                                             \
   return 1;                                                                       \
 }
@@ -77,10 +82,10 @@ STACK_OF(TYPE)* sk_##type##_fromtable(lua_State*L, int idx) {     \
 
 #define SK_INSERT(TYPE, type) static int sk_##type##_insert(lua_State*L) {          \
   STACK_OF(TYPE) * st = CHECK_OBJECT(1, STACK_OF(TYPE), "openssl.stack_of_"#type);  \
-  TYPE* val = CHECK_OBJECT(2,TYPE, "openssl."#type);                                \
+  TYPE* x = CHECK_OBJECT(2,TYPE, "openssl."#type);                                  \
   int i = luaL_checkint(L,3);                                                       \
-  CRYPTO_add(&val->references,1,CRYPTO_LOCK_##TYPE);                                \
-  SKM_sk_insert(TYPE,st,val,i);                                                     \
+  REF_OR_DUP(TYPE, x);                                                              \
+  SKM_sk_insert(TYPE,st,x,i);                                                       \
   lua_pushvalue(L,1);                                                               \
   return 1;                                                                         \
 }
@@ -96,10 +101,10 @@ STACK_OF(TYPE)* sk_##type##_fromtable(lua_State*L, int idx) {     \
 
 #define SK_SET(TYPE, type)  static int sk_##type##_set(lua_State*L) {               \
   STACK_OF(TYPE) * st = CHECK_OBJECT(1, STACK_OF(TYPE), "openssl.stack_of_"#type);  \
-  TYPE* val = CHECK_OBJECT(2,TYPE, "openssl."#type);                                \
+  TYPE* x = CHECK_OBJECT(2,TYPE, "openssl."#type);                                  \
   int i = luaL_checkint(L,3);                                                       \
-  CRYPTO_add(&val->references,1,CRYPTO_LOCK_##TYPE);                                \
-  SKM_sk_set(TYPE, st, i, val);                                                     \
+  REF_OR_DUP(TYPE, x);                                                              \
+  SKM_sk_set(TYPE, st, i, x);                                                       \
   lua_pushvalue(L,1);                                                               \
   return 1;                                                                         \
 }
@@ -108,7 +113,7 @@ STACK_OF(TYPE)* sk_##type##_fromtable(lua_State*L, int idx) {     \
   STACK_OF(TYPE) * st = CHECK_OBJECT(1, STACK_OF(TYPE), "openssl.stack_of_"#type);  \
   int i = luaL_checkint(L,2);                                                       \
   TYPE *x = SKM_sk_value(TYPE, st, i);                                              \
-  CRYPTO_add(&x->references,1,CRYPTO_LOCK_##TYPE);                                  \
+  REF_OR_DUP(TYPE, x);                                                              \
   PUSH_OBJECT(x,"openssl."#type);                                                   \
   return 1;                                                                         \
 }
