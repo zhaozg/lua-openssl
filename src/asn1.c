@@ -10,18 +10,6 @@
 #define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
   "based on OpenSSL " SHLIB_VERSION_NUMBER
 
-static const char* hex_tab = "0123456789abcdef";
-
-void to_hex(const char* in, int length, char* out)
-{
-  int i;
-  for (i = 0; i < length; i++) {
-    out[i*2] = hex_tab[(in[i] >> 4) & 0xF];
-    out[i*2+1] = hex_tab[(in[i]) & 0xF];
-  }
-  out[i*2] = '\0';
-}
-
 /*** asn1_string routines ***/
 const static char* asTypes[] =
 {
@@ -257,26 +245,26 @@ static int openssl_ans1object_name(lua_State* L)
 static int openssl_ans1object_ln(lua_State* L)
 {
   ASN1_OBJECT* o = CHECK_OBJECT(1, ASN1_OBJECT, "openssl.asn1_object");
-  lua_pushstring(L, o->sn);
+  lua_pushstring(L, o->ln);
   return 1;
 }
 
 static int openssl_ans1object_sn(lua_State* L)
 {
   ASN1_OBJECT* o = CHECK_OBJECT(1, ASN1_OBJECT, "openssl.asn1_object");
-  lua_pushstring(L, o->ln);
+  lua_pushstring(L, o->sn);
   return 1;
 }
 
 static int openssl_ans1object_txt(lua_State* L)
 {
   ASN1_OBJECT* o = CHECK_OBJECT(1, ASN1_OBJECT, "openssl.asn1_object");
-  int no_name = lua_isnoneornil(L, 2) ? 0 : lua_toboolean(L, 2);
+  int no_name = lua_isnone(L, 2) ? 0 : lua_toboolean(L, 2);
 
   luaL_Buffer B;
   luaL_buffinit(L, &B);
 
-  luaL_addsize(&B, OBJ_obj2txt(luaL_prepbuffer(&B), LUAL_BUFFERSIZE, o, 0));
+  luaL_addsize(&B, OBJ_obj2txt(luaL_prepbuffer(&B), LUAL_BUFFERSIZE, o, no_name));
   luaL_pushresult(&B);
   return 1;
 }
@@ -351,7 +339,7 @@ static int openssl_asn1object_new(lua_State* L)
   else if(lua_isstring(L, 1)) 
   {
     const char* txt = luaL_checkstring(L, 1);
-    int no_name = lua_isnoneornil(L, 2) ? 0 : lua_toboolean(L, 2);
+    int no_name = lua_isnone(L, 2) ? 0 : lua_toboolean(L, 2);
 
     ASN1_OBJECT* obj = OBJ_txt2obj(txt, no_name);
     if (obj)
@@ -366,28 +354,29 @@ static int openssl_asn1object_new(lua_State* L)
     int nid;
 
     lua_getfield(L, 1, "oid");
+    luaL_argcheck(L, lua_isstring(L, -1), 1, "not have oid field or is not string");
     oid = luaL_checkstring(L, -1);
     lua_pop(L, 1);
 
     lua_getfield(L, 1, "sn");
+    luaL_argcheck(L, lua_isstring(L, -1), 1, "not have sn field or is not string");
     sn = luaL_checkstring(L, -1);
     lua_pop(L, 1);
 
     lua_getfield(L, 1, "ln");
+    luaL_argcheck(L, lua_isstring(L, -1), 1, "not have ln field or is not string");
     ln = luaL_checkstring(L, -1);
     lua_pop(L, 1);
 
-    obj = OBJ_txt2obj(oid, 1);
-    if(obj) {
+    if(OBJ_txt2nid(oid)!=NID_undef) {
       luaL_argerror(L,1,"oid already exist");
     }
-    ASN1_OBJECT_free(obj);
 
-    if(OBJ_sn2nid(sn)!=NID_undef) {
+    if( OBJ_sn2nid(sn)!=NID_undef) {
       luaL_argerror(L,1,"sn already exist");
     }
 
-    if(OBJ_ln2nid(ln)!=NID_undef) {
+    if( OBJ_ln2nid(ln)!=NID_undef) {
       luaL_argerror(L,1,"ln already exist");
     }
 
@@ -398,7 +387,19 @@ static int openssl_asn1object_new(lua_State* L)
     }
     else
       luaL_argerror(L,1,"create object fail");
-  };
+  }else
+    luaL_argerror(L, 1, "need accept paramater");
+
+  return 1;
+}
+
+static int openssl_txt2nid(lua_State*L) {
+  const char* txt = luaL_checkstring(L, 1);
+  int nid = OBJ_txt2nid(txt);
+  if(nid!=NID_undef) {
+    lua_pushinteger(L, nid);
+  }else
+    lua_pushnil(L);
 
   return 1;
 }
@@ -407,9 +408,8 @@ static luaL_reg R[] =
 {
   {"new_string",    openssl_ans1string_new},
   {"new_object",    openssl_asn1object_new},
-  /*
-  {"create_object", openssl_asn1object_create},
-  */
+  {"txt2nid",       openssl_txt2nid},
+
   {NULL,            NULL}
 };
 

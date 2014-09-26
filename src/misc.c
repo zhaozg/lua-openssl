@@ -146,3 +146,15 @@ int openssl_pushresult(lua_State*L, int result)
   }
   return 0;
 }
+
+static const char* hex_tab = "0123456789abcdef";
+
+void to_hex(const char* in, int length, char* out)
+{
+  int i;
+  for (i = 0; i < length; i++) {
+    out[i*2] = hex_tab[(in[i] >> 4) & 0xF];
+    out[i*2+1] = hex_tab[(in[i]) & 0xF];
+  }
+  out[i*2] = '\0';
+}
