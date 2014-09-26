@@ -44,7 +44,14 @@ function new_object() end
 -- @tparam[opt] string type asn1 string type, defult with 'utf8'
 -- @see asn1_string
 function new_string() end
- 
+
+--- get nid for txt, which can be short name, long name, or numerical oid
+--
+-- @tparam string txt which get to nid
+-- @treturn[1] integer nid
+-- @treturn[2] nil
+function txt2nid() end
+
 end
 
 do  -- define class
@@ -62,8 +69,8 @@ function nid() end
 
 --- get name of asn1_object.
 --
--- @treturn[1] string short name of asn1_object
--- @treturn[2] string long name of asn1_object
+-- @treturn string short name of asn1_object
+-- @treturn string long name of asn1_object
 --
 function name() end
 
@@ -82,7 +89,7 @@ function ln() end
 --- get text of asn1_object.
 --
 -- @tparam[opt] boolean no_name true for only oid or name, default with false
--- @treturn[1] string name or oid of asn1_object
+-- @treturn[1] string long or short name, even oid of asn1_object
 --
 function txt() end
 
@@ -93,6 +100,16 @@ function txt() end
 --
 function __eq(another) end
 
+--- make a clone of asn1_object
+--
+-- @treturn[1] asn1_object clone for self
+function dup() end
+
+--- get data of asn1_object
+--
+-- @treturn[1] string asn1_object data
+function data() end
+
 end
 
 
@@ -100,12 +117,6 @@ end
 -- @type asn1_string
 
 do
-
---- get length of asn1_string
---
--- @treturn[1] integer length of asn1_string
---
-function length() end
 
 --- get type of asn1_string
 --
@@ -121,8 +132,8 @@ function data() end
 --- set data of asn1_string
 --
 -- @tparam string data set to asn1_string
--- @treturn[1] boolean success if value set true, or follow by errmsg
--- @treturn[2] string fail error message
+-- @treturn boolean success if value set true, or follow by errmsg
+-- @treturn string fail error message
 function data() end
 
 --- get data as utf8 encode string
