@@ -12,7 +12,7 @@
 
 #define MYNAME "x509.extension"
 
-int openssl_xext_totable(lua_State* L, X509_EXTENSION *x, int utf8)
+static int openssl_xext_totable(lua_State* L, X509_EXTENSION *x, int utf8)
 {
   lua_newtable(L);
   openssl_push_asn1object(L, x->object);

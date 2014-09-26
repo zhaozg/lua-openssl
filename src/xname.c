@@ -78,11 +78,6 @@ static int openssl_push_xname_entry(lua_State* L, X509_NAME_ENTRY* ne, int encod
   return 1;
 }
 
-static int openssl_push_xname_astable(lua_State* L, X509_NAME *name, int encode)
-{
-
-}
-
 static int openssl_xname_info(lua_State*L)
 {
   X509_NAME* name = CHECK_OBJECT(1, X509_NAME, "openssl.x509_name");

@@ -76,13 +76,7 @@ static int openssl_xattr_type(lua_State*L) {
   int loc = luaL_checkint(L, 2);
   ASN1_TYPE *type = X509_ATTRIBUTE_get0_type(attr, loc);
   if(type) {
-    int len;
-    unsigned char*out;
-    len = i2d_ASN1_TYPE(type,NULL);
-    out = OPENSSL_malloc(len);
-    len = i2d_ASN1_TYPE(type,NULL);
-    type = d2i_ASN1_TYPE(NULL, &out, len);
-    PUSH_OBJECT(type,"openssl.asn1_type");
+    openssl_push_asn1type(L, type);;
     return 1;
   }else
     lua_pushnil(L);
@@ -108,6 +102,7 @@ static luaL_Reg x509_attribute_funs[] =
 {
   {"info",          openssl_xattr_info},
   {"dup",           openssl_xattr_dup},
+  /* set or get */
   {"data",          openssl_xattr_data},
   {"type",          openssl_xattr_type},
   {"object",        openssl_xattr_object},

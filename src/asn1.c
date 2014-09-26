@@ -226,8 +226,7 @@ static luaL_reg asn1str_funcs[] =
   {"data",      openssl_ans1string_data },
 
   {"dup",       openssl_ans1string_dup  },
-  {"equals",    openssl_ans1string_eq  },
-  
+ 
   {"toutf8",    openssl_ans1string_toutf8 },
   {"print",     openssl_ans1string_print },
 
@@ -451,10 +450,6 @@ int openssl_get_asn1type(lua_State*L, int idx) {
     const char* st = lua_tostring(L, idx);
     for (i = 0; stricmp(st, asTypes[i]); i++);
     return isTypes[i];
-  }else if(lua_isuserdata(L, idx))
-  {
-    ASN1_TYPE* atype = CHECK_OBJECT(idx, ASN1_TYPE, "openssl.asn1_type");
-    return atype->type;
   }
   return 0;
 }
