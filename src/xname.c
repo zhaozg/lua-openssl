@@ -180,20 +180,16 @@ static int openssl_xname_delete_entry(lua_State*L)
   X509_NAME* xn = CHECK_OBJECT(1, X509_NAME, "openssl.x509_name");
   int loc = luaL_checkint(L, 2);
 
-  X509_NAME_ENTRY *xe = X509_NAME_delete_entry(xn,2);
+  X509_NAME_ENTRY *xe = X509_NAME_delete_entry(xn,loc);
   if(xe)
   {
+    PUSH_OBJECT(OBJ_dup(xe->object),"openssl.asn1_object");
+    PUSH_OBJECT(ASN1_STRING_dup(xe->value),"openssl.asn1_string");
+    return 2;
+  }else
+    lua_pushnil(L);
 
-  }
-  /*
-  const char* val;
-
-  int lastpos = luaL_optinteger(L, 3, 0);
-
-  int loc = X509_NAME_add_entry_by_NID(xn, nid, );
-  lua_pushinteger(L, loc);
-  */
-  return 0;
+  return 1;
 };
 
 static luaL_Reg xname_funcs[] =

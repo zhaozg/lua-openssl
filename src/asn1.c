@@ -479,21 +479,21 @@ int openssl_push_asn1type(lua_State* L, ASN1_TYPE* type)
       AUXILIAR_SETLSTR(L, -1, "value",
         (const char*)type->value.bmpstring->data, type->value.bmpstring->length);
 #endif
-      AUXILIAR_SET(L, -1, "type", "bmpstring", string);
+      AUXILIAR_SET(L, -1, "type", "bmp", string);
     }
     break;
 
   case V_ASN1_OCTET_STRING:
     AUXILIAR_SETLSTR(L, -1, "value",
       (const char *)type->value.octet_string->data, type->value.octet_string->length);
-    AUXILIAR_SET(L, -1, "type", "octet_string", string);
+    AUXILIAR_SET(L, -1, "type", "octet", string);
     break;
 
   case V_ASN1_BIT_STRING:
     AUXILIAR_SETLSTR(L, -1, "value",
       (const char *)type->value.bit_string->data, type->value.bit_string->length);
 
-    AUXILIAR_SET(L, -1, "type", "bit_string", string);
+    AUXILIAR_SET(L, -1, "type", "bit", string);
     break;
 
   default:
