@@ -437,6 +437,9 @@ int openssl_get_nid(lua_State*L, int idx) {
     int nid = obj->nid;
     ASN1_OBJECT_free(obj);
     return nid;
+  }else{
+    luaL_checkany(L, idx);
+    luaL_argerror(L, idx, "not accept paramater");
   }
   return NID_undef;
 }

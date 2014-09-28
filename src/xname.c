@@ -137,8 +137,8 @@ static int openssl_xname_get_text(lua_State*L)
   X509_NAME* xn = CHECK_OBJECT(1, X509_NAME, "openssl.x509_name");
   int nid = openssl_get_nid(L, 2);
   int len = X509_NAME_get_text_by_NID(xn,nid, NULL, 0);
-  unsigned char* buf = OPENSSL_malloc(len);
-  len = X509_NAME_get_text_by_NID(xn,nid, buf, len);
+  unsigned char* buf = OPENSSL_malloc(len+1);
+  len = X509_NAME_get_text_by_NID(xn,nid, buf, len+1);
   lua_pushlstring(L, buf, len);
   OPENSSL_free(buf);
   return 1;
@@ -148,10 +148,14 @@ static int openssl_xname_get_index(lua_State*L)
 {
   X509_NAME* xn = CHECK_OBJECT(1, X509_NAME, "openssl.x509_name");
   int nid = openssl_get_nid(L, 2);
-  int lastpos = luaL_optinteger(L, 3, 0);
+  int lastpos = luaL_optinteger(L, 3, -1);
 
   int loc = X509_NAME_get_index_by_NID(xn,nid, lastpos);
-  lua_pushinteger(L, loc);
+  if (loc>=0)
+    lua_pushinteger(L, loc);
+  else
+    lua_pushnil(L);
+
   return 1;
 };
 
