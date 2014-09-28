@@ -58,21 +58,27 @@ static int openssl_xattr_free(lua_State*L) {
 
 static int openssl_xattr_data(lua_State*L) {
   X509_ATTRIBUTE* attr = CHECK_OBJECT(1,X509_ATTRIBUTE, "openssl.x509_attribute");
-  if (lua_isnumber(L, 3)) {
+  if (lua_type(L, 2)==LUA_TSTRING)
+  {
+    int attrtype = openssl_get_asn1type(L, 2);
+    size_t size;
+    int ret;
+    const char *data = luaL_checklstring(L,3, &size);
+    if(attr->single)
+      ASN1_TYPE_free((ASN1_TYPE*)attr->value.ptr);
+    else
+      sk_ASN1_TYPE_pop_free(attr->value.set,ASN1_TYPE_free);
+    attr->value.ptr = NULL;
+
+    ret = X509_ATTRIBUTE_set1_data(attr,attrtype,data,size);
+    return openssl_pushresult(L, ret);
+  }else {
     int idx = luaL_checkint(L, 2);
     int attrtype = openssl_get_asn1type(L, 3);
     ASN1_STRING *as = (ASN1_STRING *)X509_ATTRIBUTE_get0_data(attr, idx, attrtype,NULL);
     PUSH_OBJECT(ASN1_STRING_dup(as), "openssl.asn1_string");
     return 1;
-  }else
-  {
-    int attrtype = openssl_get_asn1type(L, 2);
-    size_t size;
-    const char *data = luaL_checklstring(L,3, &size);
-    int ret = X509_ATTRIBUTE_set1_data(attr,attrtype,data,size);
-    return openssl_pushresult(L, ret);
   }
-  return 0;
 }
 
 static int openssl_xattr_type(lua_State*L) {
@@ -89,15 +95,18 @@ static int openssl_xattr_type(lua_State*L) {
 
 static int openssl_xattr_object(lua_State*L) {
   X509_ATTRIBUTE* attr = CHECK_OBJECT(1,X509_ATTRIBUTE, "openssl.x509_attribute");
-  int attrtype = luaL_checkint(L, 2);
-  if(lua_isnone(L,3)){
+  if(lua_isnone(L,2)){
     ASN1_OBJECT* obj = X509_ATTRIBUTE_get0_object(attr);
     PUSH_OBJECT(OBJ_nid2obj(obj->nid),"openssl.asn1_object");
     return 1;
   }else
   {
-    ASN1_OBJECT* obj = CHECK_OBJECT(2,ASN1_OBJECT,"openssl.asn1_object");
-    int ret = X509_ATTRIBUTE_set1_object(attr,obj);
+    int nid = openssl_get_nid(L, 2);
+    ASN1_OBJECT* obj;
+    int ret;
+    luaL_argcheck(L, nid!=NID_undef, 2, "invalid asn1_object identity");
+    obj = OBJ_nid2obj(nid);
+    ret = X509_ATTRIBUTE_set1_object(attr,obj);
     return openssl_pushresult(L, ret);
   }
 }
@@ -117,7 +126,7 @@ static luaL_Reg x509_attribute_funs[] =
   { NULL, NULL }
 };
 
-static X509_ATTRIBUTE* openssl_new_xattribute(lua_State*L, X509_ATTRIBUTE** a, int idx)
+static X509_ATTRIBUTE* openssl_new_xattribute(lua_State*L, X509_ATTRIBUTE** a, int idx, const char* eprefix)
 {
   int arttype;
   size_t len;
@@ -126,21 +135,51 @@ static X509_ATTRIBUTE* openssl_new_xattribute(lua_State*L, X509_ATTRIBUTE** a, i
 
   lua_getfield(L, idx, "object");
   nid = openssl_get_nid(L, -1);
+  if(nid==NID_undef){
+    if(eprefix)
+    {
+      luaL_error(L,"%s field object is invalid value", eprefix);
+    }
+    else
+      luaL_argcheck(L,nid!=NID_undef,idx, "field object is invalid value");
+  }
   lua_pop(L, 1);
 
   lua_getfield(L, idx, "type");
   arttype = openssl_get_asn1type(L, -1);
+  if(arttype==V_ASN1_UNDEF || arttype==0){
+    if(eprefix)
+    {
+      luaL_error(L,"%s field type is not invalid value", eprefix);
+    }
+    else
+      luaL_argcheck(L,nid!=NID_undef,idx, "field type is not invalid value");
+  }
   lua_pop(L, 1);
 
   lua_getfield(L, idx, "value");
-  if(lua_isuserdata(L, -1))
+  if (lua_isstring(L, -1)){
+    data = lua_tolstring(L, -1, &len);
+  }else if(auxiliar_isclass(L,"openssl.asn1_string", -1))
   {
     ASN1_STRING* value = CHECK_OBJECT(-1, ASN1_STRING, "openssl.asn1_string");
+    if(ASN1_STRING_type(value)!=arttype){
+      if(eprefix)
+        luaL_error(L,"%s field value not match type",eprefix);
+      else
+        luaL_argcheck(L, ASN1_STRING_type(value)==arttype, idx, "field value not match type");
+    }
     data = ASN1_STRING_data(value);
     len  = ASN1_STRING_length(value);
-  }else
-    data = luaL_checklstring(L, idx, &len);
-  lua_pop(L, 1);
+  }else{
+      if(eprefix)
+      {
+        luaL_error(L,"%s filed value only accept string or asn1_string", eprefix);
+      }
+      else
+        luaL_argerror(L, idx, "filed value only accept string or asn1_string");    
+  }
+    lua_pop(L, 1);
 
   return X509_ATTRIBUTE_create_by_NID(a, nid, arttype, data, len);
 }
@@ -150,7 +189,7 @@ static int openssl_xattr_new(lua_State*L) {
   X509_ATTRIBUTE *x=NULL;
   luaL_checktable(L,1);
 
-  x = openssl_new_xattribute(L, &x, 1);
+  x = openssl_new_xattribute(L, &x, 1, NULL);
   PUSH_OBJECT(x,"openssl.x509_attribute");
   return 1;
 }
@@ -165,8 +204,18 @@ static int openssl_new_xattrs(lua_State*L)
   for(i=0; i<lua_rawlen(L, idx); i++)
   {
     X509_ATTRIBUTE* a = NULL;
+    const char* eprefix = NULL;
     lua_rawgeti(L, idx, i+1);
-    a = openssl_new_xattribute(L, &a, -1);
+    if(!lua_istable(L, -1))
+    {
+      lua_pushfstring(L, "value at %d is not table", i+1);
+      luaL_argerror(L, idx, lua_tostring(L, -1));
+    }
+    lua_pushfstring(L, "table %d at argument #%d:", idx, i+1);
+    eprefix = lua_tostring(L, -1);
+    lua_pop(L,1);
+
+    a = openssl_new_xattribute(L, &a, lua_gettop(L), eprefix);
     if(a) {
       sk_X509_ATTRIBUTE_push(attrs,a);
     }

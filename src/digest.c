@@ -72,7 +72,7 @@ static LUA_FUNCTION(openssl_digest)
     md = CHECK_OBJECT(1, EVP_MD, "openssl.evp_digest");
   }
   else
-    luaL_error(L, "argument #1 must be a string identify digest method or an openssl.evp_digest object");
+    luaL_error(L, "argument #1 must be a string identity digest method or an openssl.evp_digest object");
 
   if (md)
   {
