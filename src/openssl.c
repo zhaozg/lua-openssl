@@ -234,7 +234,7 @@ LUA_API int luaopen_openssl(lua_State*L)
 
   ERR_load_ERR_strings();
   ERR_load_EVP_strings();
-
+  ERR_load_crypto_strings();
 
   ENGINE_load_dynamic();
   ENGINE_load_openssl();

@@ -150,8 +150,6 @@ static const luaL_Reg R[] =
 
 LUALIB_API int luaopen_hmac(lua_State *L)
 {
-  ERR_load_crypto_strings();
-
   auxiliar_newclass(L, "openssl.hmac_ctx", hmac_ctx_funs);
 
   luaL_register(L, MYNAME, R);

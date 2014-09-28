@@ -104,13 +104,14 @@ function object() end
 --- get type of x509_attribute
 --
 -- @tparam integer idx location want to get type
--- @tparam integer atrtype attribute type
+-- @tparam string attrtype attribute type
 -- @treturn asn1_string
 function data() end
 
 --- set type of x509_attribute
 --
--- @tparam integer atrtype attribute type
+-- @tparam string attrtype attribute type
+-- @tparam string data set to asn1_attr
 -- @string data to set
 function data() end
 

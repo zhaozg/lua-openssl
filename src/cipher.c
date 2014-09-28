@@ -84,7 +84,7 @@ static LUA_FUNCTION(openssl_evp_encrypt)
     {
       luaL_error(L, "EVP_EncryptInit_ex failed, please check openssl error");
     }
-    buffer = malloc(input_len + EVP_CIPHER_CTX_block_size(&c));
+    buffer = OPENSSL_malloc(input_len + EVP_CIPHER_CTX_block_size(&c));
     ret = EVP_EncryptUpdate(&c, (byte*) buffer, &len, (const byte*)input, input_len);
     if ( ret==1 ) {
       output_len += len;
@@ -95,7 +95,7 @@ static LUA_FUNCTION(openssl_evp_encrypt)
       }
     }
     EVP_CIPHER_CTX_cleanup(&c);
-    free(buffer);
+    OPENSSL_free(buffer);
   }
   else
     luaL_error(L, "argument #1 is not a valid cipher algorithm or openssl.evp_cipher object");
@@ -154,7 +154,7 @@ static LUA_FUNCTION(openssl_evp_decrypt)
       luaL_error(L, "EVP_DecryptInit_ex failed, please check openssl error");
     }
 
-    buffer = malloc(input_len);
+    buffer = OPENSSL_malloc(input_len);
     ret = EVP_DecryptUpdate(&c, (byte*)buffer, &len, (const byte*)input, input_len);
     if (ret==1) {
       output_len += len;
@@ -165,7 +165,7 @@ static LUA_FUNCTION(openssl_evp_decrypt)
       }
     }
     EVP_CIPHER_CTX_cleanup(&c);
-    free(buffer);
+    OPENSSL_free(buffer);
   }
   else
     luaL_error(L, "argument #1 is not a valid cipher algorithm or openssl.evp_cipher object");
@@ -226,14 +226,14 @@ static LUA_FUNCTION(openssl_evp_cipher)
       luaL_error(L, "EVP_CipherInit_ex failed, please check openssl error");
     }
 
-    buffer = malloc(input_len);
+    buffer = OPENSSL_malloc(input_len);
     EVP_CipherUpdate(&c, (byte*)buffer, &len, (const byte*)input, input_len);
     output_len += len;
     EVP_CipherFinal(&c, (byte*)buffer + len, &len);
     output_len += len;
     lua_pushlstring(L, (char*) buffer, output_len);
     EVP_CIPHER_CTX_cleanup(&c);
-    free(buffer);
+    OPENSSL_free(buffer);
   }
   else
     luaL_error(L, "argument #2 is not a valid cipher algorithm or openssl.evp_cipher object");
@@ -506,8 +506,8 @@ static luaL_Reg cipher_funs[] =
 {
   {"info",      openssl_cipher_info},
   {"new",       openssl_cipher_new},
-  { "encrypt_new", openssl_cipher_encrypt_new},
-  { "decrypt_new", openssl_cipher_decrypt_new},
+  {"encrypt_new", openssl_cipher_encrypt_new},
+  {"decrypt_new", openssl_cipher_decrypt_new},
 
   {"BytesToKey",    openssl_evp_BytesToKey},
 
@@ -550,8 +550,6 @@ static const luaL_Reg R[] =
 
 LUALIB_API int luaopen_cipher(lua_State *L)
 {
-  ERR_load_crypto_strings();
-
   auxiliar_newclass(L, "openssl.evp_cipher",   cipher_funs);
   auxiliar_newclass(L, "openssl.evp_cipher_ctx", cipher_ctx_funs);
 

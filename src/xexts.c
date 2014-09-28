@@ -298,7 +298,7 @@ static int openssl_xext_new_sk(lua_State* L)
   for (i=0; i<lua_objlen(L, 1); i++)
   {
     lua_rawgeti(L,1, i+1);
-    x = openssl_new_xextension(L, NULL, -1, utf8);
+    x = openssl_new_xextension(L, NULL, lua_gettop(L), utf8);
     sk_X509_EXTENSION_push(exts, x);
   }
   PUSH_OBJECT(exts, "openssl.stack_of_x509_extension");
