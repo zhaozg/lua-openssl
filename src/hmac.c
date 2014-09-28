@@ -59,14 +59,9 @@ static int openssl_hmac_final(lua_State *L)
   if (raw) {
     lua_pushlstring(L, (char *)digest, len);
   }else{
-    char* in;
-    BIGNUM *B = BN_new();
-    BN_bin2bn(digest, len, B);
-    in = BN_bn2hex(B);
-    strlwr(in);
-    lua_pushstring(L, in);
-    OPENSSL_free((void*)in);
-    BN_free(B);
+    char hex[2*EVP_MAX_MD_SIZE+1];
+    to_hex(digest,len,hex);
+    lua_pushstring(L, hex);
   }
   return 1;
 }
@@ -124,14 +119,9 @@ static int openssl_hmac(lua_State *L)
     if(raw)
       lua_pushlstring(L, (char *)digest, len);
     else{
-      char* in;
-      BIGNUM *B = BN_new();
-      BN_bin2bn(digest, len, B);
-      in = BN_bn2hex(B);
-      strlwr(in);
-      lua_pushstring(L, in);
-      OPENSSL_free((void*)in);
-      BN_free(B);
+      char hex[2*EVP_MAX_MD_SIZE+1];
+      to_hex(digest,len,hex);
+      lua_pushstring(L, hex);
     }
   }
   return 1;

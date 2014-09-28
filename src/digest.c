@@ -77,8 +77,8 @@ static LUA_FUNCTION(openssl_digest)
   if (md)
   {
     size_t inl;
-    unsigned char buf[MAX_PATH];
-    unsigned int  blen = MAX_PATH;
+    unsigned char buf[EVP_MAX_MD_SIZE];
+    unsigned int  blen = sizeof(buf);
     const char* in = luaL_checklstring(L, 2, &inl);
     int raw = (lua_isnoneornil(L, 3)) ? 0 : lua_toboolean(L, 3);
     int status = EVP_Digest(in, inl, buf, &blen, md, NULL);
@@ -88,14 +88,9 @@ static LUA_FUNCTION(openssl_digest)
         lua_pushlstring(L, (const char*)buf, blen);
       else
       {
-        BIGNUM *B = BN_new();
-        char* hex;
-        BN_bin2bn(buf, blen, B);
-        hex = BN_bn2hex(B);
-        strlwr(hex);
+        char hex[2*EVP_MAX_MD_SIZE+1];
+        to_hex(buf,blen,hex);
         lua_pushstring(L, hex);
-        OPENSSL_free(hex);
-        BN_free(B);
       }
     }
     else
@@ -188,8 +183,7 @@ static LUA_FUNCTION(openssl_evp_digest_final)
 {
   EVP_MD_CTX* c = CHECK_OBJECT(1, EVP_MD_CTX, "openssl.evp_digest_ctx");
   EVP_MD_CTX* d = EVP_MD_CTX_create();
-  unsigned int outl = EVP_MAX_MD_SIZE;
-  unsigned char out[EVP_MAX_MD_SIZE];
+
   int ret;
   int raw = 0;
 
@@ -205,37 +199,36 @@ static LUA_FUNCTION(openssl_evp_digest_final)
   else
     raw = (lua_isnoneornil(L, 2)) ? 0 : lua_toboolean(L, 2);
 
-  if (!EVP_MD_CTX_copy_ex(d, c)) {
-    EVP_MD_CTX_destroy(d);
-    return openssl_pushresult(L, 0);
-  }
-  c = d;
+  EVP_MD_CTX_init(d);
+  if (EVP_MD_CTX_copy_ex(d, c)==1) {
+    byte out[EVP_MAX_MD_SIZE];
+    unsigned int outl = sizeof(out);
 
-  if (EVP_DigestFinal_ex(c, (byte*)out, &outl) && outl)
-  {
-    if (raw)
+    c = d;
+
+    if (EVP_DigestFinal_ex(c, (byte*)out, &outl)==1)
     {
-      lua_pushlstring(L, (const char*)out, outl);
+      if (raw)
+      {
+        lua_pushlstring(L, (const char*)out, outl);
+      }
+      else
+      {
+        char hex[2*EVP_MAX_MD_SIZE+1];
+        to_hex(out,outl,hex);
+        lua_pushstring(L, hex);
+      }
     }
-    else
-    {
-      char* in;
-      BIGNUM *B = BN_new();
-      BN_bin2bn(out, outl, B);
-      in = BN_bn2hex(B);
-      strlwr(in);
-      lua_pushstring(L, in);
-      OPENSSL_free((void*)in);
-      BN_free(B);
+    else {
+      luaL_error(L, "digest final fail");
+      lua_pushnil(L);
     }
     EVP_MD_CTX_destroy(c);
     return 1;
+  }else{
+    EVP_MD_CTX_destroy(d);
+    return openssl_pushresult(L, 0);
   }
-  else {
-    EVP_MD_CTX_destroy(c);
-    luaL_error(L, "digest final fail");
-  }
-  return 0;
 }
 
 static LUA_FUNCTION(openssl_digest_ctx_free)

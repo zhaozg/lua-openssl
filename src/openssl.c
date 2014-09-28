@@ -31,9 +31,8 @@ static LUA_FUNCTION(openssl_hex)
 
   if (encode)
   {
-    B = BN_bin2bn((const unsigned char*)s, (int)l, NULL);
-    h = BN_bn2hex(B);
-    strlwr(h);
+    h = OPENSSL_malloc(l*2 + 1);
+    to_hex(s,l,h);
     hl = strlen(h);
   }
   else

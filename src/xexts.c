@@ -187,18 +187,34 @@ static int openssl_xext_critical(lua_State* L)
 
 static int openssl_xext_data(lua_State* L)
 {
+  int ret = 0;
   X509_EXTENSION *x = CHECK_OBJECT(1, X509_EXTENSION, "openssl.x509_extension");
   if(lua_isnone(L, 2)){
     ASN1_STRING *s = X509_EXTENSION_get_data(x);
     PUSH_OBJECT(ASN1_STRING_dup(s),"openssl.asn1_string");
     return 1;
+  } else if(lua_isstring(L, 2)) {
+    size_t size;
+    const char* data = lua_tolstring(L, 2, &size);
+    ASN1_STRING* s = ASN1_STRING_type_new(V_ASN1_OCTET_STRING);
+    if(ASN1_STRING_set(s, data, size)==1)
+    {
+      ret = X509_EXTENSION_set_data(x, s);
+    }
+    return openssl_pushresult(L, ret);
   } else {
     ASN1_STRING *s = CHECK_OBJECT(2, ASN1_STRING, "openssl.asn1_string");
-    int ret;
-    s = ASN1_STRING_dup(s);
-    ret = X509_EXTENSION_set_data(x, s);
-    return openssl_pushresult(L, ret);
+    if(ASN1_STRING_type(s)==V_ASN1_OCTET_STRING)
+    {
+      int ret;
+      s = ASN1_STRING_dup(s);
+      ret = X509_EXTENSION_set_data(x, s);
+      return openssl_pushresult(L, ret);
+    }else{
+      luaL_argerror(L,2,"asn1_string type must be octet");
+    }
   }
+  return 0;
 };
 
 static luaL_Reg x509_extension_funs[] =
@@ -231,14 +247,28 @@ static X509_EXTENSION* openssl_new_xextension(lua_State*L, X509_EXTENSION** x, i
     luaL_argerror(L, idx, lua_tostring(L,-1));
   }
   lua_getfield(L, idx, "value");
-  value = CHECK_OBJECT(-1, ASN1_STRING, "openssl.asn1_string");
+  
+  luaL_argcheck(L, lua_isstring(L, -1) || auxiliar_isclass(L,"openssl.asn1_string", -1),
+    1, "field value must be string or openssl.asn1_string object");
+  if(lua_isstring(L, -1)) {
+    size_t size;
+    const char* data = lua_tolstring(L, -1, &size);
+    value = ASN1_STRING_type_new(V_ASN1_OCTET_STRING);
+    ASN1_STRING_set(value,data, size);
+  }else
+  {
+    value = CHECK_OBJECT(-1, ASN1_STRING, "openssl.asn1_string");
+    luaL_argcheck(L, ASN1_STRING_type(value)==V_ASN1_OCTET_STRING, 1,"field value must be octet type openssl.asn1_string");
+    value = ASN1_STRING_dup(value);
+  }
+
   lua_pop(L, 1);
 
   lua_getfield(L, idx, "critical");
   critical = lua_isnil(L,-1) ? 0 : lua_toboolean(L, -1);
   lua_pop(L, 1);
 
-  return X509_EXTENSION_create_by_NID(x, nid, critical, ASN1_STRING_dup(value));
+  return X509_EXTENSION_create_by_NID(x, nid, critical, value);
 }
 
 static int openssl_xext_new(lua_State* L)
