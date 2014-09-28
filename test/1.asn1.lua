@@ -55,13 +55,16 @@ TestObject = {}
             sn  ='gmsm21',
             ln  ='CCSTC GMSM2 EC1'
         }
-        o7 =  asn1.new_object(options)
-        assertStrContains(tostring(o7), 'openssl.asn1_object')
-        assertEquals(o7:txt(), options.ln)
-        assertEquals(o7:txt(true), options.oid)
-        assertEquals(asn1.txt2nid(options.sn), o7:nid())
-        assertEquals(asn1.txt2nid(options.ln), o7:nid())
-        assertEquals(asn1.txt2nid(options.oid), o7:nid())
+        o7 = asn1.new_object(options.sn)
+        if not o7 then
+            o7 =  asn1.new_object(options)
+            assertStrContains(tostring(o7), 'openssl.asn1_object')
+            assertEquals(o7:txt(), options.ln)
+            assertEquals(o7:txt(true), options.oid)
+            assertEquals(asn1.txt2nid(options.sn), o7:nid())
+            assertEquals(asn1.txt2nid(options.ln), o7:nid())
+            assertEquals(asn1.txt2nid(options.oid), o7:nid())
+        end
     end
     
 TestString = {}

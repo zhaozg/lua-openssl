@@ -201,13 +201,13 @@ static int openssl_xext_data(lua_State* L)
     {
       ret = X509_EXTENSION_set_data(x, s);
     }
+    ASN1_STRING_free(s);
     return openssl_pushresult(L, ret);
   } else {
     ASN1_STRING *s = CHECK_OBJECT(2, ASN1_STRING, "openssl.asn1_string");
     if(ASN1_STRING_type(s)==V_ASN1_OCTET_STRING)
     {
       int ret;
-      s = ASN1_STRING_dup(s);
       ret = X509_EXTENSION_set_data(x, s);
       return openssl_pushresult(L, ret);
     }else{
@@ -236,12 +236,17 @@ static luaL_Reg x509_extension_funs[] =
 static X509_EXTENSION* openssl_new_xextension(lua_State*L, X509_EXTENSION** x, int idx, int utf8)
 {
   int nid;
-  ASN1_OCTET_STRING* value;
   int critical = 0;
+  ASN1_OCTET_STRING* value;
 
   lua_getfield(L, idx, "object");
   nid = openssl_get_nid(L, -1);
   lua_pop(L, 1);
+
+  lua_getfield(L, idx, "critical");
+  critical = lua_isnil(L,-1) ? 0 : lua_toboolean(L, -1);
+  lua_pop(L, 1);
+
   if (nid==NID_undef) {
     lua_pushfstring(L, "%s is not valid object id",lua_tostring(L, -1));
     luaL_argerror(L, idx, lua_tostring(L,-1));
@@ -253,22 +258,19 @@ static X509_EXTENSION* openssl_new_xextension(lua_State*L, X509_EXTENSION** x, i
   if(lua_isstring(L, -1)) {
     size_t size;
     const char* data = lua_tolstring(L, -1, &size);
+    X509_EXTENSION* y;
     value = ASN1_STRING_type_new(V_ASN1_OCTET_STRING);
     ASN1_STRING_set(value,data, size);
+    y = X509_EXTENSION_create_by_NID(x, nid, critical, value);
+    ASN1_STRING_free(value);
+    return y;
   }else
   {
     value = CHECK_OBJECT(-1, ASN1_STRING, "openssl.asn1_string");
+    lua_pop(L, 1);
     luaL_argcheck(L, ASN1_STRING_type(value)==V_ASN1_OCTET_STRING, 1,"field value must be octet type openssl.asn1_string");
-    value = ASN1_STRING_dup(value);
+    return X509_EXTENSION_create_by_NID(x, nid, critical, value);
   }
-
-  lua_pop(L, 1);
-
-  lua_getfield(L, idx, "critical");
-  critical = lua_isnil(L,-1) ? 0 : lua_toboolean(L, -1);
-  lua_pop(L, 1);
-
-  return X509_EXTENSION_create_by_NID(x, nid, critical, value);
 }
 
 static int openssl_xext_new(lua_State* L)

@@ -61,6 +61,7 @@ static int openssl_xname_print(lua_State*L)
   unsigned long flags = luaL_optinteger(L, 4, 0);
 
   int ret = X509_NAME_print_ex(bio, xname, indent, flags);
+  BIO_free(bio);
   if(ret==1)
     lua_pushboolean(L, 1);
   else
@@ -189,6 +190,7 @@ static int openssl_xname_delete_entry(lua_State*L)
   {
     PUSH_OBJECT(OBJ_dup(xe->object),"openssl.asn1_object");
     PUSH_OBJECT(ASN1_STRING_dup(xe->value),"openssl.asn1_string");
+    X509_NAME_ENTRY_free(xe);
     return 2;
   }else
     lua_pushnil(L);

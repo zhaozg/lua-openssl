@@ -34,7 +34,7 @@ BIO* load_bio_object(lua_State* L, int idx)
   else if (auxiliar_isclass(L, "openssl.bio", idx))
   {
     bio = CHECK_OBJECT(idx, BIO, "openssl.bio");
-    bio->references++;
+    CRYPTO_add(&bio->references,1,CRYPTO_LOCK_BIO);
   }
   else
     luaL_argerror(L, idx, "only support string or openssl.bio");
