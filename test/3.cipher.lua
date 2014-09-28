@@ -1,11 +1,8 @@
 local cipher = require'openssl'.cipher
-local print_r = require'function.print_r'
 
-require('luaunit')
+TestCipherCompat = {}
 
-TestCompat = {}
-
-    function TestCompat:setUp()
+    function TestCipherCompat:setUp()
         self.msg='abcdabcdabcdabcdabcdabcd'
         self.msg1='abcd'
         self.alg='des-ede-cbc'
@@ -13,13 +10,12 @@ TestCompat = {}
         self.key=self.key..string.reverse(self.key)
         self.iv = string.rep(string.char(00),32)
 
-        assertEquals('table',type(getmetatable(cipher)))
+        assertEquals('nil',type(getmetatable(cipher)))
     end
-    function TestCompat:tearDown()
-        print('Test END')
+    function TestCipherCompat:tearDown()
     end
 
-    function TestCompat:testCipher()
+    function TestCipherCompat:testCipher()
         local a,b,c,d
 
         a = cipher.cipher(self.alg,true,self.msg,self.key)
@@ -34,7 +30,7 @@ TestCompat = {}
         assertEquals(d,self.msg)
     end
 
-    function TestCompat:testObject()
+    function TestCipherCompat:testObject()
         local a,b,c,aa,bb,cc
         local obj,obj1
 
@@ -60,9 +56,9 @@ TestCompat = {}
     end
 
 
-TestMY = {}
+TestCipherMY = {}
 
-    function TestMY:setUp()
+    function TestCipherMY:setUp()
         self.msg='abcdabcdabcdabcdabcdabcd'
         self.msg1='abcd'
         self.alg='des-ede-cbc'
@@ -70,7 +66,7 @@ TestMY = {}
         self.key=self.key..string.reverse(self.key)
         self.iv = string.rep(string.char(00),32)
     end
-    function TestMY:testList()
+    function TestCipherMY:testList()
 
         local t1,t2,t3
         t1 = cipher.list(true)
@@ -120,8 +116,3 @@ TestMY = {}
         assertEquals(#i,t.iv_length)
 
     end
-
-local lu = LuaUnit
-lu:setVerbosity( 0 )
-lu:run()
-

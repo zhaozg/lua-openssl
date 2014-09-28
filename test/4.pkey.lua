@@ -1,7 +1,6 @@
 local pkey = require('openssl').pkey
 local print_r = require'function.print_r'
 local unpack = unpack or table.unpack
-require('luaunit')
 
 local function mk_key(args)
         assert(type(args),'table')
@@ -11,10 +10,10 @@ local function mk_key(args)
 end
 
 
-TestMY = {}
+TestPKEYMY = {}
 
 
-    function TestMY:setUp()
+    function TestPKEYMY:setUp()
         self.genalg = {
                 {nil}, --default to create rsa 1024 bits with 65537
                 {'rsa',1024,3}, --create rsa with give bits length and e
@@ -24,7 +23,7 @@ TestMY = {}
         }
 
     end
-    function TestMY:testModule()
+    function TestPKEYMY:testModule()
         for i,v in ipairs(self.genalg ) do
                 --print(v)
                 local k = mk_key(v)
@@ -79,13 +78,6 @@ TestMY = {}
                 assert(k1:export(true,true,true,'secret'))
                 assert(k:export(true,false,true,'secret'))
                 assert(k:export(false,false,true,'secret'))
---]]
+
         end
     end
-
-io.read()
-local lu = LuaUnit
-lu:setVerbosity( 0 )
-
-lu:run()
-print(openssl.mem_leaks())

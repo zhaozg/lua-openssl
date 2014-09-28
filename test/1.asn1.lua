@@ -1,9 +1,4 @@
 local asn1 = require'openssl'.asn1
-local print_r = require'function.print_r'
-
-io.read()
-
-require('luaunit')
 
 TestObject = {}
 
@@ -18,7 +13,7 @@ TestObject = {}
     function TestObject:tearDown()
     end
 
-    function TestObject:testObject()
+    function TestObject:testAll()
         local o1, o2, o3, o4, o5, o6, o7
         o1 = asn1.new_object(self.sn)
         o2 = asn1.new_object(self.ln)
@@ -78,7 +73,7 @@ TestString = {}
     function TestString:tearDown()
     end
 
-    function TestString:testObject()
+    function TestString:testAll()
         local s1,s2,s3,s4,s5,s6
         s1 = asn1.new_string(self.bmp,'bmp')
         s2 = asn1.new_string(self.bmp_cn,'bmp')
@@ -105,8 +100,3 @@ TestString = {}
         assertStrContains(tostring(s3),'utf8:')
         assert(s4==s3)
     end    
-
-local lu = LuaUnit
-lu:setVerbosity( 0 )
-lu:run()
-

@@ -1,23 +1,18 @@
 local hmac = require'openssl'.hmac
-local print_r = require'function.print_r'
-io.read()
 
-require('luaunit')
-
-TestCompat = {}
-    function TestCompat:setUp()
+TestHMACCompat = {}
+    function TestHMACCompat:setUp()
         self.msg='abcd'
         self.alg='sha1'
         self.key = 'abcdefg'
     end
 
-    function TestCompat:tearDown()
-        print('Test END')
+    function TestHMACCompat:tearDown()
     end
 
-    function TestCompat:testDigest()
+    function TestHMACCompat:testDigest()
         local a,b,c
-        a = hmac(self.alg,self.msg,self.key,true)
+        a = hmac.hmac(self.alg,self.msg,self.key,true)
         assertEquals(#a,20)
 
         b = hmac.hmac(self.alg,self.msg,self.key,false)
@@ -33,7 +28,3 @@ TestCompat = {}
         c = c:final(self.msg)
         assertEquals(c,b)        
     end
-
-local lu = LuaUnit
-lu:setVerbosity( 0 )
-lu:run()

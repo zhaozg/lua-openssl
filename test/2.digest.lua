@@ -1,21 +1,19 @@
 local digest = require'openssl'.digest
 local print_r = require'function.print_r'
 
-require('luaunit')
 
-TestCompat = {}
-    function TestCompat:setUp()
+TestDigestCompat = {}
+    function TestDigestCompat:setUp()
         self.msg='abcd'
         self.alg='sha1'
     end
 
-    function TestCompat:tearDown()
-        print('Test END')
+    function TestDigestCompat:tearDown()
     end
 
-    function TestCompat:testDigest()
+    function TestDigestCompat:testDigest()
         local a,b,c
-        a = digest(self.alg,self.msg)
+        a = digest.digest(self.alg,self.msg)
         assertEquals(#a,40)
 
         b = digest.digest(self.alg,self.msg,false)
@@ -24,7 +22,7 @@ TestCompat = {}
         c = digest.digest(self.alg,self.msg,true)
         assertEquals(#c,20)
     end
-    function TestCompat:testObject()
+    function TestDigestCompat:testObject()
         local a,b,c,aa,bb,cc
         local obj,obj1
         obj = digest.new(self.alg)
@@ -49,8 +47,8 @@ TestCompat = {}
         assertEquals(aa,bb)
     end
 
-TestMY = {}
-    function TestMY:testList()
+TestDigestMY = {}
+    function TestDigestMY:testList()
         local t1,t2,t3
         t1 = digest.list(true)
         t2 = digest.list()
@@ -74,6 +72,3 @@ TestMY = {}
         assert(t1.size==20)
     end
 
-local lu = LuaUnit
-lu:setVerbosity( 0 )
-lu:run()
