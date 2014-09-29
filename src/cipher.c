@@ -22,19 +22,23 @@ static LUA_FUNCTION(openssl_cipher_list)
 
 static LUA_FUNCTION(openssl_cipher_get)
 {
-  const EVP_CIPHER* cipher = get_cipher(L, 1, NULL);
+  if(!lua_isuserdata(L,1)) {
+    const EVP_CIPHER* cipher = get_cipher(L, 1, NULL);
 
-  if (cipher)
-    PUSH_OBJECT((void*)cipher, "openssl.evp_cipher");
-  else
-    lua_pushnil(L);
+    if (cipher)
+      PUSH_OBJECT((void*)cipher, "openssl.evp_cipher");
+    else
+      lua_pushnil(L);
+  }else{
+    luaL_argcheck(L, auxiliar_isclass(L, "openssl.evp_cipher", 1), 1, "only accept openssl.evp_cipher object");
+    lua_pushvalue(L, 1);
+  }
   return 1;
 }
 
 static LUA_FUNCTION(openssl_evp_encrypt)
 {
   const EVP_CIPHER* cipher = NULL;
-  int ret = 0;
   if (lua_istable(L, 1))
   {
     if (lua_getmetatable(L, 1) && lua_equal(L, 1, -1))
@@ -57,13 +61,15 @@ static LUA_FUNCTION(openssl_evp_encrypt)
     const char *iv = luaL_optlstring(L, 4, NULL, &iv_len);   /* can be NULL */
     int pad = lua_isnoneornil(L, 5) ? 1 : lua_toboolean(L, 5);
     ENGINE *e = lua_isnoneornil(L, 6) ? NULL : CHECK_OBJECT(6, ENGINE, "openssl.engine");
-    EVP_CIPHER_CTX c;
+
+    EVP_CIPHER_CTX *c = EVP_CIPHER_CTX_new();
 
     int output_len = 0;
     int len = 0;
     char *buffer = NULL;
     char evp_key[EVP_MAX_KEY_LENGTH] = {0};
     char evp_iv[EVP_MAX_IV_LENGTH] = {0};
+    int ret = 0;
 
     if (key)
     {
@@ -76,38 +82,41 @@ static LUA_FUNCTION(openssl_evp_encrypt)
       memcpy(evp_iv, iv, iv_len);
     }
 
-    EVP_CIPHER_CTX_init(&c);
+    EVP_CIPHER_CTX_init(c);
     if (!pad)
-      EVP_CIPHER_CTX_set_padding(&c, 0);
+      ret = EVP_CIPHER_CTX_set_padding(c, 0);
+    else
+      ret = 1;
 
-    if (!EVP_EncryptInit_ex(&c, cipher, e, (const byte*)evp_key, iv ? (const byte*)evp_iv : NULL ))
-    {
-      luaL_error(L, "EVP_EncryptInit_ex failed, please check openssl error");
-    }
-    buffer = OPENSSL_malloc(input_len + EVP_CIPHER_CTX_block_size(&c));
-    ret = EVP_EncryptUpdate(&c, (byte*) buffer, &len, (const byte*)input, input_len);
-    if ( ret==1 ) {
-      output_len += len;
-      ret = EVP_EncryptFinal(&c, (byte*)buffer + len, &len);
-      if (ret == 1) {
-        output_len += len;
-        lua_pushlstring(L, (char*) buffer, output_len);
+    if (ret==1) {
+      ret = EVP_EncryptInit_ex(c, cipher, e, (const byte*)evp_key, iv ? (const byte*)evp_iv : NULL ); 
+      if (ret==1)
+      {
+        buffer = OPENSSL_malloc(input_len + EVP_CIPHER_CTX_block_size(c));
+        ret = EVP_EncryptUpdate(c, (byte*) buffer, &len, (const byte*)input, input_len);
+        if ( ret==1 ) {
+          output_len += len;
+          ret = EVP_EncryptFinal(c, (byte*)buffer + len, &len);
+          if (ret == 1) {
+            output_len += len;
+            lua_pushlstring(L, (char*) buffer, output_len);
+          }
+        }
+        OPENSSL_free(buffer);
       }
     }
-    EVP_CIPHER_CTX_cleanup(&c);
-    OPENSSL_free(buffer);
+    EVP_CIPHER_CTX_cleanup(c);
+    EVP_CIPHER_CTX_free(c);
+    return (ret==1) ? ret : openssl_pushresult(L, ret);
   }
   else
     luaL_error(L, "argument #1 is not a valid cipher algorithm or openssl.evp_cipher object");
-  if (ret==0)
-    return openssl_pushresult(L, 0);
-  return 1;
+  return 0;
 }
 
 static LUA_FUNCTION(openssl_evp_decrypt)
 {
   const EVP_CIPHER* cipher;
-  int ret = 0;
   if (lua_istable(L, 1))
   {
     if (lua_getmetatable(L, 1) && lua_equal(L, 1, -1))
@@ -118,6 +127,7 @@ static LUA_FUNCTION(openssl_evp_decrypt)
     else
       luaL_error(L, "call function with invalid state");
   }
+
   cipher = get_cipher(L, 1, NULL);
   if (cipher)
   {
@@ -129,13 +139,14 @@ static LUA_FUNCTION(openssl_evp_decrypt)
     const char *iv = luaL_optlstring(L, 4, NULL, &iv_len); /* can be NULL */
     int pad = lua_isnoneornil(L, 5) ? 1 : lua_toboolean(L, 5);
     ENGINE *e = lua_isnoneornil(L, 6) ? NULL : CHECK_OBJECT(6, ENGINE, "openssl.engine");
-    EVP_CIPHER_CTX c;
+    EVP_CIPHER_CTX *c = EVP_CIPHER_CTX_new();
 
     int output_len = 0;
     int len = 0;
     char *buffer = NULL;
     char evp_key[EVP_MAX_KEY_LENGTH] = {0};
     char evp_iv[EVP_MAX_IV_LENGTH] = {0};
+    int ret;
     if (key)
     {
       key_len = EVP_MAX_KEY_LENGTH > key_len ? key_len : EVP_MAX_KEY_LENGTH;
@@ -147,31 +158,36 @@ static LUA_FUNCTION(openssl_evp_decrypt)
       memcpy(evp_iv, iv, iv_len);
     }
 
-    EVP_CIPHER_CTX_init(&c);
-    EVP_CIPHER_CTX_set_padding(&c, pad);
-    if (!EVP_DecryptInit_ex(&c, cipher, e, key ? (const byte*)evp_key : NULL, iv ? (const byte*)evp_iv : NULL ))
-    {
-      luaL_error(L, "EVP_DecryptInit_ex failed, please check openssl error");
-    }
-
-    buffer = OPENSSL_malloc(input_len);
-    ret = EVP_DecryptUpdate(&c, (byte*)buffer, &len, (const byte*)input, input_len);
+    EVP_CIPHER_CTX_init(c);
+    if(pad)
+      ret = EVP_CIPHER_CTX_set_padding(c, pad);
+    else
+      ret = 1;
     if (ret==1) {
-      output_len += len;
-      ret = EVP_DecryptFinal(&c, (byte*)buffer + len, &len);
+      ret = EVP_DecryptInit_ex(c, cipher, e, key ? (const byte*)evp_key : NULL, iv ? (const byte*)evp_iv : NULL ); 
       if (ret==1) {
-        output_len += len;
-        lua_pushlstring(L, (char*) buffer, output_len);
+        buffer = OPENSSL_malloc(input_len);
+
+        ret = EVP_DecryptUpdate(c, (byte*)buffer, &len, (const byte*)input, input_len);
+        if (ret==1) {
+          output_len += len;
+          len = input_len - len;
+          ret = EVP_DecryptFinal(c, (byte*)buffer + output_len, &len);
+          if (ret==1) {
+            output_len += len;
+            lua_pushlstring(L, (char*) buffer, output_len);
+          }
+        }
+        OPENSSL_free(buffer);
       }
     }
-    EVP_CIPHER_CTX_cleanup(&c);
-    OPENSSL_free(buffer);
+    EVP_CIPHER_CTX_cleanup(c);
+    EVP_CIPHER_CTX_free(c);
+    return (ret==1) ? ret : openssl_pushresult(L, ret);
   }
   else
-    luaL_error(L, "argument #1 is not a valid cipher algorithm or openssl.evp_cipher object");
-  if (ret==0)
-    return openssl_pushresult(L, 0);
-  return 1;
+    luaL_argerror(L, 1, "invalid cipher algorithm or openssl.evp_cipher object");
+  return 0;
 }
 
 static LUA_FUNCTION(openssl_evp_cipher)
@@ -196,18 +212,23 @@ static LUA_FUNCTION(openssl_evp_cipher)
     size_t input_len = 0;
     const char *input = luaL_checklstring(L, 3, &input_len);
     size_t key_len = 0;
-    const char *key = luaL_optlstring(L, 4, NULL, &key_len); /* can be NULL */
+    const char *key = luaL_checklstring(L, 4, &key_len);
     size_t iv_len = 0;
     const char *iv = luaL_optlstring(L, 5, NULL, &iv_len); /* can be NULL */
-    int pad = lua_isnoneornil(L, 6) ? 1 : lua_toboolean(L, 6);
+
+    int pad = lua_isnone(L, 6) ? 1 : lua_toboolean(L, 6);
     ENGINE *e = lua_isnoneornil(L, 7) ? NULL : CHECK_OBJECT(7, ENGINE, "openssl.engine");
-    EVP_CIPHER_CTX c;
+
+    EVP_CIPHER_CTX *c = EVP_CIPHER_CTX_new();
 
     int output_len = 0;
     int len = 0;
-    char *buffer = NULL;
+
     char evp_key[EVP_MAX_KEY_LENGTH] = {0};
     char evp_iv[EVP_MAX_IV_LENGTH] = {0};
+
+    int ret;
+
     if (key)
     {
       key_len = EVP_MAX_KEY_LENGTH > key_len ? key_len : EVP_MAX_KEY_LENGTH;
@@ -219,26 +240,40 @@ static LUA_FUNCTION(openssl_evp_cipher)
       memcpy(evp_iv, iv, iv_len);
     }
 
-    EVP_CIPHER_CTX_init(&c);
-    EVP_CIPHER_CTX_set_padding(&c, pad);
-    if (!EVP_CipherInit_ex(&c, cipher, e, key ? (const byte*)evp_key : NULL, iv ? (const byte*)evp_iv : NULL, enc))
-    {
-      luaL_error(L, "EVP_CipherInit_ex failed, please check openssl error");
-    }
+    EVP_CIPHER_CTX_init(c);
+    if (pad==1)
+      ret = EVP_CIPHER_CTX_set_padding(c, pad);
+    else
+      ret = 1;
 
-    buffer = OPENSSL_malloc(input_len);
-    EVP_CipherUpdate(&c, (byte*)buffer, &len, (const byte*)input, input_len);
-    output_len += len;
-    EVP_CipherFinal(&c, (byte*)buffer + len, &len);
-    output_len += len;
-    lua_pushlstring(L, (char*) buffer, output_len);
-    EVP_CIPHER_CTX_cleanup(&c);
-    OPENSSL_free(buffer);
+    if (ret==1) {
+      ret = EVP_CipherInit_ex(c, cipher, e, (const byte*)evp_key, iv ? (const byte*)evp_iv : NULL, enc);
+      if (ret==1)
+      {
+        char *buffer;
+        len = input_len + EVP_MAX_BLOCK_LENGTH;
+        buffer = OPENSSL_malloc(len);
+        ret = EVP_CipherUpdate(c, (byte*)buffer, &len, (const byte*)input, input_len);
+        if (ret==1) {
+          output_len += len;
+          len = input_len + EVP_MAX_BLOCK_LENGTH - len;
+          ret = EVP_CipherFinal(c, (byte*)buffer + output_len, &len);
+          if (ret==1) {
+            output_len += len;
+            lua_pushlstring(L, (char*) buffer, output_len);
+          }
+        }
+        OPENSSL_free(buffer);        
+      }
+    }
+    EVP_CIPHER_CTX_cleanup(c);
+    EVP_CIPHER_CTX_free(c);
+    return (ret==1) ? 1 : openssl_pushresult(L, ret);
   }
   else
-    luaL_error(L, "argument #2 is not a valid cipher algorithm or openssl.evp_cipher object");
+    luaL_argerror(L, 1, "invvalid cipher algorithm or openssl.evp_cipher object");
 
-  return 1;
+  return 0;
 }
 
 typedef enum
@@ -348,6 +383,8 @@ static LUA_FUNCTION(openssl_cipher_decrypt_new)
 
     char evp_key[EVP_MAX_KEY_LENGTH] = {0};
     char evp_iv[EVP_MAX_IV_LENGTH] = {0};
+    int ret; 
+
     if (key)
     {
       key_len = EVP_MAX_KEY_LENGTH > key_len ? key_len : EVP_MAX_KEY_LENGTH;
@@ -360,19 +397,26 @@ static LUA_FUNCTION(openssl_cipher_decrypt_new)
     }
     c = EVP_CIPHER_CTX_new();
     EVP_CIPHER_CTX_init(c);
-    EVP_CIPHER_CTX_set_padding(c, pad);
-    if (!EVP_DecryptInit_ex(c, cipher, e, key ? (const byte*)evp_key : NULL, iv ? (const byte*)evp_iv : NULL))
-    {
-      luaL_error(L, "EVP_CipherInit_ex failed, please check openssl error");
+    ret = EVP_CIPHER_CTX_set_padding(c, pad);
+    if (ret==1) {
+      ret = EVP_DecryptInit_ex(c, cipher, e, key ? (const byte*)evp_key : NULL, iv ? (const byte*)evp_iv : NULL);
+      if (ret==1)
+      {
+        PUSH_OBJECT(c, "openssl.evp_cipher_ctx");
+        lua_pushinteger(L, DO_DECRYPT);
+        lua_rawsetp(L,LUA_REGISTRYINDEX,c);
+        return 1;
+      }else{
+        EVP_CIPHER_CTX_free(c);
+        luaL_error(L, "EVP_CipherInit_ex failed, please check openssl error");
+      }
     }
-    PUSH_OBJECT(c, "openssl.evp_cipher_ctx");
-    lua_pushinteger(L, DO_DECRYPT);
-    lua_rawsetp(L,LUA_REGISTRYINDEX,c);
+    EVP_CIPHER_CTX_free(c);
   }
   else
-    luaL_error(L, "argument #1 is not a valid cipher algorithm or openssl.evp_cipher object");
+    luaL_argerror(L, 1, "invalid cipher algorithm or openssl.evp_cipher object");
 
-  return 1;
+  return 0;
 }
 
 /* evp_cipher method */
@@ -397,19 +441,21 @@ static LUA_FUNCTION(openssl_evp_BytesToKey)
   const char* k = luaL_checklstring(L, 2, &lk);
   const char* salt = luaL_optlstring(L, 3, NULL, &lsalt);
   const EVP_MD* m = lua_isnoneornil(L, 4) ? EVP_get_digestbyname("sha1") : get_digest(L, 4);
-
   char key[EVP_MAX_KEY_LENGTH], iv[EVP_MAX_IV_LENGTH];
-
+  int ret;
   if (salt != NULL && lsalt < PKCS5_SALT_LEN)
   {
     lua_pushfstring(L, "salt must not shorter than %d", PKCS5_SALT_LEN);
     luaL_argerror(L, 3, lua_tostring(L, -1));
   }
 
-  EVP_BytesToKey(c, m, (unsigned char*)salt, (unsigned char*)k, lk, 1, (unsigned char*)key, (unsigned char*)iv);
-  lua_pushlstring(L, key, c->key_len);
-  lua_pushlstring(L, iv, c->iv_len);
-  return 2;
+  ret = EVP_BytesToKey(c, m, (unsigned char*)salt, (unsigned char*)k, lk, 1, (unsigned char*)key, (unsigned char*)iv);
+  if (ret>1) {
+    lua_pushlstring(L, key, c->key_len);
+    lua_pushlstring(L, iv, c->iv_len);
+    return 2;
+  }
+  return openssl_pushresult(L, ret);
 }
 
 
@@ -420,7 +466,7 @@ static LUA_FUNCTION(openssl_evp_cipher_update)
   size_t inl;
   const char* in = luaL_checklstring(L, 2, &inl);
   int outl = inl + EVP_MAX_BLOCK_LENGTH;
-  char* out = malloc(outl);
+  char* out = OPENSSL_malloc(outl);
   CIPHER_MODE mode;
   int ret;
 
@@ -437,20 +483,20 @@ static LUA_FUNCTION(openssl_evp_cipher_update)
     luaL_error(L, "never go here");
   lua_pop(L, 1);
 
-  if (ret)
+  if (ret==1)
   {
     lua_pushlstring(L, out, outl);
   }
-  free(out);
-
-  return ret ? 1 : 0;
+  OPENSSL_free(out);
+  
+  return (ret==1 ? 1 : openssl_pushresult(L,ret));
 }
 
 static LUA_FUNCTION(openssl_evp_cipher_final)
 {
   EVP_CIPHER_CTX* c = CHECK_OBJECT(1, EVP_CIPHER_CTX, "openssl.evp_cipher_ctx");
-  int outl = EVP_MAX_BLOCK_LENGTH;
   char out[EVP_MAX_BLOCK_LENGTH];
+  int outl = sizeof(out);
   CIPHER_MODE mode;
   int ret;
 
@@ -467,12 +513,12 @@ static LUA_FUNCTION(openssl_evp_cipher_final)
     luaL_error(L, "never go here");
   lua_pop(L, 1);
 
-  if (ret)
+  if (ret == 1)
   {
     lua_pushlstring(L, out, outl);
     return 1;
   }
-  return 0;
+  return openssl_pushresult(L, ret);
 }
 
 
@@ -504,29 +550,29 @@ static LUA_FUNCTION(openssl_cipher_ctx_free)
 
 static luaL_Reg cipher_funs[] =
 {
-  {"info",      openssl_cipher_info},
-  {"new",       openssl_cipher_new},
+  {"info",        openssl_cipher_info},
+  {"new",         openssl_cipher_new},
   {"encrypt_new", openssl_cipher_encrypt_new},
   {"decrypt_new", openssl_cipher_decrypt_new},
 
-  {"BytesToKey",    openssl_evp_BytesToKey},
+  {"BytesToKey",  openssl_evp_BytesToKey},
 
   {"encrypt",     openssl_evp_encrypt },
   {"decrypt",     openssl_evp_decrypt },
   {"cipher",      openssl_evp_cipher },
 
-  {"__tostring",    auxiliar_tostring},
+  {"__tostring",  auxiliar_tostring},
 
   {NULL, NULL}
 };
 
 static luaL_Reg cipher_ctx_funs[] =
 {
-  {"update",    openssl_evp_cipher_update},
-  {"final",   openssl_evp_cipher_final},
+  {"update",      openssl_evp_cipher_update},
+  {"final",       openssl_evp_cipher_final},
 
-  {"info",    openssl_cipher_ctx_info},
-  {"__gc",    openssl_cipher_ctx_free},
+  {"info",        openssl_cipher_ctx_info},
+  {"__gc",        openssl_cipher_ctx_free},
   {"__tostring",  auxiliar_tostring},
 
   {NULL, NULL}
@@ -536,7 +582,7 @@ static const luaL_Reg R[] =
 {
   { "__call",  openssl_evp_cipher},
   { "list",    openssl_cipher_list},
-  { "get",   openssl_cipher_get},
+  { "get",     openssl_cipher_get},
   { "encrypt", openssl_evp_encrypt},
   { "decrypt", openssl_evp_decrypt},
   { "cipher",  openssl_evp_cipher},
@@ -550,8 +596,8 @@ static const luaL_Reg R[] =
 
 LUALIB_API int luaopen_cipher(lua_State *L)
 {
-  auxiliar_newclass(L, "openssl.evp_cipher",   cipher_funs);
-  auxiliar_newclass(L, "openssl.evp_cipher_ctx", cipher_ctx_funs);
+  auxiliar_newclass(L, "openssl.evp_cipher",      cipher_funs);
+  auxiliar_newclass(L, "openssl.evp_cipher_ctx",  cipher_ctx_funs);
 
   luaL_register(L, MYNAME, R);
   lua_pushliteral(L, "version");    /** version */

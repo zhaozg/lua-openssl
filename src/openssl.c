@@ -226,7 +226,7 @@ void CRYPTO_thread_cleanup(void);
 
 LUA_API int luaopen_openssl(lua_State*L)
 {
-  CRYPTO_thread_setup();
+  //CRYPTO_thread_setup();
 
   OpenSSL_add_all_ciphers();
   OpenSSL_add_all_digests();

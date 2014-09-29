@@ -14,13 +14,11 @@ TestCipherCompat = {}
     end
     function TestCipherCompat:tearDown()
     end
-
     function TestCipherCompat:testCipher()
         local a,b,c,d
 
         a = cipher.cipher(self.alg,true,self.msg,self.key)
         assert(#a>#self.msg)
-
         b = cipher.cipher(self.alg,false,a,self.key)
         assertEquals(b,self.msg)
 
@@ -29,7 +27,7 @@ TestCipherCompat = {}
         d = cipher.decrypt(self.alg,c,self.key)
         assertEquals(d,self.msg)
     end
-
+    
     function TestCipherCompat:testObject()
         local a,b,c,aa,bb,cc
         local obj,obj1
@@ -54,10 +52,10 @@ TestCipherCompat = {}
         assertEquals(self.msg,bb)
         assert(#self.msg < #aa)
     end
-
+    
 
 TestCipherMY = {}
-
+    
     function TestCipherMY:setUp()
         self.msg='abcdabcdabcdabcdabcdabcd'
         self.msg1='abcd'
@@ -66,6 +64,7 @@ TestCipherMY = {}
         self.key=self.key..string.reverse(self.key)
         self.iv = string.rep(string.char(00),32)
     end
+
     function TestCipherMY:testList()
 
         local t1,t2,t3
@@ -114,5 +113,5 @@ TestCipherMY = {}
         local t = obj:info()
         assertEquals(#k,t.key_length)
         assertEquals(#i,t.iv_length)
-
     end
+    
