@@ -1,6 +1,4 @@
 local digest = require'openssl'.digest
-local print_r = require'function.print_r'
-
 
 TestDigestCompat = {}
     function TestDigestCompat:setUp()
@@ -59,7 +57,6 @@ TestDigestMY = {}
         t = md:info()
         assert(t.size==20)
 
-        --print_r(t)
         ctx1 = md:new()
         t1 = ctx1:info()
         local ctx = digest.new('sha1')
