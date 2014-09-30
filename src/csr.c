@@ -22,7 +22,7 @@ static LUA_FUNCTION(openssl_csr_read)
     csr = PEM_read_bio_X509_REQ(in, NULL, NULL, NULL);
     BIO_reset(in);
   }
-  if ((fmt == FORMAT_AUTO && in == NULL) || fmt == FORMAT_DER)
+  if ((fmt == FORMAT_AUTO && csr == NULL) || fmt == FORMAT_DER)
   {
     csr = d2i_X509_REQ_bio(in, NULL);
     BIO_reset(in);
@@ -502,7 +502,7 @@ static LUA_FUNCTION(openssl_csr_attribute)
   X509_REQ *csr = CHECK_OBJECT(1, X509_REQ, "openssl.x509_req");
   if (auxiliar_isclass(L, "openssl.x509_attribute", 2))
   {
-    X509_ATTRIBUTE *attr = CHECK_OBJECT(3, X509_ATTRIBUTE, "openssl.x509_attribute");
+    X509_ATTRIBUTE *attr = CHECK_OBJECT(2, X509_ATTRIBUTE, "openssl.x509_attribute");
     int ret = X509_REQ_add1_attr(csr, attr);
     return openssl_pushresult(L, ret);
   }else if(lua_isnumber(L, 2)){
