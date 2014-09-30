@@ -1,55 +1,138 @@
 local csr = require'openssl'.csr
 local print_r = require'function.print_r'
+io.read()
 
 require('luaunit')
 
+TestCSR = {}
 
+        function TestCSR:setUp()
+                self.digest='md5'    
+                self.subject = openssl.x509.name.new({
+                    {C='CN'},
+                    {O='kkhub.com'},
+                    {CN='zhaozg'}
+                })
+    
+        
+                self.timeStamping = openssl.asn1.new_string('timeStamping','ia5')
+                self.cafalse = openssl.asn1.new_string('CA:FALSE','octet')
 
-require('luaunit')
+                self.exts = {
+                        {
+                                object = 'extendedKeyUsage',
+                                critical = true,
+                                value = 'timeStamping',
+                        },
+                        {
+                                object='basicConstraints',
+                                value=self.cafalse
+                        },
+                        {
+                                object='basicConstraints',
+                                value='CA:FALSE'
+                        }
+                }
+        
+                self.attrs = {
+                        {
+                                object = 'extendedKeyUsage',
+                                type='ia5',
+                                value = 'timeStamping',
+                        },
+                        {
+                                object='basicConstraints',
+                                type='octet',
+                                value=self.cafalse
+                        },
+                        {
+                                object='basicConstraints',
+                                type='octet',
+                                value='CA:FALSE'
+                        }
+                }
+                
+                self.extensions = openssl.x509.extension.new_sk_extension(self.exts)
+                self.attributes = openssl.x509.attribute.new_sk_attribute(self.attrs)
+        end
 
-TestCompat = {}
-    function TestCompat:setUp()
-        self.alg='sha1'
+        function TestCSR:testNew()
+                local pkey = assert(openssl.pkey.new())
+                local req1,req2
+                req1 = assert(csr.new())
+                req2 = assert(csr.new(pkey))
+                
+                t = req1:parse()
+                print_r(t)
+                t = req2:parse()
+                print_r(t)
+                assert(req1:verify());
+                assert(req2:verify());
+                req1 = assert(csr.new(self.subject))
+                req2 = assert(csr.new(self.subject, pkey))
+                
+                t = req1:parse()
+                print_r(t)
+                t = req2:parse()
+                print_r(t)
+                assert(req1:verify());
+                assert(req2:verify());
+                
+                req1 = assert(csr.new(self.subject,self.attributes))
+                req2 = assert(csr.new(self.subject,self.attributes, pkey))
+                
+                t = req1:parse()
+                print_r(t)
+                t = req2:parse()
+                print_r(t)
 
-        self.dn = {{commonName='zhaozg'},{C='CN'}}
+                assert(req1:verify());
+                assert(req2:verify());
+                               
+                req1 = assert(csr.new(self.subject,self.attributes,self.extensions))
+                req2 = assert(csr.new(self.subject,self.attributes,self.extensions, pkey))
+                assert(req1:verify());
+                assert(req2:verify());
+                
+                t = req1:parse()
+                print_r(t)
+                t = req2:parse()
+                print_r(t)
+                assert(req1:verify());
+                assert(req2:verify());
+                
+                req1 = assert(csr.new(self.subject,self.attributes,self.extensions,pkey))
+                req2 = assert(csr.new(self.subject,self.attributes,self.extensions,pkey,self.digest))
+                
+                t = req1:parse()
+                print_r(t)
+                t = req2:parse()
+                print_r(t)
+                
+                assert(req1:verify());
+                assert(req2:verify());
+
 --[[
-        self.attribs = {}
-        self.extentions = {}
+                local args = {}
+
+                args.attribs = {}
+                args.extentions = {}
+
+                args.digest = 'sha1WithRSAEncryption'
+                args.num_days = 365
+
+
+                args.serialNumber = 1
+                cert = assert(req:sign(nil,pkey,args))
+                cert:parse();
+
+                local c = cert:get_public():encrypt('abcd')
+                d = pkey:decrypt(c)
+                assert(d=='abcd')
 --]]
-        self.digest = 'sha1WithRSAEncryption'
-    end
+        end
 
-function TestCompat:testNew()
-        local pkey = assert(openssl.pkey.new())
-        local req = assert(csr.new(pkey,self.dn))
-        req = assert(csr.new(pkey,self.dn,self.attribs))
-        req = assert(csr.new(pkey,self.dn,self.attribs,self.extentions))
-        req = assert(csr.new(pkey,self.dn,self.attribs,self.extentions,self.digest))
-        --t = req:parse()
-        --print_r(t)
-
-        assert(req:verify());
-
-
-        local args = {}
-
-        args.attribs = {}
-        args.extentions = {}
-
-        args.digest = 'sha1WithRSAEncryption'
-        args.num_days = 365
-
-
-        args.serialNumber = 1
-        cert = assert(req:sign(nil,pkey,args))
-        cert:parse();
-
-        local c = cert:get_public():encrypt('abcd')
-        d = pkey:decrypt(c)
-        assert(d=='abcd')
-end
-
-function TestCompat:testIO()
+function TestCSR:testIO()
 local csr_data = [[
 -----BEGIN CERTIFICATE REQUEST-----
 MIIBvjCCAScCAQAwfjELMAkGA1UEBhMCQ04xCzAJBgNVBAgTAkJKMRAwDgYDVQQH
@@ -67,12 +150,18 @@ wSpxg0VN6+i6u9C9n4xwCe1VyteOC2In0LbxMAGL3rVFm9yDFRU3LDy3EWG6DIg/
 
         local x = assert(csr.read(csr_data))
         t = x:parse()
-        --print_r(t)
+        print_r(t)
+        assertIsTable(t)
+        assertIsUserdata(t.subject)
+        assertIsNumber(t.version)
+        assertIsTable(t.req_info)
+        assertIsTable(t.req_info.pubkey)
+        assertIsString(t.req_info.pubkey.algorithm)
+        assertIsUserdata(t.req_info.pubkey.pubkey)   
 end
 
-io.read()
 local lu = LuaUnit
 lu:setVerbosity( 0 )
-for i=1,10000 do
+for i=1,1 do
 lu:run()
 end
