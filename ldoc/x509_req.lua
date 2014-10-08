@@ -26,15 +26,6 @@ function read() end
 
 end  -- define module
 
-do --define table
---- parse x509_req result as table
-person = {
-    name = '', -- string: name of person
-    age = 0, -- int:
-}
-
-end --define table
-
 do  -- define class
 
 --- openssl.x509_req object
@@ -98,6 +89,7 @@ function attr_count() end
 
 --- convert x509_req to x509 object
 -- @treturn x509 object not signed
+-- @fixme memleaks
 function to_x509()
 
 --- clone x509_req object
