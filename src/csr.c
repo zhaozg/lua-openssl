@@ -488,7 +488,7 @@ static LUA_FUNCTION(openssl_csr_extensions)
   if (lua_isnone(L,2)) {
     STACK_OF(X509_EXTENSION) *sk = X509_REQ_get_extensions(csr);
     if (sk){
-      PUSH_OBJECT(sk_X509_EXTENSION_dup(sk), "openssl.stack_of_x509_extension");
+      PUSH_OBJECT(sk, "openssl.stack_of_x509_extension");
     }else
       lua_pushnil(L);
     return 1;
