@@ -24,8 +24,8 @@ BIO* load_bio_object(lua_State* L, int idx)
     const char* ctx = lua_tolstring(L, idx, &l);
     /* read only */
     bio = (BIO*)BIO_new_mem_buf((void*)ctx, l);
-    BIO_set_close(bio, BIO_NOCLOSE);
     /* read write
+    BIO_set_close(bio, BIO_NOCLOSE);
     bio = BIO_new(BIO_s_mem());
     BIO_write(bio,(void*)ctx, l);
     BIO_set_close(bio, BIO_CLOSE);

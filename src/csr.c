@@ -43,10 +43,11 @@ static LUA_FUNCTION(openssl_csr_read)
 
 static LUA_FUNCTION(openssl_csr_to_x509)
 {
-  X509_REQ * csr = CHECK_OBJECT(1, X509_REQ, "openssl.x509_req");
+  X509_REQ * csr  = CHECK_OBJECT(1, X509_REQ, "openssl.x509_req");
   EVP_PKEY * pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
   int days = luaL_optint(L, 3, 365);
   X509* cert = X509_REQ_to_X509(csr,days,pkey);
+
   if(cert){
     PUSH_OBJECT(cert,"openssl.x509");
     return 1;
@@ -387,11 +388,12 @@ static LUA_FUNCTION(openssl_csr_parse)
   lua_setfield(L, -2, "sig_alg");
 
   lua_newtable(L);
-  AUXILIAR_SET(L, -1, "version", ASN1_INTEGER_get(csr->req_info->version), integer);
+  AUXILIAR_SET(L, -1, "version", X509_REQ_get_version(csr), integer);
   openssl_push_xname_asobject(L, subject);
   lua_setfield(L, -2, "subject");
   if(exts){
-    PUSH_OBJECT(sk_X509_EXTENSION_dup(exts),"openssl.stack_of_x509_extension");
+    //PUSH_OBJECT(sk_X509_EXTENSION_dup(exts),"openssl.stack_of_x509_extension");
+    PUSH_OBJECT(exts,"openssl.stack_of_x509_extension");
     lua_setfield(L, -2, "extensions");
   }
 
