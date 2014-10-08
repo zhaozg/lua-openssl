@@ -544,11 +544,17 @@ static int openssl_x509_valid_at(lua_State* L)
 
     lua_pushboolean(L, (X509_cmp_time(X509_get_notAfter(cert), &now)     >= 0
       && X509_cmp_time(X509_get_notBefore(cert), &now) <= 0));
+    PUSH_ASN1_TIME(L, X509_get_notBefore(cert));
+    PUSH_ASN1_TIME(L, X509_get_notAfter(cert));
+    return 3;
   }else if(lua_gettop(L)==2)
   {
     time_t time = luaL_checkinteger(L, 2);
     lua_pushboolean(L, (X509_cmp_time(X509_get_notAfter(cert), &time)     >= 0
       && X509_cmp_time(X509_get_notBefore(cert), &time) <= 0));
+    PUSH_ASN1_TIME(L, X509_get_notBefore(cert));
+    PUSH_ASN1_TIME(L, X509_get_notAfter(cert));
+    return 3;
   }else if(lua_gettop(L)==3)
   {
     time_t before, after;
@@ -570,10 +576,9 @@ static int openssl_x509_valid_at(lua_State* L)
       ASN1_TIME_free(ab);
       ASN1_TIME_free(aa);
     }
-
     return openssl_pushresult(L, ret);
   }
-  return 1;
+  return 0;
 }
 
 static int openssl_x509_serial(lua_State *L)
@@ -599,6 +604,23 @@ static int openssl_x509_serial(lua_State *L)
     return openssl_pushresult(L, ret);
   }
 }
+
+static int openssl_x509_version(lua_State *L)
+{
+  int version;
+  X509* cert = CHECK_OBJECT(1, X509, "openssl.x509");
+  if (lua_isnone(L,2)) {
+    version = X509_get_version(cert);
+    lua_pushinteger(L, version);
+    return 1;
+  }else {
+    int ret;
+    version = luaL_checkint(L, 2);
+    ret = X509_set_version(cert, version);
+    return openssl_pushresult(L, ret);
+  }
+}
+
 
 static int openssl_x509_extensions(lua_State* L)
 {
@@ -711,7 +733,8 @@ static luaL_Reg x509_funcs[] =
   {"parse",       openssl_x509_parse},
   {"export",      openssl_x509_export},
   {"check",       openssl_x509_check},
-  {"get_public",  openssl_x509_public_key},
+  {"pubkey",      openssl_x509_public_key},
+  {"version",     openssl_x509_version},
 
   {"__gc",        openssl_x509_free},
   {"__tostring",  auxiliar_tostring},
