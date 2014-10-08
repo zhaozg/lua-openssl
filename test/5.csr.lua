@@ -1,6 +1,5 @@
 local csr = require'openssl'.csr
 local print_r = require'function.print_r'
-io.read()
 
 require('luaunit')
 
@@ -13,8 +12,7 @@ TestCSR = {}
                     {O='kkhub.com'},
                     {CN='zhaozg'}
                 })
-    
-        
+
                 self.timeStamping = openssl.asn1.new_string('timeStamping','ia5')
                 self.cafalse = openssl.asn1.new_string('CA:FALSE','octet')
 
@@ -55,81 +53,113 @@ TestCSR = {}
                 self.extensions = openssl.x509.extension.new_sk_extension(self.exts)
                 self.attributes = openssl.x509.attribute.new_sk_attribute(self.attrs)
         end
-
         function TestCSR:testNew()
                 local pkey = assert(openssl.pkey.new())
                 local req1,req2
                 req1 = assert(csr.new())
                 req2 = assert(csr.new(pkey))
-                
+
                 t = req1:parse()
-                print_r(t)
+                assertIsTable(t)
                 t = req2:parse()
-                print_r(t)
+                assertIsTable(t)
                 assert(req1:verify());
                 assert(req2:verify());
+
                 req1 = assert(csr.new(self.subject))
                 req2 = assert(csr.new(self.subject, pkey))
                 
                 t = req1:parse()
-                print_r(t)
+                assertIsTable(t)
                 t = req2:parse()
-                print_r(t)
+                assertIsTable(t)
                 assert(req1:verify());
                 assert(req2:verify());
-                
+
                 req1 = assert(csr.new(self.subject,self.attributes))
                 req2 = assert(csr.new(self.subject,self.attributes, pkey))
                 
                 t = req1:parse()
-                print_r(t)
+                assertIsTable(t)
                 t = req2:parse()
-                print_r(t)
+                assertIsTable(t)
 
                 assert(req1:verify());
                 assert(req2:verify());
-                               
+
                 req1 = assert(csr.new(self.subject,self.attributes,self.extensions))
                 req2 = assert(csr.new(self.subject,self.attributes,self.extensions, pkey))
                 assert(req1:verify());
                 assert(req2:verify());
                 
                 t = req1:parse()
-                print_r(t)
+                assertIsTable(t)
                 t = req2:parse()
-                print_r(t)
+                assertIsTable(t)
+
                 assert(req1:verify());
                 assert(req2:verify());
-                
+
                 req1 = assert(csr.new(self.subject,self.attributes,self.extensions,pkey))
                 req2 = assert(csr.new(self.subject,self.attributes,self.extensions,pkey,self.digest))
                 
                 t = req1:parse()
-                print_r(t)
+                assertIsTable(t)
                 t = req2:parse()
-                print_r(t)
+                assertIsTable(t)
                 
                 assert(req1:verify());
                 assert(req2:verify());
 
---[[
-                local args = {}
+                local pem = req2:export('pem')
+                assertIsString(pem)
+                req2 = assert(csr.read(pem,'pem'))
+                assertError(csr.read,pem,'der')
+                req2 = assert(csr.read(pem,'auto'))
+            
+                local der = req2:export('der')
+                assertIsString(der)
+                req2 = assert(csr.read(der,'der'))
+                assertError(csr.read,der,'pem')
+                req2 = assert(csr.read(der,'auto'))
+                local pubkey = req2:public()
+                assertStrContains(tostring(pubkey),"openssl.evp_pkey")
+                assert(req1:public(pubkey))
 
-                args.attribs = {}
-                args.extentions = {}
+                assertEquals(req1:attr_count(),3+1)
+                attr = req1:attribute(0)
+                assertStrContains(tostring(attr),'openssl.x509_attribute')
+                attr = req1:attribute(0,nil)
+                assertStrContains(tostring(attr),'openssl.x509_attribute')
+                assertEquals(req1:attr_count(),2+1)
+                req1:attribute(attr)
+                assertEquals(req1:attr_count(),3+1)
+                
+                assertEquals(req1:version(),0)
+                assertEquals(req1:version(1),true)
+                assertEquals(req1:version(),1)
+                assert(req1:version(0))
+                
+                assertEquals(tostring(req1:subject()),tostring(self.subject))
+                assert(req1:subject(self.subject))
+                assertEquals(tostring(req1:subject()),tostring(self.subject))
+                
+                assertStrContains(tostring(req1:extensions()),'openssl.stack_of_x509_extension')
+                assert(req1:extensions(self.extensions))
+                assertEquals(tostring(req1:subject()),tostring(self.subject))
 
-                args.digest = 'sha1WithRSAEncryption'
-                args.num_days = 365
+                local s = req1:digest()
+                local r = req1:digest('sha1')
+                assertEquals(r,s)
+                assert(req2:check(pkey))
 
+--              memory leaks in X509_REQ_to_X509
 
-                args.serialNumber = 1
-                cert = assert(req:sign(nil,pkey,args))
-                cert:parse();
-
-                local c = cert:get_public():encrypt('abcd')
-                d = pkey:decrypt(c)
-                assert(d=='abcd')
---]]
+--                assertStrContains(tostring(req1:to_x509(pkey, 3650)),'openssl.x509')
+--                assertStrContains(tostring(req2:to_x509(pkey, 3650)),'openssl.x509')
+--                local cert = req2:to_x509(pkey, 3650) -- self sign
+                --t = cert:parse()
+                --print_r(t)
         end
 
 function TestCSR:testIO()
@@ -150,7 +180,6 @@ wSpxg0VN6+i6u9C9n4xwCe1VyteOC2In0LbxMAGL3rVFm9yDFRU3LDy3EWG6DIg/
 
         local x = assert(csr.read(csr_data))
         t = x:parse()
-        print_r(t)
         assertIsTable(t)
         assertIsUserdata(t.subject)
         assertIsNumber(t.version)
@@ -158,10 +187,4 @@ wSpxg0VN6+i6u9C9n4xwCe1VyteOC2In0LbxMAGL3rVFm9yDFRU3LDy3EWG6DIg/
         assertIsTable(t.req_info.pubkey)
         assertIsString(t.req_info.pubkey.algorithm)
         assertIsUserdata(t.req_info.pubkey.pubkey)   
-end
-
-local lu = LuaUnit
-lu:setVerbosity( 0 )
-for i=1,1 do
-lu:run()
 end
