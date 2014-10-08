@@ -9,73 +9,52 @@ TestCompat = {}
     function TestCompat:setUp()
         self.alg='sha1'
 
-        self.cadn = {{commonName='CA'},{C='CN'}}
-        self.dn = {{commonName='DEMO'},{C='CN'}}
---[[
-        self.attribs = {}
-        self.extentions = {}
---]]
+        self.cadn = openssl.x509.name.new({{commonName='CA'},{C='CN'}})
+        self.dn = openssl.x509.name.new({{commonName='DEMO'},{C='CN'}})
+
         self.digest = 'sha1WithRSAEncryption'
     end
-
+    
 function TestCompat:testNew()
+        --cacert, self sign
         local pkey = assert(openssl.pkey.new())
-        local req = assert(csr.new(pkey,self.cadn))
-        req = assert(csr.new(pkey,self.cadn,self.attribs))
-        req = assert(csr.new(pkey,self.cadn,self.attribs,self.extentions))
-        req = assert(csr.new(pkey,self.cadn,self.attribs,self.extentions,self.digest))
+        local req = assert(csr.new(self.cadn,pkey))
         local t = req:parse()
         assertEquals(type(t),'table')
+        
+        local cacert = openssl.x509.new(
+                1,      --serialNumber
+                req     --copy name and extensions
+        )
 
-        --print_r(t)
-        assert(req:verify());
+        cacert:validat(os.time(), os.time() + 3600*24*365)
+        assert(cacert:sign(pkey, cacert))  --self sign
+        assertEquals(cacert:subject(), cacert:issuer())
 
-
-        local args = {}
-
-        args.attribs = {}
-        args.extentions = {}
-
-        args.digest = 'sha1WithRSAEncryption'
-        args.num_days = 365
-
-
-        args.serialNumber = 1
-        cert = assert(req:sign(nil,pkey,args))
-
-        local c = cert:get_public():encrypt('abcd')
+        local c = cacert:pubkey():encrypt('abcd')
         d = pkey:decrypt(c)
         assert(d=='abcd')
 
-        assert(cert:check(pkey),'self sign check failed')
-        assert(cert:check(openssl.x509.sk_x509_new({cert}) ))
+        assert(cacert:check(pkey),'self sign check failed')
+        assert(cacert:check(openssl.x509.sk_x509_new({cacert}) ))
         
+        --sign cert by cacert
+        local dkey = openssl.pkey.new()
+        req = assert(csr.new(self.dn,dkey))
+        local cert = openssl.x509.new(2,req)
+        cert:validat(os.time(), os.time() + 3600*24*365)
+        assert(cert:sign(pkey,cacert))
 
-        print('sign by cacert',string.rep('-',60))
-        args.serialNumber = 2
-        local pkey1 = assert(openssl.pkey.new())
-        local req1 = assert(csr.new(pkey1,self.dn))
-        cert1 = assert(req1:sign(cert,pkey,args))
-
-        local c = cert1:get_public():encrypt('abcd')
-        d = pkey1:decrypt(c)
+        local c = cert:pubkey():encrypt('abcd')
+        d = dkey:decrypt(c)
         assert(d=='abcd')
-        --print_r(cert1:parse());
-        
-        assert(cert1:check(pkey1),'self sign check failed')
-        assert(cert1:check(openssl.x509.sk_x509_new({cert}) ))
-        
+        assert(cert:check(dkey),'self private match failed')
 
-        local check = cert1:check(openssl.x509.sk_x509_new({cert}) )
-        if(check~=true) then
-                print(openssl.error())
-                assert(false,"check verify ca")
-        end
---]]
+        assert(cert:check(openssl.x509.sk_x509_new({cacert})))
 end
 
 function TestCompat:testIO()
-local raw_data = [[
+local raw_data = [=[
 -----BEGIN CERTIFICATE-----
 MIIBoDCCAUoCAQAwDQYJKoZIhvcNAQEEBQAwYzELMAkGA1UEBhMCQVUxEzARBgNV
 BAgTClF1ZWVuc2xhbmQxGjAYBgNVBAoTEUNyeXB0U29mdCBQdHkgTHRkMSMwIQYD
@@ -87,20 +66,22 @@ tB713JNvabvn6Gned7zylwLLiXQAo/PAT6mfdWPTyCX9RlId/Aroh1ou893BA32Q
 sggwDQYJKoZIhvcNAQEEBQADQQCU5SSgapJSdRXJoX+CpCvFy+JVh9HpSjCpSNKO
 19raHv98hKAUJuP9HyM+SUsffO6mAIgitUaqW8/wDMePhEC3
 -----END CERTIFICATE-----
-]]
+]=]
 
         local x = assert(x509.read(raw_data))
-        t = x:parse()
+        local t = x:parse()
         assertEquals(type(t),'table')
-        --print_r(table)
-        assert(x:get_public())
+        assert(x:pubkey())
+
+        assertEquals(x:version(), 0)
+        assert(x:notbefore())
+        assert(x:notafter())
+
+        assertIsNil(x:extensions())
+        --[[ memory leaks
+        assert(x:subject())
+        assert(x:issuer())
+        --]]
 end
 
-
-local lu = LuaUnit
-lu:setVerbosity( 0 )
-io.read()
-for i=1,1000000 do
-        lu:run()
-end
-
+ 

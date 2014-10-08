@@ -10,7 +10,7 @@ do --define module function
 
 --- create or generate a new x509 object.
 -- @tparam[opt] openssl.bn serial serial number
--- @tparam[opt] x509_req csr,copy x509_name and extension to new object
+-- @tparam[opt] x509_req csr,copy x509_name, pubkey and extension to new object
 -- @tparam[opt] x509_name subject subject name set to x509_req
 -- @tparam[opt] stack_of_x509_extension extensions add to x509
 -- @tparam[opt] stack_of_x509_attribute attributes add to x509
@@ -45,8 +45,15 @@ function export () end
 -- @treturn table result which all x509 information
 function parse() end
 
+--- sign x509
+-- @tparam evp_pkey pkey private key to sign x509
+-- @tparam x509|x509_name cacert or cacert x509_name
+-- @tparam[opt='sha1WithRSAEncryption'] string|md_digest md_alg
+-- @treturn boolean result true for check pass
+function sign() end
+
 --- check x509 with evp_pkey
--- @tparam evp_pkey pkey
+-- @tparam evp_pkey pkey private key witch match with x509 pubkey
 -- @treturn boolean result true for check pass
 function check() end
 
