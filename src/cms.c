@@ -62,7 +62,7 @@ static int openssl_cms_read(lua_State *L)
     BIO *indata = load_bio_object(L, 3);
     cms = SMIME_read_CMS(in, &indata);
   }
-
+  ERR_clear_error();
   if (cms)
   {
     PUSH_OBJECT(cms, "openssl.cms");

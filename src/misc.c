@@ -133,16 +133,20 @@ int openssl_pushresult(lua_State*L, int result)
   }
   else
   {
+    int i = 0;
     unsigned val = ERR_get_error();
-    if (val)
+    lua_pushnil(L);
+    i++;
+    while (val)
     {
       luaL_Buffer B = {0};
-      lua_pushnil(L);
       ERR_error_string_n(val, B.buffer, sizeof(B.buffer));
       lua_pushstring(L, B.buffer);
       lua_pushinteger(L, val);
-      return 3;
+      i=i+2;
+      val = ERR_get_error();
     }
+    return i;
   }
   return 0;
 }

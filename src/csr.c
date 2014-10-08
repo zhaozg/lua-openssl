@@ -27,11 +27,11 @@ static LUA_FUNCTION(openssl_csr_read)
     csr = d2i_X509_REQ_bio(in, NULL);
     BIO_reset(in);
   }
-
   BIO_free(in);
 
   if (csr)
   {
+    ERR_clear_error();
     PUSH_OBJECT(csr, "openssl.x509_req");
     return 1;
   }
@@ -227,7 +227,7 @@ static LUA_FUNCTION(openssl_csr_sign)
     BN_set_negative(bn, 0);
 
     lua_getfield(L, 4, "digest");
-    md = lua_isnil(L, -1) ? EVP_get_digestbyname("sha1WithRSAEncryption") : get_digest(L, -1);
+    md = lua_isnil(L, -1) ? EVP_get_digestbyname("sha1") : get_digest(L, -1);
     if (md == NULL)
       luaL_argerror(L, 4, "must have digest key and value can convert to evp_digest");
     lua_pop(L, 1);
@@ -293,7 +293,7 @@ static LUA_FUNCTION(openssl_csr_sign)
 
   /* Now sign it */
   if (!md)
-    md = EVP_get_digestbyname("sha1WithRSAEncryption");
+    md = EVP_get_digestbyname("sha1");
 
   if (!X509_sign(new_cert, priv_key, md))
   {
@@ -348,7 +348,7 @@ static LUA_FUNCTION(openssl_csr_new)
         if(i==n-1)
           md = get_digest(L, n);
         else
-          md = EVP_get_digestbyname("sha1WithRSAEncryption");
+          md = EVP_get_digestbyname("sha1");
 
         pkey = CHECK_OBJECT(i, EVP_PKEY, "openssl.evp_pkey");
 
@@ -471,7 +471,7 @@ static LUA_FUNCTION(openssl_csr_subject)
   if (lua_isnone(L, 2)){
     X509_NAME *xn = X509_REQ_get_subject_name(csr);
     if (xn)
-      PUSH_OBJECT(X509_NAME_dup(xn), "openssl.x509_name");
+      openssl_push_xname_asobject(L, xn);
     else
       lua_pushnil(L);
     return 1;

@@ -194,9 +194,9 @@ static LUA_FUNCTION(openssl_crl_read)
     BIO_reset(in);
   }
   BIO_free(in);
-
   if (crl)
   {
+    ERR_clear_error();
     PUSH_OBJECT(crl, "openssl.x509_crl");
     return 1;
   }
@@ -272,7 +272,7 @@ LUA_FUNCTION(openssl_crl_sign)
   X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
   EVP_PKEY *key = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
   const EVP_MD *md = lua_isnoneornil(L, 3)
-                     ? EVP_get_digestbyname("sha1WithRSAEncryption") : get_digest(L, 3);
+                     ? EVP_get_digestbyname("sha1") : get_digest(L, 3);
 
   int ret = 0;
 

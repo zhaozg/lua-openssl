@@ -122,8 +122,10 @@ static int openssl_pkey_read(lua_State*L)
     }
   }
   BIO_free(in);
-  if (key)
+  if (key) {
+    ERR_clear_error();
     PUSH_OBJECT(key, "openssl.evp_pkey");
+  }
   else
     lua_pushnil(L);
   return 1;
@@ -1404,8 +1406,8 @@ static luaL_Reg pkey_funcs[] =
 
 static const luaL_Reg R[] =
 {
-  {"read",    openssl_pkey_read},
-  {"new",     openssl_pkey_new},
+  {"read",          openssl_pkey_read},
+  {"new",           openssl_pkey_new},
 
   {"seal",          openssl_seal},
   {"seal_init",     openssl_seal_init},

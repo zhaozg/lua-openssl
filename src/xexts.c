@@ -83,7 +83,7 @@ static int openssl_xext_totable(lua_State* L, X509_EXTENSION *x, int utf8)
           {
             X509_NAME* xn = general_name->d.directoryName;
             lua_newtable(L);
-            PUSH_OBJECT(X509_NAME_dup(xn), "openssl.x509_name");
+            openssl_push_xname_asobject(L, xn);
             lua_setfield(L, -2, "directoryName");
             lua_pushstring(L, "directoryName");
             lua_rawseti(L, -2, i+1);
