@@ -12,10 +12,6 @@
 #define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
   "based on OpenSSL " SHLIB_VERSION_NUMBER
 
-#ifndef OPENSSL_NO_EC
-#include "ec_lcl.h"
-#endif
-
 static int openssl_pkey_bits(lua_State *L)
 {
   EVP_PKEY *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
@@ -68,8 +64,7 @@ static int openssl_is_private_key(EVP_PKEY* pkey)
 #ifndef OPENSSL_NO_EC
   case EVP_PKEY_EC:
     assert(pkey->pkey.ec != NULL);
-
-    if (NULL == pkey->pkey.ec->priv_key)
+    if (NULL == EC_KEY_get0_private_key(pkey->pkey.ec))
     {
       return 0;
     }
