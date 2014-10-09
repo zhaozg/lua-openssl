@@ -403,7 +403,8 @@ static int openssl_cms_decrypt(lua_State *L)
 static int openssl_cms_type(lua_State *L)
 {
   CMS_ContentInfo *cms = CHECK_OBJECT(1, CMS_ContentInfo, "openssl.cms");
-  PUSH_OBJECT(CMS_get0_type(cms), "openssl.object");
+  const ASN1_OBJECT *obj = CMS_get0_type(cms);
+  PUSH_OBJECT(obj, "openssl.object");
 
   return 1;
 }

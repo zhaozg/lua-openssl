@@ -162,7 +162,8 @@ static int openssl_xext_object(lua_State* L)
   ASN1_OBJECT* obj;
   if(lua_isnone(L, 2)){
     obj = X509_EXTENSION_get_object(x);
-    PUSH_OBJECT(OBJ_nid2obj(obj->nid), "openssl.asn1_object");
+    obj = OBJ_dup(obj);
+    PUSH_OBJECT(obj, "openssl.asn1_object");
     return 1;
   } else {
     int nid = openssl_get_nid(L, 2);
@@ -191,7 +192,8 @@ static int openssl_xext_data(lua_State* L)
   X509_EXTENSION *x = CHECK_OBJECT(1, X509_EXTENSION, "openssl.x509_extension");
   if(lua_isnone(L, 2)){
     ASN1_STRING *s = X509_EXTENSION_get_data(x);
-    PUSH_OBJECT(ASN1_STRING_dup(s),"openssl.asn1_string");
+    s = ASN1_STRING_dup(s);
+    PUSH_OBJECT(s,"openssl.asn1_string");
     return 1;
   } else if(lua_isstring(L, 2)) {
     size_t size;

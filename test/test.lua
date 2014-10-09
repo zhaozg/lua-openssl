@@ -14,7 +14,7 @@ dofile('4.pkey.lua')
 dofile('5.csr.lua')
 dofile('5.x509.lua')
 
-LuaUnit:setVerbosity(10)
+--LuaUnit:setVerbosity(10)
 for i=1,1000000 do
 LuaUnit:run()
 collectgarbage()

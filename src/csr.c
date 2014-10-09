@@ -301,7 +301,7 @@ static LUA_FUNCTION(openssl_csr_sign)
       luaL_error(L, "fail X509_set_version");
 
     /* 3) */
-    X509_set_serialNumber(new_cert, BN_to_ASN1_INTEGER(bn, X509_get_serialNumber(new_cert)));
+    //X509_set_serialNumber(new_cert, BN_to_ASN1_INTEGER(bn, X509_get_serialNumber(new_cert)));
     X509_set_subject_name(new_cert, X509_REQ_get_subject_name(csr));
   }
 
@@ -441,7 +441,6 @@ static LUA_FUNCTION(openssl_csr_parse)
   openssl_push_xname_asobject(L, subject);
   lua_setfield(L, -2, "subject");
   if(exts){
-    //PUSH_OBJECT(sk_X509_EXTENSION_dup(exts),"openssl.stack_of_x509_extension");
     PUSH_OBJECT(exts,"openssl.stack_of_x509_extension");
     lua_setfield(L, -2, "extensions");
   }

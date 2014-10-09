@@ -1375,7 +1375,8 @@ static int openssl_ssl_get(lua_State*L)
     }
     else if (strcmp(what, "certificate") == 0)
     {
-      PUSH_OBJECT(SSL_get_certificate(s), "openssl.x509");
+      X509* cert = SSL_get_certificate(s);
+      PUSH_OBJECT(cert, "openssl.x509");
     }
     else if (strcmp(what, "verify_result") == 0)
     {

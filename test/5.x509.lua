@@ -21,7 +21,7 @@ function TestCompat:testNew()
         local req = assert(csr.new(self.cadn,pkey))
         local t = req:parse()
         assertEquals(type(t),'table')
-        
+
         local cacert = openssl.x509.new(
                 1,      --serialNumber
                 req     --copy name and extensions
@@ -34,11 +34,11 @@ function TestCompat:testNew()
         local c = cacert:pubkey():encrypt('abcd')
         d = pkey:decrypt(c)
         assert(d=='abcd')
-
         assert(cacert:check(pkey),'self sign check failed')
         assert(cacert:check(openssl.x509.sk_x509_new({cacert}) ))
         
         --sign cert by cacert
+
         local dkey = openssl.pkey.new()
         req = assert(csr.new(self.dn,dkey))
         local cert = openssl.x509.new(2,req)
@@ -69,6 +69,7 @@ sggwDQYJKoZIhvcNAQEEBQADQQCU5SSgapJSdRXJoX+CpCvFy+JVh9HpSjCpSNKO
 ]=]
 
         local x = assert(x509.read(raw_data))
+
         local t = x:parse()
         assertEquals(type(t),'table')
         assert(x:pubkey())
@@ -78,10 +79,7 @@ sggwDQYJKoZIhvcNAQEEBQADQQCU5SSgapJSdRXJoX+CpCvFy+JVh9HpSjCpSNKO
         assert(x:notafter())
 
         assertIsNil(x:extensions())
-        --[[ memory leaks
+        
         assert(x:subject())
         assert(x:issuer())
-        --]]
 end
-
- 

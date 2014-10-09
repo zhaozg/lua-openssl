@@ -233,7 +233,8 @@ static LUA_FUNCTION(openssl_x509_parse)
   lua_setfield(L, -2, "purposes");
 
   if(cert->cert_info->extensions) {
-    PUSH_OBJECT(sk_X509_EXTENSION_dup(cert->cert_info->extensions),"openssl.stack_of_x509_extension");
+    STACK_OF(X509_EXTENSION) *extensions = sk_X509_EXTENSION_dup(cert->cert_info->extensions);
+    PUSH_OBJECT(extensions,"openssl.stack_of_x509_extension");
     lua_setfield(L,-2, "extensions");
   }
 
@@ -570,11 +571,9 @@ static int openssl_x509_valid_at(lua_State* L)
     if (ret==1)
         ret = X509_set_notAfter(cert, aa);
 
-    if (ret!=1)
-    {
-      ASN1_TIME_free(ab);
-      ASN1_TIME_free(aa);
-    }
+    ASN1_TIME_free(ab);
+    ASN1_TIME_free(aa);
+
     return openssl_pushresult(L, ret);
   }
   return 0;
@@ -600,6 +599,7 @@ static int openssl_x509_serial(lua_State *L)
     serial = BN_to_ASN1_INTEGER(bn, NULL);
     BN_free(bn);
     ret = X509_set_serialNumber(cert, serial);
+    ASN1_INTEGER_free(serial);
     return openssl_pushresult(L, ret);
   }
 }
@@ -651,10 +651,9 @@ static int openssl_x509_new(lua_State* L) {
   int i = 1;
   int ret = 1;
   int n = lua_gettop(L);
-
   X509 *x = X509_new();
   
-  //ret = X509_set_version(x, 2);
+  ret = X509_set_version(x, 2);
   if (ret == 1 && (
     auxiliar_isclass(L, "openssl.bn", i) ||
     lua_isstring(L,i) || lua_isnumber(L, i)
@@ -662,17 +661,17 @@ static int openssl_x509_new(lua_State* L) {
   {
     BIGNUM *bn = BN_get(L, i);
     ASN1_INTEGER* ai = BN_to_ASN1_INTEGER(bn, NULL);
-
+    BN_free(bn);
     ret = X509_set_serialNumber(x, ai);
+    ASN1_INTEGER_free(ai);
     i++;
   }
-  for(;i<=n;i++) {
 
+  for(;i<=n;i++) {
     if (ret ==1 && auxiliar_isclass(L, "openssl.x509_req", i))
     {
-      X509_NAME* xn = NULL;
       X509_REQ* csr = CHECK_OBJECT(i, X509_REQ, "openssl.x509_req");
-      xn = X509_REQ_get_subject_name(csr);
+      X509_NAME* xn = X509_REQ_get_subject_name(csr);
       ret = X509_set_subject_name(x, xn);
 
       if(ret==1) {
@@ -681,10 +680,13 @@ static int openssl_x509_new(lua_State* L) {
         n = sk_X509_EXTENSION_num(exts);
         for(j=0; ret==1 && j<n; j++) {
           ret = X509_add_ext(x, sk_X509_EXTENSION_value(exts, j), j);
-        }     
+        }
+        sk_X509_EXTENSION_pop_free(exts,X509_EXTENSION_free);
       }
       if (ret==1) {
-        ret = X509_set_pubkey(x,X509_REQ_get_pubkey(csr));
+        EVP_PKEY* pkey = X509_REQ_get_pubkey(csr);
+        ret = X509_set_pubkey(x,pkey);
+        EVP_PKEY_free(pkey);
       }
       i++;
     };
