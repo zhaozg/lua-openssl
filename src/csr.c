@@ -151,51 +151,6 @@ static LUA_FUNCTION(openssl_csr_export)
   return 1;
 }
 
-
-static int copy_extensions(X509 *x, X509_REQ *req, int all)
-{
-  STACK_OF(X509_EXTENSION) *exts = NULL;
-  X509_EXTENSION *ext, *tmpext;
-  ASN1_OBJECT *obj;
-  int i, idx, ret = 0;
-
-  exts = X509_REQ_get_extensions(req);
-  if (exts == NULL)
-    return 0;
-  for (i = 0; i < sk_X509_EXTENSION_num(exts); i++)
-  {
-    ext = sk_X509_EXTENSION_value(exts, i);
-    obj = X509_EXTENSION_get_object(ext);
-    idx = X509_get_ext_by_OBJ(x, obj, -1);
-    /* Does extension exist? */
-    if (idx != -1)
-    {
-      /* If normal copy don't override existing extension */
-      if (!all)
-        continue;
-      /* Delete all extensions of same type */
-      do
-      {
-        tmpext = X509_get_ext(x, idx);
-        X509_delete_ext(x, idx);
-        X509_EXTENSION_free(tmpext);
-        idx = X509_get_ext_by_OBJ(x, obj, -1);
-      }
-      while (idx != -1);
-    }
-    if (!X509_add_ext(x, ext, -1))
-      goto end;
-  }
-
-  ret = 1;
-
-end:
-
-  sk_X509_EXTENSION_pop_free(exts, X509_EXTENSION_free);
-
-  return ret;
-}
-
 static LUA_FUNCTION(openssl_csr_digest)
 {
   X509_REQ *csr = CHECK_OBJECT(1, X509_REQ, "openssl.x509_req");
@@ -242,117 +197,6 @@ static LUA_FUNCTION(openssl_csr_verify)
   EVP_PKEY_free(self_key);
   return 1;
 };
-
-static LUA_FUNCTION(openssl_csr_sign)
-{
-  X509_REQ *csr = CHECK_OBJECT(1, X509_REQ, "openssl.x509_req");
-  EVP_PKEY *self_key = X509_REQ_get_pubkey(csr);
-
-  X509 *cacert = lua_isnil(L, 2) ? NULL : CHECK_OBJECT(2, X509, "openssl.x509");
-  EVP_PKEY *priv_key = CHECK_OBJECT(3, EVP_PKEY, "openssl.evp_pkey");
-
-  X509 *new_cert = NULL;
-  const EVP_MD *md = NULL;
-  int num_days = 365;
-
-  if (X509_REQ_verify(csr, self_key) == 0)
-    luaL_error(L, "CSR Signature verification fail");
-
-  if (cacert && !X509_check_private_key(cacert, priv_key))
-    luaL_error(L, "private key does not correspond to signing cert");
-
-  /* Now we go on make it */
-  /* 1) */
-  luaL_checktype(L, 4, LUA_TTABLE);
-  {
-    BIGNUM *bn = NULL;
-
-    int version = 2;
-    lua_getfield(L, 4, "serialNumber");
-    bn = BN_get(L, -1);
-    if (bn == NULL)
-      luaL_argerror(L, 4, "must have serialNumber key and value is string or number type");
-    lua_pop(L, 1);
-    BN_set_negative(bn, 0);
-
-    lua_getfield(L, 4, "digest");
-    md = lua_isnil(L, -1) ? EVP_get_digestbyname("sha1") : get_digest(L, -1);
-    if (md == NULL)
-      luaL_argerror(L, 4, "must have digest key and value can convert to evp_digest");
-    lua_pop(L, 1);
-
-    lua_getfield(L, 4, "num_days");
-    num_days = luaL_optint(L, -1, num_days);
-    lua_pop(L, 1);
-
-    lua_getfield(L, 4, "version");
-    version = luaL_optint(L, -1, version);
-    lua_pop(L, 1);
-
-    new_cert = X509_new();
-
-    if (new_cert == NULL)
-    {
-      luaL_error(L, "out of memory");
-    }
-
-    /* Version 2 cert */
-    if (!X509_set_version(new_cert, version))
-      luaL_error(L, "fail X509_set_version");
-
-    /* 3) */
-    //X509_set_serialNumber(new_cert, BN_to_ASN1_INTEGER(bn, X509_get_serialNumber(new_cert)));
-    X509_set_subject_name(new_cert, X509_REQ_get_subject_name(csr));
-  }
-
-
-  /* 4) */
-  cacert = cacert ? cacert : new_cert;
-
-  if (!X509_set_issuer_name(new_cert, X509_get_subject_name(cacert)))
-    luaL_error(L, "fail X509_set_issuer_name");
-
-  /* 5 */
-  X509_gmtime_adj(X509_get_notBefore(new_cert), 0);
-#if OPENSSL_VERSION_NUMBER > 0x10000002L
-  if (!X509_time_adj_ex(X509_get_notAfter(new_cert), num_days, 0, NULL))
-    luaL_error(L, "fail X509_time_adj_ex");
-#else
-  X509_gmtime_adj(X509_get_notAfter(new_cert), (long)60 * 60 * 24 * num_days);
-#endif
-
-  /* 6 */
-  if (!X509_set_pubkey(new_cert, self_key))
-    luaL_error(L, "fail X509_set_pubkey");
-  EVP_PKEY_free(self_key);
-
-  copy_extensions(new_cert, csr, 1);
-  if (!lua_isnoneornil(L, 5))
-  {
-    int i;
-    int n = X509_get_ext_count(new_cert);
-    STACK_OF(X509_EXTENSION) *exts = 
-      CHECK_OBJECT(5, STACK_OF(X509_EXTENSION), "openssl.stack_of_x509_extension");
-
-    for(i=0; i<sk_X509_EXTENSION_num(exts); i++)
-    {
-      X509_add_ext(new_cert, sk_X509_EXTENSION_value(exts,i), n+i);
-    };
-  }
-
-  /* Now sign it */
-  if (!md)
-    md = EVP_get_digestbyname("sha1");
-
-  if (!X509_sign(new_cert, priv_key, md))
-  {
-    luaL_error(L, "failed to sign it");
-  }
-
-  /* Succeeded; lets return the cert */
-  PUSH_OBJECT(new_cert, "openssl.x509");
-  return 1;
-}
 
 static LUA_FUNCTION(openssl_csr_new)
 {
@@ -586,7 +430,6 @@ static luaL_reg csr_cfuns[] =
   {"to_x509",           openssl_csr_to_x509},
   {"export",            openssl_csr_export},
   {"parse",             openssl_csr_parse},
-  {"sign",              openssl_csr_sign},
   {"digest",            openssl_csr_digest},
   {"verify",            openssl_csr_verify},
   {"check",             openssl_csr_check},
