@@ -232,10 +232,20 @@ static LUA_FUNCTION(openssl_x509_parse)
   }
   lua_setfield(L, -2, "purposes");
 
-  if(cert->cert_info->extensions) {
-    STACK_OF(X509_EXTENSION) *extensions = sk_X509_EXTENSION_dup(cert->cert_info->extensions);
-    PUSH_OBJECT(extensions,"openssl.stack_of_x509_extension");
-    lua_setfield(L,-2, "extensions");
+  {
+    int n = X509_get_ext_count(cert);
+    if(n>0) {
+      STACK_OF(X509_EXTENSION) *extensions = sk_X509_EXTENSION_new_null();
+      int i;
+      for(i=0; i<n; i++)
+      {
+        X509_EXTENSION *ext = X509_get_ext(cert, i);
+        ext = X509_EXTENSION_dup(ext);
+        sk_X509_EXTENSION_push(extensions, ext);
+      }
+      PUSH_OBJECT(extensions,"openssl.stack_of_x509_extension");
+      lua_setfield(L,-2, "extensions");
+    }
   }
 
   return 1;
