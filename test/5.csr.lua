@@ -1,7 +1,4 @@
 local csr = require'openssl'.csr
-local print_r = require'function.print_r'
-
-require('luaunit')
 
 TestCSR = {}
 
@@ -58,7 +55,6 @@ TestCSR = {}
                 local req1,req2
                 req1 = assert(csr.new())
                 req2 = assert(csr.new(pkey))
-
                 t = req1:parse()
                 assertIsTable(t)
                 t = req2:parse()
@@ -75,14 +71,14 @@ TestCSR = {}
                 assertIsTable(t)
                 assert(req1:verify());
                 assert(req2:verify());
-
+                
                 req1 = assert(csr.new(self.subject,self.attributes))
                 req2 = assert(csr.new(self.subject,self.attributes, pkey))
-                
                 t = req1:parse()
                 assertIsTable(t)
                 t = req2:parse()
                 assertIsTable(t)
+                
 
                 assert(req1:verify());
                 assert(req2:verify());
@@ -139,11 +135,11 @@ TestCSR = {}
                 assertEquals(req1:version(1),true)
                 assertEquals(req1:version(),1)
                 assert(req1:version(0))
-                
+
                 assertEquals(tostring(req1:subject()),tostring(self.subject))
                 assert(req1:subject(self.subject))
                 assertEquals(tostring(req1:subject()),tostring(self.subject))
-                
+
                 assertStrContains(tostring(req1:extensions()),'openssl.stack_of_x509_extension')
                 assert(req1:extensions(self.extensions))
                 assertEquals(tostring(req1:subject()),tostring(self.subject))
@@ -153,17 +149,15 @@ TestCSR = {}
                 assertEquals(r,s)
                 assert(req2:check(pkey))
 
---              memory leaks in X509_REQ_to_X509
+                local cert = req2:to_x509(pkey, 3650) -- self sign
+                t = cert:parse()                
+                assertStrContains(tostring(req1:to_x509(pkey, 3650)),'openssl.x509')
+                assertStrContains(tostring(req2:to_x509(pkey, 3650)),'openssl.x509')
 
---                assertStrContains(tostring(req1:to_x509(pkey, 3650)),'openssl.x509')
---                assertStrContains(tostring(req2:to_x509(pkey, 3650)),'openssl.x509')
---                local cert = req2:to_x509(pkey, 3650) -- self sign
-                --t = cert:parse()
-                --print_r(t)
         end
 
 function TestCSR:testIO()
-local csr_data = [[
+local csr_data = [==[
 -----BEGIN CERTIFICATE REQUEST-----
 MIIBvjCCAScCAQAwfjELMAkGA1UEBhMCQ04xCzAJBgNVBAgTAkJKMRAwDgYDVQQH
 EwdYSUNIRU5HMQ0wCwYDVQQKEwRUQVNTMQ4wDAYDVQQLEwVERVZFTDEVMBMGA1UE
@@ -176,7 +170,7 @@ lemLpEEo65U7iLJUskUNMsDrNLEVt7kuWlz0uQDnuZ4qgrRVJ2BpxskTR5D5Yzzc
 wSpxg0VN6+i6u9C9n4xwCe1VyteOC2In0LbxMAGL3rVFm9yDFRU3LDy3EWG6DIg/
 4+QM/GW7qfmes65THZt0Hram
 -----END CERTIFICATE REQUEST-----
-]]
+]==]
 
         local x = assert(csr.read(csr_data))
         t = x:parse()
