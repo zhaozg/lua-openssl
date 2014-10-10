@@ -630,7 +630,6 @@ static int openssl_x509_version(lua_State *L)
   }
 }
 
-
 static int openssl_x509_extensions(lua_State* L)
 {
   X509 *peer = CHECK_OBJECT(1, X509, "openssl.x509");

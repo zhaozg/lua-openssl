@@ -73,7 +73,7 @@ static X509_REVOKED *create_revoked(lua_State*L, const BIGNUM* bn, time_t t, int
 {
   X509_REVOKED *revoked = X509_REVOKED_new();
   ASN1_TIME *tm = ASN1_TIME_new();
-  ASN1_INTEGER *it =  BN_to_ASN1_INTEGER((BIGNUM*)bn, NULL);;
+  ASN1_INTEGER *it =  BN_to_ASN1_INTEGER(bn, NULL);;
 
   ASN1_TIME_set(tm, t);
 
@@ -115,6 +115,32 @@ static LUA_FUNCTION(openssl_crl_add_revocked)
   lua_pushboolean(L, ret);
   BN_free(sn);
   return 1;
+}
+
+static int openssl_crl_extensions(lua_State* L)
+{
+  X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
+  if(lua_isnone(L,2))
+  {
+    STACK_OF(X509_EXTENSION) *exts = crl->crl->extensions;
+    if(exts) {
+      exts = sk_X509_EXTENSION_dup(exts);
+      PUSH_OBJECT(exts,"openssl.stack_of_x509_extension");
+    }else
+      lua_pushnil(L);
+    return 1;
+  }else {
+    STACK_OF(X509_EXTENSION) *exts = CHECK_OBJECT(1, STACK_OF(X509_EXTENSION), "openssl.stack_of_x509_extension");
+    int i, n, ret;
+    n = sk_X509_EXTENSION_num(exts);
+    for(i=0, ret=1; i<n && ret==1; i++)
+    {
+      X509_EXTENSION *ext = sk_X509_EXTENSION_value(exts, i);
+      X509_CRL_add_ext(crl, ext, i);
+    };
+    return openssl_pushresult(L, ret);
+  }
+  return 0;
 }
 
 static LUA_FUNCTION(openssl_crl_new)
@@ -203,57 +229,122 @@ static LUA_FUNCTION(openssl_crl_read)
   return 0;
 }
 
-static LUA_FUNCTION(openssl_crl_set_version)
+static LUA_FUNCTION(openssl_crl_version)
 {
   X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
-  long version = luaL_optinteger(L, 2, 0);
-  int ret = X509_CRL_set_version(crl, version);
-  lua_pushboolean(L, ret);
-  return 1;
+  if(lua_isnone(L, 2)) {
+    lua_pushinteger(L, X509_CRL_get_version(crl));
+    return 1;
+  }else {
+    long version = luaL_optinteger(L, 2, 0);
+    int ret = X509_CRL_set_version(crl, version);
+    return openssl_pushresult(L, ret);
+  }
 }
 
-static LUA_FUNCTION(openssl_crl_set_issuer)
+static LUA_FUNCTION(openssl_crl_issuer)
 {
   X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
-  X509* x509 = CHECK_OBJECT(2, X509, "openssl.x509");
-
-  int ret = X509_CRL_set_issuer_name(crl, x509->cert_info->issuer);
-
-  lua_pushboolean(L, ret);
-  return 1;
+  if(lua_isnone(L, 2)) {
+    return openssl_push_xname_asobject(L, X509_CRL_get_issuer(crl));
+  }else if(auxiliar_isclass(L, "openssl.x509_name", 2))
+  {
+    X509_NAME* xn = CHECK_OBJECT(2, X509_NAME, "openssl.x509_name");
+    int ret = X509_CRL_set_issuer_name(crl, xn);
+    return openssl_pushresult(L, ret);
+  }else if(auxiliar_isclass(L, "openssl.x509", 2)) {
+    X509* x = CHECK_OBJECT(2, X509, "openssl.x509");
+    int ret = X509_CRL_set_issuer_name(crl, X509_get_issuer_name(x));
+    return openssl_pushresult(L, ret);
+  }else {
+    luaL_argerror(L, 2, "only accept x509 or x509_name object");
+  }
+  return 0;
 }
 
-static LUA_FUNCTION(openssl_crl_set_updatetime)
+static LUA_FUNCTION(openssl_crl_lastUpdate)
 {
   X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
-  ASN1_TIME *ltm, *ntm;
-  int ret = 0;
+  if(lua_isnone(L, 2)) {
+    ASN1_TIME *tm = X509_CRL_get_lastUpdate(crl);
+    PUSH_ASN1_TIME(L, tm);
+    return 1;
+  }else {
+    int ret;
+    time_t time = luaL_checkint(L, 2);
+    ASN1_TIME *tm = ASN1_TIME_new();
+    ASN1_TIME_set(tm, time);
 
-  time_t last, next;
-  time(&last);
-  last = luaL_optinteger(L, 2, (lua_Integer)last);
-  next = luaL_optinteger(L, 3, (lua_Integer)last + 7 * 24 * 3600);
+    ret = X509_CRL_set_lastUpdate(crl, tm);
+    ASN1_TIME_free(tm);
+    return openssl_pushresult(L, ret);
+  }
+}
 
-  ltm = ASN1_TIME_new();
-  ASN1_TIME_set(ltm, last);
-  ntm = ASN1_TIME_new();
-  ASN1_TIME_set(ntm, next);
+static LUA_FUNCTION(openssl_crl_nextUpdate)
+{
+  X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
+  if(lua_isnone(L, 2)) {
+    ASN1_TIME *tm = X509_CRL_get_nextUpdate(crl);
+    PUSH_ASN1_TIME(L, tm);
+    return 1;
+  }else {
+    int ret;
+    time_t time = luaL_checkint(L, 2);
+    ASN1_TIME *tm = ASN1_TIME_new();
+    ASN1_TIME_set(tm, time);
 
-  ret = X509_CRL_set_lastUpdate(crl, ltm);
-  if (ret == 1)
-    ret = X509_CRL_set_nextUpdate(crl, ntm);
-  ASN1_TIME_free(ltm);
-  ASN1_TIME_free(ntm);
-  lua_pushboolean(L, ret);
-  return 1;
+    ret = X509_CRL_set_nextUpdate(crl, tm);
+    ASN1_TIME_free(tm);
+    return openssl_pushresult(L, ret);
+  }
+}
+
+static LUA_FUNCTION(openssl_crl_updateTime)
+{
+  X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
+  if(lua_isnone(L, 2)) {
+     ASN1_TIME *ltm, *ntm;
+     ltm = X509_CRL_get_lastUpdate(crl);
+     ntm = X509_CRL_get_nextUpdate(crl);
+     PUSH_ASN1_TIME(L, ltm);
+     PUSH_ASN1_TIME(L, ntm);
+     return 2;
+  }else  {
+    ASN1_TIME *ltm, *ntm;
+    int ret = 0;
+
+    time_t last, next;
+
+    if (lua_gettop(L)==2) {
+      time(&last);
+      next = last + luaL_checkint(L,2);
+    }else{
+      last = luaL_checkint(L, 2);
+      next = last + luaL_checkint(L, 3);
+      luaL_argcheck(L, next > last, 3, "value must after #2");
+    }
+
+    ltm = ASN1_TIME_new();
+    ASN1_TIME_set(ltm, last);
+    ntm = ASN1_TIME_new();
+    ASN1_TIME_set(ntm, next);
+    ret = X509_CRL_set_lastUpdate(crl, ltm);
+    if (ret == 1)
+      ret = X509_CRL_set_nextUpdate(crl, ntm);
+    ASN1_TIME_free(ltm);
+    ASN1_TIME_free(ntm);
+    openssl_pushresult(L, ret);
+    return 1;
+  }
+  return 0;
 }
 
 static LUA_FUNCTION(openssl_crl_sort)
 {
   X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
   int ret = X509_CRL_sort(crl);
-  lua_pushboolean(L, ret);
-  return 1;
+  return openssl_pushresult(L, ret);
 }
 
 static LUA_FUNCTION(openssl_crl_verify)
@@ -261,27 +352,93 @@ static LUA_FUNCTION(openssl_crl_verify)
   X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
   X509* cacert = CHECK_OBJECT(2, X509, "openssl.x509");
 
-
   int ret = X509_CRL_verify(crl, cacert->cert_info->key->pkey);
-  lua_pushboolean(L, ret);
-  return 1;
+  return openssl_pushresult(L, ret);
 }
 
 LUA_FUNCTION(openssl_crl_sign)
 {
   X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
   EVP_PKEY *key = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
-  const EVP_MD *md = lua_isnoneornil(L, 3)
-                     ? EVP_get_digestbyname("sha1") : get_digest(L, 3);
+  const EVP_MD *md = lua_isnoneornil(L, 4)
+                     ? EVP_get_digestbyname("sha1") : get_digest(L, 4);
 
-  int ret = 0;
+  int ret = 1;
 
-  luaL_argcheck(L, md, 3, "must be openssl.evp_digest or a valid digest alg name");
+  luaL_argcheck(L, auxiliar_isclass(L,"openssl.x509", 3) || auxiliar_isclass(L, "openssl.x509_name", 3),
+    3, "must be openssl.x509 or openssl.x509_name object");
+  if(auxiliar_isclass(L, "openssl.x509_name", 3)) {
+    X509_NAME* xn = CHECK_OBJECT(3, X509_NAME, "openssl.x509_name");
+    ret = X509_CRL_set_issuer_name(crl,xn);
+  }else if(auxiliar_isclass(L, "openssl.x509", 3)) {
+    X509* ca = CHECK_OBJECT(3, X509, "openssl.x509");
+    ret = X509_CRL_set_issuer_name(crl, X509_get_issuer_name(ca));
+    if(ret==1){
+      ret = X509_check_private_key(ca, key);
+      if(ret!=1) {
+        luaL_error(L, "private key not match with cacert");
+      }
+    }
+  }
+  if(ret==1)
+    ret = X509_CRL_sort(crl);
+  if(ret==1)
+    ret = X509_CRL_sign(crl, key, md);
+  return openssl_pushresult(L, ret);
+}
 
-  X509_CRL_sort(crl);
-  ret = X509_CRL_sign(crl, key, md);
-  lua_pushboolean(L, ret);
+static LUA_FUNCTION(openssl_crl_digest)
+{
+  X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
+  byte buf[EVP_MAX_MD_SIZE];
+  int lbuf = sizeof(buf);
+  const EVP_MD *md = lua_isnoneornil(L, 2)
+    ? EVP_get_digestbyname("sha1") : get_digest(L, 2);
+
+  int ret =  X509_CRL_digest(crl, md, buf, &lbuf);
+  if(ret==1)
+  {
+    lua_pushlstring(L, buf, lbuf);
+    return ret;
+  }
+  return openssl_pushresult(L, ret);
+}
+
+static LUA_FUNCTION(openssl_crl_cmp)
+{
+  X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
+  X509_CRL *oth = CHECK_OBJECT(2, X509_CRL, "openssl.x509_crl");
+  int ret = X509_CRL_cmp(crl, oth);
+  lua_pushboolean(L, ret==0);
   return 1;
+}
+
+static LUA_FUNCTION(openssl_crl_diff)
+{
+  X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
+  X509_CRL *newer = CHECK_OBJECT(2, X509_CRL, "openssl.x509_crl");
+  EVP_PKEY* pkey = CHECK_OBJECT(3, EVP_PKEY, "openssl.evp_pkey");
+  const EVP_MD *md = lua_isnoneornil(L, 4)
+    ? EVP_get_digestbyname("sha1") : get_digest(L, 4);
+  int flags = luaL_optinteger(L, 5, 0);
+
+  X509_CRL *diff  =  X509_CRL_diff(crl, newer, pkey, md, flags);
+  if(diff)
+  {
+    PUSH_OBJECT(diff,"openssl.x509_crl");
+  }else
+    lua_pushnil(L);
+  return 1;
+}
+
+static LUA_FUNCTION(openssl_crl_check_suiteb)
+{
+  X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
+  EVP_PKEY* pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
+  unsigned long flags = luaL_optinteger(L, 3, 0);
+
+  int ret = X509_CRL_check_suiteb(crl, pkey, flags);
+  return openssl_pushresult(L, ret);
 }
 
 static LUA_FUNCTION(openssl_crl_parse)
@@ -429,13 +586,25 @@ static luaL_Reg crl_funcs[] =
   {"sort",            openssl_crl_sort},
   {"verify",          openssl_crl_verify},
   {"sign",            openssl_crl_sign},
+  {"digest",          openssl_crl_digest},
+  {"diff",            openssl_crl_diff},
+  {"check",           openssl_crl_check_suiteb},
+
+  /* set and get */
+  {"version",         openssl_crl_version},
+  {"issuer",          openssl_crl_issuer},
+  {"lastUpdate",      openssl_crl_lastUpdate},
+  {"nextUpdate",      openssl_crl_nextUpdate},
+  {"updateTime",      openssl_crl_updateTime},
+  {"extension",       openssl_crl_extensions},
+
+  {"add",             openssl_crl_add_revocked},
+
+  {"parse",           openssl_crl_parse},
   {"export",          openssl_crl_export},
 
-  {"set_version",     openssl_crl_set_version},
-  {"set_update_time", openssl_crl_set_updatetime},
-  {"set_issuer",      openssl_crl_set_issuer},
-  {"add",             openssl_crl_add_revocked},
-  {"parse",           openssl_crl_parse},
+  {"cmp",             openssl_crl_cmp},
+  {"__eq",            openssl_crl_cmp},
 
   {"__tostring",      auxiliar_tostring},
   {"__gc",            openssl_crl_free  },
