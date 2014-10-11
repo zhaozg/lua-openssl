@@ -75,15 +75,21 @@ function diff() end
 -- @treturn boolean result true for pass
 function check() end
 
-
 --- parse x509_crl object as table
 -- @tparam[opt=true] shortname default will use short object name
 -- @treturn table result
 function parse() end
 
---- get version key
--- @treturn integer
-function version() end
+--- get count of revoked entry
+-- @treutrn number count
+-- @usage
+--  assert(#crl==crl:count())
+function count() end
+
+--- get revoekd entry
+-- @tparam number index
+-- @treturn table revoekd 
+function get() end
 
 --- set version key
 -- @tparam integer version
