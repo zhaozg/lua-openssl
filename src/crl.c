@@ -145,60 +145,84 @@ static int openssl_crl_extensions(lua_State* L)
 
 static LUA_FUNCTION(openssl_crl_new)
 {
-  X509* x509 = lua_isnoneornil(L, 1) ? NULL : CHECK_OBJECT(1, X509, "openssl.x509");
-  time_t lastUpdate = luaL_optinteger(L, 3, (lua_Integer)time(&lastUpdate));
-  time_t nextUpdate = luaL_optinteger(L, 4, (lua_Integer)(lastUpdate + 7 * 24 * 3600));
-  long version = luaL_optint(L, 5, 1);
+  int i;
+  int n = lua_gettop(L);
+  X509_CRL * crl = X509_CRL_new();
+  int ret = X509_CRL_set_version(crl, 0);
+  X509* cacert = NULL;
+  EVP_PKEY* capkey = NULL;
+  const EVP_MD* md = NULL;
+  int step;
 
-  X509_CRL * crl = NULL;
-  ASN1_TIME *ltm, *ntm;
+  for(i=1; ret==1 && i<n; i++){
+    if (i==1) {
+      luaL_argcheck(L, lua_istable(L,1), 1, "must be table contains rovked entry table{reason,time,sn}");
+      if(lua_objlen(L, i)>0) {
+        int j,m;
+        m = lua_objlen(L, 2);
 
-  if (!lua_isnoneornil(L, 2))
-    luaL_checktype(L, 2, LUA_TTABLE);
-
-  crl = X509_CRL_new();
-  X509_CRL_set_version(crl, version);
-  if (x509)
-    X509_CRL_set_issuer_name(crl, X509_get_subject_name(x509));
-
-  ltm = ASN1_TIME_new();
-  ntm = ASN1_TIME_new();
-  ASN1_TIME_set(ltm, lastUpdate);
-  ASN1_TIME_set(ntm, nextUpdate);
-  X509_CRL_set_lastUpdate(crl, ltm);
-  X509_CRL_set_nextUpdate(crl, ntm);
-  ASN1_TIME_free(ltm);
-  ASN1_TIME_free(ntm);
-
-
-  if (lua_istable(L, 2) && lua_objlen(L, 2) > 0)
-  {
-    int i;
-    int n = lua_objlen(L, 2);
-
-    for (i = 1; i <= n; i++)
-    {
-      lua_rawgeti(L, 2, i);
-      if (lua_istable(L, -1))
-      {
-        X509_REVOKED *revoked;
-
-        lua_getfield(L, -1, "reason");
-        lua_getfield(L, -2, "time");
-        lua_getfield(L, -3, "sn");
-
-        revoked = create_revoked(L, BN_get(L, -1), lua_tointeger(L, -2), reason_get(L, -3));
-        if (revoked)
+        for (j = 1; ret == 1 && j <= n; j++)
         {
-          X509_CRL_add0_revoked(crl, revoked);
-        }
-        lua_pop(L, 3);
+          X509_REVOKED *revoked;
+          BIGNUM* sn;
+          lua_rawgeti(L, 2, j);
+          luaL_checktable(L, -1);
+
+          lua_getfield(L, -1, "reason");
+          lua_getfield(L, -2, "time");
+          lua_getfield(L, -3, "sn");
+          sn = BN_get(L, -1);
+          revoked = create_revoked(L, sn, lua_tointeger(L, -2), reason_get(L, -3));
+          if (revoked)
+          {
+            X509_CRL_add0_revoked(crl, revoked);
+          }
+          BN_free(sn);
+          lua_pop(L, 3);
+          lua_pop(L, 1);
+        };
       }
-      lua_pop(L, 1);
+    };
+    if (i==2) {
+      cacert = CHECK_OBJECT(2, X509, "openssl.x509");
+      ret = X509_CRL_set_issuer_name(crl, X509_get_issuer_name(cacert));
+    }
+    if (i==3) {
+      capkey = CHECK_OBJECT(3, EVP_PKEY, "openssl.evp_pkey");
+      luaL_argcheck(L, X509_check_private_key(cacert,capkey)==1, 3, "evp_pkey not match with x509 in #2");
     }
   }
+  md = lua_isnoneornil(L, 4)? EVP_get_digestbyname("sha1") : get_digest(L, 4);
+  step = lua_isnoneornil(L, 5) ? 7 * 24 * 3600 : luaL_checkint(L, 5);
 
-  PUSH_OBJECT(crl, "openssl.x509_crl");
+  if (ret==1) {
+    time_t lastUpdate;
+    time_t nextUpdate;
+    ASN1_TIME *ltm, *ntm;
+
+    time(&lastUpdate);
+    nextUpdate = lastUpdate + step;
+
+    ltm = ASN1_TIME_new();
+    ntm = ASN1_TIME_new();
+    ASN1_TIME_set(ltm, lastUpdate);
+    ASN1_TIME_set(ntm, nextUpdate);
+    ret = X509_CRL_set_lastUpdate(crl, ltm);
+    if (ret==1)
+      ret = X509_CRL_set_nextUpdate(crl, ntm);
+    ASN1_TIME_free(ltm);
+    ASN1_TIME_free(ntm);
+  }
+  if(cacert && capkey && md)
+    ret = X509_CRL_sign(crl, capkey, md);
+  if (ret==1)
+  {
+    PUSH_OBJECT(crl, "openssl.x509_crl");
+  }else {
+    X509_CRL_free(crl);
+    return openssl_pushresult(L, ret);
+  };
+
   return 1;
 }
 
