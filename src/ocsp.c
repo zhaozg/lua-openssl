@@ -174,12 +174,8 @@ static int openssl_ocsp_request_parse(lua_State*L)
   AUXILIAR_SET(L, -1, "version", ASN1_INTEGER_get(inf->version), integer);
   if (inf->requestorName)
   {
-    BUF_MEM *buf;
-    GENERAL_NAME_print(bio, inf->requestorName);
-
-    BIO_get_mem_ptr(bio, &buf);
-    AUXILIAR_SETLSTR(L, -1, "requestorName", buf->data, buf->length);
-    BIO_reset(bio);
+    opensl_push_general_name(L, inf->requestorName, utf8);
+    lua_setfield(L, -2, "requestorName");
   }
   num = sk_OCSP_ONEREQ_num(inf->requestList);
   lua_newtable(L);

@@ -58,6 +58,7 @@ int openssl_push_asn1type(lua_State* L, const ASN1_TYPE* type);
 int openssl_push_asn1object(lua_State* L, const ASN1_OBJECT* obj);
 int openssl_push_asn1(lua_State* L, ASN1_STRING* string, int type, int utf8);
 int openssl_push_x509_algor(lua_State*L,const X509_ALGOR* alg);
+int opensl_push_general_name(lua_State*L, const GENERAL_NAME* name,  int utf8);
 
 #define PUSH_ASN1_TIME(L, tm)             openssl_push_asn1(L, (ASN1_STRING*)tm, V_ASN1_UTCTIME, 0)
 #define PUSH_ASN1_GENERALIZEDTIME(L, tm)  openssl_push_asn1(L, (ASN1_STRING*)tm, V_ASN1_GENERALIZEDTIME, 0)

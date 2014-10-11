@@ -24,6 +24,89 @@ int openssl_push_x509_algor(lua_State*L, const X509_ALGOR* alg) {
   return 1;
 };
 
+int opensl_push_general_name(lua_State*L, const GENERAL_NAME* general_name, int utf8) {
+  lua_newtable(L);
+
+  switch (general_name->type) {
+  case GEN_OTHERNAME:
+    {
+      OTHERNAME *otherName = general_name->d.otherName;
+      lua_newtable(L);
+      openssl_push_asn1object(L, otherName->type_id);
+      PUSH_ASN1_STRING(L, otherName->value->value.asn1_string, utf8);
+      lua_settable(L, -3);
+      lua_setfield(L, -2, "otherName");
+
+      lua_pushstring(L, "otherName");
+      lua_setfield(L, -2, "type");
+      break;
+    }
+  case GEN_EMAIL:
+    PUSH_ASN1_STRING(L, general_name->d.rfc822Name, utf8);
+    lua_setfield(L, -2, "rfc822Name");
+
+    lua_pushstring(L, "rfc822Name");
+    lua_setfield(L, -2, "type");
+    break;
+  case GEN_DNS:
+    PUSH_ASN1_STRING(L, general_name->d.dNSName, utf8);
+    lua_setfield(L, -2, "dNSName");
+    lua_pushstring(L, "dNSName");
+    lua_setfield(L, -2, "type");
+    break;
+  case GEN_X400:
+    openssl_push_asn1type(L, general_name->d.x400Address);
+    lua_setfield(L, -2, "x400Address");
+    lua_pushstring(L, "x400Address");
+    lua_setfield(L, -2, "type");
+    break;
+  case GEN_DIRNAME:
+    {
+      X509_NAME* xn = general_name->d.directoryName;
+      openssl_push_xname_asobject(L, xn);
+      lua_setfield(L, -2, "directoryName");
+      lua_pushstring(L, "directoryName");
+      lua_setfield(L, -2, "type");
+    }
+    break;
+  case GEN_URI:
+    PUSH_ASN1_STRING(L, general_name->d.uniformResourceIdentifier, utf8);
+    lua_setfield(L, -2, "uniformResourceIdentifier");
+    lua_pushstring(L, "uniformResourceIdentifier");
+    lua_setfield(L, -2, "type");
+    break;
+  case GEN_IPADD:
+    lua_newtable(L);
+    PUSH_ASN1_OCTET_STRING(L, general_name->d.iPAddress);
+    lua_setfield(L, -2, "iPAddress");
+    lua_pushstring(L, "iPAddress");
+    lua_setfield(L, -2, "type");
+    break;
+  case GEN_EDIPARTY:
+    lua_newtable(L);
+    PUSH_ASN1_STRING(L, general_name->d.ediPartyName->nameAssigner,utf8);
+    lua_setfield(L, -2, "nameAssigner");
+    PUSH_ASN1_STRING(L, general_name->d.ediPartyName->partyName,utf8);
+    lua_setfield(L, -2, "partyName");
+    lua_setfield(L, -2, "ediPartyName");
+
+    lua_pushstring(L, "ediPartyName");
+    lua_setfield(L, -2, "type");
+    break;
+  case GEN_RID:
+    lua_newtable(L);
+    openssl_push_asn1object(L, general_name->d.registeredID);
+    lua_setfield(L, -2, "registeredID");
+    lua_pushstring(L, "registeredID");
+    lua_setfield(L, -2, "type");
+    break;
+  default:
+    lua_pushstring(L, "unsupport");
+    lua_setfield(L, -2, "type");
+  }
+  return 1;
+};
+
 /*** openssl.x509 object methods ***/
 X509_STORE * skX509_to_store(STACK_OF(X509)* calist, const char* files, const char* dirs)
 {
