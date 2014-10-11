@@ -822,6 +822,8 @@ static luaL_Reg revoked_funcs[] =
 
   {"__tostring",      auxiliar_tostring},
   {"__gc",            openssl_revoked_free  },
+
+  {NULL,    NULL}
 };
 
 static luaL_reg R[] =
