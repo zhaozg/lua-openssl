@@ -153,7 +153,7 @@ static int openssl_ocsp_request_sign(lua_State*L)
   }
   sflags = luaL_optint(L, 6, sflags);
   if (!lua_isnoneornil(L, 7))
-    md = CHECK_OBJECT(7, EVP_MD, "openssl.evp_md");
+    md = CHECK_OBJECT(7, EVP_MD, "openssl.evp_digest");
 
   ret = OCSP_request_sign(req, signer, pkey, md, others, sflags);
   lua_pushboolean(L, ret);

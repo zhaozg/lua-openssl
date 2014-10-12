@@ -463,10 +463,9 @@ static LUA_FUNCTION(openssl_ts_resp_info)
 
 static LUA_FUNCTION(openssl_ts_resp_read)
 {
-  size_t len;
-  const unsigned char* buf = (const unsigned char*)luaL_checklstring(L, 1, &len);
-  const unsigned char** p = &buf;
-  TS_RESP *res = d2i_TS_RESP(NULL, p, len);
+  BIO* in = load_bio_object(L, 1);
+  TS_RESP *res = d2i_TS_RESP_bio(in, NULL);
+  BIO_free(in);
   if (res)
   {
     PUSH_OBJECT(res, "openssl.ts_resp");
@@ -510,7 +509,7 @@ static X509_STORE* Stack2Store(STACK_OF(X509)* sk)
 
 /********************************************************/
 
-static LUA_FUNCTION(openssl_ts_sign)
+static LUA_FUNCTION(openssl_ts_create_response)
 {
   TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
   BIO *bio = NULL;
@@ -544,186 +543,447 @@ static LUA_FUNCTION(openssl_ts_sign)
 
 static LUA_FUNCTION(openssl_ts_resp_ctx_new)
 {
-  X509 *signer =   CHECK_OBJECT(1, X509, "openssl.x509");
-  EVP_PKEY *pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
-  STACK_OF(X509) *certs = lua_isnoneornil(L, 3) ? NULL : CHECK_OBJECT(3, STACK_OF(X509), "openssl.stack_of_x509");
-  const char* def_policy = luaL_optstring(L, 4, "1.1.2");
-  int options = 5;
-
-  ASN1_OBJECT *oid = NULL;
-  char buffer[1024];
-
   TS_RESP_CTX* ctx = TS_RESP_CTX_new();
+  int i = 0;
+  int n = lua_gettop(L);
+  X509 *signer = NULL;
+  EVP_PKEY *pkey = NULL;
+  int nid = NID_undef;
+  int ret = 1;
 
-  if (!X509_check_private_key(signer, pkey))
+  for (i=1; i<=n;i++) {
+    if(auxiliar_isclass(L, "openssl.x509", i))
+    {
+      signer = CHECK_OBJECT(i, X509, "openssl.x509");
+    }else if(auxiliar_isclass(L, "openssl.evp_pkey", i)) 
+    {
+      pkey = CHECK_OBJECT(i, EVP_PKEY, "openssl.evp_pkey");
+    }else if(lua_isnumber(L, i) || auxiliar_isclass(L, "openssl.asn1_object",i))
+    {
+      nid = openssl_get_nid(L, i);
+    }else
+      luaL_argerror(L, i, "not accept paramater");
+  }
+  if(signer && pkey) 
   {
+    ret = X509_check_private_key(signer, pkey);
+    if(ret!=1) {
+      luaL_error(L, "singer cert and private key not match");
+    }
+  }
+  if (ret==1 && nid!=NID_undef)
+    ret = TS_RESP_CTX_set_def_policy(ctx, OBJ_nid2obj(nid));
+
+  if (ret==1 && signer)
+    ret = TS_RESP_CTX_set_signer_cert(ctx, signer);
+  if (ret==1 && pkey)
+    ret = TS_RESP_CTX_set_signer_key(ctx, pkey);
+  
+  if(ret==1){
+    PUSH_OBJECT(ctx, "openssl.ts_resp_ctx");
+    openssl_newvalue(L, ctx);
+  }else{
+    TS_RESP_CTX_free(ctx);
+    ctx = NULL;
     lua_pushnil(L);
-    lua_pushstring(L, "signer cert don't match with privatekey");
-    return 2;
   }
-  if (!TS_RESP_CTX_set_signer_cert(ctx, signer))
-  {
-    return openssl_pushresult(L,0);
-  }
-  TS_RESP_CTX_set_signer_key(ctx, pkey);
-  if (certs) TS_RESP_CTX_set_certs(ctx, certs);
-
-  oid = OBJ_txt2obj(def_policy, 0);
-  if (oid)
-  {
-    TS_RESP_CTX_set_def_policy(ctx, oid);
-    OBJ_obj2txt(buffer, sizeof(buffer), oid, 0);
-  }
-
-  if (lua_isnoneornil(L, 5))
-  {
-    lua_newtable(L);
-    lua_replace(L, 5);
-  }
-
-  luaL_checktype(L, options, LUA_TTABLE);
-
-  lua_getfield(L, options, "digest");
-  if (lua_isnil(L, -1))
-  {
-    lua_pop(L, 1);
-    //set default digets
-    lua_newtable(L);
-    lua_pushstring(L, "md5");
-    lua_rawseti(L, -2, 1);
-    lua_pushstring(L, "sha1");
-    lua_rawseti(L, -2, 2);
-    //lua_setfield(L,-2,"digest");
-  }
-
-  if (lua_istable(L, -1))
-  {
-    int i;
-    int len = lua_objlen(L, -1);
-    for (i = 1; i <= len; i++)
-    {
-      const char* p;
-      const EVP_MD *md_obj;
-      lua_rawgeti(L, -1, i);
-      p = lua_tostring(L, -1);
-      md_obj = EVP_get_digestbyname(p);
-      TS_RESP_CTX_add_md(ctx, md_obj);
-      lua_pop(L, 1);
-    }
-  }
-  lua_pop(L, 1);
-
-  lua_getfield(L, options, "policy");
-  if (lua_isnil(L, -1))
-  {
-    lua_pop(L, 1);
-    //set default policy
-    lua_newtable(L);
-    lua_pushstring(L, "1.1.3");
-    lua_rawseti(L, -2, 1);
-    lua_pushstring(L, "1.1.4");
-    lua_rawseti(L, -2, 2);
-    //lua_setfield(L,-2,"policy");
-  }
-
-  if (lua_istable(L, -1))
-  {
-    int i;
-    int len = lua_objlen(L, -1);
-    for (i = 1; i <= len; i++)
-    {
-      ASN1_OBJECT *oid = NULL;
-      char buffer[1024];
-
-      const char* p;
-      lua_rawgeti(L, -1, i);
-      p = lua_tostring(L, -1);
-
-      oid = OBJ_txt2obj(p, 0);
-      if (oid)
-      {
-        if (TS_RESP_CTX_add_policy(ctx, oid))
-          OBJ_obj2txt(buffer, sizeof(buffer), oid, 0);
-      }
-      lua_pop(L, 1);
-    }
-  }
-  lua_pop(L, 1);
-
-
-  lua_getfield(L, options, "accuracy");
-  if (lua_istable(L, -1))
-  {
-    int secs, millisecs, microsecs;
-    lua_getfield(L, -1, "seconds");
-    secs = lua_tointeger(L, -1);
-    lua_pop(L, 1);
-    lua_getfield(L, -1, "millisecs");
-    millisecs = lua_tointeger(L, -1);
-    lua_pop(L, 1);
-    lua_getfield(L, -1, "microsecs");
-    microsecs = lua_tointeger(L, -1);
-    lua_pop(L, 1);
-    TS_RESP_CTX_set_accuracy(ctx, secs, millisecs, microsecs);
-  }
-  lua_pop(L, 1);
-
-
-  lua_getfield(L, options, "precision");
-  if (!lua_isnil(L, -1))
-  {
-    int precision = lua_tointeger(L, -1);
-    TS_RESP_CTX_set_clock_precision_digits(ctx, precision);
-  }
-  lua_pop(L, 1);
-
-
-  lua_getfield(L, options, "ordering");
-  if (!lua_isnil(L, -1))
-  {
-    if (lua_toboolean(L, -1))
-      TS_RESP_CTX_add_flags(ctx, TS_ORDERING);
-  }
-  lua_pop(L, 1);
-
-  lua_getfield(L, options, "inc_name");
-  if (!lua_isnil(L, -1))
-  {
-    if (lua_toboolean(L, -1))
-      TS_RESP_CTX_add_flags(ctx, TS_TSA_NAME);
-  }
-  lua_pop(L, 1);
-
-  lua_getfield(L, options, "ess_ids");
-  if (!lua_isnil(L, -1))
-  {
-    if (lua_toboolean(L, -1))
-      TS_RESP_CTX_add_flags(ctx, TS_ESS_CERT_ID_CHAIN);
-  }
-  lua_pop(L, 1);
-
-  if (lua_isfunction(L, 6))
-  {
-    lua_pushvalue(L, 6);
-    lua_rawseti(L, LUA_REGISTRYINDEX, (int)(intptr_t)ctx);
-    TS_RESP_CTX_set_serial_cb(ctx, tsa_serial_cb, L);
-  }
-
-  PUSH_OBJECT(ctx, "openssl.ts_resp_ctx");
   return 1;
 }
 
+static LUA_FUNCTION(openssl_ts_resp_ctx_singer)
+{
+  TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
+  if(lua_isnone(L, 2)) {
+    if(ctx->signer_cert) {
+      X509* x = ctx->signer_cert;
+      x= X509_dup(x);
+      PUSH_OBJECT(x, "openssl.x509");
+    }else
+      lua_pushnil(L);
+    if(ctx->signer_key) {
+      EVP_PKEY* pkey = ctx->signer_key;
+      pkey->references ++;
+      PUSH_OBJECT(pkey, "openssl.evp_pkey");
+    }else
+      lua_pushnil(L);
+    return 2;
+  }else {
+    X509 *signer = CHECK_OBJECT(2, X509, "openssl.x509");
+    EVP_PKEY *pkey = CHECK_OBJECT(3, EVP_PKEY, "openssl.evp_pkey");
+    int ret = X509_check_private_key(signer, pkey);
+    if(ret!=1) {
+      luaL_error(L, "signer cert and private key not match");
+    }
+    if (ret==1)
+      ret = TS_RESP_CTX_set_signer_cert(ctx, signer);
+    if (ret==1)
+      ret = TS_RESP_CTX_set_signer_key(ctx, pkey);
+    return openssl_pushresult(L, ret);
+  }
+}
+
+static LUA_FUNCTION(openssl_ts_resp_ctx_certs)
+{
+  TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
+  if(lua_isnone(L, 2)) {
+    if(ctx->certs) {
+      STACK_OF(X509) *certs = sk_X509_dup(ctx->certs);
+      PUSH_OBJECT(certs,"openssl.stack_of_x509");
+    } else {
+      lua_pushnil(L);
+    };
+  }else {
+    STACK_OF(X509) *certs = CHECK_OBJECT(2, STACK_OF(X509), "openssl.stack_of_x509");
+    if(ctx->certs) {
+      sk_X509_pop_free(ctx->certs,X509_free);
+    }
+    ctx->certs = sk_X509_dup(certs);
+    lua_pushboolean(L, 1);
+  }
+  return 1;
+}
+
+static LUA_FUNCTION(openssl_ts_resp_ctx_default_policy)
+{
+  TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
+  if(lua_isnone(L, 2)) {
+    if(ctx->default_policy)
+      openssl_push_asn1object(L, ctx->default_policy);
+    else
+      lua_pushnil(L);
+  }else
+  {
+    int nid = openssl_get_nid(L, 2);
+    if(ctx->default_policy)
+      ASN1_OBJECT_free(ctx->default_policy);
+    ctx->default_policy = OBJ_nid2obj(nid);
+    lua_pushboolean(L, 1);
+  }
+  return 1;
+}
+
+static LUA_FUNCTION(openssl_ts_resp_ctx_policies)
+{
+  TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
+  if (lua_isnone(L, 2)) {
+    if(ctx->policies) {
+      STACK_OF(ASN1_OBJECT) *policies = sk_ASN1_OBJECT_dup(ctx->policies);
+      PUSH_OBJECT(policies, "openssl.stack_of_asn1_object");
+    }else
+      lua_pushnil(L);
+  }else
+  {
+    if(auxiliar_isclass(L, "openssl.stack_of_asn1_object", 2)) {
+      STACK_OF(ASN1_OBJECT) *policies = CHECK_OBJECT(2, STACK_OF(ASN1_OBJECT), "openssl.stack_of_asn1_object");
+      if(ctx->policies)
+      {
+        sk_ASN1_OBJECT_pop_free(ctx->policies,ASN1_OBJECT_free);
+      }
+      ctx->policies = sk_ASN1_OBJECT_dup(policies);
+      lua_pushboolean(L, 1);
+    }else {
+      int nid = openssl_get_nid(L, 2);
+      int ret;
+      if(nid!=NID_undef) {
+        ret = TS_RESP_CTX_add_policy(ctx,OBJ_nid2obj(nid));
+      }else
+        luaL_argerror(L, 2, "invalid asn1_object or id");
+      return openssl_pushresult(L, ret);
+    }
+  }
+  return 1;
+}
+
+static LUA_FUNCTION(openssl_ts_resp_ctx_accuracy)
+{
+  TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
+  if (lua_isnone(L, 2)) {
+    lua_pushinteger(L, ASN1_INTEGER_get(ctx->seconds));
+    lua_pushinteger(L, ASN1_INTEGER_get(ctx->millis));
+    lua_pushinteger(L, ASN1_INTEGER_get(ctx->micros));
+    return 3;
+  }else
+  {
+    int seconds = luaL_checkint(L, 2);
+    int millis  = luaL_checkint(L, 3);
+    int micros  = luaL_checkint(L, 4);
+    int ret = TS_RESP_CTX_set_accuracy(ctx, seconds, millis, micros);
+    return openssl_pushresult(L, ret);
+  }
+  return 0;
+}
+
+static LUA_FUNCTION(openssl_ts_resp_ctx_clock_precision_digits)
+{
+  TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
+  if (lua_isnone(L, 2)) {
+    lua_pushinteger(L, ctx->clock_precision_digits);
+    return 1;
+  }else
+  {
+    int ret;
+    int clock_precision_digits = luaL_checkint(L, 2);
+    if(clock_precision_digits>TS_MAX_CLOCK_PRECISION_DIGITS)
+      clock_precision_digits = TS_MAX_CLOCK_PRECISION_DIGITS;
+    if(clock_precision_digits <0)
+      clock_precision_digits = 0;
+    ret = TS_RESP_CTX_set_clock_precision_digits(ctx, clock_precision_digits);
+    return openssl_pushresult(L, ret);
+  }
+  return 0;
+}
+
+static LUA_FUNCTION(openssl_ts_resp_ctx_set_status_info)
+{
+  TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
+  int status = luaL_checkint(L, 2);
+  const char* text = luaL_checkstring(L, 3);
+  int ret = TS_RESP_CTX_set_status_info(ctx, status, text);
+  return openssl_pushresult(L, ret);
+}
+
+static LUA_FUNCTION(openssl_ts_resp_ctx_set_status_info_cond)
+{
+  TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
+  int status = luaL_checkint(L, 2);
+  const char* text = luaL_checkstring(L, 3);
+  int ret = TS_RESP_CTX_set_status_info_cond(ctx, status, text);
+  return openssl_pushresult(L, ret);
+}
+
+static LUA_FUNCTION(openssl_ts_resp_ctx_add_failure_info)
+{
+  TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
+  int failure = luaL_checkint(L, 2);
+  int ret = TS_RESP_CTX_add_failure_info(ctx, failure);
+  return openssl_pushresult(L, ret);
+}
+
+static LUA_FUNCTION(openssl_ts_resp_ctx_flags)
+{
+  TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
+  if(lua_isnone(L, 2)) {
+    lua_pushinteger(L, ctx->flags);
+  }else if(lua_isnumber(L, 2)){
+    int flags = luaL_checkint(L, 2);
+    ctx->flags = flags;
+    lua_pushboolean(L, 1);
+  }else if(lua_isstring(L, 2)){
+    /* TS_RESP_CTX_add_flags(ctx, ) */
+    luaL_error(L, "not support");
+  }else
+    luaL_error(L, "not support");
+  return 1;
+}
+
+static LUA_FUNCTION(openssl_ts_resp_ctx_md)
+{
+  TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
+  if(lua_isnone(L, 2)) {
+    if(ctx->mds) {
+      int i;
+      int n = sk_EVP_MD_num(ctx->mds);
+      lua_newtable(L);
+      for(i=0; i<n; i++) {
+        EVP_MD* md = sk_EVP_MD_value(ctx->mds,i);
+        PUSH_OBJECT(md,"openssl.evp_digest");
+        lua_rawseti(L, -2, i+1);
+      }
+    }else
+      lua_pushnil(L);
+    return 1;
+  }else if(lua_istable(L,2)) {
+    int i;
+    int n = lua_rawlen(L, 2);
+    int ret = 1;
+    for(i=1; ret==1 && i<=n; i++) {
+      const EVP_MD* md;
+      lua_rawgeti(L, 2, i);
+      md = get_digest(L, -1);
+      lua_pop(L, 1);
+      if(md) {
+        ret = TS_RESP_CTX_add_md(ctx, md);
+      }else {
+        lua_pushfstring(L, "#%d not valid evp_digest object or id", i);
+        luaL_argcheck(L, md, 2, lua_tostring(L, -1));
+        lua_pop(L,1);
+      }
+    }
+    return openssl_pushresult(L, ret);
+  }else {
+    const EVP_MD* md = get_digest(L, 2);
+    int ret = TS_RESP_CTX_add_md(ctx, md);
+    return openssl_pushresult(L, ret);
+  }
+}
+
+static LUA_FUNCTION(openssl_ts_resp_ctx_tst_info)
+{
+  TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
+  int utf8 = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L, 2);
+  TS_TST_INFO *info = TS_RESP_CTX_get_tst_info(ctx);
+  if(info) {
+    openssl_push_ts_tst_info(L, info, utf8);
+    TS_TST_INFO_ext_free(info);
+  }else
+    lua_pushnil(L);
+  return 1;
+}
+
+static LUA_FUNCTION(openssl_ts_resp_ctx_request)
+{
+  TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
+  TS_REQ *req = TS_RESP_CTX_get_request(ctx);
+  if(req) {
+    PUSH_OBJECT(req, "openssl.ts_req");
+  }else
+    lua_pushnil(L);
+  return 1;
+}
+
+typedef struct{
+  lua_State* L;
+  int callback;
+  int ctx;
+  int cb_arg;
+}TS_CB_ARG;
+
+static const char* time_cb_key  = "time_cb_key";
+static const char* serial_cb_key = "serial_cb_key";
+
+static ASN1_INTEGER* openssl_serial_cb(TS_RESP_CTX*ctx, void*data) {
+  TS_CB_ARG *arg = (TS_CB_ARG*)data;
+  lua_State* L = arg->L;
+  ASN1_INTEGER *ai = NULL;
+  int err;
+  lua_rawgeti(L, LUA_REGISTRYINDEX, arg->callback);
+  lua_rawgeti(L, LUA_REGISTRYINDEX, arg->ctx);
+  lua_rawgeti(L, LUA_REGISTRYINDEX, arg->cb_arg);
+  err = lua_pcall(L, 2, 1, 0);
+  if(err=LUA_OK)
+  {
+    BIGNUM *bn = BN_get(L, -1);
+    lua_pop(L,1);
+    if(bn) {
+      ai = BN_to_ASN1_INTEGER(bn, NULL);
+      BN_free(bn);
+    }
+    if(ai==NULL)
+      luaL_error(L, "serial_cb not return openssl.bn");
+    return NULL;
+  }else
+    lua_error(L);
+  return ai;
+};
+
+static LUA_FUNCTION(openssl_ts_resp_ctx_set_serial_cb)
+{
+  TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
+  int cbref,argref;
+  TS_CB_ARG* arg = NULL;
+  luaL_checktype(L, 2, LUA_TFUNCTION);
+
+  lua_pushvalue(L, 2);
+  cbref = luaL_ref(L, LUA_REGISTRYINDEX);
+  lua_pushvalue(L, 3);
+  argref = luaL_ref(L,LUA_REGISTRYINDEX);
+  
+  arg = (TS_CB_ARG*)lua_newuserdata(L,sizeof(TS_CB_ARG));
+  arg->callback = cbref;
+  arg->cb_arg = argref;
+  lua_pushvalue(L, 1);
+  arg->ctx = luaL_ref(L, LUA_REGISTRYINDEX);
+  openssl_setvalue(L, ctx, "serial_cb");
+
+  TS_RESP_CTX_set_serial_cb(ctx, openssl_serial_cb, arg);
+  return 0;
+};
+
+static int openssl_time_cb(TS_RESP_CTX *ctx, void *data, long *sec, long *usec){
+  TS_CB_ARG *arg = (TS_CB_ARG*)data;
+  lua_State* L = arg->L;
+  int err;
+
+  lua_rawgeti(L, LUA_REGISTRYINDEX, arg->callback);
+  lua_rawgeti(L, LUA_REGISTRYINDEX, arg->ctx);
+  lua_rawgeti(L, LUA_REGISTRYINDEX, arg->cb_arg);
+  err = lua_pcall(L, 2, 2, 0);
+  if(err=LUA_OK)
+  {
+    if(lua_isnil(L, -2)) {
+      lua_pop(L, 2);
+      return 0;
+    }else {
+      *sec = (long)luaL_checkinteger(L, -2);
+      *usec = (long)luaL_optinteger(L, -1, 0);
+      lua_pop(L, 2);
+      return 1;
+    }
+  }else
+    lua_error(L);
+  return 0;
+}
+
+static LUA_FUNCTION(openssl_ts_resp_ctx_set_time_cb)
+{
+  TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
+  int cbref,argref;
+  TS_CB_ARG* arg = NULL;
+  luaL_checktype(L, 2, LUA_TFUNCTION);
+  
+  lua_pushvalue(L, 2);
+  cbref = luaL_ref(L, LUA_REGISTRYINDEX);
+  lua_pushvalue(L, 3);
+  argref = luaL_ref(L,LUA_REGISTRYINDEX);
+
+  arg = (TS_CB_ARG*)lua_newuserdata(L,sizeof(TS_CB_ARG));
+  arg->callback = cbref;
+  arg->cb_arg = argref;
+  lua_pushvalue(L, 1);
+  arg->ctx = luaL_ref(L, LUA_REGISTRYINDEX);
+
+  lua_rawsetp(L,LUA_REGISTRYINDEX,ctx);
+  TS_RESP_CTX_set_time_cb(ctx, openssl_time_cb, arg);
+  return 0;
+}
 
 static LUA_FUNCTION(openssl_ts_resp_ctx_gc)
 {
   TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
+  lua_pushnil(L);
+  lua_setmetatable(L, 1);
+  openssl_freevalue(L, ctx);
   TS_RESP_CTX_free(ctx);
   return 0;
 }
 
+
 static luaL_Reg ts_resp_ctx_funs[] =
 {
-  {"sign",        openssl_ts_sign},
+  /* get and set */
+  {"signer",              openssl_ts_resp_ctx_singer},
+  {"certs",               openssl_ts_resp_ctx_certs},
+  {"default_policy",      openssl_ts_resp_ctx_default_policy},
+  {"policies",            openssl_ts_resp_ctx_policies},
+  {"accuracy",            openssl_ts_resp_ctx_accuracy},
+  {"clock_precision_digits",  openssl_ts_resp_ctx_clock_precision_digits},
+  {"md",                  openssl_ts_resp_ctx_md},
+  {"flags",               openssl_ts_resp_ctx_flags},
+
+  /* set */
+  {"set_status_info",         openssl_ts_resp_ctx_set_status_info},
+  {"set_status_info_cond",    openssl_ts_resp_ctx_set_status_info_cond},
+  {"set_serial_cb",      openssl_ts_resp_ctx_set_serial_cb},
+  {"set_time_cb",        openssl_ts_resp_ctx_set_time_cb},
+  {"add_failure_info",   openssl_ts_resp_ctx_add_failure_info},
+
+  /* get */
+  {"request",            openssl_ts_resp_ctx_request},
+  {"tst_info",           openssl_ts_resp_ctx_tst_info},
+
+  {"sign",               openssl_ts_create_response},
+  {"create_response",    openssl_ts_create_response},
+
   {"__tostring",  auxiliar_tostring},
   {"__gc",        openssl_ts_resp_ctx_gc},
 
@@ -732,139 +992,168 @@ static luaL_Reg ts_resp_ctx_funs[] =
 
 /********************************************************************/
 
-/*  openssl.ts_verify_ctx_new(
-  openssl.ts_req  --tsa request object
-  |string,  --der encode tsa request
-  |{source=raw dat,digest=md value}
-  ,
-  openssl.stack_of_x509|openssl.x509 --ca certificate
-  openssl.stack_of_x509|openssl.x509 --others certificate
-  )
-*/
-
 static LUA_FUNCTION(openssl_ts_verify_ctx_new)
 {
   TS_VERIFY_CTX *ctx = NULL;
-
-  if (auxiliar_isclass(L, "openssl.ts_req", 1))
-  {
+  if (lua_isnone(L, 1)) {
+    ctx = TS_VERIFY_CTX_new();
+  }else if(lua_isstring(L, 1)) {
+    BIO* bio = load_bio_object(L, 1);
+    TS_REQ* req = d2i_TS_REQ_bio(bio, NULL);
+    BIO_free(bio);
+    if(req) {
+      ctx = TS_REQ_to_TS_VERIFY_CTX(req, NULL);
+      TS_REQ_free(req);
+    }else {
+      luaL_argerror(L, 1, "must be ts_req data or object or nil");
+    }
+  } else {
     TS_REQ* req = CHECK_OBJECT(1, TS_REQ, "openssl.ts_req");
     ctx = TS_REQ_to_TS_VERIFY_CTX(req, NULL);
   }
-  else if (lua_isstring(L, 1))
-  {
-    BIO* bio = load_bio_object(L, 1);
-    TS_REQ* req = d2i_TS_REQ_bio(bio, NULL);
-    ctx = TS_REQ_to_TS_VERIFY_CTX(req, NULL);
-    BIO_free(bio);
-  }
-  else if (lua_istable(L, 1))
-  {
-    ctx = TS_VERIFY_CTX_new();
-    TS_VERIFY_CTX_init(ctx);
-    ctx->flags = TS_VFY_VERSION;
-    lua_getfield(L, 1, "digest");
-    if (!lua_isnil(L, -1))
-    {
-      size_t l;
-      const char*data = luaL_checklstring(L, -1, &l);
-      ctx->flags |= TS_VFY_IMPRINT;
-      ctx->imprint_len = l;
-      ctx->imprint = (unsigned char*)data;
-
-    }
-    lua_pop(L, 1);
-
-    lua_getfield(L, 1, "source");
-    if (!lua_isnil(L, -1))
-    {
-      ctx->flags |= TS_VFY_DATA;
-      ctx->data = load_bio_object(L, -1);
-    }
-    lua_pop(L, 1);
-  }
-  if (ctx)
-  {
-    if (lua_type(L, 2) == LUA_TUSERDATA)
-    {
-      if (auxiliar_isclass(L, "openssl.stack_of_x509", 2))
-      {
-        STACK_OF(X509) *cas = CHECK_OBJECT(2, STACK_OF(X509), "openssl.stack_of_x509");
-        ctx->store = Stack2Store(cas);
-      }
-      else if (auxiliar_isclass(L, "openssl.x509", 2))
-      {
-        X509* x = auxiliar_checkclass(L, "openssl.x509", 2);
-        ctx->store = X509_STORE_new();
-        X509_STORE_add_cert(ctx->store, x);
-        CRYPTO_add(&x->references, 1, CRYPTO_LOCK_X509);
-      }
-      else
-      {
-        luaL_argerror(L, 2, "must be a object of openssl.stack_of_x509 or openssl.x509");
-      }
-      ctx->flags |= TS_VFY_SIGNER;
-      ctx->flags |= TS_VFY_SIGNATURE;
-
-      if (!lua_isnoneornil(L, 3))
-      {
-        if (auxiliar_isclass(L, "openssl.stack_of_x509", 3))
-        {
-          ctx->certs = sk_X509_dup(CHECK_OBJECT(3, STACK_OF(X509), "openssl.stack_of_x509"));
-        }
-        else if (auxiliar_isclass(L, "openssl.x509", 3))
-        {
-          X509* x = auxiliar_checkclass(L, "openssl.x509", 3);
-          ctx->certs = sk_X509_new_null();
-          sk_X509_push(ctx->certs, x);
-          CRYPTO_add(&x->references, 1, CRYPTO_LOCK_X509);
-        }
-        else
-        {
-          luaL_argerror(L, 3, "must be a object of openssl.stack_of_x509 or openssl.x509");
-        }
-      }
-    }
-    else
-      luaL_argerror(L, 2, "must be a object of openssl.stack_of_x509 or openssl.x509");
+  if (ctx) {
+    ctx->flags |= TS_VFY_SIGNATURE;
 
     PUSH_OBJECT(ctx, "openssl.ts_verify_ctx");
-  }
-  else
+  }else
     lua_pushnil(L);
   return 1;
+}
+
+static int openssl_ts_verify_ctx_store(lua_State*L) {
+  TS_VERIFY_CTX *ctx = CHECK_OBJECT(1, TS_VERIFY_CTX, "openssl.ts_verify_ctx");
+  if (lua_isnone(L, 2)) {
+    if(ctx->store) {
+      /*
+      STACK_OF(X509) *cas =  X509_STORE_get1_certs(ctx->store);
+      PUSH_OBJECT(cas, "openssl.stack_of_x509");
+      */
+      luaL_error(L, "NYI");
+    }else
+      lua_pushnil(L);
+  }else {
+    STACK_OF(X509) *cas = CHECK_OBJECT(2, STACK_OF(X509), "openssl.stack_of_x509");
+    if (ctx->store)
+      X509_STORE_free(ctx->store);
+    ctx->store = Stack2Store(cas);
+    ctx->flags |= TS_VFY_SIGNER | TS_VFY_SIGNATURE;
+    lua_pushboolean(L, 1);
+  }
+  return 1;
+}
+
+static int openssl_ts_verify_ctx_certs(lua_State*L) {
+  TS_VERIFY_CTX *ctx = CHECK_OBJECT(1, TS_VERIFY_CTX, "openssl.ts_verify_ctx");
+  if (lua_isnone(L, 2)) {
+    if(ctx->certs) {
+      STACK_OF(X509) *certs =  sk_X509_dup(ctx->certs);
+      PUSH_OBJECT(certs, "openssl.stack_of_x509");
+    }else
+      lua_pushnil(L);
+  }else {
+    STACK_OF(X509) *cas = CHECK_OBJECT(2, STACK_OF(X509), "openssl.stack_of_x509");
+    if (ctx->certs)
+      sk_X509_free(ctx->certs);
+    ctx->certs = sk_X509_dup(cas);
+    lua_pushboolean(L, 1);
+  }
+  return 1;
+}
+
+static int openssl_ts_verify_ctx_flags(lua_State*L) {
+  TS_VERIFY_CTX *ctx = CHECK_OBJECT(1, TS_VERIFY_CTX, "openssl.ts_verify_ctx");
+  if(lua_isnone(L, 2)) {
+    lua_pushinteger(L, ctx->flags);
+    return 1;
+  } else {
+    ctx->flags = luaL_checkinteger(L, 2);
+  }
+  return 0;
+}
+
+static int openssl_ts_verify_ctx_data(lua_State*L) {
+  TS_VERIFY_CTX *ctx = CHECK_OBJECT(1, TS_VERIFY_CTX, "openssl.ts_verify_ctx");
+  if(lua_isnone(L, 2)) {
+    if (ctx->data)
+    {
+      BIO* bio = ctx->data;
+      bio->references++;
+      PUSH_OBJECT(bio,"openssl.bio");
+    }else
+      lua_pushnil(L);
+    return 1;
+  } else {
+    BIO* bio = load_bio_object(L, 2);
+    if(ctx->data)
+      BIO_free(ctx->data);
+    ctx->data = bio;
+    ctx->flags |= TS_VFY_DATA;
+    lua_pushboolean(L, 1);
+    return 1;
+  }
+  return 0;
+}
+
+static int openssl_ts_verify_ctx_imprint(lua_State*L) {
+  TS_VERIFY_CTX *ctx = CHECK_OBJECT(1, TS_VERIFY_CTX, "openssl.ts_verify_ctx");
+  if (lua_isnone(L, 2)) {
+    lua_pushlstring(L, ctx->imprint, ctx->imprint_len);
+    return 1;
+  } else {
+    size_t imprint_len;
+    const char* imprint = luaL_checklstring(L, 2, &imprint_len);
+    
+    ctx->imprint = (unsigned char*)imprint;
+    ctx->imprint_len = imprint_len;
+    ctx->flags |= TS_VFY_IMPRINT;
+    lua_pushboolean(L, 1);
+    return 1;
+  }
 }
 
 static LUA_FUNCTION(openssl_ts_verify_ctx_gc)
 {
   TS_VERIFY_CTX *ctx = CHECK_OBJECT(1, TS_VERIFY_CTX, "openssl.ts_verify_ctx");
+  lua_pushnil(L);
+  lua_setmetatable(L, 1);
   TS_VERIFY_CTX_free(ctx);
-  //void TS_VERIFY_CTX_cleanup(TS_VERIFY_CTX *ctx);
   return 0;
 }
 
-static LUA_FUNCTION(openssl_ts_verify_ctx_response)
+static LUA_FUNCTION(openssl_ts_verify_ctx_verify)
 {
   TS_VERIFY_CTX *ctx = CHECK_OBJECT(1, TS_VERIFY_CTX, "openssl.ts_verify_ctx");
-  TS_RESP *response = CHECK_OBJECT(2, TS_RESP, "openssl.ts_resp");
-  int ret = TS_RESP_verify_response(ctx, response);
-  lua_pushboolean(L, ret);
-  return 1;
-}
-
-static LUA_FUNCTION(openssl_ts_verify_ctx_token)
-{
-  TS_VERIFY_CTX *ctx = CHECK_OBJECT(1, TS_VERIFY_CTX, "openssl.ts_verify_ctx");
-  PKCS7 *token = CHECK_OBJECT(2, PKCS7, "openssl.pkcs7");
-  int ret = TS_RESP_verify_token(ctx, token);
-  lua_pushboolean(L, ret);
-  return 1;
+  int ret = 0;
+  if(auxiliar_isclass(L, "openssl.ts_resp", 2)) {
+    TS_RESP *response = CHECK_OBJECT(2, TS_RESP, "openssl.ts_resp");
+    ret = TS_RESP_verify_response(ctx, response);
+  }else if(auxiliar_isclass(L, "openssl.pkcs7", 2))
+  {
+    PKCS7 *token = CHECK_OBJECT(2, PKCS7, "openssl.pkcs7");
+    ret = TS_RESP_verify_token(ctx, token);
+  }else if(lua_isstring(L, 2)){
+    size_t size;
+    const char* data = lua_tolstring(L, 2, &size);
+    TS_RESP *resp = d2i_TS_RESP(NULL, &data, size);
+    if (resp) {
+      ret = TS_RESP_verify_response(ctx, resp);
+      TS_RESP_free(resp);
+    }else
+      luaL_argerror(L, 2, "data is not ts_resp object");
+  }else {
+    luaL_argerror(L, 2, "must be ts_resp or pkcs7 object");
+  }
+  return openssl_pushresult(L, ret);
 }
 
 static luaL_Reg ts_verify_ctx_funs[] =
 {
-  {"verify_response",   openssl_ts_verify_ctx_response},
-  {"verify_token",      openssl_ts_verify_ctx_token},
+  {"store",             openssl_ts_verify_ctx_store},
+  {"certs",             openssl_ts_verify_ctx_certs},
+  {"flags",             openssl_ts_verify_ctx_flags},
+  {"verify",            openssl_ts_verify_ctx_verify},
+  {"data",              openssl_ts_verify_ctx_data},
+  {"imprint",           openssl_ts_verify_ctx_imprint},
 
   {"__tostring",        auxiliar_tostring},
   {"__gc",              openssl_ts_verify_ctx_gc},
