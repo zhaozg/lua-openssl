@@ -726,13 +726,13 @@ static int openssl_x509_extensions(lua_State* L)
       lua_pushnil(L);
     return 1;
   }else {
-    STACK_OF(X509_EXTENSION) *exts = CHECK_OBJECT(1, STACK_OF(X509_EXTENSION), "openssl.stack_of_x509_extension");
+    STACK_OF(X509_EXTENSION) *exts = CHECK_OBJECT(2, STACK_OF(X509_EXTENSION), "openssl.stack_of_x509_extension");
     int i, n, ret;
     n = sk_X509_EXTENSION_num(exts);
     for(i=0, ret=1; i<n && ret==1; i++)
     {
       X509_EXTENSION *ext = sk_X509_EXTENSION_value(exts, i);
-      X509_add_ext(peer, ext, i);
+      ret = X509_add_ext(peer, ext, i);
     };
     return openssl_pushresult(L, ret);
   }

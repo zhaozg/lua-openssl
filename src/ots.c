@@ -108,11 +108,17 @@ static int openssl_ts_req_msg_imprint(lua_State*L) {
       X509_ALGOR* alg = X509_ALGOR_new();
       X509_ALGOR_set_md(alg, md);
       if(ret==1)
+      {
         ret = TS_MSG_IMPRINT_set_algo(msg,alg);
+        if(ret==1)
+          ret = TS_REQ_set_msg_imprint(req,msg);
+      }
       X509_ALGOR_free(alg);
     }
+
     if(ret!=1)
       TS_MSG_IMPRINT_free(msg);
+
     return openssl_pushresult(L, ret);
   }
 };
@@ -151,7 +157,6 @@ static LUA_FUNCTION(openssl_ts_req_to_verify_ctx)
 static LUA_FUNCTION(openssl_ts_req_read)
 {
   BIO *in = load_bio_object(L, 1);
-  int fmt = luaL_checkoption(L, 2, "auto", format);
   TS_REQ *ts_req = d2i_TS_REQ_bio(in, NULL);
   BIO_free(in);
   if (ts_req) {
@@ -163,7 +168,7 @@ static LUA_FUNCTION(openssl_ts_req_read)
 
 static LUA_FUNCTION(openssl_ts_req_export)
 {
-  TS_REQ *ts_req = CHECK_OBJECT(1, TS_REQ, "opensl.ts_req");
+  TS_REQ *ts_req = CHECK_OBJECT(1, TS_REQ, "openssl.ts_req");
   unsigned char *data = NULL;
   int len = i2d_TS_REQ(ts_req, &data);
   if (len>0) {
@@ -221,18 +226,6 @@ static LUA_FUNCTION(openssl_ts_req_info)
   }
 
   BIO_free(bio);
-  return 1;
-}
-
-
-
-static LUA_FUNCTION(openssl_ts_req_d2i)
-{
-  size_t l;
-  const char* buf = luaL_checklstring(L, 1, &l);
-
-  TS_REQ *req = d2i_TS_REQ(NULL, (const byte**)&buf, l);
-  PUSH_OBJECT(req, "openssl.ts_req");
   return 1;
 }
 
@@ -537,10 +530,6 @@ static LUA_FUNCTION(openssl_ts_create_response)
   return 1;
 }
 
-
-/*  openssl.ts_resp_ctx_newsign(x509 signer, evp_pkey pkey, string def_policy, table options[, stack_of_x509 certs=nil] ) -> ts_resp_ctx {{{1
-*/
-
 static LUA_FUNCTION(openssl_ts_resp_ctx_new)
 {
   TS_RESP_CTX* ctx = TS_RESP_CTX_new();
@@ -558,7 +547,7 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_new)
     }else if(auxiliar_isclass(L, "openssl.evp_pkey", i)) 
     {
       pkey = CHECK_OBJECT(i, EVP_PKEY, "openssl.evp_pkey");
-    }else if(lua_isnumber(L, i) || auxiliar_isclass(L, "openssl.asn1_object",i))
+    }else if(lua_isnumber(L, i) || lua_isstring(L, i) || auxiliar_isclass(L, "openssl.asn1_object",i))
     {
       nid = openssl_get_nid(L, i);
     }else
@@ -571,7 +560,8 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_new)
       luaL_error(L, "singer cert and private key not match");
     }
   }
-  if (ret==1 && nid!=NID_undef)
+  /* if (ret==1 && nid!=NID_undef) */
+  if (ret==1)
     ret = TS_RESP_CTX_set_def_policy(ctx, OBJ_nid2obj(nid));
 
   if (ret==1 && signer)

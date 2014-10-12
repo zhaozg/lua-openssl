@@ -431,7 +431,13 @@ int openssl_get_nid(lua_State*L, int idx) {
   if (lua_isnumber(L,idx)){
     return luaL_checkint(L, idx);
   }else if(lua_isstring(L, idx)) {
-    return OBJ_txt2nid(lua_tostring(L, idx));
+    int nid = NID_undef;
+    ASN1_OBJECT* obj = OBJ_txt2obj(lua_tostring(L, idx), 0);
+    if(obj) {
+      nid = OBJ_obj2nid(obj);
+      ASN1_OBJECT_free(obj);
+    }
+    return nid;
   }else if(lua_isuserdata(L, idx)) {
     ASN1_OBJECT* obj = CHECK_OBJECT(idx, ASN1_OBJECT, "openssl.asn1_object");
     int nid = obj->nid;

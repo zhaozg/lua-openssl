@@ -25,31 +25,18 @@ function req_read() end
 -- @treturn ts_resp object
 function resp_read() end
 
+--- create ts_resp_ctx object
+-- @tparam[opt] x509 signer timestamp certificate
+-- @tparam[opt] evp_pkey pkey private key to sign ts_req
+-- @tparam[opt] asn1_object|string|nid identity for default policy object
+-- @treturn ts_resp_ctx object
+
+function resp_ctx_new() end
+
 --- create ts_verify_ctx object
 -- @tparam[opt=nil] string|ts_req reqdata
 -- @treturn ts_verify_ctx object
 function verify_ctx_new() end
-
--------------
-openssl.ts.req_new(string req, string|digest md [,table option={version=1,policy=,nonce=,cert_req=}] ) => openssl.ts_req
-
---- read x509_req from string or bio input
--- @tparam bio|string input input data
--- @tparam[opt='auto'] string format support 'auto','pem','der'
--- @treturn x509_req certificate sign request object
-function read() end
-
-
-lua-openssl timestamp modules has four object, ts_req,ts_resp,ts_resp_ctx,ts_verify_ctx
-
-
-openssl.ts.req_d2i(string der) => openssl.ts_req
-
-openssl.ts.resp_d2i(string der) => openssl.ts_resp
-
-openssl.ts.resp_ctx_new(x509 tscert, evp_pkey tspkey, sk_x509 extra_certs,string default_policy,table options[, function serial_cb]) => ts_resp_ctx
-
-openssl.ts.verify_ctx_new() => ts_verify_ctx
 
 end  -- define module
 
@@ -152,7 +139,7 @@ end
 
 --- openssl.ts_verify_ctx object
 -- @type ts_verify_ctx
-
+do
 --- verify ts_resp object, pkcs7 token or ts_resp data
 -- @tparam ts_resp|pkcs7|string data
 -- @treturn boolean result
@@ -205,8 +192,8 @@ function imprint() end
 
 end
 
---- openssl.ts_verify_ctx object
--- @type ts_verify_ctx
+--- openssl.ts_resp_ctx object
+-- @type ts_resp_ctx
 
 do
 
