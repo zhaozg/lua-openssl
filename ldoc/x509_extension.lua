@@ -17,6 +17,11 @@ do  -- define module function
 -- @see x509_extension_param_table
 function new_extension() end
 
+--- read der encoded x509_extension
+-- @tparam string data der encoded
+-- @treutrn x509_extension mappling to X509_EXTENSION in openssl
+function read_extension() end
+
 --- Create stack_of_x509_extension object, which mapping to STACK_OF(X509_EXTENSION)
 --
 -- @tparam table node_array, each node is a x509_extension node
@@ -112,6 +117,10 @@ function data() end
 -- @treturn[2] nil nil when occure error
 -- @treturn[2] string errmsg error message
 function data() end
+
+--- export x509_extenion to der encoded string
+-- @treturn string 
+function export() end
 
 end
 

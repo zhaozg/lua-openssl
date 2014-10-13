@@ -67,6 +67,18 @@ static int openssl_xext_dup(lua_State* L)
   return 1;
 };
 
+static int openssl_xext_export(lua_State* L)
+{
+  X509_EXTENSION *x = CHECK_OBJECT(1, X509_EXTENSION, "openssl.x509_extension");
+  unsigned char* p = NULL;
+  int len = i2d_X509_EXTENSION(x, &p);
+  if(len>0){
+    lua_pushlstring(L, p, len);
+  }else
+    lua_pushnil(L);
+  return 1;
+};
+
 static int openssl_xext_free(lua_State* L)
 {
   X509_EXTENSION *x = CHECK_OBJECT(1, X509_EXTENSION, "openssl.x509_extension");
@@ -143,6 +155,7 @@ static luaL_Reg x509_extension_funs[] =
 {
   {"info",          openssl_xext_info},
   {"dup",           openssl_xext_dup},
+  {"export",        openssl_xext_export},
 
   /* set and get */
   {"object",        openssl_xext_object},
@@ -207,6 +220,18 @@ static int openssl_xext_new(lua_State* L)
   return 1;
 };
 
+static int openssl_xext_read(lua_State* L)
+{
+  size_t size;
+  const char* s = luaL_checklstring(L, 1, &size);
+  X509_EXTENSION *x = d2i_X509_EXTENSION(NULL, &s, size);
+  if(x) {
+    PUSH_OBJECT(x, "openssl.x509_extension");
+  }else
+    lua_pushnil(L);
+  return 1;
+};
+
 static int openssl_xext_new_sk(lua_State* L)
 {
   size_t i;
@@ -249,6 +274,7 @@ static int openssl_xexts_totable(lua_State*L)
 static luaL_Reg R[] =
 {
   {"new_extension",           openssl_xext_new},
+  {"read_extension",          openssl_xext_read},
   {"new_sk_extension",        openssl_xext_new_sk},
   {"sktotable",               openssl_xexts_totable},
 
