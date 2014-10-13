@@ -168,7 +168,7 @@ static luaL_Reg x509_extension_funs[] =
   { NULL, NULL }
 };
 
-static X509_EXTENSION* openssl_new_xextension(lua_State*L, X509_EXTENSION** x, int idx, int utf8)
+static X509_EXTENSION* openssl_new_xextension(lua_State*L, int idx)
 {
   int nid;
   int critical = 0;
@@ -196,7 +196,7 @@ static X509_EXTENSION* openssl_new_xextension(lua_State*L, X509_EXTENSION** x, i
     X509_EXTENSION* y;
     value = ASN1_STRING_type_new(V_ASN1_OCTET_STRING);
     ASN1_STRING_set(value,data, size);
-    y = X509_EXTENSION_create_by_NID(x, nid, critical, value);
+    y = X509_EXTENSION_create_by_NID(NULL, nid, critical, value);
     ASN1_STRING_free(value);
     return y;
   }else
@@ -204,18 +204,15 @@ static X509_EXTENSION* openssl_new_xextension(lua_State*L, X509_EXTENSION** x, i
     value = CHECK_OBJECT(-1, ASN1_STRING, "openssl.asn1_string");
     lua_pop(L, 1);
     luaL_argcheck(L, ASN1_STRING_type(value)==V_ASN1_OCTET_STRING, 1,"field value must be octet type openssl.asn1_string");
-    return X509_EXTENSION_create_by_NID(x, nid, critical, value);
+    return X509_EXTENSION_create_by_NID(NULL, nid, critical, value);
   }
 }
 
 static int openssl_xext_new(lua_State* L)
 {
   X509_EXTENSION *x=NULL;
-  int utf8;
   luaL_checktable(L,1);
-  utf8 = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L, 2);
-
-  x = openssl_new_xextension(L, &x, 1, utf8);
+  x = openssl_new_xextension(L, 1);
   PUSH_OBJECT(x,"openssl.x509_extension");
   return 1;
 };
@@ -237,7 +234,6 @@ static int openssl_xext_new_sk(lua_State* L)
   size_t i;
   X509_EXTENSION *x=NULL;
   STACK_OF(X509_EXTENSION) *exts;
-  int utf8 = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L, 2);
   
   luaL_checktable(L,1);
   exts = sk_X509_EXTENSION_new_null();
@@ -245,7 +241,7 @@ static int openssl_xext_new_sk(lua_State* L)
   for (i=0; i<lua_objlen(L, 1); i++)
   {
     lua_rawgeti(L,1, i+1);
-    x = openssl_new_xextension(L, NULL, lua_gettop(L), utf8);
+    x = openssl_new_xextension(L, lua_gettop(L));
     sk_X509_EXTENSION_push(exts, x);
   }
   PUSH_OBJECT(exts, "openssl.stack_of_x509_extension");
