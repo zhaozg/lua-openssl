@@ -568,7 +568,7 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_new)
     ret = TS_RESP_CTX_set_signer_cert(ctx, signer);
   if (ret==1 && pkey)
     ret = TS_RESP_CTX_set_signer_key(ctx, pkey);
-  
+
   if(ret==1){
     PUSH_OBJECT(ctx, "openssl.ts_resp_ctx");
     openssl_newvalue(L, ctx);
