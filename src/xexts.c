@@ -8,6 +8,8 @@
 #include <ctype.h>
 #include "openssl.h"
 #include "private.h"
+#include <openssl/x509v3.h>
+
 #include "sk.h"
 
 #define MYNAME "x509.extension"
@@ -168,11 +170,11 @@ static luaL_Reg x509_extension_funs[] =
   { NULL, NULL }
 };
 
-static X509_EXTENSION* openssl_new_xextension(lua_State*L, int idx)
+static X509_EXTENSION* openssl_new_xextension(lua_State*L, int idx, int v3)
 {
   int nid;
   int critical = 0;
-  ASN1_OCTET_STRING* value;
+  ASN1_OCTET_STRING* value = NULL;
 
   lua_getfield(L, idx, "object");
   nid = openssl_get_nid(L, -1);
@@ -193,12 +195,70 @@ static X509_EXTENSION* openssl_new_xextension(lua_State*L, int idx)
   if(lua_isstring(L, -1)) {
     size_t size;
     const char* data = lua_tolstring(L, -1, &size);
-    X509_EXTENSION* y;
-    value = ASN1_STRING_type_new(V_ASN1_OCTET_STRING);
-    ASN1_STRING_set(value,data, size);
-    y = X509_EXTENSION_create_by_NID(NULL, nid, critical, value);
-    ASN1_STRING_free(value);
-    return y;
+    X509_EXTENSION* y = NULL;
+    if(v3) {
+      const X509V3_EXT_METHOD *method = X509V3_EXT_get_nid(nid);
+      if (method){
+        void *ext_struc = NULL;
+        STACK_OF(CONF_VALUE) *nval = X509V3_parse_list(data);
+        /* Now get internal extension representation based on type */
+        if (method->v2i && nval)
+        {
+          if(sk_CONF_VALUE_num(nval)>0)
+          {
+            ext_struc = method->v2i(method, NULL, nval);
+          }
+        }
+        else if(method->s2i)
+        {
+          ext_struc = method->s2i(method, NULL, data);
+        }
+        if(nval)
+          sk_CONF_VALUE_pop_free(nval, X509V3_conf_free);
+
+        if(ext_struc) {
+          unsigned char *ext_der = NULL;
+          int ext_len;
+          /* Convert internal representation to DER */
+          if (method->it)
+          {
+            ext_der = NULL;
+            ext_len = ASN1_item_i2d(ext_struc, &ext_der, ASN1_ITEM_ptr(method->it));
+            if (ext_len < 0) {
+              ext_der = NULL;
+            }
+          }
+          else
+          {
+            ext_len = method->i2d(ext_struc, NULL);
+            ext_der = OPENSSL_malloc(ext_len);
+            if(ext_der){
+              unsigned char* p = ext_der;
+              method->i2d(ext_struc, &p);
+            }
+          }
+          if(ext_der) {
+            value = ASN1_STRING_type_new(V_ASN1_OCTET_STRING);
+            ASN1_STRING_set(value,ext_der, ext_len);
+          }else
+            value = NULL;
+
+          if(method->it) ASN1_item_free(ext_struc, ASN1_ITEM_ptr(method->it));
+          else method->ext_free(ext_struc);
+        }
+      }
+    }else {
+      value = ASN1_STRING_type_new(V_ASN1_OCTET_STRING);
+      ASN1_STRING_set(value,data, size);
+    }
+    if(value) {
+      y = X509_EXTENSION_create_by_NID(NULL, nid, critical, value);
+      ASN1_STRING_free(value);
+      return y;
+    }else {
+      luaL_error(L, "don't support object(%s) with value (%s)", OBJ_nid2ln(nid), data);
+      return NULL;
+    }
   }else
   {
     value = CHECK_OBJECT(-1, ASN1_STRING, "openssl.asn1_string");
@@ -211,9 +271,16 @@ static X509_EXTENSION* openssl_new_xextension(lua_State*L, int idx)
 static int openssl_xext_new(lua_State* L)
 {
   X509_EXTENSION *x=NULL;
+  int v3 = 1;
   luaL_checktable(L,1);
-  x = openssl_new_xextension(L, 1);
-  PUSH_OBJECT(x,"openssl.x509_extension");
+  if(!lua_isnone(L,2))
+    v3 =lua_toboolean(L, 2);
+  x = openssl_new_xextension(L, 1, v3);
+  if(x) {
+    PUSH_OBJECT(x,"openssl.x509_extension");
+  }else
+    lua_pushnil(L);
+
   return 1;
 };
 
@@ -234,15 +301,19 @@ static int openssl_xext_new_sk(lua_State* L)
   size_t i;
   X509_EXTENSION *x=NULL;
   STACK_OF(X509_EXTENSION) *exts;
-  
+  int v3 = 1;
   luaL_checktable(L,1);
+  if(!lua_isnone(L,2))
+    v3 =lua_toboolean(L, 2);
+
   exts = sk_X509_EXTENSION_new_null();
 
   for (i=0; i<lua_objlen(L, 1); i++)
   {
     lua_rawgeti(L,1, i+1);
-    x = openssl_new_xextension(L, lua_gettop(L));
-    sk_X509_EXTENSION_push(exts, x);
+    x = openssl_new_xextension(L, lua_gettop(L),v3);
+    if(x)
+      sk_X509_EXTENSION_push(exts, x);
   }
   PUSH_OBJECT(exts, "openssl.stack_of_x509_extension");
   return 1;
