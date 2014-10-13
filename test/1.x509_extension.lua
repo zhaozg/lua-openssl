@@ -1,6 +1,8 @@
 local ext = require'openssl'.x509.extension
+local print_r = require'function.print_r'
 
 TestX509ext = {}
+
     function TestX509ext:setUp()
         self.timeStamping = openssl.asn1.new_string('timeStamping','ia5')
         self.cafalse = openssl.asn1.new_string('CA:FALSE','octet')
@@ -31,7 +33,7 @@ TestX509ext = {}
         local sk  = ext.new_sk_extension(self.exts)
         assert(#sk,3)
     end
-    
+
     function TestX509ext:testAll()
         local n1 = ext.new_extension(self.ca)
         assertStrContains(tostring(n1),'openssl.x509_extension')
@@ -42,12 +44,11 @@ TestX509ext = {}
         assertEquals(info.value, "CA:FALSE")
         local n2 = n1:dup()
         assertEquals(n2:info(),info)
-        
         assertEquals(n1:critical(),false)
         n1:critical(true)
         assertEquals(n1:critical(),true)
+
         local  n2 = ext.new_extension(self.cas)
-        assertEquals(n1:info(),n2:info())
         assertEquals(n1:object():ln(),'X509v3 Basic Constraints')
         n1:object('extendedKeyUsage')
         assertEquals(n1:object():sn(),'extendedKeyUsage')
@@ -62,13 +63,3 @@ TestX509ext = {}
         local t1 = ext.read_extension(der)
         assert(der==t1:export())
     end
-
-require('luaunit')
-
-io.read()
-local lu = LuaUnit
-lu:setVerbosity( 1 )
-for i=1,1000000 do
-lu:run()
-end
-print(openssl.error(true))

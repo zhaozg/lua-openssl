@@ -231,7 +231,7 @@ static int openssl_asn1type_info(lua_State* L)
   return 1;
 }
 
-int openssl_push_asn1type(lua_State* L, ASN1_TYPE* type)
+int openssl_push_asn1type(lua_State* L, const ASN1_TYPE* type)
 {
   lua_newtable(L);
   switch (type->type)
@@ -273,7 +273,7 @@ int openssl_push_asn1type(lua_State* L, ASN1_TYPE* type)
       lua_setfield(L, -2, "type");
 
       AUXILIAR_SET(L, -1, "format", "der", string);
-      i = i2d_ASN1_TYPE(type, &dat);
+      i = i2d_ASN1_TYPE((ASN1_TYPE*)type, &dat);
       if (i > 0)
       {
         AUXILIAR_SETLSTR(L, -1, "value", (const char *)dat, i);

@@ -5,8 +5,8 @@ local print_r = require'function.print_r'
 
 require('luaunit')
 
-TestCompat = {}
-    function TestCompat:setUp()
+TestX509 = {}
+    function TestX509:setUp()
         self.alg='sha1'
 
         self.cadn = openssl.x509.name.new({{commonName='CA'},{C='CN'}})
@@ -15,7 +15,7 @@ TestCompat = {}
         self.digest = 'sha1WithRSAEncryption'
     end
     
-function TestCompat:testNew()
+function TestX509:testNew()
         --cacert, self sign
         local pkey = assert(openssl.pkey.new())
         local req = assert(csr.new(self.cadn,pkey))
@@ -53,7 +53,7 @@ function TestCompat:testNew()
         assert(cert:check(openssl.x509.sk_x509_new({cacert})))
 end
 
-function TestCompat:testIO()
+function TestX509:testIO()
 local raw_data = [=[
 -----BEGIN CERTIFICATE-----
 MIIBoDCCAUoCAQAwDQYJKoZIhvcNAQEEBQAwYzELMAkGA1UEBhMCQVUxEzARBgNV

@@ -1,8 +1,6 @@
 local csr = require'openssl'.csr
 local print_r = require'function.print_r'
 
-require('luaunit')
-
 TestCRL = {}
     function TestCRL:setUp()
         self.alg='sha1'
@@ -91,12 +89,3 @@ mOKp8Jla1BibEZf14+/HqCi2hnZUiEXh
         assertEquals(r:count(),#r)
         assertEquals(#r,2)
     end
-
-
-io.read()
-local lu = LuaUnit
-lu:setVerbosity( 0 )
-for i=1,1000000 do
-lu:run()
-end
-

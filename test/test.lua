@@ -12,10 +12,13 @@ dofile('2.hmac.lua')
 dofile('3.cipher.lua')
 dofile('4.pkey.lua')
 dofile('5.csr.lua')
+dofile('5.crl.lua')
 dofile('5.x509.lua')
+dofile('5.ts.lua')
 
---LuaUnit:setVerbosity(10)
+LuaUnit:setVerbosity(0)
 for i=1,1000000 do
 LuaUnit:run()
+print(openssl.error(true))
 collectgarbage()
 end

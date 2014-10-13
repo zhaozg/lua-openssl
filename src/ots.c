@@ -115,9 +115,7 @@ static int openssl_ts_req_msg_imprint(lua_State*L) {
       }
       X509_ALGOR_free(alg);
     }
-
-    if(ret!=1)
-      TS_MSG_IMPRINT_free(msg);
+    TS_MSG_IMPRINT_free(msg);
 
     return openssl_pushresult(L, ret);
   }
@@ -179,11 +177,9 @@ static LUA_FUNCTION(openssl_ts_req_export)
   return 0;
 }
 
-
 static LUA_FUNCTION(openssl_ts_req_info)
 {
-  TS_REQ *req = CHECK_OBJECT(1, TS_REQ, "openssl.ts_req");
-  BIO* bio = BIO_new(BIO_s_mem());
+  TS_REQ *req = CHECK_OBJECT(1, TS_REQ, "openssl.ts_req"); 
 
   lua_newtable(L);
 #if 0
@@ -222,10 +218,10 @@ static LUA_FUNCTION(openssl_ts_req_info)
 
   if (req->extensions)
   {
-    AUXILIAR_SETOBJECT(L, req->extensions, "openssl.stack_of_x509_extension", -1, "extensions");
+    STACK_OF(X509_EXTENSION) *extensions = sk_X509_EXTENSION_dup(req->extensions);
+    AUXILIAR_SETOBJECT(L, extensions, "openssl.stack_of_x509_extension", -1, "extensions");
   }
 
-  BIO_free(bio);
   return 1;
 }
 
@@ -334,12 +330,15 @@ static int openssl_push_ts_msg_imprint(lua_State*L, TS_MSG_IMPRINT* imprint) {
   X509_ALGOR* alg = TS_MSG_IMPRINT_get_algo(imprint);
   ASN1_STRING* str =  TS_MSG_IMPRINT_get_msg(imprint);
   lua_newtable(L);
-  openssl_push_x509_algor(L, alg);
-  lua_setfield(L, -2, "algo");
-  PUSH_ASN1_OCTET_STRING(L, str);
-  lua_setfield(L, -2, "msg");
-  X509_ALGOR_free(alg);
-  ASN1_STRING_free(str);
+  if(alg) {
+    openssl_push_x509_algor(L, alg);
+    lua_setfield(L, -2, "algo");
+  }
+  if(str) {
+    PUSH_ASN1_OCTET_STRING(L, str);
+    lua_setfield(L, -2, "msg");
+  }
+
   return 1;
 };
 
@@ -404,11 +403,11 @@ static LUA_FUNCTION(openssl_ts_resp_info)
   TS_RESP *res = CHECK_OBJECT(1, TS_RESP, "openssl.ts_resp");
   int utf8 = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L, 2);
 
-  BIO* bio = BIO_new(BIO_s_mem());
   lua_newtable(L);
 
   {
     lua_newtable(L);
+
     PUSH_ASN1_INTEGER(L, res->status_info->status);
     lua_setfield(L, -2, "status");
 
@@ -439,17 +438,15 @@ static LUA_FUNCTION(openssl_ts_resp_info)
 
   if (res->token)
   {
-    AUXILIAR_SETOBJECT(L, PKCS7_dup(res->token), "openssl.pkcs7", -1, "token");
+    PKCS7* token = PKCS7_dup(res->token);
+    AUXILIAR_SETOBJECT(L, token, "openssl.pkcs7", -1, "token");
   }
-
 
   if (res->tst_info)
   {
     openssl_push_ts_tst_info(L, res->tst_info, utf8);
     lua_setfield(L, -2, "tst_info");
   }
-
-  BIO_free(bio);
 
   return 1;
 }
@@ -987,6 +984,7 @@ static LUA_FUNCTION(openssl_ts_verify_ctx_new)
   TS_VERIFY_CTX *ctx = NULL;
   if (lua_isnone(L, 1)) {
     ctx = TS_VERIFY_CTX_new();
+    ctx->flags |= TS_VFY_SIGNATURE;
   }else if(lua_isstring(L, 1)) {
     BIO* bio = load_bio_object(L, 1);
     TS_REQ* req = d2i_TS_REQ_bio(bio, NULL);
@@ -1002,8 +1000,6 @@ static LUA_FUNCTION(openssl_ts_verify_ctx_new)
     ctx = TS_REQ_to_TS_VERIFY_CTX(req, NULL);
   }
   if (ctx) {
-    ctx->flags |= TS_VFY_SIGNATURE;
-
     PUSH_OBJECT(ctx, "openssl.ts_verify_ctx");
   }else
     lua_pushnil(L);
@@ -1093,7 +1089,8 @@ static int openssl_ts_verify_ctx_imprint(lua_State*L) {
     size_t imprint_len;
     const char* imprint = luaL_checklstring(L, 2, &imprint_len);
     
-    ctx->imprint = (unsigned char*)imprint;
+    ctx->imprint = OPENSSL_malloc(imprint_len);
+    memcpy(ctx->imprint, imprint, imprint_len);;
     ctx->imprint_len = imprint_len;
     ctx->flags |= TS_VFY_IMPRINT;
     lua_pushboolean(L, 1);
@@ -1144,6 +1141,7 @@ static luaL_Reg ts_verify_ctx_funs[] =
   {"verify",            openssl_ts_verify_ctx_verify},
   {"data",              openssl_ts_verify_ctx_data},
   {"imprint",           openssl_ts_verify_ctx_imprint},
+//  {"info",              openssl_ts_verify_ctx_info},
 
   {"__tostring",        auxiliar_tostring},
   {"__gc",              openssl_ts_verify_ctx_gc},
