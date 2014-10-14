@@ -357,40 +357,6 @@ static LUA_FUNCTION(openssl_x509_public_key)
   }
 }
 
-const static int iPurpose[] =
-{
-  0,
-  X509_PURPOSE_SSL_CLIENT,
-  X509_PURPOSE_SSL_SERVER,
-  X509_PURPOSE_NS_SSL_SERVER,
-  X509_PURPOSE_SMIME_SIGN,
-  X509_PURPOSE_SMIME_ENCRYPT,
-  X509_PURPOSE_CRL_SIGN,
-  X509_PURPOSE_ANY,
-  X509_PURPOSE_OCSP_HELPER,
-#if OPENSSL_VERSION_NUMBER > 0x10000000L
-  X509_PURPOSE_TIMESTAMP_SIGN,
-#endif
-  0
-};
-
-const static char* sPurpose[] =
-{
-  "NONE",
-  "ssl_client",
-  "ssl_server",
-  "ns_ssl_server",
-  "smime_sign",
-  "smime_encrypt",
-  "crl_sign",
-  "any",
-  "ocsp_helper",
-#if OPENSSL_VERSION_NUMBER > 0x10000000L
-  "timestamp_sign",
-#endif
-  NULL
-};
-
 static int verify_cb(int ok, X509_STORE_CTX *ctx)
 {
   char buf[256];
@@ -452,8 +418,7 @@ static LUA_FUNCTION(openssl_x509_check)
   {
     STACK_OF(X509)* cert_stack =  CHECK_OBJECT(2, STACK_OF(X509), "openssl.stack_of_x509");
     STACK_OF(X509)* untrustedchain = lua_isnoneornil(L, 3) ?  NULL : CHECK_OBJECT(3, STACK_OF(X509), "openssl.stack_of_x509");
-    int purpose = auxiliar_checkoption(L, 4, "NONE", sPurpose, iPurpose);
-
+    int purpose = X509_PURPOSE_get_by_sname((char*)luaL_optstring(L, 4, "any"));
     X509_STORE * cainfo = skX509_to_store(cert_stack, NULL, NULL);
     int ret = 0;
     /*
@@ -868,13 +833,62 @@ static luaL_Reg x509_funcs[] =
   {NULL,      NULL},
 };
 
+
+static int openssl_push_purpose(lua_State*L , X509_PURPOSE* purpose) {
+  lua_newtable(L);
+
+  AUXILIAR_SET(L, -1, "purpose", purpose->purpose, integer);
+  AUXILIAR_SET(L, -1, "trust", purpose->trust, integer);
+  AUXILIAR_SET(L, -1, "flags", purpose->flags, integer);
+
+  AUXILIAR_SET(L, -1, "name", purpose->name, string);
+  AUXILIAR_SET(L, -1, "sname", purpose->sname, string);
+
+  return 1;
+};
+
+static int openssl_x509_purpose(lua_State*L) {
+  if(lua_isnoneornil(L, 1))
+  {
+    int count = X509_PURPOSE_get_count();
+    int i;
+    lua_newtable(L);
+    for(i=0; i < count; i++)
+    {
+      X509_PURPOSE* purpose = X509_PURPOSE_get0(i);
+      openssl_push_purpose(L, purpose);
+      lua_rawseti(L, -2, i+1);
+    }
+    return 1;
+  }else if(lua_isnumber(L, 1)) {
+    int idx = X509_PURPOSE_get_by_id(lua_tointeger(L, 1));
+    if(idx>=0) {
+      X509_PURPOSE* purpose = X509_PURPOSE_get0(idx);
+      openssl_push_purpose(L, purpose);
+    }else
+      lua_pushnil(L);
+    return 1;
+  }
+  else if(lua_isstring(L, 1)) {
+    char* name = (char*)lua_tostring(L, 1);
+    int idx = X509_PURPOSE_get_by_sname(name);
+    if(idx>=0){
+      X509_PURPOSE* purpose = X509_PURPOSE_get0(idx);
+      openssl_push_purpose(L, purpose);
+    }else
+      lua_pushnil(L);
+    return 1;
+  }
+  return 0;
+};
+
 static luaL_reg R[] =
 {
   {"new",           openssl_x509_new },
   {"read",          openssl_x509_read },
   {"sk_x509_read",  openssl_sk_x509_read },
   {"sk_x509_new",   openssl_sk_x509_new },
-
+  {"purpose",       openssl_x509_purpose},
   {NULL,    NULL}
 };
 

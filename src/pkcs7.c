@@ -161,7 +161,7 @@ static LUA_FUNCTION(openssl_pkcs7_decrypt)
 {
   PKCS7 *p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
   X509 *cert = CHECK_OBJECT(2, X509, "openssl.x509");
-  EVP_PKEY *key = lua_isnoneornil(L, 3) ? NULL : CHECK_OBJECT(3, EVP_PKEY, "openssl.evp_pkey");
+  EVP_PKEY *key = CHECK_OBJECT(3, EVP_PKEY, "openssl.evp_pkey");
   long flags = luaL_optint(L, 4, 0);
   BIO *out = BIO_new(BIO_s_mem());
 

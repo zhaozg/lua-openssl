@@ -24,6 +24,16 @@ function new () end
 -- @treturn x509 certificate object
 function read() end
 
+--- return all supported purpose as table
+-- @treturn table
+function purpose() end
+
+--- get special purpose info as table
+-- @tparam number|string purpose id or short name
+-- @treturn table
+function purpose() end
+
+
 end --define module
 
 do  -- define class
