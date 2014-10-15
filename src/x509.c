@@ -108,7 +108,7 @@ int opensl_push_general_name(lua_State*L, const GENERAL_NAME* general_name, int 
 };
 
 /*** openssl.x509 object methods ***/
-X509_STORE * skX509_to_store(STACK_OF(X509)* calist, const char* files, const char* dirs)
+X509_STORE * skX509_to_store(STACK_OF(X509)* calist, const char* files, const char* dirs, int trust)
 {
   X509_STORE *store = X509_STORE_new();
   if (store)
@@ -137,6 +137,8 @@ X509_STORE * skX509_to_store(STACK_OF(X509)* calist, const char* files, const ch
       }
     }
   }
+  X509_STORE_set_trust(store, trust);
+  X509_STORE_set_flags(store, X509_V_FLAG_CHECK_SS_SIGNATURE);
   return store;
 }
 
@@ -297,7 +299,7 @@ static LUA_FUNCTION(openssl_x509_parse)
     int set;
     X509_PURPOSE *purp = X509_PURPOSE_get0(i);
     int id = X509_PURPOSE_get_id(purp);
-    const char * pname = useshortnames ? X509_PURPOSE_get0_sname(purp) : X509_PURPOSE_get0_name(purp);
+    const char * pname = X509_PURPOSE_get0_sname(purp);
 
     set = X509_check_purpose(cert, id, 0);
     if (set)
@@ -419,7 +421,7 @@ static LUA_FUNCTION(openssl_x509_check)
     STACK_OF(X509)* cert_stack =  CHECK_OBJECT(2, STACK_OF(X509), "openssl.stack_of_x509");
     STACK_OF(X509)* untrustedchain = lua_isnoneornil(L, 3) ?  NULL : CHECK_OBJECT(3, STACK_OF(X509), "openssl.stack_of_x509");
     int purpose = X509_PURPOSE_get_by_sname((char*)luaL_optstring(L, 4, "any"));
-    X509_STORE * cainfo = skX509_to_store(cert_stack, NULL, NULL);
+    X509_STORE * cainfo = skX509_to_store(cert_stack, NULL, NULL, 1);
     int ret = 0;
     /*
     X509_STORE_set_verify_cb_func(cainfo,verify_cb);

@@ -82,4 +82,7 @@ sggwDQYJKoZIhvcNAQEEBQADQQCU5SSgapJSdRXJoX+CpCvFy+JVh9HpSjCpSNKO
         
         assert(x:subject())
         assert(x:issuer())
+        
+        x = x509.purpose()
+        assert(#x==9)
 end

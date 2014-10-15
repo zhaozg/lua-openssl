@@ -16,6 +16,8 @@ dofile('5.crl.lua')
 dofile('5.x509.lua')
 dofile('5.ts.lua')
 
+dofile('7.pkcs12.lua')
+
 LuaUnit:setVerbosity(0)
 for i=1,1000000 do
 LuaUnit:run()

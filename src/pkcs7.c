@@ -89,7 +89,7 @@ static LUA_FUNCTION(openssl_pkcs7_verify)
   STACK_OF(X509) *cainfo = lua_isnoneornil(L, 3) ? NULL : CHECK_OBJECT(3, STACK_OF(X509), "openssl.stack_of_x509");
   BIO* in = lua_isnoneornil(L, 4) ? NULL : load_bio_object(L, 4);
   long flags = luaL_optint(L, 5, 0);
-  X509_STORE * store = skX509_to_store(cainfo, NULL, NULL);
+  X509_STORE * store = skX509_to_store(cainfo, NULL, NULL, 1);
   BIO* out = BIO_new(BIO_s_mem());
 
   //flags = flags & ~PKCS7_DETACHED;

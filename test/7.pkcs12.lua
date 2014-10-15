@@ -1,52 +1,49 @@
 
 local csr = require'openssl'.csr
-local print_r = require'function.print_r'
-
-
-require('luaunit')
 
 TestCompat = {}
     function TestCompat:setUp()
         self.alg='sha1'
+        self.cadn = openssl.x509.name.new({{commonName='CA'},{C='CN'}})
+        self.dn = openssl.x509.name.new({{commonName='DEMO'},{C='CN'}})
 
-        self.dn = {commonName='zhaozg'}
         self.digest = 'sha1WithRSAEncryption'
     end
 
 
 function TestCompat:testNew()
         local pkey = assert(openssl.pkey.new())
-        local req = assert(csr.new(pkey,self.dn))
-        t = req:parse()
-        assert(req:verify());
+        local req = assert(csr.new(self.cadn,pkey))
+        local t = req:parse()
+        assertEquals(type(t),'table')
 
-        local args = {}
-        args.attribs = {}
-        args.extentions = {}
-        args.digest = 'sha1WithRSAEncryption'
-        args.num_days = 365
+        local cacert = openssl.x509.new(
+                1,      --serialNumber
+                req     --copy name and extensions
+        )
+        local dkey = openssl.pkey.new()
+        req = assert(csr.new(self.dn,dkey))
+        
+        local extensions = 
+        openssl.x509.extension.new_sk_extension(
+        {{
+            object='nsCertType',
+            value = 'email',
+            --critical = true
+        },{
+            object='extendedKeyUsage',
+            value = 'emailProtection' 
+        }})
 
-        args.serialNumber = 1
-        cacert = assert(req:sign(nil,pkey,args))
-        args.serialNumber = 2
+        local cert = openssl.x509.new(2,req,extensions)
+        cert:validat(os.time(), os.time() + 3600*24*365)
+        assert(cert:sign(pkey,cacert))
 
-        local pkey1 = assert(openssl.pkey.new())
-        local req1 = assert(csr.new(pkey1,{CN='user'}))
-        cert1 = assert(req1:sign(cert,pkey,args))
+        local certs = assert(x509.sk_x509_new({cert}))
 
-        local cask = assert(x509.sk_x509_new({cacert}))
-
-        local ss = assert(openssl.pkcs12.export(cert1,pkey1,'secret','USER'))
+        local ss = assert(openssl.pkcs12.export(cert,dkey,'secret','USER'))
         local tt = assert(openssl.pkcs12.read(ss,'secret'))
---        print_r(tt)
-
+        assertIsTable(tt)
+        assertStrContains(tostring(tt.cert),"openssl.x509")
+        assertStrContains(tostring(tt.pkey),"openssl.evp_pkey")
 end
-
-io.read()
-local lu = LuaUnit
-lu:setVerbosity( 0 )
-for k=1,10000000 do
-lu:run()
-end
-print(openssl.error(true))
-
