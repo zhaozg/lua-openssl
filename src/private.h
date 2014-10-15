@@ -50,8 +50,6 @@ const EVP_CIPHER* get_cipher(lua_State* L, int idx, const char* def_alg);
 BIGNUM *BN_get(lua_State *L, int i);
 int openssl_engine(lua_State *L);
 
-X509_STORE* skX509_to_store(STACK_OF(X509)* calist, const char* files, const char* dirs, int trust);
-
 void to_hex(const char* in, int length, char* out);
 
 int openssl_push_asn1type(lua_State* L, const ASN1_TYPE* type);
@@ -75,6 +73,7 @@ int openssl_get_asn1type(lua_State*L, int idx);
 int openssl_register_xname(lua_State*L);
 int openssl_register_xattribute(lua_State*L);
 int openssl_register_xextension(lua_State*L);
+int openssl_register_xstore(lua_State*L);
 
 int openssl_pushresult(lua_State*L, int result);
 

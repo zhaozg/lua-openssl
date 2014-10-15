@@ -107,41 +107,6 @@ int opensl_push_general_name(lua_State*L, const GENERAL_NAME* general_name, int 
   return 1;
 };
 
-/*** openssl.x509 object methods ***/
-X509_STORE * skX509_to_store(STACK_OF(X509)* calist, const char* files, const char* dirs, int trust)
-{
-  X509_STORE *store = X509_STORE_new();
-  if (store)
-  {
-    int i;
-    for (i = 0; i < sk_X509_num(calist); i++)
-    {
-      X509 *x = sk_X509_value(calist, i);
-      X509_STORE_add_cert(store, x);
-    }
-
-    if (files)
-    {
-      X509_LOOKUP *file_lookup = X509_STORE_add_lookup(store, X509_LOOKUP_file());
-      if (file_lookup)
-      {
-        X509_LOOKUP_load_file(file_lookup, files, X509_FILETYPE_DEFAULT);
-      }
-    }
-    if (dirs)
-    {
-      X509_LOOKUP *dir_lookup = X509_STORE_add_lookup(store, X509_LOOKUP_hash_dir());
-      if (dir_lookup)
-      {
-        X509_LOOKUP_add_dir(dir_lookup, dirs, X509_FILETYPE_DEFAULT);
-      }
-    }
-  }
-  X509_STORE_set_trust(store, trust);
-  X509_STORE_set_flags(store, X509_V_FLAG_CHECK_SS_SIGNATURE);
-  return store;
-}
-
 static int check_cert(lua_State*L, X509_STORE *ca, X509 *x, STACK_OF(X509) *untrustedchain, int purpose)
 {
   int ret = 0;
@@ -418,17 +383,15 @@ static LUA_FUNCTION(openssl_x509_check)
   }
   else
   {
-    STACK_OF(X509)* cert_stack =  CHECK_OBJECT(2, STACK_OF(X509), "openssl.stack_of_x509");
+    X509_STORE* store = CHECK_OBJECT(2, X509_STORE, "openssl.x509_store");
     STACK_OF(X509)* untrustedchain = lua_isnoneornil(L, 3) ?  NULL : CHECK_OBJECT(3, STACK_OF(X509), "openssl.stack_of_x509");
     int purpose = X509_PURPOSE_get_by_sname((char*)luaL_optstring(L, 4, "any"));
-    X509_STORE * cainfo = skX509_to_store(cert_stack, NULL, NULL, 1);
     int ret = 0;
     /*
     X509_STORE_set_verify_cb_func(cainfo,verify_cb);
     */
-    ret = check_cert(L, cainfo, cert, untrustedchain, purpose);
+    ret = check_cert(L, store, cert, untrustedchain, purpose);
     lua_pushboolean(L, ret);
-    X509_STORE_free(cainfo);
   }
 
   return 1;
@@ -907,6 +870,8 @@ LUALIB_API int luaopen_x509(lua_State *L)
   lua_setfield(L, -2, "attribute");
   openssl_register_xextension(L);
   lua_setfield(L, -2, "extension");
+  openssl_register_xstore(L);
+  lua_setfield(L, -2, "store");
 
   lua_pushliteral(L, "version");    /** version */
   lua_pushliteral(L, MYVERSION);
