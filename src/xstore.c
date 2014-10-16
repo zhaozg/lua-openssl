@@ -74,7 +74,7 @@ static int openssl_xstore_purpose(lua_State* L)
 static int openssl_xstore_trust(lua_State* L)
 {
   X509_STORE* ctx = CHECK_OBJECT(1, X509_STORE, "openssl.x509_store");
-  int trust = luaL_checkint(L, 2);
+  int trust = auxiliar_checkboolean(L, 2);
   int ret = X509_STORE_set_trust(ctx, trust);
   return openssl_pushresult(L, ret);
 }

@@ -2,9 +2,6 @@
 local csr = require'openssl'.csr
 local print_r = require'function.print_r'
 
-
-require('luaunit')
-
 TestX509 = {}
     function TestX509:setUp()
         self.alg='sha1'
@@ -35,7 +32,7 @@ function TestX509:testNew()
         d = pkey:decrypt(c)
         assert(d=='abcd')
         assert(cacert:check(pkey),'self sign check failed')
-        assert(cacert:check(openssl.x509.sk_x509_new({cacert}) ))
+        assert(cacert:check(openssl.x509.store.new({cacert}) ))
         
         --sign cert by cacert
 
@@ -50,7 +47,7 @@ function TestX509:testNew()
         assert(d=='abcd')
         assert(cert:check(dkey),'self private match failed')
 
-        assert(cert:check(openssl.x509.sk_x509_new({cacert})))
+        assert(cert:check(openssl.x509.store.new({cacert})))
 end
 
 function TestX509:testIO()

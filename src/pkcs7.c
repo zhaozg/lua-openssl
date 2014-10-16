@@ -60,7 +60,7 @@ static LUA_FUNCTION(openssl_pkcs7_sign)
   X509 *cert = CHECK_OBJECT(2, X509, "openssl.x509");
   EVP_PKEY *privkey = CHECK_OBJECT(3, EVP_PKEY, "openssl.evp_pkey");
   STACK_OF(X509) *others = lua_isnoneornil(L, 4) ? 0 : CHECK_OBJECT(4, STACK_OF(X509), "openssl.stack_of_x509");
-  long flags =  lua_isnoneornil(L, 5) ? 0 : luaL_checkint(L, 5);
+  long flags =  luaL_optint(L, 5, 0);
 
   PKCS7 *p7 = NULL;
   if (!X509_check_private_key(cert, privkey))
@@ -91,36 +91,36 @@ static LUA_FUNCTION(openssl_pkcs7_verify)
   long flags = luaL_optint(L, 5, 0);
   BIO* out = BIO_new(BIO_s_mem());
 
-  //flags = flags & ~PKCS7_DETACHED;
-
   if (!store)
   {
     luaL_error(L, "can't setup veirfy cainfo");
   }
 
-  if (PKCS7_verify(p7, signers, store, in, out, flags))
+  if (PKCS7_verify(p7, signers, store, in, out, flags)==1)
   {
     STACK_OF(X509) *signers1 = PKCS7_get0_signers(p7, NULL, flags);
-    if (in)
-      lua_pushboolean(L, 1);
-    else
+    if (out)
     {
       BUF_MEM *bio_buf;
 
       BIO_get_mem_ptr(out, &bio_buf);
       lua_pushlstring(L, bio_buf->data, bio_buf->length);
-    }
+      ret = 1;
+    }else
+      ret = 0;
 
-    PUSH_OBJECT(signers1, "openssl.sk_x509");
-    ret = 2;
+    if(signers1) {
+      signers1 = sk_X509_dup(signers1);
+      PUSH_OBJECT(signers1, "openssl.sk_x509");
+      ret+=1;
+    }
   }
   else
   {
     lua_pushnil(L);
     ret = 1;
   }
-  if (store)
-    X509_STORE_free(store);
+
   if (out)
     BIO_free(out);
   if (in)

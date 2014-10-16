@@ -97,7 +97,8 @@ function TestTS:testAll()
     --print_r(t)
     
     local skx = openssl.x509.sk_x509_new({cacert})
-    assert(x509:check(skx,nil,'timestamp_sign'))
+    local store = openssl.x509.store.new({cacert})
+    assert(x509:check(store,nil,'timestamp_sign'))
 
     local vry = assert(req:to_verify_ctx())
     assert(vry:store(skx))

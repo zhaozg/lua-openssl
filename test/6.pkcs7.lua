@@ -10,10 +10,9 @@ TestCompat = {}
         self.digest = 'sha1WithRSAEncryption'
     end
 
-
     function TestCompat:testNew()
-        local pkey = assert(openssl.pkey.new())
-        local req = assert(csr.new(self.cadn,pkey))
+        local cakey = assert(openssl.pkey.new())
+        local req = assert(csr.new(self.cadn,cakey))
         local t = req:parse()
         assertEquals(type(t),'table')
 
@@ -21,9 +20,18 @@ TestCompat = {}
                 1,      --serialNumber
                 req     --copy name and extensions
         )
+        cacert:validat(os.time(), os.time() + 3600*24*361)
+        assert(cacert:sign(cakey, cacert))  --self sign
+
         local dkey = openssl.pkey.new()
         req = assert(csr.new(self.dn,dkey))
         
+        local e = openssl.x509.extension.new_extension(
+        {
+            object='keyUsage',
+            value = 'smimesign' 
+        },false
+        )
         local extensions = 
         openssl.x509.extension.new_sk_extension(
         {{
@@ -34,11 +42,12 @@ TestCompat = {}
             object='extendedKeyUsage',
             value = 'emailProtection' 
         }})
-
+        --extensions:push(e)
+        
         local cert = openssl.x509.new(2,req,extensions)
         cert:validat(os.time(), os.time() + 3600*24*365)
-        assert(cert:sign(pkey,cacert))
-
+        assert(cert:sign(cakey,cacert))
+        
         msg = 'abcd'
         skcert = assert(x509.sk_x509_new({cert}))
         p7 = assert(pkcs7.encrypt(msg,skcert))
@@ -52,19 +61,7 @@ TestCompat = {}
         --t = p7:parse()
         --print_r(t)
         assert(p7:export())
-        skca = assert(x509.sk_x509_new({cacert}))
-        local ret,signer = p7:verify(skcert,skca)
-        for i=1, 5 do
-        print(openssl.error(true))
-        end
+        local store = openssl.x509.store.new({cacert})
+        local ret,signer = assert(p7:verify(skcert,store))
 end
 
-require('luaunit')
-io.read()
-
-local lu = LuaUnit
-lu:setVerbosity( 0 )
-for i=1,1000000 do
-lu:run()
-end
-print(openssl.error(true))
