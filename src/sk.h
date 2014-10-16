@@ -8,9 +8,9 @@
 #include "openssl.h"
 
 #ifdef CRYPTO_LOCK_REF
-  #define REF_OR_DUP(TYPE, x)  CRYPTO_add(&x->references,1,CRYPTO_LOCK_##TYPE)
+ #define REF_OR_DUP(TYPE, x)  CRYPTO_add(&x->references,1,CRYPTO_LOCK_##TYPE)
 #else
-  #define REF_OR_DUP(TYPE, x) x = ##TYPE##_dup(x)
+  #define REF_OR_DUP(TYPE, x) x = TYPE##_dup(x)
 #endif 
 
 #define TAB2SK(TYPE, type)                                        \
@@ -55,7 +55,7 @@ STACK_OF(TYPE)* sk_##type##_fromtable(lua_State*L, int idx) {     \
 #define SK_FREE(TYPE,type) static int sk_##type##_free(lua_State* L) {            \
   STACK_OF(TYPE)* sk = CHECK_OBJECT(1, STACK_OF(TYPE), "openssl.stack_of_"#type); \
   if (sk) {                                                                       \
-    sk_##TYPE##_pop_free(sk, ##TYPE##_free);                                      \
+    sk_##TYPE##_pop_free(sk, TYPE##_free);                                        \
   }                                                                               \
   return 0;                                                                       \
 }
