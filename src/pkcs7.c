@@ -423,21 +423,21 @@ while (lua_next(L, headers) != 0)
 
 static luaL_Reg pkcs7_funcs[] =
 {
-  {"parse",       openssl_pkcs7_parse},
+  {"parse",         openssl_pkcs7_parse},
   {"export",        openssl_pkcs7_export},
   {"decrypt",       openssl_pkcs7_decrypt},
   {"verify",        openssl_pkcs7_verify},
 
-  {"__gc",        openssl_pkcs7_gc       },
-  {"__tostring",      auxiliar_tostring },
+  {"__gc",          openssl_pkcs7_gc       },
+  {"__tostring",    auxiliar_tostring },
 
   {NULL,      NULL}
 };
 
 static const luaL_Reg R[] =
 {
-  {"read",      openssl_pkcs7_read},
-  {"sign",      openssl_pkcs7_sign},
+  {"read",        openssl_pkcs7_read},
+  {"sign",        openssl_pkcs7_sign},
   {"verify",      openssl_pkcs7_verify},
   {"encrypt",     openssl_pkcs7_encrypt},
   {"decrypt",     openssl_pkcs7_decrypt},
