@@ -417,14 +417,14 @@ static LUA_FUNCTION(openssl_crl_digest)
 {
   X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
   byte buf[EVP_MAX_MD_SIZE];
-  int lbuf = sizeof(buf);
+  unsigned int lbuf = sizeof(buf);
   const EVP_MD *md = lua_isnoneornil(L, 2)
     ? EVP_get_digestbyname("sha1") : get_digest(L, 2);
 
   int ret =  X509_CRL_digest(crl, md, buf, &lbuf);
   if(ret==1)
   {
-    lua_pushlstring(L, buf, lbuf);
+    lua_pushlstring(L, (const char*)buf, (size_t)lbuf);
     return ret;
   }
   return openssl_pushresult(L, ret);
@@ -439,6 +439,7 @@ static LUA_FUNCTION(openssl_crl_cmp)
   return 1;
 }
 
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
 static LUA_FUNCTION(openssl_crl_diff)
 {
   X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
@@ -446,7 +447,7 @@ static LUA_FUNCTION(openssl_crl_diff)
   EVP_PKEY* pkey = CHECK_OBJECT(3, EVP_PKEY, "openssl.evp_pkey");
   const EVP_MD *md = lua_isnoneornil(L, 4)
     ? EVP_get_digestbyname("sha1") : get_digest(L, 4);
-  int flags = luaL_optinteger(L, 5, 0);
+  unsigned int flags = luaL_optinteger(L, 5, 0);
 
   X509_CRL *diff  =  X509_CRL_diff(crl, newer, pkey, md, flags);
   if(diff)
@@ -456,21 +457,11 @@ static LUA_FUNCTION(openssl_crl_diff)
     lua_pushnil(L);
   return 1;
 }
-
-static LUA_FUNCTION(openssl_crl_check_suiteb)
-{
-  X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
-  EVP_PKEY* pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
-  unsigned long flags = luaL_optinteger(L, 3, 0);
-
-  int ret = X509_CRL_check_suiteb(crl, pkey, flags);
-  return openssl_pushresult(L, ret==X509_V_OK);
-}
+#endif
 
 static LUA_FUNCTION(openssl_crl_parse)
 {
   X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
-  int utf8 = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L, 2);
   int n, i;
 
   lua_newtable(L);
@@ -661,8 +652,10 @@ static luaL_Reg crl_funcs[] =
   {"verify",          openssl_crl_verify},
   {"sign",            openssl_crl_sign},
   {"digest",          openssl_crl_digest},
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
   {"diff",            openssl_crl_diff},
-  {"check",           openssl_crl_check_suiteb},
+#endif
 
   /* set and get */
   {"version",         openssl_crl_version},
@@ -718,9 +711,6 @@ static int openssl_revoked_info(lua_State* L)
   }
   return 1;
 };
-
-
-IMP_LUA_SK(X509_REVOKED,x509_revoked)
 
 static int openssl_revoked_reason(lua_State* L)
 {
@@ -837,7 +827,6 @@ LUALIB_API int luaopen_crl(lua_State *L)
 {
   auxiliar_newclass(L, "openssl.x509_crl", crl_funcs);
   auxiliar_newclass(L, "openssl.x509_revoked", revoked_funcs);
-  openssl_register_sk_x509_revoked(L);
 
   luaL_register(L, MYNAME, R);
 

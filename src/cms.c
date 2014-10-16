@@ -249,7 +249,7 @@ static int openssl_cms_EncryptedData_decrypt(lua_State*L)
 static char *memdup(const char *src, size_t buffer_length)
 {
   size_t length;
-  int add = FALSE;
+  int add = 0;
   char *buffer;
 
   if (buffer_length)
@@ -257,7 +257,7 @@ static char *memdup(const char *src, size_t buffer_length)
   else if (src)
   {
     length = strlen(src);
-    add = TRUE;
+    add = 1;
   }
   else
     /* no length and a NULL src pointer! */

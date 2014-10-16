@@ -126,7 +126,7 @@ static LUA_FUNCTION(openssl_ts_req_new)
   TS_REQ *ts_req = TS_REQ_new();
   long version = luaL_optinteger(L, 1, 1);
 
-  int ret = TS_REQ_set_version(ts_req, 1);
+  int ret = TS_REQ_set_version(ts_req, version);
   if (ret==1) {
     PUSH_OBJECT(ts_req, "openssl.ts_req");
     return 1;
@@ -170,7 +170,7 @@ static LUA_FUNCTION(openssl_ts_req_export)
   unsigned char *data = NULL;
   int len = i2d_TS_REQ(ts_req, &data);
   if (len>0) {
-    lua_pushlstring(L, data, len);
+    lua_pushlstring(L, data, (size_t)len);
     OPENSSL_free(data);
     return 1;
   }
@@ -250,7 +250,7 @@ static ASN1_INTEGER *tsa_serial_cb(TS_RESP_CTX *ctx, void *data)
   lua_State *L = (lua_State*) data;
   ASN1_INTEGER *serial = NULL;
 
-  lua_rawgeti(L, LUA_REGISTRYINDEX, (int)(intptr_t)ctx);
+  lua_rawgetp(L, LUA_REGISTRYINDEX, ctx);
   if (lua_isnil(L, -1))
   {
     TS_RESP_CTX_set_status_info(ctx, TS_STATUS_REJECTION,
@@ -1120,7 +1120,7 @@ static LUA_FUNCTION(openssl_ts_verify_ctx_verify)
     ret = TS_RESP_verify_token(ctx, token);
   }else if(lua_isstring(L, 2)){
     size_t size;
-    const char* data = lua_tolstring(L, 2, &size);
+    const unsigned char* data = lua_tolstring(L, 2, &size);
     TS_RESP *resp = d2i_TS_RESP(NULL, &data, size);
     if (resp) {
       ret = TS_RESP_verify_response(ctx, resp);

@@ -381,7 +381,7 @@ static int openssl_ssl_ctx_new_bio(lua_State*L)
       SSL_set_mode(ssl, SSL_MODE_AUTO_RETRY);
     if (server)
     {
-      BIO* acpt = BIO_new_accept(host_addr);
+      BIO* acpt = BIO_new_accept((char*)host_addr);
       bio = BIO_push(acpt, bio);
     }
     else

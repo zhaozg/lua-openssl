@@ -287,7 +287,7 @@ static int openssl_xext_new(lua_State* L)
 static int openssl_xext_read(lua_State* L)
 {
   size_t size;
-  const char* s = luaL_checklstring(L, 1, &size);
+  const unsigned char* s = (const unsigned char*)luaL_checklstring(L, 1, &size);
   X509_EXTENSION *x = d2i_X509_EXTENSION(NULL, &s, size);
   if(x) {
     PUSH_OBJECT(x, "openssl.x509_extension");

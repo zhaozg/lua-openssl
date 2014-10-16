@@ -780,7 +780,7 @@ static LUA_FUNCTION(openssl_pkey_encrypt)
   EVP_PKEY *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
   const char *data = luaL_checklstring(L, 2, &dlen);
   int padding = auxiliar_checkoption(L, 3, "pkcs1", sPadding, iPadding);
-  int clen = EVP_PKEY_size(pkey);
+  size_t clen = EVP_PKEY_size(pkey);
   EVP_PKEY_CTX *ctx = NULL;
   int ret = 0;
 
@@ -817,7 +817,7 @@ static LUA_FUNCTION(openssl_pkey_decrypt)
   EVP_PKEY *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
   const char *data = luaL_checklstring(L, 2, &dlen);
   int padding = auxiliar_checkoption(L, 3, "pkcs1", sPadding, iPadding);
-  int clen = EVP_PKEY_size(pkey);
+  size_t clen = EVP_PKEY_size(pkey);
   EVP_PKEY_CTX *ctx = NULL;
   int ret = 0;
 
@@ -1347,7 +1347,7 @@ static LUA_FUNCTION(openssl_open_init)
 
 static LUA_FUNCTION(openssl_open_update) {
   EVP_CIPHER_CTX* ctx = CHECK_OBJECT(1, EVP_CIPHER_CTX, "openssl.evp_cipher_ctx");
-  int data_len;
+  size_t data_len;
   const char* data = luaL_checklstring(L, 2, &data_len);
 
   int len = EVP_CIPHER_CTX_block_size(ctx) + data_len;
@@ -1355,7 +1355,7 @@ static LUA_FUNCTION(openssl_open_update) {
 
   if (EVP_OpenUpdate(ctx, buf, &len, (unsigned char *)data, data_len))
   {
-    lua_pushlstring(L, buf, len);
+    lua_pushlstring(L, (const char*)buf, len);
   }else
     luaL_error(L,"EVP_OpenUpdate fail");
 

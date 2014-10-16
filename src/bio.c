@@ -626,7 +626,7 @@ static LUA_FUNCTION(openssl_bio_set_callback)
   int ret;
   luaL_argcheck(L, lua_isfunction(L, 2), 2, "need function");
   lua_pushvalue(L, 2);
-  lua_rawseti(L,LUA_REGISTRYINDEX,(int)bio);
+  lua_rawsetp(L,LUA_REGISTRYINDEX,bio);
   ret = BIO_set_info_callback(bio, BIO_info_callback);
   return openssl_pushresult(L,ret);
 }

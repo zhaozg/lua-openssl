@@ -349,8 +349,7 @@ void thread_cleanup(void)
   OPENSSL_free(lock_count);
 }
 
-static void pthreads_locking_callback(int mode, int type, char *file,
-                               int line)
+static void pthreads_locking_callback(int mode, int type, const char *file, int line)
 {
 #if 0
   fprintf(stderr, "thread=%4d mode=%s lock=%s %s:%d\n",

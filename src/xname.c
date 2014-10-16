@@ -281,7 +281,7 @@ static int openssl_xname_new(lua_State*L) {
 
 static int openssl_xname_d2i(lua_State*L) {
   size_t len;
-  const char* dat = luaL_checklstring(L, 1, &len);
+  const unsigned char* dat = luaL_checklstring(L, 1, &len);
   X509_NAME* xn = d2i_X509_NAME(NULL, &dat, len);
   if (xn)
     PUSH_OBJECT(xn,"openssl.x509_name");

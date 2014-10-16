@@ -215,10 +215,7 @@ static LUA_FUNCTION(openssl_x509_export)
 static LUA_FUNCTION(openssl_x509_parse)
 {
   int i;
-  X509 * cert = CHECK_OBJECT(1, X509, "openssl.x509");
-  int utf8 = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L, 2);
-  int useshortnames = lua_isnoneornil(L, 3) ? 0 : lua_toboolean(L, 3);
-
+  X509 * cert = CHECK_OBJECT(1, X509, "openssl.x509"); 
   lua_newtable(L);
 
   if (cert->name)

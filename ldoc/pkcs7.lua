@@ -72,11 +72,11 @@ function export() end
 function parse() end
 
 --- verify pkcs7 object, and return msg content, follow by singers
--- @tparam[opt=0] number flags
 -- @tparam[opt] stack_of_x509 signercerts
 -- @tparam[opt] stack_of_x509 cacerts
 -- @tparam[opt] stack_of_x509 extracerts
 -- @tparam[opt] string|bio msg
+-- @tparam[opt=0] number flags
 -- @treturn string content
 -- @treturn stack_of_x509 signers 
 function verify() end

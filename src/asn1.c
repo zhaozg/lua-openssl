@@ -79,7 +79,7 @@ static int openssl_asn1type_new(lua_State*L) {
   int ret = 1;
   if (lua_isboolean(L, 1)) {
     int b = lua_toboolean(L, 1);
-    ASN1_TYPE_set(at, V_ASN1_BOOLEAN, (void*)b);
+    ASN1_TYPE_set(at, V_ASN1_BOOLEAN, b?&b:0);
   }else if(lua_isnumber(L, 1)) {
     long n = lua_tointeger(L, 1);
     ASN1_INTEGER* ai = ASN1_INTEGER_new();
@@ -124,7 +124,7 @@ static int openssl_asn1type_octet(lua_State*L) {
     octet = OPENSSL_malloc(len+1);
     len = ASN1_TYPE_get_octetstring(at, octet, len+1);
     if(len>=0)
-      lua_pushlstring(L, octet, len);
+      lua_pushlstring(L, octet, (size_t)len);
     else
       lua_pushnil(L);
     OPENSSL_free(octet);
@@ -169,7 +169,7 @@ static int openssl_asn1type_i2d(lua_State*L) {
   unsigned char* out = NULL;
   int len = i2d_ASN1_TYPE(at,&out);
   if(len>0)
-    lua_pushlstring(L, out, len);
+    lua_pushlstring(L, out, (size_t)len);
   else
     lua_pushnil(L);
   OPENSSL_free(out);
@@ -286,7 +286,7 @@ int openssl_push_asn1type(lua_State* L, const ASN1_TYPE* type)
 
 static int openssl_asn1type_d2i(lua_State*L) {
   size_t size;
-  const char* data = luaL_checklstring(L, 1, &size);
+  const unsigned char* data = (const unsigned char*)luaL_checklstring(L, 1, &size);
   ASN1_TYPE* at = d2i_ASN1_TYPE(NULL, &data, size);
   if(at) {
     PUSH_OBJECT(at,"openssl.asn1_type");
@@ -700,7 +700,7 @@ int openssl_get_asn1type(lua_State*L, int idx) {
   {
     int i;
     const char* st = lua_tostring(L, idx);
-    for (i = 0; stricmp(st, asTypes[i]); i++);
+    for (i = 0; strcasecmp(st, asTypes[i]); i++);
     return isTypes[i];
   }
   return 0;

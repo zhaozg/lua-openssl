@@ -7,15 +7,10 @@ LIB_OPTION	?= -shared
 #Lua auto detect
 LUA_VERSION ?= $(shell pkg-config luajit --print-provides)
 ifeq ($(LUA_VERSION),)                         ############ Not use luajit
-LUA_VERSION ?= $(shell pkg-config lua --print-provides)
-ifeq ($(LUA_VERSION),)
-LUA_CFLAGS	?= $(shell pkg-config lua --cflags)
-LUA_LIBS	?= $(shell pkg-config lua --libs)
-else
-LUA_CFLAGS	?= -I$(PREFIX)/include/lua5.2
-LUA_LIBS	?= -L$(PREFIX)/lib -llua5.2
-endif
-else                                          ############ Use luajit
+LUAV		?= $(shell lua -e "_,_,v=string.find(_VERSION,'Lua (.+)');print(v)")
+LUA_CFLAGS	?= -I$(PREFIX)/include/lua$(LUAV)
+LUA_LIBS	?= -L$(PREFIX)/lib -llua$(LUAV)
+else                                           ############ Use luajit
 LUA_CFLAGS	?= $(shell pkg-config luajit --cflags)
 LUA_LIBS	?= $(shell pkg-config luajit --libs)
 endif
@@ -48,14 +43,14 @@ OPENSSL_CFLAGS=$(shell pkg-config openssl --cflags)
 # Compilation directives
 WARN_MOST	= -Wall -fPIC -W -Waggregate-return -Wcast-align -Wmissing-prototypes -Wnested-externs -Wshadow -Wwrite-strings -pedantic
 WARN		= -Wall -fPIC -Wno-unused-value
-CFLAGS		+= $(WARN) $(OPENSSL_CFLAGS) $(LUA_CFLAGS) -DPTHREADS 
+WARN_MIN	= -fPIC 
+CFLAGS		+= $(WARN_MIN) $(OPENSSL_CFLAGS) $(LUA_CFLAGS) -DPTHREADS 
 CC= gcc -g -fPIC $(CFLAGS)
 
 
-OBJS=src/asn1.o src/auxiliar.o src/bio.o src/cipher.o src/compat.o src/crl.o src/csr.o src/digest.o src/ec.o src/engine.o \
-src/hmac.o src/lbn.o src/lhash.o src/misc.o src/ocsp.o src/openssl.o src/ots.o src/util.o src/cms.o \
-src/pkcs12.o src/pkcs7.o src/pkey.o src/ssl.o src/x509.o src/xname.o src/xexts.o src/xattrs.o src/th-lock.o
-
+OBJS=src/asn1.o src/auxiliar.o src/bio.o src/cipher.o src/cms.o src/compat.o src/crl.o src/csr.o src/dh.o src/digest.o src/dsa.o \
+src/ec.o src/engine.o src/hmac.o src/lbn.o src/lhash.o src/misc.o src/ocsp.o src/openssl.o src/ots.o src/pkcs12.o src/pkcs7.o    \
+src/pkey.o src/rsa.o src/ssl.o src/th-lock.o src/util.o src/x509.o src/xattrs.o src/xexts.o src/xname.o src/xstore.o 
 
 .c.o:
 	$(CC) $(CFLAGS) -c -o $@ $?
