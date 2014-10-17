@@ -122,15 +122,12 @@ function push() end
 
 --- remove bio from chain
 -- @tparam bio toremove
--- @TODO return
 function pop() end
 
 --- free a chain
--- @TODO return
 function free_all() end
 
 --- close bio
--- @TODO return
 function close() end
 
 --- get type of bio
