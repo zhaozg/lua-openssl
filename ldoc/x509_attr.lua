@@ -20,7 +20,7 @@ function new_attribute() end
 --- Create stack_of_x509_attribute object, which mapping to STACK_OF(X509_ATTRIBUTE)
 --
 -- @tparam table node_array, each node is a x509_attribute node
--- @treturn[1] sk_x509_attribute mapping to STACK_OF(X509_ATTRIBUTE) in openssl
+-- @treturn sk_x509_attribute mapping to STACK_OF(X509_ATTRIBUTE) in openssl
 --
 -- @see new_attribute, sk
 function new_sk_attribute() end
@@ -43,7 +43,7 @@ do -- define module table
 --   value = string or asn1_string value
 -- }
 -- 
--- @see new_string
+function new_attribute() end
 
 --- x509_attribute infomation table
 --

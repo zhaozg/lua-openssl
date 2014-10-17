@@ -81,7 +81,7 @@ function check() end
 function parse() end
 
 --- get count of revoked entry
--- @treutrn number count
+-- @treturn number count
 -- @usage
 --  assert(#crl==crl:count())
 function count() end

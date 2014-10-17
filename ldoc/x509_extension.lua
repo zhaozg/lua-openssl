@@ -19,7 +19,7 @@ function new_extension() end
 
 --- read der encoded x509_extension
 -- @tparam string data der encoded
--- @treutrn x509_extension mappling to X509_EXTENSION in openssl
+-- @treturn x509_extension mappling to X509_EXTENSION in openssl
 function read_extension() end
 
 --- Create stack_of_x509_extension object, which mapping to STACK_OF(X509_EXTENSION)
@@ -47,8 +47,7 @@ do -- define module table
 --   critical = false,
 --   value = string or asn1_string value
 -- }
--- 
--- @see new_string
+function new_extension() end
 
 --- x509_extension infomation table
 -- other field is number type, and value table is alter name.(I not understand clearly)

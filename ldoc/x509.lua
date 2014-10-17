@@ -15,7 +15,6 @@ do --define module function
 -- @tparam[opt] stack_of_x509_extension extensions add to x509
 -- @tparam[opt] stack_of_x509_attribute attributes add to x509
 -- @treturn x509 certificate object
--- @see x509_req
 function new () end
 
 --- read x509 from string or bio input
@@ -96,14 +95,14 @@ function pubkey() end
 function extensions() end
 
 --- set extension of x509 object
--- @tparam stack_of_x509_extension
+-- @tparam stack_of_x509_extension extensions
 -- @treturn boolean result true for success
 function extensions() end
 
 --- get issuer name of x509
 -- @tparam[opt=false] boolean asobject, true for return as x509_name object, or as table
 -- @treturn[1] x509_name issuer
--- @treutrn[1] table issuer name as table
+-- @treturn[1] table issuer name as table
 function issuer() end
 
 --- set issuer name of x509
@@ -114,7 +113,7 @@ function issuer() end
 --- get subject name of x509
 -- @tparam[opt=false] boolean asobject, true for return as x509_name object, or as table
 -- @treturn[1] x509_name subject name
--- @treutrn[1] table subject name as table
+-- @treturn[1] table subject name as table
 function subject() end
 
 --- set subject name of x509
@@ -123,7 +122,7 @@ function subject() end
 function subject() end
 
 --- get serial number of x509
--- @tparam[opt=true] asobject
+-- @tparam[opt=true] boolean asobject
 -- @treturn[1] bn object
 -- @treturn[2] string result
 function serial() end
@@ -162,7 +161,7 @@ function notafter() end
 -- @tparam[opt] number time, default will use now time
 -- @treturn boolean result true for valid, or for invalid
 -- @treturn string notbefore
--- @treutrn string notafter
+-- @treturn string notafter
 function validat()
 
 --- set valid time, notbefore and notafter
