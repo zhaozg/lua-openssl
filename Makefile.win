@@ -1,10 +1,10 @@
-# $Id: Makefile.win,v 1.11 2008/05/07 19:06:37 carregal Exp $
-
 T= openssl
 
 include config.win
 
-OBJS=src\auxiliar.obj src\bio.obj src\cipher.obj src\crl.obj src\csr.obj src\digest.obj src\misc.obj src\openssl.obj src\pkcs12.obj src\pkcs7.obj  src\pkey.obj src\x509.obj src\ots.obj src\conf.obj
+OBJS=src\asn1.obj src\auxiliar.obj src\bio.obj src\cipher.obj src\cms.obj src\compat.obj src\crl.obj src\csr.obj src\dh.obj src\digest.obj src\dsa.obj \
+src\ec.obj src\engine.obj src\hmac.obj src\lbn.obj src\lhash.obj src\misc.obj src\ocsp.obj src\openssl.obj src\ots.obj src\pkcs12.obj src\pkcs7.obj    \
+src\pkey.obj src\rsa.obj src\ssl.obj src\th-lock.obj src\util.obj src\x509.obj src\xattrs.obj src\xexts.obj src\xname.obj src\xstore.obj 
 
 
 lib: src\$T.dll

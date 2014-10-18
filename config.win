@@ -3,12 +3,12 @@
 LUA_LIBDIR= "d:\work\luabuild\bin\Win32Debug\clibs\"
 
 # Lua includes and lib
-LUA_INC= "d:\work\lua-5.1\src"
-LUA_LIB= "d:\work\lua-5.1\src\lua51.lib"
+LUA_INC= "e:\work\lua-5.1\src"
+LUA_LIB= "e:\work\lua-5.1\src\lua51.lib"
 
 # Openssl include and lib
-OPENSSL_INC="d:\work\portable\openssl\inc32"
-OPENSSL_LIB="d:\work\portable\openssl\out32\libeay32.lib d:\work\portable\openssl\out32\ssleay32.lib"
+OPENSSL_INC="e:\work\openssl\master\include"
+OPENSSL_LIB="e:\work\openssl\master\lib\libeay32.lib e:\work\openssl\master\lib\ssleay32.lib"
 
 LIBNAME= $T.dll
 
