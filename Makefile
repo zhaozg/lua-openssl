@@ -1,7 +1,6 @@
 T=openssl
 
 PREFIX		?=/usr/local
-LUA_LIBDIR	?=$(PREFIX)/lib/lua/5.1
 LIB_OPTION	?= -shared 
 
 #Lua auto detect
@@ -10,7 +9,10 @@ ifeq ($(LUA_VERSION),)                         ############ Not use luajit
 LUAV		?= $(shell lua -e "_,_,v=string.find(_VERSION,'Lua (.+)');print(v)")
 LUA_CFLAGS	?= -I$(PREFIX)/include/lua$(LUAV)
 LUA_LIBS	?= -L$(PREFIX)/lib 
+LUA_LIBDIR	?= $(PREFIX)/lib/lua/$(LUAV)
 else
+LUAV		?= $(shell lua -e "_,_,v=string.find(_VERSION,'Lua (.+)');print(v)")
+LUA_CFLAGS	?= -I$(PREFIX)/include/lua$(LUAV)
 LUA_CFLAGS	?= $(shell pkg-config luajit --cflags)
 LUA_LIBS	?= $(shell pkg-config luajit --libs)
 endif
