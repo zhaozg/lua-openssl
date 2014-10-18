@@ -1215,7 +1215,7 @@ static int openssl_ssl_current_cipher(lua_State *L)
   const SSL_CIPHER* c = SSL_get_current_cipher(s);
   if (c) {
     int bits, algbits;
-    luaL_Buffer B = {0};
+    char err[LUAL_BUFFERSIZE] = {0};;
 
     lua_newtable(L);
 
@@ -1229,7 +1229,7 @@ static int openssl_ssl_current_cipher(lua_State *L)
     AUXILIAR_SET(L, -1, "bits", bits, integer);
     AUXILIAR_SET(L, -1, "algbits", algbits, integer);
 
-    AUXILIAR_SET(L, -1, "description", SSL_CIPHER_description((SSL_CIPHER*)c, B.buffer, sizeof(B.buffer)), string);
+    AUXILIAR_SET(L, -1, "description", SSL_CIPHER_description((SSL_CIPHER*)c, err, sizeof(err)), string);
 
     return 1;
   }
@@ -1328,8 +1328,8 @@ static int openssl_ssl_get(lua_State*L)
     }
     else if (strcmp(what, "shared_ciphers") == 0)
     {
-      luaL_Buffer buf = {0};
-      lua_pushstring(L, SSL_get_shared_ciphers(s, buf.buffer, sizeof(buf.buffer)));
+      char buf[LUAL_BUFFERSIZE] = {0};
+      lua_pushstring(L, SSL_get_shared_ciphers(s, buf, sizeof(buf)));
     }
     else if (strcmp(what, "cipher_list") == 0)
     {

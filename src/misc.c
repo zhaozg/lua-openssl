@@ -139,9 +139,9 @@ int openssl_pushresult(lua_State*L, int result)
     i++;
     while (val)
     {
-      luaL_Buffer B = {0};
-      ERR_error_string_n(val, B.buffer, sizeof(B.buffer));
-      lua_pushstring(L, B.buffer);
+      char err[LUAL_BUFFERSIZE] = {0};
+      ERR_error_string_n(val, err, sizeof(err));
+      lua_pushstring(L, err);
       lua_pushinteger(L, val);
       i=i+2;
       val = ERR_get_error();
