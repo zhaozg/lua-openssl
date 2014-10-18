@@ -20,13 +20,19 @@ SYS := $(shell gcc -dumpmachine)
 ifneq (, $(findstring linux, $(SYS)))
 # Do linux things
 LDFLAGS		= -fPIC -lrt -ldl
+CFLAGS		= -fPIC
+OPENSSL_LIBS=$(shell pkg-config openssl --libs) 
+OPENSSL_CFLAGS=$(shell pkg-config openssl --cflags)
 endif
 ifneq (, $(findstring mingw, $(SYS)))
 # Do mingw things
-LDFLAGS		= -mwindows -lws2_32 -lcrypt32
+LDFLAGS		= -mwindows -lcrypt32 -lssl -lcrypto -llua -lws2_32 
+LUA_CFLAGS  = -I$(PREFIX)/include/
 endif
 ifneq (, $(findstring cygwin, $(SYS)))
 # Do cygwin things
+OPENSSL_LIBS=$(shell pkg-config openssl --libs) 
+OPENSSL_CFLAGS=$(shell pkg-config openssl --cflags)
 endif
 
 #custome config
@@ -37,14 +43,12 @@ endif
 LIBNAME= $T.so.$V
 
 #LIB_OPTION= -bundle -undefined dynamic_lookup #for MacOS X
-OPENSSL_LIBS=$(shell pkg-config openssl --libs) 
-OPENSSL_CFLAGS=$(shell pkg-config openssl --cflags)
 
 # Compilation directives
 WARN_MOST	= -Wall -W -Waggregate-return -Wcast-align -Wmissing-prototypes -Wnested-externs -Wshadow -Wwrite-strings -pedantic
 WARN		= -Wall -Wno-unused-value
 WARN_MIN	= 
-CFLAGS		+=-fPIC -DPIC $(WARN_MIN) $(OPENSSL_CFLAGS) $(LUA_CFLAGS) -DPTHREADS 
+CFLAGS		+= $(WARN_MIN) $(OPENSSL_CFLAGS) $(LUA_CFLAGS) -DPTHREADS 
 CC= gcc -g $(CFLAGS)
 
 
