@@ -22,19 +22,21 @@ SYS := $(shell gcc -dumpmachine)
 ifneq (, $(findstring linux, $(SYS)))
 # Do linux things
 LDFLAGS		= -fPIC -lrt -ldl
-CFLAGS		= -fPIC
-OPENSSL_LIBS=$(shell pkg-config openssl --libs) 
-OPENSSL_CFLAGS=$(shell pkg-config openssl --cflags)
+OPENSSL_LIBS	= $(shell pkg-config openssl --libs) 
+OPENSSL_CFLAGS	= $(shell pkg-config openssl --cflags)
+CFLAGS		= -fPIC $(OPENSSL_CFLAGS) $(LUA_CFLAGS)
 endif
 ifneq (, $(findstring mingw, $(SYS)))
 # Do mingw things
 LDFLAGS		= -mwindows -lcrypt32 -lssl -lcrypto -llua -lws2_32 
-LUA_CFLAGS  = -I$(PREFIX)/include/
+LUA_CFLAGS  	= -I$(PREFIX)/include/
+CFLAGS		= -fPIC $(OPENSSL_CFLAGS) $(LUA_CFLAGS)
 endif
 ifneq (, $(findstring cygwin, $(SYS)))
 # Do cygwin things
-OPENSSL_LIBS=$(shell pkg-config openssl --libs) 
-OPENSSL_CFLAGS=$(shell pkg-config openssl --cflags)
+OPENSSL_LIBS	=$(shell pkg-config openssl --libs) 
+OPENSSL_CFLAGS  =$(shell pkg-config openssl --cflags)
+CFLAGS		= -fPIC $(OPENSSL_CFLAGS) $(LUA_CFLAGS)
 endif
 
 #custome config
