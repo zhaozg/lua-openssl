@@ -102,9 +102,6 @@ Lua-Openssl is heavily updated, if you find bug, please report to [here](https:/
 
 ### Howto 1: Build on Linux/Unix System.
 
-Before building, please change the setting in the config file.
-Works with Lua5.1 (should support Lua5.2 by updating config file).
-
 	make
 	make install
 	make clean
@@ -121,7 +118,14 @@ Works with Lua5.1 (should support Lua5.2 by updating the config.win file).
 
 ### Howto 3: Build on Windows with mingw.
 
-TODO
+	make
+	make install
+	make clean
+
+### Howto 4: Install using luarocks.
+	
+	luarocks install openssl --server=https://rocks.moonscript.org/dev
+
 
 #B.  Example usage
 
