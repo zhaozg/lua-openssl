@@ -1,0 +1,28 @@
+language: c
+
+env:
+  global:
+    - LUAROCKS=2.2.0
+  matrix:
+    - LUA=lua5.1
+    # - LUA=lua5.2
+    # - LUA=luajit
+
+branches:
+  only:
+    - master
+
+before_install:
+  - bash .travis/setup_lua.sh
+
+install: 
+  - sudo make install
+
+script: 
+  - cd test
+  - lua 2.hmac.lua
+
+notifications:
+  email:
+    on_success: change
+    on_failure: always
