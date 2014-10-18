@@ -1014,7 +1014,7 @@ static LUA_FUNCTION(openssl_seal)
 
   if (lua_istable(L, 1))
   {
-    nkeys = lua_objlen(L, 1);
+    nkeys = lua_rawlen(L, 1);
     if (!nkeys)
     {
       luaL_argerror(L, 1, "empty array");
@@ -1133,7 +1133,7 @@ static LUA_FUNCTION(openssl_seal_init)
 
   if (lua_istable(L, 1))
   {
-    nkeys = lua_objlen(L, 1);
+    nkeys = lua_rawlen(L, 1);
     if (!nkeys)
     {
       luaL_argerror(L, 1, "empty array");

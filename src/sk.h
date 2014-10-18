@@ -20,7 +20,7 @@ STACK_OF(TYPE)* sk_##type##_fromtable(lua_State*L, int idx) {     \
     idx, "must be a table as array or nil");                      \
   sk = SKM_sk_new_null(TYPE);                                     \
   if (lua_istable(L,idx)) {                                       \
-    int n = lua_objlen(L, idx);                                   \
+    int n = lua_rawlen(L, idx);                                   \
     int i;                                                        \
     for ( i=0; i<n; i++ ) {                                       \
       TYPE *x;                                                    \

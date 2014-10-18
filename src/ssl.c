@@ -145,7 +145,7 @@ static int openssl_ssl_ctx_add(lua_State*L)
     size_t i;
     luaL_checktable(L, 3);
 
-    for (i = 1; ret == 1 && i <= lua_objlen(L, 3); i++ )
+    for (i = 1; ret == 1 && i <= lua_rawlen(L, 3); i++ )
     {
       lua_rawgeti(L, 3, i);
       x = CHECK_OBJECT(2, X509, "openssl.x509");
@@ -461,7 +461,7 @@ static int verify_cb(int preverify_ok, X509_STORE_CTX *xctx)
         lua_setfield(L, -2, "error_string");
         lua_pushinteger(L, X509_STORE_CTX_get_error_depth(xctx)); 
         lua_setfield(L, -2, "error_depth");
-        lua_rawseti(L,-2, lua_objlen(L, -2)+1);
+        lua_rawseti(L,-2, lua_rawlen(L, -2)+1);
         lua_pop(L,1);
       }
     }
@@ -526,7 +526,7 @@ static int openssl_ssl_ctx_set_verify(lua_State*L)
     size_t i;
     int mode = 0;
     luaL_checktable(L, 2);
-    for(i=0; i < lua_objlen(L, 2); i++) {
+    for(i=0; i < lua_rawlen(L, 2); i++) {
       lua_rawgeti(L, 2, i+1);
       mode |= auxiliar_checkoption(L, -1, NULL, sVerifyMode_Options, iVerifyMode_Options);
       lua_pop(L, 1);

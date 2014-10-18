@@ -53,7 +53,7 @@ static LUA_FUNCTION(openssl_hex)
 static void list_callback(const OBJ_NAME *obj, void *arg)
 {
   lua_State *L = (lua_State *)arg;
-  int idx = (int)lua_objlen(L, -1);
+  int idx = (int)lua_rawlen(L, -1);
   lua_pushstring(L, obj->name);
   lua_rawseti(L, -2, idx + 1);
 }

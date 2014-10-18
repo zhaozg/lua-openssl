@@ -41,7 +41,7 @@ static int openssl_ocsp_request_new(lua_State*L)
 
     if (lua_istable(L, 2))
     {
-      int len = lua_objlen(L, 2);
+      int len = lua_rawlen(L, 2);
       int i;
       for (i = 1; i <= len; i++)
       {

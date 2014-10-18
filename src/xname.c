@@ -235,10 +235,10 @@ static int openssl_new_xname(lua_State*L, X509_NAME* xname, int idx, int utf8)
 {
   int i,n;
   luaL_checktable(L, idx);
-  luaL_argcheck(L, lua_istable(L,idx) && lua_objlen(L,idx)>0, idx,
+  luaL_argcheck(L, lua_istable(L,idx) && lua_rawlen(L,idx)>0, idx,
     "must be not empty table as array");
 
-  n = lua_objlen(L, idx);
+  n = lua_rawlen(L, idx);
   for (i=0; i<n; i++){   
     lua_rawgeti(L, idx, i+1);
     lua_pushnil(L);

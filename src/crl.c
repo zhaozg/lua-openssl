@@ -158,9 +158,9 @@ static LUA_FUNCTION(openssl_crl_new)
   for(i=1; ret==1 && i<=n; i++){
     if (i==1) {
       luaL_argcheck(L, lua_istable(L,1), 1, "must be table contains rovked entry table{reason,time,sn}");
-      if(lua_objlen(L, i)>0) {
+      if(lua_rawlen(L, i)>0) {
         int j,m;
-        m = lua_objlen(L, i);
+        m = lua_rawlen(L, i);
 
         for (j = 1; ret == 1 && j <= m; j++)
         {
