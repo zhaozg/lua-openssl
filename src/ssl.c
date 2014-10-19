@@ -433,7 +433,7 @@ static int verify_cb(int preverify_ok, X509_STORE_CTX *xctx)
       lua_pushinteger(L,preverify_ok);
       PUSH_OBJECT(xctx, "openssl.x509_store_ctx");
 
-      if (lua_pcall(L, 2, 1, 0) == LUA_OK) {
+      if (lua_pcall(L, 2, 1, 0) == 0) {
         int rt = luaL_checkint(L, -1);
         return luaL_checkint(L, -1);
       }
@@ -588,7 +588,7 @@ static int cert_verify_cb(X509_STORE_CTX *xctx,void* u)
       PUSH_OBJECT(xctx, "openssl.x509_store_ctx");
       openssl_getvalue(L, ctx, "cert_verify_data");
 
-      if (lua_pcall(L, 2, 1, 0) == LUA_OK){
+      if (lua_pcall(L, 2, 1, 0) == 0){
         int rt = luaL_checkint(L, -1);
         lua_pop(L, 1);
         return rt;

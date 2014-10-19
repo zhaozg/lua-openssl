@@ -6,7 +6,6 @@
 \*=========================================================================*/
 
 #include "openssl.h"
-#include "compat.h"
 #include "private.h"
 
 #define MYNAME "x509.name"

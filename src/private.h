@@ -1,5 +1,11 @@
 #include "openssl.h"
-#include "compat.h"
+
+#ifdef LUA_JITLIBNAME
+#define LUAI_UINT32 unsigned int
+#endif
+#include "lua-compat\c-api\compat-5.2.h"
+
+#define luaL_checktable(L, n) luaL_checktype(L, n, LUA_TTABLE)
 
 #define AUXILIAR_SETOBJECT(L, cval, ltype, idx, lvar) \
   do {                                                \

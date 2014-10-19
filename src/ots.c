@@ -847,7 +847,7 @@ static ASN1_INTEGER* openssl_serial_cb(TS_RESP_CTX*ctx, void*data) {
   lua_rawgeti(L, LUA_REGISTRYINDEX, arg->ctx);
   lua_rawgeti(L, LUA_REGISTRYINDEX, arg->cb_arg);
   err = lua_pcall(L, 2, 1, 0);
-  if(err=LUA_OK)
+  if(err=0)
   {
     BIGNUM *bn = BN_get(L, -1);
     lua_pop(L,1);
@@ -895,7 +895,7 @@ static int openssl_time_cb(TS_RESP_CTX *ctx, void *data, long *sec, long *usec){
   lua_rawgeti(L, LUA_REGISTRYINDEX, arg->ctx);
   lua_rawgeti(L, LUA_REGISTRYINDEX, arg->cb_arg);
   err = lua_pcall(L, 2, 2, 0);
-  if(err=LUA_OK)
+  if(err=0)
   {
     if(lua_isnil(L, -2)) {
       lua_pop(L, 2);
