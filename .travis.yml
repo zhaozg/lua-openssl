@@ -14,6 +14,8 @@ branches:
 
 before_install:
   - bash .travis/setup_lua.sh
+  - cd deps/lua-compat
+  - git pull
 
 install: 
   - sudo make install
