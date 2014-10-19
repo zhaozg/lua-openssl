@@ -14,7 +14,7 @@ LIBNAME= $T.dll
 
 # Compilation directives
 WARN= /O2
-INCS= /I$(LUA_INC) /I$(OPENSSL_INC)
+INCS= /I$(LUA_INC) /I$(OPENSSL_INC) /Ideps
 CFLAGS= /DWIN32_LEAN_AND_MEAN /MD $(WARN) $(INCS)
 CC= cl
 
