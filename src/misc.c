@@ -5,7 +5,7 @@
 * Author:  george zhao <zhaozg(at)gmail.com>
 \*=========================================================================*/
 #include "openssl.h"
-#include "compat.h"
+#include "private.h"
 const char* format[] =
 {
   "auto",
