@@ -1,0 +1,3 @@
+[submodule "deps/lua-compat"]
+	path = deps/lua-compat
+	url = https://github.com/hishamhm/lua-compat-5.2.git

@@ -24,15 +24,15 @@ enum
 
 static const char* const list[] =
 {
-  "RSA",  /* 0 */
+  "RSA",      /* 0 */
   "DSA",
-  "ECDH", /* 2 */
+  "ECDH",     /* 2 */
   "ECDSA",
-  "DH", /* 4 */
+  "DH",       /* 4 */
   "RAND",
-  "STORE", /* 6 */
+  "STORE",    /* 6 */
   "ciphers",
-  "digests",/* 8 */
+  "digests",  /* 8 */
   "complete", /* 9 */
 
   NULL
