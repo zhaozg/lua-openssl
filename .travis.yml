@@ -14,8 +14,8 @@ branches:
 
 before_install:
   - bash .travis/setup_lua.sh
-  - cd deps/lua-compat
-  - git pull
+  - git submodule update --init --recursive
+  - git submodule update --recursive
 
 install: 
   - sudo make install
