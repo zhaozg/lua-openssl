@@ -457,6 +457,15 @@ static LUA_FUNCTION(openssl_crl_diff)
     lua_pushnil(L);
   return 1;
 }
+static LUA_FUNCTION(openssl_crl_check)
+{
+  X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
+  EVP_PKEY* pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
+  unsigned long flags = luaL_optinteger(L, 3, X509_V_FLAG_SUITEB_128_LOS);
+
+  int ret  =  X509_CRL_check_suiteb(crl, pkey, flags);
+  return openssl_pushresult(L, ret==X509_V_OK);
+}
 #endif
 
 static LUA_FUNCTION(openssl_crl_parse)
@@ -655,6 +664,7 @@ static luaL_Reg crl_funcs[] =
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
   {"diff",            openssl_crl_diff},
+  {"check",           openssl_crl_check},
 #endif
 
   /* set and get */

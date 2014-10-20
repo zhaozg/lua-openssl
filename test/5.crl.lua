@@ -49,7 +49,7 @@ TestCRL = {}
 
         assert(other:sign(pkey,cacert))
         assert(other:verify(cacert))
-        assert(other:check(pkey))
+
         assert(other:export())
         t = other:get(0)
         assertIsTable(t)

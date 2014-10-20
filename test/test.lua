@@ -4,6 +4,7 @@ require'luaunit'
 openssl.rand_load()
 
 dofile('0.engine.lua')
+dofile('0.misc.lua')
 
 dofile('1.asn1.lua')
 dofile('1.x509_name.lua')
@@ -21,8 +22,8 @@ dofile('6.pkcs7.lua')
 dofile('7.pkcs12.lua')
 
 LuaUnit:setVerbosity(0)
-for i=1,1000000 do
+io.read()
 LuaUnit:run()
 print(openssl.error(true))
 collectgarbage()
-end
+

@@ -9,12 +9,10 @@ TestEngine = {}
     end
 
     function TestEngine:testLoop()
-        print()
         local e = openssl.engine(true)
         while e do
-            print(e:id(), e:name())
+            --print(e:id(), e:name())
             e = e:next()
         end
-		print()
     end
    

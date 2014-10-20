@@ -1,19 +1,29 @@
 local openssl = require('openssl')
-local print_r = require('function.print_r')
-require 'l-io'
 
-print('load openssl.cnf', string.rep('-',40))
-data = io.loaddata('.\\openssl.cnf')
-conf = openssl.lhash_read(data)
-print(conf)
-print(conf:parse(false))
-print('parse openssl.cnf as table', string.rep('-',40))
-print(io.hex_dump(conf:parse()))
-print('parse openssl.cnf as table', string.rep('-',40))
-print(conf:get_string('ca','default_ca'))
-print(conf:get_string('CA_default','default_days'))
-print('从表中载入配置', string.rep('-',40))
-io.read('*l')
-c1 = openssl.lhash_load(conf:export())
-print(c1)
-print(io.hex_dump(c1:parse()))
+TestLhtml = {}
+
+    function testAll()
+        local f = io.open('openssl.cnf','r') 
+        if not f then f = io.open('test/openssl.cnf','r') end
+        if f then
+            local data = f:read('*a')
+            f:close()
+            local conf = assert(openssl.lhash_read(data))
+            local t = conf:parse(false)
+            assertIsTable(t)
+            --print_r(t)
+            local t = conf:parse()
+            assertIsTable(t)
+
+            local t = conf:parse(true)
+            assertIsTable(t)
+            
+            assert(conf:get_string('ca','default_ca'))
+            assert(conf:get_string('CA_default','default_days'))
+            
+            local c1 = openssl.lhash_load('openssl.cnf') or openssl.lhash_load('test/openssl.cnf')
+            t = c1:parse()
+            assertIsTable(t)
+        end
+    end
+    
