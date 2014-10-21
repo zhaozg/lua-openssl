@@ -293,7 +293,7 @@ static luaL_Reg R[] =
   { NULL, NULL }
 };
 
-LUALIB_API int luaopen_ec(lua_State *L)
+int luaopen_ec(lua_State *L)
 {
   auxiliar_newclass(L, "openssl.ec_point",   ec_point_funs);
   auxiliar_newclass(L, "openssl.ec_group",   ec_group_funs);

@@ -1796,7 +1796,7 @@ static luaL_reg R[] =
   {NULL,    NULL}
 };
 
-LUALIB_API int luaopen_ssl(lua_State *L)
+int luaopen_ssl(lua_State *L)
 {
   int i;
 

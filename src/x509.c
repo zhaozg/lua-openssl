@@ -854,7 +854,7 @@ static luaL_reg R[] =
   {NULL,    NULL}
 };
 
-LUALIB_API int luaopen_x509(lua_State *L)
+int luaopen_x509(lua_State *L)
 {
   auxiliar_newclass(L, "openssl.x509", x509_funcs);
   openssl_register_sk_x509(L);

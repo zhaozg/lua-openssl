@@ -314,7 +314,7 @@ static const luaL_Reg R[] =
   {NULL,  NULL}
 };
 
-LUALIB_API int luaopen_digest(lua_State *L)
+int luaopen_digest(lua_State *L)
 {
   auxiliar_newclass(L, "openssl.evp_digest",   digest_funs);
   auxiliar_newclass(L, "openssl.evp_digest_ctx", digest_ctx_funs);

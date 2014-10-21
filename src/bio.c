@@ -695,7 +695,7 @@ static luaL_reg R[] =
   {NULL,    NULL}
 };
 
-LUALIB_API int luaopen_bio(lua_State *L)
+int luaopen_bio(lua_State *L)
 {
   auxiliar_newclass(L, "openssl.bio", bio_funs);
 

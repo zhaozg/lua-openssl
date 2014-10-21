@@ -1161,7 +1161,7 @@ static luaL_reg R[] =
   {NULL,    NULL}
 };
 
-LUALIB_API int luaopen_ts(lua_State *L)
+int luaopen_ts(lua_State *L)
 {
   auxiliar_newclass(L, "openssl.ts_req",        ts_req_funs);
   auxiliar_newclass(L, "openssl.ts_resp",       ts_resp_funs);

@@ -119,7 +119,7 @@ static luaL_reg R[] =
   {NULL,    NULL}
 };
 
-LUALIB_API int luaopen_pkcs12(lua_State *L)
+int luaopen_pkcs12(lua_State *L)
 {
   luaL_register(L, MYNAME, R);
 

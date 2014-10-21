@@ -70,27 +70,27 @@ __pragma(warning(pop))
 
 int openssl_get_revoke_reason(const char*s);
 
-LUA_API LUA_FUNCTION(luaopen_digest);
-LUA_API LUA_FUNCTION(luaopen_hmac);
-LUA_API LUA_FUNCTION(luaopen_cipher);
-LUA_API LUA_FUNCTION(luaopen_bn);
-LUA_API LUA_FUNCTION(luaopen_pkey);
-LUA_API LUA_FUNCTION(luaopen_x509);
-LUA_API LUA_FUNCTION(luaopen_pkcs7);
-LUA_API LUA_FUNCTION(luaopen_pkcs12);
-LUA_API LUA_FUNCTION(luaopen_bio);
-LUA_API LUA_FUNCTION(luaopen_asn1);
+LUA_FUNCTION(luaopen_digest);
+LUA_FUNCTION(luaopen_hmac);
+LUA_FUNCTION(luaopen_cipher);
+LUA_FUNCTION(luaopen_bn);
+LUA_FUNCTION(luaopen_pkey);
+LUA_FUNCTION(luaopen_x509);
+LUA_FUNCTION(luaopen_pkcs7);
+LUA_FUNCTION(luaopen_pkcs12);
+LUA_FUNCTION(luaopen_bio);
+LUA_FUNCTION(luaopen_asn1);
 
-LUA_API LUA_FUNCTION(luaopen_ts);
-LUA_API LUA_FUNCTION(luaopen_csr);
-LUA_API LUA_FUNCTION(luaopen_crl);
-LUA_API LUA_FUNCTION(luaopen_ocsp);
-LUA_API LUA_FUNCTION(luaopen_cms);
-LUA_API LUA_FUNCTION(luaopen_ssl);
-LUA_API LUA_FUNCTION(luaopen_ec);
-LUA_API LUA_FUNCTION(luaopen_rsa);
-LUA_API LUA_FUNCTION(luaopen_dsa);
-LUA_API LUA_FUNCTION(luaopen_dh);
+LUA_FUNCTION(luaopen_ts);
+LUA_FUNCTION(luaopen_csr);
+LUA_FUNCTION(luaopen_crl);
+LUA_FUNCTION(luaopen_ocsp);
+LUA_FUNCTION(luaopen_cms);
+LUA_FUNCTION(luaopen_ssl);
+LUA_FUNCTION(luaopen_ec);
+LUA_FUNCTION(luaopen_rsa);
+LUA_FUNCTION(luaopen_dsa);
+LUA_FUNCTION(luaopen_dh);
 
 void openssl_add_method_or_alias(const OBJ_NAME *name, void *arg) ;
 void openssl_add_method(const OBJ_NAME *name, void *arg);

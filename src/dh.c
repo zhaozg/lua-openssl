@@ -50,7 +50,7 @@ static luaL_Reg dh_funs[] =
   { NULL, NULL }
 };
 
-LUALIB_API int luaopen_dh(lua_State *L)
+int luaopen_dh(lua_State *L)
 {
   auxiliar_newclass(L, "openssl.dh",     dh_funs);
   return 0;

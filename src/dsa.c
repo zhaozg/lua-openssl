@@ -50,7 +50,7 @@ static luaL_Reg dsa_funs[] =
   { NULL, NULL }
 };
 
-LUALIB_API int luaopen_dsa(lua_State *L)
+int luaopen_dsa(lua_State *L)
 {
   auxiliar_newclass(L, "openssl.dsa",     dsa_funs);
   return 0;

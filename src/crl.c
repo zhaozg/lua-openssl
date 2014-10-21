@@ -833,7 +833,7 @@ static luaL_reg R[] =
   {NULL,    NULL}
 };
 
-LUALIB_API int luaopen_crl(lua_State *L)
+int luaopen_crl(lua_State *L)
 {
   auxiliar_newclass(L, "openssl.x509_crl", crl_funcs);
   auxiliar_newclass(L, "openssl.x509_revoked", revoked_funcs);

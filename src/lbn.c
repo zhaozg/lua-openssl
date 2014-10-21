@@ -445,7 +445,7 @@ static const luaL_Reg R[] =
   { NULL,   NULL  }
 };
 
-LUALIB_API int luaopen_bn(lua_State *L)
+int luaopen_bn(lua_State *L)
 {
   ctx = BN_CTX_new();
   ERR_load_BN_strings();

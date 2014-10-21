@@ -655,7 +655,7 @@ static luaL_reg R[] =
   {NULL,            NULL}
 };
 
-LUALIB_API int luaopen_asn1(lua_State *L)
+int luaopen_asn1(lua_State *L)
 {
   auxiliar_newclass(L, "openssl.asn1_object", asn1obj_funcs);
   auxiliar_newclass(L, "openssl.asn1_string", asn1str_funcs);

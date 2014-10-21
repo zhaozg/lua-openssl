@@ -1434,7 +1434,7 @@ static const luaL_Reg R[] =
   {NULL,  NULL}
 };
 
-LUALIB_API int luaopen_pkey(lua_State *L)
+int luaopen_pkey(lua_State *L)
 {
   auxiliar_newclass(L, "openssl.evp_pkey", pkey_funcs);
 

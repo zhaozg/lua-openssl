@@ -461,7 +461,7 @@ static luaL_reg R[] =
   {NULL,    NULL}
 };
 
-LUALIB_API int luaopen_ocsp(lua_State *L)
+int luaopen_ocsp(lua_State *L)
 {
   auxiliar_newclass(L, "openssl.ocsp_request",   ocsp_req_cfuns);
   auxiliar_newclass(L, "openssl.ocsp_response",  ocsp_res_cfuns);

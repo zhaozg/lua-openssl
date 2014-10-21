@@ -572,7 +572,7 @@ static const luaL_Reg R[] =
   {NULL,  NULL}
 };
 
-LUALIB_API int luaopen_cms(lua_State *L)
+int luaopen_cms(lua_State *L)
 {
   ERR_load_CMS_strings();
 

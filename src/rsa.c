@@ -53,7 +53,7 @@ static luaL_Reg rsa_funs[] =
   { NULL, NULL }
 };
 
-LUALIB_API int luaopen_rsa(lua_State *L)
+int luaopen_rsa(lua_State *L)
 {
   auxiliar_newclass(L, "openssl.rsa",     rsa_funs);
   return 0;

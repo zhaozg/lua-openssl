@@ -594,7 +594,7 @@ static const luaL_Reg R[] =
   {NULL,  NULL}
 };
 
-LUALIB_API int luaopen_cipher(lua_State *L)
+int luaopen_cipher(lua_State *L)
 {
   auxiliar_newclass(L, "openssl.evp_cipher",      cipher_funs);
   auxiliar_newclass(L, "openssl.evp_cipher_ctx",  cipher_ctx_funs);
