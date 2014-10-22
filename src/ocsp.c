@@ -20,11 +20,13 @@ static int openssl_ocsp_request_new(lua_State*L)
   {
     BIO* bio = load_bio_object(L, 1);
     req = d2i_OCSP_REQUEST_bio(bio, NULL);
+    /*
     if (!req)
     {
       BIO_reset(bio);
       req = PEM_read_bio_OCSP_REQUEST(bio, NULL, NULL);
     }
+    */
     BIO_free(bio);
   }
   else
@@ -92,8 +94,11 @@ static int openssl_ocsp_request_new(lua_State*L)
     if (nonce)
       OCSP_request_add1_nonce(req, NULL,  -1);
   }
+  if(req) {
+    PUSH_OBJECT(req, "openssl.ocsp_request");
+  }else
+    lua_pushnil(L);
 
-  PUSH_OBJECT(req, "openssl.ocsp_request");
   return 1;
 }
 
@@ -109,6 +114,7 @@ static int openssl_ocsp_request_export(lua_State*L)
     pem = auxiliar_checkboolean(L, 2);
 
   bio = BIO_new(BIO_s_mem());
+  /*
   if (pem)
   {
     ret = PEM_write_bio_OCSP_REQUEST(bio, req);
@@ -117,7 +123,8 @@ static int openssl_ocsp_request_export(lua_State*L)
   {
     ret = i2d_OCSP_REQUEST_bio(bio, req);
   }
-
+  */
+  ret = i2d_OCSP_REQUEST_bio(bio, req);
   if (ret)
   {
     BIO_get_mem_ptr(bio, &buf);
@@ -230,12 +237,13 @@ static int openssl_ocsp_response(lua_State *L)
   {
     BIO* bio = load_bio_object(L, 1);
     res = d2i_OCSP_RESPONSE_bio(bio, NULL);
+    /*
     BIO_reset(bio);
     if (!res)
     {
       res = PEM_read_bio_OCSP_RESPONSE(bio, NULL, NULL);
     }
-
+    */
     BIO_free(bio);
   }
   else
@@ -381,8 +389,10 @@ static int openssl_ocsp_response(lua_State *L)
     res = OCSP_response_create(OCSP_RESPONSE_STATUS_SUCCESSFUL, bs);
     BIO_free(bio);
   }
-
-  PUSH_OBJECT(res, "openssl.ocsp_response");
+  if(res) {
+    PUSH_OBJECT(res, "openssl.ocsp_response");
+  }else
+    lua_pushnil(L);
   return 1;
 }
 
@@ -399,6 +409,7 @@ static int openssl_ocsp_response_export(lua_State*L)
     pem = auxiliar_checkboolean(L, 2);
 
   bio = BIO_new(BIO_s_mem());
+  /*
   if (pem)
   {
     ret = PEM_write_bio_OCSP_RESPONSE(bio, res);
@@ -407,7 +418,8 @@ static int openssl_ocsp_response_export(lua_State*L)
   {
     ret = i2d_OCSP_RESPONSE_bio(bio, res);
   }
-
+  */
+  ret = i2d_OCSP_RESPONSE_bio(bio, res);
   if (ret)
   {
     BIO_get_mem_ptr(bio, &buf);

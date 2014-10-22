@@ -541,7 +541,7 @@ static LUA_FUNCTION(openssl_bio_fd)
   return 1;
 }
 
-long BIO_info_callback(BIO *bio, int cmd, const char *argp,
+void BIO_info_callback(BIO *bio, int cmd, const char *argp,
   int argi, long argl, long ret)
 {
   BIO *b;
@@ -617,7 +617,6 @@ long BIO_info_callback(BIO *bio, int cmd, const char *argp,
   else
     fputs(buf,stderr);
 #endif
-  return(r);
 }
 
 static LUA_FUNCTION(openssl_bio_set_callback)
