@@ -26,7 +26,7 @@
 #include <openssl/pkcs12.h>
 #include <openssl/opensslv.h>
 
-#define LOPENSSL_VERSION_STR  "0.0.5"
+#define LOPENSSL_VERSION_STR  "0.4.0"
 
 #if OPENSSL_VERSION_NUMBER >= 0x10000000L
 #include <openssl/lhash.h>

@@ -859,7 +859,8 @@ int luaopen_x509(lua_State *L)
   auxiliar_newclass(L, "openssl.x509", x509_funcs);
   openssl_register_sk_x509(L);
 
-  luaL_register(L, MYNAME, R);
+  lua_newtable(L);
+  luaL_setfuncs(L, R, 0);
 
   openssl_register_xname(L);
   lua_setfield(L, -2, "name");

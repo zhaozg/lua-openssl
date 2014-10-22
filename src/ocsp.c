@@ -478,7 +478,8 @@ int luaopen_ocsp(lua_State *L)
   auxiliar_newclass(L, "openssl.ocsp_request",   ocsp_req_cfuns);
   auxiliar_newclass(L, "openssl.ocsp_response",  ocsp_res_cfuns);
 
-  luaL_register(L, MYNAME, R);
+  lua_newtable(L);
+  luaL_setfuncs(L, R, 0);
 
   lua_pushliteral(L, "version");    /** version */
   lua_pushliteral(L, MYVERSION);

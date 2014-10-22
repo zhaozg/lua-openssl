@@ -838,7 +838,8 @@ int luaopen_crl(lua_State *L)
   auxiliar_newclass(L, "openssl.x509_crl", crl_funcs);
   auxiliar_newclass(L, "openssl.x509_revoked", revoked_funcs);
 
-  luaL_register(L, MYNAME, R);
+  lua_newtable(L);
+  luaL_setfuncs(L, R, 0);
 
   lua_pushliteral(L, "version");    /** version */
   lua_pushliteral(L, MYVERSION);

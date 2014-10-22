@@ -152,7 +152,8 @@ int luaopen_hmac(lua_State *L)
 {
   auxiliar_newclass(L, "openssl.hmac_ctx", hmac_ctx_funs);
 
-  luaL_register(L, MYNAME, R);
+  lua_newtable(L);
+  luaL_setfuncs(L, R, 0);
   lua_pushliteral(L, "version");    /** version */
   lua_pushliteral(L, MYVERSION);
   lua_settable(L, -3);

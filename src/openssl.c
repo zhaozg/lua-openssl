@@ -224,7 +224,7 @@ static const luaL_Reg eay_functions[] =
 void CRYPTO_thread_setup(void);
 void CRYPTO_thread_cleanup(void);
 
-LUA_API int luaopen_openssl(lua_State*L)
+LUALIB_API int luaopen_openssl(lua_State*L)
 {
   //CRYPTO_thread_setup();
 
@@ -245,12 +245,9 @@ LUA_API int luaopen_openssl(lua_State*L)
   RAND_screen();
 #endif
 
-#if LUA_VERSION_NUM==501
-  luaL_register(L, "openssl", eay_functions);
-#elif LUA_VERSION_NUM==502
   lua_newtable(L);
   luaL_setfuncs(L, eay_functions, 0);
-#endif
+
   openssl_register_lhash(L);
   openssl_register_engine(L);
 
@@ -315,6 +312,9 @@ LUA_API int luaopen_openssl(lua_State*L)
   luaopen_rsa(L);
   luaopen_dsa(L);
   luaopen_dh(L);
+
+  lua_pushvalue(L, -1);
+  lua_setglobal(L, "openssl");
 
   return 1;
 }

@@ -193,6 +193,7 @@ static luaL_Reg R[] =
 int openssl_register_xstore(lua_State*L)
 {
   auxiliar_newclass(L, "openssl.x509_store",xname_funcs);
-  luaL_register(L, MYNAME, R);
+  lua_newtable(L);
+  luaL_setfuncs(L, R, 0);
   return 1;
 }

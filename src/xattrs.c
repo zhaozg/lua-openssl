@@ -241,6 +241,7 @@ int openssl_register_xattribute(lua_State*L)
 {
   auxiliar_newclass(L, "openssl.x509_attribute", x509_attribute_funs);
   openssl_register_sk_x509_attribute(L);
-  luaL_register(L, MYNAME, R);
+  lua_newtable(L);
+  luaL_setfuncs(L, R, 0);
   return 1;
 }

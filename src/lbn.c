@@ -15,6 +15,11 @@
 
 #include "lua.h"
 #include "lauxlib.h"
+#include "lualib.h"
+#ifdef LUA_JITLIBNAME
+#define LUAI_UINT32 unsigned int
+#endif
+#include "lua-compat/c-api/compat-5.2.h"
 
 #define lua_boxpointer(L,u) \
   (*(void **)(lua_newuserdata(L, sizeof(void *))) = (u))
@@ -451,7 +456,8 @@ int luaopen_bn(lua_State *L)
   ERR_load_BN_strings();
   RAND_seed(MYVERSION, sizeof(MYVERSION));
 
-  luaL_register(L, MYNAME, R);
+  lua_newtable(L);
+  luaL_setfuncs(L, R, 0);
   lua_pushliteral(L, "version");     /** version */
   lua_pushliteral(L, MYVERSION);
   lua_settable(L, -3);

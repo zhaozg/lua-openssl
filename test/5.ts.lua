@@ -1,6 +1,6 @@
 local openssl = require'openssl'
 local print_r = require'function.print_r'
-local ts,asn1 = openssl.ts,openssl.asn1
+local ts,asn1,csr = openssl.ts,openssl.asn1, openssl.csr
 
 local timeStamping = openssl.asn1.new_string('timeStamping','octet')
 local timeStamping=asn1.new_type('timeStamping')

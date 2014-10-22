@@ -1,4 +1,5 @@
-local csr = require'openssl'.csr
+local openssl = require'openssl'
+local crl,csr = openssl.crl,openssl.csr
 local print_r = require'function.print_r'
 
 TestCRL = {}

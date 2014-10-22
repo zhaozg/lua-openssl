@@ -7,6 +7,16 @@
 
 #define luaL_checktable(L, n) luaL_checktype(L, n, LUA_TTABLE)
 
+#if LUA_VERSION_NUM == 502
+#ifndef lua_equal
+#define lua_equal( L, a, b) lua_compare( L, a, b, LUA_OPEQ)
+#endif 
+#ifndef lua_lessthan 
+#define lua_lessthan( L, a, b) lua_compare( L, a, b, LUA_OPLT)
+#endif 
+#define luaG_registerlibfuncs( L, _funcs) luaL_setfuncs( L, _funcs, 0)
+#endif
+
 #define AUXILIAR_SETOBJECT(L, cval, ltype, idx, lvar) \
   do {                                                \
   int n = (idx < 0)?idx-1:idx;                        \

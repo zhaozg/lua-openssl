@@ -354,6 +354,7 @@ int openssl_register_xextension(lua_State*L)
 {
   auxiliar_newclass(L, "openssl.x509_extension", x509_extension_funs);
   openssl_register_sk_x509_extension(L);
-  luaL_register(L, MYNAME, R);
+  lua_newtable(L);
+  luaL_setfuncs(L, R, 0);
   return 1;
 }

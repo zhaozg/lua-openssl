@@ -121,7 +121,8 @@ static luaL_reg R[] =
 
 int luaopen_pkcs12(lua_State *L)
 {
-  luaL_register(L, MYNAME, R);
+  lua_newtable(L);
+  luaL_setfuncs(L, R, 0);
 
   lua_pushliteral(L, "version");    /** version */
   lua_pushliteral(L, MYVERSION);
