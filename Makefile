@@ -22,23 +22,23 @@ SYS := $(shell gcc -dumpmachine)
 ifneq (, $(findstring linux, $(SYS)))
 # Do linux things
 LDFLAGS		= -fPIC -lrt -ldl
-OPENSSL_LIBS	= $(shell pkg-config openssl --libs) 
-OPENSSL_CFLAGS	= $(shell pkg-config openssl --cflags)
+OPENSSL_LIBS	?= $(shell pkg-config openssl --libs) 
+OPENSSL_CFLAGS	?= $(shell pkg-config openssl --cflags)
 CFLAGS		= -fPIC $(OPENSSL_CFLAGS) $(LUA_CFLAGS)
 endif
 ifneq (, $(findstring mingw, $(SYS)))
 # Do mingw things
-LDFLAGS		= -mwindows -lcrypt32 -lssl -lcrypto -llua -lws2_32 
-LUA_CFLAGS  	= -I$(PREFIX)/include/
-CFLAGS		= $(OPENSSL_CFLAGS) $(LUA_CFLAGS)
+V		= $(shell lua -e "v=string.gsub('$(LUAV)','%.','');print(v)")
+LDFLAGS		= -mwindows -lcrypt32 -lssl -lcrypto -lws2_32 $(PREFIX)/bin/lua$(V).dll 
+LUA_CFLAGS  	= -DLUA_LIB -DLUA_BUILD_AS_DLL -I$(PREFIX)/include/
+CFLAGS		=  $(OPENSSL_CFLAGS) $(LUA_CFLAGS)
 endif
 ifneq (, $(findstring cygwin, $(SYS)))
 # Do cygwin things
-OPENSSL_LIBS	=$(shell pkg-config openssl --libs) 
-OPENSSL_CFLAGS  =$(shell pkg-config openssl --cflags)
+OPENSSL_LIBS	?= $(shell pkg-config openssl --libs) 
+OPENSSL_CFLAGS  ?= $(shell pkg-config openssl --cflags)
 CFLAGS		= -fPIC $(OPENSSL_CFLAGS) $(LUA_CFLAGS)
 endif
-
 #custome config
 ifeq (.config, $(wildcard .config))
 include .config
@@ -52,7 +52,7 @@ LIBNAME= $T.so.$V
 WARN_MOST	= -Wall -W -Waggregate-return -Wcast-align -Wmissing-prototypes -Wnested-externs -Wshadow -Wwrite-strings -pedantic
 WARN		= -Wall -Wno-unused-value
 WARN_MIN	= 
-CFLAGS		+= $(WARN_MIN) $(OPENSSL_CFLAGS) $(LUA_CFLAGS) -DPTHREADS 
+CFLAGS		+= $(WARN_MIN) -DPTHREADS 
 CC= gcc -g $(CFLAGS) -Ideps
 
 
