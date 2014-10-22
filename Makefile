@@ -12,9 +12,9 @@ LUA_LIBS	?= -L$(PREFIX)/lib
 LUA_LIBDIR	?= $(PREFIX)/lib/lua/$(LUAV)
 else
 LUAV		?= $(shell lua -e "_,_,v=string.find(_VERSION,'Lua (.+)');print(v)")
-LUA_CFLAGS	?= -I$(PREFIX)/include/lua$(LUAV)
 LUA_CFLAGS	?= $(shell pkg-config luajit --cflags)
 LUA_LIBS	?= $(shell pkg-config luajit --libs)
+LUA_LIBDIR	?= $(PREFIX)/lib/lua/$(LUAV)
 endif
 
 #OS auto detect
@@ -30,7 +30,7 @@ ifneq (, $(findstring mingw, $(SYS)))
 # Do mingw things
 LDFLAGS		= -mwindows -lcrypt32 -lssl -lcrypto -llua -lws2_32 
 LUA_CFLAGS  	= -I$(PREFIX)/include/
-CFLAGS		= -fPIC $(OPENSSL_CFLAGS) $(LUA_CFLAGS)
+CFLAGS		= $(OPENSSL_CFLAGS) $(LUA_CFLAGS)
 endif
 ifneq (, $(findstring cygwin, $(SYS)))
 # Do cygwin things
