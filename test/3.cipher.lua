@@ -99,11 +99,6 @@ TestCipherMY = {}
         assertEquals(self.msg,bb)
         assert(#self.msg < #aa)
 
-        if false then
-            print_r(C:info())
-            print_r(obj:info())
-        end
-
         local r = openssl.random(16)
         local k,i = C:BytesToKey(r)
 

@@ -1,5 +1,4 @@
 local pkey = require('openssl').pkey
-local print_r = require'function.print_r'
 local unpack = unpack or table.unpack
 
 local function mk_key(args)

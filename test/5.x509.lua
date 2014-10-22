@@ -1,7 +1,6 @@
 local openssl = require'openssl'
 
 local csr,x509 = openssl.csr, openssl.x509
-local print_r = require'function.print_r'
 
 TestX509 = {}
     function TestX509:setUp()

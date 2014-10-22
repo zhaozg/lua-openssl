@@ -1,5 +1,4 @@
 local csr = require'openssl'.csr
-local print_r = require'function.print_r'
 
 TestCompat = {}
     function TestCompat:setUp()

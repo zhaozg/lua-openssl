@@ -1,5 +1,4 @@
 local ext = require'openssl'.x509.extension
-local print_r = require'function.print_r'
 
 TestX509ext = {}
 
