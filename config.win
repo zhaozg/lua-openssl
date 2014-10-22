@@ -3,12 +3,12 @@
 LUA_LIBDIR= "d:\work\luabuild\bin\Win32Debug\clibs\"
 
 # Lua includes and lib
-LUA_INC= "e:\work\lua-5.1\src"
-LUA_LIB= "e:\work\lua-5.1\src\lua51.lib"
+LUA_INC= "c:\luajit-2.0\src"
+LUA_LIB= "c:\luajit-2.0\src\lua51.lib"
 
 # Openssl include and lib
-OPENSSL_INC="e:\work\openssl\master\include"
-OPENSSL_LIB="e:\work\openssl\master\lib\libeay32.lib e:\work\openssl\master\lib\ssleay32.lib"
+OPENSSL_INC="c:\openssl-win32\include"
+OPENSSL_LIB="c:\openssl-win32\lib\libeay32.lib c:\openssl-win32\lib\ssleay32.lib"
 
 LIBNAME= $T.dll
 
@@ -17,5 +17,4 @@ WARN= /O2
 INCS= /I$(LUA_INC) /I$(OPENSSL_INC) /Ideps
 CFLAGS= /DWIN32_LEAN_AND_MEAN /MD $(WARN) $(INCS)
 CC= cl
-
 
