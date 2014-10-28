@@ -319,7 +319,6 @@ static int openssl_xext_new_sk(lua_State* L)
   return 1;
 };
 
-
 static int openssl_xexts_totable(lua_State*L)
 {
   STACK_OF(X509_EXTENSION) *exts = CHECK_OBJECT(1, STACK_OF(X509_EXTENSION), "openssl.stack_of_x509_extension");
@@ -338,8 +337,64 @@ static int openssl_xexts_totable(lua_State*L)
   return 1;
 }
 
+static int openssl_xext_support(lua_State*L)
+{
+  static const int supported_nids[] = {
+    NID_netscape_cert_type, /* 71 */
+    NID_key_usage,		/* 83 */
+    NID_subject_alt_name,	/* 85 */
+    NID_basic_constraints,	/* 87 */
+    NID_certificate_policies, /* 89 */
+    NID_ext_key_usage,	/* 126 */
+#ifndef OPENSSL_NO_RFC3779
+    NID_sbgp_ipAddrBlock,	/* 290 */
+    NID_sbgp_autonomousSysNum, /* 291 */
+#endif
+    NID_policy_constraints,	/* 401 */
+    NID_proxyCertInfo,	/* 663 */
+    NID_name_constraints,	/* 666 */
+    NID_policy_mappings,	/* 747 */
+    NID_inhibit_any_policy	/* 748 */
+  };
+  if(lua_isnoneornil(L,1)) {
+    int count = sizeof(supported_nids)/sizeof(int);
+    int i,nid;
+    lua_newtable(L);
+    for(i=0; i<count; i++) {
+      nid = supported_nids[i];
+      lua_newtable(L);
+      lua_pushstring(L, OBJ_nid2ln(nid));
+      lua_rawseti(L, -2, 1);
+      lua_pushstring(L, OBJ_nid2sn(nid));
+      lua_rawseti(L, -2, 2);
+      lua_pushinteger(L, nid);
+      lua_rawseti(L, -2, 3);
+      lua_rawseti(L, -2, i+1);
+    };
+    return 1;
+  } else if(auxiliar_isclass(L, "openssl.x509_extension", 1)) {
+    X509_EXTENSION* ext = CHECK_OBJECT(1,X509_EXTENSION,"openssl.x509_extension");
+    int ret = X509_supported_extension(ext);
+    lua_pushboolean(L, ret);
+    return 1;
+  } else {
+    int i;
+    int ex_nid = openssl_get_nid(L, 1);
+    if (ex_nid == NID_undef) 
+      return 0;
+
+    for(i=0; i<sizeof(supported_nids)/sizeof(int); i++){
+      if(supported_nids[i]==ex_nid)
+        break;
+    }
+    lua_pushboolean(L, i<sizeof(supported_nids)/sizeof(int));
+    return 1;
+  }
+}
+
 static luaL_Reg R[] =
 {
+  {"support",                 openssl_xext_support},
   {"new_extension",           openssl_xext_new},
   {"read_extension",          openssl_xext_read},
   {"new_sk_extension",        openssl_xext_new_sk},
