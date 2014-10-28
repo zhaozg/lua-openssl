@@ -826,10 +826,22 @@ static luaL_Reg revoked_funcs[] =
   {NULL,    NULL}
 };
 
+static int openssl_crl_reason(lua_State *L) {
+  int i;
+  const BIT_STRING_BITNAME* bitname;
+  lua_newtable(L);
+  for(i=0, bitname = &reason_flags[i]; bitname->bitnum!=-1; i++, bitname = &reason_flags[i]) {
+    openssl_push_bit_string_bitname(L, bitname);
+    lua_rawseti(L, -2, i+1);
+  }
+  return 1;
+}
+
 static luaL_reg R[] =
 {
   {"new",       openssl_crl_new },
   {"read",      openssl_crl_read},
+  {"reason",    openssl_crl_reason},
   {NULL,    NULL}
 };
 

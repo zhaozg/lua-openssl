@@ -26,6 +26,10 @@ function new () end
 -- @see x509_crl
 function read() end
 
+--- list all support reason info
+-- @treturn table contain support reason node like {lname=...,sname=...,bitnum=...}
+function reason() end
+
 end  -- define module
 
 do  -- define class

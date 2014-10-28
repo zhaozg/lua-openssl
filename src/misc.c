@@ -162,3 +162,14 @@ void to_hex(const char* in, int length, char* out)
   }
   out[i*2] = '\0';
 }
+
+int openssl_push_bit_string_bitname(lua_State* L,const BIT_STRING_BITNAME* name) {
+  lua_newtable(L);
+  lua_pushinteger(L,name->bitnum);
+  lua_setfield(L, -2, "bitnum");
+  lua_pushstring(L, name->lname);
+  lua_setfield(L, -2, "lname");
+  lua_pushstring(L, name->sname);
+  lua_setfield(L, -2, "sname");
+  return 1;
+}
