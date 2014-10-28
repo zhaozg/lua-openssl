@@ -32,6 +32,11 @@ function purpose() end
 -- @treturn table
 function purpose() end
 
+--- get support certtypes
+-- @tparam[opt='standard'] string type support 'standard','netscape','extend'
+-- @treturn table if type is 'standard' or 'netscape', contains node with {lname=...,sname=...,bitname=...},
+--                if type is 'extend', contains node with {lname=...,sname=...,nid=...}
+function certtypes() end
 
 end --define module
 

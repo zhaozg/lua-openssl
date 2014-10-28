@@ -844,6 +844,95 @@ static int openssl_x509_purpose(lua_State*L) {
   return 0;
 };
 
+static const char* usage_mode[] = {
+  "standard",
+  "netscape",
+  "extend",
+  NULL
+};
+
+static int openssl_x509_certtypes(lua_State*L) {
+  int mode = luaL_checkoption(L, 1, "standard", usage_mode);
+  int i;
+  const BIT_STRING_BITNAME* bitname;
+  
+  switch(mode) {
+  case 0:
+    {
+      const static BIT_STRING_BITNAME key_usage_type_table[] = {
+        {0, "Digital Signature", "digitalSignature"},
+        {1, "Non Repudiation", "nonRepudiation"},
+        {2, "Key Encipherment", "keyEncipherment"},
+        {3, "Data Encipherment", "dataEncipherment"},
+        {4, "Key Agreement", "keyAgreement"},
+        {5, "Certificate Sign", "keyCertSign"},
+        {6, "CRL Sign", "cRLSign"},
+        {7, "Encipher Only", "encipherOnly"},
+        {8, "Decipher Only", "decipherOnly"},
+        {-1, NULL, NULL}
+      };
+      lua_newtable(L);
+      for(i=0, bitname = &key_usage_type_table[i]; bitname->bitnum!=-1; i++, bitname = &key_usage_type_table[i]) {
+        openssl_push_bit_string_bitname(L, bitname);
+        lua_rawseti(L, -2, i+1);
+      }
+      return 1;
+
+    }
+  case 1:
+    {
+      const static BIT_STRING_BITNAME ns_cert_type_table[] = {
+        {0, "SSL Client", "client"},
+        {1, "SSL Server", "server"},
+        {2, "S/MIME", "email"},
+        {3, "Object Signing", "objsign"},
+        {4, "Unused", "reserved"},
+        {5, "SSL CA", "sslCA"},
+        {6, "S/MIME CA", "emailCA"},
+        {7, "Object Signing CA", "objCA"},
+        {-1, NULL, NULL}
+      };
+      lua_newtable(L);
+      for(i=0, bitname = &ns_cert_type_table[i]; bitname->bitnum!=-1; i++, bitname = &ns_cert_type_table[i]) {
+        openssl_push_bit_string_bitname(L, bitname);
+        lua_rawseti(L, -2, i+1);
+      }
+      return 1;
+    }
+  case 2:
+    {
+      static const int ext_nids[] = {
+        NID_server_auth,
+        NID_client_auth,
+        NID_email_protect,
+        NID_code_sign,
+        NID_ms_sgc,
+        NID_ns_sgc,
+        NID_OCSP_sign,
+        NID_time_stamp,
+        NID_dvcs,
+        NID_anyExtendedKeyUsage
+      };
+      int count = sizeof(ext_nids)/sizeof(int);
+      int i,nid;
+      lua_newtable(L);
+      for(i=0; i<count; i++) {
+        nid = ext_nids[i];
+        lua_newtable(L);
+        lua_pushstring(L, OBJ_nid2ln(nid));
+        lua_setfield(L, -2, "lname");
+        lua_pushstring(L, OBJ_nid2sn(nid));
+        lua_setfield(L, -2, "sname");
+        lua_pushinteger(L, nid);
+        lua_setfield(L, -2, "nid");
+        lua_rawseti(L, -2, i+1);
+      };
+      return 1;
+    }
+  }
+  return 0;
+}
+
 static luaL_reg R[] =
 {
   {"new",           openssl_x509_new },
@@ -851,6 +940,9 @@ static luaL_reg R[] =
   {"sk_x509_read",  openssl_sk_x509_read },
   {"sk_x509_new",   openssl_sk_x509_new },
   {"purpose",       openssl_x509_purpose},
+
+  {"certtypes",     openssl_x509_certtypes},
+
   {NULL,    NULL}
 };
 
