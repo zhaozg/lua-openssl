@@ -31,6 +31,7 @@ function read_extension() end
 function new_sk_extension() end
 
 --- get all x509 certificate supported extensions
+-- @treturn table contain all support extension nid
 -- @treturn table contain all support extension info as table node {long nane,short name, obj_nid}
 function support() end
 

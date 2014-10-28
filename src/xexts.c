@@ -361,6 +361,12 @@ static int openssl_xext_support(lua_State*L)
     int i,nid;
     lua_newtable(L);
     for(i=0; i<count; i++) {
+      lua_pushinteger(L, supported_nids[i]);
+      lua_rawseti(L,-2, i+1);
+    }
+
+    lua_newtable(L);
+    for(i=0; i<count; i++) {
       nid = supported_nids[i];
       lua_newtable(L);
       lua_pushstring(L, OBJ_nid2ln(nid));
@@ -371,7 +377,7 @@ static int openssl_xext_support(lua_State*L)
       lua_rawseti(L, -2, 3);
       lua_rawseti(L, -2, i+1);
     };
-    return 1;
+    return 2;
   } else if(auxiliar_isclass(L, "openssl.x509_extension", 1)) {
     X509_EXTENSION* ext = CHECK_OBJECT(1,X509_EXTENSION,"openssl.x509_extension");
     int ret = X509_supported_extension(ext);
