@@ -189,16 +189,6 @@ err:
   return (ok);
 }
 
-#define CHECK_BN(b,n)               \
-  if(lua_isstring(L, n)){             \
-  size_t l =0;                \
-  const char* s = luaL_checklstring(L,n,&l);  \
-  BN_bin2bn((const unsigned char *)s,l,b);              \
-  }else {                     \
-  const BIGNUM* bn = CHECK_OBJECT(n, BIGNUM, "openssl.bn"); \
-  BN_copy(b,bn);                \
-  }
-
 static LUA_FUNCTION(openssl_pkey_new)
 {
   EVP_PKEY *pkey = NULL;
@@ -415,32 +405,28 @@ static LUA_FUNCTION(openssl_pkey_new)
       lua_getfield(L, -1, "D");
       if (!lua_isnil(L, -1))
       {
-        d = BN_new();
-        CHECK_BN(d, -1);
+        d = BN_get(L, -1);
       }
       lua_pop(L, 1);
 
       lua_getfield(L, -1, "X");
       if (!lua_isnil(L, -1))
       {
-        x = BN_new();
-        CHECK_BN(x, -1);
+        x = BN_get(L, -1);
       }
       lua_pop(L, 1);
 
       lua_getfield(L, -1, "Y");
       if (!lua_isnil(L, -1))
       {
-        y = BN_new();
-        CHECK_BN(y, -1);
+        y = BN_get(L, -1);
       }
       lua_pop(L, 1);
 
       lua_getfield(L, -1, "Z");
       if (!lua_isnil(L, -1))
       {
-        z = BN_new();
-        CHECK_BN(z, -1);
+        z = BN_get(L, -1);
       }
       lua_pop(L, 1);
 
