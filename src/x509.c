@@ -376,6 +376,7 @@ static LUA_FUNCTION(openssl_x509_check)
   if (auxiliar_isclass(L, "openssl.evp_pkey", 2))
   {
     EVP_PKEY * key = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
+    luaL_argcheck(L,openssl_pkey_is_private(key), 2, "must be private key");
     lua_pushboolean(L, X509_check_private_key(cert, key));
   }
   else
@@ -743,6 +744,7 @@ static int openssl_x509_sign(lua_State*L) {
   const EVP_MD *md;
   int ret = 1;
   int i = 3;
+  luaL_argcheck(L,openssl_pkey_is_private(pkey), 2, "must be private key");
   if(auxiliar_isclass(L, "openssl.x509_name", 3)){
     X509_NAME* xn = CHECK_OBJECT(3, X509_NAME, "openssl.x509_name");
     ret = X509_set_issuer_name(x, xn);

@@ -62,6 +62,7 @@ const EVP_MD* get_digest(lua_State* L, int idx);
 const EVP_CIPHER* get_cipher(lua_State* L, int idx, const char* def_alg);
 BIGNUM *BN_get(lua_State *L, int i);
 int openssl_engine(lua_State *L);
+int openssl_pkey_is_private(EVP_PKEY* pkey);
 
 void to_hex(const char* in, int length, char* out);
 

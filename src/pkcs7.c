@@ -63,6 +63,8 @@ static LUA_FUNCTION(openssl_pkcs7_sign)
   long flags =  luaL_optint(L, 5, 0);
 
   PKCS7 *p7 = NULL;
+  luaL_argcheck(L,openssl_pkey_is_private(privkey), 3, "must be private key");
+
   if (!X509_check_private_key(cert, privkey))
     luaL_error(L, "sigcert and private key not match");
 

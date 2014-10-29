@@ -14,7 +14,7 @@ do --define module function
 -- @tparam[opt] stack_of_x509_extension extensions add to x509_req
 -- @tparam[opt] stack_of_x509_attribute attributes add to x509_req
 -- @tparam[opt] evp_pkey pkey private key sign the x509_req, and set as public key
--- @tparam[opt='sha1WithRSAEncryption'] evp_digest|string md_alg,  only used when pkey exist
+-- @tparam[opt='sha1WithRSAEncryption'] evp_digest|string md_alg,  only used when pkey exist, and should fellow pkey
 -- @treturn x509_req certificate sign request object
 -- @see x509_req
 function new () end

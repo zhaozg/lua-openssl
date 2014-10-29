@@ -150,6 +150,9 @@ static int openssl_ocsp_request_sign(lua_State*L)
   const EVP_MD *md = EVP_sha1();
   int ret;
   int sflags = 0;
+
+  luaL_argcheck(L,openssl_pkey_is_private(pkey), 3, "must be private key");
+
   if (lua_isnoneornil(L, 4))
   {
     sflags = OCSP_NOCERTS;
@@ -263,6 +266,7 @@ static int openssl_ocsp_response(lua_State *L)
 
     int i, id_count, type;
     BIO* bio = NULL;
+    luaL_argcheck(L,openssl_pkey_is_private(rkey), 4, "must be private key");
 
     type = lua_type(L, 5);
     if (type != LUA_TFUNCTION && type != LUA_TTABLE)

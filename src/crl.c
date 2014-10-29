@@ -190,6 +190,7 @@ static LUA_FUNCTION(openssl_crl_new)
     }
     if (i==3) {
       capkey = CHECK_OBJECT(3, EVP_PKEY, "openssl.evp_pkey");
+      luaL_argcheck(L,openssl_pkey_is_private(capkey), 3, "must be private key");
       luaL_argcheck(L, X509_check_private_key(cacert,capkey)==1, 3, "evp_pkey not match with x509 in #2");
     }
   }
@@ -391,6 +392,7 @@ LUA_FUNCTION(openssl_crl_sign)
 
   int ret = 1;
 
+  luaL_argcheck(L,openssl_pkey_is_private(key), 2, "must be private key");
   luaL_argcheck(L, auxiliar_isclass(L,"openssl.x509", 3) || auxiliar_isclass(L, "openssl.x509_name", 3),
     3, "must be openssl.x509 or openssl.x509_name object");
   if(auxiliar_isclass(L, "openssl.x509_name", 3)) {
@@ -448,8 +450,10 @@ static LUA_FUNCTION(openssl_crl_diff)
   const EVP_MD *md = lua_isnoneornil(L, 4)
     ? EVP_get_digestbyname("sha1") : get_digest(L, 4);
   unsigned int flags = luaL_optinteger(L, 5, 0);
+  X509_CRL *diff;
 
-  X509_CRL *diff  =  X509_CRL_diff(crl, newer, pkey, md, flags);
+  luaL_argcheck(L,openssl_pkey_is_private(pkey), 3, "must be private key");
+  diff  =  X509_CRL_diff(crl, newer, pkey, md, flags);
   if(diff)
   {
     PUSH_OBJECT(diff,"openssl.x509_crl");
@@ -462,8 +466,9 @@ static LUA_FUNCTION(openssl_crl_check)
   X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
   EVP_PKEY* pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
   unsigned long flags = luaL_optinteger(L, 3, X509_V_FLAG_SUITEB_128_LOS);
-
-  int ret  =  X509_CRL_check_suiteb(crl, pkey, flags);
+  int ret;
+  luaL_argcheck(L,openssl_pkey_is_private(pkey), 2, "must be private key");
+  ret  =  X509_CRL_check_suiteb(crl, pkey, flags);
   return openssl_pushresult(L, ret==X509_V_OK);
 }
 #endif

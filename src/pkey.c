@@ -20,8 +20,7 @@ static int openssl_pkey_bits(lua_State *L)
   return  1;
 };
 
-
-static int openssl_is_private_key(EVP_PKEY* pkey)
+int openssl_pkey_is_private(EVP_PKEY* pkey)
 {
   assert(pkey != NULL);
 
@@ -504,7 +503,7 @@ static LUA_FUNCTION(openssl_pkey_export)
     expem = lua_toboolean(L, 4);
   passphrase = luaL_optlstring(L, 5, NULL, &passphrase_len);
 
-  is_priv = openssl_is_private_key(key);
+  is_priv = openssl_pkey_is_private(key);
   bio_out = BIO_new(BIO_s_mem());
   if (!is_priv)
     exppriv = 0;
@@ -770,7 +769,7 @@ static LUA_FUNCTION(openssl_pkey_encrypt)
   EVP_PKEY_CTX *ctx = NULL;
   int ret = 0;
 
-  if (openssl_is_private_key(pkey)==0)
+  if (openssl_pkey_is_private(pkey)==0)
   {
     ctx = EVP_PKEY_CTX_new(pkey,pkey->engine);
     if(EVP_PKEY_encrypt_init(ctx)==1)
@@ -807,7 +806,7 @@ static LUA_FUNCTION(openssl_pkey_decrypt)
   EVP_PKEY_CTX *ctx = NULL;
   int ret = 0;
 
-  if(openssl_is_private_key(pkey)){
+  if(openssl_pkey_is_private(pkey)){
     ctx = EVP_PKEY_CTX_new(pkey,pkey->engine);
     if(EVP_PKEY_decrypt_init(ctx)==1)
     {
@@ -833,10 +832,10 @@ static LUA_FUNCTION(openssl_pkey_decrypt)
   return ret;
 }
 
-static LUA_FUNCTION(openssl_pkey_is_private)
+LUA_FUNCTION(openssl_pkey_is_private1)
 {
   EVP_PKEY *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
-  int private = openssl_is_private_key(pkey);
+  int private = openssl_pkey_is_private(pkey);
   if (private == 0)
     lua_pushboolean(L, 0);
   else if (private == 1)
@@ -849,7 +848,7 @@ static LUA_FUNCTION(openssl_pkey_is_private)
 static LUA_FUNCTION(openssl_pkey_get_public)
 {
   EVP_PKEY *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
-  int private = openssl_is_private_key(pkey);
+  int private = openssl_pkey_is_private(pkey);
   int ret = 0;
   if (private == 0)
     luaL_argerror(L, 1, "alreay public key");
@@ -1367,7 +1366,7 @@ static LUA_FUNCTION(openssl_open_final) {
 
 static luaL_Reg pkey_funcs[] =
 {
-  {"is_private",    openssl_pkey_is_private},
+  {"is_private",    openssl_pkey_is_private1},
   {"get_public",    openssl_pkey_get_public},
 
   {"export",      openssl_pkey_export},
@@ -1405,7 +1404,7 @@ static const luaL_Reg R[] =
   {"open_final",    openssl_open_final},
 
   {"get_public",    openssl_pkey_get_public},
-  {"is_private",    openssl_pkey_is_private},
+  {"is_private",    openssl_pkey_is_private1},
   {"export",        openssl_pkey_export},
   {"parse",         openssl_pkey_parse},
   {"bits",          openssl_pkey_bits},

@@ -24,6 +24,8 @@ static LUA_FUNCTION(openssl_pkcs12_export)
   STACK_OF(X509) *ca = NULL;
   int ret = 0;
 
+  luaL_argcheck(L,openssl_pkey_is_private(priv_key), 2, "must be private key");
+
   if (top > 3)
   {
     if (lua_isstring(L, 4))

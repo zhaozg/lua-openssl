@@ -96,6 +96,8 @@ static LUA_FUNCTION(openssl_csr_to_x509)
   EVP_PKEY * pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
   int days = luaL_optint(L, 3, 365);
   X509* cert = X509_REQ_to_X509_a(csr,days,pkey);
+  
+  luaL_argcheck(L,openssl_pkey_is_private(pkey), 2, "must be private key");
 
   if(cert){
     PUSH_OBJECT(cert,"openssl.x509");
@@ -176,8 +178,9 @@ static LUA_FUNCTION(openssl_csr_check)
 {
   X509_REQ *csr = CHECK_OBJECT(1, X509_REQ, "openssl.x509_req");
   EVP_PKEY *pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
-
-  int ret = X509_REQ_check_private_key(csr,pkey);
+  int ret;
+  luaL_argcheck(L,openssl_pkey_is_private(pkey), 2, "must be private key");
+  ret = X509_REQ_check_private_key(csr,pkey);
   return openssl_pushresult(L, ret);
 };
 
@@ -238,12 +241,14 @@ static LUA_FUNCTION(openssl_csr_new)
         const EVP_MD *md;
         luaL_argcheck(L, i==n || i==n-1, i, "must is evp_pkey object");
 
+        pkey = CHECK_OBJECT(i, EVP_PKEY, "openssl.evp_pkey");
+
+        luaL_argcheck(L, openssl_pkey_is_private(pkey), i, "must be private key");
+
         if(i==n-1)
           md = get_digest(L, n);
         else
           md = EVP_get_digestbyname("sha1");
-
-        pkey = CHECK_OBJECT(i, EVP_PKEY, "openssl.evp_pkey");
 
         ret = X509_REQ_set_pubkey(csr, pkey);
         if (ret==1) {
