@@ -16,9 +16,7 @@
 #include "lua.h"
 #include "lauxlib.h"
 #include "lualib.h"
-#ifdef LUA_JITLIBNAME
-#define LUAI_UINT32 unsigned int
-#endif
+
 #include "lua-compat/c-api/compat-5.2.h"
 
 #define lua_boxpointer(L,u) \
