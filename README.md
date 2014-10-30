@@ -37,9 +37,10 @@ Similarly, you can also specify a public key as a key object returned from x509:
 digest,cipher, x509, cms and so on, be write as modules.
 
 ```lua
-   local digest = require'openssl'digest
-   local cipher = require'openssl'cipher
+   local digest = require'openssl'.digest
+   local cipher = require'openssl'.cipher
    local crypto = require'crypto'
+   local ssl    = require'ssl'
 ```
 
 digest() equals with digest.digest(), same cipher() equals with cipher.cipher().
@@ -172,7 +173,7 @@ m = 'abcdefghick'
 key = m
 cdata = evp_cipher:encrypt(m,key)
 m1  = evp_cipher:decrypt(cdata,key)
-assert(cdata==m1)
+assert(m==m1)
 ```
 
 ### Example 2: quick evp_digest
@@ -180,12 +181,12 @@ assert(cdata==m1)
 ```lua
 md = openssl.digest.get('md5')
 m = 'abcd'
-aa = md:evp_digest(m)
+aa = md:digest(m)
 
-mdc=md:init()
+mdc=md:new()
 mdc:update(m)
 bb = mdc:final()
-assert(aa==bb)
+assert(openssl.hex(aa,true)==bb)
 ```
 
 ### Example 3:  Iterate a openssl.stack_of_x509(sk_x509) object
