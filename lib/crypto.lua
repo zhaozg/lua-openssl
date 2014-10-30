@@ -281,7 +281,12 @@ X.__index = {
     verify_pem = function(self,pem)
         local ret,x = pcall(openssl.x509.read,pem)
         if ret then
-            return x:check(self.sk_x509)
+            local t = {}
+            for i=1,#self.sk_x509 do
+                table.insert(t,self.sk_x509:get(i-1))
+            end
+            local store = openssl.x509.store.new(t)
+            return x:check(store)
         end
         return false    
     end
