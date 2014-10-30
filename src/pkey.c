@@ -1204,8 +1204,7 @@ static LUA_FUNCTION(openssl_seal_init)
       free(eks[0]);
     }
     lua_pushlstring(L, iv, EVP_CIPHER_CTX_iv_length(ctx));
-    EVP_CIPHER_CTX_cleanup(ctx);
-    EVP_CIPHER_CTX_free(ctx);
+
     free(eks);
     free(eksl);
     free(pkeys);
