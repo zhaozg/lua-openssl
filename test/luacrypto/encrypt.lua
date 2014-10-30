@@ -69,7 +69,7 @@ local ctx, err = crypto.decrypt("aes128", res .. "foo", key, iv)
 assert(not ctx and err, "should have failed")
 
 -- don't crash on an invalid iv
-local ok, ctx, err = pcall(crypto.decrypt, "aes128", res, key, iv .. "123456123456123456")
+local ok, ctx, err = pcall(crypto.decrypt, "aes128", res, key, iv .. "123456123456123456") 
 assert(not ok and ctx, "should have failed")
 local ok, ctx = pcall(crypto.decrypt.new, "aes128", key, iv .. "123456123456123456")
 assert(not ok and ctx, "should have failed")
@@ -97,3 +97,4 @@ assert(not ok and res)
 
 local res = crypto.decrypt("aes128", crypto.encrypt("aes128", "", key, iv), key, iv)
 assert(res == "")
+print('OK')

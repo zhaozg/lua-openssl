@@ -56,12 +56,13 @@ C.__call = function(self,alg,input,key,iv)
     local c = cipher.get(alg)
     local I = c:info()
     if (iv and #iv>I.iv_length) then
-        error('invalid iv')
+        error 'invalid iv'
     end
     if(#key>I.key_length) then
-        error('invalid key')
+        error 'invalid key'
     end
-    return cipher.encrypt(alg,input,key,iv)
+    local ret, msg = cipher.encrypt(alg,input,key,iv)
+    return ret,msg
 end
 
 setmetatable(C,C)

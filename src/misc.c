@@ -137,6 +137,11 @@ int openssl_pushresult(lua_State*L, int result)
     unsigned val = ERR_get_error();
     lua_pushnil(L);
     i++;
+    if(!val)
+    {
+      lua_pushstring(L, "unknown error occure");
+      i++;
+    }
     while (val)
     {
       char err[LUAL_BUFFERSIZE] = {0};
