@@ -116,7 +116,7 @@ do  -- define class
 do  -- define evp_pkey
 
 --- export evp_pkey as string 
--- @tparam[opt=false] boolean only_public true for export only public or private
+-- @tparam[opt=false] boolean export_private, true for export private, or public only
 -- @tparam[opt=false] boolean raw_key true for export low layer key just rsa,dsa,dc...
 -- @tparam[opt=true] boolean pem default export as pem format, false export as der string
 -- @tparam[opt] string passphrase if given, export key will encrypt with des-cbc-ede
