@@ -22,6 +22,7 @@ install:
 
 script: 
   - cd test
+  - curl https://github.com/bluebird75/luaunit/blob/master/luaunit.lua > luaunit.lua
   - lua test.lua
 
 notifications:
