@@ -2,7 +2,7 @@
 -- $Id: test.lua,v 1.3 2006/08/25 03:24:17 nezroy Exp $
 -- See Copyright Notice in license.html
 --]]
-  io.read()
+
 crypto = require("crypto")
 
 local digest = crypto.digest
