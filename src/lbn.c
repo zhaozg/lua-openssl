@@ -454,11 +454,14 @@ int luaopen_bn(lua_State *L)
   ERR_load_BN_strings();
   RAND_seed(MYVERSION, sizeof(MYVERSION));
 
-  lua_newtable(L);
+  luaL_newmetatable(L,MYTYPE);
   luaL_setfuncs(L, R, 0);
   lua_pushliteral(L, "version");     /** version */
   lua_pushliteral(L, MYVERSION);
   lua_settable(L, -3);
+  lua_pushliteral(L,"__index");
+  lua_pushvalue(L,-2);
+  lua_settable(L,-3);
 
   return 1;
 }
