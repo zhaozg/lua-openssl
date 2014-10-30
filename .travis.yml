@@ -22,7 +22,7 @@ install:
 
 script: 
   - cd test
-  - lua 2.hmac.lua
+  - lua test.lua
 
 notifications:
   email:
