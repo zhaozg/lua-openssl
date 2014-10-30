@@ -13,6 +13,15 @@ function M.hex(s)
     return string.lower(s)
 end
 M.digest = openssl.digest
+local dm = {}
+dm.__call = function(self,alg,msg,raw) 
+    raw = raw or true
+--    print('MSG:',msg)
+--    print('RAW:',raw)
+    return M.digest.digest(alg,msg)
+end
+setmetatable(M.digest,dm)
+
 M.hmac = openssl.hmac
 -----------crypto encrypt/decrypt compat----------
 local cipher = openssl.cipher
