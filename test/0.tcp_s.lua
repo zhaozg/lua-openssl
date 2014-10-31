@@ -1,4 +1,6 @@
-require 'openssl'
+local openssl = require 'openssl'
+local bio = openssl.bio
+io.read()
 
 host = arg[1] or "127.0.0.1"; --only ip
 port = arg[2] or "8383";
@@ -6,11 +8,11 @@ print(string.format('Listen at %s:%s',host,port))
 
 local srv = assert(bio.accept(host..':'..port))
 if srv then
-  local cli = assert(srv:accept())  -- make real listen
+  assert(srv:accept(true))  -- make real listen
   while true do
-      cli = assert(srv:accept())
+      local cli = assert(srv:accept())
       local s
-      print('cli',cli)
+      print('accept',cli)
       repeat 
           s = cli:read()
           if s then 
@@ -19,6 +21,7 @@ if srv then
           end
       until not s
       cli:close()
-      openssl.error(true)
+      cli = nil
+      collectgarbage()
   end
 end

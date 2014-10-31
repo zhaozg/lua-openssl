@@ -162,6 +162,10 @@ static int openssl_bio_new_connect(lua_State *L)
     if (ret == 1)
     {
       PUSH_OBJECT(bio, "openssl.bio");
+      openssl_newvalue(L, bio);
+
+      lua_pushboolean(L, 1);
+      openssl_setvalue(L, bio, "free_all");
       return 1;
     }
     else
@@ -363,8 +367,24 @@ static LUA_FUNCTION(openssl_bio_flush)
 static LUA_FUNCTION(openssl_bio_close)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
-  BIO_shutdown_wr(bio);
-  BIO_set_close(bio, 1);
+  int all = 0;
+
+  if(lua_isboolean(L,2))
+    all = lua_toboolean(L, 2);
+  else
+  {
+    openssl_getvalue(L, bio, "free_all");
+    all = lua_toboolean(L, -1);
+    lua_pop(L,1);
+  }
+
+  if(all)
+    BIO_free_all(bio);
+  else
+    BIO_free(bio);
+
+  lua_pushnil(L);
+  lua_setmetatable(L,1);
   return 0;
 }
 
@@ -487,6 +507,10 @@ static LUA_FUNCTION(openssl_bio_accept)
       BIO *nb = BIO_pop(bio);
 
       PUSH_OBJECT(nb, "openssl.bio");
+      openssl_newvalue(L, nb);
+
+      lua_pushboolean(L, 1);
+      openssl_setvalue(L, nb, "free_all");
       return 1;
     }else
       return openssl_pushresult(L, ret);
