@@ -31,6 +31,6 @@ end
 
 local cert = conn:getpeercertificate()
 print( cert )
-print( cert:pem() )
+print( cert:export() )
 
 conn:close()

@@ -33,8 +33,10 @@ local peer = server:accept()
    assert( peer:dohandshake() )
 --]]
 
-while true do
+local str
+repeat
    local str = peer:receive("*l")
    print(str)
-end
+until not str
+
 peer:close()

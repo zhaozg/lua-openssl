@@ -63,4 +63,5 @@ while not str do
    wait(peer)
    str = peer:receive("*l")
 end
+print(str)
 peer:close()

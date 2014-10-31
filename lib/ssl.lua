@@ -2,8 +2,6 @@ local openssl = require'openssl'
 local socket = require'socket'
 local ssl,pkey,x509 = openssl.ssl,openssl.pkey,openssl.x509
 
-io.read()
-
 local M = {}
 
 local function load(path)
@@ -110,7 +108,6 @@ S.__index = {
             local s = assert(openssl.bio.filter('ssl',self.ssl,'noclose'))
 
             self.bio = assert(b:push(s))
-            
         else
             msg = msg and string.gsub(msg,'_','') or msg
         end
@@ -139,10 +136,16 @@ S.__index = {
     getpeerchain = function(self)
         self.peer,self.peerchain = self.ssl:peer()
         local chains = {}
+        --[[
+        print(self.peerchain,#self.peerchain)
+        for i=1,#self.peerchain do 
+            table.insert(chains,self.peerchain:get(i-1))
+        end
+        --]]
         if (self.peerchain) then
             chains = self.peerchain:totable()
         end
-        return {}
+        return chains
     end,
     close = function(self)
         self.ssl:shutdown()
@@ -193,13 +196,23 @@ S.__index = {
         
         fmt = fmt and string.sub(fmt,1,2) or '*a'
         if (fmt=='*l') then
-            local r, m = self.bio:read(245)
-            if r then
-                self.buff = self.buff .. r
-            elseif(m==-2) then
-                return nil,'closed'                
-            end
             _,_,s, s1 = string.find(self.buff,'(.-)\n(.*)')
+            if not s then
+                local r, m = self.bio:gets(245)
+                if r then
+                    self.buff = self.buff .. r
+                elseif(m==-2) then
+                    return nil,'closed',self.buff
+                else
+                    if not self.timeout then
+                        repeat
+                            r, m = self:receive(fmt)
+                        until (not r) or (m=='closed')
+                        return r,m
+                    end
+                end
+                _,_,s, s1 = string.find(self.buff,'(.-)\n(.*)')
+            end
             if s then
                 self.buff = s1
                 return s

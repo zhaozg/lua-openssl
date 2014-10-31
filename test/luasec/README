@@ -4,8 +4,11 @@ Directories:
  Contains scripts to generate the certificates used by the examples.
  Generate Root CA 'A' and 'B' first, then the servers and clients.
 
-* chain :fail
+* chain
  Example of certificate chain in handshake.
+ note: not full compat with luasec, change cert:pem() to cert:export(),  
+ cert:issuer() and cert:subject() return openssl.x509_name replace old table, 
+ please to see chain/util.lua
 
 * dhparam
  DH parameters for handshake.
@@ -19,7 +22,7 @@ Directories:
 * info
  Informations about the connection.
 
-* key :fail
+* key
  Test encrypted private key.
 
 * loop: : fail, server side memory leaks
@@ -36,14 +39,14 @@ Directories:
 * verification
  Retrieve the certificate verification errors from the handshake.
 
-* verify: fail
+* verify
  Ignore handshake errors and proceed.
 
 * wantread
  Test timeout in handshake() and receive().
 
-* wantwrite: fail
+* wantwrite
  Test timeout in send().
 
-* want: need check
+* want
  Test want() method.
