@@ -2,6 +2,8 @@ local openssl = require'openssl'
 local socket = require'socket'
 local ssl,pkey,x509 = openssl.ssl,openssl.pkey,openssl.x509
 
+io.read()
+
 local M = {}
 
 local function load(path)
@@ -12,6 +14,7 @@ local function load(path)
         return c
     end
 end
+
 
 function M.newcontext(params)
 --[[
@@ -272,7 +275,7 @@ function M.wrap(sock, cfg)
       ctx = cfg
    end
    
-   local s, msg = ctx.ctx:new(sock:getfd())
+   local s, msg = ctx.ctx:ssl(sock:getfd())
    if s then
       if(ctx.mode=='server') then
         s:set_accept_state()
