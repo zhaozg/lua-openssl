@@ -42,6 +42,7 @@ STACK_OF(TYPE)* sk_##type##_fromtable(lua_State*L, int idx) {     \
   for(i=0;i<n;i++) {                                                                      \
     TYPE *x =  SKM_sk_value(TYPE, sk, i);                                                 \
     REF_OR_DUP(TYPE, x);                                                                  \
+    PUSH_OBJECT(x,"openssl."#type);                                                       \
     lua_rawseti(L,-2, i+1);                                                               \
   }                                                                                       \
   return 1;                                                                               \
