@@ -184,6 +184,7 @@ static LUA_FUNCTION(openssl_bio_new_filter)
   int type = luaL_checkoption(L, 1, NULL, sType);
   BIO* bio = NULL;
   int ret = 1;
+  int closeflag = 0;
   switch (type)
   {
   case 0:
@@ -212,9 +213,10 @@ static LUA_FUNCTION(openssl_bio_new_filter)
   }
   case 4:
   {
-    const SSL* ssl = CHECK_OBJECT(2, SSL, "openssl.ssl");
-    int closeflag = luaL_checkoption(L, 3, "noclose", close_flags);
+    SSL* ssl = CHECK_OBJECT(2, SSL, "openssl.ssl");
+    closeflag = luaL_checkoption(L, 3, "noclose", close_flags);
     bio = BIO_new(BIO_f_ssl());
+    //CRYPTO_add(&ssl->references,1,CRYPTO_LOCK_SSL);
     ret = BIO_set_ssl(bio, ssl, closeflag);
   }
   break;
@@ -224,6 +226,12 @@ static LUA_FUNCTION(openssl_bio_new_filter)
   if (ret == 1 && bio)
   {
     PUSH_OBJECT(bio, "openssl.bio");
+    if(closeflag) {
+      openssl_newvalue(L, bio);
+
+      lua_pushboolean(L, 1);
+      openssl_setvalue(L, bio, "free_all");
+    }
     return 1;
   }else
   {
@@ -471,13 +479,17 @@ static LUA_FUNCTION(openssl_bio_get_mem)
 static LUA_FUNCTION(openssl_bio_accept)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
+  int first = lua_isnoneornil(L, 2) ? 0 : lua_toboolean(L, 2); 
   int ret = BIO_do_accept(bio);
   if (ret == 1)
   {
-    BIO *nb = BIO_pop(bio);
+    if(!first) {
+      BIO *nb = BIO_pop(bio);
 
-    PUSH_OBJECT(nb, "openssl.bio");
-    return 1;
+      PUSH_OBJECT(nb, "openssl.bio");
+      return 1;
+    }else
+      return openssl_pushresult(L, ret);
   }
   else
     luaL_error(L, "BIO_do_accept fail");

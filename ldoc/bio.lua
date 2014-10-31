@@ -91,6 +91,12 @@ do  -- define class
 
 do  -- define bio
 
+--- setup ready and accept client connect
+-- @tparam[opt=false] boolean setup true for setup accept bio, false or none will accept client connect
+-- @treturn[1] boolean result only when setup is true
+-- @treturn[2] bio accpeted bio object
+function accept() end 
+
 --- read data from bio object
 -- @tparam number len
 -- @treturn string string length may be less than param len
