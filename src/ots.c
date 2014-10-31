@@ -617,7 +617,7 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_certs)
   TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
   if(lua_isnone(L, 2)) {
     if(ctx->certs) {
-      STACK_OF(X509) *certs = sk_X509_dup(ctx->certs);
+      STACK_OF(X509) *certs = openssl_sk_x509_dup(ctx->certs);
       PUSH_OBJECT(certs,"openssl.stack_of_x509");
     } else {
       lua_pushnil(L);
@@ -627,7 +627,7 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_certs)
     if(ctx->certs) {
       sk_X509_pop_free(ctx->certs,X509_free);
     }
-    ctx->certs = sk_X509_dup(certs);
+    ctx->certs = openssl_sk_x509_dup(certs);
     lua_pushboolean(L, 1);
   }
   return 1;
@@ -1035,7 +1035,7 @@ static int openssl_ts_verify_ctx_certs(lua_State*L) {
   TS_VERIFY_CTX *ctx = CHECK_OBJECT(1, TS_VERIFY_CTX, "openssl.ts_verify_ctx");
   if (lua_isnone(L, 2)) {
     if(ctx->certs) {
-      STACK_OF(X509) *certs =  sk_X509_dup(ctx->certs);
+      STACK_OF(X509) *certs =  openssl_sk_x509_dup(ctx->certs);
       PUSH_OBJECT(certs, "openssl.stack_of_x509");
     }else
       lua_pushnil(L);
@@ -1043,7 +1043,7 @@ static int openssl_ts_verify_ctx_certs(lua_State*L) {
     STACK_OF(X509) *cas = CHECK_OBJECT(2, STACK_OF(X509), "openssl.stack_of_x509");
     if (ctx->certs)
       sk_X509_free(ctx->certs);
-    ctx->certs = sk_X509_dup(cas);
+    ctx->certs = openssl_sk_x509_dup(cas);
     lua_pushboolean(L, 1);
   }
   return 1;

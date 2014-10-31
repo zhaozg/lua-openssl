@@ -112,7 +112,7 @@ static LUA_FUNCTION(openssl_pkcs7_verify)
       ret = 0;
 
     if(signers1) {
-      signers1 = sk_X509_dup(signers1);
+      signers1 = openssl_sk_x509_dup(signers1);
       PUSH_OBJECT(signers1, "openssl.sk_x509");
       ret+=1;
     }
@@ -373,11 +373,11 @@ static LUA_FUNCTION(openssl_pkcs7_parse)
 
   if (certs != NULL)
   {
-    AUXILIAR_SETOBJECT(L, sk_X509_dup(certs), "openssl.stack_of_x509", -1, "certs");
+    AUXILIAR_SETOBJECT(L, openssl_sk_x509_dup(certs), "openssl.stack_of_x509", -1, "certs");
   }
   if (crls != NULL)
   {
-    AUXILIAR_SETOBJECT(L, sk_X509_CRL_dup(crls), "openssl.stack_of_crl", -1, "crls");
+    AUXILIAR_SETOBJECT(L, openssl_sk_x509_crl_dup(crls), "openssl.stack_of_crl", -1, "crls");
   }
 
   return 1;

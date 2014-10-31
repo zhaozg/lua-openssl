@@ -474,7 +474,7 @@ static int openssl_cms_get_signers(lua_State*L)
   STACK_OF(X509) *signers = CMS_get0_signers(cms);
   if (signers)
   {
-    signers = sk_X509_dup(signers);
+    signers = openssl_sk_x509_dup(signers);
     PUSH_OBJECT(signers, "openssl.stack_of_x509");
     return 1;
   }

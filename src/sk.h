@@ -133,6 +133,16 @@ STACK_OF(TYPE)* sk_##type##_fromtable(lua_State*L, int idx) {     \
   return 1;                                                                         \
 }
 
+#define SK_DUP(TYPE, type) STACK_OF(TYPE)* openssl_sk_##type##_dup(STACK_OF(TYPE)* sk) {     \
+  STACK_OF(TYPE)* s = sk_##TYPE##_new_null();       \
+  int i;                                            \
+  for(i=0; i<sk_##TYPE##_num(sk); i++) {            \
+  TYPE* x = sk_##TYPE##_value(sk,i);                \
+  REF_OR_DUP(TYPE,x);                               \
+  sk_##TYPE##_push(s,x);                            \
+  }                                                 \
+  return s;                                         \
+}
 
 #define IMP_LUA_SK(TYPE,type)   \
 TAB2SK(TYPE,type);              \
@@ -149,6 +159,7 @@ SK_GET(TYPE,type);              \
 SK_LENGTH(TYPE,type);           \
 SK_SORT(TYPE,type);             \
 SK_SORTED(TYPE,type);           \
+SK_DUP(TYPE, type)              \
                                 \
 static luaL_Reg sk_##type##_funcs[] = {   \
   {"push",  sk_##type##_push },           \

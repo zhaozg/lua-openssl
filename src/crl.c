@@ -6,6 +6,7 @@
 \*=========================================================================*/
 #include "openssl.h"
 #include "private.h"
+#define CRYPTO_LOCK_REF
 #include "sk.h"
 #include <openssl/x509v3.h>
 
@@ -850,11 +851,13 @@ static luaL_reg R[] =
   {NULL,    NULL}
 };
 
+IMP_LUA_SK(X509_CRL, x509_crl)
+
 int luaopen_crl(lua_State *L)
 {
   auxiliar_newclass(L, "openssl.x509_crl", crl_funcs);
   auxiliar_newclass(L, "openssl.x509_revoked", revoked_funcs);
-
+  openssl_register_sk_x509_crl(L);
   lua_newtable(L);
   luaL_setfuncs(L, R, 0);
 

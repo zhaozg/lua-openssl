@@ -1168,7 +1168,7 @@ static int openssl_ssl_peer(lua_State*L)
   PUSH_OBJECT(x, "openssl.x509");
   if (sk)
   {
-    sk = sk_X509_dup(sk);
+    sk = openssl_sk_x509_dup(sk);
     PUSH_OBJECT(sk, "openssl.stack_of_x509");
     return 2;
   }

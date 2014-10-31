@@ -82,6 +82,9 @@ int opensl_push_general_name(lua_State*L, const GENERAL_NAME* name,  int utf8);
 int openssl_push_xname_asobject(lua_State*L, X509_NAME* xname);
 int openssl_push_bit_string_bitname(lua_State* L,const BIT_STRING_BITNAME* name);
 
+STACK_OF(X509)* openssl_sk_x509_dup(STACK_OF(X509)* sk);
+STACK_OF(X509_CRL)* openssl_sk_x509_crl_dup(STACK_OF(X509_CRL)* sk);
+
 int openssl_get_nid(lua_State*L, int idx);
 int openssl_get_asn1type(lua_State*L, int idx);
 
