@@ -364,31 +364,6 @@ static LUA_FUNCTION(openssl_bio_flush)
   return 1;
 }
 
-static LUA_FUNCTION(openssl_bio_close)
-{
-  BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
-  int all = 0;
-
-  if(lua_isboolean(L,2))
-    all = lua_toboolean(L, 2);
-  else
-  {
-    openssl_getvalue(L, bio, "free_all");
-    all = lua_toboolean(L, -1);
-    lua_pop(L,1);
-  }
-
-  if(all)
-    BIO_free_all(bio);
-  else
-    BIO_free(bio);
-
-  lua_pushnil(L);
-  lua_setmetatable(L,1);
-  return 0;
-}
-
-
 static LUA_FUNCTION(openssl_bio_free)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
@@ -685,7 +660,7 @@ static luaL_reg bio_funs[] =
   {"write", openssl_bio_write },
   {"puts",  openssl_bio_puts  },
   {"flush", openssl_bio_flush },
-  {"close", openssl_bio_close },
+  {"close", openssl_bio_free  },
   {"type",  openssl_bio_type  },
   {"nbio",  openssl_bio_nbio  },
   {"reset", openssl_bio_reset },

@@ -9,7 +9,7 @@
 do  -- define module function
 
 --- create ssl_ctx object, which mapping to SSL_CTX in openssl.
--- @tparam string protocol support 'SSLv3', 'SSLv23', 'SSLv2', 'TSLv1', 'DTLSv1', and can be follow by '-server' or '-client'
+-- @tparam string protocol support 'SSLv3', 'SSLv23', 'SSLv2', 'TSLv1', 'TSLv1_1','TSLv1_2','DTLSv1', and can be follow by '_server' or '_client'
 -- @tparam[opt] string support_ciphers, if not given, default of openssl will be used
 -- @treturn ssl_ctx
 function ctx_new() end
@@ -169,13 +169,18 @@ function verify_mode() end
 -- @treturn boolean result
 function set_verify() end
 
---- create bio and ssl object
+--- create bio object
 -- @tparam string host_addr format like 'host:port'
 -- @tparam[opt=true] boolean server, true listen at host_addr,false connect to host_addr
 -- @tparam[opt=true] boolean autoretry 
 -- @treturn bio bio object
--- @treturn ssl ssl object
 function bio() end
+
+--- create ssl object
+-- @tparam bio bio 
+-- @tparam[opt=false] boolean server, true will make ssl server
+-- @tparam ssl 
+function ssl() end
 
 end
 

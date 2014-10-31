@@ -22,7 +22,6 @@ static int openssl_ssl_ctx_new(lua_State*L)
   const
 #endif
   SSL_METHOD* method = NULL;
-
   const char* ciphers;
   SSL_CTX* ctx;
   if (strcmp(meth, "SSLv3") == 0)
@@ -75,14 +74,14 @@ static int openssl_ssl_ctx_new(lua_State*L)
 #endif
   else
     luaL_error(L, "#1:%s not supported\n"
-               "Maybe SSLv3 SSLv23 TLSv1 DTLSv1 [SSLv2], option followed by -client or -server\n",
+               "Maybe SSLv3 SSLv23 TLSv1 TLSv1_1 TLSv1_2 DTLSv1 [SSLv2], option followed by _client or _server\n",
                "default is SSLv3",
                meth);
   ciphers = luaL_optstring(L, 2, SSL_DEFAULT_CIPHER_LIST);
   ctx = SSL_CTX_new(method);
   if (!ctx)
     luaL_error(L, "#1:%s not supported\n"
-               "Maybe SSLv3 SSLv23 TLSv1 DTLSv1 [SSLv2], option followed by -client or -server\n",
+               "Maybe SSLv3 SSLv23 TLSv1 TLSv1_1 TLSv1_2 DTLSv1 [SSLv2], option followed by _client or _server\n",
                "default is SSLv3",
                meth);
   openssl_newvalue(L, ctx);
@@ -374,7 +373,7 @@ static int openssl_ssl_ctx_new_bio(lua_State*L)
   int autoretry = lua_isnoneornil(L, 4) ? 1 : auxiliar_checkboolean(L, 4);
 
   SSL *ssl = NULL;
-  BIO *bio = server ? BIO_new_ssl(ctx, server) : BIO_new_ssl_connect(ctx);
+  BIO *bio = server ? BIO_new_ssl(ctx, 0) : BIO_new_ssl_connect(ctx);
   int ret = 0;
   ret = BIO_get_ssl(bio, &ssl);
   if (ret==1)
