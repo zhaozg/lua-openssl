@@ -474,9 +474,7 @@ static int openssl_x509_digest(lua_State* L)
   unsigned char buffer[EVP_MAX_MD_SIZE];
   char hex_buffer[EVP_MAX_MD_SIZE*2];
   X509 *cert = CHECK_OBJECT(1, X509, "openssl.x509");
-  const EVP_MD *digest = get_digest(L, 2);
-  if(digest==NULL)
-    digest = EVP_sha1();
+  const EVP_MD *digest = lua_isnoneornil(L,2) ? EVP_sha1() : get_digest(L, 2);
 
   if (!digest) {
     lua_pushnil(L);
