@@ -26,22 +26,28 @@ function list() end
 -- @treturn string verbose message
 function error() end
 
---- get randome bytes
+--- get random bytes
 -- @tparam number length
 -- @tparam[opt=false] boolean strong true to generate strong randome bytes
 -- @treturn string 
-function randome() end
+function random() end
 
---- add new object
--- @tparam string oid
--- @tparam string name 
--- @tparam[opt=nil] string alias
-function object() end
+--- get random generator state
+-- @tparam boolean result true for sucess
+function rand_status() end
 
---- get object according object nid or name
--- @tparam number|string nid_or_name
--- @treturn asn1_object
-function object() end
+--- load rand seed from file
+-- @tparam[opt=nil] string file path to laod seed, default opensl management
+-- @treutrn result
+function rand_load() end
+
+--- save rand seed to file
+-- @tparam[opt=nil] string file path to save seed, default openssl management
+-- @treturn bool result
+function rand_write() end
+
+--- cleanup random genrator 
+function rand_cleanup() end
 
 --- get openssl engine object
 -- @tparam string engine_id

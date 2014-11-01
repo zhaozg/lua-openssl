@@ -1,41 +1,49 @@
 local openssl = require'openssl'
-local bio = openssl.bio
-io.read()
+local csr,bio,ssl = openssl.csr,openssl.bio, openssl.ssl
+local sslctx = require'sslctx'
 
 host = arg[1] or "127.0.0.1"; --only ip
 port = arg[2] or "8383";
 
-local ctx = openssl.ssl.ctx_new('SSLv23','ALL')
-print(string.format('Connect to %s:%s with %s',host,port,ctx))
+local params = {
+   mode = "client",
+   protocol = "tlsv1",
+   key = "luasec/certs/clientAkey.pem",
+   certificate = "luasec/certs/clientA.pem",
+   cafile = "luasec/certs/rootA.pem",
+   verify = {"peer", "fail_if_no_peer_cert"},
+   options = {"all", "no_sslv2"},
+}
 
-function mode_ssl()
-    local bio = assert(bio.connect(host..':'..port,true)) --tcp
-    if bio then
-        local cli = assert(ctx:ssl(bio,false))
-        if cli then
-            print('connected',cli:connect() )--ssl
-            cli:write('aaa')
-            cli:shutdown()
-            cli = nil
-        end
-        bio:shutdown()
-        bio,cli = nil,nil
-        collectgarbage()
-    end
-end
+local ctx = assert(sslctx.new(params))
 
-function mode_bio()
-    local cli = assert(ctx:bio(host..':'..port,false)) 
-    print(cli)
-    if cli then
-        assert(cli:connect())
-        cli:write('aaa')
-        cli = nil
+print(string.format('CONNECT to %s:%s with %s',host,port,ctx))
+
+function mk_connection(host,port,i)
+  local cli = assert(bio.connect(host..':'..port,true))
+  if(cli) then
+    S = ctx:ssl(cli,false)
+    if(i%2==2) then
+        assert(S:handshake())
+    else
+        assert(S:connect())
     end
+    s = 'aaa'
+    io.write('.')
+    for j=1,100 do
+          assert(S:write(s))
+          assert(S:read())
+    end
+    S:shutdown()
+    cli:shutdown()
+    cli:close()
+    cli = nil
     collectgarbage()
+    
+  end
+  openssl.error(true)
 end
 
-for i=1,100000 do
-    mode_bio()
-    mode_ssl()
+for i=1,1000000 do
+  mk_connection(host,port,i)
 end

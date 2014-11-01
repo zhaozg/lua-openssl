@@ -762,9 +762,11 @@ static int openssl_ssl_ctx_set_tmp(lua_State *L)
   };
 
   int nwhich = luaL_checkoption(L, 2, NULL, which);
+  int ret = 0;
 
   if(lua_isfunction(L,3)) {
     lua_pushvalue(L, 3);
+    ret = 1;
     switch (nwhich)
     {
     case 0:
@@ -795,7 +797,7 @@ static int openssl_ssl_ctx_set_tmp(lua_State *L)
       {
         DH* dh = PEM_read_bio_DHparams(bio, NULL, NULL, NULL);
         if(dh)
-          SSL_CTX_set_tmp_dh(ctx, dh);
+          ret = SSL_CTX_set_tmp_dh(ctx, dh);
         else
           luaL_error(L,"generate new tmp dh fail");
       }
@@ -804,7 +806,7 @@ static int openssl_ssl_ctx_set_tmp(lua_State *L)
       {
         RSA* rsa = PEM_read_bio_RSAPrivateKey(bio, NULL, NULL, NULL);
         if(rsa)
-          SSL_CTX_set_tmp_rsa(ctx, rsa);
+          ret = SSL_CTX_set_tmp_rsa(ctx, rsa);
         else
           luaL_error(L,"generate new tmp rsa fail");
       }
@@ -820,7 +822,7 @@ static int openssl_ssl_ctx_set_tmp(lua_State *L)
             ec = EC_KEY_new_by_curve_name(nid);
         }
         if(ec)
-          SSL_CTX_set_tmp_ecdh(ctx, ec);
+          ret = SSL_CTX_set_tmp_ecdh(ctx, ec);
         else
           luaL_error(L,"generate new tmp ec_key fail");
       }
@@ -834,7 +836,7 @@ static int openssl_ssl_ctx_set_tmp(lua_State *L)
   }else
     luaL_argerror(L,3,"should be tmp key callback function or pem string or key object");
 
-  return 0;
+  return openssl_pushresult(L, ret);
 }
 
 static int tlsext_servername_callback(SSL *ssl, int *ad, void *arg)
@@ -1763,15 +1765,15 @@ static luaL_Reg ssl_funcs[] =
 #endif
   {"clear",     openssl_ssl_clear},
   {"want",      openssl_ssl_want},
-  {"pending",     openssl_ssl_pending},
-  {"accept",      openssl_ssl_accept},
-  {"connect",     openssl_ssl_connect},
+  {"pending",   openssl_ssl_pending},
+  {"accept",    openssl_ssl_accept},
+  {"connect",   openssl_ssl_connect},
   {"read",      openssl_ssl_read},
   {"peek",      openssl_ssl_peek},
   {"write",     openssl_ssl_write},
   {"error",     openssl_ssl_error},
 
-  {"renegotiate",       openssl_ssl_renegotiate},
+  {"renegotiate",   openssl_ssl_renegotiate},
   {"handshake",     openssl_ssl_do_handshake},
   {"shutdown",      openssl_ssl_shutdown},
 
@@ -1781,10 +1783,10 @@ static luaL_Reg ssl_funcs[] =
   {"renegotiate_abbreviated", openssl_ssl_renegotiate_abbreviated},
 #endif
   {"renegotiate_pending",   openssl_ssl_renegotiate_pending},
-  {"set_connect_state", openssl_ssl_set_connect_state},
-  {"set_accept_state",  openssl_ssl_set_accept_state},
+  {"set_connect_state",     openssl_ssl_set_connect_state},
+  {"set_accept_state",      openssl_ssl_set_accept_state},
 
-  {"__gc",        openssl_ssl_gc},
+  {"__gc",          openssl_ssl_gc},
   {"__tostring",    auxiliar_tostring},
 
   {NULL,      NULL},

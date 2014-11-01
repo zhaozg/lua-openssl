@@ -1,6 +1,5 @@
 local openssl = require 'openssl'
 local bio = openssl.bio
-io.read()
 
 host = arg[1] or "127.0.0.1"; --only ip
 port = arg[2] or "8383";
