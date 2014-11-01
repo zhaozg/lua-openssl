@@ -38,7 +38,7 @@ function rand_status() end
 
 --- load rand seed from file
 -- @tparam[opt=nil] string file path to laod seed, default opensl management
--- @treutrn result
+-- @treturn boolean result
 function rand_load() end
 
 --- save rand seed to file

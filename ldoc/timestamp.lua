@@ -1,5 +1,5 @@
 ---
--- timestamp module.
+-- Provide timestamp module.
 -- create and manage x509 certificate sign request
 -- @module ts
 -- @usage

@@ -1,5 +1,5 @@
 ------------
--- Public/Private key module.
+-- Provide Public/Private key module.
 -- @module pkey
 -- @usage
 --  pkey = require'openssl'.pkey

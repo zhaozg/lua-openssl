@@ -179,14 +179,14 @@ function bio() end
 --- create ssl object
 -- @tparam bio bio 
 -- @tparam[opt=false] boolean server, true will make ssl server
--- @tparam ssl 
+-- @treturn ssl 
 function ssl() end
 
 --- create ssl object
 -- @tparam bio input
 -- @tparam bio ouput
 -- @tparam[opt=false] boolean server, true will make ssl server
--- @tparam ssl 
+-- @treturn ssl 
 function ssl() end
 
 end

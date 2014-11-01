@@ -1,5 +1,5 @@
 ------------
--- openssl.bio module.
+-- Provide bio module.
 -- bio object mapping to BIO in openssl
 -- openssl.bio is a help object, it is useful, but rarely use.
 -- @module bio

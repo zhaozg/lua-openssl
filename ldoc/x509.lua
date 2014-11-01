@@ -1,5 +1,5 @@
 ---
--- x509 module.
+-- Provide x509 module.
 -- create and manage x509 certificate
 -- @module x509
 -- @usage

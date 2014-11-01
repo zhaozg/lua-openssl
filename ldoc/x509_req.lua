@@ -1,5 +1,5 @@
 ---
--- csr module.
+-- Provide csr module.
 -- create and manage x509 certificate sign request
 -- @module csr
 -- @usage

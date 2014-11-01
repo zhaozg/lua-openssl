@@ -1,5 +1,5 @@
 ---
--- crl module.
+-- Provide crl module.
 -- create and manage x509 certificate sign request
 -- @module crl
 -- @usage
