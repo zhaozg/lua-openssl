@@ -383,7 +383,8 @@ static int openssl_ssl_ctx_new_bio(lua_State*L)
     if (server)
     {
       BIO* acpt = BIO_new_accept((char*)host_addr);
-      bio = BIO_push(acpt, bio);
+      BIO_set_accept_bios(acpt, bio);
+      bio = acpt;
     }
     else
     {
