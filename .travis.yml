@@ -1,6 +1,11 @@
 language: c
 
 env:
+  global:
+    - PLATFORM=linux
+  matrix:
+    - LUA=lua5.2
+env:
 
 branches:
   only:
@@ -9,8 +14,9 @@ branches:
 before_install:
   - curl http://www.lua.org/ftp/lua-5.2.3.tar.gz | tar xz
   - cd lua-5.2.3
-  - sudo make $PLATFORM install
+  - sudo make linux install
   - cd $TRAVIS_BUILD_DIR
+  - export PATH=$PATH:/usr/local/bin
   - git submodule update --init --recursive
   - git submodule update --recursive
 
