@@ -9,10 +9,7 @@ local tmp = true
 
 local function setInterval(fn, ms)
   local handle = uv.new_timer()
-  function handle:ontimeout()
-    fn();
-  end
-  uv.timer_start(handle, ms, ms)
+  uv.timer_start(handle, ms, ms, fn)
   return handle
 end
 
@@ -23,13 +20,16 @@ setInterval(function()
 end,
 1000)
 --------------------------------------------------------------
+host = arg[1] or "127.0.0.1"; --only ip
+port = arg[2] or "8383";
+
 local address = {
-	port = arg[2] and tonumber(arg[2]) or 12456,
-	address = arg[1] and arg[1] or '127.0.0.1'
+	port = tonumber(port),
+	address = host
 }
 
 local ctx = ssl.new_ctx({
-   protocol = "SSLv3_client",
+   protocol = "TLSv1_2_client",
    verify = {"none"},
 --   options = {"all", "no_sslv2"}
 })
@@ -45,9 +45,11 @@ function new_connection(i)
 		if tmp then
 			self:close()
 		end
+
 		if count <= ncount then
 			new_connection(i)
 		end
+
 	end)
 
 	function scli:ondata(chunk)
@@ -70,7 +72,9 @@ function new_connection(i)
 	return scli
 end
 
+tmp = true
 local conns = {}
+
 for i=1, step do 
 	new_connection(i)
 end

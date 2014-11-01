@@ -1,10 +1,10 @@
 local uv = require('luv')
 local openssl=require'openssl'
-local ssl = openssl.ssl
-local bio = openssl.bio
+local ssl,bio,x509,pkey,csr = openssl.ssl,openssl.bio,openssl.x509,openssl.pkey,openssl.csr
+
 local bit = require'bit'
 local print = print
-
+-- support 
 local M = {}
 
 local function load(path)
@@ -69,81 +69,82 @@ end
 
 local S = {}
 S.__index = {
+
     handshake = function(self, connected_cb)
 		if not self.connecting then
-			function self.socket.ondata(socket,chunk)
-				self.inp:write(chunk)
-				self:handshake(connected_cb)
-			end
-            function self.socket.onclose()
-                self:close()
-            end
-            function self.socket.onerror()
-                if self.onerror then
+            uv.read_start(self.socket, function(_,err,chunk)
+                if(err) then 
+                    print('ERR',err)
                     self:onerror()
+                end
+                if chunk then
+                    self.inp:write(chunk)
+                    self:handshake(connected_cb)
                 else
                     self:close()
                 end
-            end
-            function self.socket.onend()
-                if self.onend then
-                    self:onend()
-                else
-                    self:close()
-                end
-            end
-            uv.read_start(self.socket)
+			end)
+
             self.connecting = true
 		end
-
-		local ret,err = self.ssl:handshake()
-        if ret==nil then
-            if (self.onerror) then
-                self:onerror()
-            elseif (self.onclose) then
-                self:onclose()
+        if not self.connected then
+            local ret,err = self.ssl:handshake()
+            if ret==nil then
+                if (self.onerror) then
+                    self:onerror()
+                elseif (self.onclose) then
+                    self:onclose()
+                else
+                    self:close()
+                end
             else
-                self:close()
-            end
-        else
-			local i, o = self.out:pending()
-			if i > 0 then  --客户端握手使用
-				uv.write(self.socket, self.out:read(), function()
-                    self:handshake(connected_cb)
-                end)
-                return
-			end
-            if (ret==false) then return end
-            
-			self.connected = true
-			self.connecting = nil
-
-            function self.socket.ondata(socket,chunk)
-                local ret,err = self.inp:write(chunk)
-                if ret==nil then
-                    if self.onerror then
-                        self.onerror(self)
-                    elseif self.onend then
-                        self.onend(self)
-                    end
+                local i, o = self.out:pending()
+                if i > 0 then  --客户端握手使用
+                    uv.write(self.socket, self.out:read(), function()
+                        self:handshake(connected_cb)
+                    end)
                     return
                 end
+                if (ret==false) then return end
                 
-                local i,o = self.inp:pending()
-                if i>0 then
-                    local ret, msg = self.ssl:read()
-                    if ret then
-                        self:ondata(ret)
+                self.connected = true
+                self.connecting = true
+                uv.read_stop(self.socket)
+                uv.read_start(self.socket, function(_,err,chunk)
+                    if(err) then 
+                        print('ERR',err)
+                        self:onerror()
                     end
-                end
-                if o > 0 then
-                    assert(false,'never here')
-                end
+                    if chunk then
+                        local ret,err = self.inp:write(chunk)
+                        if ret==nil then
+                            if self.onerror then
+                                self.onerror(self)
+                            elseif self.onend then
+                                self.onend(self)
+                            end
+                            return
+                        end
+                        
+                        local i,o = self.inp:pending()
+                        if i>0 then
+                            local ret, msg = self.ssl:read()
+                            if ret then
+                                self:ondata(ret)
+                            end
+                        end
+                        if o > 0 then
+                            assert(false,'never here')
+                        end
+                    else
+                        self:close()
+                    end
+                end)
+                connected_cb(self)
             end
-            connected_cb(self)
-        end
 
-		return self.connected
+            return self.connected
+        end
 	end,
     shutdown = function(self,callback)
         if not self.shutdown then
@@ -169,10 +170,6 @@ S.__index = {
             if self.out then self.out:close() end
 
             self.out,self.inp = nil,nil
-            if self.mode then
-                --server mode
-                uv.unref(self.socket)
-            end
             uv.close(self.socket)
             self.connected = nil
             self.socket = nil
@@ -219,19 +216,19 @@ function M.connect(host,port,ctx,connected_cb)
     end
     local socket = uv.new_tcp()
     local scli = M.new_ssl(ctx, socket) 
-
-    uv.tcp_connect(socket, host, port, function(err)
-		scli:handshake(function(scli)
-            if connected_cb then
-                connected_cb(scli)
-            end
-		end)
-    end)
-    function socket:onend()
-        if (scli.onend) then
-            scli:onend()
+    
+    uv.tcp_connect(socket, host, port, function(self, err)
+        if err then 
+            print('ERROR',err)
+        else
+            print('SCLI',scli)
+            scli:handshake(function(self)
+                if connected_cb then
+                    connected_cb(self)
+                end
+            end)
         end
-    end
+    end)
 
     return scli   
 end

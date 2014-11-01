@@ -7,10 +7,7 @@ local count = 0
 
 local function setInterval(fn, ms)
   local handle = uv.new_timer()
-  function handle:ontimeout()
-    fn();
-  end
-  uv.timer_start(handle, ms, ms)
+  uv.timer_start(handle, ms, ms, fn)
   return handle
 end
 
@@ -22,22 +19,20 @@ end,
 1000)
 --]]
 --------------------------------------------------------------
-local address = {
-	port = 4433,
-	address = '192.168.0.248'
-}
+host = arg[1] or "127.0.0.1"; --only ip
+port = arg[2] or "8383";
 
 local address = {
-	port = 12456,
-	address = '127.0.0.1'
+	port = tonumber(port),
+	address = host
 }
 
 local ctx = ssl.new_ctx({
-   protocol = "SSLv3_server",
+   protocol = "TLSv1_2_server",
    verify = {"none"},
-   key = "certs/serverAkey.pem",
-   certificate = "certs/serverA.pem",
-   cafile = "certs/rootA.pem",
+   key = "../luasec/certs/serverAkey.pem",
+   certificate = "../luasec/certs/serverA.pem",
+   cafile = "../luasec/certs/rootA.pem",
    verify = {"none"},   
 --   options = {"all", "no_sslv2"}
 })
@@ -45,21 +40,20 @@ local ctx = ssl.new_ctx({
 function create_server(host, port, on_connection)
   local server = uv.new_tcp()
   uv.tcp_bind(server, host, port)
-  function server:onconnection()
+  uv.listen(server,64, function(self) 
     local client = uv.new_tcp()
-    uv.accept(server, client)
+    uv.accept(self, client)
     on_connection(client)
-  end
-  uv.listen(server)
+  end)
   return server
 end
 
 local p = print
 local server = create_server(address.address, address.port, function (client)
 
-	uv.read_start(client)
 	local scli = ssl.new_ssl(ctx,client,true)
-	scli:handshake(function(self)
+	scli:handshake(function(scli)
+		print('CONNECTED')
 		count = count + 1
 	end)
 
@@ -81,9 +75,6 @@ local server = create_server(address.address, address.port, function (client)
 
 end)
 
-function server:onclose()
-  p("server closed")
-end
 local address = uv.tcp_getsockname(server)
 p("server", server, address)
 
