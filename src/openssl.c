@@ -50,6 +50,41 @@ static LUA_FUNCTION(openssl_hex)
   return 1;
 }
 
+static LUA_FUNCTION(openssl_base64)
+{
+  size_t l = 0;
+  BIO *bio = load_bio_object(L, 1);
+  int encode = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L, 2);
+  BIO *b64 = BIO_new(BIO_f_base64());
+  BIO *out = BIO_new(BIO_s_mem());
+  
+  BUF_MEM* mem;
+
+  if (encode) {
+    BIO_push(b64, out);
+    BIO_get_mem_ptr(bio, &mem);
+    lua_pushlstring(L, mem->data, mem->length);
+    BIO_write(b64, mem->data, mem->length);
+    BIO_flush(b64);
+  } else {
+    char inbuf[512];
+    int inlen;
+    BIO_push(b64, bio);
+    while((inlen = BIO_read(b64, inbuf, 512)) > 0) 
+      BIO_write(out, inbuf, inlen);
+    BIO_flush(out);
+  }
+
+  BIO_get_mem_ptr(out, &mem);
+  lua_pushlstring(L, mem->data, mem->length);
+  BIO_free_all(b64);
+  if(encode)
+    BIO_free(bio);
+  else
+    BIO_free(out);
+  return 1;
+}
+
 static void list_callback(const OBJ_NAME *obj, void *arg)
 {
   lua_State *L = (lua_State *)arg;
@@ -206,6 +241,7 @@ static const luaL_Reg eay_functions[] =
   {"version",     openssl_version},
   {"list",        openssl_list},
   {"hex",         openssl_hex},
+  {"base64",      openssl_base64},
   {"mem_leaks",   openssl_mem_leaks},
 
   {"rand_status", openssl_random_status},

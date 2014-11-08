@@ -14,6 +14,12 @@ do  -- define module function
 -- @treturn string
 function hex() end
 
+--- base64 encode or decode
+-- @tparam string|bio input
+-- @tparam[opt=true] boolean encode true to encoed, false to decode
+-- @treturn string
+function base64() end
+
 --- get method names
 -- @tparam string type support 'cipher','digests','pkeys','comps'
 -- @treturn table as array

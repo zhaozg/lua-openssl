@@ -1,7 +1,23 @@
 local openssl = require('openssl')
 
+local msg = 'The quick brown fox jumps over the lazy dog.'
 TestLhtml = {}
-
+    function testHex()
+        local ano = openssl.hex(msg)
+        assertEquals(openssl.hex(msg,true),ano)
+        local raw = openssl.hex(ano,false)
+        assertEquals(raw,msg)
+        assertEquals(#msg*2,#ano)
+    end
+    
+    function testBase64()
+        local ano = openssl.base64(msg)
+        assert(#ano>#msg)
+        assertEquals(openssl.base64(msg,true),ano)
+        local raw = openssl.base64(ano,false)
+        assertEquals(raw,msg)
+    end
+    
     function testAll()
         local f = io.open('openssl.cnf','r') 
         if not f then f = io.open('test/openssl.cnf','r') end

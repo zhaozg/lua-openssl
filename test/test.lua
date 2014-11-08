@@ -1,5 +1,6 @@
 local openssl = require'openssl'
 require'luaunit'
+io.read()
 
 openssl.rand_load()
 
