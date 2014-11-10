@@ -13,7 +13,7 @@ do  -- define module function
 --
 -- @tparam string name_or_oid  short name,long name or oid string
 -- @tparam[opt] boolean no_name  true for only oid string, default is false
--- @treturn[1] asn1_object mapping to ASN1_OBJECT in openssl
+-- @treturn asn1_object mapping to ASN1_OBJECT in openssl
 --
 -- @see asn1_object
 function new_object() end
@@ -21,7 +21,7 @@ function new_object() end
 --- Create asn1_object object
 --
 -- @tparam integer nid ident to asn1_object
--- @treturn[1] asn1_object mapping to ASN1_OBJECT in openssl
+-- @treturn asn1_object mapping to ASN1_OBJECT in openssl
 --
 -- @see asn1_object
 function new_object() end
@@ -29,7 +29,7 @@ function new_object() end
 --- Create asn1_object object
 --
 -- @tparam table options have sn, ln, oid keys to create asn1_object
--- @treturn[1] asn1_object mapping to ASN1_OBJECT in openssl
+-- @treturn asn1_object mapping to ASN1_OBJECT in openssl
 --
 -- @see asn1_object
 function new_object() end
@@ -48,8 +48,7 @@ function new_string() end
 --- get nid for txt, which can be short name, long name, or numerical oid
 --
 -- @tparam string txt which get to nid
--- @treturn[1] integer nid
--- @treturn[2] nil
+-- @treturn integer nid or nil on fail
 function txt2nid() end
 
 end
@@ -63,7 +62,7 @@ do  -- defint asn1_object
 
 --- get nid of asn1_object.
 --
--- @treturn[1] integer nid of asn1_object
+-- @treturn integer nid of asn1_object
 --
 function nid() end
 
@@ -76,38 +75,38 @@ function name() end
 
 --- get short name of asn1_object.
 --
--- @treturn[1] string short name of asn1_object
+-- @treturn string short name of asn1_object
 --
 function sn() end
 
 --- get long name of asn1_object.
 --
--- @treturn[1] string long name of asn1_object
+-- @treturn string long name of asn1_object
 --
 function ln() end
 
 --- get text of asn1_object.
 --
 -- @tparam[opt] boolean no_name true for only oid or name, default with false
--- @treturn[1] string long or short name, even oid of asn1_object
+-- @treturn string long or short name, even oid of asn1_object
 --
 function txt() end
 
 --- compare two asn1_objects, if equals return true
 --
 -- @tparam asn1_object another to compre
--- @treturn[1] boolean true if equals
+-- @treturn boolean true if equals
 --
 function __eq(another) end
 
 --- make a clone of asn1_object
 --
--- @treturn[1] asn1_object clone for self
+-- @treturn asn1_object clone for self
 function dup() end
 
 --- get data of asn1_object
 --
--- @treturn[1] string asn1_object data
+-- @treturn string asn1_object data
 function data() end
 
 end
@@ -120,13 +119,13 @@ do
 
 --- get type of asn1_string
 --
--- @treturn[1] string type of asn1_string
+-- @treturn string type of asn1_string
 -- @see new_string
 function type() end
 
 --- get data of asn1_string
 --
--- @treturn[1] string raw data of asn1_string
+-- @treturn string raw data of asn1_string
 function data() end
 
 --- set data of asn1_string
@@ -138,22 +137,22 @@ function data() end
 
 --- get data as utf8 encode string
 --
--- @treturn[1] string utf8 encoded string
+-- @treturn string utf8 encoded string
 function toutf8() end
 
 --- get data as printable encode string
 --
--- @treturn[1] string printable encoded string
+-- @treturn string printable encoded string
 function print() end
 
 --- duplicate a new asn1_string
 --
--- @treturn[1] asn1_string clone for self
+-- @treturn asn1_string clone for self
 function dup() end
 
 --- get length two asn1_string
 --
--- @treturn[1] integer length of asn1_string
+-- @treturn integer length of asn1_string
 -- @usage
 --  local astr = asn1.new_string('ABCD')
 --  print('length:',#astr)
@@ -164,7 +163,7 @@ function length() end
 --- compare two asn1_string, if equals return true
 --
 -- @tparam asn1_string another to compre
--- @treturn[1] boolean true if equals
+-- @treturn boolean true if equals
 -- @usage
 --  local obj = astr:dup()
 --  assert(obj==astr, "must equals")
@@ -172,7 +171,7 @@ function __eq(another) end
 
 --- convert asn1_string to lua string
 --
--- @treturn[1] string result format match with type:data
+-- @treturn string result format match with type:data
 function __tostring() end
 
 end

@@ -15,7 +15,7 @@ do --define module function
 -- @tparam[opt] stack_of_x509_extension extensions add to x509
 -- @tparam[opt] stack_of_x509_attribute attributes add to x509
 -- @treturn x509 certificate object
-function new () end
+function new() end
 
 --- read x509 from string or bio input
 -- @tparam bio|string input input data
@@ -52,7 +52,7 @@ do  -- define x509
 -- @tparam[opt='pem'] string format, 'der' or 'pem' default
 -- @tparam[opt='true'] boolean noext not export extension
 -- @treturn string
-function export () end
+function export() end
 
 --- parse x509 object as table
 -- @tparam[opt=true] shortname default will use short object name

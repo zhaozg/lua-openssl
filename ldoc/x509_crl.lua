@@ -17,7 +17,7 @@ do --define module function
 -- @tparam[opt=7*24*3600] number period to generate new crl
 -- @treturn x509_crl object
 -- @see x509_crl
-function new () end
+function new() end
 
 --- read x509_crl from string or bio input
 -- @tparam bio|string input input data
