@@ -151,6 +151,7 @@ static int openssl_ssl_ctx_add(lua_State*L)
       lua_rawgeti(L, 3, i);
       x = CHECK_OBJECT(2, X509, "openssl.x509");
       lua_pop(L, 1);
+      CRYPTO_add(&x->references, 1, CRYPTO_LOCK_X509);
       ret = SSL_CTX_add_extra_chain_cert(ctx, x);
     }
   }
