@@ -50,3 +50,4 @@ TestX509Name = {}
         assertStrContains(tostring(k),'openssl.asn1_object')
         assertEquals(tostring(v),'utf8:DEV')
     end
+    

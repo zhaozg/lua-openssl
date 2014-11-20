@@ -590,7 +590,7 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_singer)
       lua_pushnil(L);
     if(ctx->signer_key) {
       EVP_PKEY* pkey = ctx->signer_key;
-      pkey->references ++;
+      CRYPTO_add(&pkey->references,1,CRYPTO_LOCK_EVP_PKEY);
       PUSH_OBJECT(pkey, "openssl.evp_pkey");
     }else
       lua_pushnil(L);
@@ -1066,7 +1066,7 @@ static int openssl_ts_verify_ctx_data(lua_State*L) {
     if (ctx->data)
     {
       BIO* bio = ctx->data;
-      bio->references++;
+      CRYPTO_add(&bio->references,1,CRYPTO_LOCK_BIO);
       PUSH_OBJECT(bio,"openssl.bio");
     }else
       lua_pushnil(L);

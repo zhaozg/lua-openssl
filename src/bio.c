@@ -220,7 +220,6 @@ static LUA_FUNCTION(openssl_bio_new_filter)
     SSL* ssl = CHECK_OBJECT(2, SSL, "openssl.ssl");
     closeflag = luaL_checkoption(L, 3, "noclose", close_flags);
     bio = BIO_new(BIO_f_ssl());
-    //CRYPTO_add(&ssl->references,1,CRYPTO_LOCK_SSL);
     ret = BIO_set_ssl(bio, ssl, closeflag);
   }
   break;
@@ -448,7 +447,7 @@ static LUA_FUNCTION(openssl_bio_pop)
   }
   else
   {
-    end->references++;
+    CRYPTO_add(&end->references,1,CRYPTO_LOCK_BIO);
     PUSH_OBJECT(end, "openssl.bio");
   }
   return 1;
@@ -516,7 +515,7 @@ static LUA_FUNCTION(openssl_bio_get_ssl){
   if (ret==1)
   {
     PUSH_OBJECT(ssl,"openssl.ssl");
-    ssl->references++;
+    CRYPTO_add(&ssl->references,1,CRYPTO_LOCK_SSL);
     openssl_newvalue(L, ssl);
     return 1;
   }

@@ -305,11 +305,13 @@ static int openssl_ssl_ctx_cert_store(lua_State*L)
   if (!lua_isnoneornil(L, 2))
   {
     store = CHECK_OBJECT(2, X509_STORE, "openssl.x509_store");
+    CRYPTO_add(&store->references,1,CRYPTO_LOCK_SSL_CTX);
     SSL_CTX_set_cert_store(ctx, store);
     return 0;
   }
 
   store = SSL_CTX_get_cert_store(ctx);
+  CRYPTO_add(&store->references,1,CRYPTO_LOCK_SSL_CTX);
   PUSH_OBJECT(store, "openssl.x509_store");
   return 1;
 }
@@ -327,11 +329,11 @@ static int openssl_ssl_ctx_new_ssl(lua_State*L)
   {
     BIO *bi = CHECK_OBJECT(2, BIO, "openssl.bio");
     BIO *bo = bi;
-    bi->references++;
+    CRYPTO_add(&bi->references,1,CRYPTO_LOCK_BIO);
     if (auxiliar_isclass(L, "openssl.bio", 3))
     {
       bo = CHECK_OBJECT(3, BIO, "openssl.bio");
-      bo->references++;
+      CRYPTO_add(&bo->references,1,CRYPTO_LOCK_BIO);
       mode_idx = 4;
     }else
       mode_idx = 3;
@@ -1689,7 +1691,7 @@ static int openssl_ssl_ctx(lua_State*L)
   if (lua_isnoneornil(L, 2))
   {
     SSL_CTX *ctx = SSL_get_SSL_CTX(s);
-    ctx->references++;
+    CRYPTO_add(&ctx->references,1,CRYPTO_LOCK_SSL_CTX);
     PUSH_OBJECT(ctx, "openssl.ssl_ctx");
   }
   else
