@@ -163,6 +163,7 @@ static int openssl_ssl_ctx_gc(lua_State*L)
   SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
   X509_STORE *xctx = SSL_CTX_get_cert_store(ctx);
   openssl_freevalue(L, ctx);
+  ctx->cert_store = NULL;
 
   SSL_CTX_free(ctx);
   return 0;
