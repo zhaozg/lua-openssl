@@ -302,19 +302,19 @@ static int openssl_ssl_ctx_load_verify_locations(lua_State*L)
 static int openssl_ssl_ctx_cert_store(lua_State*L)
 {
   SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
-  X509_STORE* store = SSL_CTX_get_cert_store(ctx);
-  if (!lua_isnoneornil(L, 2))
-  {
+  X509_STORE *store = NULL;
+  if (lua_isnoneornil(L, 2)) {
+    store = SSL_CTX_get_cert_store(ctx);
+    CRYPTO_add(&store->references,1,CRYPTO_LOCK_X509_STORE);
+    PUSH_OBJECT(store, "openssl.x509_store");
+    return 1;
+  } else {
     store = CHECK_OBJECT(2, X509_STORE, "openssl.x509_store");
-    CRYPTO_add(&store->references,1,CRYPTO_LOCK_SSL_CTX);
+    CRYPTO_add(&store->references,1,CRYPTO_LOCK_X509_STORE);
     SSL_CTX_set_cert_store(ctx, store);
+    X509_STORE_set_trust(store,1);
     return 0;
   }
-
-  store = SSL_CTX_get_cert_store(ctx);
-  CRYPTO_add(&store->references,1,CRYPTO_LOCK_SSL_CTX);
-  PUSH_OBJECT(store, "openssl.x509_store");
-  return 1;
 }
 
 static int openssl_ssl_ctx_new_ssl(lua_State*L)
@@ -450,6 +450,13 @@ static int verify_cb(int preverify_ok, X509_STORE_CTX *xctx)
       continued = lua_toboolean(L, -1);
       lua_pop(L, 1);
       err = X509_STORE_CTX_get_error(xctx);
+      if (err == X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY)
+      {
+        char buf[256];
+        X509_NAME_oneline(X509_get_issuer_name(xctx->current_cert), buf, 256);
+        printf("look issuer %s fail\n", buf);
+      };
+
       if (err != X509_V_OK) {
         openssl_getvalue(L,ssl,"verify_cert");
         if(lua_isnil(L,-1))

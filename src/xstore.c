@@ -97,8 +97,8 @@ static int openssl_xstore_add(lua_State* L)
   X509_STORE* ctx = CHECK_OBJECT(1, X509_STORE, "openssl.x509_store");
   int n = lua_gettop(L);
   int i;
-  int ret = 1;
-  for(i=2; i<n  && ret==1; i++) {
+  int ret = 0;
+  for(i=2; i<=n; i++) {
     if(lua_istable(L, i)) {
       int k = lua_rawlen(L, i);
       int j;
@@ -123,6 +123,8 @@ static int openssl_xstore_add(lua_State* L)
     }else{
       luaL_argerror(L, i, "only accept x509 or x509_crl object or table with x509 or x509_crl object");
     }
+    if (ret==0)
+      break;
   }
 
   return openssl_pushresult(L, ret);
