@@ -22,15 +22,16 @@ TestObject = {}
         o5 = asn1.new_object(self.oid,true)
 
         o6 = asn1.new_object(self.ln,true)
-        
+        assertEquals(openssl.error(),218513530)
+
         assert(o1==o2)
         assert(o1==o3)
         assert(o1==o4)
         assert(o1==o5)
         assertNil(o6)
-        
         o6 = o1:dup()
         assert(o1==o6)
+
         
         local sn,ln = o1:name()
         local nid = o1:nid()
@@ -38,7 +39,7 @@ TestObject = {}
         local txt = o1:txt()
         local oid = o1:txt(true)
         local dat = o1:data()
-        
+            
         assertEquals(sn,self.sn)
         assertEquals(ln,self.ln)
         assertEquals(oid,self.oid)
@@ -48,15 +49,17 @@ TestObject = {}
         assertEquals(ln1,ln)
         assertEquals(txt, ln)
         assertEquals(o1:txt(false), txt)
-        
+  
         assertErrorMsgContains('(need accept paramater)', asn1.new_object)
         local options = {
             oid ='1.2.840.10045.2.1.2.1',
             sn  ='gmsm21',
             ln  ='CCSTC GMSM2 EC1'
         }
+  
         o7 = asn1.new_object(options.sn)
         if not o7 then
+            assertEquals(openssl.error(),218513530)
             o7 =  asn1.new_object(options)
             assertStrContains(tostring(o7), 'openssl.asn1_object')
             assertEquals(o7:txt(), options.ln)
@@ -66,7 +69,7 @@ TestObject = {}
             assertEquals(asn1.txt2nid(options.oid), o7:nid())
         end
     end
-    
+
 TestString = {}
     function TestString:setUp()
         self.bmp = 'abcd'
@@ -103,3 +106,4 @@ TestString = {}
         assertStrContains(tostring(s3),'utf8:')
         assert(s4==s3)
     end    
+

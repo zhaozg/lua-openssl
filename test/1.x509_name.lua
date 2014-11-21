@@ -1,4 +1,5 @@
 local name = require'openssl'.x509.name
+local asn1 = require'openssl'.asn1
 
 TestX509Name = {}
     function TestX509Name:setUp()
@@ -43,11 +44,17 @@ TestX509Name = {}
         assertEquals(n1:get_text('C'),'CN')
         assertEquals(n1:get_index('C'),0)
         assertEquals(n1:get_index('C',0),nil)
-       
-        assert(n1:add_entry('OU','DEV'))
+
+        local s2 = asn1.new_string('’‘÷Œπ˙','bmp')
+        local utf_cn = s2:toutf8()
+        s3 = asn1.new_string(utf_cn,'utf8')
+        
+        assert(n1:add_entry('OU',utf_cn,true))
         assertEquals(n1:get_index('OU'),3)
         local k,v = n1:delete_entry(3)
         assertStrContains(tostring(k),'openssl.asn1_object')
-        assertEquals(tostring(v),'utf8:DEV')
+        assertStrContains(tostring(v),'utf8')  --bug on linux, wrong type
+        assertEquals(v:print(),[[\UD5D4\UD6CE\UB9FA]])
+        assertEquals(tostring(v),'utf8:'..v:toutf8())
     end
     
