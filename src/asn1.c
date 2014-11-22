@@ -433,8 +433,10 @@ static int openssl_ans1string_toutf8(lua_State* L)
   ASN1_STRING* s = CHECK_OBJECT(1, ASN1_STRING, "openssl.asn1_string");
   unsigned char* out = NULL;
   int len =  ASN1_STRING_to_UTF8(&out, s);
-  lua_pushlstring(L, (const char*)out, len);
-  OPENSSL_free(out);
+  if (out) {
+    lua_pushlstring(L, (const char*)out, len);
+    OPENSSL_free(out);
+  }
   return 1;
 }
 

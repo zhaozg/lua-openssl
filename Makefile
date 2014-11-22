@@ -28,10 +28,10 @@ CFLAGS		= -fPIC $(OPENSSL_CFLAGS) $(LUA_CFLAGS)
 endif
 ifneq (, $(findstring mingw, $(SYS)))
 # Do mingw things
-V		= $(shell lua -e "v=string.gsub('$(LUAV)','%.','');print(v)")
+V			= $(shell lua -e "v=string.gsub('$(LUAV)','%.','');print(v)")
 LDFLAGS		= -mwindows -lcrypt32 -lssl -lcrypto -lws2_32 $(PREFIX)/bin/lua$(V).dll 
-LUA_CFLAGS  	= -DLUA_LIB -DLUA_BUILD_AS_DLL -I$(PREFIX)/include/
-CFLAGS		=  $(OPENSSL_CFLAGS) $(LUA_CFLAGS)
+LUA_CFLAGS	= -DLUA_LIB -DLUA_BUILD_AS_DLL -I$(PREFIX)/include/
+CFLAGS		= $(OPENSSL_CFLAGS) $(LUA_CFLAGS)
 endif
 ifneq (, $(findstring cygwin, $(SYS)))
 # Do cygwin things
