@@ -39,22 +39,26 @@ TestX509Name = {}
         assert(n1:entry_count(),3)
         
         assertEquals(n1:get_text('CN'),'zhaozg')
-        assertEquals(n1:get_index('CN'),2)
-        
         assertEquals(n1:get_text('C'),'CN')
-        assertEquals(n1:get_index('C'),0)
-        assertEquals(n1:get_index('C',0),nil)
+        assertEquals(n1:get_text('OU'),nil)
+
+        assertIsTable(n1:get_entry(0))
+        
+        assertIsTable(n1:get_entry(1))
+        assertIsTable(n1:get_entry(2))
+        assertIsNil(n1:get_entry(3))
 
         local s2 = asn1.new_string('’‘÷Œπ˙','bmp')
         local utf_cn = s2:toutf8()
         s3 = asn1.new_string(utf_cn,'utf8')
         
         assert(n1:add_entry('OU',utf_cn,true))
-        assertEquals(n1:get_index('OU'),3)
+        local S, i = n1:get_text('OU')
+        assertEquals(i,3)
         local k,v = n1:delete_entry(3)
         assertStrContains(tostring(k),'openssl.asn1_object')
         assertStrContains(tostring(v),'utf8')  --bug on linux, wrong type
         assertEquals(v:print(),[[\UD5D4\UD6CE\UB9FA]])
-        assertEquals(tostring(v),'utf8:'..v:toutf8())
+        assertEquals(tostring(v),'utf8:'..v:toutf8())        
     end
     

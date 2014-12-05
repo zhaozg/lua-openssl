@@ -110,13 +110,16 @@ function entry_count() end
 --- get text by given asn1_object or nid
 --
 -- @tparam string|integer|asn1_object identid for asn1_object
--- @treturn string 
+-- @tparam[opt=-1] number lastpos retrieve the next index after lastpos
+-- @treturn string
+-- @treturn lastpos
 function get_text() end
 
---- get index by give asn1_object or nid
---
--- @treturn integer location start from 0
-function get_index() end
+--- get x509 name entry by index
+-- @tparam integer index start from 0, and less than xn:entry_count()
+-- @tparam[opt=true] utf8
+-- @treturn x509 name entry table
+function get_entry() end
 
 --- add name entry 
 --

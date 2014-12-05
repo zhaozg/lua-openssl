@@ -216,7 +216,7 @@ static luaL_Reg xname_funcs[] =
   {"i2d",               openssl_xname_i2d},
   {"entry_count",       openssl_xname_entry_count},
   {"get_text",          openssl_xname_get_text},
-  {"get_index",         openssl_xname_get_entry},
+  {"get_entry",         openssl_xname_get_entry},
   {"add_entry",         openssl_xname_add_entry},
   {"delete_entry",      openssl_xname_delete_entry},
   {"cmp",               openssl_xname_cmp},
