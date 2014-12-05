@@ -136,27 +136,33 @@ static int openssl_xname_get_text(lua_State*L)
 {
   X509_NAME* xn = CHECK_OBJECT(1, X509_NAME, "openssl.x509_name");
   int nid = openssl_get_nid(L, 2);
-  int len = X509_NAME_get_text_by_NID(xn,nid, NULL, 0);
-  unsigned char* buf = OPENSSL_malloc(len+1);
-  len = X509_NAME_get_text_by_NID(xn,nid, buf, len+1);
-  lua_pushlstring(L, buf, len);
-  OPENSSL_free(buf);
-  return 1;
+  int lastpos = luaL_optint(L, 3, -1);
+  X509_NAME_ENTRY *e;
+  ASN1_STRING *s;
+  if (nid == NID_undef)
+    return 0;
+
+  lastpos = X509_NAME_get_index_by_NID(xn, nid, lastpos);
+  if (lastpos == -1)
+    return 0;
+
+  e = X509_NAME_get_entry(xn, lastpos);
+  s = X509_NAME_ENTRY_get_data(e);
+  lua_pushlstring(L, ASN1_STRING_data(s), ASN1_STRING_length(s));
+  lua_pushinteger(L, lastpos);
+  return 2;
 };
 
-static int openssl_xname_get_index(lua_State*L)
+static int openssl_xname_get_entry(lua_State*L)
 {
   X509_NAME* xn = CHECK_OBJECT(1, X509_NAME, "openssl.x509_name");
-  int nid = openssl_get_nid(L, 2);
-  int lastpos = luaL_optinteger(L, 3, -1);
-
-  int loc = X509_NAME_get_index_by_NID(xn,nid, lastpos);
-  if (loc>=0)
-    lua_pushinteger(L, loc);
-  else
-    lua_pushnil(L);
-
-  return 1;
+  int lastpos = luaL_checkint(L, 2);
+  int utf8 = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L, 2);
+  X509_NAME_ENTRY *e = X509_NAME_get_entry(xn, lastpos);
+  if (e) {
+    return openssl_push_xname_entry(L, e, utf8);
+  }
+  return 0;
 };
 
 static int openssl_xname_add_entry(lua_State*L)
@@ -210,7 +216,7 @@ static luaL_Reg xname_funcs[] =
   {"i2d",               openssl_xname_i2d},
   {"entry_count",       openssl_xname_entry_count},
   {"get_text",          openssl_xname_get_text},
-  {"get_index",         openssl_xname_get_index},
+  {"get_index",         openssl_xname_get_entry},
   {"add_entry",         openssl_xname_add_entry},
   {"delete_entry",      openssl_xname_delete_entry},
   {"cmp",               openssl_xname_cmp},
