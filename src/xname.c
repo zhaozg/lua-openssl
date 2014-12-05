@@ -157,7 +157,7 @@ static int openssl_xname_get_entry(lua_State*L)
 {
   X509_NAME* xn = CHECK_OBJECT(1, X509_NAME, "openssl.x509_name");
   int lastpos = luaL_checkint(L, 2);
-  int utf8 = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L, 2);
+  int utf8 = lua_isnoneornil(L, 3) ? 1 : lua_toboolean(L, 3);
   X509_NAME_ENTRY *e = X509_NAME_get_entry(xn, lastpos);
   if (e) {
     return openssl_push_xname_entry(L, e, utf8);
