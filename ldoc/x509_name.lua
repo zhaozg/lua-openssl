@@ -117,7 +117,7 @@ function get_text() end
 
 --- get x509 name entry by index
 -- @tparam integer index start from 0, and less than xn:entry_count()
--- @tparam[opt=true] utf8
+-- @tparam[opt=true] boolean utf8
 -- @treturn x509 name entry table
 function get_entry() end
 
