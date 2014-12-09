@@ -17,6 +17,7 @@ file={
 	'x509_attr.lua',
 	'x509_req.lua',
 	'x509_crl.lua',
+	'x509_store.lua',
 	'pkcs7.lua',
 	'cms.lua',
 	'pkcs12.lua',
