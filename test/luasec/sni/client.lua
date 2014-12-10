@@ -24,7 +24,7 @@ conn:sni("serveraa.br")
 assert(conn:dohandshake())
 --
 local cert = conn:getpeercertificate()
-for k, v in pairs(cert:subject()) do
+for k, v in pairs(cert:subject():info()) do
   for i, j in pairs(v) do
     print(i, j)
   end
