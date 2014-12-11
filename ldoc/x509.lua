@@ -38,6 +38,11 @@ function purpose() end
 --                if type is 'extend', contains node with {lname=...,sname=...,nid=...}
 function certtypes() end
 
+--- get certificate verify result string message
+-- @tparam number verify_result
+-- @treturn string result message
+function verify_cert_error_string() end
+
 end --define module
 
 do  -- define class
@@ -77,6 +82,8 @@ function check() end
 -- @tparam stack_of_x509 untrusted certs  containing a bunch of certs that are not trusted but may be useful in validating the certificate.
 -- @tparam[opt] string purpose to check supported
 -- @treturn boolean result true for check pass
+-- @treturn integer verify result
+-- @see verify_cert_error_string
 function check() end
 
 --- get digest of x509 object

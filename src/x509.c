@@ -107,7 +107,7 @@ int opensl_push_general_name(lua_State*L, const GENERAL_NAME* general_name, int 
   return 1;
 };
 
-static int check_cert(lua_State*L, X509_STORE *ca, X509 *x, STACK_OF(X509) *untrustedchain, int purpose)
+static int check_cert(X509_STORE *ca, X509 *x, STACK_OF(X509) *untrustedchain, int purpose)
 {
   int ret = 0;
   X509_STORE_CTX *csc = X509_STORE_CTX_new();
@@ -121,13 +121,16 @@ static int check_cert(lua_State*L, X509_STORE *ca, X509 *x, STACK_OF(X509) *untr
         X509_STORE_CTX_set_purpose(csc, purpose);
       }
       ret = X509_verify_cert(csc);
+      if (ret==1) 
+        ret = X509_V_OK;
+      else
+        ret = X509_STORE_CTX_get_error(csc);
     }
     X509_STORE_CTX_free(csc);
     return ret;
   }
-  else
-    luaL_error(L, "lua-openssl inner error");
-  return 0;
+
+  return X509_V_ERR_OUT_OF_MEM;
 }
 
 static LUA_FUNCTION(openssl_x509_read)
@@ -378,6 +381,7 @@ static LUA_FUNCTION(openssl_x509_check)
     EVP_PKEY * key = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
     luaL_argcheck(L,openssl_pkey_is_private(key), 2, "must be private key");
     lua_pushboolean(L, X509_check_private_key(cert, key));
+    return 1;
   }
   else
   {
@@ -388,11 +392,12 @@ static LUA_FUNCTION(openssl_x509_check)
     /*
     X509_STORE_set_verify_cb_func(cainfo,verify_cb);
     */
-    ret = check_cert(L, store, cert, untrustedchain, purpose);
-    lua_pushboolean(L, ret);
+    ret = check_cert(store, cert, untrustedchain, purpose);
+    lua_pushboolean(L, ret==X509_V_OK);
+    lua_pushinteger(L, ret);
+    
+    return 2;
   }
-
-  return 1;
 }
 
 IMP_LUA_SK(X509, x509)
@@ -933,15 +938,23 @@ static int openssl_x509_certtypes(lua_State*L) {
   return 0;
 }
 
+static int openssl_verify_cert_error_string(lua_State*L)
+{
+  int v = luaL_checkint(L, 1);
+  const char*s = X509_verify_cert_error_string(v);
+  lua_pushstring(L, s);
+  return 1;
+}
+
 static luaL_reg R[] =
 {
   {"new",           openssl_x509_new },
   {"read",          openssl_x509_read },
   {"sk_x509_read",  openssl_sk_x509_read },
   {"sk_x509_new",   openssl_sk_x509_new },
-  {"purpose",       openssl_x509_purpose},
-
-  {"certtypes",     openssl_x509_certtypes},
+  {"purpose",       openssl_x509_purpose },
+  {"certtypes",     openssl_x509_certtypes },
+  {"verify_cert_error_string", openssl_verify_cert_error_string },
 
   {NULL,    NULL}
 };
