@@ -320,9 +320,6 @@ LUALIB_API int luaopen_openssl(lua_State*L)
   luaopen_pkcs12(L);
   lua_setfield(L, -2, "pkcs12");
 
-  luaopen_csr(L);
-  lua_setfield(L, -2, "csr");
-
   luaopen_crl(L);
   lua_setfield(L, -2, "crl");
 

@@ -1,5 +1,5 @@
 local openssl = require'openssl'
-local crl,csr = openssl.crl,openssl.csr
+local crl,csr = openssl.crl,openssl.x509.req
 
 TestCRL = {}
     function TestCRL:setUp()

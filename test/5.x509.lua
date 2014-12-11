@@ -1,6 +1,6 @@
 local openssl = require'openssl'
 
-local csr,x509 = openssl.csr, openssl.x509
+local csr,x509 = openssl.x509.req, openssl.x509
 
 TestX509 = {}
     function TestX509:setUp()

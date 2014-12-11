@@ -1,4 +1,4 @@
-local csr = require'openssl'.csr
+local csr = require'openssl'.x509.req
 
 TestCSR = {}
 

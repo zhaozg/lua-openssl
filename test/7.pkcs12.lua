@@ -1,5 +1,5 @@
 local openssl = require'openssl'
-local csr, x509, pkcs12 = openssl.csr,openssl.x509, openssl.pkcs12
+local csr, x509, pkcs12 = openssl.x509.req,openssl.x509, openssl.pkcs12
 
 TestCompat = {}
     function TestCompat:setUp()

@@ -963,6 +963,9 @@ int luaopen_x509(lua_State *L)
   openssl_register_xstore(L);
   lua_setfield(L, -2, "store");
 
+  luaopen_x509_req(L);
+  lua_setfield(L, -2, "req");
+
   lua_pushliteral(L, "version");    /** version */
   lua_pushliteral(L, MYVERSION);
   lua_settable(L, -3);

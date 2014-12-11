@@ -7,10 +7,6 @@
 #include "openssl.h"
 #include "private.h"
 
-#define MYNAME    "csr"
-#define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
-  "based on OpenSSL " SHLIB_VERSION_NUMBER
-
 static LUA_FUNCTION(openssl_csr_read)
 {
   BIO * in = load_bio_object(L, 1);
@@ -466,16 +462,11 @@ static luaL_reg R[] =
   {NULL,    NULL}
 };
 
-int luaopen_csr(lua_State *L)
+int luaopen_x509_req(lua_State *L)
 {
   auxiliar_newclass(L, "openssl.x509_req", csr_cfuns);
 
   lua_newtable(L);
   luaL_setfuncs(L, R, 0);
-
-  lua_pushliteral(L, "version");    /** version */
-  lua_pushliteral(L, MYVERSION);
-  lua_settable(L, -3);
-
   return 1;
 }

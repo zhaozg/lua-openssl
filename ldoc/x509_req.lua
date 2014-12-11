@@ -1,9 +1,9 @@
 ---
--- Provide csr module.
+-- Provide x509_req as lua object.
 -- create and manage x509 certificate sign request
--- @module csr
+-- @module x509.req
 -- @usage
---  csr = require'openssl'.csr
+--  req = require'openssl'.x509.req
 --
 
 do --define module function
