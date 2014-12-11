@@ -84,7 +84,7 @@ LUA_FUNCTION(luaopen_asn1);
 
 LUA_FUNCTION(luaopen_ts);
 LUA_FUNCTION(luaopen_x509_req);
-LUA_FUNCTION(luaopen_crl);
+LUA_FUNCTION(luaopen_x509_crl);
 LUA_FUNCTION(luaopen_ocsp);
 LUA_FUNCTION(luaopen_cms);
 LUA_FUNCTION(luaopen_ssl);

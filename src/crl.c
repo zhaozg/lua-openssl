@@ -10,10 +10,6 @@
 #include "sk.h"
 #include <openssl/x509v3.h>
 
-#define MYNAME    "crl"
-#define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
-  "based on OpenSSL " SHLIB_VERSION_NUMBER
-
 int   X509_CRL_cmp(const X509_CRL *a, const X509_CRL *b);
 int   X509_CRL_match(const X509_CRL *a, const X509_CRL *b);
 
@@ -853,17 +849,13 @@ static luaL_reg R[] =
 
 IMP_LUA_SK(X509_CRL, x509_crl)
 
-int luaopen_crl(lua_State *L)
+int luaopen_x509_crl(lua_State *L)
 {
   auxiliar_newclass(L, "openssl.x509_crl", crl_funcs);
   auxiliar_newclass(L, "openssl.x509_revoked", revoked_funcs);
   openssl_register_sk_x509_crl(L);
   lua_newtable(L);
   luaL_setfuncs(L, R, 0);
-
-  lua_pushliteral(L, "version");    /** version */
-  lua_pushliteral(L, MYVERSION);
-  lua_settable(L, -3);
 
   return 1;
 }

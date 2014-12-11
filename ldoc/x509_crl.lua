@@ -1,9 +1,9 @@
 ---
--- Provide crl module.
+-- Provide x509_crl as lua object.
 -- create and manage x509 certificate sign request
--- @module crl
+-- @module x509.crl
 -- @usage
---  crl = require'openssl'.crl
+--  crl = require'openssl'.x509.crl
 --
 
 do --define module function

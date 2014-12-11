@@ -965,6 +965,8 @@ int luaopen_x509(lua_State *L)
 
   luaopen_x509_req(L);
   lua_setfield(L, -2, "req");
+  luaopen_x509_crl(L);
+  lua_setfield(L, -2, "crl");
 
   lua_pushliteral(L, "version");    /** version */
   lua_pushliteral(L, MYVERSION);
