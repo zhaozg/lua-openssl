@@ -192,7 +192,7 @@ static LUA_FUNCTION(openssl_csr_verify)
 {
   X509_REQ *csr = CHECK_OBJECT(1, X509_REQ, "openssl.x509_req");
   EVP_PKEY * self_key = X509_REQ_get_pubkey(csr);
-  lua_pushboolean(L, X509_REQ_verify(csr, self_key));
+  lua_pushboolean(L, X509_REQ_verify(csr, self_key)==1);
   EVP_PKEY_free(self_key);
   return 1;
 };

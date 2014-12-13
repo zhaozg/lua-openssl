@@ -126,9 +126,9 @@ static int openssl_ec_group_parse(lua_State*L)
 
   AUXILIAR_SETLSTR(L, -1, "seed", EC_GROUP_get0_seed(group), EC_GROUP_get_seed_len(group));
 
-  X = BN_new();
-  Y = BN_new();
-  P = BN_new();
+  X = BN_CTX_get(ctx);
+  Y = BN_CTX_get(ctx);
+  P = BN_CTX_get(ctx);
   EC_GROUP_get_curve_GFp(group, P, X, Y, ctx);
   lua_newtable(L);
   {
