@@ -16,6 +16,18 @@ local params = {
 }
 
 local ctx = assert(sslctx.new(params))
+--ctx:set_cert_verify({always_continue=true,verify_depth=4})
+--[[
+ctx:set_cert_verify(function(arg) 
+
+      --do some check
+      for k,v in pairs(arg) do
+            print(k,v)
+      end
+
+      return true --return false will fail ssh handshake
+end)
+--]]
 
 print(string.format('Listen at %s:%s with %s',host,port,ctx))
 

@@ -38,11 +38,13 @@ static int verify_cb(int preverify_ok, X509_STORE_CTX *xctx, lua_State*L, SSL* s
     lua_setfield(L, -2, "error_string");
     lua_pushinteger(L, X509_STORE_CTX_get_error_depth(xctx)); 
     lua_setfield(L, -2, "error_depth");
-    PUSH_OBJECT(current, "openssl.x509");
-    CRYPTO_add(&current->references,1,CRYPTO_LOCK_X509);
-    lua_setfield(L, -2, "current_cert");
+    if(current) {
+      PUSH_OBJECT(current, "openssl.x509");
+      CRYPTO_add(&current->references,1,CRYPTO_LOCK_X509);
+      lua_setfield(L, -2, "current_cert");
+    }
 
-    openssl_getvalue(L, ctx, "verify_cb");
+    openssl_getvalue(L, ctx, preverify_ok==-1 ? "cert_verify_cb" : "verify_cb");
     if (lua_isfunction(L, -1))
     {
       /* this is set by  SSL_CTX_set_verify */
