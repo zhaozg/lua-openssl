@@ -376,7 +376,7 @@ static int openssl_push_ts_tst_info(lua_State*L, TS_TST_INFO* info, int utf8) {
     lua_setfield(L, -2, "nonce");
   }
   if(info->tsa) {
-    opensl_push_general_name(L, info->tsa, utf8);
+    openssl_push_general_name(L, info->tsa, utf8);
     lua_setfield(L, -2, "tsa");
   }
   if(info->extensions) {

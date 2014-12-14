@@ -428,74 +428,6 @@ static int openssl_ssl_ctx_new_bio(lua_State*L)
   }
 }
 
-static int verify_cb(int preverify_ok, X509_STORE_CTX *xctx)
-{
-  SSL *ssl;
-  SSL_CTX *ctx;
-  lua_State *L;
-  int continued = 0;
-
-  /* Short-circuit optimization */
-  if (preverify_ok)
-    return 1;
-
-  ssl = X509_STORE_CTX_get_ex_data(xctx,
-    SSL_get_ex_data_X509_STORE_CTX_idx());
-  ctx = SSL_get_SSL_CTX(ssl); 
-
-  L = SSL_CTX_get_app_data(ctx);
-  if (L)
-  {
-    openssl_getvalue(L, ctx, "verify_cb");
-    if (lua_isfunction(L, -1))
-    {
-      lua_pushinteger(L,preverify_ok);
-      PUSH_OBJECT(xctx, "openssl.x509_store_ctx");
-
-      if (lua_pcall(L, 2, 1, 0) == 0) {
-        int rt = luaL_checkint(L, -1);
-        return luaL_checkint(L, -1);
-      }
-      else
-        luaL_error(L, lua_tostring(L, -1));
-    }else {
-      int err;
-      openssl_getvalue(L, ctx, "verify_cb_flag");
-      continued = lua_toboolean(L, -1);
-      lua_pop(L, 1);
-      err = X509_STORE_CTX_get_error(xctx);
-      if (err == X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY)
-      {
-        char buf[256];
-        X509_NAME_oneline(X509_get_issuer_name(xctx->current_cert), buf, 256);
-        printf("look issuer %s fail\n", buf);
-      };
-
-      if (err != X509_V_OK) {
-        openssl_getvalue(L,ssl,"verify_cert");
-        if(lua_isnil(L,-1))
-        {
-          lua_newtable(L);
-          openssl_setvalue(L,ssl,"verify_cert");
-          openssl_getvalue(L,ssl,"verify_cert");
-        }
-
-        lua_newtable(L);
-        lua_pushinteger(L, err);
-        lua_setfield(L, -2, "error");
-        lua_pushstring(L,X509_verify_cert_error_string(err));
-        lua_setfield(L, -2, "error_string");
-        lua_pushinteger(L, X509_STORE_CTX_get_error_depth(xctx)); 
-        lua_setfield(L, -2, "error_depth");
-        lua_rawseti(L,-2, lua_rawlen(L, -2)+1);
-        lua_pop(L,1);
-      }
-    }
-  }
-
-  return (continued ? 1 : preverify_ok); 
-};
-
 static int openssl_ssl_getpeerverification(lua_State *L)
 {
   long err;
@@ -503,12 +435,7 @@ static int openssl_ssl_getpeerverification(lua_State *L)
   SSL_CTX* ctx = SSL_get_SSL_CTX(ssl); 
 
   err = SSL_get_verify_result(ssl);
-  if (err == X509_V_OK) {
-    lua_pushboolean(L, 1);
-    return 1;
-  }
-
-  lua_pushnil(L);
+  lua_pushboolean(L, err == X509_V_OK);
   openssl_getvalue(L, ssl, "verify_cert");
   return 2;
 } 
@@ -563,21 +490,24 @@ static int openssl_ssl_ctx_set_verify(lua_State*L)
     {
       lua_pushvalue(L, 3);
       openssl_setvalue(L, ctx, "verify_cb");
-      SSL_CTX_set_verify(ctx, mode, verify_cb);
+      SSL_CTX_set_verify(ctx, mode, openssl_verify_cb);
     }
     else
     {
-      SSL_CTX_set_verify(ctx, mode, verify_cb);
+      SSL_CTX_set_verify(ctx, mode, openssl_verify_cb);
     }
 
     return 0;
   }else{
+    int i = 0;
     int mode = SSL_CTX_get_verify_mode(ctx);
+    lua_pushinteger(L, mode);
+    i += 1;
+
     if (mode ==  SSL_VERIFY_NONE) {
       lua_pushstring(L, "none");
-      return 1;
+      i += 1;
     } else {
-      int i = 0;
       if (mode & SSL_VERIFY_PEER) {
         lua_pushstring(L, "peer");
         i += 1;
@@ -591,55 +521,11 @@ static int openssl_ssl_ctx_set_verify(lua_State*L)
         lua_pushstring(L, "client_once");
         i += 1;
       }
-      return i;
     }
+    return i;
   }
   return 0;
 }
-
-static int cert_verify_cb(X509_STORE_CTX *xctx,void* u)
-{
-  SSL *ssl;
-  SSL_CTX *ctx;
-
-  lua_State *L = u;
-  if (L)
-  {
-    ssl = X509_STORE_CTX_get_ex_data(xctx,
-      SSL_get_ex_data_X509_STORE_CTX_idx());
-    ctx = SSL_get_SSL_CTX(ssl);
-
-    openssl_getvalue(L, ctx, "cert_verify_cb");
-    if (lua_isfunction(L, -1)) {
-      PUSH_OBJECT(xctx, "openssl.x509_store_ctx");
-      openssl_getvalue(L, ctx, "cert_verify_data");
-
-      if (lua_pcall(L, 2, 1, 0) == 0){
-        int rt = luaL_checkint(L, -1);
-        lua_pop(L, 1);
-        return rt;
-      }
-      else
-        luaL_error(L, lua_tostring(L, -1));
-    }
-    else if(lua_istable(L,-1))
-    {
-      X509_VERIFY_PARAM *param = X509_STORE_CTX_get0_param(xctx);
-      lua_getfield(L, -1, "ignore_purpose");
-      if (lua_toboolean(L, -1) && param)
-      {
-        X509_VERIFY_PARAM_set_purpose(param, X509_PURPOSE_SSL_SERVER);
-        X509_VERIFY_PARAM_set_trust(param, X509_TRUST_SSL_SERVER);
-      }
-      /* Call OpenSSL standard verification function */
-      lua_pop(L, 1);
-      return X509_verify_cert(xctx); 
-    }
-
-    return 0;
-  }
-  return 0;
-};
 
 static int openssl_ssl_ctx_set_cert_verify(lua_State*L)
 {
@@ -649,14 +535,22 @@ static int openssl_ssl_ctx_set_cert_verify(lua_State*L)
     lua_pushvalue(L, 2);
     if(lua_istable(L,2))
     {
-      openssl_setvalue(L, ctx, "verify_cb_flag");
+      openssl_setvalue(L, ctx, "verify_cb_flags");
       lua_pushvalue(L, 2);
     }
     openssl_setvalue(L, ctx, "cert_verify_cb");
     lua_pushvalue(L, 3);
     openssl_setvalue(L, ctx, "cert_verify_data");
-
-    SSL_CTX_set_cert_verify_callback(ctx, cert_verify_cb, L);
+    /*
+    X509_VERIFY_PARAM *param = X509_STORE_CTX_get0_param(xctx);
+    lua_getfield(L, -1, "ignore_purpose");
+    if (lua_toboolean(L, -1) && param)
+    {
+    X509_VERIFY_PARAM_set_purpose(param, X509_PURPOSE_SSL_SERVER);
+    X509_VERIFY_PARAM_set_trust(param, X509_TRUST_SSL_SERVER);
+    }
+    */
+    SSL_CTX_set_cert_verify_callback(ctx, openssl_cert_verify_cb, L);
   }else
     SSL_CTX_set_cert_verify_callback(ctx, NULL, NULL);
   return 0;

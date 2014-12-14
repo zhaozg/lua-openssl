@@ -153,21 +153,39 @@ function verify_depth() end
 -- @treturn number depth 
 function verify_depth() end
 
---- get verify_mode
+--- get verify_mode, return number mode and all string modes list
 -- @treturn number mode_code
 -- @treturn string mode_string
---  none: not verify client cert
---  peer: verify client cert
---  fail: if client not have cert, will failure
---  once: verify client only once.
+-- @return ...
+ --  none: not verify client cert
+ --  peer: verify client cert
+ --  fail_if_no_peer_cert: if client not have cert, will failure
+ --  once: verify client only once.
+-- @usage
+--  mode = {ctx:verify_mode()}
+--  print('integer mode',mode[1])
+--  for i=2, #mode then
+--    print('string mode:'..mode[i])
+--  end
 function verify_mode() end
 
---- set verify call back
--- @tparam string mode, must be 'none' or 'peer'
--- @tparam[opt=nil] function verifycb if mode is 'none', not need this
--- verifycb should like int function(int preverify_ok,X509_STORE_CTX ctx) return 0 to end,1 to continue
+--- set verify callback
+-- @tparam table modes, array of mode set to ctx verify_cb
+-- @tparam[opt=nil] function verify_cb if mode is 'none', not need this
+-- verify_cb must be boolean function(verifyarg) return false to end,true to continue
+-- verifyarg has field 'error', 'error_string','error_depth','current_cert', and 'preverify_ok'
 -- @treturn boolean result
 function set_verify() end
+
+--- set certificate verify callback function
+-- @tparam function cert_verify_cb boolean function(verifyarg), if nil or none will use openssl default
+-- verifyarg has field 'error', 'error_string','error_depth','current_cert'
+-- @param[opt] arg pass to cert_verify_cb
+function set_cert_verify() end
+
+--- set certificate verify options
+-- @tparam table verify_cb_flag
+function set_cert_verify() end
 
 --- create bio object
 -- @tparam string host_addr format like 'host:port'

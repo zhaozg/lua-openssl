@@ -16,6 +16,15 @@ local params = {
 }
 
 local ctx = assert(sslctx.new(params))
+ctx:set_verify({'peer'},function(arg) 
+--[[
+      --do some check
+      for k,v in pairs(arg) do
+            print(k,v)
+      end
+--]]
+      return true --return false will fail ssh handshake
+end)
 
 print(string.format('CONNECT to %s:%s with %s',host,port,ctx))
 
@@ -28,6 +37,17 @@ function mk_connection(host,port,i)
     else
         assert(S:connect())
     end
+    local b,r = S:getpeerverification()
+    assert(b)
+    --[[
+    print(b)
+    for k,v in pairs(r) do
+      print('INDEX',k)
+      for kk,vv in pairs(v) do
+            print(kk,vv)
+      end
+    end
+    --]]
     s = 'aaa'
     io.write('.')
     for j=1,100 do

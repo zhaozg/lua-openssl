@@ -21,10 +21,10 @@ endif
 SYS := $(shell gcc -dumpmachine)
 ifneq (, $(findstring linux, $(SYS)))
 # Do linux things
-LDFLAGS		= -fPIC -lrt -ldl
+LDFLAGS		    = -fPIC -lrt -ldl
 OPENSSL_LIBS	?= $(shell pkg-config openssl --libs) 
 OPENSSL_CFLAGS	?= $(shell pkg-config openssl --cflags)
-CFLAGS		= -fPIC $(OPENSSL_CFLAGS) $(LUA_CFLAGS)
+CFLAGS		    = -fPIC $(OPENSSL_CFLAGS) $(LUA_CFLAGS)
 endif
 ifneq (, $(findstring mingw, $(SYS)))
 # Do mingw things
@@ -58,7 +58,7 @@ CC= gcc -g $(CFLAGS) -Ideps
 
 OBJS=src/asn1.o src/auxiliar.o src/bio.o src/cipher.o src/cms.o src/compat.o src/crl.o src/csr.o src/dh.o src/digest.o src/dsa.o \
 src/ec.o src/engine.o src/hmac.o src/lbn.o src/lhash.o src/misc.o src/ocsp.o src/openssl.o src/ots.o src/pkcs12.o src/pkcs7.o    \
-src/pkey.o src/rsa.o src/ssl.o src/th-lock.o src/util.o src/x509.o src/xattrs.o src/xexts.o src/xname.o src/xstore.o 
+src/pkey.o src/rsa.o src/ssl.o src/th-lock.o src/util.o src/x509.o src/xattrs.o src/xexts.o src/xname.o src/xstore.o src/callback.o 
 
 .c.o:
 	$(CC) -c -o $@ $?

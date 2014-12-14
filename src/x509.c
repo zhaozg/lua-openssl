@@ -24,7 +24,7 @@ int openssl_push_x509_algor(lua_State*L, const X509_ALGOR* alg) {
   return 1;
 };
 
-int opensl_push_general_name(lua_State*L, const GENERAL_NAME* general_name, int utf8) {
+int openssl_push_general_name(lua_State*L, const GENERAL_NAME* general_name, int utf8) {
   lua_newtable(L);
 
   switch (general_name->type) {
@@ -322,54 +322,6 @@ static LUA_FUNCTION(openssl_x509_public_key)
     int ret = X509_set_pubkey(cert, pkey);
     return openssl_pushresult(L, ret);
   }
-}
-
-static int verify_cb(int ok, X509_STORE_CTX *ctx)
-{
-  char buf[256];
-
-  if (!ok)
-  {
-    if (ctx->current_cert)
-    {
-      X509_NAME_oneline(
-        X509_get_subject_name(ctx->current_cert), buf,
-        sizeof buf);
-      printf("%s\n", buf);
-    }
-    printf("error %d at %d depth lookup:%s\n", ctx->error,
-           ctx->error_depth,
-           X509_verify_cert_error_string(ctx->error));
-
-    if (ctx->error == X509_V_ERR_CERT_HAS_EXPIRED) ok = 1;
-    /* since we are just checking the certificates, it is
-     * ok if they are self signed. But we should still warn
-     * the user.
-     */
-    if (ctx->error == X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT) ok = 1;
-
-    /* Continue after extension errors too */
-    if (ctx->error == X509_V_ERR_INVALID_CA) ok = 1;
-    if (ctx->error == X509_V_ERR_INVALID_NON_CA) ok = 1;
-    if (ctx->error == X509_V_ERR_PATH_LENGTH_EXCEEDED) ok = 1;
-    if (ctx->error == X509_V_ERR_INVALID_PURPOSE) ok = 1;
-
-    if (ctx->error == X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT) ok = 1;
-    if (ctx->error == X509_V_ERR_CRL_HAS_EXPIRED) ok = 1;
-    if (ctx->error == X509_V_ERR_CRL_NOT_YET_VALID) ok = 1;
-    if (ctx->error == X509_V_ERR_UNHANDLED_CRITICAL_EXTENSION) ok = 1;
-    /*
-    if (ctx->error == X509_V_ERR_NO_EXPLICIT_POLICY)
-      policies_print(NULL, ctx);
-    */
-    return ok;
-
-  }
-  /*
-  if ((ctx->error == X509_V_OK) && (ok == 2))
-    policies_print(NULL, ctx);
-  */
-  return (ok);
 }
 
 

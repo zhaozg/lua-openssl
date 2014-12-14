@@ -184,7 +184,7 @@ static int openssl_ocsp_request_parse(lua_State*L)
   AUXILIAR_SET(L, -1, "version", ASN1_INTEGER_get(inf->version), integer);
   if (inf->requestorName)
   {
-    opensl_push_general_name(L, inf->requestorName, utf8);
+    openssl_push_general_name(L, inf->requestorName, utf8);
     lua_setfield(L, -2, "requestorName");
   }
   num = sk_OCSP_ONEREQ_num(inf->requestList);

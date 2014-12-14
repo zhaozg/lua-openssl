@@ -43,7 +43,7 @@ static int openssl_xext_totable(lua_State* L, X509_EXTENSION *x, int utf8)
       n_general_names = sk_GENERAL_NAME_num(values);
       for (i = 0; i < n_general_names; i++) {
         GENERAL_NAME *general_name = sk_GENERAL_NAME_value(values, i);
-        opensl_push_general_name(L, general_name, utf8);
+        openssl_push_general_name(L, general_name, utf8);
         lua_rawseti(L, -2, i+1);
        }
       lua_settable(L, -3);
