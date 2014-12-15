@@ -59,7 +59,7 @@ TestCSR = {}
                 assertIsTable(t)
                 t = req2:parse()
                 assertIsTable(t)
-                assert(req1:verify());
+                assert(req1:verify()==false);
                 assert(req2:verify());
 
                 req1 = assert(csr.new(self.subject))
