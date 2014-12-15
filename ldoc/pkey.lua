@@ -6,11 +6,17 @@
 
 do --define module function
 
---- generate a new keypair
--- @tparam[opt='rsa'] string alg, accept 'rsa','dsa','dh','ec'
--- @tparam[opt=1024|512] integer bits, rsa with 1024,dh with 512
--- @tparam[opt] string|integer 3rd when alg is ec, give ec_name, when alg is rsa give e value default is 0x10001
+--- generate a new ec keypair
+-- @tparam string alg, alg must be 'ec'
+-- @tparam string|number curvename this can be integer as curvename NID
 -- @tparam[opt] integer flags when alg is ec need this.
+-- @treturn evp_pkey object with mapping to EVP_PKEY in openssl
+function new() end
+
+--- generate a new keypair
+-- @tparam[opt='rsa'] string alg, accept 'rsa','dsa','dh'
+-- @tparam[opt=1024|512] integer bits, rsa with 1024,dh with 512
+-- @tparam[opt]  when alg is rsa give e value default is 0x10001
 -- @treturn evp_pkey object with mapping to EVP_PKEY in openssl
 function new() end
 
