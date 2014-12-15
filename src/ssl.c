@@ -65,12 +65,14 @@ static int openssl_ssl_ctx_new(lua_State*L)
   else if (strcmp(meth, "DTLSv1_client") == 0)
     method = DTLSv1_client_method();  /* DTLSv1.0 */
 #ifndef OPENSSL_NO_SSL2
+#if OPENSSL_VERSION_NUMBER < 0x10100000L 
   else if (strcmp(meth, "SSLv2") == 0)
     method = SSLv2_method();    /* SSLv2 */
   else if (strcmp(meth, "SSLv2_server") == 0)
     method = SSLv2_server_method(); /* SSLv2 */
   else if (strcmp(meth, "SSLv2_client") == 0)
     method = SSLv2_client_method();
+#endif
 #endif
   else
     luaL_error(L, "#1:%s not supported\n"
