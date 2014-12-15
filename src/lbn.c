@@ -12,12 +12,8 @@
 #include <openssl/crypto.h>
 #include <openssl/err.h>
 #include <openssl/rand.h>
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L 
-#include <openssl/internal/bn_int.h>
-#else
-#ifndef BN_is_negative
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 #define BN_is_negative(a) ((a)->neg != 0)
-#endif
 #endif
 
 #include "lua.h"
