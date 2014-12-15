@@ -69,7 +69,7 @@ TestCSR = {}
                 assertIsTable(t)
                 t = req2:parse()
                 assertIsTable(t)
-                assert(req1:verify());
+                assert(req1:verify()==false);
                 assert(req2:verify());
                 
                 req1 = assert(csr.new(self.subject,self.attributes))
@@ -80,12 +80,12 @@ TestCSR = {}
                 assertIsTable(t)
                 
 
-                assert(req1:verify());
+                assert(req1:verify()==false);
                 assert(req2:verify());
 
                 req1 = assert(csr.new(self.subject,self.attributes,self.extensions))
                 req2 = assert(csr.new(self.subject,self.attributes,self.extensions, pkey))
-                assert(req1:verify());
+                assert(req1:verify()==false);
                 assert(req2:verify());
                 
                 t = req1:parse()
@@ -93,7 +93,7 @@ TestCSR = {}
                 t = req2:parse()
                 assertIsTable(t)
 
-                assert(req1:verify());
+                assert(req1:verify()==false);
                 assert(req2:verify());
 
                 req1 = assert(csr.new(self.subject,self.attributes,self.extensions,pkey))
