@@ -75,7 +75,7 @@ static X509 *X509_REQ_to_X509_a(X509_REQ *r, int days, EVP_PKEY *pkey)
   pubkey=X509_REQ_get_pubkey(r);
 	X509_set_pubkey(ret,pubkey);
   EVP_PKEY_free(pubkey);
-	if (!X509_sign(ret,pkey,EVP_md5()))
+	if (!X509_sign(ret,pkey, EVP_get_digestbyobj(r->sig_alg->algorithm)))
 		goto err;
 	if (0)
 		{
@@ -249,7 +249,7 @@ static LUA_FUNCTION(openssl_csr_new)
         ret = X509_REQ_set_pubkey(csr, pkey);
         if (ret==1) {
           ret = X509_REQ_sign(csr,pkey,md);
-          if (ret==EVP_PKEY_size(pkey))
+          if (ret>0)
             ret = 1;
         }
         break;

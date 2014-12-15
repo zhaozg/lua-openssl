@@ -720,7 +720,7 @@ static int openssl_x509_sign(lua_State*L) {
       EVP_get_digestbyname("sha1") :
     get_digest(L, i);
     ret = X509_sign(x, pkey, md);
-    if(ret==EVP_PKEY_size(pkey))
+    if(ret>0)
       ret = 1;
   }
   return openssl_pushresult(L, ret);
