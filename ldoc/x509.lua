@@ -78,8 +78,8 @@ function check() end
 
 --- check x509 with ca certchian and option purpose
 -- purpose can be one of: ssl_client, ssl_server, ns_ssl_server, smime_sign, smime_encrypt, crl_sign, any, ocsp_helper, timestamp_sign
--- @tparam stack_of_x509 cacerts 
--- @tparam stack_of_x509 untrusted certs  containing a bunch of certs that are not trusted but may be useful in validating the certificate.
+-- @tparam x509_store cacerts 
+-- @tparam x509_store untrusted certs  containing a bunch of certs that are not trusted but may be useful in validating the certificate.
 -- @tparam[opt] string purpose to check supported
 -- @treturn boolean result true for check pass
 -- @treturn integer verify result
