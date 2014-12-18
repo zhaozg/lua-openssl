@@ -671,13 +671,35 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_policies)
       }
       ctx->policies = sk_ASN1_OBJECT_dup(policies);
       lua_pushboolean(L, 1);
-    }else {
-      int nid = openssl_get_nid(L, 2);
-      int ret;
-      if(nid!=NID_undef) {
-        ret = TS_RESP_CTX_add_policy(ctx,OBJ_nid2obj(nid));
-      }else
-        luaL_argerror(L, 2, "invalid asn1_object or id");
+    } else {
+      int n = lua_gettop(L);
+      int ret = 1;
+      int nid;
+      int i;
+      for (i=2; i<=n && ret==1; i++) {
+        if (lua_istable(L, i)) {
+          int j, k;
+          k = lua_objlen(L, i);
+          for (j=1; j<=k && ret==1; j++) {
+            lua_rawgeti(L, i, j);
+            nid = openssl_get_nid(L, -1);
+            lua_pop(L, 1);
+            
+            if(nid!=NID_undef) {
+              ret = TS_RESP_CTX_add_policy(ctx,OBJ_nid2obj(nid));
+            }else {
+              lua_pushfstring(L, "index %d is invalid asn1_object or object id", j);
+              luaL_argerror(L, i, lua_tostring(L, -1));
+            }
+          }
+        } else {
+          nid = openssl_get_nid(L, i);
+          if(nid!=NID_undef) {
+            ret = TS_RESP_CTX_add_policy(ctx, OBJ_nid2obj(nid));
+          }else
+            luaL_argerror(L, i, "invalid asn1_object or id");
+        }
+      }
       return openssl_pushresult(L, ret);
     }
   }
@@ -850,7 +872,7 @@ static ASN1_INTEGER* openssl_serial_cb(TS_RESP_CTX*ctx, void*data) {
   lua_rawgeti(L, LUA_REGISTRYINDEX, arg->ctx);
   lua_rawgeti(L, LUA_REGISTRYINDEX, arg->cb_arg);
   err = lua_pcall(L, 2, 1, 0);
-  if(err=0)
+  if(err==0)
   {
     BIGNUM *bn = BN_get(L, -1);
     lua_pop(L,1);
@@ -860,7 +882,6 @@ static ASN1_INTEGER* openssl_serial_cb(TS_RESP_CTX*ctx, void*data) {
     }
     if(ai==NULL)
       luaL_error(L, "serial_cb not return openssl.bn");
-    return NULL;
   }else
     lua_error(L);
   return ai;
@@ -881,6 +902,7 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_set_serial_cb)
   arg = (TS_CB_ARG*)lua_newuserdata(L,sizeof(TS_CB_ARG));
   arg->callback = cbref;
   arg->cb_arg = argref;
+  arg->L = L;
   lua_pushvalue(L, 1);
   arg->ctx = luaL_ref(L, LUA_REGISTRYINDEX);
   openssl_setvalue(L, ctx, "serial_cb");
@@ -898,7 +920,7 @@ static int openssl_time_cb(TS_RESP_CTX *ctx, void *data, long *sec, long *usec){
   lua_rawgeti(L, LUA_REGISTRYINDEX, arg->ctx);
   lua_rawgeti(L, LUA_REGISTRYINDEX, arg->cb_arg);
   err = lua_pcall(L, 2, 2, 0);
-  if(err=0)
+  if(err==0)
   {
     if(lua_isnil(L, -2)) {
       lua_pop(L, 2);
@@ -931,7 +953,7 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_set_time_cb)
   arg->cb_arg = argref;
   lua_pushvalue(L, 1);
   arg->ctx = luaL_ref(L, LUA_REGISTRYINDEX);
-
+  arg->L = L;
   lua_rawsetp(L,LUA_REGISTRYINDEX,ctx);
   TS_RESP_CTX_set_time_cb(ctx, openssl_time_cb, arg);
   return 0;
