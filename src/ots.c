@@ -679,7 +679,7 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_policies)
       for (i=2; i<=n && ret==1; i++) {
         if (lua_istable(L, i)) {
           int j, k;
-          k = lua_objlen(L, i);
+          k = lua_rawlen(L, i);
           for (j=1; j<=k && ret==1; j++) {
             lua_rawgeti(L, i, j);
             nid = openssl_get_nid(L, -1);
