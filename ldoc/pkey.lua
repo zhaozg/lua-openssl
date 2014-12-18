@@ -41,7 +41,7 @@ function get_public() end
 
 --- read public/private key from data
 -- @tparam string|openssl.bio input string data or bio object
--- @tparam[opt=false] public if true when input is public key
+-- @tparam[opt=false] boolean prikey set true when input is private key
 -- @tparam[opt='auto'] format format or encoding of input, support 'auto','pem','der'
 -- @tparam[opt] string passhprase when not public need this
 -- @treturn evp_pkey public key

@@ -231,7 +231,7 @@ function flags() end
 function policies() end
 
 --- set policies
--- @tparam asn1_object|integer|stack_of_asn1_object policies
+-- @tparam asn1_object|integer|string|stack_of_asn1_object|table policies
 -- @treturn boolean result
 function policies() end
 
