@@ -171,6 +171,7 @@ static int openssl_xstore_new(lua_State*L) {
   for(i=0; i<n; i++) {
     X509* x;
     lua_rawgeti(L, 1, i+1);
+    luaL_argcheck(L, auxiliar_isclass(L, "openssl.x509", -1), 1, "only contains x509 object");
     x = CHECK_OBJECT(-1, X509, "openssl.x509");
     lua_pop(L, 1);
     X509_STORE_add_cert(ctx, x);

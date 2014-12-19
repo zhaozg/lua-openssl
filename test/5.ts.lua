@@ -1,6 +1,7 @@
 local openssl = require'openssl'
+io.read()
 
-local ts,asn1,csr = openssl.ts,openssl.asn1, openssl.x509.req
+local asn1,ts,asn1,csr = openssl.asn1,openssl.ts,openssl.asn1, openssl.x509.req
 
 local timeStamping = openssl.asn1.new_string('timeStamping','octet')
 local timeStamping=asn1.new_type('timeStamping')
@@ -23,6 +24,9 @@ keyUsage = nonRepudiation, digitalSignature, keyEncipherment
 extendedKeyUsage = critical,timeStamping
 ]]
         self.hash = assert(self.md:digest(self.dat))
+
+        assert(asn1.new_object({oid='1.2.3.4.5.6',sn='1.2.3.4.5.6_sn',ln='1.2.3.4.5.6_ln'}))
+        assert(asn1.new_object({oid='1.2.3.4.5.7',sn='1.2.3.4.5.7_sn',ln='1.2.3.4.5.7_ln'}))
     end
 
 function TestTS:testAll()
@@ -96,10 +100,11 @@ function TestTS:testAll()
     assertIsTable(t)
     --print_r(t)
     
-    local skx = openssl.x509.sk_x509_new({cacert})
-    local store = openssl.x509.store.new({cacert})
-    assert(x509:check(store,nil,'timestamp_sign'))
+    local skx = openssl.x509.store.new({cacert})
+    
+    assert(x509:check(skx,nil,'timestamp_sign'))
 
+    local res = assert(openssl.ts.resp_read(res:export()))
     local vry = assert(req:to_verify_ctx())
     assert(vry:store(skx))
     assert(vry:verify(res))
@@ -123,4 +128,6 @@ function TestTS:testAll()
     assert(vry:data(self.dat))
     assert(vry:store(skx))
     assert(vry:verify(res))
+    res = ts.resp_read(res:export())
+    vry:verify(res)
 end

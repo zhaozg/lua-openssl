@@ -8,6 +8,10 @@ TestObject = {}
         self.oid = '2.5.4.6'
         self.nid = 14
         assertIsTable(asn1)
+        
+        self.ne_sn = 'Good1'
+        self.ne_ln = 'GoodString1'
+        self.ne_oid = '1.2.3.4.1'
     end
 
     function TestObject:tearDown()
@@ -68,6 +72,14 @@ TestObject = {}
             assertEquals(asn1.txt2nid(options.ln), o7:nid())
             assertEquals(asn1.txt2nid(options.oid), o7:nid())
         end
+        
+        assertEquals(asn1.txt2nid(self.ne_oid),nil)
+        assertIsNil(asn1.new_object(self.ne_sn))
+        assertIsNil(asn1.new_object(self.ne_ln))
+        assert(asn1.new_object(self.ne_oid))
+        o1 = assert(asn1.new_object({oid=self.ne_oid,sn=self.ne_sn,ln=self.ne_ln}))
+        o2 = assert(asn1.new_object(self.ne_oid))
+        assertEquals(o1,o2)
     end
 
 TestString = {}

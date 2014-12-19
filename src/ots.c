@@ -478,25 +478,6 @@ static luaL_Reg ts_resp_funs[] =
   { NULL, NULL }
 };
 
-//////////////////////////////////////////////////////////////////////////
-static X509_STORE* Stack2Store(STACK_OF(X509)* sk)
-{
-  X509_STORE *store = NULL;
-  int i;
-
-  /* Creating the X509_STORE object. */
-  store = X509_STORE_new();
-  /* Setting the callback for certificate chain verification. */
-  X509_STORE_set_verify_cb(store, NULL);
-
-  for (i = 0; i < sk_X509_num(sk); i++)
-  {
-    X509_STORE_add_cert(store, sk_X509_value(sk, i));
-  };
-
-  return store;
-}
-
 /********************************************************/
 
 static LUA_FUNCTION(openssl_ts_create_response)
@@ -548,6 +529,7 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_new)
     }else if(lua_isnumber(L, i) || lua_isstring(L, i) || auxiliar_isclass(L, "openssl.asn1_object",i))
     {
       nid = openssl_get_nid(L, i);
+      luaL_argcheck(L, nid!=NID_undef, i, "invalid asn1_object or object id");
     }else
       luaL_argerror(L, i, "not accept paramater");
   }
@@ -558,8 +540,7 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_new)
       luaL_error(L, "singer cert and private key not match");
     }
   }
-  /* if (ret==1 && nid!=NID_undef) */
-  if (ret==1)
+  if (ret==1 && nid!=NID_undef)
     ret = TS_RESP_CTX_set_def_policy(ctx, OBJ_nid2obj(nid));
 
   if (ret==1 && signer)
@@ -1043,10 +1024,12 @@ static int openssl_ts_verify_ctx_store(lua_State*L) {
     }else
       lua_pushnil(L);
   }else {
-    STACK_OF(X509) *cas = CHECK_OBJECT(2, STACK_OF(X509), "openssl.stack_of_x509");
+    X509_STORE* store = CHECK_OBJECT(2, X509_STORE, "openssl.x509_store");
     if (ctx->store)
       X509_STORE_free(ctx->store);
-    ctx->store = Stack2Store(cas);
+    
+    CRYPTO_add(&store->references, 1, CRYPTO_LOCK_X509_STORE);
+    ctx->store = store;
     ctx->flags |= TS_VFY_SIGNER | TS_VFY_SIGNATURE;
     lua_pushboolean(L, 1);
   }

@@ -145,12 +145,12 @@ do
 -- @treturn boolean result
 function verify() end
 
---- get stack_of_x509 cacerts
+--- get x509_store cacerts
 -- @treturn stack_of_x509
 function store() end
 
---- set stack_of_x509 cacerts
--- @tparam stack_of_x509 cacerts
+--- set x509_store cacerts
+-- @tparam x509_store cacerts
 -- @treturn boolean result
 function store() end
 
