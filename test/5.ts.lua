@@ -1,5 +1,4 @@
 local openssl = require'openssl'
-io.read()
 
 local asn1,ts,asn1,csr = openssl.asn1,openssl.ts,openssl.asn1, openssl.x509.req
 
