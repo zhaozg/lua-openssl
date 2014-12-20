@@ -10,11 +10,8 @@
 
 #define MYNAME "x509.store"
 
-static int openssl_xstore_gc(lua_State* L)
+void openssl_xstore_free(X509_STORE* ctx)
 {
-  X509_STORE* ctx = CHECK_OBJECT(1, X509_STORE, "openssl.x509_store");
-  lua_pushnil(L);
-  lua_setmetatable(L,1);
 #if OPENSSL_VERSION_NUMBER < 0x10002000L
   if (ctx->references > 1)
     CRYPTO_add(&ctx->references,-1,CRYPTO_LOCK_X509_STORE);
@@ -23,6 +20,14 @@ static int openssl_xstore_gc(lua_State* L)
 #else
   X509_STORE_free(ctx);
 #endif
+}
+
+static int openssl_xstore_gc(lua_State* L)
+{
+  X509_STORE* ctx = CHECK_OBJECT(1, X509_STORE, "openssl.x509_store");
+  lua_pushnil(L);
+  lua_setmetatable(L,1);
+  openssl_xstore_free(ctx);
   return 0;
 }
 

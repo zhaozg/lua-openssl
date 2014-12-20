@@ -1026,8 +1026,8 @@ static int openssl_ts_verify_ctx_store(lua_State*L) {
   }else {
     X509_STORE* store = CHECK_OBJECT(2, X509_STORE, "openssl.x509_store");
     if (ctx->store)
-      X509_STORE_free(ctx->store);
-    
+      openssl_xstore_free(ctx->store);
+
     CRYPTO_add(&store->references, 1, CRYPTO_LOCK_X509_STORE);
     ctx->store = store;
     ctx->flags |= TS_VFY_SIGNER | TS_VFY_SIGNATURE;
@@ -1109,6 +1109,10 @@ static int openssl_ts_verify_ctx_imprint(lua_State*L) {
 static LUA_FUNCTION(openssl_ts_verify_ctx_gc)
 {
   TS_VERIFY_CTX *ctx = CHECK_OBJECT(1, TS_VERIFY_CTX, "openssl.ts_verify_ctx");
+  if (ctx->store)
+    openssl_xstore_free(ctx->store);
+
+  ctx->store = NULL;
   lua_pushnil(L);
   lua_setmetatable(L, 1);
   TS_VERIFY_CTX_free(ctx);
