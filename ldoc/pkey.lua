@@ -20,17 +20,18 @@ function new() end
 -- @treturn evp_pkey object with mapping to EVP_PKEY in openssl
 function new() end
 
---- create a new keypair
+--- create a new keypair by factors of keypair or get public key only
 -- @tparam table factors to create private/public key, key alg only accept accept 'rsa','dsa','dh','ec' and must exist</br>
---  when arg is rsa, table may with key n,e,d,p,q,dmp1,dmq1,iqmp,both are string value</br>
---  when arg is dsa, table may with key p,q,g,priv_key,pub_key,both are string value</br>
---  when arg is dh, table may with key p,g,priv_key,pub_key,both are string value</br>
---  when arg is ec, table may with D,X,Y,Z,both are string value</br>
-
+--  when arg is rsa, table may with key n,e,d,p,q,dmp1,dmq1,iqmp, both are binary string or openssl.bn<br>
+--  when arg is dsa, table may with key p,q,g,priv_key,pub_key, both are binary string or openssl.bn<br>
+--  when arg is dh, table may with key p,g,priv_key,pub_key, both are binary string or openssl.bn<br>
+--  when arg is ec, table may with D,X,Y,Z,both are binary string or openssl.bn<br>
 -- @treturn evp_pkey object with mapping to EVP_PKEY in openssl
 -- @usage
+--  --create rsa public key
+--    pubkey = new({alg='rsa',n=...,e=...}
 --  --create new rsa
---    rsa = new({alg='rsa',n=...,q=...,e=...}
+--    rsa = new({alg='rsa',n=...,q=...,e=...,...}
 function new() end
 
 --- get public key from private key object
