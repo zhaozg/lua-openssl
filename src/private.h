@@ -36,12 +36,12 @@
   const char* bn = luaL_checklstring(L,-1,&l);              \
   if(_type->_name==NULL)  _type->_name = BN_new();          \
   BN_bin2bn((const unsigned char *)bn,l,_type->_name);      \
-  }else if(auxiliar_isclass(L,"openssl.bn",n)) {            \
-  const BIGNUM* bn = CHECK_OBJECT(n,BIGNUM,"openssl.bn");   \
+  }else if(auxiliar_isclass(L,"openssl.bn",-1)) {            \
+  const BIGNUM* bn = CHECK_OBJECT(-1,BIGNUM,"openssl.bn");   \
   if(_type->_name==NULL)  _type->_name = BN_new();          \
   BN_copy(_type->_name, bn);                                \
   }else if(!lua_isnil(L,-1))                                \
-  luaL_error(L,"arg #%d must be string or openssl.bn",n);   \
+  luaL_error(L,"arg #%d must have \"%s\"field string or openssl.bn",n,#_name);   \
   lua_pop(L,1);                                             \
 }
 
