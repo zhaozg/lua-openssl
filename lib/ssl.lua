@@ -14,19 +14,7 @@ local function load(path)
 end
 
 
-function M.newcontext(params)
---[[
-local params = {
-   mode = "server",
-   protocol = "tlsv1",
-   key = "../certs/serverAkey.pem",
-   certificate = "../certs/serverA.pem",
-   cafile = "../certs/rootA.pem",
-   verify = {"peer", "fail_if_no_peer_cert"},
-   options = {"all", "no_sslv2"},
-   password = 'password'
-}
---]]    
+function M.newcontext(params)  
     local protocol = params.protocol and string.upper(string.sub(params.protocol,1,3))
         ..string.sub(params.protocol,4,-1) or 'SSLv3'
     local ctx = ssl.ctx_new(protocol,params.ciphers)
@@ -60,11 +48,7 @@ local params = {
         ctx:set_verify(args)
     end
     if params.options then
-        local args = {}
-        for i=1,#params.options do
-            table.insert(arg,params.options[i])
-        end
-        ctx:options(unpack(args))
+        ctx:options(unpack(params.options))
     end
     if params.verifyext then
         for k,v in pairs(params.verifyext) do

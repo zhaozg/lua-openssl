@@ -33,15 +33,13 @@ do  -- define ssl_ctx
 
 --- tell ssl_ctx use private key and certificate, and check private key
 -- @tparam evp_pkey pkey
--- @tparam x509 cert
--- @treturn boolean result return true for ok, or nil follow by errmsg and errval
--- @treturn string errmsg
--- @treturn number errval
-function used() end
+-- @tparam[opt] x509 cert
+-- @treturn boolean result return true for ok, or nil followed by errmsg and errval
+function use() end
 
 --- add client ca cert and option extra chain cert
 -- @tparam x509 clientca 
--- @tparam table extra_chain_cert_array
+-- @tparam[opt] table extra_chain_cert_array
 -- @treturn boolean result
 function add() end
 
@@ -77,19 +75,23 @@ function set_tmp() emd
 --  --output 'enable_partial_write','accept_moving_write_buffer','auto_retry'
 function mode() end
 
+--- get options
+-- @treturn table string list of current options
+function options() end
+  
 --- set options 
 -- @tparam string option, support "microsoft_sess_id_bug", "netscape_challenge_bug", "netscape_reuse_cipher_change_bug",
 -- "sslref2_reuse_cert_type_bug", "microsoft_big_sslv3_buffer", "msie_sslv3_rsa_padding","ssleay_080_client_dh_bug",
--- "tls_d5_bug","tls_block_padding_bug","dont_insert_empty_fragments","all",
--- @tparam string new options list
+-- "tls_d5_bug","tls_block_padding_bug","dont_insert_empty_fragments","all", please to see ssl_options.h
+-- @treturn table string list of current options after set new option
 function options() end
 
 --- clear options
 -- @tparam boolean clear set true to clear options 
 -- @tparam string option, support "microsoft_sess_id_bug", "netscape_challenge_bug", "netscape_reuse_cipher_change_bug",
 -- "sslref2_reuse_cert_type_bug", "microsoft_big_sslv3_buffer", "msie_sslv3_rsa_padding","ssleay_080_client_dh_bug",
--- "tls_d5_bug","tls_block_padding_bug","dont_insert_empty_fragments","all",
--- @tparam string new options list
+-- "tls_d5_bug","tls_block_padding_bug","dont_insert_empty_fragments","all",  please to see ssl_options.h
+-- @treturn table string list of current options after clear some option
 function options() end
 
 --- get timeout
@@ -293,6 +295,16 @@ function get() end
 -- @param value val type accroding to arg 
 -- @return value
 function set() end
+
+function use() end
+function peer() end
+function getfd() end
+function current_cipher() end
+function current_compression() end
+function getpeerverfication() end
+function session() end
+function peek() end 
+function error() end
 
 end
 

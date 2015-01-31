@@ -257,8 +257,25 @@ static int openssl_ssl_ctx_options(lua_State*L)
   if (!lua_isnoneornil(L, 2))
   {
     int clear = lua_isboolean(L, 2) ? lua_toboolean(L, 2) : 0;
-    i =  lua_isboolean(L, 2) ? 3 : 2;
-    options = luaL_checkint(L, i);
+    i = lua_isboolean(L, 2) ? 3 : 2;
+    if (lua_isnumber(L, i))
+      options = luaL_checkint(L, i);
+    else {
+      int top = lua_gettop(L);
+      for (; i <= top; i++) {
+        const char* s = luaL_checkstring(L, i);
+        int j;
+        for (j = 0; j < sizeof(ssl_options) / sizeof(LuaL_Enum); j++)
+        {
+          LuaL_Enum e = ssl_options[j];
+          if (strcasecmp(s, e.name)) {
+            options |= e.val;
+          }
+        }
+      }
+    }
+
+
     if (clear != 0)
       options = SSL_CTX_set_options(ctx, options);
     else
