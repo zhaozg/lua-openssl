@@ -25,6 +25,7 @@
 #include <openssl/rand.h>
 #include <openssl/pkcs12.h>
 #include <openssl/opensslv.h>
+#include <openssl/bn.h>
 
 #define LOPENSSL_VERSION_STR  "0.4.0"
 

@@ -6,6 +6,7 @@
 \*=========================================================================*/
 #include "openssl.h"
 #include "private.h"
+#include <openssl/rsa.h>
 
 #define MYNAME    "rsa"
 #define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\

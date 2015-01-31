@@ -267,6 +267,7 @@ static int openssl_ssl_ctx_options(lua_State*L)
   else
     options = SSL_CTX_get_options(ctx);
 
+  lua_newtable(L);
   ret = 0;
   for (i = 0; i < sizeof(ssl_options) / sizeof(LuaL_Enum); i++)
   {
@@ -275,9 +276,10 @@ static int openssl_ssl_ctx_options(lua_State*L)
     {
       lua_pushstring(L, e.name);
       ret++;
+      lua_rawseti(L, -2, ret);
     }
   }
-  return ret;
+  return 1;
 }
 
 static int openssl_ssl_ctx_quiet_shutdown(lua_State*L)

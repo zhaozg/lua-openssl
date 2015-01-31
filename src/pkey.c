@@ -7,6 +7,9 @@
 
 #include "openssl.h"
 #include "private.h"
+#include <openssl/rsa.h>
+#include <openssl/dh.h>
+#include <openssl/dsa.h>
 
 #define MYNAME    "pkey"
 #define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
@@ -201,11 +204,18 @@ static LUA_FUNCTION(openssl_pkey_new)
     {
       int bits = luaL_optint(L, 2, 1024);
       int e = luaL_optint(L, 3, 65537);
-      RSA* rsa = bits ? RSA_generate_key(bits, e, NULL, NULL) : RSA_new();
-      if (bits == 0 || rsa->n == 0)
-        rsa->n = BN_new();
-      pkey = EVP_PKEY_new();
-      EVP_PKEY_assign_RSA(pkey, rsa);
+      RSA* rsa = RSA_new();
+      
+      BIGNUM *E = BN_new();
+      BN_set_word(E, e);
+      if (RSA_generate_key_ex(rsa, bits, E, NULL))
+      {
+        pkey = EVP_PKEY_new();
+        EVP_PKEY_assign_RSA(pkey, rsa);
+      }
+      else
+        RSA_free(rsa);
+      BN_free(E);
     }
     else if (strcasecmp(alg, "dsa") == 0)
     {
@@ -213,15 +223,14 @@ static LUA_FUNCTION(openssl_pkey_new)
       size_t seed_len = 0;
       const char* seed = luaL_optlstring(L, 3, NULL, &seed_len);
 
-      DSA *dsa = DSA_generate_parameters(bits, (byte*)seed, seed_len, NULL,  NULL, NULL, NULL);
-      if ( !DSA_generate_key(dsa))
+      DSA *dsa = DSA_new();
+      if (DSA_generate_parameters_ex(dsa,bits,(byte*)seed,seed_len,NULL,NULL,NULL) 
+        && DSA_generate_key(dsa))
       {
+        pkey = EVP_PKEY_new();
+        EVP_PKEY_assign_DSA(pkey, dsa);
+      }else
         DSA_free(dsa);
-        luaL_error(L, "DSA_generate_key failed");
-      }
-      pkey = EVP_PKEY_new();
-      EVP_PKEY_assign_DSA(pkey, dsa);
-
     }
     else if (strcasecmp(alg, "dh") == 0)
     {
@@ -229,14 +238,17 @@ static LUA_FUNCTION(openssl_pkey_new)
       int generator = luaL_optint(L, 3, 2);
 
       DH* dh = DH_new();
-      if (!DH_generate_parameters_ex(dh, bits, generator, NULL))
+      if (DH_generate_parameters_ex(dh, bits, generator, NULL))
       {
+        if (DH_generate_key(dh))
+        {
+          pkey = EVP_PKEY_new();
+          EVP_PKEY_assign_DH(pkey, dh);
+        }
+        else
+          DH_free(dh);
+      }else
         DH_free(dh);
-        luaL_error(L, "DH_generate_parameters_ex failed");
-      }
-      DH_generate_key(dh);
-      pkey = EVP_PKEY_new();
-      EVP_PKEY_assign_DH(pkey, dh);
     }
 #ifndef OPENSSL_NO_EC
     else if (strcasecmp(alg, "ec") == 0)
@@ -269,17 +281,18 @@ static LUA_FUNCTION(openssl_pkey_new)
         }
         EC_KEY_set_group(ec, group);
         EC_GROUP_free(group);
-        if (!EC_KEY_generate_key(ec))
+        if (EC_KEY_generate_key(ec))
         {
+          EC_KEY_set_asn1_flag(ec, flag);
+
+          pkey = EVP_PKEY_new();
+          EVP_PKEY_assign_EC_KEY(pkey, ec);
+        }else
           EC_KEY_free(ec);
-          luaL_error(L, "EC_KEY_generate_key failed");
-        }
       }
+      else
+        EC_KEY_free(ec);
 
-      EC_KEY_set_asn1_flag(ec, flag);
-
-      pkey = EVP_PKEY_new();
-      EVP_PKEY_assign_EC_KEY(pkey, ec);
     }
 #endif
     else
