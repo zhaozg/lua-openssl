@@ -226,7 +226,7 @@ static int openssl_ssl_ctx_mode(lua_State*L)
     i =  lua_isboolean(L, 2) ? 3 : 2;
     while (i <= lua_gettop(L))
     {
-      mode = mode || auxiliar_checkoption(L, i, NULL, sMode_options, iMode_options);
+      mode = mode | auxiliar_checkoption(L, i++, NULL, sMode_options, iMode_options);
     }
     if (clear != 0)
       mode = SSL_CTX_set_mode(ctx, mode);
