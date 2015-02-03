@@ -1,0 +1,28 @@
+version: 0.4.{build}
+configuration: Release
+platform: x86
+clone_depth: 2
+clone_folder: C:\lua-openssl
+install:
+- cd c:\lua-openssl
+- git submodule update --init --recursive
+- git submodule update --recursive
+- '"C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat" x86'
+- cd C:\
+- git clone https://github.com/zhaozg/openssl-win32.git C:\openssl-win32
+- git clone http://luajit.org/git/luajit-2.0.git C:\luajit-2.0
+build_script:
+- cd c:\luajit-2.0\src
+- msvcbuild.bat
+- copy luajit.exe C:\
+- copy lua51.* C:\
+- cd c:\lua-openssl
+- nmake -f makefile.win
+- copy src\openssl.dll c:\
+test_script:
+- cd test\
+- set LUA_PATH=?.lua;
+- set LUA_CPATH=C:\?.dll;
+- dir C:\
+- 'dir '
+- c:\luajit.exe bn.lua
