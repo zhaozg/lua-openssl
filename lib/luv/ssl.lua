@@ -127,14 +127,15 @@ S.__index = {
                         end
                         
                         local i,o = self.inp:pending()
-                        if i>0 then
+                        while i>0 do
+                            if o > 0 then
+                                assert(false,'never here')
+                            end
                             local ret, msg = self.ssl:read()
                             if ret then
                                 self:ondata(ret)
                             end
-                        end
-                        if o > 0 then
-                            assert(false,'never here')
+                            i,o = self.inp:pending()
                         end
                     else
                         self:close()
