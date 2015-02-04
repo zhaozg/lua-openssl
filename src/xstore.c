@@ -10,15 +10,19 @@
 
 #define MYNAME "x509.store"
 
-void openssl_xstore_free(X509_STORE* ctx)
+int openssl_xstore_free(X509_STORE* ctx)
 {
 #if OPENSSL_VERSION_NUMBER < 0x10002000L
-  if (ctx->references > 1)
-    CRYPTO_add(&ctx->references,-1,CRYPTO_LOCK_X509_STORE);
-  else
-    X509_STORE_free(ctx);
+  int cnt = CRYPTO_add(&ctx->references,-1,CRYPTO_LOCK_X509_STORE);
+  if (cnt > 0)
+  {
+    return 0;
+  }
+  X509_STORE_free(ctx);
+  return 1;
 #else
   X509_STORE_free(ctx);
+  return 1;
 #endif
 }
 

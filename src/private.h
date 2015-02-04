@@ -102,4 +102,4 @@ int openssl_getvalue(lua_State*L, void*p, const char*field);
 
 int openssl_verify_cb(int preverify_ok, X509_STORE_CTX *xctx);
 int openssl_cert_verify_cb(X509_STORE_CTX *xctx,void* u);
-void openssl_xstore_free(X509_STORE* ctx);
+int openssl_xstore_free(X509_STORE* ctx);
