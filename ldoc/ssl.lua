@@ -189,6 +189,15 @@ function set_cert_verify() end
 -- @tparam table verify_cb_flag
 function set_cert_verify() end
 
+--- get current session cache mode
+-- @ table modes as array, mode is 'no_auto_clear','server','client','both','off' 
+function session_cache_mode()
+
+--- set session cache mode,and return old mode
+-- @param mode string support 'no_auto_clear','server','client','both','off',
+-- 'no_auto_clear' can be combine with others, so accept one or two param.
+function session_cache_mode(...)
+
 --- create bio object
 -- @tparam string host_addr format like 'host:port'
 -- @tparam[opt=true] boolean server, true listen at host_addr,false connect to host_addr

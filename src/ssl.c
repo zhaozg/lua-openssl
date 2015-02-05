@@ -850,6 +850,67 @@ static int openssl_ssl_ctx_sessions(lua_State*L)
   }
 }
 
+static int openssl_session_cache_mode(lua_State *L) {
+  static const char* smode[] = {
+    "off",
+    "client",
+    "server",
+    "both",
+    "no_auto_clear",
+    NULL
+  };
+  static const int imode[] = {
+    SSL_SESS_CACHE_OFF,
+    SSL_SESS_CACHE_CLIENT,
+    SSL_SESS_CACHE_SERVER,
+    SSL_SESS_CACHE_BOTH,
+    SSL_SESS_CACHE_NO_AUTO_CLEAR,
+    -1
+  };
+
+  SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
+  int n = lua_gettop(L);
+  long mode = 0;
+  int i;
+  if (n > 1) {
+    if (lua_isnumber(L, 2)) {
+      mode = luaL_checkinteger(L, 2);
+      mode = SSL_CTX_set_session_cache_mode(ctx, mode);
+    } else {
+      for (i = 2; i <= n; i++) {
+        int j = auxiliar_checkoption(L, i, NULL, smode, imode);
+        mode |= j;
+      }
+      mode = SSL_CTX_set_session_cache_mode(ctx, mode);
+    }
+  } else {
+    mode = SSL_CTX_get_session_cache_mode(ctx);
+  };
+  lua_newtable(L);
+  i = 0;
+  if (mode & SSL_SESS_CACHE_NO_AUTO_CLEAR) {
+    lua_pushstring(L, smode[4]);
+    lua_rawseti(L, -2, i++);
+  }
+  if (mode & SSL_SESS_CACHE_BOTH) {
+    lua_pushstring(L, smode[3]);
+    lua_rawseti(L, -2, i++);
+  }
+  else if (mode & SSL_SESS_CACHE_SERVER) {
+    lua_pushstring(L, smode[2]);
+    lua_rawseti(L, -2, i++);
+  }
+  else if (mode & SSL_SESS_CACHE_CLIENT) {
+    lua_pushstring(L, smode[1]);
+    lua_rawseti(L, -2, i++);
+  }
+  else if (mode & SSL_SESS_CACHE_OFF) {
+    lua_pushstring(L, smode[0]);
+    lua_rawseti(L, -2, i++);
+  }
+  return 1;
+}
+
 static luaL_Reg ssl_ctx_funcs[] =
 {
   {"ssl",             openssl_ssl_ctx_new_ssl},
@@ -872,6 +933,7 @@ static luaL_Reg ssl_ctx_funcs[] =
   {"set_tmp",         openssl_ssl_ctx_set_tmp},
   {"flush_sessions",  openssl_ssl_ctx_flush_sessions},
   {"session",         openssl_ssl_ctx_sessions},
+  {"session_cache_mode",        openssl_session_cache_mode },
 
   {"__gc",            openssl_ssl_ctx_gc},
   {"__tostring",      auxiliar_tostring},
