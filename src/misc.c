@@ -178,3 +178,14 @@ int openssl_push_bit_string_bitname(lua_State* L,const BIT_STRING_BITNAME* name)
   lua_setfield(L, -2, "sname");
   return 1;
 }
+
+int openssl_sk_check_index(int i, unsigned int num, int idx) {
+  int ret = i;
+  if (i < 0)
+    ret = num + i;
+  else
+    ret = i - 1;
+
+  luaL_argcheck(L, ret >= 0 && i < num, idx, "out of range");
+  return ret;
+}
