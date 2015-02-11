@@ -163,10 +163,9 @@ static int openssl_ssl_ctx_add(lua_State*L)
 static int openssl_ssl_ctx_gc(lua_State*L)
 {
   SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
-  if (ctx->cert_store)
-    openssl_xstore_free(ctx->cert_store);
-  if (ctx->references==1)
+  if (ctx->cert_store && ctx->cert_store->references > 1)
   {
+    openssl_xstore_free(ctx->cert_store);
     ctx->cert_store = NULL;
   }
   openssl_freevalue(L, ctx);
