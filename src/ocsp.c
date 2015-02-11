@@ -331,13 +331,10 @@ static int openssl_ocsp_response(lua_State *L)
 
             lua_getfield(L, -1, "reason");
             if (lua_isstring(L, -1))
-              reason = openssl_get_revoke_reason(lua_tostring(L, -1));
+              reason = openssl_s2i_revoke_reason(lua_tostring(L, -1));
             else
               reason = luaL_checkint(L, -1);
             lua_pop(L, 1);
-
-
-
           }
           else
           {
@@ -348,7 +345,7 @@ static int openssl_ocsp_response(lua_State *L)
       }
       else
       {
-
+        //TODO:
       }
 
       if (reason == 7)

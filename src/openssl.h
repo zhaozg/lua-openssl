@@ -69,7 +69,7 @@ __pragma(warning(pop))
 #define LUA_FUNCTION(X) int X(lua_State *L)
 
 
-int openssl_get_revoke_reason(const char*s);
+int openssl_s2i_revoke_reason(const char*s);
 
 LUALIB_API LUA_FUNCTION(luaopen_openssl);
 LUA_FUNCTION(luaopen_digest);

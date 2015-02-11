@@ -29,7 +29,15 @@ static const BIT_STRING_BITNAME reason_flags[] =
 
 static const int reason_num = sizeof(reason_flags) / sizeof(BIT_STRING_BITNAME) - 1;
 
-int openssl_get_revoke_reason(const char*s)
+const char* openssl_i2s_revoke_reason(int reason){
+  int i;
+  for (i = 0; i < reason_num && i != reason; i++);
+  if (i == reason_num)
+    return "unset";
+  else
+    return reason_flags[i].sname;
+}
+int openssl_s2i_revoke_reason(const char*s)
 {
   int reason = -1;
   int i;
@@ -55,7 +63,7 @@ static int reason_get(lua_State*L, int reasonidx)
   else if (lua_isstring(L, reasonidx))
   {
     const char* s = lua_tostring(L, reasonidx);
-    reason = openssl_get_revoke_reason(s);
+    reason = openssl_s2i_revoke_reason(s);
   }
   else if (lua_isnoneornil(L, reasonidx))
     reason = 0;
@@ -530,13 +538,13 @@ static LUA_FUNCTION(openssl_crl_parse)
     lua_newtable(L);
 
 #if OPENSSL_VERSION_NUMBER > 0x10000000L
-    AUXILIAR_SET(L, -1, "CRLReason", reason_flags[revoked->reason].lname, string);
+    AUXILIAR_SET(L, -1, "CRLReason", openssl_i2s_revoke_reason(revoked->reason), string);
 #else
     {
       int crit = 0;
       void* reason = X509_REVOKED_get_ext_d2i(revoked, NID_crl_reason, &crit, NULL);
 
-      AUXILIAR_SET(L, -1, "CRLReason", reason_flags[ASN1_ENUMERATED_get(reason)].lname, string);
+      AUXILIAR_SET(L, -1, "CRLReason", openssl_i2s_revoke_reason(ASN1_ENUMERATED_get(reason)), string);
       ASN1_ENUMERATED_free(reason);
     }
 #endif
@@ -630,13 +638,13 @@ static LUA_FUNCTION(openssl_crl_get)
     lua_newtable(L);
 
 #if OPENSSL_VERSION_NUMBER > 0x10000000L
-    AUXILIAR_SET(L, -1, "reason", reason_flags[revoked->reason].lname, string);
+    AUXILIAR_SET(L, -1, "reason", openssl_i2s_revoke_reason(revoked->reason), string);
 #else
     {
       int crit = 0;
       void* reason = X509_REVOKED_get_ext_d2i(revoked, NID_crl_reason, &crit, NULL);
 
-      AUXILIAR_SET(L, -1, "reason", reason_flags[ASN1_ENUMERATED_get(reason)].lname, string);
+      AUXILIAR_SET(L, -1, "reason", openssl_i2s_revoke_reason(ASN1_ENUMERATED_get(reason)), string);
       ASN1_ENUMERATED_free(reason);
     }
 #endif
@@ -700,13 +708,13 @@ static int openssl_revoked_info(lua_State* L)
   lua_newtable(L);
 
 #if OPENSSL_VERSION_NUMBER > 0x10000000L
-  AUXILIAR_SET(L, -1, "reason", reason_flags[revoked->reason].lname, string);
+  AUXILIAR_SET(L, -1, "reason", openssl_i2s_revoke_reason(revoked->reason), string);
 #else
   {
     int crit = 0;
     void* reason = X509_REVOKED_get_ext_d2i(revoked, NID_crl_reason, &crit, NULL);
 
-    AUXILIAR_SET(L, -1, "reason", reason_flags[ASN1_ENUMERATED_get(reason)].lname, string);
+    AUXILIAR_SET(L, -1, "reason", openssl_i2s_revoke_reason(ASN1_ENUMERATED_get(reason)), string);
     ASN1_ENUMERATED_free(reason);
   }
 #endif
@@ -728,13 +736,13 @@ static int openssl_revoked_reason(lua_State* L)
 {
   X509_REVOKED* revoked = CHECK_OBJECT(1, X509_REVOKED, "openssl.x509_revoked");
 #if OPENSSL_VERSION_NUMBER > 0x10000000L
-  lua_pushstring(L, reason_flags[revoked->reason].lname);
+  lua_pushstring(L, openssl_i2s_revoke_reason(revoked->reason));
   lua_pushinteger(L, revoked->reason);
 #else
   {
     int crit = 0;
     void* reason = X509_REVOKED_get_ext_d2i(revoked, NID_crl_reason, &crit, NULL);
-    lua_pushstring(L, reason_flags[ASN1_ENUMERATED_get(reason)].lname);
+    lua_pushstring(L, openssl_i2s_revoke_reason(ASN1_ENUMERATED_get(reason)).lname);
     lua_pushinteger(revoked->reason);
     ASN1_ENUMERATED_free(reason);
   }
