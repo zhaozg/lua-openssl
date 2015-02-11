@@ -721,13 +721,13 @@ int openssl_push_asn1object(lua_State* L, const ASN1_OBJECT* obj)
 
 int openssl_push_asn1(lua_State* L, ASN1_STRING* string, int type, int utf8)
 {
-  if (type && ((string->type&type) == type))
+  if (type && ((string->type&type) != type))
   {
     luaL_error(L, "need %s asn1, but get %s",asn1_typestring(type),asn1_typestring(string->type));
     return 0;
   }
 
-  switch(string->type){
+  switch (type){
   case V_ASN1_INTEGER:
     {
       ASN1_INTEGER *ai = (ASN1_INTEGER *)string;
