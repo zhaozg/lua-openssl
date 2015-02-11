@@ -721,7 +721,7 @@ int openssl_push_asn1object(lua_State* L, const ASN1_OBJECT* obj)
 
 int openssl_push_asn1(lua_State* L, ASN1_STRING* string, int type, int utf8)
 {
-  if(type && string->type!=type)
+  if (type && (string->type&type == type))
   {
     luaL_error(L, "need %s asn1, but get %s",asn1_typestring(type),asn1_typestring(string->type));
     return 0;
