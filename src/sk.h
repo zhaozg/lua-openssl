@@ -81,7 +81,8 @@ STACK_OF(TYPE)* sk_##type##_fromtable(lua_State*L, int idx) {     \
 #define SK_INSERT(TYPE, type) static int sk_##type##_insert(lua_State*L) {          \
   STACK_OF(TYPE) * st = CHECK_OBJECT(1, STACK_OF(TYPE), "openssl.stack_of_"#type);  \
   TYPE* x = CHECK_OBJECT(2,TYPE, "openssl."#type);                                  \
-  int i = luaL_checkint(L,3) || openssl_sk_check_index(i, SKM_sk_num(TYPE, st), 3); \
+  int i = luaL_checkint(L,3);                                                       \
+  i = openssl_sk_index(L, i, SKM_sk_num(TYPE, st), 3);                              \
   REF_OR_DUP(TYPE, x);                                                              \
   SKM_sk_insert(TYPE,st,x,i);                                                       \
   lua_pushvalue(L,1);                                                               \
@@ -91,8 +92,10 @@ STACK_OF(TYPE)* sk_##type##_fromtable(lua_State*L, int idx) {     \
 
 #define SK_DELETE(TYPE, type) static int sk_##type##_delete(lua_State*L) {          \
   STACK_OF(TYPE) * st = CHECK_OBJECT(1, STACK_OF(TYPE), "openssl.stack_of_"#type);  \
-  int i = luaL_checkint(L,2) || openssl_sk_check_index(i, SKM_sk_num(TYPE, st), 2); \
-  TYPE *val = SKM_sk_delete(TYPE,st,i);                                             \
+  TYPE *val;                                                                        \
+  int i = luaL_checkint(L,2);                                                       \
+  i = openssl_sk_index(L, i, SKM_sk_num(TYPE, st), 2);                              \
+  val = SKM_sk_delete(TYPE,st,i);                                                   \
   PUSH_OBJECT(val,"openssl."#type);                                                 \
   return 1;                                                                         \
 }
@@ -100,7 +103,8 @@ STACK_OF(TYPE)* sk_##type##_fromtable(lua_State*L, int idx) {     \
 #define SK_SET(TYPE, type)  static int sk_##type##_set(lua_State*L) {               \
   STACK_OF(TYPE) * st = CHECK_OBJECT(1, STACK_OF(TYPE), "openssl.stack_of_"#type);  \
   TYPE* x = CHECK_OBJECT(2,TYPE, "openssl."#type);                                  \
-  int i = luaL_checkint(L,3) || openssl_sk_check_index(i, SKM_sk_num(TYPE, st), 3); \
+  int i = luaL_checkint(L,3);                                                       \
+  i = openssl_sk_index(L, i, SKM_sk_num(TYPE, st), 3);                              \
   REF_OR_DUP(TYPE, x);                                                              \
   SKM_sk_set(TYPE, st, i, x);                                                       \
   lua_pushvalue(L,1);                                                               \
@@ -109,8 +113,10 @@ STACK_OF(TYPE)* sk_##type##_fromtable(lua_State*L, int idx) {     \
 
 #define SK_GET(TYPE, type)  static int sk_##type##_get(lua_State*L) {               \
   STACK_OF(TYPE) * st = CHECK_OBJECT(1, STACK_OF(TYPE), "openssl.stack_of_"#type);  \
-  int i = luaL_checkint(L,2) || openssl_sk_check_index(i, SKM_sk_num(TYPE, st), 2); \
-  TYPE *x = SKM_sk_value(TYPE, st, i);                                              \
+  TYPE *x;                                                                          \
+  int i = luaL_checkint(L,2);                                                       \
+  i = openssl_sk_index(L, i, SKM_sk_num(TYPE, st), 2);                              \
+  x = SKM_sk_value(TYPE, st, i);                                                    \
   REF_OR_DUP(TYPE, x);                                                              \
   PUSH_OBJECT(x,"openssl."#type);                                                   \
   return 1;                                                                         \

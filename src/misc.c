@@ -179,7 +179,7 @@ int openssl_push_bit_string_bitname(lua_State* L,const BIT_STRING_BITNAME* name)
   return 1;
 }
 
-int openssl_sk_check_index(int i, unsigned int num, int idx) {
+int openssl_sk_index(lua_State*L, int i, int num, int idx) {
   int ret = i;
   if (i < 0)
     ret = num + i;
