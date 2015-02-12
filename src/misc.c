@@ -186,6 +186,6 @@ int openssl_sk_index(lua_State*L, int i, int num, int idx) {
   else
     ret = i - 1;
 
-  luaL_argcheck(L, ret >= 0 && i < num, idx, "out of range");
+  luaL_argcheck(L, ret >= 0 && ret < num, idx, "out of range");
   return ret;
 }
