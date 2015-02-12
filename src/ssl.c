@@ -255,20 +255,21 @@ static int openssl_ssl_ctx_options(lua_State*L)
   int i;
   if (!lua_isnoneornil(L, 2))
   {
+    int top = lua_gettop(L);
     int clear = lua_isboolean(L, 2) ? lua_toboolean(L, 2) : 0;
     i = lua_isboolean(L, 2) ? 3 : 2;
-    if (lua_isnumber(L, i))
-      options = luaL_checkint(L, i);
-    else {
-      int top = lua_gettop(L);
-      for (; i <= top; i++) {
+    for (; i <= top; i++) {
+      if (lua_isnumber(L, i))
+        options |= (long)luaL_checkinteger(L, i);
+      else{
         const char* s = luaL_checkstring(L, i);
         int j;
-        for (j = 0; j < sizeof(ssl_options) / sizeof(LuaL_Enum); j++)
+        for (j = 0; ssl_options[j].name; j++)
         {
           LuaL_Enum e = ssl_options[j];
           if (strcasecmp(s, e.name)) {
             options |= e.val;
+            break;
           }
         }
       }
@@ -276,16 +277,16 @@ static int openssl_ssl_ctx_options(lua_State*L)
 
 
     if (clear != 0)
-      options = SSL_CTX_set_options(ctx, options);
-    else
       options = SSL_CTX_clear_options(ctx, options);
+    else
+      options = SSL_CTX_set_options(ctx, options);
   }
   else
     options = SSL_CTX_get_options(ctx);
 
   lua_newtable(L);
   ret = 0;
-  for (i = 0; i < sizeof(ssl_options) / sizeof(LuaL_Enum); i++)
+  for (i = 0; ssl_options[i].name; i++)
   {
     LuaL_Enum e = ssl_options[i];
     if (options && e.val)
