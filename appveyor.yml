@@ -23,6 +23,4 @@ test_script:
 - cd test\
 - set LUA_PATH=?.lua;
 - set LUA_CPATH=C:\?.dll;
-- dir C:\
-- 'dir '
-- c:\luajit.exe bn.lua
+- c:\luajit.exe test.lua
