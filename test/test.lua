@@ -20,6 +20,7 @@ dofile('5.x509.lua')
 dofile('5.ts.lua')
 dofile('6.pkcs7.lua')
 dofile('7.pkcs12.lua')
+dofile('8.ssl_options.lua')
 
 --LuaUnit:setVerbosity(0)
 LuaUnit:run()
