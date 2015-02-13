@@ -103,15 +103,7 @@ function timeout() end
 -- @treturn number previous timeout
 function timeout() end
 
---- get verify mode
--- @treturn string 'none','peer','fail' or 'once'
-function verify_mode() end
-
---- set verify mode
--- @tparam string mode must be in "none", "peer", "fail", "once"
--- you can pass more than one mode at same time
-
- --- get quit_shutdown is set or not
+--- get quit_shutdown is set or not
 -- Normally when a SSL connection is finished, the parties must send out
 -- "close notify" alert messages using ***SSL:shutdown"*** for a clean shutdown.
 -- @treturn boolean result
@@ -157,7 +149,6 @@ function verify_depth() end
 
 --- get verify_mode, return number mode and all string modes list
 -- @treturn number mode_code
--- @treturn string mode_string
 -- @return ...
  --  none: not verify client cert
  --  peer: verify client cert
@@ -171,13 +162,13 @@ function verify_depth() end
 --  end
 function verify_mode() end
 
---- set verify callback
+--- set verify mode and callback
 -- @tparam table modes, array of mode set to ctx verify_cb
--- @tparam[opt=nil] function verify_cb if mode is 'none', not need this
+-- @tparam[opt=nil] function verify_cb nil will use default, when mode is 'none', will be ignore this, 
 -- verify_cb must be boolean function(verifyarg) return false to end,true to continue
 -- verifyarg has field 'error', 'error_string','error_depth','current_cert', and 'preverify_ok'
 -- @treturn boolean result
-function set_verify() end
+function verify_mode() end
 
 --- set certificate verify callback function
 -- @tparam function cert_verify_cb boolean function(verifyarg), if nil or none will use openssl default
