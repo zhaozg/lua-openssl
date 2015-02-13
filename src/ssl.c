@@ -484,7 +484,7 @@ static const char* sVerifyMode_Options[] =
   NULL
 };
 
-static int openssl_ssl_ctx_set_verify(lua_State*L)
+static int openssl_ssl_ctx_verify_mode(lua_State*L)
 {
   SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
   if(lua_gettop(L)>1) {
@@ -925,7 +925,7 @@ static luaL_Reg ssl_ctx_funcs[] =
   {"verify_locations",openssl_ssl_ctx_load_verify_locations},
   {"cert_store",      openssl_ssl_ctx_cert_store},
 
-  {"set_verify",         openssl_ssl_ctx_set_verify},
+  {"verify_mode",     openssl_ssl_ctx_verify_mode },
   {"set_cert_verify",    openssl_ssl_ctx_set_cert_verify},
   {"set_servername_callback",    openssl_ssl_ctx_set_servername_callback},
   
