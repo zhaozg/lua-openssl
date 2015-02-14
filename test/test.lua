@@ -23,6 +23,7 @@ dofile('6.pkcs7.lua')
 dofile('7.pkcs12.lua')
 dofile('8.ssl_options.lua')
 dofile('8.ssl.lua')
+dofile('rsa.lua')
 
 --LuaUnit:setVerbosity(0)
 LuaUnit:run()
