@@ -51,11 +51,7 @@ local params = {
 
     unpack = unpack or table.unpack   
     if(params.verify) then
-        local args = {}
-        for i=1,#params.verify do
-            table.insert(args, params.verify[i])
-        end
-        ctx:set_verify(args)
+        ctx:verify_mode(params.verify)
     end
     if params.options then
         local args = {}

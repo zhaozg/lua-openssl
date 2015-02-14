@@ -4,6 +4,7 @@ local sslctx = require'sslctx'
 
 host = arg[1] or "127.0.0.1"; --only ip
 port = arg[2] or "8383";
+loop = arg[3] and tonumber(arg[3]) or 100
 
 local params = {
    mode = "client",
@@ -16,8 +17,10 @@ local params = {
 }
 
 local ctx = assert(sslctx.new(params))
-ctx:set_verify({'peer'},function(arg) 
+
+ctx:verify_mode({'peer'},function(arg) 
 --[[
+      print(arg)
       --do some check
       for k,v in pairs(arg) do
             print(k,v)
@@ -39,15 +42,6 @@ function mk_connection(host,port,i)
     end
     local b,r = S:getpeerverification()
     assert(b)
-    --[[
-    print(b)
-    for k,v in pairs(r) do
-      print('INDEX',k)
-      for kk,vv in pairs(v) do
-            print(kk,vv)
-      end
-    end
-    --]]
     s = 'aaa'
     io.write('.')
     for j=1,100 do
@@ -64,6 +58,7 @@ function mk_connection(host,port,i)
   openssl.error(true)
 end
 
-for i=1,1000000 do
+for i=1,loop do
   mk_connection(host,port,i)
 end
+os.exit(1)

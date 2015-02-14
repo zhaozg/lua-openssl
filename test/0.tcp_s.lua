@@ -3,15 +3,15 @@ local bio = openssl.bio
 
 host = arg[1] or "127.0.0.1"; --only ip
 port = arg[2] or "8383";
+loop = arg[3] and tonumber(arg[3]) or 100
 print(string.format('Listen at %s:%s',host,port))
-
+local i = 0;
 local srv = assert(bio.accept(host..':'..port))
 if srv then
   assert(srv:accept(true))  -- make real listen
-  while true do
+  while i<loop do
       local cli = assert(srv:accept())
       local s
-      print('accept',cli)
       repeat 
           s = cli:read()
           if s then 
@@ -22,5 +22,7 @@ if srv then
       cli:close()
       cli = nil
       collectgarbage()
+      i = i + 1
   end
 end
+os.exit(1)

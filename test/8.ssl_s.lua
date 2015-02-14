@@ -4,6 +4,7 @@ local sslctx = require'sslctx'
 
 host = arg[1] or "127.0.0.1"; --only ip
 port = arg[2] or "8383";
+loop = arg[3] and tonumber(arg[3]) or 100
 
 local params = {
    mode = "server",
@@ -36,10 +37,9 @@ function ssl_mode()
     local i = 0
     if srv then
       assert(srv:accept(true))  -- make real listen
-      while true do
+      while i<loop do
           local cli = assert(srv:accept()) --bio tcp
           local s = ctx:ssl(cli,true)
-          print('accept',s)
           if(i%2==0) then
             assert(s:handshake())
           else
@@ -64,3 +64,4 @@ end
 print(pcall(ssl_mode))
 debug.traceback()
 print(openssl.error(true))
+os.exit(1)

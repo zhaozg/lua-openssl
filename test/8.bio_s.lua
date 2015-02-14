@@ -4,6 +4,7 @@ local sslctx = require'sslctx'
 
 host = arg[1] or "127.0.0.1"; --only ip
 port = arg[2] or "8383";
+loop = arg[3] and tonumber(arg[3]) or 100
 
 local params = {
    mode = "server",
@@ -20,15 +21,14 @@ local ctx = assert(sslctx.new(params))
 print(string.format('Listen at %s:%s with %s',host,port,ctx))
 
 function ssl_mode()
-    local srv = assert(ctx:bio(host..':'..port,true,false))
+    local srv = assert(ctx:bio(host..':'..port,true))
     local i = 0
     if srv then
-        print('listen BIO:',srv)
-      assert(srv:accept(true))  -- make real listen
-      while true do
-          local cli = assert(srv:accept()) --bio tcp
-          print('accept',cli)
-          
+      print('listen BIO:',srv)
+      assert(srv:accept(true),'Error in accept BIO')  -- make real listen
+      while i<loop do
+          local cli = assert(srv:accept(),'Error in ssl connection') --bio tcp
+          assert(cli:handshake(),'handshake fail')
           repeat 
               d = cli:read()
               if d then 
@@ -46,3 +46,4 @@ end
 print(pcall(ssl_mode))
 debug.traceback()
 print(openssl.error(true))
+os.exit(1)
