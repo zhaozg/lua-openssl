@@ -9,6 +9,7 @@ install:
 - git submodule update --recursive
 - '"C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat" x86'
 - cd C:\
+- ps: Start-FileDownload 'https://ci.appveyor.com/api/buildjobs/4dar2oubv95t5fxw/artifacts/luv.dll' -FileName 'C:\luv.dll'
 - git clone https://github.com/zhaozg/openssl-win32.git C:\openssl-win32
 - git clone http://luajit.org/git/luajit-2.0.git C:\luajit-2.0
 build_script:

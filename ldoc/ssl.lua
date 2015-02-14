@@ -191,8 +191,8 @@ function session_cache_mode(...)
 
 --- create bio object
 -- @tparam string host_addr format like 'host:port'
--- @tparam[opt=true] boolean server, true listen at host_addr,false connect to host_addr
--- @tparam[opt=true] boolean autoretry 
+-- @tparam[opt=false] boolean server, true listen at host_addr,false connect to host_addr
+-- @tparam[opt=true] boolean autoretry ssl operation autoretry mode
 -- @treturn bio bio object
 function bio() end
 
