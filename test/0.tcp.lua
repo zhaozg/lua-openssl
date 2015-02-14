@@ -1,7 +1,7 @@
-local uv = require'luv'
+local uv = pcall(require,'luv')
 
 TestTCP = {}
-
+if uv then
 function TestEngine:testTCP()
     print(arg[-1])
 
@@ -41,4 +41,4 @@ function TestEngine:testTCP()
     uv.run()
     uv.loop_close()
 end
-
+end

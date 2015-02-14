@@ -1,7 +1,7 @@
-local uv = require'luv'
+local uv = pcall(require,'luv')
 
 TestSSL = {}
-
+if uv then
 function TestSSL:testSSL()
     local stdout1 = uv.new_pipe(false)
     local stderr1 = uv.new_pipe(false)
@@ -151,4 +151,5 @@ function TestSSL:testbioconnectssl()
     
     uv.run()
     uv.loop_close()
+end
 end
