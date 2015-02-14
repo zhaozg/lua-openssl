@@ -1,4 +1,4 @@
-local uv = pcall(require,'luv')
+local _,uv = pcall(require,'luv')
 
 TestSSL = {}
 if uv then

@@ -1,4 +1,4 @@
-local uv = pcall(require,'luv')
+local _,uv = pcall(require,'luv')
 
 TestTCP = {}
 if uv then
