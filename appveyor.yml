@@ -9,7 +9,7 @@ install:
 - git submodule update --recursive
 - '"C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat" x86'
 - cd C:\
-- ps: Start-FileDownload 'http://qd.baidupcs.com/file/e1d8aee57799606fee000c940bf8ef4d?bkt=p2-qd-175&fid=3156003896-250528-666620937252055&time=1423910812&sign=FDTAXERLBH-DCb740ccc5511e5e8fedcff06b081203-ZfRYLal%2FdjnUpDSuIa1lfLVUuQ4%3D&to=qb&fm=Qin,B,U,nc&newver=1&newfm=1&flow_ver=3&sl=72286287&expires=8h&rt=sh&r=893307532&mlogid=1853596293&vuk=3156003896&vbdid=2203092739&fin=luv.dll&fn=luv.dll' -FileName 'C:\luv.dll'
+#- ps: Start-FileDownload 'http://qd.baidupcs.com/file/e1d8aee57799606fee000c940bf8ef4d?bkt=p2-qd-175&fid=3156003896-250528-666620937252055&time=1423910812&sign=FDTAXERLBH-DCb740ccc5511e5e8fedcff06b081203-ZfRYLal%2FdjnUpDSuIa1lfLVUuQ4%3D&to=qb&fm=Qin,B,U,nc&newver=1&newfm=1&flow_ver=3&sl=72286287&expires=8h&rt=sh&r=893307532&mlogid=1853596293&vuk=3156003896&vbdid=2203092739&fin=luv.dll&fn=luv.dll' -FileName 'C:\luv.dll'
 - git clone https://github.com/zhaozg/openssl-win32.git C:\openssl-win32
 - git clone http://luajit.org/git/luajit-2.0.git C:\luajit-2.0
 build_script:

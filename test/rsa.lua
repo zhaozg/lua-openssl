@@ -14,8 +14,6 @@ testRSA = {}
         assert(t.size==128)
         local r = t.rsa
         t = r:parse()
-        io = require'enhance.io'
-        io.print_r(t)
         t.alg = 'rsa'
         local r2 = pkey.new(t)
         print('private:',r2:is_private())
