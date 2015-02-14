@@ -163,11 +163,16 @@ static int openssl_ssl_ctx_add(lua_State*L)
 static int openssl_ssl_ctx_gc(lua_State*L)
 {
   SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
-  if (ctx->cert_store && ctx->cert_store->references > 1)
+  /*
+  X509_STORE *cert_store = SSL_CTX_get_cert_store(ctx);
+  if (ctx)
   {
-    openssl_xstore_free(ctx->cert_store);
-    ctx->cert_store = NULL;
+    int ref = openssl_refrence(L, ctx, -1);
+    if (ref==0)
+      openssl_xstore_free(cert_store);
+    SSL_CTX_set_cert_store(ctx, NULL);
   }
+  */
   openssl_freevalue(L, ctx);
   SSL_CTX_free(ctx);
 
@@ -403,9 +408,8 @@ static int openssl_ssl_ctx_new_bio(lua_State*L)
 
   SSL *ssl = NULL;
   BIO *bio = server ? BIO_new_ssl(ctx, 0) : BIO_new_ssl_connect(ctx);
-  int ret = 0;
-  ret = BIO_get_ssl(bio, &ssl);
-  if (ret==1)
+  int ret = BIO_get_ssl(bio, &ssl);
+  if (ret==1 && ssl)
   {
     if (autoretry)
       SSL_set_mode(ssl, SSL_MODE_AUTO_RETRY);
@@ -1681,7 +1685,7 @@ static int openssl_ssl_ctx(lua_State*L)
   if (lua_isnoneornil(L, 2))
   {
     SSL_CTX *ctx = SSL_get_SSL_CTX(s);
-    CRYPTO_add(&ctx->references,1,CRYPTO_LOCK_SSL_CTX);
+    openssl_refrence(L, ctx, +1);
     PUSH_OBJECT(ctx, "openssl.ssl_ctx");
   }
   else

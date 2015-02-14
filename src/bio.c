@@ -514,13 +514,12 @@ static LUA_FUNCTION(openssl_bio_get_ssl){
   int ret = BIO_get_ssl(bio,&ssl);
   if (ret==1)
   {
-    PUSH_OBJECT(ssl,"openssl.ssl");
-    CRYPTO_add(&ssl->references,1,CRYPTO_LOCK_SSL);
     openssl_newvalue(L, ssl);
+    PUSH_OBJECT(ssl, "openssl.ssl");
+    openssl_refrence(L, ssl, +1);
     return 1;
   }
   return 0;
-
 }
 
 static LUA_FUNCTION(openssl_bio_connect)
@@ -528,6 +527,13 @@ static LUA_FUNCTION(openssl_bio_connect)
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
   int ret = BIO_do_connect(bio);
   return openssl_pushresult(L,ret);
+}
+
+static LUA_FUNCTION(openssl_bio_handshake)
+{
+  BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
+  int ret = BIO_do_handshake(bio);
+  return openssl_pushresult(L, ret);
 }
 
 static LUA_FUNCTION(openssl_bio_fd)
@@ -678,6 +684,8 @@ static luaL_reg bio_funs[] =
   /* network socket */
   {"accept",    openssl_bio_accept },
   {"connect",   openssl_bio_connect },
+  {"handshake", openssl_bio_handshake },
+  
   {"shutdown",  openssl_bio_shutdown},
   {"fd",        openssl_bio_fd },
   {"ssl",       openssl_bio_get_ssl},
