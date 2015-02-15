@@ -65,7 +65,8 @@ const int isTypes[] =
   0
 };
 
-static const char* asn1_typestring(int type){
+static const char* asn1_typestring(int type)
+{
   int i;
   for (i = 0; isTypes[i] && isTypes[i] != type; i++);
   if (isTypes[i])
@@ -74,36 +75,47 @@ static const char* asn1_typestring(int type){
     return "unknown";
 }
 
-static int openssl_asn1type_new(lua_State*L) {
+static int openssl_asn1type_new(lua_State*L)
+{
   ASN1_TYPE* at = ASN1_TYPE_new();
   int ret = 1;
-  if (lua_isboolean(L, 1)) {
+  if (lua_isboolean(L, 1))
+  {
     int b = lua_toboolean(L, 1);
-    ASN1_TYPE_set(at, V_ASN1_BOOLEAN, b?&b:0);
-  }else if(lua_isnumber(L, 1)) {
+    ASN1_TYPE_set(at, V_ASN1_BOOLEAN, b ? &b : 0);
+  }
+  else if (lua_isnumber(L, 1))
+  {
     long n = lua_tointeger(L, 1);
     ASN1_INTEGER* ai = ASN1_INTEGER_new();
     ret = ASN1_INTEGER_set(ai, n);
-    if(ret==1)
+    if (ret == 1)
       ASN1_TYPE_set(at, V_ASN1_INTEGER, ai);
-  }else if (lua_isstring(L, 1)) {
+  }
+  else if (lua_isstring(L, 1))
+  {
     size_t size;
     const char* octet = luaL_checklstring(L, 1, &size);
     ret = ASN1_TYPE_set_octetstring(at, (unsigned char*)octet, size);
-  }else if(auxiliar_isclass(L, "openssl.asn1_string", 1)) {
-    ASN1_STRING* s = CHECK_OBJECT(1, ASN1_STRING, "openssl.asn1_string");
-    ret = ASN1_TYPE_set1(at,ASN1_STRING_type(s), s);
-  }else
-    luaL_argerror(L, 1, "only accept boolean, number, string or asn1_string");
-  if (ret==1)
+  }
+  else if (auxiliar_isclass(L, "openssl.asn1_string", 1))
   {
-    PUSH_OBJECT(at,"openssl.asn1_type");
-  }else
+    ASN1_STRING* s = CHECK_OBJECT(1, ASN1_STRING, "openssl.asn1_string");
+    ret = ASN1_TYPE_set1(at, ASN1_STRING_type(s), s);
+  }
+  else
+    luaL_argerror(L, 1, "only accept boolean, number, string or asn1_string");
+  if (ret == 1)
+  {
+    PUSH_OBJECT(at, "openssl.asn1_type");
+  }
+  else
     lua_pushnil(L);
   return 1;
 }
 
-static int openssl_asn1type_type(lua_State*L) {
+static int openssl_asn1type_type(lua_State*L)
+{
   ASN1_TYPE* at = CHECK_OBJECT(1, ASN1_TYPE, "openssl.asn1_type");
   int type = at->type;
   int i;
@@ -116,20 +128,24 @@ static int openssl_asn1type_type(lua_State*L) {
   return 2;
 }
 
-static int openssl_asn1type_octet(lua_State*L) {
+static int openssl_asn1type_octet(lua_State*L)
+{
   ASN1_TYPE* at = CHECK_OBJECT(1, ASN1_TYPE, "openssl.asn1_type");
-  if(lua_isnone(L, 2)) {
+  if (lua_isnone(L, 2))
+  {
     unsigned char* octet;
     int len  = ASN1_TYPE_get_octetstring(at, NULL, 0);
-    octet = OPENSSL_malloc(len+1);
-    len = ASN1_TYPE_get_octetstring(at, octet, len+1);
-    if(len>=0)
+    octet = OPENSSL_malloc(len + 1);
+    len = ASN1_TYPE_get_octetstring(at, octet, len + 1);
+    if (len >= 0)
       lua_pushlstring(L, octet, (size_t)len);
     else
       lua_pushnil(L);
     OPENSSL_free(octet);
     return 1;
-  } else {
+  }
+  else
+  {
     size_t size;
     const char* octet = luaL_checklstring(L, 2, &size);
     int ret = ASN1_TYPE_set_octetstring(at, (unsigned char*)octet, size);
@@ -137,15 +153,17 @@ static int openssl_asn1type_octet(lua_State*L) {
   }
 }
 
-static int openssl_asn1type_cmp(lua_State*L) {
+static int openssl_asn1type_cmp(lua_State*L)
+{
   ASN1_TYPE* at = CHECK_OBJECT(1, ASN1_TYPE, "openssl.asn1_type");
   ASN1_TYPE* ot = CHECK_OBJECT(2, ASN1_TYPE, "openssl.asn1_type");
-  int ret = ASN1_TYPE_cmp(at,ot);
-  lua_pushboolean(L, ret==0);
+  int ret = ASN1_TYPE_cmp(at, ot);
+  lua_pushboolean(L, ret == 0);
   return 1;
 }
 
-static int openssl_asn1type_free(lua_State*L) {
+static int openssl_asn1type_free(lua_State*L)
+{
   ASN1_TYPE* at = CHECK_OBJECT(1, ASN1_TYPE, "openssl.asn1_type");
   lua_pushnil(L);
   lua_setmetatable(L, 1);
@@ -153,22 +171,24 @@ static int openssl_asn1type_free(lua_State*L) {
   return 0;
 }
 
-static int openssl_asn1type_asn1string(lua_State*L) {
+static int openssl_asn1type_asn1string(lua_State*L)
+{
   ASN1_TYPE* at = CHECK_OBJECT(1, ASN1_TYPE, "openssl.asn1_type");
-  if(at->type != V_ASN1_BOOLEAN && at->type!=V_ASN1_OBJECT)
+  if (at->type != V_ASN1_BOOLEAN && at->type != V_ASN1_OBJECT)
   {
     ASN1_STRING* as = ASN1_STRING_dup(at->value.asn1_string);
-    PUSH_OBJECT(as,"openssl.asn1_string");
+    PUSH_OBJECT(as, "openssl.asn1_string");
     return 1;
   }
   return 0;
 }
 
-static int openssl_asn1type_i2d(lua_State*L) {
+static int openssl_asn1type_i2d(lua_State*L)
+{
   ASN1_TYPE* at = CHECK_OBJECT(1, ASN1_TYPE, "openssl.asn1_type");
   unsigned char* out = NULL;
-  int len = i2d_ASN1_TYPE(at,&out);
-  if(len>0)
+  int len = i2d_ASN1_TYPE(at, &out);
+  if (len > 0)
     lua_pushlstring(L, out, (size_t)len);
   else
     lua_pushnil(L);
@@ -184,49 +204,49 @@ static int openssl_asn1type_info(lua_State* L)
   switch (type->type)
   {
   case V_ASN1_BMPSTRING:
-    {
+  {
 #if OPENSSL_VERSION_NUMBER > 0x10000000L
-      char *value = OPENSSL_uni2asc(type->value.bmpstring->data, type->value.bmpstring->length);
-      AUXILIAR_SET(L, -1, "value", value, string);
-      OPENSSL_free(value);
+    char *value = OPENSSL_uni2asc(type->value.bmpstring->data, type->value.bmpstring->length);
+    AUXILIAR_SET(L, -1, "value", value, string);
+    OPENSSL_free(value);
 #else
-      AUXILIAR_SETLSTR(L, -1, "value",
-        (const char*)type->value.bmpstring->data, type->value.bmpstring->length);
+    AUXILIAR_SETLSTR(L, -1, "value",
+                     (const char*)type->value.bmpstring->data, type->value.bmpstring->length);
 #endif
-      AUXILIAR_SET(L, -1, "type", "bmp", string);
-    }
-    break;
+    AUXILIAR_SET(L, -1, "type", "bmp", string);
+  }
+  break;
 
   case V_ASN1_OCTET_STRING:
     AUXILIAR_SETLSTR(L, -1, "value",
-      (const char *)type->value.octet_string->data, type->value.octet_string->length);
+                     (const char *)type->value.octet_string->data, type->value.octet_string->length);
     AUXILIAR_SET(L, -1, "type", "octet", string);
     break;
 
   case V_ASN1_BIT_STRING:
     AUXILIAR_SETLSTR(L, -1, "value",
-      (const char *)type->value.bit_string->data, type->value.bit_string->length);
+                     (const char *)type->value.bit_string->data, type->value.bit_string->length);
 
     AUXILIAR_SET(L, -1, "type", "bit", string);
     break;
 
   default:
+  {
+    int i;
+    unsigned char* dat = NULL;
+
+    for (i = 0; isTypes[i] && isTypes[i] != type->type; i++);
+    lua_pushstring(L, isTypes[i] ? asTypes[i] : "unknown");
+    lua_setfield(L, -2, "type");
+
+    AUXILIAR_SET(L, -1, "format", "der", string);
+    i = i2d_ASN1_TYPE(type, &dat);
+    if (i > 0)
     {
-      int i;
-      unsigned char* dat = NULL;
-
-      for (i = 0; isTypes[i] && isTypes[i] != type->type; i++);
-      lua_pushstring(L, isTypes[i] ? asTypes[i] : "unknown");
-      lua_setfield(L, -2, "type");
-
-      AUXILIAR_SET(L, -1, "format", "der", string);
-      i = i2d_ASN1_TYPE(type, &dat);
-      if (i > 0)
-      {
-        AUXILIAR_SETLSTR(L, -1, "value", (const char *)dat, i);
-        OPENSSL_free(dat);
-      }
+      AUXILIAR_SETLSTR(L, -1, "value", (const char *)dat, i);
+      OPENSSL_free(dat);
     }
+  }
   }
   return 1;
 }
@@ -237,60 +257,63 @@ int openssl_push_asn1type(lua_State* L, const ASN1_TYPE* type)
   switch (type->type)
   {
   case V_ASN1_BMPSTRING:
-    {
+  {
 #if OPENSSL_VERSION_NUMBER > 0x10000000L
-      char *value = OPENSSL_uni2asc(type->value.bmpstring->data, type->value.bmpstring->length);
-      AUXILIAR_SET(L, -1, "value", value, string);
-      OPENSSL_free(value);
+    char *value = OPENSSL_uni2asc(type->value.bmpstring->data, type->value.bmpstring->length);
+    AUXILIAR_SET(L, -1, "value", value, string);
+    OPENSSL_free(value);
 #else
-      AUXILIAR_SETLSTR(L, -1, "value",
-        (const char*)type->value.bmpstring->data, type->value.bmpstring->length);
+    AUXILIAR_SETLSTR(L, -1, "value",
+                     (const char*)type->value.bmpstring->data, type->value.bmpstring->length);
 #endif
-      AUXILIAR_SET(L, -1, "type", "bmp", string);
-    }
-    break;
+    AUXILIAR_SET(L, -1, "type", "bmp", string);
+  }
+  break;
 
   case V_ASN1_OCTET_STRING:
     AUXILIAR_SETLSTR(L, -1, "value",
-      (const char *)type->value.octet_string->data, type->value.octet_string->length);
+                     (const char *)type->value.octet_string->data, type->value.octet_string->length);
     AUXILIAR_SET(L, -1, "type", "octet", string);
     break;
 
   case V_ASN1_BIT_STRING:
     AUXILIAR_SETLSTR(L, -1, "value",
-      (const char *)type->value.bit_string->data, type->value.bit_string->length);
+                     (const char *)type->value.bit_string->data, type->value.bit_string->length);
 
     AUXILIAR_SET(L, -1, "type", "bit", string);
     break;
 
   default:
+  {
+    int i;
+    unsigned char* dat = NULL;
+
+    for (i = 0; isTypes[i] && isTypes[i] != type->type; i++);
+    lua_pushstring(L, isTypes[i] ? asTypes[i] : "unknown");
+    lua_setfield(L, -2, "type");
+
+    AUXILIAR_SET(L, -1, "format", "der", string);
+    i = i2d_ASN1_TYPE((ASN1_TYPE*)type, &dat);
+    if (i > 0)
     {
-      int i;
-      unsigned char* dat = NULL;
-
-      for (i = 0; isTypes[i] && isTypes[i] != type->type; i++);
-      lua_pushstring(L, isTypes[i] ? asTypes[i] : "unknown");
-      lua_setfield(L, -2, "type");
-
-      AUXILIAR_SET(L, -1, "format", "der", string);
-      i = i2d_ASN1_TYPE((ASN1_TYPE*)type, &dat);
-      if (i > 0)
-      {
-        AUXILIAR_SETLSTR(L, -1, "value", (const char *)dat, i);
-        OPENSSL_free(dat);
-      }
+      AUXILIAR_SETLSTR(L, -1, "value", (const char *)dat, i);
+      OPENSSL_free(dat);
     }
+  }
   }
   return 1;
 }
 
-static int openssl_asn1type_d2i(lua_State*L) {
+static int openssl_asn1type_d2i(lua_State*L)
+{
   size_t size;
   const unsigned char* data = (const unsigned char*)luaL_checklstring(L, 1, &size);
   ASN1_TYPE* at = d2i_ASN1_TYPE(NULL, &data, size);
-  if(at) {
-    PUSH_OBJECT(at,"openssl.asn1_type");
-  }else 
+  if (at)
+  {
+    PUSH_OBJECT(at, "openssl.asn1_type");
+  }
+  else
     lua_pushnil(L);
   return 1;
 }
@@ -301,11 +324,11 @@ static luaL_reg asn1type_funcs[] =
   {"octet",     openssl_asn1type_octet},
   {"cmp",       openssl_asn1type_cmp},
   {"info",      openssl_asn1type_info},
-  
+
   {"i2d",       openssl_asn1type_i2d},
-  {"asn1string",openssl_asn1type_asn1string},
-  
-  {"__tostring",auxiliar_tostring},
+  {"asn1string", openssl_asn1type_asn1string},
+
+  {"__tostring", auxiliar_tostring},
   {"__eq",      openssl_asn1type_cmp},
   {"__gc",      openssl_asn1type_free },
 
@@ -417,13 +440,13 @@ static int openssl_ans1string_tostring(lua_State* L)
 static int openssl_ans1string_print(lua_State* L)
 {
   ASN1_STRING* s = CHECK_OBJECT(1, ASN1_STRING, "openssl.asn1_string");
-  unsigned long flags = luaL_optint(L,2,0);
+  unsigned long flags = luaL_optint(L, 2, 0);
   BIO* out = BIO_new(BIO_s_mem());
   BUF_MEM *mem;
 
   BIO_get_mem_ptr(out, &mem);
-  ASN1_STRING_print_ex(out,s,flags);
-  lua_pushlstring(L,mem->data,mem->length);
+  ASN1_STRING_print_ex(out, s, flags);
+  lua_pushlstring(L, mem->data, mem->length);
   BIO_free(out);
   return 1;
 }
@@ -433,7 +456,8 @@ static int openssl_ans1string_toutf8(lua_State* L)
   ASN1_STRING* s = CHECK_OBJECT(1, ASN1_STRING, "openssl.asn1_string");
   unsigned char* out = NULL;
   int len =  ASN1_STRING_to_UTF8(&out, s);
-  if (out) {
+  if (out)
+  {
     lua_pushlstring(L, (const char*)out, len);
     OPENSSL_free(out);
   }
@@ -455,12 +479,12 @@ static luaL_reg asn1str_funcs[] =
   {"data",      openssl_ans1string_data },
 
   {"dup",       openssl_ans1string_dup  },
- 
+
   {"toutf8",    openssl_ans1string_toutf8 },
   {"print",     openssl_ans1string_print },
 
   {"__len",     openssl_ans1string_length },
-  {"__tostring",openssl_ans1string_tostring },
+  {"__tostring", openssl_ans1string_tostring },
   {"__eq",      openssl_ans1string_eq },
   {"__gc",      openssl_ans1string_free },
 
@@ -514,8 +538,8 @@ static int openssl_ans1object_equals(lua_State* L)
 {
   ASN1_OBJECT* o = CHECK_OBJECT(1, ASN1_OBJECT, "openssl.asn1_object");
   ASN1_OBJECT* a = CHECK_OBJECT(2, ASN1_OBJECT, "openssl.asn1_object");
-  
-  lua_pushboolean(L,OBJ_cmp(o,a)==0);
+
+  lua_pushboolean(L, OBJ_cmp(o, a) == 0);
   return 1;
 }
 
@@ -577,7 +601,7 @@ static int openssl_asn1object_new(lua_State* L)
     else
       lua_pushnil(L);
   }
-  else if(lua_isstring(L, 1)) 
+  else if (lua_isstring(L, 1))
   {
     const char* txt = luaL_checkstring(L, 1);
     int no_name = lua_isnone(L, 2) ? 0 : lua_toboolean(L, 2);
@@ -588,7 +612,7 @@ static int openssl_asn1object_new(lua_State* L)
     else
       lua_pushnil(L);
   }
-  else if(lua_istable(L, 1))
+  else if (lua_istable(L, 1))
   {
     const char *oid, *sn, *ln;
     ASN1_OBJECT* obj;
@@ -609,37 +633,45 @@ static int openssl_asn1object_new(lua_State* L)
     ln = luaL_checkstring(L, -1);
     lua_pop(L, 1);
 
-    if(OBJ_txt2nid(oid)!=NID_undef) {
-      luaL_argerror(L,1,"oid already exist");
+    if (OBJ_txt2nid(oid) != NID_undef)
+    {
+      luaL_argerror(L, 1, "oid already exist");
     }
 
-    if( OBJ_sn2nid(sn)!=NID_undef) {
-      luaL_argerror(L,1,"sn already exist");
+    if ( OBJ_sn2nid(sn) != NID_undef)
+    {
+      luaL_argerror(L, 1, "sn already exist");
     }
 
-    if( OBJ_ln2nid(ln)!=NID_undef) {
-      luaL_argerror(L,1,"ln already exist");
+    if ( OBJ_ln2nid(ln) != NID_undef)
+    {
+      luaL_argerror(L, 1, "ln already exist");
     }
 
     nid = OBJ_create(oid, sn, ln);
-    if (nid!=NID_undef){
+    if (nid != NID_undef)
+    {
       obj = OBJ_nid2obj(nid);
       PUSH_OBJECT(obj, "openssl.asn1_object");
     }
     else
-      luaL_argerror(L,1,"create object fail");
-  }else
+      luaL_argerror(L, 1, "create object fail");
+  }
+  else
     luaL_argerror(L, 1, "need accept paramater");
 
   return 1;
 }
 
-static int openssl_txt2nid(lua_State*L) {
+static int openssl_txt2nid(lua_State*L)
+{
   const char* txt = luaL_checkstring(L, 1);
   int nid = OBJ_txt2nid(txt);
-  if(nid!=NID_undef) {
+  if (nid != NID_undef)
+  {
     lua_pushinteger(L, nid);
-  }else
+  }
+  else
     lua_pushnil(L);
 
   return 1;
@@ -673,33 +705,45 @@ int luaopen_asn1(lua_State *L)
   return 1;
 }
 
-int openssl_get_nid(lua_State*L, int idx) {
-  if (lua_isnumber(L,idx)){
+int openssl_get_nid(lua_State*L, int idx)
+{
+  if (lua_isnumber(L, idx))
+  {
     return luaL_checkint(L, idx);
-  }else if(lua_isstring(L, idx)) {
+  }
+  else if (lua_isstring(L, idx))
+  {
     int nid = NID_undef;
     ASN1_OBJECT* obj = OBJ_txt2obj(lua_tostring(L, idx), 0);
-    if(obj) {
+    if (obj)
+    {
       nid = OBJ_obj2nid(obj);
       ASN1_OBJECT_free(obj);
     }
     return nid;
-  }else if(lua_isuserdata(L, idx)) {
+  }
+  else if (lua_isuserdata(L, idx))
+  {
     ASN1_OBJECT* obj = CHECK_OBJECT(idx, ASN1_OBJECT, "openssl.asn1_object");
     int nid = obj->nid;
     ASN1_OBJECT_free(obj);
     return nid;
-  }else{
+  }
+  else
+  {
     luaL_checkany(L, idx);
     luaL_argerror(L, idx, "not accept paramater");
   }
   return NID_undef;
 }
 
-int openssl_get_asn1type(lua_State*L, int idx) {
-  if (lua_isnumber(L, idx)) {
+int openssl_get_asn1type(lua_State*L, int idx)
+{
+  if (lua_isnumber(L, idx))
+  {
     return luaL_checkint(L, idx);
-  }else if(lua_isstring(L, idx))
+  }
+  else if (lua_isstring(L, idx))
   {
     int i;
     const char* st = lua_tostring(L, idx);
@@ -721,58 +765,64 @@ int openssl_push_asn1object(lua_State* L, const ASN1_OBJECT* obj)
 
 int openssl_push_asn1(lua_State* L, ASN1_STRING* string, int type, int utf8)
 {
-  if (type && ((string->type&type) != type))
+  if (type && ((string->type & type) != type))
   {
-    luaL_error(L, "need %s asn1, but get %s",asn1_typestring(type),asn1_typestring(string->type));
+    luaL_error(L, "need %s asn1, but get %s", asn1_typestring(type), asn1_typestring(string->type));
     return 0;
   }
 
-  switch (type){
+  switch (type)
+  {
   case V_ASN1_INTEGER:
-    {
-      ASN1_INTEGER *ai = (ASN1_INTEGER *)string;
-      BIGNUM *bn = ASN1_INTEGER_to_BN(ai, NULL);
-      char *tmp = BN_bn2hex(bn);
-      lua_pushstring(L, tmp);
-      BN_free(bn);
-      OPENSSL_free(tmp);
-      return 1;
-    }
+  {
+    ASN1_INTEGER *ai = (ASN1_INTEGER *)string;
+    BIGNUM *bn = ASN1_INTEGER_to_BN(ai, NULL);
+    char *tmp = BN_bn2hex(bn);
+    lua_pushstring(L, tmp);
+    BN_free(bn);
+    OPENSSL_free(tmp);
+    return 1;
+  }
   case V_ASN1_UTCTIME:
   case V_ASN1_GENERALIZEDTIME:
-    {
-      char *tmp;
-      long size;
-      ASN1_TIME *tm = (ASN1_TIME*)string;
-      BIO *out = BIO_new(BIO_s_mem());
-      ASN1_TIME_print(out, tm);
-      size = BIO_get_mem_data(out, &tmp);
-      lua_pushlstring(L, tmp, size);
-      BIO_free(out);
-      return 1;
-    }
+  {
+    char *tmp;
+    long size;
+    ASN1_TIME *tm = (ASN1_TIME*)string;
+    BIO *out = BIO_new(BIO_s_mem());
+    ASN1_TIME_print(out, tm);
+    size = BIO_get_mem_data(out, &tmp);
+    lua_pushlstring(L, tmp, size);
+    BIO_free(out);
+    return 1;
+  }
   case V_ASN1_OCTET_STRING:
   case V_ASN1_BIT_STRING:
+  {
+    lua_pushlstring(L, (char*)ASN1_STRING_data(string), ASN1_STRING_length(string));
+    return 1;
+  }
+  default:
+  {
+    int len;
+    unsigned char *data;
+    if (utf8)
+    {
+      len = ASN1_STRING_to_UTF8(&data, string);
+      if (len >= 0)
+      {
+        lua_pushlstring(L, (char*)data, len);
+        OPENSSL_free(data);
+      }
+      else
+        lua_pushnil(L);
+    }
+    else
     {
       lua_pushlstring(L, (char*)ASN1_STRING_data(string), ASN1_STRING_length(string));
-      return 1;
     }
-  default:
-    {
-      int len;
-      unsigned char *data;
-      if (utf8) {
-        len = ASN1_STRING_to_UTF8(&data, string);
-        if (len >= 0) {
-          lua_pushlstring(L, (char*)data, len);
-          OPENSSL_free(data);
-        }else
-          lua_pushnil(L);
-      } else {
-        lua_pushlstring(L, (char*)ASN1_STRING_data(string), ASN1_STRING_length(string));
-      }
-      return 1;
-    }
+    return 1;
+  }
   }
 
   return 0;

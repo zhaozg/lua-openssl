@@ -67,14 +67,16 @@ static LUA_FUNCTION(openssl_bio_new_mem)
 {
   size_t l = 0;
   BIO *bio = BIO_new(BIO_s_mem());
-  if(lua_isnumber(L,1))
+  if (lua_isnumber(L, 1))
   {
     l = lua_tointeger(L, 1);
-    BIO_set_buffer_size(bio,l);
-  }else if (lua_isstring(L,1)){
+    BIO_set_buffer_size(bio, l);
+  }
+  else if (lua_isstring(L, 1))
+  {
     const char* d = (char*)luaL_checklstring(L, 1, &l);
-    BIO_write(bio,d,l);
-  } 
+    BIO_write(bio, d, l);
+  }
 
   BIO_set_close(bio, BIO_CLOSE);
   PUSH_OBJECT(bio, "openssl.bio");
@@ -229,14 +231,16 @@ static LUA_FUNCTION(openssl_bio_new_filter)
   if (ret == 1 && bio)
   {
     PUSH_OBJECT(bio, "openssl.bio");
-    if(closeflag) {
+    if (closeflag)
+    {
       openssl_newvalue(L, bio);
 
       lua_pushboolean(L, 1);
       openssl_setvalue(L, bio, "free_all");
     }
     return 1;
-  }else
+  }
+  else
   {
     if (bio)
       BIO_free(bio);
@@ -253,20 +257,22 @@ static LUA_FUNCTION(openssl_bio_read)
   char* buf = NULL;
   int ret = 1;
 
-  len = len>0 ? len : 4096;
+  len = len > 0 ? len : 4096;
   buf = malloc(len);
   len = BIO_read(bio, buf, len);
 
-  if (len>0)
+  if (len > 0)
   {
     lua_pushlstring(L, buf, len);
     ret = 1;
   }
-  else if(BIO_should_retry(bio))
+  else if (BIO_should_retry(bio))
   {
     lua_pushlstring(L, buf, 0);
     ret = 1;
-  }else{
+  }
+  else
+  {
     lua_pushnil(L);
     lua_pushinteger(L, len);
     ret = 2;
@@ -290,11 +296,13 @@ static LUA_FUNCTION(openssl_bio_gets)
     lua_pushlstring(L, buf, len);
     ret = 1;
   }
-  else if(BIO_should_retry(bio))
+  else if (BIO_should_retry(bio))
   {
-    lua_pushstring(L,"");
+    lua_pushstring(L, "");
     ret = 1;
-  }else{
+  }
+  else
+  {
     lua_pushnil(L);
     lua_pushinteger(L, len);
     ret = 2;
@@ -317,7 +325,8 @@ static LUA_FUNCTION(openssl_bio_write)
   {
     lua_pushinteger(L, len);
     ret = 1;
-  }else if(BIO_should_retry(bio))
+  }
+  else if (BIO_should_retry(bio))
   {
     lua_pushinteger(L, 0);
     ret = 1;
@@ -343,11 +352,13 @@ static LUA_FUNCTION(openssl_bio_puts)
     lua_pushinteger(L, len);
     ret = 1;
   }
-  else if(BIO_should_retry(bio))
+  else if (BIO_should_retry(bio))
   {
     lua_pushinteger(L, 0);
     ret = 1;
-  } else {
+  }
+  else
+  {
     lua_pushnil(L);
     lua_pushinteger(L, len);
     ret = 2;
@@ -367,23 +378,23 @@ static LUA_FUNCTION(openssl_bio_free)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
   int all = 0;
-  
-  if(lua_isboolean(L,2))
+
+  if (lua_isboolean(L, 2))
     all = lua_toboolean(L, 2);
   else
   {
     openssl_getvalue(L, bio, "free_all");
     all = lua_toboolean(L, -1);
-    lua_pop(L,1);
+    lua_pop(L, 1);
   }
 
-  if(all)
+  if (all)
     BIO_free_all(bio);
   else
     BIO_free(bio);
 
   lua_pushnil(L);
-  lua_setmetatable(L,1);
+  lua_setmetatable(L, 1);
   return 0;
 }
 
@@ -398,7 +409,7 @@ static LUA_FUNCTION(openssl_bio_nbio)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
   int nbio = lua_toboolean(L, 2);
-  int ret = BIO_set_nbio(bio,nbio);
+  int ret = BIO_set_nbio(bio, nbio);
   return openssl_pushresult(L, ret);
 }
 
@@ -406,13 +417,15 @@ static LUA_FUNCTION(openssl_bio_retry)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
   int retry = BIO_should_retry(bio);
-  if (retry) {
+  if (retry)
+  {
     lua_pushboolean(L, 1);
     lua_pushboolean(L, BIO_should_read(bio));
     lua_pushboolean(L, BIO_should_write(bio));
     lua_pushboolean(L, BIO_should_io_special(bio));
     return 4;
-  }else
+  }
+  else
     lua_pushboolean(L, 0);
   return 1;
 }
@@ -447,7 +460,7 @@ static LUA_FUNCTION(openssl_bio_pop)
   }
   else
   {
-    CRYPTO_add(&end->references,1,CRYPTO_LOCK_BIO);
+    CRYPTO_add(&end->references, 1, CRYPTO_LOCK_BIO);
     PUSH_OBJECT(end, "openssl.bio");
   }
   return 1;
@@ -473,11 +486,12 @@ static LUA_FUNCTION(openssl_bio_get_mem)
 static LUA_FUNCTION(openssl_bio_accept)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
-  int first = lua_isnoneornil(L, 2) ? 0 : lua_toboolean(L, 2); 
+  int first = lua_isnoneornil(L, 2) ? 0 : lua_toboolean(L, 2);
   int ret = BIO_do_accept(bio);
   if (ret == 1)
   {
-    if(!first) {
+    if (!first)
+    {
       BIO *nb = BIO_pop(bio);
 
       PUSH_OBJECT(nb, "openssl.bio");
@@ -486,7 +500,8 @@ static LUA_FUNCTION(openssl_bio_accept)
       lua_pushboolean(L, 1);
       openssl_setvalue(L, nb, "free_all");
       return 1;
-    }else
+    }
+    else
       return openssl_pushresult(L, ret);
   }
   else
@@ -495,24 +510,30 @@ static LUA_FUNCTION(openssl_bio_accept)
   return 0;
 }
 
-static LUA_FUNCTION(openssl_bio_shutdown){
+static LUA_FUNCTION(openssl_bio_shutdown)
+{
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
 
-  if (BIO_method_type(bio) & BIO_TYPE_SSL){
+  if (BIO_method_type(bio) & BIO_TYPE_SSL)
+  {
     BIO_ssl_shutdown(bio);
-  }else if(BIO_method_type(bio) & (BIO_TYPE_SOCKET|BIO_TYPE_FD)) {
+  }
+  else if (BIO_method_type(bio) & (BIO_TYPE_SOCKET | BIO_TYPE_FD))
+  {
     BIO_shutdown_wr(bio);;
-  }else
+  }
+  else
     luaL_error(L, "don't know how to shutdown");
   return 0;
 }
 
 
-static LUA_FUNCTION(openssl_bio_get_ssl){
+static LUA_FUNCTION(openssl_bio_get_ssl)
+{
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
   SSL* ssl = NULL;
-  int ret = BIO_get_ssl(bio,&ssl);
-  if (ret==1)
+  int ret = BIO_get_ssl(bio, &ssl);
+  if (ret == 1)
   {
     openssl_newvalue(L, ssl);
     PUSH_OBJECT(ssl, "openssl.ssl");
@@ -526,7 +547,7 @@ static LUA_FUNCTION(openssl_bio_connect)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
   int ret = BIO_do_connect(bio);
-  return openssl_pushresult(L,ret);
+  return openssl_pushresult(L, ret);
 }
 
 static LUA_FUNCTION(openssl_bio_handshake)
@@ -558,80 +579,80 @@ static LUA_FUNCTION(openssl_bio_fd)
 }
 
 void BIO_info_callback(BIO *bio, int cmd, const char *argp,
-  int argi, long argl, long ret)
+                       int argi, long argl, long ret)
 {
   BIO *b;
   char buf[256];
   char *p;
-  long r=1;
+  long r = 1;
   size_t p_maxlen;
 
   if (BIO_CB_RETURN & cmd)
-    r=ret;
+    r = ret;
 
-  BIO_snprintf(buf,sizeof buf,"BIO[%08lX]:",(unsigned long)bio);
-  p= &(buf[14]);
+  BIO_snprintf(buf, sizeof buf, "BIO[%08lX]:", (unsigned long)bio);
+  p = &(buf[14]);
   p_maxlen = sizeof buf - 14;
   switch (cmd)
   {
   case BIO_CB_FREE:
-    BIO_snprintf(p,p_maxlen,"Free - %s\n",bio->method->name);
+    BIO_snprintf(p, p_maxlen, "Free - %s\n", bio->method->name);
     break;
   case BIO_CB_READ:
     if (bio->method->type & BIO_TYPE_DESCRIPTOR)
-      BIO_snprintf(p,p_maxlen,"read(%d,%lu) - %s fd=%d\n",
-      bio->num,(unsigned long)argi,
-      bio->method->name,bio->num);
+      BIO_snprintf(p, p_maxlen, "read(%d,%lu) - %s fd=%d\n",
+                   bio->num, (unsigned long)argi,
+                   bio->method->name, bio->num);
     else
-      BIO_snprintf(p,p_maxlen,"read(%d,%lu) - %s\n",
-      bio->num,(unsigned long)argi,
-      bio->method->name);
+      BIO_snprintf(p, p_maxlen, "read(%d,%lu) - %s\n",
+                   bio->num, (unsigned long)argi,
+                   bio->method->name);
     break;
   case BIO_CB_WRITE:
     if (bio->method->type & BIO_TYPE_DESCRIPTOR)
-      BIO_snprintf(p,p_maxlen,"write(%d,%lu) - %s fd=%d\n",
-      bio->num,(unsigned long)argi,
-      bio->method->name,bio->num);
+      BIO_snprintf(p, p_maxlen, "write(%d,%lu) - %s fd=%d\n",
+                   bio->num, (unsigned long)argi,
+                   bio->method->name, bio->num);
     else
-      BIO_snprintf(p,p_maxlen,"write(%d,%lu) - %s\n",
-      bio->num,(unsigned long)argi,
-      bio->method->name);
+      BIO_snprintf(p, p_maxlen, "write(%d,%lu) - %s\n",
+                   bio->num, (unsigned long)argi,
+                   bio->method->name);
     break;
   case BIO_CB_PUTS:
-    BIO_snprintf(p,p_maxlen,"puts() - %s\n",bio->method->name);
+    BIO_snprintf(p, p_maxlen, "puts() - %s\n", bio->method->name);
     break;
   case BIO_CB_GETS:
-    BIO_snprintf(p,p_maxlen,"gets(%lu) - %s\n",(unsigned long)argi,bio->method->name);
+    BIO_snprintf(p, p_maxlen, "gets(%lu) - %s\n", (unsigned long)argi, bio->method->name);
     break;
   case BIO_CB_CTRL:
-    BIO_snprintf(p,p_maxlen,"ctrl(%lu) - %s\n",(unsigned long)argi,bio->method->name);
+    BIO_snprintf(p, p_maxlen, "ctrl(%lu) - %s\n", (unsigned long)argi, bio->method->name);
     break;
   case BIO_CB_RETURN|BIO_CB_READ:
-    BIO_snprintf(p,p_maxlen,"read return %ld\n",ret);
+    BIO_snprintf(p, p_maxlen, "read return %ld\n", ret);
     break;
   case BIO_CB_RETURN|BIO_CB_WRITE:
-    BIO_snprintf(p,p_maxlen,"write return %ld\n",ret);
+    BIO_snprintf(p, p_maxlen, "write return %ld\n", ret);
     break;
   case BIO_CB_RETURN|BIO_CB_GETS:
-    BIO_snprintf(p,p_maxlen,"gets return %ld\n",ret);
+    BIO_snprintf(p, p_maxlen, "gets return %ld\n", ret);
     break;
   case BIO_CB_RETURN|BIO_CB_PUTS:
-    BIO_snprintf(p,p_maxlen,"puts return %ld\n",ret);
+    BIO_snprintf(p, p_maxlen, "puts return %ld\n", ret);
     break;
   case BIO_CB_RETURN|BIO_CB_CTRL:
-    BIO_snprintf(p,p_maxlen,"ctrl return %ld\n",ret);
+    BIO_snprintf(p, p_maxlen, "ctrl return %ld\n", ret);
     break;
   default:
-    BIO_snprintf(p,p_maxlen,"bio callback - unknown type (%d)\n",cmd);
+    BIO_snprintf(p, p_maxlen, "bio callback - unknown type (%d)\n", cmd);
     break;
   }
 
-  b=(BIO *)bio->cb_arg;
+  b = (BIO *)bio->cb_arg;
   if (b != NULL)
-    BIO_write(b,buf,strlen(buf));
+    BIO_write(b, buf, strlen(buf));
 #if !defined(OPENSSL_NO_STDIO) && !defined(OPENSSL_SYS_WIN16)
   else
-    fputs(buf,stderr);
+    fputs(buf, stderr);
 #endif
 }
 
@@ -641,9 +662,9 @@ static LUA_FUNCTION(openssl_bio_set_callback)
   int ret;
   luaL_argcheck(L, lua_isfunction(L, 2), 2, "need function");
   lua_pushvalue(L, 2);
-  lua_rawsetp(L,LUA_REGISTRYINDEX,bio);
+  lua_rawsetp(L, LUA_REGISTRYINDEX, bio);
   ret = BIO_set_info_callback(bio, BIO_info_callback);
-  return openssl_pushresult(L,ret);
+  return openssl_pushresult(L, ret);
 }
 
 static LUA_FUNCTION(openssl_bio_pending)
@@ -685,7 +706,7 @@ static luaL_reg bio_funs[] =
   {"accept",    openssl_bio_accept },
   {"connect",   openssl_bio_connect },
   {"handshake", openssl_bio_handshake },
-  
+
   {"shutdown",  openssl_bio_shutdown},
   {"fd",        openssl_bio_fd },
   {"ssl",       openssl_bio_get_ssl},

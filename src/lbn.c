@@ -193,7 +193,7 @@ static int Bneg(lua_State *L)     /** neg(x) */
   BIGNUM *a = BN_new();
   BIGNUM *b = Bget(L, 1);
   BIGNUM *c = Bnew(L);
-  BN_set_word(a,0);
+  BN_set_word(a, 0);
   BN_sub(c, a, b);
   BN_free(a);
   return 1;
@@ -206,7 +206,7 @@ static int Babs(lua_State *L)     /** abs(x) */
   {
     BIGNUM *a = BN_new();
     BIGNUM *c = Bnew(L);
-    BN_set_word(a,0);
+    BN_set_word(a, 0);
     BN_sub(c, a, b);
     BN_free(a);
   }
@@ -457,14 +457,14 @@ int luaopen_bn(lua_State *L)
   ERR_load_BN_strings();
   RAND_seed(MYVERSION, sizeof(MYVERSION));
 
-  luaL_newmetatable(L,MYTYPE);
+  luaL_newmetatable(L, MYTYPE);
   luaL_setfuncs(L, R, 0);
   lua_pushliteral(L, "version");     /** version */
   lua_pushliteral(L, MYVERSION);
   lua_settable(L, -3);
-  lua_pushliteral(L,"__index");
-  lua_pushvalue(L,-2);
-  lua_settable(L,-3);
+  lua_pushliteral(L, "__index");
+  lua_pushvalue(L, -2);
+  lua_settable(L, -3);
 
   return 1;
 }

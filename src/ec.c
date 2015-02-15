@@ -213,8 +213,9 @@ static int openssl_ec_key_free(lua_State*L)
   return 0;
 }
 
-static int openssl_ec_key_parse(lua_State*L){
-  EC_KEY* ec = CHECK_OBJECT(1,EC_KEY,"openssl.ec_key");
+static int openssl_ec_key_parse(lua_State*L)
+{
+  EC_KEY* ec = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
 
   const EC_POINT* point = EC_KEY_get0_public_key(ec);
   const EC_GROUP* group = EC_KEY_get0_group(ec);

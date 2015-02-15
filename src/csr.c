@@ -39,64 +39,65 @@ static LUA_FUNCTION(openssl_csr_read)
 
 
 static X509 *X509_REQ_to_X509_a(X509_REQ *r, int days, EVP_PKEY *pkey)
-	{
-	X509 *ret=NULL;
-	X509_CINF *xi=NULL;
-	X509_NAME *xn;
+{
+  X509 *ret = NULL;
+  X509_CINF *xi = NULL;
+  X509_NAME *xn;
   EVP_PKEY* pubkey;
 
-	if ((ret=X509_new()) == NULL)
-		{
-		X509err(X509_F_X509_REQ_TO_X509,ERR_R_MALLOC_FAILURE);
-		goto err;
-		}
+  if ((ret = X509_new()) == NULL)
+  {
+    X509err(X509_F_X509_REQ_TO_X509, ERR_R_MALLOC_FAILURE);
+    goto err;
+  }
 
-	/* duplicate the request */
-	xi=ret->cert_info;
+  /* duplicate the request */
+  xi = ret->cert_info;
 
-	if (sk_X509_ATTRIBUTE_num(r->req_info->attributes) != 0)
-		{
-		if ((xi->version=M_ASN1_INTEGER_new()) == NULL) goto err;
-		if (!ASN1_INTEGER_set(xi->version,2)) goto err;
-/*		xi->extensions=ri->attributes; <- bad, should not ever be done
-		ri->attributes=NULL; */
-		}
+  if (sk_X509_ATTRIBUTE_num(r->req_info->attributes) != 0)
+  {
+    if ((xi->version = M_ASN1_INTEGER_new()) == NULL) goto err;
+    if (!ASN1_INTEGER_set(xi->version, 2)) goto err;
+    /*    xi->extensions=ri->attributes; <- bad, should not ever be done
+        ri->attributes=NULL; */
+  }
 
-	xn=X509_REQ_get_subject_name(r);
-	if (X509_set_subject_name(ret,xn) == 0)
-		goto err;
-	if (X509_set_issuer_name(ret,xn) == 0)
-		goto err;
+  xn = X509_REQ_get_subject_name(r);
+  if (X509_set_subject_name(ret, xn) == 0)
+    goto err;
+  if (X509_set_issuer_name(ret, xn) == 0)
+    goto err;
 
-	if (X509_gmtime_adj(xi->validity->notBefore,0) == NULL)
-		goto err;
-	if (X509_gmtime_adj(xi->validity->notAfter,(long)60*60*24*days) == NULL)
-		goto err;
-  pubkey=X509_REQ_get_pubkey(r);
-	X509_set_pubkey(ret,pubkey);
+  if (X509_gmtime_adj(xi->validity->notBefore, 0) == NULL)
+    goto err;
+  if (X509_gmtime_adj(xi->validity->notAfter, (long)60 * 60 * 24 * days) == NULL)
+    goto err;
+  pubkey = X509_REQ_get_pubkey(r);
+  X509_set_pubkey(ret, pubkey);
   EVP_PKEY_free(pubkey);
-	if (!X509_sign(ret,pkey, EVP_get_digestbyobj(r->sig_alg->algorithm)))
-		goto err;
-	if (0)
-		{
+  if (!X509_sign(ret, pkey, EVP_get_digestbyobj(r->sig_alg->algorithm)))
+    goto err;
+  if (0)
+  {
 err:
-		X509_free(ret);
-		ret=NULL;
-		}
-	return(ret);
-	}
+    X509_free(ret);
+    ret = NULL;
+  }
+  return (ret);
+}
 
 static LUA_FUNCTION(openssl_csr_to_x509)
 {
   X509_REQ * csr  = CHECK_OBJECT(1, X509_REQ, "openssl.x509_req");
   EVP_PKEY * pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
   int days = luaL_optint(L, 3, 365);
-  X509* cert = X509_REQ_to_X509_a(csr,days,pkey);
-  
-  luaL_argcheck(L,openssl_pkey_is_private(pkey), 2, "must be private key");
+  X509* cert = X509_REQ_to_X509_a(csr, days, pkey);
 
-  if(cert){
-    PUSH_OBJECT(cert,"openssl.x509");
+  luaL_argcheck(L, openssl_pkey_is_private(pkey), 2, "must be private key");
+
+  if (cert)
+  {
+    PUSH_OBJECT(cert, "openssl.x509");
     return 1;
   }
   return openssl_pushresult(L, 0);
@@ -156,13 +157,13 @@ static LUA_FUNCTION(openssl_csr_digest)
   unsigned char buf[EVP_MAX_MD_SIZE];
   unsigned int len = sizeof(buf);
   int ret;
-  if (lua_isnoneornil(L,2))
+  if (lua_isnoneornil(L, 2))
     md = EVP_get_digestbyname("SHA1");
   else
     md = get_digest(L, 2);
 
-  ret = X509_REQ_digest(csr,md,buf, &len);
-  if (ret==1)
+  ret = X509_REQ_digest(csr, md, buf, &len);
+  if (ret == 1)
   {
     lua_pushlstring(L, buf, len);
     return 1;
@@ -175,8 +176,8 @@ static LUA_FUNCTION(openssl_csr_check)
   X509_REQ *csr = CHECK_OBJECT(1, X509_REQ, "openssl.x509_req");
   EVP_PKEY *pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
   int ret;
-  luaL_argcheck(L,openssl_pkey_is_private(pkey), 2, "must be private key");
-  ret = X509_REQ_check_private_key(csr,pkey);
+  luaL_argcheck(L, openssl_pkey_is_private(pkey), 2, "must be private key");
+  ret = X509_REQ_check_private_key(csr, pkey);
   return openssl_pushresult(L, ret);
 };
 
@@ -184,7 +185,7 @@ static LUA_FUNCTION(openssl_csr_dup)
 {
   X509_REQ *csr = CHECK_OBJECT(1, X509_REQ, "openssl.x509_req");
   csr = X509_REQ_dup(csr);
-  PUSH_OBJECT(csr,"openssl.x509_req");
+  PUSH_OBJECT(csr, "openssl.x509_req");
   return 1;
 };
 
@@ -192,7 +193,7 @@ static LUA_FUNCTION(openssl_csr_verify)
 {
   X509_REQ *csr = CHECK_OBJECT(1, X509_REQ, "openssl.x509_req");
   EVP_PKEY * self_key = X509_REQ_get_pubkey(csr);
-  lua_pushboolean(L, X509_REQ_verify(csr, self_key)==1);
+  lua_pushboolean(L, X509_REQ_verify(csr, self_key) == 1);
   EVP_PKEY_free(self_key);
   return 1;
 };
@@ -204,61 +205,68 @@ static LUA_FUNCTION(openssl_csr_new)
   int n = lua_gettop(L);
   int ret = X509_REQ_set_version(csr, 0L);
 
-  for(i=1; ret==1 && i<=n; i++) {
-    luaL_argcheck(L, 
-      auxiliar_isclass(L, "openssl.stack_of_x509_extension", i) ||
-      auxiliar_isclass(L, "openssl.stack_of_x509_attribute", i) ||
-      auxiliar_isclass(L, "openssl.x509_name", i) || 
-      auxiliar_isclass(L, "openssl.evp_pkey", i),
+  for (i = 1; ret == 1 && i <= n; i++)
+  {
+    luaL_argcheck(L,
+                  auxiliar_isclass(L, "openssl.stack_of_x509_extension", i) ||
+                  auxiliar_isclass(L, "openssl.stack_of_x509_attribute", i) ||
+                  auxiliar_isclass(L, "openssl.x509_name", i) ||
+                  auxiliar_isclass(L, "openssl.evp_pkey", i),
 
-      i,"must be x509_name, stack_of_x509_extension or stack_of_x509_attribute");
-    if (auxiliar_isclass(L, "openssl.x509_name", i)){
+                  i, "must be x509_name, stack_of_x509_extension or stack_of_x509_attribute");
+    if (auxiliar_isclass(L, "openssl.x509_name", i))
+    {
       X509_NAME * subject = CHECK_OBJECT(i, X509_NAME, "openssl.x509_name");
       ret = X509_REQ_set_subject_name(csr, subject);
     }
-    if(auxiliar_isclass(L, "openssl.stack_of_x509_attribute", i)) {
+    if (auxiliar_isclass(L, "openssl.stack_of_x509_attribute", i))
+    {
       int j, m;
-      STACK_OF(X509_ATTRIBUTE) *attrs = CHECK_OBJECT(i,STACK_OF(X509_ATTRIBUTE),"openssl.stack_of_x509_attribute");
+      STACK_OF(X509_ATTRIBUTE) *attrs = CHECK_OBJECT(i, STACK_OF(X509_ATTRIBUTE), "openssl.stack_of_x509_attribute");
       m = sk_X509_ATTRIBUTE_num(attrs);
-      for(j=0; ret ==1 && j<m; j++) {
-        ret = X509_REQ_add1_attr(csr,sk_X509_ATTRIBUTE_value(attrs, j));
+      for (j = 0; ret == 1 && j < m; j++)
+      {
+        ret = X509_REQ_add1_attr(csr, sk_X509_ATTRIBUTE_value(attrs, j));
       }
     }
 
-    if (auxiliar_isclass(L, "openssl.stack_of_x509_extension", i)) {
-      STACK_OF(X509_EXTENSION) *exts = 
+    if (auxiliar_isclass(L, "openssl.stack_of_x509_extension", i))
+    {
+      STACK_OF(X509_EXTENSION) *exts =
         CHECK_OBJECT(i, STACK_OF(X509_EXTENSION), "openssl.stack_of_x509_extension");
       ret = X509_REQ_add_extensions(csr, exts);
     }
 
     if (auxiliar_isclass(L, "openssl.evp_pkey", i))
     {
-        EVP_PKEY *pkey;
-        const EVP_MD *md;
-        luaL_argcheck(L, i==n || i==n-1, i, "must is evp_pkey object");
+      EVP_PKEY *pkey;
+      const EVP_MD *md;
+      luaL_argcheck(L, i == n || i == n - 1, i, "must is evp_pkey object");
 
-        pkey = CHECK_OBJECT(i, EVP_PKEY, "openssl.evp_pkey");
+      pkey = CHECK_OBJECT(i, EVP_PKEY, "openssl.evp_pkey");
 
-        luaL_argcheck(L, openssl_pkey_is_private(pkey), i, "must be private key");
+      luaL_argcheck(L, openssl_pkey_is_private(pkey), i, "must be private key");
 
-        if(i==n-1)
-          md = get_digest(L, n);
-        else
-          md = EVP_get_digestbyname("sha1");
+      if (i == n - 1)
+        md = get_digest(L, n);
+      else
+        md = EVP_get_digestbyname("sha1");
 
-        ret = X509_REQ_set_pubkey(csr, pkey);
-        if (ret==1) {
-          ret = X509_REQ_sign(csr,pkey,md);
-          if (ret>0)
-            ret = 1;
-        }
-        break;
+      ret = X509_REQ_set_pubkey(csr, pkey);
+      if (ret == 1)
+      {
+        ret = X509_REQ_sign(csr, pkey, md);
+        if (ret > 0)
+          ret = 1;
+      }
+      break;
     }
   };
 
-  if (ret==1)
+  if (ret == 1)
     PUSH_OBJECT(csr, "openssl.x509_req");
-  else{
+  else
+  {
     X509_REQ_free(csr);
     return openssl_pushresult(L, ret);
   }
@@ -276,7 +284,7 @@ static LUA_FUNCTION(openssl_csr_parse)
   lua_newtable(L);
 
   PUSH_ASN1_BIT_STRING(L, csr->signature);
-  lua_setfield(L,-2, "signature");
+  lua_setfield(L, -2, "signature");
 
   openssl_push_x509_algor(L, csr->sig_alg);
   lua_setfield(L, -2, "sig_alg");
@@ -285,26 +293,28 @@ static LUA_FUNCTION(openssl_csr_parse)
   AUXILIAR_SET(L, -1, "version", X509_REQ_get_version(csr), integer);
   openssl_push_xname_asobject(L, subject);
   lua_setfield(L, -2, "subject");
-  if(exts){
-    PUSH_OBJECT(exts,"openssl.stack_of_x509_extension");
+  if (exts)
+  {
+    PUSH_OBJECT(exts, "openssl.stack_of_x509_extension");
     lua_setfield(L, -2, "extensions");
   }
 
   {
     X509_REQ_INFO* ri = csr->req_info;
-    int i,n;
+    int i, n;
     EVP_PKEY *pubkey = X509_REQ_get_pubkey(csr);
-    
+
     lua_newtable(L);
     n = X509_REQ_get_attr_count(csr);
-    if(n>0) {
+    if (n > 0)
+    {
       lua_newtable(L);
-      for(i=0; i<n ;i++)
+      for (i = 0; i < n ; i++)
       {
-        X509_ATTRIBUTE *attr = X509_REQ_get_attr(csr,i);
+        X509_ATTRIBUTE *attr = X509_REQ_get_attr(csr, i);
         attr = X509_ATTRIBUTE_dup(attr);
-        PUSH_OBJECT(attr,"openssl.x509_attribute");
-        lua_rawseti(L,-2, i+1);
+        PUSH_OBJECT(attr, "openssl.x509_attribute");
+        lua_rawseti(L, -2, i + 1);
       }
       lua_setfield(L, -2, "attributes");
     }
@@ -313,7 +323,7 @@ static LUA_FUNCTION(openssl_csr_parse)
     openssl_push_asn1object(L, ri->pubkey->algor->algorithm);
     lua_setfield(L, -2, "algorithm");
 
-    AUXILIAR_SETOBJECT(L,pubkey , "openssl.evp_pkey", -1, "pubkey");
+    AUXILIAR_SETOBJECT(L, pubkey , "openssl.evp_pkey", -1, "pubkey");
     lua_setfield(L, -2, "pubkey");
 
     lua_setfield(L, -2, "req_info");
@@ -334,11 +344,14 @@ static LUA_FUNCTION(openssl_csr_free)
 static LUA_FUNCTION(openssl_csr_public)
 {
   X509_REQ *csr = CHECK_OBJECT(1, X509_REQ, "openssl.x509_req");
-  if (lua_isnone(L, 2)){
+  if (lua_isnone(L, 2))
+  {
     EVP_PKEY *pkey = X509_REQ_get_pubkey(csr);
     PUSH_OBJECT(pkey, "openssl.evp_pkey");
     return 1;
-  }else{
+  }
+  else
+  {
     EVP_PKEY *pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
     int ret = X509_REQ_set_pubkey(csr, pkey);
     return openssl_pushresult(L, ret);
@@ -352,7 +365,9 @@ static LUA_FUNCTION(openssl_csr_version)
   {
     lua_pushinteger(L, X509_REQ_get_version(csr));
     return 1;
-  }else{
+  }
+  else
+  {
     long version = luaL_checkint(L, 2);
     int ret = X509_REQ_set_version(csr, version);
     return openssl_pushresult(L, ret);
@@ -362,14 +377,17 @@ static LUA_FUNCTION(openssl_csr_version)
 static LUA_FUNCTION(openssl_csr_subject)
 {
   X509_REQ *csr = CHECK_OBJECT(1, X509_REQ, "openssl.x509_req");
-  if (lua_isnone(L, 2)){
+  if (lua_isnone(L, 2))
+  {
     X509_NAME *xn = X509_REQ_get_subject_name(csr);
     if (xn)
       openssl_push_xname_asobject(L, xn);
     else
       lua_pushnil(L);
     return 1;
-  }else{
+  }
+  else
+  {
     X509_NAME* xn = CHECK_OBJECT(2, X509_NAME, "openssl.x509_name");
     int ret = X509_REQ_set_subject_name(csr, xn);
     return openssl_pushresult(L, ret);
@@ -379,16 +397,21 @@ static LUA_FUNCTION(openssl_csr_subject)
 static LUA_FUNCTION(openssl_csr_extensions)
 {
   X509_REQ *csr = CHECK_OBJECT(1, X509_REQ, "openssl.x509_req");
-  if (lua_isnone(L,2)) {
+  if (lua_isnone(L, 2))
+  {
     STACK_OF(X509_EXTENSION) *sk = X509_REQ_get_extensions(csr);
-    if (sk){
+    if (sk)
+    {
       PUSH_OBJECT(sk, "openssl.stack_of_x509_extension");
-    }else
+    }
+    else
       lua_pushnil(L);
     return 1;
-  } else {
+  }
+  else
+  {
     STACK_OF(X509_EXTENSION) *sk = CHECK_OBJECT(2,  STACK_OF(X509_EXTENSION), "openssl.stack_of_x509_extension");
-    int ret = X509_REQ_add_extensions(csr,sk);
+    int ret = X509_REQ_add_extensions(csr, sk);
     return openssl_pushresult(L, ret);
   }
 }
@@ -401,18 +424,25 @@ static LUA_FUNCTION(openssl_csr_attribute)
     X509_ATTRIBUTE *attr = CHECK_OBJECT(2, X509_ATTRIBUTE, "openssl.x509_attribute");
     int ret = X509_REQ_add1_attr(csr, attr);
     return openssl_pushresult(L, ret);
-  }else if(lua_isnumber(L, 2)){
+  }
+  else if (lua_isnumber(L, 2))
+  {
     int loc = luaL_checkint(L, 2);
     X509_ATTRIBUTE *attr = NULL;
-    if(lua_isnone(L, 3)){
-      attr = X509_REQ_get_attr(csr,loc);
+    if (lua_isnone(L, 3))
+    {
+      attr = X509_REQ_get_attr(csr, loc);
       attr = X509_ATTRIBUTE_dup(attr);
-    }else if(lua_isnil(L, 3)){
+    }
+    else if (lua_isnil(L, 3))
+    {
       attr = X509_REQ_delete_attr(csr, loc);
     }
-    if (attr){
+    if (attr)
+    {
       PUSH_OBJECT(attr, "openssl.x509_attribute");
-    }else
+    }
+    else
       lua_pushnil(L);
     return 1;
   }
@@ -438,7 +468,7 @@ static luaL_reg csr_cfuns[] =
 
   /* get or set */
   {"public",            openssl_csr_public},
-  {"version",           openssl_csr_version},  
+  {"version",           openssl_csr_version},
   {"subject",           openssl_csr_subject},
 
   /* get or add */

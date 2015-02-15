@@ -24,7 +24,7 @@ static LUA_FUNCTION(openssl_pkcs12_export)
   STACK_OF(X509) *ca = NULL;
   int ret = 0;
 
-  luaL_argcheck(L,openssl_pkey_is_private(priv_key), 2, "must be private key");
+  luaL_argcheck(L, openssl_pkey_is_private(priv_key), 2, "must be private key");
 
   if (top > 3)
   {
@@ -106,7 +106,7 @@ static LUA_FUNCTION(openssl_pkcs12_read)
     ERR_clear_error();
     ret = 1;
   }
-  if(b64)
+  if (b64)
     BIO_free(b64);
   BIO_free(bio_in);
   PKCS12_free(p12);

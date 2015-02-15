@@ -55,12 +55,12 @@ int luaopen_dh(lua_State *L)
 {
   auxiliar_newclass(L, "openssl.dh",     dh_funs);
   return 0;
-/*
-  lua_newtable(L);
-  luaL_setfuncs(L, R, 0);
-  lua_pushliteral(L, "version");    
-  lua_pushliteral(L, MYVERSION);
-  lua_settable(L, -3);
-  return 1;
-*/
+  /*
+    lua_newtable(L);
+    luaL_setfuncs(L, R, 0);
+    lua_pushliteral(L, "version");
+    lua_pushliteral(L, MYVERSION);
+    lua_settable(L, -3);
+    return 1;
+  */
 }

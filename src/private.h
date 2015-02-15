@@ -7,10 +7,10 @@
 #if LUA_VERSION_NUM == 502
 #ifndef lua_equal
 #define lua_equal( L, a, b) lua_compare( L, a, b, LUA_OPEQ)
-#endif 
-#ifndef lua_lessthan 
+#endif
+#ifndef lua_lessthan
 #define lua_lessthan( L, a, b) lua_compare( L, a, b, LUA_OPLT)
-#endif 
+#endif
 #define luaG_registerlibfuncs( L, _funcs) luaL_setfuncs( L, _funcs, 0)
 #endif
 
@@ -69,7 +69,7 @@ void to_hex(const char* in, int length, char* out);
 int openssl_push_asn1type(lua_State* L, const ASN1_TYPE* type);
 int openssl_push_asn1object(lua_State* L, const ASN1_OBJECT* obj);
 int openssl_push_asn1(lua_State* L, ASN1_STRING* string, int type, int utf8);
-int openssl_push_x509_algor(lua_State*L,const X509_ALGOR* alg);
+int openssl_push_x509_algor(lua_State*L, const X509_ALGOR* alg);
 int openssl_push_general_name(lua_State*L, const GENERAL_NAME* name,  int utf8);
 
 #define PUSH_ASN1_TIME(L, tm)             openssl_push_asn1(L, (ASN1_STRING*)tm, V_ASN1_UTCTIME, 0)
@@ -80,7 +80,7 @@ int openssl_push_general_name(lua_State*L, const GENERAL_NAME* name,  int utf8);
 #define PUSH_ASN1_STRING(L, s, utf)       openssl_push_asn1(L, (ASN1_STRING*)s,  0,  utf)
 
 int openssl_push_xname_asobject(lua_State*L, X509_NAME* xname);
-int openssl_push_bit_string_bitname(lua_State* L,const BIT_STRING_BITNAME* name);
+int openssl_push_bit_string_bitname(lua_State* L, const BIT_STRING_BITNAME* name);
 
 STACK_OF(X509)* openssl_sk_x509_dup(STACK_OF(X509)* sk);
 STACK_OF(X509_CRL)* openssl_sk_x509_crl_dup(STACK_OF(X509_CRL)* sk);
@@ -103,5 +103,5 @@ int openssl_getvalue(lua_State*L, void*p, const char*field);
 int openssl_refrence(lua_State*L, void*p, int op);
 
 int openssl_verify_cb(int preverify_ok, X509_STORE_CTX *xctx);
-int openssl_cert_verify_cb(X509_STORE_CTX *xctx,void* u);
+int openssl_cert_verify_cb(X509_STORE_CTX *xctx, void* u);
 void openssl_xstore_free(X509_STORE* ctx);

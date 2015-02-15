@@ -34,7 +34,7 @@ BIO* load_bio_object(lua_State* L, int idx)
   else if (auxiliar_isclass(L, "openssl.bio", idx))
   {
     bio = CHECK_OBJECT(idx, BIO, "openssl.bio");
-    CRYPTO_add(&bio->references,1,CRYPTO_LOCK_BIO);
+    CRYPTO_add(&bio->references, 1, CRYPTO_LOCK_BIO);
   }
   else
     luaL_argerror(L, idx, "only support string or openssl.bio");
@@ -60,7 +60,7 @@ const EVP_MD* get_digest(lua_State* L, int idx)
   return md;
 }
 
-const EVP_CIPHER* get_cipher(lua_State*L, int idx,const char* def_alg)
+const EVP_CIPHER* get_cipher(lua_State*L, int idx, const char* def_alg)
 {
   const EVP_CIPHER* cipher = NULL;
   if (lua_isstring(L, idx))
@@ -75,7 +75,7 @@ const EVP_CIPHER* get_cipher(lua_State*L, int idx,const char* def_alg)
     cipher = EVP_get_cipherbyname(def_alg);
   else
     luaL_argerror(L, idx, "must be a string, NID number or ans1_object identity cipher method");
-  if (cipher==NULL)
+  if (cipher == NULL)
     luaL_argerror(L, idx, "not valid cipher alg");
 
   return cipher;
@@ -137,7 +137,7 @@ int openssl_pushresult(lua_State*L, int result)
     unsigned val = ERR_get_error();
     lua_pushnil(L);
     i++;
-    if(!val)
+    if (!val)
     {
       lua_pushstring(L, "unknown error occure");
       i++;
@@ -148,7 +148,7 @@ int openssl_pushresult(lua_State*L, int result)
       ERR_error_string_n(val, err, sizeof(err));
       lua_pushstring(L, err);
       lua_pushinteger(L, val);
-      i=i+2;
+      i = i + 2;
       val = ERR_get_error();
     }
     return i;
@@ -161,16 +161,18 @@ static const char* hex_tab = "0123456789abcdef";
 void to_hex(const char* in, int length, char* out)
 {
   int i;
-  for (i = 0; i < length; i++) {
-    out[i*2] = hex_tab[(in[i] >> 4) & 0xF];
-    out[i*2+1] = hex_tab[(in[i]) & 0xF];
+  for (i = 0; i < length; i++)
+  {
+    out[i * 2] = hex_tab[(in[i] >> 4) & 0xF];
+    out[i * 2 + 1] = hex_tab[(in[i]) & 0xF];
   }
-  out[i*2] = '\0';
+  out[i * 2] = '\0';
 }
 
-int openssl_push_bit_string_bitname(lua_State* L,const BIT_STRING_BITNAME* name) {
+int openssl_push_bit_string_bitname(lua_State* L, const BIT_STRING_BITNAME* name)
+{
   lua_newtable(L);
-  lua_pushinteger(L,name->bitnum);
+  lua_pushinteger(L, name->bitnum);
   lua_setfield(L, -2, "bitnum");
   lua_pushstring(L, name->lname);
   lua_setfield(L, -2, "lname");
@@ -179,7 +181,8 @@ int openssl_push_bit_string_bitname(lua_State* L,const BIT_STRING_BITNAME* name)
   return 1;
 }
 
-int openssl_sk_index(lua_State*L, int i, int num, int idx) {
+int openssl_sk_index(lua_State*L, int i, int num, int idx)
+{
   int ret = i;
   if (i < 0)
     ret = num + i;

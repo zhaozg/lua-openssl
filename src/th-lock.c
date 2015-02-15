@@ -134,7 +134,7 @@ void CRYPTO_thread_cleanup(void)
   OPENSSL_free(lock_cs);
 }
 
-static void win32_locking_callback(int mode, int type,const char *file, int line)
+static void win32_locking_callback(int mode, int type, const char *file, int line)
 {
   if (mode & CRYPTO_LOCK)
   {
@@ -200,7 +200,7 @@ void CRYPTO_thread_cleanup(void)
   OPENSSL_free(lock_count);
 }
 
-static void solaris_locking_callback(int mode, int type,const char *file, int line)
+static void solaris_locking_callback(int mode, int type, const char *file, int line)
 {
 #if 0
   fprintf(stderr, "thread=%4d mode=%s lock=%s %s:%d\n",

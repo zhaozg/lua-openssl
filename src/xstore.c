@@ -14,7 +14,7 @@ void openssl_xstore_free(X509_STORE* ctx)
 {
 #if OPENSSL_VERSION_NUMBER < 0x10002000L
   if (ctx->references > 1)
-    CRYPTO_add(&ctx->references,-1,CRYPTO_LOCK_X509_STORE);
+    CRYPTO_add(&ctx->references, -1, CRYPTO_LOCK_X509_STORE);
   else
     X509_STORE_free(ctx);
 #else
@@ -26,7 +26,7 @@ static int openssl_xstore_gc(lua_State* L)
 {
   X509_STORE* ctx = CHECK_OBJECT(1, X509_STORE, "openssl.x509_store");
   lua_pushnil(L);
-  lua_setmetatable(L,1);
+  lua_setmetatable(L, 1);
   openssl_xstore_free(ctx);
   return 0;
 }
@@ -41,15 +41,19 @@ static int openssl_xstore_add_lookup(lua_State* L)
   int fmt = luaL_checkoption(L, 4, "default", sFormat);
   int ret = 0;
   X509_LOOKUP *lookup = NULL;
-  if(mode==0) {
+  if (mode == 0)
+  {
     lookup = X509_STORE_add_lookup(ctx, X509_LOOKUP_file());
     if (lookup)
     {
       ret = X509_LOOKUP_load_file(lookup, path, X509_FILETYPE_DEFAULT);
     }
-  }else {
+  }
+  else
+  {
     lookup = X509_STORE_add_lookup(ctx, X509_LOOKUP_hash_dir());
-    if(lookup) {
+    if (lookup)
+    {
       ret = X509_LOOKUP_add_dir(lookup, path, X509_FILETYPE_DEFAULT);
     }
   }
@@ -96,9 +100,11 @@ static int openssl_xstore_load(lua_State* L)
   const char* file = luaL_optstring(L, 2, NULL);
   const char* dir = luaL_optstring(L, 3, NULL);
   int ret;
-  if(file || dir) {
-    ret =	X509_STORE_load_locations (ctx, file, dir);
-  }else
+  if (file || dir)
+  {
+    ret = X509_STORE_load_locations (ctx, file, dir);
+  }
+  else
     ret = X509_STORE_set_default_paths(ctx);
 
   return openssl_pushresult(L, ret);
@@ -110,32 +116,46 @@ static int openssl_xstore_add(lua_State* L)
   int n = lua_gettop(L);
   int i;
   int ret = 0;
-  for(i=2; i<=n; i++) {
-    if(lua_istable(L, i)) {
+  for (i = 2; i <= n; i++)
+  {
+    if (lua_istable(L, i))
+    {
       int k = lua_rawlen(L, i);
       int j;
-      for(j=1;j<=k;j++) {
-        lua_rawgeti(L,i,j);
-        if(auxiliar_isclass(L, "openssl.x509", i)) {
+      for (j = 1; j <= k; j++)
+      {
+        lua_rawgeti(L, i, j);
+        if (auxiliar_isclass(L, "openssl.x509", i))
+        {
           X509* x = CHECK_OBJECT(i, X509, "openssl.x509");
-          ret = X509_STORE_add_cert(ctx,x);
-        }else if(auxiliar_isclass(L, "openssl.x509_crl", i)) {
+          ret = X509_STORE_add_cert(ctx, x);
+        }
+        else if (auxiliar_isclass(L, "openssl.x509_crl", i))
+        {
           X509_CRL* c = CHECK_OBJECT(i, X509_CRL, "openssl.x509_crl");
-          ret = X509_STORE_add_crl(ctx,c);
-        }else{
+          ret = X509_STORE_add_crl(ctx, c);
+        }
+        else
+        {
           luaL_argerror(L, i, "only accept table with x509 or x509_crl object");
         }
       }
-    }else if(auxiliar_isclass(L, "openssl.x509", i)) {
+    }
+    else if (auxiliar_isclass(L, "openssl.x509", i))
+    {
       X509* x = CHECK_OBJECT(i, X509, "openssl.x509");
-      ret = X509_STORE_add_cert(ctx,x);
-    }else if(auxiliar_isclass(L, "openssl.x509_crl", i)) {
+      ret = X509_STORE_add_cert(ctx, x);
+    }
+    else if (auxiliar_isclass(L, "openssl.x509_crl", i))
+    {
       X509_CRL* c = CHECK_OBJECT(i, X509_CRL, "openssl.x509_crl");
-      ret = X509_STORE_add_crl(ctx,c);
-    }else{
+      ret = X509_STORE_add_crl(ctx, c);
+    }
+    else
+    {
       luaL_argerror(L, i, "only accept x509 or x509_crl object or table with x509 or x509_crl object");
     }
-    if (ret==0)
+    if (ret == 0)
       break;
   }
 
@@ -168,33 +188,37 @@ static luaL_Reg xname_funcs[] =
   {NULL,          NULL},
 };
 
-static int openssl_xstore_new(lua_State*L) {
+static int openssl_xstore_new(lua_State*L)
+{
   X509_STORE* ctx = X509_STORE_new();
   int i, n;
   luaL_checktable(L, 1);
   n = lua_rawlen(L, 1);
-  for(i=0; i<n; i++) {
+  for (i = 0; i < n; i++)
+  {
     X509* x;
-    lua_rawgeti(L, 1, i+1);
+    lua_rawgeti(L, 1, i + 1);
     luaL_argcheck(L, auxiliar_isclass(L, "openssl.x509", -1), 1, "only contains x509 object");
     x = CHECK_OBJECT(-1, X509, "openssl.x509");
     lua_pop(L, 1);
     X509_STORE_add_cert(ctx, x);
   }
-  if(!lua_isnoneornil(L, 2)) {
+  if (!lua_isnoneornil(L, 2))
+  {
     luaL_checktable(L, 2);
-    
+
     n = lua_rawlen(L, 2);
-    for(i=0; i<n; i++) {
+    for (i = 0; i < n; i++)
+    {
       X509_CRL* c;
-      lua_rawgeti(L, 2, i+1);
+      lua_rawgeti(L, 2, i + 1);
       c = CHECK_OBJECT(-1, X509_CRL, "openssl.x509_crl");
       lua_pop(L, 1);
       X509_STORE_add_crl(ctx, c);
     }
   };
 
-  PUSH_OBJECT(ctx,"openssl.x509_store");
+  PUSH_OBJECT(ctx, "openssl.x509_store");
   return 1;
 };
 
@@ -207,7 +231,7 @@ static luaL_Reg R[] =
 
 int openssl_register_xstore(lua_State*L)
 {
-  auxiliar_newclass(L, "openssl.x509_store",xname_funcs);
+  auxiliar_newclass(L, "openssl.x509_store", xname_funcs);
   lua_newtable(L);
   luaL_setfuncs(L, R, 0);
   return 1;

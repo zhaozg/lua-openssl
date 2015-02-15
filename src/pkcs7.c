@@ -63,7 +63,7 @@ static LUA_FUNCTION(openssl_pkcs7_sign)
   long flags =  luaL_optint(L, 5, 0);
 
   PKCS7 *p7 = NULL;
-  luaL_argcheck(L,openssl_pkey_is_private(privkey), 3, "must be private key");
+  luaL_argcheck(L, openssl_pkey_is_private(privkey), 3, "must be private key");
 
   if (!X509_check_private_key(cert, privkey))
     luaL_error(L, "sigcert and private key not match");
@@ -98,7 +98,7 @@ static LUA_FUNCTION(openssl_pkcs7_verify)
     luaL_error(L, "can't setup veirfy cainfo");
   }
 
-  if (PKCS7_verify(p7, signers, store, in, out, flags)==1)
+  if (PKCS7_verify(p7, signers, store, in, out, flags) == 1)
   {
     STACK_OF(X509) *signers1 = PKCS7_get0_signers(p7, NULL, flags);
     if (out)
@@ -108,13 +108,15 @@ static LUA_FUNCTION(openssl_pkcs7_verify)
       BIO_get_mem_ptr(out, &bio_buf);
       lua_pushlstring(L, bio_buf->data, bio_buf->length);
       ret = 1;
-    }else
+    }
+    else
       ret = 0;
 
-    if(signers1) {
+    if (signers1)
+    {
       signers1 = openssl_sk_x509_dup(signers1);
       PUSH_OBJECT(signers1, "openssl.sk_x509");
-      ret+=1;
+      ret += 1;
     }
   }
   else

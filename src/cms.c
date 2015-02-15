@@ -85,10 +85,12 @@ static int openssl_cms_write(lua_State *L)
     ret = SMIME_write_CMS(out, cms, in, flags);
   else if (fmt == FORMAT_PEM)
     ret = PEM_write_bio_CMS_stream(out, cms, in, flags);
-  else if (fmt == FORMAT_DER) {
+  else if (fmt == FORMAT_DER)
+  {
     ret = i2d_CMS_bio_stream(out, cms, in, flags);
     //i2d_CMS_bio
-  } else
+  }
+  else
     luaL_argerror(L, 5, "only accept smime, pem or der");
   return openssl_pushresult(L, ret);
 }
@@ -97,17 +99,21 @@ static int openssl_cms_create(lua_State*L)
 {
   CMS_ContentInfo *cms = NULL;
 
-  if (lua_gettop(L)==1) 
+  if (lua_gettop(L) == 1)
   {
     cms = CMS_ContentInfo_new();
-  } else {
+  }
+  else
+  {
     BIO* in = load_bio_object(L, 1);
-    if (lua_isuserdata(L,2)) 
+    if (lua_isuserdata(L, 2))
     {
       const EVP_MD* md = get_digest(L, 2);
       int flags = luaL_optint(L, 3, 0);
       cms = CMS_digest_create(in, md, flags);
-    } else {
+    }
+    else
+    {
       int flags = luaL_optint(L, 2, 0);
       cms = CMS_data_create(in, flags);
     }
@@ -162,7 +168,7 @@ static int openssl_cms_sign(lua_State *L)
   BIO* data = load_bio_object(L, 4);
   unsigned int flags = 0;
   CMS_ContentInfo *cms;
-  luaL_argcheck(L,openssl_pkey_is_private(pkey), 2, "must be private key");
+  luaL_argcheck(L, openssl_pkey_is_private(pkey), 2, "must be private key");
   cms = CMS_sign(signcert, pkey, certs, data, flags);
   if (cms)
   {
@@ -545,7 +551,7 @@ static luaL_Reg cms_ctx_funs[] =
   { "get_signers",   openssl_cms_get_signers},
 
   { "bio_new",   openssl_cms_bio_new},
-  
+
   {"final", openssl_cms_final},
   {"__tostring",  auxiliar_tostring},
   {"__gc",    openssl_cms_free},

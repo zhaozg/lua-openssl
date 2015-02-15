@@ -31,8 +31,8 @@ static LUA_FUNCTION(openssl_hex)
 
   if (encode)
   {
-    h = OPENSSL_malloc(l*2 + 1);
-    to_hex(s,l,h);
+    h = OPENSSL_malloc(l * 2 + 1);
+    to_hex(s, l, h);
     hl = strlen(h);
   }
   else
@@ -57,20 +57,23 @@ static LUA_FUNCTION(openssl_base64)
   int encode = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L, 2);
   BIO *b64 = BIO_new(BIO_f_base64());
   BIO *out = BIO_new(BIO_s_mem());
-  
+
   BUF_MEM* mem;
 
-  if (encode) {
+  if (encode)
+  {
     BIO_push(b64, out);
     BIO_get_mem_ptr(bio, &mem);
     lua_pushlstring(L, mem->data, mem->length);
     BIO_write(b64, mem->data, mem->length);
     BIO_flush(b64);
-  } else {
+  }
+  else
+  {
     char inbuf[512];
     int inlen;
     BIO_push(b64, bio);
-    while((inlen = BIO_read(b64, inbuf, 512)) > 0) 
+    while ((inlen = BIO_read(b64, inbuf, 512)) > 0)
       BIO_write(out, inbuf, inlen);
     BIO_flush(out);
   }
@@ -78,7 +81,7 @@ static LUA_FUNCTION(openssl_base64)
   BIO_get_mem_ptr(out, &mem);
   lua_pushlstring(L, mem->data, mem->length);
   BIO_free_all(b64);
-  if(encode)
+  if (encode)
     BIO_free(bio);
   else
     BIO_free(out);
@@ -247,7 +250,7 @@ static const luaL_Reg eay_functions[] =
   {"rand_status", openssl_random_status},
   {"rand_load",   openssl_random_load},
   {"rand_write",  openssl_random_write},
-  {"rand_cleanup",openssl_random_cleanup},
+  {"rand_cleanup", openssl_random_cleanup},
   {"random",      openssl_random_bytes},
 
   {"error",       openssl_error_string},

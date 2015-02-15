@@ -15,7 +15,7 @@
 static int openssl_ocsp_request_new(lua_State*L)
 {
   OCSP_REQUEST *req = NULL;
-  
+
   if (lua_isstring(L, 1))
   {
     BIO* bio = load_bio_object(L, 1);
@@ -94,9 +94,11 @@ static int openssl_ocsp_request_new(lua_State*L)
     if (nonce)
       OCSP_request_add1_nonce(req, NULL,  -1);
   }
-  if(req) {
+  if (req)
+  {
     PUSH_OBJECT(req, "openssl.ocsp_request");
-  }else
+  }
+  else
     lua_pushnil(L);
 
   return 1;
@@ -151,7 +153,7 @@ static int openssl_ocsp_request_sign(lua_State*L)
   int ret;
   int sflags = 0;
 
-  luaL_argcheck(L,openssl_pkey_is_private(pkey), 3, "must be private key");
+  luaL_argcheck(L, openssl_pkey_is_private(pkey), 3, "must be private key");
 
   if (lua_isnoneornil(L, 4))
   {
@@ -211,10 +213,11 @@ static int openssl_ocsp_request_parse(lua_State*L)
   }
   lua_setfield(L, -2, "requestList");
 
-  if (inf->requestExtensions){
+  if (inf->requestExtensions)
+  {
     STACK_OF(X509_EXTENSION) *extensions = sk_X509_EXTENSION_dup(inf->requestExtensions);
-    PUSH_OBJECT(extensions,"openssl.stack_of_x509_extension");
-    lua_setfield(L,-2, "extensions");
+    PUSH_OBJECT(extensions, "openssl.stack_of_x509_extension");
+    lua_setfield(L, -2, "extensions");
   }
 
   if (sig)
@@ -266,7 +269,7 @@ static int openssl_ocsp_response(lua_State *L)
 
     int i, id_count, type;
     BIO* bio = NULL;
-    luaL_argcheck(L,openssl_pkey_is_private(rkey), 4, "must be private key");
+    luaL_argcheck(L, openssl_pkey_is_private(rkey), 4, "must be private key");
 
     type = lua_type(L, 5);
     if (type != LUA_TFUNCTION && type != LUA_TTABLE)
@@ -390,9 +393,11 @@ static int openssl_ocsp_response(lua_State *L)
     res = OCSP_response_create(OCSP_RESPONSE_STATUS_SUCCESSFUL, bs);
     BIO_free(bio);
   }
-  if(res) {
+  if (res)
+  {
     PUSH_OBJECT(res, "openssl.ocsp_response");
-  }else
+  }
+  else
     lua_pushnil(L);
   return 1;
 }

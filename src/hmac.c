@@ -51,16 +51,20 @@ static int openssl_hmac_final(lua_State *L)
     const char *s = luaL_checklstring(L, 2, &l);
     HMAC_Update(c, (unsigned char *)s, l);
     raw = (lua_isnoneornil(L, 3)) ? 0 : lua_toboolean(L, 3);
-  }else
+  }
+  else
     raw = (lua_isnoneornil(L, 2)) ? 0 : lua_toboolean(L, 2);
 
   HMAC_Final(c, digest, &len);
 
-  if (raw) {
+  if (raw)
+  {
     lua_pushlstring(L, (char *)digest, len);
-  }else{
-    char hex[2*EVP_MAX_MD_SIZE+1];
-    to_hex(digest,len,hex);
+  }
+  else
+  {
+    char hex[2 * EVP_MAX_MD_SIZE + 1];
+    to_hex(digest, len, hex);
     lua_pushstring(L, hex);
   }
   return 1;
@@ -116,11 +120,12 @@ static int openssl_hmac(lua_State *L)
 
     HMAC_CTX_cleanup(c);
 
-    if(raw)
+    if (raw)
       lua_pushlstring(L, (char *)digest, len);
-    else{
-      char hex[2*EVP_MAX_MD_SIZE+1];
-      to_hex(digest,len,hex);
+    else
+    {
+      char hex[2 * EVP_MAX_MD_SIZE + 1];
+      to_hex(digest, len, hex);
       lua_pushstring(L, hex);
     }
   }
@@ -132,7 +137,7 @@ static luaL_Reg hmac_ctx_funs[] =
   {"update",  openssl_hmac_update},
   {"final",   openssl_hmac_final},
   {"reset",   openssl_hmac_reset},
-  
+
   {"__tostring",  auxiliar_tostring},
   {"__gc",    openssl_hmac_free},
   {NULL, NULL}

@@ -39,10 +39,12 @@ static LUA_FUNCTION(openssl_digest_new)
     ENGINE* e =  (!lua_isnoneornil(L, 2)) ? CHECK_OBJECT(2, ENGINE, "openssl.engine") : NULL;
     EVP_MD_CTX* ctx = EVP_MD_CTX_create();
     EVP_MD_CTX_init(ctx);
-    if (EVP_DigestInit_ex(ctx, md, e)==1)
+    if (EVP_DigestInit_ex(ctx, md, e) == 1)
     {
       PUSH_OBJECT(ctx, "openssl.evp_digest_ctx");
-    }else{
+    }
+    else
+    {
       EVP_MD_CTX_destroy(ctx);
       return openssl_pushresult(L, 0);
     }
@@ -90,8 +92,8 @@ static LUA_FUNCTION(openssl_digest)
         lua_pushlstring(L, (const char*)buf, blen);
       else
       {
-        char hex[2*EVP_MAX_MD_SIZE+1];
-        to_hex(buf,blen,hex);
+        char hex[2 * EVP_MAX_MD_SIZE + 1];
+        to_hex(buf, blen, hex);
         lua_pushstring(L, hex);
       }
     }
@@ -144,17 +146,21 @@ static LUA_FUNCTION(openssl_evp_digest_init)
   ENGINE*     e = lua_gettop(L) > 1 ? CHECK_OBJECT(2, ENGINE, "openssl.engine") : NULL;
 
   EVP_MD_CTX* ctx = EVP_MD_CTX_create();
-  if (ctx) {
+  if (ctx)
+  {
     EVP_MD_CTX_init(ctx);
 
-    if (EVP_DigestInit_ex(ctx, md, e)==1)
+    if (EVP_DigestInit_ex(ctx, md, e) == 1)
     {
       PUSH_OBJECT(ctx, "openssl.evp_digest_ctx");
-    }else{
+    }
+    else
+    {
       EVP_MD_CTX_destroy(ctx);
       return openssl_pushresult(L, 0);
     }
-  }else
+  }
+  else
     lua_pushnil(L);
   return 1;
 }
@@ -207,11 +213,12 @@ static LUA_FUNCTION(openssl_evp_digest_final)
     raw = (lua_isnoneornil(L, 2)) ? 0 : lua_toboolean(L, 2);
 
   EVP_MD_CTX_init(d);
-  if (EVP_MD_CTX_copy_ex(d, c)==1) {
+  if (EVP_MD_CTX_copy_ex(d, c) == 1)
+  {
     byte out[EVP_MAX_MD_SIZE];
     unsigned int outl = sizeof(out);
 
-    if (EVP_DigestFinal_ex(d, (byte*)out, &outl)==1)
+    if (EVP_DigestFinal_ex(d, (byte*)out, &outl) == 1)
     {
       if (raw)
       {
@@ -219,18 +226,21 @@ static LUA_FUNCTION(openssl_evp_digest_final)
       }
       else
       {
-        char hex[2*EVP_MAX_MD_SIZE+1];
-        to_hex(out,outl,hex);
+        char hex[2 * EVP_MAX_MD_SIZE + 1];
+        to_hex(out, outl, hex);
         lua_pushstring(L, hex);
       }
     }
-    else {
+    else
+    {
       luaL_error(L, "digest final fail");
       lua_pushnil(L);
     }
     EVP_MD_CTX_destroy(d);
     return 1;
-  }else{
+  }
+  else
+  {
     EVP_MD_CTX_destroy(d);
     return openssl_pushresult(L, 0);
   }
@@ -240,7 +250,7 @@ static LUA_FUNCTION(openssl_digest_ctx_free)
 {
   EVP_MD_CTX *ctx = CHECK_OBJECT(1, EVP_MD_CTX, "openssl.evp_digest_ctx");
   lua_pushnil(L);
-  lua_setmetatable(L,1);
+  lua_setmetatable(L, 1);
   EVP_MD_CTX_destroy(ctx);
   return 0;
 }
@@ -264,17 +274,20 @@ static LUA_FUNCTION(openssl_digest_ctx_clone)
 {
   EVP_MD_CTX *ctx = CHECK_OBJECT(1, EVP_MD_CTX, "openssl.evp_digest_ctx");
   EVP_MD_CTX *d = EVP_MD_CTX_create();
-  if (d) {
+  if (d)
+  {
     EVP_MD_CTX_init(d);
-    if (EVP_MD_CTX_copy_ex(d, ctx)==1)
+    if (EVP_MD_CTX_copy_ex(d, ctx) == 1)
     {
       PUSH_OBJECT(d, "openssl.evp_digest_ctx");
-    }else
+    }
+    else
     {
       EVP_MD_CTX_destroy(d);
-      return openssl_pushresult(L,0);
+      return openssl_pushresult(L, 0);
     }
-  }else
+  }
+  else
     lua_pushnil(L);
 
   return 1;
