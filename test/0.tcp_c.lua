@@ -27,4 +27,4 @@ end
 for i=1,loop do
   mk_connection(host,port)
 end
-os.exit(1)
+os.exit(0)

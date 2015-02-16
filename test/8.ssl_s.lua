@@ -30,7 +30,7 @@ ctx:set_cert_verify(function(arg)
 end)
 --]]
 
-print(string.format('Listen at %s:%s with %s',host,port,ctx))
+print(string.format('Listen at %s:%s with %s',host,port,tostring(ctx)))
 
 function ssl_mode()
     local srv = assert(bio.accept(host..':'..port))
@@ -64,4 +64,4 @@ end
 print(pcall(ssl_mode))
 debug.traceback()
 print(openssl.error(true))
-os.exit(1)
+os.exit(0)

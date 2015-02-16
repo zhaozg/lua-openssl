@@ -1,44 +1,63 @@
-local _,uv = pcall(require,'luv')
+local ok, uv = pcall(require, 'lluv')
+if not ok then uv = nil end
+
+local lua_spawn do
+local LUA = arg[-1]
+
+local function P(pipe, read)
+  return {
+    stream = pipe,
+    flags = uv.CREATE_PIPE + 
+            (read and uv.READABLE_PIPE or uv.WRITABLE_PIPE)
+  }
+end
+
+lua_spawn = function(f, o, e, c)
+    return uv.spawn({
+        file = LUA, args = {f},
+      stdio = {{}, P(o, false), P(e, false)}
+    }, c)
+end
+end
 
 TestTCP = {}
 if uv then
 function TestEngine:testTCP()
-    print(arg[-1])
-
-    local stdout1 = uv.new_pipe(false)
-    local stderr1 = uv.new_pipe(false)
-    local stdout2 = uv.new_pipe(false)
-    local stderr2 = uv.new_pipe(false)
-
-    local function onread(err, chunk)
-      assert(not err, err)
-      if (chunk) then
-        print(chunk)
-      else
-        print("end")
-      end
+    local function onread(pipe, err, chunk)
+        if err then
+            if err:name() ~= 'EOF' then
+                assert(not err, tostring(err))
+            end
+        end
+        if chunk then
+            print(chunk)
+        else
+            print("end")
+        end
     end
-    local child, pid child, pid = uv.spawn(arg[-1], {
-        args = {"0.tcp_s.lua"},
-        stdio = {nil, stdout1, stderr1}
-    }, function (code, signal)
-        assertEquals(code,1)
-        uv.close(child)
-    end)
-    
-    local child, pid child, pid = uv.spawn(arg[-1], {
-        args = {"0.tcp_c.lua"},
-        stdio = {nil, stdout2, stderr2}
-    }, function (code, signal)
-        assertEquals(code,1)
-        uv.close(child)
-    end)
 
-    uv.read_start(stdout1, onread)
-    uv.read_start(stderr1, onread)
-    uv.read_start(stdout2, onread)
-    uv.read_start(stderr2, onread)
+    local function onclose(child, err, status)
+        if err then return print("Error spawn:", err) end
+        assertEquals(status, 0)
+        child:close()
+    end
+
+    local stdout1 = uv.pipe()
+    local stderr1 = uv.pipe()
+    local stdout2 = uv.pipe()
+    local stderr2 = uv.pipe()
+
+    lua_spawn("0.tcp_s.lua", stdout1, stderr1, onclose)
+
+    lua_spawn("0.tcp_c.lua", stdout2, stderr2, onclose)
+
+    stdout1:start_read(onread)
+    stderr1:start_read(onread)
+    stdout2:start_read(onread)
+    stderr2:start_read(onread)
+
     uv.run()
-    uv.loop_close()
+    uv.close()
 end
 end
+

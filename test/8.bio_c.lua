@@ -28,7 +28,7 @@ ctx:verify_mode({'peer'},function(arg)
       return true --return false will fail ssh handshake
 end)
 --]]
-print(string.format('CONNECT to %s:%s with %s',host,port,ctx))
+print(string.format('CONNECT to %s:%s with %s',host,port,tostring(ctx)))
 
 function mk_connection(host,port,i)
   local cli = assert(ctx:bio(host..':'..port))
@@ -59,4 +59,4 @@ for i=1,loop do
   mk_connection(host,port,i)
 end
 
-os.exit(1)
+os.exit(0)

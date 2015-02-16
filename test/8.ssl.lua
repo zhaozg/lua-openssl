@@ -1,155 +1,121 @@
-local _,uv = pcall(require,'luv')
+local ok, uv = pcall(require, 'lluv')
+if not ok then uv = nil end
+
+local lua_spawn do
+local LUA = arg[-1]
+
+local function P(pipe, read)
+  return {
+    stream = pipe,
+    flags = uv.CREATE_PIPE + 
+            (read and uv.READABLE_PIPE or uv.WRITABLE_PIPE)
+  }
+end
+
+lua_spawn = function(f, o, e, c)
+    return uv.spawn({
+        file = LUA, args = {f},
+      stdio = {{}, P(o, false), P(e, false)}
+    }, c)
+end
+end
+
+local function onread(pipe, err, chunk)
+    if err then
+        if err:name() ~= 'EOF' then
+            assert(not err, tostring(err))
+        end
+        pipe:close()
+    end
+
+    if chunk then
+        print(chunk)
+    else
+        print("end")
+    end
+end
+
+local function onclose(child, err, status)
+    if err then return print("Error spawn:", err) end
+    assertEquals(status, 0)
+    child:close()
+end
 
 TestSSL = {}
 if uv then
 function TestSSL:testSSL()
-    local stdout1 = uv.new_pipe(false)
-    local stderr1 = uv.new_pipe(false)
-    local stdout2 = uv.new_pipe(false)
-    local stderr2 = uv.new_pipe(false)
-    local function onread(err, chunk)
-      assert(not err, err)
-      if (chunk) then
-        print(chunk)
-      else
-        print("end")
-      end
-    end
+    local stdout1 = uv.pipe()
+    local stderr1 = uv.pipe()
+    local stdout2 = uv.pipe()
+    local stderr2 = uv.pipe()
 
-    local child, pid child, pid = uv.spawn(arg[-1], {
-      args = {"8.ssl_s.lua"},
-      stdio = {nil, stdout1, stderr1}
-    }, function (code, signal)
-        assertEquals(code,1)
-        uv.close(child)
-    end)
+    lua_spawn("8.ssl_s.lua", stdout1, stderr1, onclose)
 
-    local child, pid child, pid = uv.spawn(arg[-1], {
-      args = {"8.ssl_c.lua"},
-      stdio = {nil, stdout2, stderr2}
-    }, function (code, signal)
-        assertEquals(code,1)
-        uv.close(child)
-    end)
-    uv.read_start(stdout1, onread)
-    uv.read_start(stderr1, onread)
-    uv.read_start(stdout2, onread)
-    uv.read_start(stderr2, onread)
-    
+    lua_spawn("8.ssl_c.lua", stdout2, stderr2, onclose)
+
+    stdout1:start_read(onread)
+    stderr1:start_read(onread)
+    stdout2:start_read(onread)
+    stderr2:start_read(onread)
+
     uv.run()
-    uv.loop_close()
+    uv.close()
 end
-
 
 function TestSSL:testBio()
-    local stdout1 = uv.new_pipe(false)
-    local stderr1 = uv.new_pipe(false)
-    local stdout2 = uv.new_pipe(false)
-    local stderr2 = uv.new_pipe(false)
-    local function onread(err, chunk)
-      assert(not err, err)
-      if (chunk) then
-        print(chunk)
-      else
-        print("end")
-      end
-    end
-    local child, pid child, pid = uv.spawn(arg[-1], {
-      args = {"8.bio_s.lua"},
-      stdio = {nil, stdout1, stderr1}
-    }, function (code, signal)
-        assertEquals(code,1)
-        uv.close(child)
-    end)
+    local stdout1 = uv.pipe()
+    local stderr1 = uv.pipe()
+    local stdout2 = uv.pipe()
+    local stderr2 = uv.pipe()
 
-    local child, pid child, pid = uv.spawn(arg[-1], {
-      args = {"8.bio_c.lua"},
-      stdio = {nil, stdout2, stderr2}
-    }, function (code, signal)
-        assertEquals(code,1)
-        uv.close(child)
-    end)
-    uv.read_start(stdout1, onread)
-    uv.read_start(stderr1, onread)
-    uv.read_start(stdout2, onread)
-    uv.read_start(stderr2, onread)
-    
+    lua_spawn("8.bio_s.lua", stdout1, stderr1, onclose)
+
+    lua_spawn("8.bio_c.lua", stdout2, stderr2, onclose)
+
+    stdout1:start_read(onread)
+    stderr1:start_read(onread)
+    stdout2:start_read(onread)
+    stderr2:start_read(onread)
+
     uv.run()
-    uv.loop_close()
+    uv.close()
 end
 
-
 function TestSSL:testsslconnectbio()
-    local stdout1 = uv.new_pipe(false)
-    local stderr1 = uv.new_pipe(false)
-    local stdout2 = uv.new_pipe(false)
-    local stderr2 = uv.new_pipe(false)
-    local function onread(err, chunk)
-      assert(not err, err)
-      if (chunk) then
-        print(chunk)
-      else
-        print("end")
-      end
-    end
-    local child, pid child, pid = uv.spawn(arg[-1], {
-      args = {"8.bio_s.lua"},
-      stdio = {nil, stdout1, stderr1}
-    }, function (code, signal)
-        assertEquals(code,1)
-        uv.close(child)
-    end)
+    local stdout1 = uv.pipe()
+    local stderr1 = uv.pipe()
+    local stdout2 = uv.pipe()
+    local stderr2 = uv.pipe()
 
-    local child, pid child, pid = uv.spawn(arg[-1], {
-      args = {"8.ssl_c.lua"},
-      stdio = {nil, stdout2, stderr2}
-    }, function (code, signal)
-        assertEquals(code,1)
-        uv.close(child)
-    end)
-    uv.read_start(stdout1, onread)
-    uv.read_start(stderr1, onread)
-    uv.read_start(stdout2, onread)
-    uv.read_start(stderr2, onread)
-    
+    lua_spawn("8.bio_s.lua", stdout1, stderr1, onclose)
+
+    lua_spawn("8.ssl_c.lua", stdout2, stderr2, onclose)
+
+    stdout1:start_read(onread)
+    stderr1:start_read(onread)
+    stdout2:start_read(onread)
+    stderr2:start_read(onread)
+
     uv.run()
-    uv.loop_close()
+    uv.close()
 end
 
 function TestSSL:testbioconnectssl()
-    local stdout1 = uv.new_pipe(false)
-    local stderr1 = uv.new_pipe(false)
-    local stdout2 = uv.new_pipe(false)
-    local stderr2 = uv.new_pipe(false)
-    local function onread(err, chunk)
-      assert(not err, err)
-      if (chunk) then
-        print(chunk)
-      else
-        print("end")
-      end
-    end
-    local child, pid child, pid = uv.spawn(arg[-1], {
-      args = {"8.ssl_s.lua"},
-      stdio = {nil, stdout1, stderr1}
-    }, function (code, signal)
-        assertEquals(code,1)
-        uv.close(child)
-    end)
+    local stdout1 = uv.pipe()
+    local stderr1 = uv.pipe()
+    local stdout2 = uv.pipe()
+    local stderr2 = uv.pipe()
 
-    local child, pid child, pid = uv.spawn(arg[-1], {
-      args = {"8.bio_c.lua"},
-      stdio = {nil, stdout2, stderr2}
-    }, function (code, signal)
-        assertEquals(code,1)
-        uv.close(child)
-    end)
-    uv.read_start(stdout1, onread)
-    uv.read_start(stderr1, onread)
-    uv.read_start(stdout2, onread)
-    uv.read_start(stderr2, onread)
-    
+    lua_spawn("8.ssl_s.lua", stdout1, stderr1, onclose)
+
+    lua_spawn("8.bio_c.lua", stdout2, stderr2, onclose)
+
+    stdout1:start_read(onread)
+    stderr1:start_read(onread)
+    stdout2:start_read(onread)
+    stderr2:start_read(onread)
+
     uv.run()
-    uv.loop_close()
+    uv.close()
 end
 end
