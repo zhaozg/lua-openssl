@@ -25,4 +25,4 @@ if srv then
       i = i + 1
   end
 end
-os.exit(1)
+os.exit(0)

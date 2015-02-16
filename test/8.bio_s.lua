@@ -18,7 +18,7 @@ local params = {
 
 local ctx = assert(sslctx.new(params))
 
-print(string.format('Listen at %s:%s with %s',host,port,ctx))
+print(string.format('Listen at %s:%s with %s',host,port,tostring(ctx)))
 
 function ssl_mode()
     local srv = assert(ctx:bio(host..':'..port,true))
@@ -46,4 +46,4 @@ end
 print(pcall(ssl_mode))
 debug.traceback()
 print(openssl.error(true))
-os.exit(1)
+os.exit(0)
