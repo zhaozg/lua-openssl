@@ -59,4 +59,3 @@ for i=1,loop do
   mk_connection(host,port,i)
 end
 
-os.exit(0)

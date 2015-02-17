@@ -2,26 +2,26 @@ language: c
 
 env:
   global:
-    - PLATFORM=linux
+    - LUAROCKS=2.2.0
   matrix:
+    - LUA=lua5.1
     - LUA=lua5.2
-env:
+    # - LUA=lua5.3
+    - LUA=luajit
 
 branches:
   only:
     - master
 
 before_install:
-  - curl http://www.lua.org/ftp/lua-5.2.3.tar.gz | tar xz
-  - cd lua-5.2.3
-  - sudo make linux install
-  - cd $TRAVIS_BUILD_DIR
-  - export PATH=$PATH:/usr/local/bin
+  - bash .travis/setup_lua.sh
+  - bash .travis/setup_uv.sh
+  - sudo luarocks install lluv UV_DIR=$TRAVIS_BUILD_DIR/libuv
   - git submodule update --init --recursive
   - git submodule update --recursive
 
 install: 
-  - sudo make install
+  - sudo luarocks make rockspecs/openssl-scm-0.rockspec
 
 script: 
   - cd test
