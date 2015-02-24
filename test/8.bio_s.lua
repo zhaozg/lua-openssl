@@ -46,4 +46,3 @@ end
 print(pcall(ssl_mode))
 debug.traceback()
 print(openssl.error(true))
-os.exit(0)
