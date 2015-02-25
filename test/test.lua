@@ -1,6 +1,6 @@
 local openssl = require'openssl'
-local lu = require'luaunit'
-local LuaUnit = lu.LuaUnit
+EXPORT_ASSERT_TO_GLOBALS = true
+require'luaunit'
 
 openssl.rand_load()
 
