@@ -1,5 +1,6 @@
 local openssl = require'openssl'
-require'luaunit'
+local lu = require'luaunit'
+local LuaUnit = lu.LuaUnit
 
 openssl.rand_load()
 
@@ -25,8 +26,8 @@ dofile('8.ssl_options.lua')
 dofile('8.ssl.lua')
 dofile('rsa.lua')
 
---LuaUnit:setVerbosity(0)
-LuaUnit:run()
+--LuaUnit.verbosity = 0
+LuaUnit.run()
 print(openssl.error(true))
 collectgarbage()
 
