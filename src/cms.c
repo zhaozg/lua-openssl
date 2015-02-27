@@ -357,7 +357,7 @@ static int openssl_cms_encrypt(lua_State *L)
 static int openssl_cms_decrypt(lua_State *L)
 {
   CMS_ContentInfo *cms = CHECK_OBJECT(1, CMS_ContentInfo, "openssl.cms");
-  EVP_PKEY* pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.pkey");
+  EVP_PKEY* pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
   X509* x509 = CHECK_OBJECT(3, X509, "openssl.x509");
   BIO* dcont = load_bio_object(L, 4);
   BIO* out = load_bio_object(L, 5);
@@ -510,7 +510,7 @@ static int openssl_cms_sign_receipt(lua_State*L)
 {
   CMS_ContentInfo *cms = CHECK_OBJECT(1, CMS_ContentInfo, "openssl.cms");
   X509 *signcert = CHECK_OBJECT(2, X509, "openssl.x509");
-  EVP_PKEY* pkey = CHECK_OBJECT(3, EVP_PKEY, "openssl.pkey");
+  EVP_PKEY* pkey = CHECK_OBJECT(3, EVP_PKEY, "openssl.evp_pkey");
   STACK_OF(X509) *other = CHECK_OBJECT(4, STACK_OF(X509), "openssl.stack_of_x509");
   unsigned int flags = luaL_optint(L, 5, 0);
 
