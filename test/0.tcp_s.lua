@@ -24,4 +24,5 @@ if srv then
       collectgarbage()
       i = i + 1
   end
+  srv:close()
 end
