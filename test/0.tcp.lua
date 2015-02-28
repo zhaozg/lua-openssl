@@ -51,7 +51,7 @@ if uv then
 end
 
 
-local ok, luv = pcall(require, 'llluv')
+local ok, luv = pcall(require, 'lluv')
 if not ok then luv = nil end
 
 if luv then
@@ -73,7 +73,7 @@ if luv then
     end
 
     if luv then
-    function TestTCP:testTCP()
+    function TestTCP:testLUVTCP()
         local function onread(pipe, err, chunk)
             if err then
                 if err:name() ~= 'EOF' then

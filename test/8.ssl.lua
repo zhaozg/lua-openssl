@@ -5,7 +5,7 @@ TestSSL = {}
 local LUA = arg[-1]
 
 if uv then
-    function TestSSL:testSSL()
+    function TestSSL:testUVSSL()
         local lcode
         local stdout1 = uv.new_pipe(false)
         local stderr1 = uv.new_pipe(false)
@@ -48,7 +48,7 @@ if uv then
     end
 
 
-    function TestSSL:testBio()
+    function TestSSL:testUVBio()
         local lcode 
         local stdout1 = uv.new_pipe(false)
         local stderr1 = uv.new_pipe(false)
@@ -90,7 +90,7 @@ if uv then
     end
 
 
-    function TestSSL:testsslconnectbio()
+    function TestSSL:testUVsslconnectbio()
         local lcode
         local stdout1 = uv.new_pipe(false)
         local stderr1 = uv.new_pipe(false)
@@ -131,7 +131,7 @@ if uv then
         assertEquals(lcode,0)
     end
 
-    function TestSSL:testbioconnectssl()
+    function TestSSL:testUVbioconnectssl()
         local lcode = nil
         local stdout1 = uv.new_pipe(false)
         local stderr1 = uv.new_pipe(false)
@@ -174,7 +174,7 @@ if uv then
 end
 
 
-local ok, luv = pcall(require, 'llluv')
+local ok, luv = pcall(require, 'lluv')
 if not ok then luv = nil end
 
 
@@ -219,7 +219,7 @@ local lua_spawn do
 
 
     if luv then
-    function TestSSL:testSSL()
+    function TestSSL:testLUVSSL()
         local stdout1 = luv.pipe()
         local stderr1 = luv.pipe()
         local stdout2 = luv.pipe()
@@ -238,7 +238,7 @@ local lua_spawn do
         luv.close()
     end
 
-    function TestSSL:testBio()
+    function TestSSL:testLUVBio()
         local stdout1 = luv.pipe()
         local stderr1 = luv.pipe()
         local stdout2 = luv.pipe()
@@ -257,7 +257,7 @@ local lua_spawn do
         luv.close()
     end
 
-    function TestSSL:testsslconnectbio()
+    function TestSSL:testLUVsslconnectbio()
         local stdout1 = luv.pipe()
         local stderr1 = luv.pipe()
         local stdout2 = luv.pipe()
@@ -276,7 +276,7 @@ local lua_spawn do
         luv.close()
     end
 
-    function TestSSL:testbioconnectssl()
+    function TestSSL:testLUVbioconnectssl()
         local stdout1 = luv.pipe()
         local stderr1 = luv.pipe()
         local stdout2 = luv.pipe()
