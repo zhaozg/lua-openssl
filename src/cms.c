@@ -166,7 +166,7 @@ static int openssl_cms_sign(lua_State *L)
   EVP_PKEY* pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
   STACK_OF(X509)* certs = CHECK_OBJECT(3, STACK_OF(X509), "openssl.stack_of_x509");
   BIO* data = load_bio_object(L, 4);
-  unsigned int flags = 0;
+  unsigned int flags = luaL_optint(L, 5, 0);
   CMS_ContentInfo *cms;
   luaL_argcheck(L, openssl_pkey_is_private(pkey), 2, "must be private key");
   cms = CMS_sign(signcert, pkey, certs, data, flags);

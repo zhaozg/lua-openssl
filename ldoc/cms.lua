@@ -52,8 +52,9 @@ function encrypt() end
 function decrypt() end
 
 --- make signed cms object
--- @tparam x509 cert
+-- @tparam x509 signer cert
 -- @tparam evp_pkey pkey
+-- @tparam stack_of_x509 certs include in the CMS
 -- @tparam bio input_data
 -- @tparam[opt=0] number flags 
 -- @treturn cms object
