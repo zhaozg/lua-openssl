@@ -48,7 +48,7 @@ function TestEngine:testTCP()
     local stderr2 = uv.pipe()
 
     lua_spawn("0.tcp_s.lua", stdout1, stderr1, onclose)
-
+    os.execute('ping -n 3 127.0.0.1')
     lua_spawn("0.tcp_c.lua", stdout2, stderr2, onclose)
 
     stdout1:start_read(onread)

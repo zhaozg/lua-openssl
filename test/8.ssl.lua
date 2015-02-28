@@ -50,7 +50,7 @@ function TestSSL:testSSL()
     local stderr2 = uv.pipe()
 
     lua_spawn("8.ssl_s.lua", stdout1, stderr1, onclose)
-
+    os.execute('ping -n 3 127.0.0.1')
     lua_spawn("8.ssl_c.lua", stdout2, stderr2, onclose)
 
     stdout1:start_read(onread)
@@ -69,7 +69,7 @@ function TestSSL:testBio()
     local stderr2 = uv.pipe()
 
     lua_spawn("8.bio_s.lua", stdout1, stderr1, onclose)
-
+    os.execute('ping -n 3 127.0.0.1')
     lua_spawn("8.bio_c.lua", stdout2, stderr2, onclose)
 
     stdout1:start_read(onread)
@@ -88,7 +88,7 @@ function TestSSL:testsslconnectbio()
     local stderr2 = uv.pipe()
 
     lua_spawn("8.bio_s.lua", stdout1, stderr1, onclose)
-
+    os.execute('ping -n 3 127.0.0.1')
     lua_spawn("8.ssl_c.lua", stdout2, stderr2, onclose)
 
     stdout1:start_read(onread)
@@ -107,7 +107,7 @@ function TestSSL:testbioconnectssl()
     local stderr2 = uv.pipe()
 
     lua_spawn("8.ssl_s.lua", stdout1, stderr1, onclose)
-
+    os.execute('ping -n 3 127.0.0.1')
     lua_spawn("8.bio_c.lua", stdout2, stderr2, onclose)
 
     stdout1:start_read(onread)
