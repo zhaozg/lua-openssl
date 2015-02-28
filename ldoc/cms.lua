@@ -63,7 +63,8 @@ function sign() end
 --- verfiy signed cms object
 -- @tparam cms signed
 -- @tparam string verify_mode, must be 'verify'
--- @tparam stack_of_x509 singers
+-- @tparam stack_of_x509 others 
+-- @tparam x509_store castore
 -- @tparam bio message
 -- @tparam bio out
 -- @tparam[opt=0] number flags

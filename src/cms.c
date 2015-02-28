@@ -193,7 +193,7 @@ static int openssl_cms_verify(lua_State *L)
   {
     BIO* in = load_bio_object(L, 3);
     BIO* out = load_bio_object(L, 4);
-    unsigned int flags = luaL_optint(L, 4, 0);
+    unsigned int flags = luaL_optint(L, 5, 0);
 
     int ret = CMS_digest_verify(cms, in, out, flags);
     return openssl_pushresult(L, ret);
@@ -204,7 +204,6 @@ static int openssl_cms_verify(lua_State *L)
     STACK_OF(X509) *other = CHECK_OBJECT(4, STACK_OF(X509), "openssl.stack_of_x509");
     X509_STORE* store = CHECK_OBJECT(5, X509_STORE, "openssl.x509_store");
     unsigned int flags = luaL_optint(L, 6, 0);
-
     int ret = CMS_verify_receipt(cms, src, other, store, flags);
     return openssl_pushresult(L, ret);
   }
