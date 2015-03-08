@@ -13,7 +13,7 @@ sudo apt-get update -qq
 sudo apt-get install cmake
 
 make
-export LUA_LIBDIR=/usr/local/lib/lua/`shell lua -e "_,_,v=string.find(_VERSION,'Lua (.+)');print(v)"`
-cp build/luv.so $(LUA_LIBDIR)
+export LUA_LIBDIR=/usr/local/lib/lua/`luajit -e "_,_,v=string.find(_VERSION,'Lua (.+)');print(v)"`
+cp luv.so $(LUA_LIBDIR)
 
 cd $TRAVIS_BUILD_DIR
