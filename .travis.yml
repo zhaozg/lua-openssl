@@ -1,5 +1,9 @@
 language: c
 
+os:
+  - linux
+  - osx
+
 env:
   global:
     - LUAROCKS=2.2.0
@@ -16,7 +20,7 @@ branches:
 before_install:
   - bash .travis/setup_lua.sh
   - bash .travis/setup_uv.sh
-  - sudo luarocks install lluv UV_DIR=$TRAVIS_BUILD_DIR/libuv
+  #- sudo luarocks install lluv UV_DIR=$TRAVIS_BUILD_DIR/libuv
   - git submodule update --init --recursive
   - git submodule update --recursive
 
