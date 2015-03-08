@@ -5,6 +5,17 @@ TestSSL = {}
 local LUA = arg[-1]
 
 if uv then
+    local function set_timeout(timeout, callback)
+      local timer = uv.new_timer()
+      local function ontimeout()
+        uv.timer_stop(timer)
+        uv.close(timer)
+        callback(timer)
+      end
+      uv.timer_start(timer, timeout, 0, ontimeout)
+      return timer
+    end        
+
     function TestSSL:testUVSSL()
         local lcode
         local stdout1 = uv.new_pipe(false)
@@ -15,12 +26,11 @@ if uv then
           assert(not err, err)
           if (chunk) then
             print(chunk)
-          else
-            print("end")
           end
         end
 
-        local child, pid child, pid = uv.spawn(arg[-1], {
+        local child, pid 
+        child, pid = uv.spawn(arg[-1], {
           args = {"8.ssl_s.lua"},
           stdio = {nil, stdout1, stderr1}
         }, function (code, signal)
@@ -28,19 +38,23 @@ if uv then
             uv.close(child)
             lcode = code
         end)
-
-        local child, pid child, pid = uv.spawn(arg[-1], {
-          args = {"8.ssl_c.lua"},
-          stdio = {nil, stdout2, stderr2}
-        }, function (code, signal)
-            assertEquals(code,0)
-            uv.close(child)
-            lcode = code
-        end)
-        uv.read_start(stdout1, onread)
-        uv.read_start(stderr1, onread)
-        uv.read_start(stdout2, onread)
-        uv.read_start(stderr2, onread)
+        if pid then
+            uv.read_start(stdout1, onread)
+            uv.read_start(stderr1, onread)
+            set_timeout(1000,function()
+                local child, pid 
+                child, pid = uv.spawn(arg[-1], {
+                  args = {"8.ssl_c.lua"},
+                  stdio = {nil, stdout2, stderr2}
+                }, function (code, signal)
+                    assertEquals(code,0)
+                    uv.close(child)
+                    lcode = code
+                end)
+                uv.read_start(stdout2, onread)
+                uv.read_start(stderr2, onread)
+            end)
+        end
         
         uv.run()
         uv.loop_close()
@@ -58,11 +72,10 @@ if uv then
           assert(not err, err)
           if (chunk) then
             print(chunk)
-          else
-            print("end")
           end
         end
-        local child, pid child, pid = uv.spawn(arg[-1], {
+        local child, pid
+        child, pid = uv.spawn(arg[-1], {
           args = {"8.bio_s.lua"},
           stdio = {nil, stdout1, stderr1}
         }, function (code, signal)
@@ -70,19 +83,22 @@ if uv then
             uv.close(child)
             lcode = code
         end)
-
-        local child, pid child, pid = uv.spawn(arg[-1], {
-          args = {"8.bio_c.lua"},
-          stdio = {nil, stdout2, stderr2}
-        }, function (code, signal)
-            assertEquals(code,0)
-            uv.close(child)
-            lcode = 0
-        end)
         uv.read_start(stdout1, onread)
         uv.read_start(stderr1, onread)
-        uv.read_start(stdout2, onread)
-        uv.read_start(stderr2, onread)
+
+        set_timeout(1000,function()
+            local child, pid
+            child, pid = uv.spawn(arg[-1], {
+              args = {"8.bio_c.lua"},
+              stdio = {nil, stdout2, stderr2}
+            }, function (code, signal)
+                assertEquals(code,0)
+                uv.close(child)
+                lcode = 0
+            end)
+            uv.read_start(stdout2, onread)
+            uv.read_start(stderr2, onread)
+        end)
         
         uv.run()
         uv.loop_close()
@@ -100,8 +116,6 @@ if uv then
           assert(not err, err)
           if (chunk) then
             print(chunk)
-          else
-            print("end")
           end
         end
         local child, pid child, pid = uv.spawn(arg[-1], {
@@ -112,19 +126,22 @@ if uv then
             uv.close(child)
             lcode = code
         end)
-
-        local child, pid child, pid = uv.spawn(arg[-1], {
-          args = {"8.ssl_c.lua"},
-          stdio = {nil, stdout2, stderr2}
-        }, function (code, signal)
-            assertEquals(code,0)
-            uv.close(child)
-            lcode = code
-        end)
         uv.read_start(stdout1, onread)
         uv.read_start(stderr1, onread)
-        uv.read_start(stdout2, onread)
-        uv.read_start(stderr2, onread)
+
+        set_timeout(1000,function()
+            local child, pid 
+            child, pid = uv.spawn(arg[-1], {
+              args = {"8.ssl_c.lua"},
+              stdio = {nil, stdout2, stderr2}
+            }, function (code, signal)
+                assertEquals(code,0)
+                uv.close(child)
+                lcode = code
+            end)
+            uv.read_start(stdout2, onread)
+            uv.read_start(stderr2, onread)
+        end)
         
         uv.run()
         uv.loop_close()
@@ -141,8 +158,7 @@ if uv then
           assert(not err, err)
           if (chunk) then
             print(chunk)
-          else
-            print("end")
+          
           end
         end
         local child, pid child, pid = uv.spawn(arg[-1], {
@@ -153,19 +169,21 @@ if uv then
             uv.close(child)
             lcode = code
         end)
-
-        local child, pid child, pid = uv.spawn(arg[-1], {
-          args = {"8.bio_c.lua"},
-          stdio = {nil, stdout2, stderr2}
-        }, function (code, signal)
-            assertEquals(code,0)
-            uv.close(child)
-            lcode = code
-        end)
         uv.read_start(stdout1, onread)
         uv.read_start(stderr1, onread)
-        uv.read_start(stdout2, onread)
-        uv.read_start(stderr2, onread)
+
+        set_timeout(1000,function()
+            local child, pid child, pid = uv.spawn(arg[-1], {
+              args = {"8.bio_c.lua"},
+              stdio = {nil, stdout2, stderr2}
+            }, function (code, signal)
+                assertEquals(code,0)
+                uv.close(child)
+                lcode = code
+            end)
+            uv.read_start(stdout2, onread)
+            uv.read_start(stderr2, onread)
+        end)
         
         uv.run()
         uv.loop_close()
@@ -176,7 +194,6 @@ end
 
 local ok, luv = pcall(require, 'lluv')
 if not ok then luv = nil end
-
 
 local lua_spawn do
 

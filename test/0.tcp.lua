@@ -16,12 +16,11 @@ if uv then
           assert(not err, err)
           if (chunk) then
             print(chunk)
-          else
-            print("end")
           end
         end
 
-        local child, pid child, pid = uv.spawn(LUA, {
+        local child, pid
+        child, pid = uv.spawn(LUA, {
           args = {"0.tcp_s.lua"},
           stdio = {nil, stdout1, stderr1}
         }, function (code, signal)
@@ -29,20 +28,23 @@ if uv then
             uv.close(child)
             lcode = 0
         end)
-        os.execute('ping -n 3 127.0.0.1')
-        local child, pid child, pid = uv.spawn(LUA, {
-          args = {"0.tcp_c.lua"},
-          stdio = {nil, stdout2, stderr2}
-        }, function (code, signal)
-            assertEquals(code,0)
-            uv.close(child)
-            lcode = 0
-        end)
-        
-        uv.read_start(stdout1, onread)
-        uv.read_start(stderr1, onread)
-        uv.read_start(stdout2, onread)
-        uv.read_start(stderr2, onread)
+        if pid then
+            uv.read_start(stdout1, onread)
+            uv.read_start(stderr1, onread)
+            local child, pid
+            child, pid = uv.spawn(LUA, {
+              args = {"0.tcp_c.lua"},
+              stdio = {nil, stdout2, stderr2}
+            }, function (code, signal)
+                assertEquals(code,0)
+                uv.close(child)
+                lcode = 0
+            end)
+            if pid then
+                uv.read_start(stdout2, onread)
+                uv.read_start(stderr2, onread)
+            end
+        end
         
         uv.run()
         uv.loop_close()
@@ -70,9 +72,7 @@ if luv then
           stdio = {{}, P(o, false), P(e, false)}
         }, c)
     end
-    end
-
-    if luv then
+    
     function TestTCP:testLUVTCP()
         local function onread(pipe, err, chunk)
             if err then
@@ -82,8 +82,6 @@ if luv then
             end
             if chunk then
                 print(chunk)
-            else
-                print("end")
             end
         end
 
@@ -99,7 +97,6 @@ if luv then
         local stderr2 = luv.pipe()
 
         lua_spawn("0.tcp_s.lua", stdout1, stderr1, onclose)
-        os.execute('ping -n 3 127.0.0.1')
         lua_spawn("0.tcp_c.lua", stdout2, stderr2, onclose)
 
         stdout1:start_read(onread)

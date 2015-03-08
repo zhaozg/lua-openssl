@@ -16,23 +16,33 @@ local params = {
    options = {"all", "no_sslv2"},
 }
 
-local ctx = assert(sslctx.new(params))
---ctx:set_cert_verify({always_continue=true,verify_depth=4})
---[[
-ctx:set_cert_verify(function(arg) 
 
-      --do some check
-      for k,v in pairs(arg) do
-            print(k,v)
-      end
+    local certstore = openssl.x509.store:new()
+    local cas = require'root_ca'
+    for i=1,#cas do
+          local cert = assert(openssl.x509.read(cas[i]))
+          assert(certstore:add(cert))
+    end
 
-      return true --return false will fail ssh handshake
-end)
---]]
-
-print(string.format('Listen at %s:%s with %s',host,port,tostring(ctx)))
+print(string.format('Listen at %s:%s SSL',host,port))
 
 function ssl_mode()
+    local ctx = assert(sslctx.new(params))
+    ctx:cert_store(certstore)
+    --ctx:set_cert_verify({always_continue=true,verify_depth=4})
+    --[[
+    ctx:set_cert_verify(function(arg) 
+
+          --do some check
+          for k,v in pairs(arg) do
+                print(k,v)
+          end
+
+          return true --return false will fail ssh handshake
+    end)
+    --]]
+
+    
     local srv = assert(bio.accept(host..':'..port))
     local i = 0
     if srv then
@@ -45,7 +55,7 @@ function ssl_mode()
           else
             assert(s:accept())
           end
-          
+
           repeat 
               d = s:read()
               if d then 
@@ -62,6 +72,6 @@ function ssl_mode()
     end
 end
 
-print(pcall(ssl_mode))
+pcall(ssl_mode)
 debug.traceback()
 print(openssl.error(true))

@@ -44,6 +44,6 @@ function ssl_mode()
     end
 end
 
-print(pcall(ssl_mode))
+pcall(ssl_mode)
 debug.traceback()
 print(openssl.error(true))

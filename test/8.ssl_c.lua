@@ -16,22 +16,30 @@ local params = {
    options = {"all", "no_sslv2"},
 }
 
-local ctx = assert(sslctx.new(params))
+print(string.format('CONNECT to %s:%s',host,port))
+local certstore = openssl.x509.store:new()
+local cas = require'root_ca'
+for i=1,#cas do
+      local cert = assert(openssl.x509.read(cas[i]))
+      assert(certstore:add(cert))
+end
 
-ctx:verify_mode({'peer'},function(arg) 
---[[
-      print(arg)
-      --do some check
-      for k,v in pairs(arg) do
-            print(k,v)
-      end
---]]
-      return true --return false will fail ssh handshake
-end)
-
-print(string.format('CONNECT to %s:%s with %s',host,port,tostring(ctx)))
 
 function mk_connection(host,port,i)
+
+      local ctx = assert(sslctx.new(params))
+      ctx:cert_store(certstore)
+      ctx:verify_mode({'peer'},function(arg) 
+      --[[
+            print(arg)
+            --do some check
+            for k,v in pairs(arg) do
+                  print(k,v)
+            end
+      --]]
+            return true --return false will fail ssh handshake
+      end)
+      
   local cli = assert(bio.connect(host..':'..port,true))
   if(cli) then
     S = ctx:ssl(cli,false)
