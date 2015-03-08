@@ -13,6 +13,6 @@ sudo apt-get update -qq
 sudo apt-get install cmake
 
 make
-cp luv.so /usr/local/lib/lua/`luajit -e "_,_,v=string.find(_VERSION,'Lua (.+)');print(v)"`
+sudo cp luv.so /usr/local/lib/lua/`luajit -e "_,_,v=string.find(_VERSION,'Lua (.+)');print(v)"`
 
 cd $TRAVIS_BUILD_DIR
