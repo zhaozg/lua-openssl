@@ -1,6 +1,7 @@
 local openssl = require'openssl'
 local csr,bio,ssl = openssl.csr,openssl.bio, openssl.ssl
 local sslctx = require'sslctx'
+_,_,opensslv = openssl.version(true)
 
 host = arg[1] or "127.0.0.1"; --only ip
 port = arg[2] or "8383";
@@ -15,20 +16,26 @@ local params = {
    verify = {"peer", "fail_if_no_peer_cert"},
    options = {"all", "no_sslv2"},
 }
+_,_,opensslv = openssl.version(true)
 
 print(string.format('CONNECT to %s:%s',host,port))
-local certstore = openssl.x509.store:new()
-local cas = require'root_ca'
-for i=1,#cas do
+
+local certstore = nil
+if opensslv > 0x10002000 then
+    certstore = openssl.x509.store:new()
+    local cas = require'root_ca'
+    for i=1,#cas do
       local cert = assert(openssl.x509.read(cas[i]))
       assert(certstore:add(cert))
+    end
 end
-
 
 function mk_connection(host,port,i)
 
       local ctx = assert(sslctx.new(params))
-      ctx:cert_store(certstore)
+      if (certstore) then
+          ctx:cert_store(certstore)
+      end
       ctx:verify_mode({'peer'},function(arg) 
       --[[
             print(arg)
