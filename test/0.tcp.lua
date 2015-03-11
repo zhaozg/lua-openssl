@@ -21,7 +21,7 @@ if uv then
 
         local child, pid
         child, pid = uv.spawn(LUA, {
-          args = {"0.tcp_s.lua"},
+          args = {"0.tcp_s.lua",'127.0.0.1',8081},
           stdio = {nil, stdout1, stderr1}
         }, function (code, signal)
             assertEquals(code,0)
@@ -33,7 +33,7 @@ if uv then
             uv.read_start(stderr1, onread)
             local child, pid
             child, pid = uv.spawn(LUA, {
-              args = {"0.tcp_c.lua"},
+              args = {"0.tcp_c.lua",'127.0.0.1',8081},
               stdio = {nil, stdout2, stderr2}
             }, function (code, signal)
                 assertEquals(code,0)
