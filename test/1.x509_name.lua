@@ -57,8 +57,11 @@ TestX509Name = {}
         assertEquals(i,3)
         local k,v = n1:delete_entry(3)
         assertStrContains(tostring(k),'openssl.asn1_object')
-        assertStrContains(tostring(v),'utf8')  --bug on linux, wrong type
-        assertEquals(v:print(),[[\UD5D4\UD6CE\UB9FA]])
-        assertEquals(tostring(v),'utf8:'..v:toutf8())        
+	_,_,opensslv = openssl.version(true)
+        if opensslv > 0x10002000 then
+            assertStrContains(tostring(v),'utf8')  --bug on old version openssl, wrong type
+            assertEquals(v:print(),[[\UD5D4\UD6CE\UB9FA]])
+            assertEquals(tostring(v),'utf8:'..v:toutf8())
+        end
     end
     

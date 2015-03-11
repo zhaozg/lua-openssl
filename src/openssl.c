@@ -14,7 +14,7 @@
 
 static int openssl_version(lua_State*L)
 {
-  int num = lua_isnoneornil(L, 1) ? 0 : auxiliar_checkboolean(L, 2);
+  int num = lua_isnoneornil(L, 1) ? 0 : auxiliar_checkboolean(L, 1);
   if (num)
   {
     lua_pushinteger(L, LOPENSSL_VERSION_NUM);
