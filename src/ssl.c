@@ -354,7 +354,7 @@ static int openssl_ssl_ctx_cert_store(lua_State*L)
     return 0;
   }
 #else
-  luaL_error(L, "NYI, openssl version below 1.0.2 not fully support this feature");
+  luaL_error(L, "NYI, openssl below 1.0.2 not fully support this feature");
   return 0;
 #endif
 }
