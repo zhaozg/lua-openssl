@@ -337,6 +337,7 @@ static int openssl_ssl_ctx_cert_store(lua_State*L)
 {
   SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
   X509_STORE *store = NULL;
+#if OPENSSL_VERSION_NUMBER >  0x10002000L
   if (lua_isnoneornil(L, 2))
   {
     store = SSL_CTX_get_cert_store(ctx);
@@ -352,6 +353,10 @@ static int openssl_ssl_ctx_cert_store(lua_State*L)
     X509_STORE_set_trust(store, 1);
     return 0;
   }
+#else
+  luaL_error(L, "NYI, openssl version below 1.0.2 not fully support this feature");
+  return 0;
+#endif
 }
 
 static int openssl_ssl_ctx_new_ssl(lua_State*L)
