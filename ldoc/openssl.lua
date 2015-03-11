@@ -60,4 +60,9 @@ function rand_cleanup() end
 -- @treturn engine 
 function engine() end
 
+-- get lua-openssl version
+-- @tparam[opt] boolean format result will be number when set true, or string
+-- @treturn lua-openssl version, lua version, openssl version
+function version() end
+
 end
