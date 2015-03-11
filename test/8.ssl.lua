@@ -31,7 +31,7 @@ if uv then
 
         local child, pid 
         child, pid = uv.spawn(arg[-1], {
-          args = {"8.ssl_s.lua"},
+          args = {"8.ssl_s.lua",'127.0.0.1',8082},
           stdio = {nil, stdout1, stderr1}
         }, function (code, signal)
             assertEquals(code,0)
@@ -44,7 +44,7 @@ if uv then
             set_timeout(1000,function()
                 local child, pid 
                 child, pid = uv.spawn(arg[-1], {
-                  args = {"8.ssl_c.lua"},
+                  args = {"8.ssl_c.lua",'127.0.0.1',8082},
                   stdio = {nil, stdout2, stderr2}
                 }, function (code, signal)
                     assertEquals(code,0)
@@ -76,7 +76,7 @@ if uv then
         end
         local child, pid
         child, pid = uv.spawn(arg[-1], {
-          args = {"8.bio_s.lua"},
+          args = {"8.bio_s.lua",'127.0.0.1',8083},
           stdio = {nil, stdout1, stderr1}
         }, function (code, signal)
             assertEquals(code,0)
@@ -89,7 +89,7 @@ if uv then
         set_timeout(1000,function()
             local child, pid
             child, pid = uv.spawn(arg[-1], {
-              args = {"8.bio_c.lua"},
+              args = {"8.bio_c.lua",'127.0.0.1',8083},
               stdio = {nil, stdout2, stderr2}
             }, function (code, signal)
                 assertEquals(code,0)
@@ -119,7 +119,7 @@ if uv then
           end
         end
         local child, pid child, pid = uv.spawn(arg[-1], {
-          args = {"8.bio_s.lua"},
+          args = {"8.bio_s.lua",'127.0.0.1',8084},
           stdio = {nil, stdout1, stderr1}
         }, function (code, signal)
             assertEquals(code,0)
@@ -132,7 +132,7 @@ if uv then
         set_timeout(1000,function()
             local child, pid 
             child, pid = uv.spawn(arg[-1], {
-              args = {"8.ssl_c.lua"},
+              args = {"8.ssl_c.lua",'127.0.0.1',8084},
               stdio = {nil, stdout2, stderr2}
             }, function (code, signal)
                 assertEquals(code,0)
@@ -162,7 +162,7 @@ if uv then
           end
         end
         local child, pid child, pid = uv.spawn(arg[-1], {
-          args = {"8.ssl_s.lua"},
+          args = {"8.ssl_s.lua",'127.0.0.1',8085},
           stdio = {nil, stdout1, stderr1}
         }, function (code, signal)
             assertEquals(code,0)
@@ -174,7 +174,7 @@ if uv then
 
         set_timeout(1000,function()
             local child, pid child, pid = uv.spawn(arg[-1], {
-              args = {"8.bio_c.lua"},
+              args = {"8.bio_c.lua",'127.0.0.1',8085},
               stdio = {nil, stdout2, stderr2}
             }, function (code, signal)
                 assertEquals(code,0)
