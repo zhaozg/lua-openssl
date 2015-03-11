@@ -1,6 +1,7 @@
 local openssl = require'openssl'
 local csr,bio,ssl = openssl.csr,openssl.bio, openssl.ssl
 local sslctx = require'sslctx'
+_,_,opensslv = openssl.version(true)
 
 host = arg[1] or "127.0.0.1"; --only ip
 port = arg[2] or "8383";
@@ -17,18 +18,23 @@ local params = {
 }
 
 
-    local certstore = openssl.x509.store:new()
+local certstore 
+if opensslv > 0x10002000 then
+    certstore = openssl.x509.store:new()
     local cas = require'root_ca'
     for i=1,#cas do
           local cert = assert(openssl.x509.read(cas[i]))
           assert(certstore:add(cert))
     end
+end
 
 print(string.format('Listen at %s:%s SSL',host,port))
 
 function ssl_mode()
     local ctx = assert(sslctx.new(params))
-    ctx:cert_store(certstore)
+    if certstore then
+        ctx:cert_store(certstore)
+    end
     --ctx:set_cert_verify({always_continue=true,verify_depth=4})
     --[[
     ctx:set_cert_verify(function(arg) 

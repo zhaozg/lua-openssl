@@ -16,7 +16,6 @@ local params = {
    verify = {"peer", "fail_if_no_peer_cert"},
    options = {"all", "no_sslv2"},
 }
-_,_,opensslv = openssl.version(true)
 
 print(string.format('CONNECT to %s:%s',host,port))
 
