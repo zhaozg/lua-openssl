@@ -57,7 +57,6 @@ if uv then
         end
         
         uv.run()
-        uv.loop_close()
         assertEquals(lcode,0)
     end
 
@@ -101,7 +100,6 @@ if uv then
         end)
         
         uv.run()
-        uv.loop_close()
         assertEquals(lcode,0)
     end
 
@@ -144,7 +142,6 @@ if uv then
         end)
         
         uv.run()
-        uv.loop_close()
         assertEquals(lcode,0)
     end
 
@@ -186,7 +183,6 @@ if uv then
         end)
         
         uv.run()
-        uv.loop_close()
         assertEquals(lcode,0)
     end
 end
