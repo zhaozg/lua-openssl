@@ -304,6 +304,14 @@ function current_compression() end
 function getpeerverfication() end
 function session() end
 function peek() end 
+
+--obtain result code for TLS/SSL I/O operation
+--@tparam number ret
+-- ssl:error(code) returns a result code (suitable for the C "switch"
+-- statement) for a preceding call to ssl:connect(), ssl:accept(), ssl:handshake(),
+-- ssl:read(), ssl:peek(), or ssl:write() on B<ssl>.  The value returned by
+-- that TLS/SSL I/O function must be passed to ssl:error() in parameter ret
+--@treturn number result code
 function error() end
 
 end

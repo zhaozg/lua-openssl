@@ -126,9 +126,18 @@ static LUA_FUNCTION(openssl_error_string)
 {
   char buf[1024];
   unsigned long val;
-  int verbose = lua_toboolean(L, 1);
+  int stderr_output;
   int ret = 0;
-  val = ERR_get_error();
+  if (lua_isnumber(L, 1))
+  {
+    val = (unsigned long)lua_tonumber(L, 1);
+    stderr_output = lua_toboolean(L, 2);
+  } else
+  {
+    val = ERR_get_error();
+    stderr_output = lua_toboolean(L, 1);
+  }
+  
   if (val)
   {
     lua_pushinteger(L, val);
@@ -136,7 +145,7 @@ static LUA_FUNCTION(openssl_error_string)
     lua_pushstring(L, buf);
     ret = 2;
   }
-  if (verbose)
+  if (stderr_output)
   {
     ERR_print_errors_fp(stderr);
   }

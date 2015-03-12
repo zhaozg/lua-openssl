@@ -26,10 +26,14 @@ function base64() end
 function list() end
 
 --- get last error infomation
--- @tparam[opt=false] boolean verbose 
+-- @tparam[opt] number error, default use ERR_get_error() return value
+-- @tparam[opt=false] boolean verbose error message print on stderr. 
 -- @treturn number errcode
 -- @treturn string errmsg
--- @treturn string verbose message
+--  The string will have the following format:
+-- error:[error code]:[library name]:[function name]:[reason string]
+-- `error code` is an 8 digit hexadecimal number, 
+-- `library name`, `function name` and `reason string` are ASCII text.
 function error() end
 
 --- get random bytes
