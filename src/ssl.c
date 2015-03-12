@@ -1535,7 +1535,7 @@ static int openssl_ssl_set(lua_State*L)
       luaL_argerror(L, i, "don't understand");
 
     if (ret != 1)
-      openssl_pushresult(L, ret);
+      return openssl_pushresult(L, ret);
   }
   return 0;
 }
@@ -1570,7 +1570,7 @@ static int openssl_ssl_read(lua_State*L)
   }
   else
   {
-    ret = openssl_ssl_pushresult(L, ret);
+    ret = openssl_ssl_pushresult(L,s,ret);
   }
   free(buf);
   return ret;
@@ -1592,7 +1592,7 @@ static int openssl_ssl_peek(lua_State*L)
     ret = 1;
   } else
   {
-    ret = openssl_ssl_pushresult(L, ret);
+    ret = openssl_ssl_pushresult(L, s, ret);
   }
   free(buf);
   return ret;
