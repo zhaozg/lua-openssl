@@ -154,6 +154,36 @@ static LUA_FUNCTION(openssl_error_string)
   return ret;
 }
 
+static LUA_FUNCTION(openssl_last_error)
+{
+  unsigned long val;
+  int clear, ret = 0;
+  if (lua_isnumber(L, 1))
+  {
+    val = (unsigned long)lua_tonumber(L, 1);
+    clear = lua_toboolean(L, 2);
+  } else
+  {
+    val = ERR_get_error();
+    clear = lua_toboolean(L, 1);
+  }
+
+  if (val)
+  {
+    lua_pushinteger(L, val);
+    lua_pushstring (L, ERR_reason_error_string(val));
+    lua_pushstring (L, ERR_lib_error_string   (val));
+    lua_pushstring (L, ERR_func_error_string  (val));
+    lua_pushboolean(L, ERR_FATAL_ERROR        (val));
+    ret = 5;
+  }
+
+  if (clear)
+    ERR_clear_error();
+
+  return ret;
+}
+
 static int openssl_random_load(lua_State*L)
 {
   const char *file = luaL_optstring(L, 1, NULL);
@@ -273,6 +303,7 @@ static const luaL_Reg eay_functions[] =
   {"random",      openssl_random_bytes},
 
   {"error",       openssl_error_string},
+  {"last_error",  openssl_last_error},
 
   {"engine",      openssl_engine},
 
