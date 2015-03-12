@@ -1183,10 +1183,10 @@ SSL_SESSION *d2i_SSL_SESSION(SSL_SESSION **a, const unsigned char **pp,
                              void *SSL_SESSION_get_ex_data(const SSL_SESSION *ss, int idx);
 #endif
 
-                             /***************************SSL**********************************/
+/***************************SSL**********************************/
 
-                             /* need more think */
-                             static int openssl_ssl_clear(lua_State*L)
+/* need more think */
+static int openssl_ssl_clear(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
   lua_pushboolean(L, SSL_clear(s));
@@ -1570,9 +1570,7 @@ static int openssl_ssl_read(lua_State*L)
   }
   else
   {
-    lua_pushnil(L);
-    lua_pushinteger(L, ret);
-    ret = 2;
+    ret = openssl_ssl_pushresult(L, ret);
   }
   free(buf);
   return ret;
@@ -1588,9 +1586,16 @@ static int openssl_ssl_peek(lua_State*L)
   num = num ? num : 4096;
   buf = malloc(num);
   ret = SSL_peek(s, buf, num);
+  if (ret > 0)
+  {
+    lua_pushlstring(L, buf, ret);
+    ret = 1;
+  } else
+  {
+    ret = openssl_ssl_pushresult(L, ret);
+  }
   free(buf);
-  lua_pushinteger(L, ret);
-  return 1;
+  return ret;
 }
 
 static int openssl_ssl_write(lua_State*L)

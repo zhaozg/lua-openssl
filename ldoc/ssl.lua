@@ -216,41 +216,6 @@ do  --define ssl object
 --- openssl.ssl object
 -- @type ssl
 
---- get want to do 
--- @treturn string 'nothing', 'reading', 'writing', 'x509_lookup'
--- @treturn number state want
-function want() end
-
---- get cipher info of current session
--- @treturn table has key include name, version,id,bits,description 
-function cipher() end
-
---- get number of bytes available inside SSL fro immediate read
--- treturn number 
-function pending() end
-
---- get ssl_ctx object
--- @treturn ssl_ctx 
-function ctx() end
-
---- set new ssl_ctx object
--- @tparam ssl_ctx ctx 
--- @treturn ssl_ctx orgine ssl_ctx object
-function ctx() end
-
---- shutdown SSL connection
-function shutdown() end
-
---- shutdown ssl connect with special mode, disable read or write, 
--- enable or disable quite shutdown
--- @tparam string mode support 'read','write', 'quite', 'noquite'
-function shutdown() end
-
---- shutdown ssl connection with quite or noquite mode 
--- @tparam boolean mode
--- @treturn[1] boolean if mode is true, return true or false for quite 
--- @treturn[2] string if mode is false, return 'read' or 'write' for shutdown direction
-function shutdown() end
 
 --- get value according to what, arg can be list, arg must be in below list 
 -- @tparam string arg
@@ -296,23 +261,151 @@ function get() end
 -- @return value
 function set() end
 
+--- tell ssl use private key and certificate, and check private key
+-- @tparam evp_pkey pkey
+-- @tparam[opt] x509 cert
+-- @treturn boolean result return true for ok, or nil followed by errmsg and errval
 function use() end
-function peer() end
-function getfd() end
-function current_cipher() end
-function current_compression() end
-function getpeerverfication() end
-function session() end
-function peek() end 
 
---obtain result code for TLS/SSL I/O operation
---@tparam number ret
+--- get peer certificate and certificate chains
+-- @treturn x509 certificate
+-- @treturn sk_of_x509 chains of peer
+function peer() end
+
+--- get socket fd of ssl
+-- @treturn number fd
+function getfd() end
+
+--- get current cipher info
+-- @treturn table include name,version,id,bits,algbits and description
+function current_cipher() end 
+
+--- get current compression name
+-- @treturn string 
+function current_compression() end 
+
+--- get peer certificate verify result
+-- @treturn boolean true for success 
+-- @treturn table all certificate in chains verify result
+--  preverify_ok as boolean verify result
+--  error as number error code
+--  error_string as string error message 
+--  error_depth as number verify depth
+--  current_cert as x509 certificate to verified
+function getpeerverification() end
+
+--- get ssl session 
+-- @treturn ssl_session session object
+function session() end 
+
+--- set ssl session 
+-- @tparam string|ssl_session sesion
+--  reuse session would speed up ssl handshake
+-- @treturn boolean result
+function session() end 
+
+--- duplicate ssl object
+-- @treturn ssl 
+function dup() end 
+
+--- get ssl_ctx associate with current ssl
+-- @treturn ssl_ctx
+function ctx() end 
+
+--- set ssl_ctx associate to current ssl
+-- @tparam ssl_ctx ctx
+-- @treturn ssl_ctx orgine ssl_ctx object
+function ctx() end
+
+--- reset ssl object to allow another connection
+-- @treturn boolean result true for success
+function clear() end
+
+--- get want to do 
+-- @treturn string 'nothing', 'reading', 'writing', 'x509_lookup'
+-- @treturn number state want
+function want() end
+
+--- get number of bytes available inside SSL fro immediate read
+-- treturn number 
+function pending() end
+
+--- do ssl server accept 
+-- @treturn boolean true for success
+-- @treturn string fail reason 
+function accept() end
+
+--- do ssl client connect
+-- @treturn boolean true for success
+-- @treturn string fail reasion
+function connect() end
+ 
+--- do ssl read
+-- @tparam[opt=4096] number length to read
+-- @treturn string data, nil for fail
+-- @treturn string fail reason 
+function read() end
+
+--- do ssl peak, data can be read again
+-- @tparam[opt=4096] number length to read
+-- @treturn string data, nil for fail
+-- @treturn string fail reason 
+function peek() end
+
+--- do ssl write
+-- @tparam string data
+-- @treturn number count of bytes write successfully
+-- @treturn string fail reason 
+function write() end
+ 
+--- obtain result code for TLS/SSL I/O operation
+-- @tparam number ret
 -- ssl:error(code) returns a result code (suitable for the C "switch"
 -- statement) for a preceding call to ssl:connect(), ssl:accept(), ssl:handshake(),
--- ssl:read(), ssl:peek(), or ssl:write() on B<ssl>.  The value returned by
+-- ssl:read(), ssl:peek(), or ssl:write().  The value returned by
 -- that TLS/SSL I/O function must be passed to ssl:error() in parameter ret
---@treturn number result code
+-- @treturn number result code, more info pass it as paramater to openssl.error(ret)
 function error() end
+
+--- do ssl renegotiate
+-- @treturn boolean true for success
+-- @treturn string fail reasion
+function renegotiate() end
+
+--- do ssl handshake, support both server and client side
+-- @treturn boolean true for success
+-- @treturn string fail reasion
+function handshake() end
+
+--- shutdown SSL connection
+function shutdown() end
+
+--- shutdown ssl connect with special mode, disable read or write, 
+-- enable or disable quite shutdown
+-- @tparam string mode support 'read','write', 'quite', 'noquite'
+function shutdown() end
+
+--- shutdown ssl connection with quite or noquite mode 
+-- @tparam boolean mode
+-- @treturn[1] boolean if mode is true, return true or false for quite 
+-- @treturn[2] string if mode is false, return 'read' or 'write' for shutdown direction
+function shutdown() end
+
+--- do ssl renegotiate_pending
+-- @treturn boolean true for success
+-- @treturn string fail reasion
+function renegotiate_pending() end
+
+--- do ssl renegotiate_pending
+-- @treturn boolean true for success
+-- @treturn string fail reasion
+function renegotiate_pending() end
+
+--- make ssl to client mode
+function set_connect_state() end
+
+--- make ssl to server mode
+function set_accept_state() end
 
 end
 
