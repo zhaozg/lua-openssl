@@ -36,6 +36,16 @@ function list() end
 -- `library name`, `function name` and `reason string` are ASCII text.
 function error() end
 
+--- get last error infomation
+-- @tparam[opt] number error, default use ERR_get_error() return value
+-- @tparam[opt=false] boolean empties the current thread's error queue.
+-- @treturn number errcode
+-- @treturn string reason
+-- @treturn string library name
+-- @treturn string function name
+-- @treturn boolean is this is fatal error
+function last_error() end
+
 --- get random bytes
 -- @tparam number length
 -- @tparam[opt=false] boolean strong true to generate strong randome bytes

@@ -174,8 +174,13 @@ static LUA_FUNCTION(openssl_last_error)
     lua_pushstring (L, ERR_reason_error_string(val));
     lua_pushstring (L, ERR_lib_error_string   (val));
     lua_pushstring (L, ERR_func_error_string  (val));
+    #ifdef ERR_FATAL_ERROR
     lua_pushboolean(L, ERR_FATAL_ERROR        (val));
     ret = 5;
+    #else
+    ret = 4;
+    #endif
+    
   }
 
   if (clear)
