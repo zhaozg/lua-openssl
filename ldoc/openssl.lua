@@ -25,26 +25,15 @@ function base64() end
 -- @treturn table as array
 function list() end
 
---- get last error infomation
+--- get last or given error infomation
 -- @tparam[opt] number error, default use ERR_get_error() return value
--- @tparam[opt=false] boolean verbose error message print on stderr. 
--- @treturn number errcode
--- @treturn string errmsg
---  The string will have the following format:
--- error:[error code]:[library name]:[function name]:[reason string]
--- `error code` is an 8 digit hexadecimal number, 
--- `library name`, `function name` and `reason string` are ASCII text.
-function error() end
-
---- get last error infomation
--- @tparam[opt] number error, default use ERR_get_error() return value
--- @tparam[opt=false] boolean empties the current thread's error queue.
+-- @tparam[opt=false] boolean empties the current thread's error queue. 
 -- @treturn number errcode
 -- @treturn string reason
 -- @treturn string library name
 -- @treturn string function name
 -- @treturn boolean is this is fatal error
-function last_error() end
+function error() end
 
 --- get random bytes
 -- @tparam number length

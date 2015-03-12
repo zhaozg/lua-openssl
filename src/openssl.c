@@ -124,38 +124,6 @@ static LUA_FUNCTION(openssl_list)
 
 static LUA_FUNCTION(openssl_error_string)
 {
-  char buf[1024];
-  unsigned long val;
-  int stderr_output;
-  int ret = 0;
-  if (lua_isnumber(L, 1))
-  {
-    val = (unsigned long)lua_tonumber(L, 1);
-    stderr_output = lua_toboolean(L, 2);
-  } else
-  {
-    val = ERR_get_error();
-    stderr_output = lua_toboolean(L, 1);
-  }
-  
-  if (val)
-  {
-    lua_pushinteger(L, val);
-    ERR_error_string_n(val, buf, sizeof(buf));
-    lua_pushstring(L, buf);
-    ret = 2;
-  }
-  if (stderr_output)
-  {
-    ERR_print_errors_fp(stderr);
-  }
-  ERR_clear_error();
-
-  return ret;
-}
-
-static LUA_FUNCTION(openssl_last_error)
-{
   unsigned long val;
   int clear, ret = 0;
   if (lua_isnumber(L, 1))
@@ -308,7 +276,6 @@ static const luaL_Reg eay_functions[] =
   {"random",      openssl_random_bytes},
 
   {"error",       openssl_error_string},
-  {"last_error",  openssl_last_error},
 
   {"engine",      openssl_engine},
 
