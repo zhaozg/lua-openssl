@@ -268,7 +268,6 @@ static LUA_FUNCTION(openssl_crl_read)
   BIO_free(in);
   if (crl)
   {
-    ERR_clear_error();
     PUSH_OBJECT(crl, "openssl.x509_crl");
     return 1;
   }

@@ -1039,11 +1039,10 @@ static int openssl_ssl_session_read(lua_State*L)
   BIO_free(in);
   if (ss)
   {
-    ERR_clear_error();
     PUSH_OBJECT(ss, "openssl.ssl_session");
     return 1;
   }
-  return 0;
+  return openssl_pushresult(L, 0);
 }
 
 static int openssl_ssl_session_time(lua_State*L)

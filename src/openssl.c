@@ -148,7 +148,6 @@ static LUA_FUNCTION(openssl_error_string)
     #else
     ret = 4;
     #endif
-    
   }
 
   if (clear)

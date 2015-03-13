@@ -103,7 +103,6 @@ static LUA_FUNCTION(openssl_pkcs12_read)
     AUXILIAR_SETOBJECT(L, pkey, "openssl.evp_pkey" , -1, "pkey");
     AUXILIAR_SETOBJECT(L, ca, "openssl.stack_of_x509" , -1, "extracerts");
 
-    ERR_clear_error();
     ret = 1;
   }
   if (b64)

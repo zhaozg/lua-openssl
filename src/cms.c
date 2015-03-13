@@ -62,7 +62,7 @@ static int openssl_cms_read(lua_State *L)
     BIO *indata = load_bio_object(L, 3);
     cms = SMIME_read_CMS(in, &indata);
   }
-  ERR_clear_error();
+
   if (cms)
   {
     PUSH_OBJECT(cms, "openssl.cms");
@@ -289,9 +289,9 @@ static int openssl_cms_encrypt(lua_State *L)
   BIO* in = load_bio_object(L, 2);
   const EVP_CIPHER* ciphers = get_cipher(L, 3, NULL);
   unsigned int flags = luaL_optint(L, 4, 0);
-
-  int ret = 1;
+  int ret = 0;
   CMS_ContentInfo *cms = CMS_encrypt(encerts, in, ciphers, flags);
+  CMS_RecipientInfo *recipient;
   if (cms)
   {
     if (lua_istable(L, 5))
@@ -308,27 +308,30 @@ static int openssl_cms_encrypt(lua_State *L)
         key = memdup(key, keylen);
         keyid = memdup(keyid, keyidlen);
 
-        if (CMS_add0_recipient_key(cms, NID_undef,
-                                   key, keylen,
-                                   keyid, keyidlen,
-                                   NULL, NULL, NULL) == 0)
+        recipient = CMS_add0_recipient_key(cms, NID_undef,
+          key, keylen,
+          keyid, keyidlen,
+          NULL, NULL, NULL);
+        if (!recipient)
           ret = 0;
       }
       else if (!lua_isnil(L, -1) || !lua_isnil(L, -2))
       {
         luaL_argerror(L, 5, "key and keyid field must be string");
-      }
+      } else
+        ret = 1;
       lua_pop(L, 2);
+
       if (ret)
       {
         lua_getfield(L, 5, "password");
         if (lua_isstring(L, -1))
         {
           unsigned char*passwd = (unsigned char*)lua_tostring(L, -1);
-
-          if (CMS_add0_recipient_password(cms,
-                                          -1, NID_undef, NID_undef,
-                                          passwd, -1, NULL) == 0)
+          recipient = CMS_add0_recipient_password(cms,
+            -1, NID_undef, NID_undef,
+            passwd, -1, NULL);
+          if (!recipient)
             ret = 0;
         }
         else if (!lua_isnil(L, -1))
@@ -343,14 +346,14 @@ static int openssl_cms_encrypt(lua_State *L)
     {
       if (flags & CMS_STREAM)
         ret = CMS_final(cms, in, NULL, flags);
-      if (ret)
-      {
-        PUSH_OBJECT(cms, "openssl.cms");
-        return 1;
-      }
     }
   }
-  return openssl_pushresult(L, 0);
+  if (ret)
+  {
+    PUSH_OBJECT(cms, "openssl.cms");
+    return 1;
+  }
+  return openssl_pushresult(L, ret);
 }
 
 static int openssl_cms_decrypt(lua_State *L)

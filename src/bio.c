@@ -244,7 +244,7 @@ static LUA_FUNCTION(openssl_bio_new_filter)
   {
     if (bio)
       BIO_free(bio);
-    return openssl_pushresult(L, 0);
+    return openssl_pushresult(L, ret);
   }
   return 0;
 }

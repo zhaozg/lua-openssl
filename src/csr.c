@@ -27,7 +27,6 @@ static LUA_FUNCTION(openssl_csr_read)
 
   if (csr)
   {
-    ERR_clear_error();
     PUSH_OBJECT(csr, "openssl.x509_req");
     return 1;
   }

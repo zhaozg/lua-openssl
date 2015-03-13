@@ -126,7 +126,6 @@ static int openssl_pkey_read(lua_State*L)
   BIO_free(in);
   if (key)
   {
-    ERR_clear_error();
     PUSH_OBJECT(key, "openssl.evp_pkey");
   }
   else
@@ -1389,16 +1388,13 @@ static LUA_FUNCTION(openssl_open_final)
   EVP_CIPHER_CTX* ctx = CHECK_OBJECT(1, EVP_CIPHER_CTX, "openssl.evp_cipher_ctx");
   int len = EVP_CIPHER_CTX_block_size(ctx);
   unsigned char *buf = malloc(len);
-
-  if (!EVP_OpenFinal(ctx, buf, &len))
+  int ret = EVP_OpenFinal(ctx, buf, &len);
+  if (ret==1)
   {
-    free(buf);
-    return openssl_pushresult(L, 0);
+    lua_pushlstring(L, (const char*)buf, len);
   }
-
-  lua_pushlstring(L, (const char*)buf, len);
   free(buf);
-  return 1;
+  return ret==1 ? ret : openssl_pushresult(L, ret);
 }
 
 static luaL_Reg pkey_funcs[] =

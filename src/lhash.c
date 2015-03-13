@@ -34,14 +34,16 @@ static LUA_FUNCTION(openssl_lhash_read)
   BIO* bio = load_bio_object(L, 1);
   LHASH* lhash = CONF_load_bio(NULL, bio, &eline);
   if (lhash)
+  {
     PUSH_OBJECT(lhash, "openssl.lhash");
+    return 1;
+  }
   else
   {
     lua_pushfstring(L, "ERROR at LINE %d", eline);
     luaL_argerror(L, 1, lua_tostring(L, -1));
   }
-  ERR_clear_error();
-  return 1;
+  return openssl_pushresult(L, 0);
 }
 
 

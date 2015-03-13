@@ -281,7 +281,7 @@ static LUA_FUNCTION(openssl_evp_cipher)
     }
     EVP_CIPHER_CTX_cleanup(c);
     EVP_CIPHER_CTX_free(c);
-    return (ret == 1) ? 1 : openssl_pushresult(L, ret);
+    return (ret == 1) ? ret : openssl_pushresult(L, ret);
   }
   else
     luaL_argerror(L, 1, "invvalid cipher algorithm or openssl.evp_cipher object");
@@ -506,7 +506,7 @@ static LUA_FUNCTION(openssl_evp_cipher_update)
   }
   OPENSSL_free(out);
 
-  return (ret == 1 ? 1 : openssl_pushresult(L, ret));
+  return (ret == 1 ? ret : openssl_pushresult(L, ret));
 }
 
 static LUA_FUNCTION(openssl_evp_cipher_final)

@@ -158,7 +158,6 @@ static LUA_FUNCTION(openssl_x509_read)
 
   if (cert)
   {
-    ERR_clear_error();
     PUSH_OBJECT(cert, "openssl.x509");
     return 1;
   }
@@ -445,23 +444,21 @@ static int openssl_x509_digest(lua_State* L)
   char hex_buffer[EVP_MAX_MD_SIZE * 2];
   X509 *cert = CHECK_OBJECT(1, X509, "openssl.x509");
   const EVP_MD *digest = lua_isnoneornil(L, 2) ? EVP_sha1() : get_digest(L, 2);
-
+  int ret;
   if (!digest)
   {
     lua_pushnil(L);
     lua_pushfstring(L, "digest algorithm not supported (%s)", lua_tostring(L, 2));
     return 2;
   }
-  if (!X509_digest(cert, digest, buffer, &bytes))
+  ret = X509_digest(cert, digest, buffer, &bytes);
+  if (ret)
   {
-    lua_pushnil(L);
-    lua_pushfstring(L, "error processing the certificate (%s)",
-                    ERR_reason_error_string(ERR_get_error()));
-    return 2;
+    to_hex((char*)buffer, bytes, hex_buffer);
+    lua_pushlstring(L, hex_buffer, bytes * 2);
+    return 1;
   }
-  to_hex((char*)buffer, bytes, hex_buffer);
-  lua_pushlstring(L, hex_buffer, bytes * 2);
-  return 1;
+  return openssl_pushresult(L, ret);
 };
 
 static int openssl_x509_notbefore(lua_State *L)

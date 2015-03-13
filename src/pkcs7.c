@@ -37,7 +37,6 @@ static LUA_FUNCTION(openssl_pkcs7_read)
   BIO_free(bio);
   if (p7)
   {
-    ERR_clear_error();
     PUSH_OBJECT(p7, "openssl.pkcs7");
     if (ctx)
     {
