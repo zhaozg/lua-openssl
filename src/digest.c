@@ -259,14 +259,13 @@ static LUA_FUNCTION(openssl_digest_ctx_reset)
   EVP_MD_CTX *ctx = CHECK_OBJECT(1, EVP_MD_CTX, "openssl.evp_digest_ctx");
   const EVP_MD *md = EVP_MD_CTX_md(ctx);
   ENGINE* e = ctx->engine;
-
-  EVP_MD_CTX_cleanup(ctx);
-  EVP_MD_CTX_init(ctx);
-  if (!EVP_DigestInit_ex(ctx, md, e))
+  int ret = EVP_MD_CTX_cleanup(ctx);
+  if (ret)
   {
-    luaL_error(L, "reset digest fail");
+    EVP_MD_CTX_init(ctx);
+    EVP_DigestInit_ex(ctx, md, e);
   }
-  return 0;
+  return openssl_pushresult(L, ret);
 }
 
 static LUA_FUNCTION(openssl_digest_ctx_clone)
@@ -281,7 +280,6 @@ static LUA_FUNCTION(openssl_digest_ctx_clone)
     if (ret == 1)
     {
       PUSH_OBJECT(d, "openssl.evp_digest_ctx");
-      EVP_MD_CTX_destroy(d);
       return 1;
     }
     EVP_MD_CTX_destroy(d);
