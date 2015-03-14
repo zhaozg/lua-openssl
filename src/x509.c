@@ -140,15 +140,19 @@ static int check_cert(X509_STORE *ca, X509 *x, STACK_OF(X509) *untrustedchain, i
 static LUA_FUNCTION(openssl_x509_read)
 {
   X509 *cert = NULL;
-
   BIO *in = load_bio_object(L, 1);
   int fmt = luaL_checkoption(L, 2, "auto", format);
-  if (fmt == FORMAT_AUTO || fmt == FORMAT_DER)
+  if (fmt == FORMAT_AUTO)
+  {
+    fmt = bio_is_der(in) ? FORMAT_DER : FORMAT_PEM;
+  }
+
+  if (fmt == FORMAT_DER)
   {
     cert = d2i_X509_bio(in, NULL);
     BIO_reset(in);
-  }
-  if ((fmt == FORMAT_AUTO && cert == NULL) || fmt == FORMAT_PEM)
+  }else
+  if (fmt == FORMAT_PEM)
   {
     cert = PEM_read_bio_X509(in, NULL, NULL, NULL);
     BIO_reset(in);
@@ -161,15 +165,7 @@ static LUA_FUNCTION(openssl_x509_read)
     PUSH_OBJECT(cert, "openssl.x509");
     return 1;
   }
-  else
-  {
-    if (!lua_isnoneornil(L, 2))
-      lua_pushfstring(L, "Invalid X509 certificate content with format %s", lua_tostring(L, 2));
-    else
-      lua_pushfstring(L, "Invalid X509 certificate content");
-    luaL_argerror(L, 1, lua_tostring(L, -1));
-  }
-  return 0;
+  return openssl_pushresult(L, 0);
 }
 
 static LUA_FUNCTION(openssl_x509_export)

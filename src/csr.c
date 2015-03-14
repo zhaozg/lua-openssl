@@ -13,12 +13,17 @@ static LUA_FUNCTION(openssl_csr_read)
   int fmt = luaL_checkoption(L, 2, "auto", format);
   X509_REQ * csr = NULL;
 
-  if ( fmt == FORMAT_AUTO || fmt == FORMAT_PEM)
+  if (fmt == FORMAT_AUTO)
+  {
+    fmt = bio_is_der(in) ? FORMAT_DER : FORMAT_PEM;
+  }
+
+  if (fmt == FORMAT_PEM)
   {
     csr = PEM_read_bio_X509_REQ(in, NULL, NULL, NULL);
     BIO_reset(in);
-  }
-  if ((fmt == FORMAT_AUTO && csr == NULL) || fmt == FORMAT_DER)
+  }else
+  if (fmt == FORMAT_DER)
   {
     csr = d2i_X509_REQ_bio(in, NULL);
     BIO_reset(in);
@@ -30,10 +35,7 @@ static LUA_FUNCTION(openssl_csr_read)
     PUSH_OBJECT(csr, "openssl.x509_req");
     return 1;
   }
-  else
-    luaL_error(L, "read openssl.x509_req content fail");
-
-  return 0;
+  return openssl_pushresult(L, 0);
 }
 
 

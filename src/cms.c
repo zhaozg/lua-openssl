@@ -38,26 +38,26 @@ static LuaL_Enum cms_flags[] =
   {NULL,        -1}
 };
 
-
-
-
 static int openssl_cms_read(lua_State *L)
 {
   BIO* in = load_bio_object(L, 1);
   int fmt = luaL_checkoption(L, 2, "auto", format);
-
   CMS_ContentInfo *cms = NULL;
-  if (fmt == FORMAT_DER || fmt == FORMAT_AUTO)
+  if (fmt == FORMAT_AUTO)
+  {
+    fmt = bio_is_der(in) ? FORMAT_DER : FORMAT_PEM;
+  }
+  if (fmt == FORMAT_DER)
   {
     cms = d2i_CMS_bio(in, NULL);
     //CMS_ContentInfo *cms = CMS_ContentInfo_new();
     //int ret = i2d_CMS_bio(bio, cms);
-  }
-  if (fmt == FORMAT_PEM || (cms == NULL && fmt == FORMAT_AUTO))
+  }else
+  if (fmt == FORMAT_PEM)
   {
     cms = PEM_read_bio_CMS(in, NULL, NULL, NULL);
-  }
-  if (fmt == FORMAT_SMIME || (cms == NULL && fmt == FORMAT_AUTO))
+  }else
+  if (fmt == FORMAT_SMIME)
   {
     BIO *indata = load_bio_object(L, 3);
     cms = SMIME_read_CMS(in, &indata);

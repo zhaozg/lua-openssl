@@ -19,17 +19,22 @@ static LUA_FUNCTION(openssl_pkcs7_read)
   PKCS7 *p7 = NULL;
   BIO* ctx = NULL;
 
-  if (fmt == FORMAT_AUTO || fmt == FORMAT_DER)
+  if (fmt == FORMAT_AUTO)
+  {
+    fmt = bio_is_der(bio) ? FORMAT_DER : FORMAT_PEM;
+  }
+
+  if (fmt == FORMAT_DER)
   {
     p7 = d2i_PKCS7_bio(bio, NULL);
     BIO_reset(bio);
-  }
-  if ((fmt == FORMAT_AUTO && p7 == NULL) || fmt == FORMAT_PEM)
+  }else
+  if (fmt == FORMAT_PEM)
   {
     p7 = PEM_read_bio_PKCS7(bio, NULL, NULL, NULL);
     BIO_reset(bio);
-  }
-  if ((fmt == FORMAT_AUTO && p7 == NULL) || fmt == FORMAT_SMIME)
+  }else
+  if (fmt == FORMAT_SMIME)
   {
     p7 = SMIME_read_PKCS7(bio, &ctx);
   }
@@ -46,11 +51,9 @@ static LUA_FUNCTION(openssl_pkcs7_read)
       BIO_free(ctx);
       return 2;
     }
+    return 1;
   }
-  else
-    lua_pushnil(L);
-
-  return 1;
+  return openssl_pushresult(L, 0);
 }
 
 static LUA_FUNCTION(openssl_pkcs7_sign)

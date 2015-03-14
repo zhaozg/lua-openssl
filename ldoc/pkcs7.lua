@@ -12,6 +12,7 @@ do  -- define module function
 -- read string or bio object, which include pkcs7 content
 -- @tparam bio|string input
 -- @tparam[opt='auto'] format allow 'auto','der','pem','smime'
+--  auto will only try 'der' or 'pem'
 -- @tparam string password for pkcs12
 -- @treturn pkcs7 object or nil
 -- @treturn string content exist only smime format

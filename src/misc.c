@@ -41,6 +41,16 @@ BIO* load_bio_object(lua_State* L, int idx)
   return bio;
 }
 
+int  bio_is_der(BIO* bio)
+{
+  byte head[2];
+  int len = BIO_read(bio, head, sizeof(head));
+  BIO_reset(bio);
+  if (len == sizeof(head) && head[0] == 0x30 && head[1] == 0x82)
+    return 1;
+  return 0;
+}
+
 const EVP_MD* get_digest(lua_State* L, int idx)
 {
   const EVP_MD* md = NULL;

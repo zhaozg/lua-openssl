@@ -252,15 +252,19 @@ static LUA_FUNCTION(openssl_crl_read)
 {
   BIO * in = load_bio_object(L, 1);
   int fmt = luaL_checkoption(L, 2, "auto", format);
-
   X509_CRL *crl = NULL;
 
-  if (fmt == FORMAT_AUTO || fmt == FORMAT_PEM)
+  if (fmt == FORMAT_AUTO)
+  {
+    fmt = bio_is_der(in) ? FORMAT_DER : FORMAT_PEM;
+  }
+
+  if (fmt == FORMAT_PEM)
   {
     crl = PEM_read_bio_X509_CRL(in, NULL, NULL, NULL);
     BIO_reset(in);
-  }
-  if ((fmt == FORMAT_AUTO && crl == NULL) || fmt == FORMAT_DER)
+  }else
+  if (fmt == FORMAT_DER)
   {
     crl = d2i_X509_CRL_bio(in, NULL);
     BIO_reset(in);
@@ -271,7 +275,7 @@ static LUA_FUNCTION(openssl_crl_read)
     PUSH_OBJECT(crl, "openssl.x509_crl");
     return 1;
   }
-  return 0;
+  return openssl_pushresult(L, 0);
 }
 
 static LUA_FUNCTION(openssl_crl_version)

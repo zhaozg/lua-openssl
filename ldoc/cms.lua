@@ -93,6 +93,7 @@ function verify() end
 --- read cms object from input bio or string
 -- @tparam bio|string input 
 -- @tparam[opt='auto'] string format, support 'auto','smime','der','pem'
+--  auto will only try 'der' or 'pem'
 -- @tparam[opt=nil] bio content, only used when format is 'smime'
 -- @treturn cms
 function read() end

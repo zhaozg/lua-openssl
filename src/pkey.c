@@ -96,14 +96,19 @@ static int openssl_pkey_read(lua_State*L)
   int priv = lua_isnoneornil(L, 2) ? 0 : auxiliar_checkboolean(L, 2);
   int fmt = luaL_checkoption(L, 3, "auto", format);
 
+  if (fmt == FORMAT_AUTO)
+  {
+    fmt = bio_is_der(in) ? FORMAT_DER : FORMAT_PEM;
+  }
+
   if (!priv)
   {
-    if (fmt == FORMAT_AUTO || fmt == FORMAT_PEM)
+    if (fmt == FORMAT_PEM)
     {
       key = PEM_read_bio_PUBKEY(in, NULL, NULL, NULL);
       BIO_reset(in);
-    }
-    if ((fmt == FORMAT_AUTO && key == NULL) || fmt == FORMAT_DER)
+    }else
+    if (fmt == FORMAT_DER)
     {
       key = d2i_PUBKEY_bio(in, NULL);
       BIO_reset(in);
@@ -111,13 +116,13 @@ static int openssl_pkey_read(lua_State*L)
   }
   else
   {
-    if (fmt == FORMAT_AUTO || fmt == FORMAT_PEM)
+    if (fmt == FORMAT_PEM)
     {
       const char* passphrase = luaL_optstring(L, 4, NULL);
       key = PEM_read_bio_PrivateKey(in, NULL, passphrase ? pkey_read_pass_cb : NULL, (void*)passphrase);
       BIO_reset(in);
-    }
-    if ((fmt == FORMAT_AUTO && key == NULL) || fmt == FORMAT_DER)
+    }else
+    if (fmt == FORMAT_DER)
     {
       d2i_PrivateKey_bio(in, &key);
       BIO_reset(in);
@@ -127,10 +132,9 @@ static int openssl_pkey_read(lua_State*L)
   if (key)
   {
     PUSH_OBJECT(key, "openssl.evp_pkey");
+    return 1;
   }
-  else
-    lua_pushnil(L);
-  return 1;
+  return openssl_pushresult(L, 0);
 }
 
 static int EC_KEY_generate_key_part(EC_KEY *eckey)
