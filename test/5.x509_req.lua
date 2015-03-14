@@ -116,7 +116,6 @@ TestCSR = {}
                 local der = req2:export('der')
                 assertIsString(der)
                 req2 = assert(csr.read(der,'der'))
-                print(csr.read(der,'pem'))
                 assertIsNil(csr.read(der,'pem'))
                 req2 = assert(csr.read(der,'auto'))
                 local pubkey = req2:public()
