@@ -162,6 +162,17 @@ Works with Lua5.1 (should support Lua5.2 by updating the config.win file).
 	
 	luarocks install openssl --server=https://rocks.moonscript.org/dev
 
+### Howto 5: Handle fail or error
+
+    Most lua-openssl function or methods return nil or false when error or 
+    failed, followed by numbererror _code_ and string error _reason_, _code_ 
+    can pass to openssl.error() to get more error information.
+
+    All SSL object IO operation methods return nil or false when fail or error.
+    When nil returned, it followed by 'ssl' or 'syscall', means SSL layare or 
+    system layer error. When false returned, it followed by 'want_read',
+    'want_write','want_x509_lookup','want_connect','want_accept', that means 
+    you should do some SSL operation.
 
 #B.  Example usage
 

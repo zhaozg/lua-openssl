@@ -1309,7 +1309,10 @@ static int openssl_ssl_pushresult(lua_State* L, SSL*ssl, int ret_code)
   switch (err)
   {
   case SSL_ERROR_NONE:
-    lua_pushboolean(L, 1);
+    lua_pushinteger(L, ret_code);
+    return 1;
+  case SSL_ERROR_ZERO_RETURN:
+    lua_pushinteger(L, 0);
     return 1;
   case SSL_ERROR_SSL:
     lua_pushnil(L);
@@ -1330,10 +1333,6 @@ static int openssl_ssl_pushresult(lua_State* L, SSL*ssl, int ret_code)
   case SSL_ERROR_SYSCALL:
     lua_pushnil(L);
     lua_pushstring(L, "syscall");
-    return 2;
-  case SSL_ERROR_ZERO_RETURN:
-    lua_pushboolean(L, 0);
-    lua_pushstring(L, "zero_return");
     return 2;
   case SSL_ERROR_WANT_CONNECT:
     lua_pushboolean(L, 0);

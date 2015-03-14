@@ -27,7 +27,7 @@ function list() end
 
 --- get last or given error infomation
 -- @tparam[opt] number error, default use ERR_get_error() return value
--- @tparam[opt=false] boolean empties the current thread's error queue. 
+-- @tparam[opt=false] boolean clear the current thread's error queue. 
 -- @treturn number errcode
 -- @treturn string reason
 -- @treturn string library name
