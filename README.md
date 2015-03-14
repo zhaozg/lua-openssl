@@ -164,15 +164,20 @@ Works with Lua5.1 (should support Lua5.2 by updating the config.win file).
 
 ### Howto 5: Handle fail or error
 
-    Most lua-openssl function or methods return nil or false when error or 
-    failed, followed by numbererror _code_ and string error _reason_, _code_ 
-    can pass to openssl.error() to get more error information.
+  Most lua-openssl function or methods return nil or false when error or 
+failed, followed by string type error _reason_ and number type error _code_, 
+_code_ can pass to openssl.error() to get more error information.
 
-    All SSL object IO operation methods return nil or false when fail or error.
-    When nil returned, it followed by 'ssl' or 'syscall', means SSL layare or 
-    system layer error. When false returned, it followed by 'want_read',
-    'want_write','want_x509_lookup','want_connect','want_accept', that means 
-    you should do some SSL operation.
+  All SSL object IO operation methods return nil or false when fail or error.
+When nil returned, it followed by 'ssl' or 'syscall', means SSL layare or 
+system layer error. When false returned, it followed by 'want_read',
+'want_write','want_x509_lookup','want_connect','want_accept', that means 
+you should do some SSL operation.
+
+  Please remeber that when lua-openssl function or methods failed without 
+error code, you can get last error by openssl.error(), and repeat call 
+openssl.error() will walk through error stacks of current threads. 
+openssl.error(true) will alao clear error stacks after get last error code.
 
 #B.  Example usage
 

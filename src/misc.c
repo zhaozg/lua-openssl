@@ -144,7 +144,7 @@ int openssl_pushresult(lua_State*L, int result)
   else
   {
     int i = 0;
-    unsigned long val = ERR_peek_error();
+    unsigned long val = ERR_get_error();
     lua_pushnil(L);
     if (val)
     {
