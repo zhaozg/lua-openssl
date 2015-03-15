@@ -177,7 +177,8 @@ SSL connection closed, others means you should do some SSL operation.
   Please remeber that when lua-openssl function or methods failed without 
 error code, you can get last error by openssl.error(), and repeat call 
 openssl.error() will walk through error stacks of current threads. 
-openssl.error(true) will also clear error stacks after get last error code.
+openssl.error(true) will also clear error stacks after get last error code,
+this is very useful to free memory when lua-openssl repeat calls or run long times.
 
 #B.  Example usage
 
