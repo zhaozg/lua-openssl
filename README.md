@@ -169,15 +169,15 @@ failed, followed by string type error _reason_ and number type error _code_,
 _code_ can pass to openssl.error() to get more error information.
 
   All SSL object IO operation methods return nil or false when fail or error.
-When nil returned, it followed by 'ssl' or 'syscall', means SSL layare or 
-system layer error. When false returned, it followed by 'want_read',
-'want_write','want_x509_lookup','want_connect','want_accept', that means 
-you should do some SSL operation.
+When nil returned, it followed by 'ssl' or 'syscall', means SSL layer or 
+system layer error. When false returned, it followed by number 0, 'want_read',
+'want_write','want_x509_lookup','want_connect','want_accept'. Numnber 0 means
+SSL connection closed, others means you should do some SSL operation.
 
   Please remeber that when lua-openssl function or methods failed without 
 error code, you can get last error by openssl.error(), and repeat call 
 openssl.error() will walk through error stacks of current threads. 
-openssl.error(true) will alao clear error stacks after get last error code.
+openssl.error(true) will also clear error stacks after get last error code.
 
 #B.  Example usage
 

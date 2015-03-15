@@ -342,13 +342,13 @@ function connect() end
  
 --- do ssl read
 -- @tparam[opt=4096] number length to read
--- @treturn string data, nil for fail
+-- @treturn string data, nil or false for fail
 -- @treturn string fail reason 
 function read() end
 
 --- do ssl peak, data can be read again
 -- @tparam[opt=4096] number length to read
--- @treturn string data, nil for fail
+-- @treturn string data, nil or false for fail
 -- @treturn string fail reason 
 function peek() end
 

@@ -61,11 +61,10 @@ function ssl_mode()
           else
             assert(s:accept())
           end
-
           repeat 
               d = s:read()
               if d then 
-                s:write(d)
+                assert(#d==s:write(d))
               end
           until not d
           s:shutdown()

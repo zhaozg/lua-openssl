@@ -1312,8 +1312,9 @@ static int openssl_ssl_pushresult(lua_State* L, SSL*ssl, int ret_code)
     lua_pushinteger(L, ret_code);
     return 1;
   case SSL_ERROR_ZERO_RETURN:
+    lua_pushboolean(L, 0);
     lua_pushinteger(L, 0);
-    return 1;
+    return 2;
   case SSL_ERROR_SSL:
     lua_pushnil(L);
     lua_pushstring(L, "ssl");
