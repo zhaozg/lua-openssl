@@ -1615,15 +1615,6 @@ static int openssl_ssl_write(lua_State*L)
   return 0;
 }
 
-static int openssl_ssl_error(lua_State*L)
-{
-  SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
-  int ret = luaL_checkint(L, 2);
-  ret = SSL_get_error(s, ret);
-  lua_pushinteger(L, ret);
-  return 1;
-}
-
 static int openssl_ssl_do_handshake(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
@@ -1829,7 +1820,6 @@ static luaL_Reg ssl_funcs[] =
   {"read",      openssl_ssl_read},
   {"peek",      openssl_ssl_peek},
   {"write",     openssl_ssl_write},
-  {"error",     openssl_ssl_error},
 
   {"renegotiate",   openssl_ssl_renegotiate},
   {"handshake",     openssl_ssl_do_handshake},

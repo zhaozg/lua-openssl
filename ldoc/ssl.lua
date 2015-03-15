@@ -215,7 +215,13 @@ do  --define ssl object
 
 --- openssl.ssl object
 -- @type ssl
-
+--  All SSL object IO operation methods(connect, accept, handshake, read, 
+--  peek or write) return nil or false when fail or error.
+--  When nil returned, it followed by 'ssl' or 'syscall', means SSL layer or 
+--  system layer error. When false returned, it followed by number 0, 
+--  'want_read','want_write','want_x509_lookup','want_connect','want_accept'. 
+--  Numnber 0 means SSL connection closed, others means you should do some 
+--  SSL operation.
 
 --- get value according to what, arg can be list, arg must be in below list 
 -- @tparam string arg
@@ -358,15 +364,6 @@ function peek() end
 -- @treturn string fail reason 
 function write() end
  
---- obtain result code for TLS/SSL I/O operation
--- @tparam number ret
--- ssl:error(code) returns a result code (suitable for the C "switch"
--- statement) for a preceding call to ssl:connect(), ssl:accept(), ssl:handshake(),
--- ssl:read(), ssl:peek(), or ssl:write().  The value returned by
--- that TLS/SSL I/O function must be passed to ssl:error() in parameter ret
--- @treturn number result code, more info pass it as paramater to openssl.error(ret)
-function error() end
-
 --- do ssl renegotiate
 -- @treturn boolean true for success
 -- @treturn string fail reasion

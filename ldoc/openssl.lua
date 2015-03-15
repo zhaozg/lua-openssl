@@ -8,6 +8,10 @@
 
 do  -- define module function
 
+-- Most lua-openssl function or methods return nil or false when error or 
+-- failed, followed by string type error _reason_ and number type error _code_, 
+-- _code_ can pass to openssl.error() to get more error information.
+
 --- hex encode or decode string
 -- @tparam string str
 -- @tparam[opt=true] boolean encode true to encoed, false to decode
