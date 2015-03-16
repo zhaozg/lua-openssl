@@ -214,7 +214,6 @@ end
 do  --define ssl object
 
 --- openssl.ssl object
--- @type ssl
 --  All SSL object IO operation methods(connect, accept, handshake, read, 
 --  peek or write) return nil or false when fail or error.
 --  When nil returned, it followed by 'ssl' or 'syscall', means SSL layer or 
@@ -222,6 +221,7 @@ do  --define ssl object
 --  'want_read','want_write','want_x509_lookup','want_connect','want_accept'. 
 --  Numnber 0 means SSL connection closed, others means you should do some 
 --  SSL operation.
+-- @type ssl
 
 --- get value according to what, arg can be list, arg must be in below list 
 -- @tparam string arg
