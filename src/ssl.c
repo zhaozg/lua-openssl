@@ -242,7 +242,7 @@ static int openssl_ssl_ctx_mode(lua_State*L)
   ret = 0;
   for (i = 0; i < sizeof(iMode_options) / sizeof(int); i++)
   {
-    if (mode && iMode_options[i])
+    if (mode & iMode_options[i])
     {
       lua_pushstring(L, sMode_options[i]);
       ret++;
