@@ -70,13 +70,6 @@ static int openssl_hmac_final(lua_State *L)
   return 1;
 }
 
-static int openssl_hmac_reset(lua_State*L)
-{
-  HMAC_CTX *c = CHECK_OBJECT(1, HMAC_CTX, "openssl.hmac_ctx");
-  int ret = HMAC_Init_ex(c, NULL, 0, NULL, NULL);
-  return openssl_pushresult(L, ret);
-}
-
 static int openssl_hmac_free(lua_State *L)
 {
   HMAC_CTX *c = CHECK_OBJECT(1, HMAC_CTX, "openssl.hmac_ctx");
@@ -136,7 +129,7 @@ static luaL_Reg hmac_ctx_funs[] =
 {
   {"update",  openssl_hmac_update},
   {"final",   openssl_hmac_final},
-  {"reset",   openssl_hmac_reset},
+  {"close",   openssl_hmac_free},
 
   {"__tostring",  auxiliar_tostring},
   {"__gc",    openssl_hmac_free},

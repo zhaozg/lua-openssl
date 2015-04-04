@@ -538,7 +538,6 @@ static LUA_FUNCTION(openssl_evp_cipher_final)
   return openssl_pushresult(L, ret);
 }
 
-
 static LUA_FUNCTION(openssl_cipher_ctx_info)
 {
   EVP_CIPHER_CTX *ctx = CHECK_OBJECT(1, EVP_CIPHER_CTX, "openssl.evp_cipher_ctx");
@@ -587,8 +586,9 @@ static luaL_Reg cipher_ctx_funs[] =
 {
   {"update",      openssl_evp_cipher_update},
   {"final",       openssl_evp_cipher_final},
-
   {"info",        openssl_cipher_ctx_info},
+  {"close",       openssl_cipher_ctx_free},
+
   {"__gc",        openssl_cipher_ctx_free},
   {"__tostring",  auxiliar_tostring},
 

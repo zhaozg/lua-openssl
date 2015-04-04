@@ -309,6 +309,8 @@ static luaL_Reg digest_ctx_funs[] =
   {"info",        openssl_digest_ctx_info},
   {"clone",       openssl_digest_ctx_clone},
   {"reset",       openssl_digest_ctx_reset},
+  {"close",       openssl_digest_ctx_free},
+
   {"__tostring",  auxiliar_tostring},
   {"__gc",        openssl_digest_ctx_free},
   {NULL, NULL}
