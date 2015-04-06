@@ -86,14 +86,10 @@ static LUA_FUNCTION(openssl_evp_encrypt)
     }
 
     EVP_CIPHER_CTX_init(c);
-    if (!pad)
-      ret = EVP_CIPHER_CTX_set_padding(c, 0);
-    else
-      ret = 1;
-
+    ret = EVP_EncryptInit_ex(c, cipher, e, (const byte*)evp_key, iv_len > 0 ? (const byte*)evp_iv : NULL);
     if (ret == 1)
     {
-      ret = EVP_EncryptInit_ex(c, cipher, e, (const byte*)evp_key, iv_len>0 ? (const byte*)evp_iv : NULL);
+      ret = EVP_CIPHER_CTX_set_padding(c, pad);
       if (ret == 1)
       {
         buffer = OPENSSL_malloc(input_len + EVP_CIPHER_CTX_block_size(c));
@@ -165,13 +161,10 @@ static LUA_FUNCTION(openssl_evp_decrypt)
     }
 
     EVP_CIPHER_CTX_init(c);
-    if (pad)
-      ret = EVP_CIPHER_CTX_set_padding(c, pad);
-    else
-      ret = 1;
+    ret = EVP_DecryptInit_ex(c, cipher, e, key ? (const byte*)evp_key : NULL, iv_len > 0 ? (const byte*)evp_iv : NULL);
     if (ret == 1)
     {
-      ret = EVP_DecryptInit_ex(c, cipher, e, key ? (const byte*)evp_key : NULL, iv_len>0 ? (const byte*)evp_iv : NULL);
+      ret = EVP_CIPHER_CTX_set_padding(c, pad);
       if (ret == 1)
       {
         buffer = OPENSSL_malloc(input_len);
@@ -251,14 +244,10 @@ static LUA_FUNCTION(openssl_evp_cipher)
     }
 
     EVP_CIPHER_CTX_init(c);
-    if (pad == 1)
-      ret = EVP_CIPHER_CTX_set_padding(c, pad);
-    else
-      ret = 1;
-
+    ret = EVP_CipherInit_ex(c, cipher, e, (const byte*)evp_key, iv_len>0 ? (const byte*)evp_iv : NULL, enc);
     if (ret == 1)
     {
-      ret = EVP_CipherInit_ex(c, cipher, e, (const byte*)evp_key, iv_len>0 ? (const byte*)evp_iv : NULL, enc);
+      ret = EVP_CIPHER_CTX_set_padding(c, pad);
       if (ret == 1)
       {
         char *buffer;
@@ -324,9 +313,9 @@ static LUA_FUNCTION(openssl_cipher_new)
     }
     c = EVP_CIPHER_CTX_new();
     EVP_CIPHER_CTX_init(c);
-    EVP_CIPHER_CTX_set_padding(c, pad);
     if (!EVP_CipherInit_ex(c, cipher, e, key ? (const byte*)evp_key : NULL, iv_len>0 ? (const byte*)evp_iv : NULL, enc))
     {
+      EVP_CIPHER_CTX_set_padding(c, pad);
       luaL_error(L, "EVP_CipherInit_ex failed, please check openssl error");
     }
     PUSH_OBJECT(c, "openssl.evp_cipher_ctx");
@@ -366,9 +355,9 @@ static LUA_FUNCTION(openssl_cipher_encrypt_new)
     }
     c = EVP_CIPHER_CTX_new();
     EVP_CIPHER_CTX_init(c);
-    EVP_CIPHER_CTX_set_padding(c, pad);
     if (!EVP_EncryptInit_ex(c, cipher, e, key ? (const byte*)evp_key : NULL, iv_len>0 ? (const byte*)evp_iv : NULL))
     {
+      EVP_CIPHER_CTX_set_padding(c, pad);
       luaL_error(L, "EVP_CipherInit_ex failed, please check openssl error");
     }
     PUSH_OBJECT(c, "openssl.evp_cipher_ctx");
@@ -410,10 +399,10 @@ static LUA_FUNCTION(openssl_cipher_decrypt_new)
     }
     c = EVP_CIPHER_CTX_new();
     EVP_CIPHER_CTX_init(c);
-    ret = EVP_CIPHER_CTX_set_padding(c, pad);
+    ret = EVP_DecryptInit_ex(c, cipher, e, key ? (const byte*)evp_key : NULL, iv_len > 0 ? (const byte*)evp_iv : NULL);
     if (ret == 1)
     {
-      ret = EVP_DecryptInit_ex(c, cipher, e, key ? (const byte*)evp_key : NULL, iv_len>0 ? (const byte*)evp_iv : NULL);
+      ret = EVP_CIPHER_CTX_set_padding(c, pad);
       if (ret == 1)
       {
         PUSH_OBJECT(c, "openssl.evp_cipher_ctx");
