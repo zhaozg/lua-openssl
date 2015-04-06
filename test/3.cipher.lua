@@ -48,7 +48,10 @@ TestCipherCompat = {}
 
         obj1 = cipher.decrypt_new(self.alg,self.key)
         bb = assert(obj1:update(aa))
-        bb = bb..assert(obj1:final())
+        local dd = assert(obj1:final())
+        bb = bb..dd
+        local ee = assert(obj1:final())
+        assertEquals(dd,ee)
         assertEquals(self.msg,bb)
         assert(#self.msg < #aa)
     end
