@@ -42,7 +42,7 @@ function create_server(host, port, on_connection)
   uv.tcp_bind(server, host, port)
   uv.listen(server,64, function(self) 
     local client = uv.new_tcp()
-    uv.accept(self, client)
+    uv.accept(server, client)
     on_connection(client)
   end)
   return server

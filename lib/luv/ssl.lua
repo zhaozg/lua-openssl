@@ -45,7 +45,7 @@ function M.new_ctx(params)
 
     local unpack = unpack or table.unpack   
     if(params.verify) then
-        ctx:set_verify(params.verify)
+        ctx:verify_mode(params.verify)
     end
     if params.options and #params.options>0 then
         local args = {}
@@ -72,10 +72,11 @@ S.__index = {
 
     handshake = function(self, connected_cb)
 		if not self.connecting then
-            uv.read_start(self.socket, function(_,err,chunk)
+            uv.read_start(self.socket, function(err,chunk)
+                print(_,err,chunk)
                 if(err) then 
                     print('ERR',err)
-                    self:onerror()
+                    self:onerror(err)
                 end
                 if chunk then
                     self.inp:write(chunk)
@@ -108,9 +109,8 @@ S.__index = {
                 if (ret==false) then return end
                 
                 self.connected = true
-                self.connecting = true
                 uv.read_stop(self.socket)
-                uv.read_start(self.socket, function(_,err,chunk)
+                uv.read_start(self.socket, function(err,chunk)
                     if(err) then 
                         print('ERR',err)
                         self:onerror()

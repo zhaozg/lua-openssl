@@ -45,7 +45,7 @@ function M.newcontext(params)
         for i=1,#params.verify do
             table.insert(args, params.verify[i])
         end
-        ctx:set_verify(args)
+        ctx:verify_mode(args)
     end
     if params.options then
         ctx:options(unpack(params.options))
