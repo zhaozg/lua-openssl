@@ -1010,7 +1010,7 @@ static LUA_FUNCTION(openssl_verify)
     EVP_VerifyUpdate (&md_ctx, data, data_len);
     result = EVP_VerifyFinal (&md_ctx, (unsigned char *)signature, signature_len, pkey);
     EVP_MD_CTX_cleanup(&md_ctx);
-    lua_pushboolean(L, result);
+    lua_pushboolean(L, result == 1);
 
     return 1;
   }
