@@ -309,7 +309,7 @@ static int openssl_ssl_ctx_options(lua_State*L)
 
 static int openssl_ssl_ctx_quiet_shutdown(lua_State*L)
 {
-  SSL_CTX* s = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl");
+  SSL_CTX* s = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
   if (lua_isnoneornil(L, 2))
   {
     int m = SSL_CTX_get_quiet_shutdown(s);

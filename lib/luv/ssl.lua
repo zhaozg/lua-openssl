@@ -73,7 +73,6 @@ S.__index = {
     handshake = function(self, connected_cb)
 		if not self.connecting then
             uv.read_start(self.socket, function(err,chunk)
-                print(_,err,chunk)
                 if(err) then 
                     print('ERR',err)
                     self:onerror(err)
