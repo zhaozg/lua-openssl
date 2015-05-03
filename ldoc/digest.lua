@@ -39,6 +39,20 @@ function new() end
 -- @treturn string digest result value
 function digest() end
  
+--- create digest object for sign
+--
+-- @tparam string|integer|asn1_object alg name, nid or object identity
+-- @tparam[opt=nil] engine object
+-- @treturn evp_digest_ctx
+function signInit() end
+
+--- create digest object for verify
+--
+-- @tparam string|integer|asn1_object alg name, nid or object identity
+-- @tparam[opt=nil] engine object
+-- @treturn evp_digest_ctx
+function verifyInit() end
+
 end
 
 do  -- define class
@@ -66,6 +80,18 @@ function info() end
 -- @tparam[opt] engine, eng
 -- @treturn string result a binary hash value for msg
 function digest() end
+
+--- create digest object for sign
+--
+-- @tparam[opt=nil] engine object
+-- @treturn evp_digest_ctx
+function signInit() end
+
+--- create digest object for verify
+--
+-- @tparam[opt=nil] engine object
+-- @treturn evp_digest_ctx
+function verifyInit() end
 
 end
 
@@ -97,6 +123,30 @@ function final() end
 --- reset evp_diget_ctx to reuse
 --
 function reset() end
+
+--- feed data for sign to get signature
+--
+-- @tparam string data to be signed
+-- @treturn boolean result
+function signUpdate() end
+
+--- feed data for verify with signature
+--
+-- @tparam string data to be verified
+-- @treturn boolean result
+function verifyUpdate() end
+
+--- get result of sign
+--
+-- @tparam evp_pkey private key to do sign
+-- @treturn string singed result
+function signFinal() end
+
+--- get verify result
+--
+-- @tparam string signature
+-- @treturn boolean result, true for verify pass
+function verifyFinal() end
 
 end
 
