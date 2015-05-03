@@ -1406,24 +1406,24 @@ static luaL_Reg pkey_funcs[] =
   {"is_private",    openssl_pkey_is_private1},
   {"get_public",    openssl_pkey_get_public},
 
-  {"export",      openssl_pkey_export},
-  {"parse",     openssl_pkey_parse},
-  {"bits",      openssl_pkey_bits},
+  {"export",        openssl_pkey_export},
+  {"parse",         openssl_pkey_parse},
+  {"bits",          openssl_pkey_bits},
 
-  {"encrypt",     openssl_pkey_encrypt},
-  {"decrypt",     openssl_pkey_decrypt},
-  {"sign",      openssl_sign},
-  {"verify",      openssl_verify},
+  {"encrypt",       openssl_pkey_encrypt},
+  {"decrypt",       openssl_pkey_decrypt},
+  {"sign",          openssl_sign},
+  {"verify",        openssl_verify},
 
-  {"seal",    openssl_seal},
-  {"open",    openssl_open},
+  {"seal",          openssl_seal},
+  {"open",          openssl_open},
 
   {"compute_key",   openssl_dh_compute_key},
 
-  {"__gc",      openssl_pkey_free},
+  {"__gc",          openssl_pkey_free},
   {"__tostring",    auxiliar_tostring},
 
-  {NULL,      NULL},
+  {NULL,            NULL},
 };
 
 static const luaL_Reg R[] =
