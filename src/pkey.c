@@ -946,14 +946,7 @@ static LUA_FUNCTION(openssl_sign)
   const EVP_MD *mdtype = NULL;
   if (top > 2)
   {
-    if (lua_isstring(L, 3))
-    {
-      mdtype = EVP_get_digestbyname(lua_tostring(L, 3));
-    }
-    else if (lua_isuserdata(L, 3))
-      mdtype = CHECK_OBJECT(3, EVP_MD, "openssl.evp_digest");
-    else
-      luaL_argerror(L, 3, "must be string for digest alg name, or openssl.evp_digest object,default use 'sha1'");
+    mdtype = get_digest(L, 3);
   }
   else
     mdtype = EVP_get_digestbyname("sha1");
@@ -992,12 +985,7 @@ static LUA_FUNCTION(openssl_verify)
   int top = lua_gettop(L);
   if (top > 3)
   {
-    if (lua_isstring(L, 4))
-      mdtype = EVP_get_digestbyname(lua_tostring(L, 4));
-    else if (lua_isuserdata(L, 4))
-      mdtype = CHECK_OBJECT(4, EVP_MD, "openssl.evp_digest");
-    else
-      luaL_error(L, "#4 must be nil, string, or openssl.evp_digest object");
+    mdtype = get_digest(L, 4);
   }
   else
     mdtype = EVP_get_digestbyname("sha1");

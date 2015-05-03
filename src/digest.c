@@ -293,7 +293,7 @@ static LUA_FUNCTION(openssl_digest_ctx_clone)
 
 static LUA_FUNCTION(openssl_signInit)
 {
-  EVP_MD *md = CHECK_OBJECT(1, EVP_MD, "openssl.evp_digest");
+  const EVP_MD *md = get_digest(L, 1);
   ENGINE *e = lua_isnoneornil(L, 2) ? NULL : CHECK_OBJECT(2, ENGINE, "openssl.engine");
   int ret = 0;
   EVP_MD_CTX *ctx = EVP_MD_CTX_create();
@@ -312,7 +312,7 @@ static LUA_FUNCTION(openssl_signInit)
 
 static LUA_FUNCTION(openssl_verifyInit)
 {
-  EVP_MD *md = CHECK_OBJECT(1, EVP_MD, "openssl.evp_digest");
+  const EVP_MD *md = get_digest(L, 1);
   ENGINE *e = lua_isnoneornil(L, 2) ? NULL : CHECK_OBJECT(2, ENGINE, "openssl.engine");
   int ret = 0;
   EVP_MD_CTX *ctx = EVP_MD_CTX_create();
@@ -421,6 +421,9 @@ static const luaL_Reg R[] =
   { "get",        openssl_digest_get},
   { "new",        openssl_digest_new},
   { "digest",     openssl_digest},
+
+  {"signInit", openssl_signInit},
+  {"verifyInit", openssl_verifyInit},
 
   {NULL,  NULL}
 };

@@ -68,4 +68,42 @@ TestDigestMY = {}
         end
         assert(t1.size==20)
     end
+    
+local function mk_key(args)
+        assert(type(args),'table')
+        
+        local k = assert(openssl.pkey.new(unpack(args)))
+        return k
+end
 
+TestSignVry = {}
+    function TestSignVry:setUp()
+        self.msg='abcd'
+        self.alg='sha1'
+        self.prik = mk_key({'rsa',2048,3})
+        self.pubk = openssl.pkey.get_public(self.prik)
+    end
+    function TestSignVry:testSignVry()
+        local md = digest.get(self.alg)
+        local sctx = digest.signInit(md);
+        assert(sctx:signUpdate(self.msg))
+        assert(sctx:signUpdate(self.msg))
+        local sig = sctx:signFinal(self.prik)
+        assertEquals(#sig,256)
+        local vctx = digest.verifyInit(md)
+        assert(vctx:verifyUpdate(self.msg))
+        assert(vctx:verifyUpdate(self.msg))
+        assert(vctx:verifyFinal(sig,self.pubk))
+    end
+     function TestSignVry:testSignVry1()
+        local md = digest.get(self.alg)
+        local sctx = md:signInit();
+        assert(sctx:signUpdate(self.msg))
+        assert(sctx:signUpdate(self.msg))
+        local sig = sctx:signFinal(self.prik)
+        assertEquals(#sig,256)
+        local vctx = md:verifyInit()
+        assert(vctx:verifyUpdate(self.msg))
+        assert(vctx:verifyUpdate(self.msg))
+        assert(vctx:verifyFinal(sig,self.pubk))
+    end   
