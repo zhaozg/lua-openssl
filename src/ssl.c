@@ -1442,15 +1442,17 @@ static int openssl_ssl_get(lua_State*L)
       long l = SSL_get_verify_result(s);
       lua_pushinteger(L, l);
     }
-
     else if (strcmp(what, "version") == 0)
     {
       lua_pushstring(L, SSL_get_version(s));
     }
-
     else if (strcmp(what, "state") == 0)
     {
       lua_pushinteger(L, SSL_state(s));
+    }
+    else if (strcmp(what, "hostname") == 0)
+    {
+      lua_pushstring(L, SSL_get_servername(s, TLSEXT_NAMETYPE_host_name));
     }
     else
       luaL_argerror(L, i, "can't understant");
