@@ -32,7 +32,7 @@ static int openssl_version(lua_State*L)
 
 static LUA_FUNCTION(openssl_hex)
 {
-  size_t l = 0;
+  size_t l = 0, pad = 0;
   const char* s = luaL_checklstring(L, 1, &l);
   int hl = 0;
   int encode = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L, 2);
@@ -50,7 +50,9 @@ static LUA_FUNCTION(openssl_hex)
     BN_hex2bn(&B, s);
     hl = l / 2;
     h = OPENSSL_malloc( hl + 1 );
-    BN_bn2bin(B, (unsigned char*)h);
+    pad = hl - BN_num_bytes(B);
+    memset(h, 0, pad);
+    BN_bn2bin(B, (unsigned char *)h+pad);
     h[hl] = '\0';
   };
   lua_pushlstring(L, (const char*)h, hl);
