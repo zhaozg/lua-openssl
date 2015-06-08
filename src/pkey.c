@@ -421,28 +421,28 @@ static LUA_FUNCTION(openssl_pkey_new)
       }
       lua_pop(L, 1);
 
-      lua_getfield(L, -1, "D");
+      lua_getfield(L, -1, "d");
       if (!lua_isnil(L, -1))
       {
         d = BN_get(L, -1);
       }
       lua_pop(L, 1);
 
-      lua_getfield(L, -1, "X");
+      lua_getfield(L, -1, "x");
       if (!lua_isnil(L, -1))
       {
         x = BN_get(L, -1);
       }
       lua_pop(L, 1);
 
-      lua_getfield(L, -1, "Y");
+      lua_getfield(L, -1, "y");
       if (!lua_isnil(L, -1))
       {
         y = BN_get(L, -1);
       }
       lua_pop(L, 1);
 
-      lua_getfield(L, -1, "Z");
+      lua_getfield(L, -1, "z");
       if (!lua_isnil(L, -1))
       {
         z = BN_get(L, -1);

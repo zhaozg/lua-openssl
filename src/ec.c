@@ -126,15 +126,15 @@ static int openssl_ec_group_parse(lua_State*L)
 
   AUXILIAR_SETLSTR(L, -1, "seed", EC_GROUP_get0_seed(group), EC_GROUP_get_seed_len(group));
 
-  X = BN_new();
-  Y = BN_new();
-  P = BN_new();
-  EC_GROUP_get_curve_GFp(group, P, X, Y, ctx);
+  BIGNUM* a = BN_new();
+  BIGNUM* b = BN_new();
+  BIGNUM* p = BN_new();
+  EC_GROUP_get_curve_GFp(group, p, a, b, ctx);
   lua_newtable(L);
   {
-    AUXILIAR_SETOBJECT(L, P, "openssl.bn", -1, "P");
-    AUXILIAR_SETOBJECT(L, X, "openssl.bn", -1, "X");
-    AUXILIAR_SETOBJECT(L, Y, "openssl.bn", -1, "Y");
+    AUXILIAR_SETOBJECT(L, p, "openssl.bn", -1, "p");
+    AUXILIAR_SETOBJECT(L, a, "openssl.bn", -1, "a");
+    AUXILIAR_SETOBJECT(L, b, "openssl.bn", -1, "b");
   }
   lua_setfield(L, -2, "curve");
   BN_CTX_free(ctx);
