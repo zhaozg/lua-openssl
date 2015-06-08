@@ -789,6 +789,11 @@ static LUA_FUNCTION(openssl_pkey_encrypt)
   EVP_PKEY_CTX *ctx = NULL;
   int ret = 0;
 
+  if (pkey->type != EVP_PKEY_RSA && pkey->type != EVP_PKEY_RSA2) {
+    luaL_argerror(L, 2, "EVP_PKEY must be of type RSA or RSA2");
+    return ret;
+  }
+
   if (openssl_pkey_is_private(pkey) == 0)
   {
     ctx = EVP_PKEY_CTX_new(pkey, pkey->engine);
@@ -830,6 +835,11 @@ static LUA_FUNCTION(openssl_pkey_decrypt)
   size_t clen = EVP_PKEY_size(pkey);
   EVP_PKEY_CTX *ctx = NULL;
   int ret = 0;
+
+  if (pkey->type != EVP_PKEY_RSA && pkey->type != EVP_PKEY_RSA2) {
+    luaL_argerror(L, 2, "EVP_PKEY must be of type RSA or RSA2");
+    return ret;
+  }
 
   if (openssl_pkey_is_private(pkey))
   {
