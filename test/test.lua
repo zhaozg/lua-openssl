@@ -24,6 +24,7 @@ dofile('7.pkcs12.lua')
 dofile('8.ssl_options.lua')
 dofile('8.ssl.lua')
 dofile('rsa.lua')
+dofile('ec.lua')
 
 --LuaUnit.verbosity = 0
 LuaUnit.run()

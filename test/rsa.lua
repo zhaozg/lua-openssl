@@ -5,7 +5,6 @@ testRSA = {}
     function testRSA:testRSA()
         local nrsa =  {'rsa',1024,3}
         local rsa = pkey.new(unpack(nrsa))
-        print(rsa)
         local k1 = pkey.get_public(rsa)
         assert(not k1:is_private())
         local t = k1:parse ()
@@ -16,7 +15,6 @@ testRSA = {}
         t = r:parse()
         t.alg = 'rsa'
         local r2 = pkey.new(t)
-        print('private:',r2:is_private())
         local msg = openssl.random(128-11)
         
         local out = pkey.encrypt(r2,msg)
