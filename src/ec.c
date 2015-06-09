@@ -102,7 +102,7 @@ static int openssl_ec_group_parse(lua_State*L)
   const EC_GROUP* group = CHECK_OBJECT(1, EC_GROUP, "openssl.ec_group");
   const EC_POINT *generator = EC_GROUP_get0_generator(group);
   BN_CTX* ctx = BN_CTX_new();
-  BIGNUM *X, *Y, *P, *order, *cofactor;
+  BIGNUM *a, *b, *p, *order, *cofactor;
 
   lua_newtable(L);
   if (generator)
@@ -126,9 +126,9 @@ static int openssl_ec_group_parse(lua_State*L)
 
   AUXILIAR_SETLSTR(L, -1, "seed", EC_GROUP_get0_seed(group), EC_GROUP_get_seed_len(group));
 
-  BIGNUM* a = BN_new();
-  BIGNUM* b = BN_new();
-  BIGNUM* p = BN_new();
+  a = BN_new();
+  b = BN_new();
+  p = BN_new();
   EC_GROUP_get_curve_GFp(group, p, a, b, ctx);
   lua_newtable(L);
   {
