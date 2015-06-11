@@ -73,6 +73,10 @@ static int openssl_ssl_ctx_new(lua_State*L)
   else if (strcmp(meth, "SSLv2_client") == 0)
     method = SSLv2_client_method();
 #endif
+#ifdef LOAD_SSL_CUSTOM
+  LOAD_SSL_CUSTOM
+#endif
+
 #endif
   else
     luaL_error(L, "#1:%s not supported\n"
