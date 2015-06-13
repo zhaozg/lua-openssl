@@ -1790,7 +1790,7 @@ static int openssl_ssl_session(lua_State*L)
       if (lua_isnoneornil(L, 3))
       {
         int ret = SSL_set_session(s, ss);
-        lua_pushboolean(L, ret == 0);
+        lua_pushboolean(L, ret);
       }
       else
       {
