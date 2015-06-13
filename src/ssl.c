@@ -1719,6 +1719,14 @@ static int openssl_ssl_dup(lua_State*L)
   return 1;
 }
 
+static int openssl_ssl_session_reused(lua_State*L) 
+{
+  SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
+  int ret = SSL_session_reused(s);
+  lua_pushboolean(L, ret);
+  return 1;
+}
+
 #if OPENSSL_VERSION_NUMBER > 0x10000000L
 static int openssl_ssl_cache_hit(lua_State*L)
 {
@@ -1831,6 +1839,7 @@ static luaL_Reg ssl_funcs[] =
   {"handshake",     openssl_ssl_do_handshake},
   {"shutdown",      openssl_ssl_shutdown},
 
+  {"session_reused", openssl_ssl_session_reused},
 #if OPENSSL_VERSION_NUMBER > 0x10000000L
   {"set_debug",   openssl_ssl_set_debug},
   {"cache_hit",   openssl_ssl_cache_hit},
