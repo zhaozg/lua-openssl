@@ -33,7 +33,7 @@ do  -- define ssl_ctx
 
 --- tell ssl_ctx use private key and certificate, and check private key
 -- @tparam evp_pkey pkey
--- @tparam[opt] x509 cert
+-- @tparam x509 cert
 -- @treturn boolean result return true for ok, or nil followed by errmsg and errval
 function use() end
 

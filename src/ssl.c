@@ -122,21 +122,19 @@ static int openssl_ssl_alert_string(lua_State*L)
 /****************************SSL CTX********************************/
 static int openssl_ssl_ctx_use(lua_State*L)
 {
+  int ret;
   SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
   EVP_PKEY* pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
-  int ret;
+  X509* cert = CHECK_OBJECT(3, X509, "openssl.x509");
+
   luaL_argcheck(L, openssl_pkey_is_private(pkey), 2, "must be private key");
-  ret = SSL_CTX_use_PrivateKey(ctx, pkey);
+  ret = SSL_CTX_use_certificate(ctx, cert);
   if (ret == 1)
   {
-    if (lua_gettop(L) > 2 && !lua_isnoneornil(L, 3))
+    ret = SSL_CTX_use_PrivateKey(ctx, pkey);
+    if (ret == 1)
     {
-      X509* x = CHECK_OBJECT(3, X509, "openssl.x509");
-      ret = SSL_CTX_use_certificate(ctx, x);
-      if (ret == 1)
-      {
-        ret = SSL_CTX_check_private_key(ctx);
-      }
+      ret = SSL_CTX_check_private_key(ctx);
     }
   }
   return openssl_pushresult(L, ret);
