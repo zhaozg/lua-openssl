@@ -5,6 +5,12 @@ testEC = {}
     function testEC:testEC()
         local nec =  {'ec','prime256v1'}
         local ec = pkey.new(unpack(nec))
+        local t = ec:parse().ec:parse(true) --make basic table 
+        assertEquals(type(t.curve_name), 'number')
+        assertStrContains(t.x.version, 'bn library')
+        assertStrContains(t.y.version, 'bn library')
+        assertStrContains(t.d.version, 'bn library')
+        
         local k1 = pkey.get_public(ec)
         assert(not k1:is_private())
         local t = k1:parse()
@@ -12,6 +18,11 @@ testEC = {}
         assert(t.type=='ec')
         assert(t.size==72)
         local r = t.ec
+        t = r:parse(true) --make basic table 
+        assertEquals(type(t.curve_name), 'number')
+        assertStrContains(t.x.version, 'bn library')
+        assertStrContains(t.y.version, 'bn library')
+        assertEquals(t.d, nil)
         t = r:parse()
         assertStrContains(tostring(t.pub_key), 'openssl.ec_point')
         assertStrContains(tostring(t.group), 'openssl.ec_group')

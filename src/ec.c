@@ -26,13 +26,12 @@ static int openssl_ecpoint_affine_coordinates(lua_State *L)
 {
   EC_GROUP* g = CHECK_OBJECT(1, EC_GROUP, "openssl.ec_group");
   EC_POINT* p = CHECK_OBJECT(2, EC_POINT, "openssl.ec_point");
-  BN_CTX* ctx = BN_CTX_new();
   int ret = 0;
   if (lua_gettop(L) == 2)
   {
     BIGNUM* x = BN_new();
     BIGNUM* y = BN_new();
-    if (EC_POINT_get_affine_coordinates_GFp(g, p, x, y, ctx) == 1)
+    if (EC_POINT_get_affine_coordinates_GFp(g, p, x, y, NULL) == 1)
     {
       PUSH_BN(x);
       PUSH_BN(y);
@@ -43,12 +42,11 @@ static int openssl_ecpoint_affine_coordinates(lua_State *L)
   {
     BIGNUM* x = CHECK_OBJECT(3, BIGNUM, "openssl.bn");
     BIGNUM* y = CHECK_OBJECT(4, BIGNUM, "openssl.bn");
-    ret = EC_POINT_set_affine_coordinates_GFp(g, p, x, y, ctx);
+    ret = EC_POINT_set_affine_coordinates_GFp(g, p, x, y, NULL);
     if (ret == 0)
       luaL_error(L, "EC_POINT_set_affine_coordinates_GFp fail");
     ret = 0;
   }
-  BN_CTX_free(ctx);
   return ret;
 }
 
@@ -216,21 +214,39 @@ static int openssl_ec_key_free(lua_State*L)
 static int openssl_ec_key_parse(lua_State*L)
 {
   EC_KEY* ec = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
-
+  int basic = luaL_opt(L,lua_toboolean, 2, 0);
   const EC_POINT* point = EC_KEY_get0_public_key(ec);
   const EC_GROUP* group = EC_KEY_get0_group(ec);
   const BIGNUM *priv = EC_KEY_get0_private_key(ec);
   lua_newtable(L);
+  if (basic)
+  {
+    AUXILIAR_SET(L, -1, "enc_flag", EC_KEY_get_enc_flags(ec), integer);
+    AUXILIAR_SET(L, -1, "conv_form", EC_KEY_get_conv_form(ec), integer);
+    AUXILIAR_SET(L, -1, "curve_name", EC_GROUP_get_curve_name(group), integer);
 
-  AUXILIAR_SET(L, -1, "enc_flag", EC_KEY_get_enc_flags(ec), integer);
-  AUXILIAR_SET(L, -1, "conv_form", EC_KEY_get_conv_form(ec), integer);
+    AUXILIAR_SETOBJECT(L, BN_dup(priv), "openssl.bn", -1, "d");
 
-  point = EC_POINT_dup(point, group);
-  AUXILIAR_SETOBJECT(L, point, "openssl.ec_point", -1, "pub_key");
-  group = EC_GROUP_dup(group);
-  AUXILIAR_SETOBJECT(L, group, "openssl.ec_group", -1, "group");
+    BIGNUM* x = BN_new();
+    BIGNUM* y = BN_new();
+    if (EC_POINT_get_affine_coordinates_GFp(group, point, x, y, NULL) == 1)
+    {
+      AUXILIAR_SETOBJECT(L, x, "openssl.bn", -1, "x");
+      AUXILIAR_SETOBJECT(L, y, "openssl.bn", -1, "y");
+    };
+  }
+  else
+  {
+    AUXILIAR_SET(L, -1, "enc_flag", EC_KEY_get_enc_flags(ec), integer);
+    AUXILIAR_SET(L, -1, "conv_form", EC_KEY_get_conv_form(ec), integer);
 
-  OPENSSL_PKEY_GET_BN(priv, priv_key);
+    point = EC_POINT_dup(point, group);
+    AUXILIAR_SETOBJECT(L, point, "openssl.ec_point", -1, "pub_key");
+    group = EC_GROUP_dup(group);
+    AUXILIAR_SETOBJECT(L, group, "openssl.ec_group", -1, "group");
+
+    OPENSSL_PKEY_GET_BN(priv, priv_key);
+  }
   return 1;
 };
 
