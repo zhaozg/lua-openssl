@@ -195,6 +195,22 @@ err:
   return (ok);
 }
 
+
+#define EC_GET_FIELD(_name)        {                                                  \
+  lua_getfield(L, -1, #_name);                                                        \
+  if (lua_isstring(L, -1)) {                                                          \
+    size_t l = 0; const char* bn = luaL_checklstring(L, -1, &l);                      \
+    if (_name == NULL)  _name = BN_new();                                             \
+    BN_bin2bn((const unsigned char *)bn, l, _name);                                   \
+  } else if (auxiliar_isclass(L, "openssl.bn", -1)) {                                 \
+    const BIGNUM* bn = CHECK_OBJECT(-1, BIGNUM, "openssl.bn");                        \
+    if (_name == NULL)  _name = BN_new();                                             \
+    BN_copy(_name, bn);                                                               \
+  } else if (!lua_isnil(L, -1))                                                       \
+    luaL_error(L, "parameters must have \"%s\" field string or openssl.bn", #_name);  \
+  lua_pop(L, 1);                                                                      \
+}
+
 static LUA_FUNCTION(openssl_pkey_new)
 {
   EVP_PKEY *pkey = NULL;
@@ -397,7 +413,6 @@ static LUA_FUNCTION(openssl_pkey_new)
     }
     else if (strcasecmp(alg, "ec") == 0)
     {
-
       int ec_name = NID_undef;
       BIGNUM *d = NULL;
       BIGNUM *x = NULL;
@@ -421,33 +436,11 @@ static LUA_FUNCTION(openssl_pkey_new)
       }
       lua_pop(L, 1);
 
-      lua_getfield(L, -1, "d");
-      if (!lua_isnil(L, -1))
-      {
-        d = BN_get(L, -1);
-      }
-      lua_pop(L, 1);
 
-      lua_getfield(L, -1, "x");
-      if (!lua_isnil(L, -1))
-      {
-        x = BN_get(L, -1);
-      }
-      lua_pop(L, 1);
-
-      lua_getfield(L, -1, "y");
-      if (!lua_isnil(L, -1))
-      {
-        y = BN_get(L, -1);
-      }
-      lua_pop(L, 1);
-
-      lua_getfield(L, -1, "z");
-      if (!lua_isnil(L, -1))
-      {
-        z = BN_get(L, -1);
-      }
-      lua_pop(L, 1);
+      EC_GET_FIELD(d);
+      EC_GET_FIELD(x);
+      EC_GET_FIELD(y);
+      EC_GET_FIELD(z);
 
       if (ec_name != NID_undef)
         group = EC_GROUP_new_by_curve_name(ec_name);
