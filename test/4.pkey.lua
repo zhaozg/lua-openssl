@@ -12,10 +12,12 @@ end
 TestPKEYMY = {}
     function TestPKEYMY:setUp()
         self.genalg = {
+        --[[
                 {nil}, --default to create rsa 1024 bits with 65537
                 {'rsa',1024,3}, --create rsa with give bits length and e
                 {'dsa',512},
                 {'dh',512},
+        --]]                
                 {'ec','prime256v1'}
         }
 
@@ -53,28 +55,34 @@ TestPKEYMY = {}
                         assert(true==k1:verify(msg,sig))
                 end
 
-                assert(k1:export())
-                assert(k:export())
+                assert(string.len(k1:export())>0)
+                assert(string.len(k:export())>0)
 
                 assertEquals(k1:export(),k:export())
                 assertEquals(k1:export(false),k:export())
 
-                assert(k1:export(true,true))
-                assert(k:export(true,true))
+                assert(string.len(k1:export(true,true))>0)
+                assert(string.len(k:export(true,true))>0)
 
-                assert(k1:export(true,true,true))
-                assert(k:export(true,true,true))
+                assert(string.len(k:export(true,true,true))>0)
+                assert(string.len(k1:export(true,true,true))>0)
+                assert(string.len(k:export(true,true,false))>0)
+                assert(string.len(k1:export(true,true,false))>0)
+                assert(string.len(k:export(true,false,false))>0)
+                assert(string.len(k1:export(true,false,false))>0)
+                assert(string.len(k:export(true,false,true))>0)
+                assert(string.len(k1:export(true,false,true))>0)
+                
+                assert(string.len(k1:export(true,true,true,'secret'))>0)
+                assert(string.len(k:export(true,true,true,'secret'))>0)
 
-                assert(k1:export(true,true,true,'secret'))
-                assert(k:export(true,true,true,'secret'))
+                assert(string.len(k1:export(true,true,true,'secret'))>0)
+                assert(string.len(k:export(true,true,true,'secret'))>0)
+                assert(string.len(k:export(false,true,'secret'))>0)
 
-                assert(k1:export(true,true,true,'secret'))
-                assert(k:export(true,true,true,'secret'))
-                assert(k:export(false,true,'secret'))
-
-                assert(k1:export(true,true,true,'secret'))
-                assert(k:export(true,false,true,'secret'))
-                assert(k:export(false,false,true,'secret'))
+                assert(string.len(k1:export(true,true,true,'secret'))>0)
+                assert(string.len(k:export(true,false,true,'secret'))>0)
+                assert(string.len(k:export(false,false,true,'secret'))>0)
 
         end
     end

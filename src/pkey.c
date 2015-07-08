@@ -546,28 +546,37 @@ static LUA_FUNCTION(openssl_pkey_export)
         ret = PEM_write_bio_PUBKEY(bio_out, key);
       else
       {
+        switch (EVP_PKEY_type(key->type))
+        {
+#ifndef OPENSSL_NO_EC
+          case EVP_PKEY_EC:
+            ret = i2d_EC_PUBKEY_bio(bio_out, key->pkey.ec);
+            break;
+#endif
+          default:
+          {
 #if OPENSSL_VERSION_NUMBER > 0x10000000L
-        ret = i2b_PublicKey_bio(bio_out, key);
+            ret = i2b_PublicKey_bio(bio_out, key);
 #else
 
-        int l;
-        l = i2d_PublicKey(key, NULL);
-        if (l > 0)
-        {
-          unsigned char* p = malloc(l);
-          l = i2d_PublicKey(key, &p);
-          if (l > 0)
-          {
-            BIO_write(bio_out, p, l);
-            ret = 1;
-          }
-          else
-            ret = 0;
-          free(p);
-        }
-        else
-          ret = 0;
+            int l;
+            l = i2d_PublicKey(key, NULL);
+            if (l > 0)
+            {
+              unsigned char* p = malloc(l);
+              l = i2d_PublicKey(key, &p);
+              if (l > 0)
+              {
+                BIO_write(bio_out, p, l);
+                ret = 1;
+              } else
+                ret = 0;
+              free(p);
+            } else
+              ret = 0;
 #endif
+          }
+        }
       }
     }
     else
@@ -578,26 +587,36 @@ static LUA_FUNCTION(openssl_pkey_export)
       {
         if (passphrase == NULL)
         {
-#if OPENSSL_VERSION_NUMBER > 0x10000000L
-          ret = i2b_PrivateKey_bio(bio_out, key);
-#else
-          int l = i2d_PrivateKey(key, NULL);
-          if (l > 0)
+          /* export raw key format */
+          switch (EVP_PKEY_type(key->type))
           {
-            unsigned char* p = malloc(l);
-            l = i2d_PrivateKey(key, &p);
-            if (l > 0)
-            {
-              BIO_write(bio_out, p, l);
-              ret = 1;
-            }
-            else
-              ret = 0;
-            free(p);
-          }
-          else
-            ret = 0;
+#ifndef OPENSSL_NO_EC
+            case EVP_PKEY_EC:
+              ret = i2d_ECPrivateKey_bio(bio_out, key->pkey.ec);
+              break;
 #endif
+            default:
+            {
+#if OPENSSL_VERSION_NUMBER > 0x10000000L
+              ret = i2b_PrivateKey_bio(bio_out, key);
+#else
+              int l = i2d_PrivateKey(key, NULL);
+              if (l > 0)
+              {
+                unsigned char* p = malloc(l);
+                l = i2d_PrivateKey(key, &p);
+                if (l > 0)
+                {
+                  BIO_write(bio_out, p, l);
+                  ret = 1;
+                } else
+                  ret = 0;
+                free(p);
+              } else
+                ret = 0;
+#endif
+            }
+          }
         }
         else
         {
