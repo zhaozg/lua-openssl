@@ -274,6 +274,58 @@ static LUA_FUNCTION(openssl_csr_new)
   return 1;
 }
 
+static LUA_FUNCTION(openssl_csr_sign)
+{
+  X509_REQ * csr = CHECK_OBJECT(1, X509_REQ, "openssl.x509_req");
+  EVP_PKEY *pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
+  if (openssl_pkey_is_private(pkey))
+  {
+    const EVP_MD* md = get_digest(L, 3);
+    return openssl_pushresult(L, X509_REQ_sign(csr, pkey, md));
+  } else if (lua_isnoneornil(L, 3) && X509_REQ_set_pubkey(csr, pkey))
+  {
+    unsigned char* tosign = NULL;
+    const ASN1_ITEM *it = ASN1_ITEM_rptr(X509_REQ_INFO);
+    int inl = ASN1_item_i2d((void*)csr->req_info, &tosign, it);
+    if (inl > 0 && tosign)
+    {
+      lua_pushlstring(L, tosign, inl);
+      OPENSSL_free(tosign);
+      return 1;
+    }
+    return openssl_pushresult(L, 0);
+  } else {
+    size_t siglen;
+    const unsigned char* sigdata = luaL_checklstring(L, 3, &siglen);
+    const EVP_MD* md = get_digest(L, 4);
+
+    X509_REQ* x = csr;
+    const ASN1_ITEM *it = ASN1_ITEM_rptr(X509_REQ_INFO);
+    X509_ALGOR *algor1 = csr->sig_alg;
+    X509_ALGOR *algor2 = NULL;
+    ASN1_BIT_STRING *signature = x->signature;
+    void *asn = x->req_info;
+    EVP_PKEY* pkey = X509_REQ_get_pubkey(csr);
+
+    /* (pkey->ameth->pkey_flags & ASN1_PKEY_SIGPARAM_NULL) ? V_ASN1_NULL : V_ASN1_UNDEF, */
+    X509_ALGOR_set0(csr->sig_alg, OBJ_nid2obj(md->pkey_type), V_ASN1_NULL, NULL);
+
+    if (csr->signature->data != NULL)
+      OPENSSL_free(csr->signature->data);
+    csr->signature->data = OPENSSL_malloc(siglen);
+    memcpy(csr->signature->data, sigdata, siglen);
+    csr->signature->length = siglen;
+    /*
+    * In the interests of compatibility, I'll make sure that the bit string
+    * has a 'not-used bits' value of 0
+    */
+    csr->signature->flags &= ~(ASN1_STRING_FLAG_BITS_LEFT | 0x07);
+    csr->signature->flags |= ASN1_STRING_FLAG_BITS_LEFT;
+    lua_pushboolean(L, 1);
+    return 1;
+  }
+}
+
 static LUA_FUNCTION(openssl_csr_parse)
 {
   X509_REQ * csr = CHECK_OBJECT(1, X509_REQ, "openssl.x509_req");
@@ -465,8 +517,9 @@ static luaL_reg csr_cfuns[] =
   {"digest",            openssl_csr_digest},
   {"verify",            openssl_csr_verify},
   {"check",             openssl_csr_check},
-  {"dup",               openssl_csr_check},
-
+  {"dup",               openssl_csr_dup},
+  {"sign",              openssl_csr_sign},
+  
   /* get or set */
   {"public",            openssl_csr_public},
   {"version",           openssl_csr_version},
