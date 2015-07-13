@@ -52,38 +52,7 @@ static int openssl_ecpoint_affine_coordinates(lua_State *L)
 
 static int openssl_eckey_group(lua_State *L)
 {
-  int nid = NID_undef;
-  const EC_GROUP* g = NULL;
-  if (lua_isnumber(L, 1))
-    nid = lua_tointeger(L, 1);
-  else if (lua_isstring(L, 1))
-  {
-    const char* name = luaL_checkstring(L, 1);
-    nid = OBJ_sn2nid(name);
-  }
-  else if (lua_isuserdata(L, 1))
-  {
-    if (auxiliar_isclass(L, "openssl.evp_pkey", 1))
-    {
-      EVP_PKEY* pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
-      EC_KEY* ec_key = EVP_PKEY_get1_EC_KEY(pkey);
-      if (ec_key)
-      {
-        g = EC_KEY_get0_group(ec_key);
-        EC_KEY_free(ec_key);
-      }
-    }
-    else if (auxiliar_isclass(L, "openssl.ec_key", 1))
-    {
-      EC_KEY* ec_key = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
-      g = EC_KEY_get0_group(ec_key);
-    }
-    if (g)
-      g = EC_GROUP_dup(g);
-  }
-  if (nid != NID_undef)
-    g = EC_GROUP_new_by_curve_name(nid);
-
+  const EC_GROUP* g = openssl_get_ec_group(L, 1, 2, 3);
   if (g)
   {
     const EC_POINT* p = EC_GROUP_get0_generator(g);
@@ -158,14 +127,20 @@ static int openssl_ec_group_asn1_flag(lua_State*L)
     else if (asn1_flag == OPENSSL_EC_NAMED_CURVE)
       lua_pushstring(L, "named_curve");
     else
-      lua_pushinteger(L, asn1_flag);
-    return 1;
-  } else
+      lua_pushnil(L);
+    lua_pushinteger(L, asn1_flag);
+    return 2;
+  } else if (lua_isstring(L, 2))
   {           /* OPENSSL_EC_NAMED_CURVE,   0 */
     const char* const options[] = {"named_curve", "explicit", NULL};
     asn1_flag = luaL_checkoption(L, 2, NULL, options);
     EC_GROUP_set_asn1_flag(group, asn1_flag);
-  }
+  } else if (lua_isnumber(L, 2))
+  {
+    asn1_flag = luaL_checkint(L, 2);
+    EC_GROUP_set_asn1_flag(group, asn1_flag);
+  } else
+    luaL_argerror(L, 2, "not accept type of asn1 flag");
 
   return 0;
 }
@@ -185,8 +160,9 @@ static int openssl_ec_group_point_conversion_form(lua_State*L)
       lua_pushstring(L, "hybrid");
     else
       lua_pushnil(L);
-    return 1;
-  } else
+    lua_pushinteger(L, form);
+    return 2;
+  } else if (lua_isstring(L, 2))
   {
     const char* options[] = {"compressed", "uncompressed", "hybrid", NULL};
     int f = luaL_checkoption(L, 2, NULL, options);
@@ -197,10 +173,106 @@ static int openssl_ec_group_point_conversion_form(lua_State*L)
     else if (f == 2)
       form = POINT_CONVERSION_HYBRID;
     else
-      luaL_argerror(L,2, "not accept point_conversion_form");
+      luaL_argerror(L, 2, "not accept value point_conversion_form");
     EC_GROUP_set_point_conversion_form(group, form);
-  }
+  } else if (lua_isnumber(L, 2))
+  {
+    form = luaL_checkint(L, 2);
+    EC_GROUP_set_point_conversion_form(group, form);
+  } else
+    luaL_argerror(L, 2, "not accept type of point_conversion_form");
   return 0;
+}
+
+
+EC_GROUP* openssl_get_ec_group(lua_State* L, int ec_name_idx, int param_enc_idx,
+  int conv_form_idx)
+{
+  int nid = NID_undef;
+  EC_GROUP* g = NULL;
+  if (lua_isnumber(L, ec_name_idx))
+    nid = lua_tointeger(L, ec_name_idx);
+  else if (lua_isstring(L, ec_name_idx))
+  {
+    const char* name = luaL_checkstring(L, ec_name_idx);
+    nid = OBJ_sn2nid(name);
+  } else if (lua_isuserdata(L, ec_name_idx))
+  {
+    if (auxiliar_isclass(L, "openssl.evp_pkey", ec_name_idx))
+    {
+      EVP_PKEY* pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
+      EC_KEY* ec_key = EVP_PKEY_get1_EC_KEY(pkey);
+      if (ec_key)
+      {
+        g = (EC_GROUP*)EC_KEY_get0_group(ec_key);
+        EC_KEY_free(ec_key);
+      }
+    } else if (auxiliar_isclass(L, "openssl.ec_key", ec_name_idx))
+    {
+      EC_KEY* ec_key = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
+      g = (EC_GROUP*)EC_KEY_get0_group(ec_key);
+    }
+    if (g)
+      g = EC_GROUP_dup(g);
+  }
+
+  if (g == NULL && nid != NID_undef)
+    g = EC_GROUP_new_by_curve_name(nid);
+
+  if (g)
+  {
+    if (param_enc_idx)
+    {
+      int form = 0;
+      if (lua_isstring(L, param_enc_idx))
+      {
+        const char* options[] = {"compressed", "uncompressed", "hybrid", NULL};
+        int f = luaL_checkoption(L, param_enc_idx, NULL, options);
+        if (f == 0)
+          form = POINT_CONVERSION_COMPRESSED;
+        else if (f == 1)
+          form = POINT_CONVERSION_UNCOMPRESSED;
+        else if (f == 2)
+          form = POINT_CONVERSION_HYBRID;
+        else
+          luaL_argerror(L, param_enc_idx, "not accept value point_conversion_form");
+        EC_GROUP_set_point_conversion_form(g, form);
+      } else if (lua_isnumber(L, param_enc_idx))
+      {
+        form = luaL_checkint(L, param_enc_idx);
+        EC_GROUP_set_point_conversion_form(g, form);
+      } else if (lua_isnoneornil(L, param_enc_idx))
+      {
+        EC_GROUP_set_point_conversion_form(g, POINT_CONVERSION_UNCOMPRESSED);
+      }
+      else
+        luaL_argerror(L, param_enc_idx, "not accept type of point_conversion_form");
+    }else
+      EC_GROUP_set_point_conversion_form(g, POINT_CONVERSION_UNCOMPRESSED);
+
+    if (conv_form_idx)
+    {
+      int asn1_flag = 0;
+      if (lua_isstring(L, conv_form_idx))
+      {           /* OPENSSL_EC_NAMED_CURVE,   0 */
+        const char* const options[] = {"named_curve", "explicit", NULL};
+        asn1_flag = luaL_checkoption(L, conv_form_idx, NULL, options);
+        EC_GROUP_set_asn1_flag(g, asn1_flag);
+      } else if (lua_isnumber(L, conv_form_idx))
+      {
+        asn1_flag = luaL_checkint(L, conv_form_idx);
+        EC_GROUP_set_asn1_flag(g, asn1_flag);
+      } else if (lua_isnoneornil(L, conv_form_idx))
+      {
+        EC_GROUP_set_asn1_flag(g, OPENSSL_EC_NAMED_CURVE);
+      }
+      else
+        luaL_argerror(L, conv_form_idx, "not accept type of asn1 flag");
+    }else
+      EC_GROUP_set_asn1_flag(g, OPENSSL_EC_NAMED_CURVE);
+  }
+
+  return g;
 }
 
 static luaL_Reg ec_group_funs[] =

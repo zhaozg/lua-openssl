@@ -277,36 +277,16 @@ static LUA_FUNCTION(openssl_pkey_new)
     {
       int ec_name = NID_undef;
       EC_KEY *ec = NULL;
-
-      int flag = OPENSSL_EC_NAMED_CURVE;
-
-      if (lua_isnumber(L, 2))
-      {
-        ec_name = luaL_checkint(L, 2);
-      }
-      else if (lua_isstring(L, 2))
-      {
-        const char* name = luaL_checkstring(L, 2);
-        ec_name = OBJ_sn2nid(name);
-      }
-      else
-        luaL_argerror(L, 2, "must be ec_name string or nid");
-
-      flag = lua_isnoneornil(L, 3) ? flag : lua_toboolean(L, 3);
+      EC_GROUP *group = openssl_get_ec_group(L, 2, 3, 4);
+      if (!group)
+        luaL_error(L, "failed to get ec_group object");
       ec = EC_KEY_new();
-      if (ec_name != NID_undef)
+      if (ec)
       {
-        EC_GROUP *group = EC_GROUP_new_by_curve_name(ec_name);
-        if (!group)
-        {
-          luaL_error(L, "not support curve_name %d:%s!!!!", ec_name, OBJ_nid2sn(ec_name));
-        }
         EC_KEY_set_group(ec, group);
         EC_GROUP_free(group);
         if (EC_KEY_generate_key(ec))
         {
-          EC_KEY_set_asn1_flag(ec, flag);
-
           pkey = EVP_PKEY_new();
           EVP_PKEY_assign_EC_KEY(pkey, ec);
         }
@@ -314,7 +294,7 @@ static LUA_FUNCTION(openssl_pkey_new)
           EC_KEY_free(ec);
       }
       else
-        EC_KEY_free(ec);
+        EC_GROUP_free(group);
 
     }
 #endif
@@ -413,7 +393,6 @@ static LUA_FUNCTION(openssl_pkey_new)
     }
     else if (strcasecmp(alg, "ec") == 0)
     {
-      int ec_name = NID_undef;
       BIGNUM *d = NULL;
       BIGNUM *x = NULL;
       BIGNUM *y = NULL;
@@ -421,34 +400,20 @@ static LUA_FUNCTION(openssl_pkey_new)
       EC_GROUP *group = NULL;
 
       lua_getfield(L, -1, "ec_name");
-      if (lua_isnumber(L, -1))
+      lua_getfield(L, -2, "param_enc");
+      lua_getfield(L, -3, "conv_form");
+      group = openssl_get_ec_group(L, -3, -2, -1);
+      lua_pop(L, 3);
+      if (!group)
       {
-        ec_name = luaL_checkint(L, -1);
+        luaL_error(L, "get openssl.ec_group fail");
       }
-      else if (lua_isstring(L, -1))
-      {
-        const char* name = luaL_checkstring(L, -1);
-        ec_name = OBJ_sn2nid(name);
-      }
-      else
-      {
-        luaL_error(L, "not support ec_name type:%s!!!!", lua_typename(L, lua_type(L, -1)));
-      }
-      lua_pop(L, 1);
-
 
       EC_GET_FIELD(d);
       EC_GET_FIELD(x);
       EC_GET_FIELD(y);
       EC_GET_FIELD(z);
 
-      if (ec_name != NID_undef)
-        group = EC_GROUP_new_by_curve_name(ec_name);
-
-      if (!group)
-      {
-        luaL_error(L, "not support curve_name %d:%s!!!!", ec_name, OBJ_nid2sn(ec_name));
-      }
 
       pkey = EVP_PKEY_new();
       if (pkey)

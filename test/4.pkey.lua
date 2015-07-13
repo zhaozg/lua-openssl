@@ -45,14 +45,9 @@ TestPKEYMY = {}
                         local raw = pkey.open(k,out,sk,iv)
                         assertEquals(msg,raw)
                 end
-                if t.type ~='dh' then
-                        local sig = pkey.sign(k,msg)
+                if t.type ~='ec' and t.type ~='dh' then
+                        local sig = assert(pkey.sign(k,msg))
                         assert(true==pkey.verify(k1,msg,sig))
-                end
-
-                if t.type ~='dh' then
-                        local sig = k:sign(msg)
-                        assert(true==k1:verify(msg,sig))
                 end
 
                 assert(string.len(k1:export())>0)

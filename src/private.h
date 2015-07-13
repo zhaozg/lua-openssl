@@ -88,6 +88,8 @@ STACK_OF(X509_CRL)* openssl_sk_x509_crl_dup(STACK_OF(X509_CRL)* sk);
 
 int openssl_get_nid(lua_State*L, int idx);
 int openssl_get_asn1type(lua_State*L, int idx);
+EC_GROUP* openssl_get_ec_group(lua_State* L, int ec_name_idx, int param_enc_idx,
+  int conv_form_idx);
 
 int openssl_register_xname(lua_State*L);
 int openssl_register_xattribute(lua_State*L);
