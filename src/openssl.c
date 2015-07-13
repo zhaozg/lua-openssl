@@ -65,18 +65,17 @@ static LUA_FUNCTION(openssl_hex)
 static LUA_FUNCTION(openssl_base64)
 {
   size_t l = 0;
-  BIO *bio = load_bio_object(L, 1);
+  BIO *inp = load_bio_object(L, 1);
   int encode = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L, 2);
   BIO *b64 = BIO_new(BIO_f_base64());
   BIO *out = BIO_new(BIO_s_mem());
 
-  BUF_MEM* mem;
+  BUF_MEM* mem = {0};
 
   if (encode)
   {
     BIO_push(b64, out);
-    BIO_get_mem_ptr(bio, &mem);
-    lua_pushlstring(L, mem->data, mem->length);
+    BIO_get_mem_ptr(inp, &mem);
     BIO_write(b64, mem->data, mem->length);
     BIO_flush(b64);
   }
@@ -84,17 +83,21 @@ static LUA_FUNCTION(openssl_base64)
   {
     char inbuf[512];
     int inlen;
-    BIO_push(b64, bio);
+    BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
+    BIO_push(b64, inp);
     while ((inlen = BIO_read(b64, inbuf, 512)) > 0)
       BIO_write(out, inbuf, inlen);
     BIO_flush(out);
   }
 
   BIO_get_mem_ptr(out, &mem);
-  lua_pushlstring(L, mem->data, mem->length);
+  if (mem->length > 0)
+    lua_pushlstring(L, mem->data, mem->length);
+  else
+    lua_pushnil(L);
   BIO_free_all(b64);
   if (encode)
-    BIO_free(bio);
+    BIO_free(inp);
   else
     BIO_free(out);
   return 1;

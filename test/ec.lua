@@ -1,7 +1,27 @@
-local pkey = require'openssl'.pkey
+local openssl = require'openssl'
+local pkey = openssl.pkey
 local unpack = unpack or table.unpack
 
 testEC = {}
+
+    function testEC:testCompat()
+        local factor = {
+          alg = "ec",
+          ec_name = 415,
+          x = openssl.base64('fBEMZtz9qAf25p5F3bPHT2mhSE0gPo3Frajpqd18s8c=',false),
+          y = openssl.base64('DfRImG5RveXRV2+ZkB+cLGqAakf9kHZDpyuDVZfvyMY=',false),
+          d = openssl.base64('H+M5UMX0YRJK6ZLCvf3xxzsWFfVxvVZ+YNGaofSM30I=',false),
+        }
+        local ec = assert(pkey.new(factor))
+        local pem = assert(ec:export(true))
+        assertEquals(pem,[[
+-----BEGIN PRIVATE KEY-----
+MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgH+M5UMX0YRJK6ZLC
+vf3xxzsWFfVxvVZ+YNGaofSM30KhRANCAAR8EQxm3P2oB/bmnkXds8dPaaFITSA+
+jcWtqOmp3Xyzxw30SJhuUb3l0VdvmZAfnCxqgGpH/ZB2Q6crg1WX78jG
+-----END PRIVATE KEY-----
+]])
+    end
     function testEC:testEC()
         local nec =  {'ec','prime256v1'}
         local ec = pkey.new(unpack(nec))
@@ -43,3 +63,4 @@ testEC = {}
         assert(ec2priv:is_private())
 
     end
+--]==]
