@@ -146,11 +146,71 @@ static int openssl_ec_group_free(lua_State*L)
   return 0;
 }
 
+static int openssl_ec_group_asn1_flag(lua_State*L)
+{
+  EC_GROUP* group = CHECK_OBJECT(1, EC_GROUP, "openssl.ec_group");
+  int asn1_flag = 0;
+  if (lua_isnone(L, 2))
+  {
+    asn1_flag = EC_GROUP_get_asn1_flag(group);
+    if (asn1_flag == 0)
+      lua_pushstring(L, "explicit");
+    else if (asn1_flag == OPENSSL_EC_NAMED_CURVE)
+      lua_pushstring(L, "named_curve");
+    else
+      lua_pushinteger(L, asn1_flag);
+    return 1;
+  } else
+  {           /* OPENSSL_EC_NAMED_CURVE,   0 */
+    const char* const options[] = {"named_curve", "explicit", NULL};
+    asn1_flag = luaL_checkoption(L, 2, NULL, options);
+    EC_GROUP_set_asn1_flag(group, asn1_flag);
+  }
+
+  return 0;
+}
+
+static int openssl_ec_group_point_conversion_form(lua_State*L)
+{
+  EC_GROUP* group = CHECK_OBJECT(1, EC_GROUP, "openssl.ec_group");
+  point_conversion_form_t form = 0;
+  if (lua_isnone(L, 2))
+  {
+    form = EC_GROUP_get_point_conversion_form(group);
+    if (form == POINT_CONVERSION_COMPRESSED)
+      lua_pushstring(L, "compressed");
+    else if (form == POINT_CONVERSION_UNCOMPRESSED)
+      lua_pushstring(L, "uncompressed");
+    else if (form == POINT_CONVERSION_HYBRID)
+      lua_pushstring(L, "hybrid");
+    else
+      lua_pushnil(L);
+    return 1;
+  } else
+  {
+    const char* options[] = {"compressed", "uncompressed", "hybrid", NULL};
+    int f = luaL_checkoption(L, 2, NULL, options);
+    if (f == 0)
+      form = POINT_CONVERSION_COMPRESSED;
+    else if (f == 1)
+      form = POINT_CONVERSION_UNCOMPRESSED;
+    else if (f == 2)
+      form = POINT_CONVERSION_HYBRID;
+    else
+      luaL_argerror(L,2, "not accept point_conversion_form");
+    EC_GROUP_set_point_conversion_form(group, form);
+  }
+  return 0;
+}
+
 static luaL_Reg ec_group_funs[] =
 {
   {"__tostring", auxiliar_tostring},
   {"affine_coordinates", openssl_ecpoint_affine_coordinates},
   {"parse", openssl_ec_group_parse},
+  {"asn1_flag", openssl_ec_group_asn1_flag},
+  {"point_conversion_form", openssl_ec_group_point_conversion_form},
+
   {"__gc", openssl_ec_group_free},
 
   { NULL, NULL }
