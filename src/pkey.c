@@ -116,15 +116,18 @@ static int openssl_pkey_read(lua_State*L)
   }
   else
   {
+    const char* passphrase = luaL_optstring(L, 4, NULL);
     if (fmt == FORMAT_PEM)
     {
-      const char* passphrase = luaL_optstring(L, 4, NULL);
       key = PEM_read_bio_PrivateKey(in, NULL, passphrase ? pkey_read_pass_cb : NULL, (void*)passphrase);
       BIO_reset(in);
     }else
     if (fmt == FORMAT_DER)
     {
-      d2i_PrivateKey_bio(in, &key);
+      if (passphrase)
+        d2i_PKCS8PrivateKey_bio(in, &key, NULL, (void*)passphrase);
+      else
+        d2i_PrivateKey_bio(in, &key);
       BIO_reset(in);
     }
   }
@@ -483,8 +486,10 @@ static LUA_FUNCTION(openssl_pkey_export)
 
   is_priv = openssl_pkey_is_private(key);
   bio_out = BIO_new(BIO_s_mem());
-  if (!is_priv)
-    exppriv = 0;
+  if (!is_priv && exppriv)
+  {
+    luaL_argerror(L, 2, "public key not support export private key");
+  }
 
   if (passphrase)
   {
@@ -504,37 +509,22 @@ static LUA_FUNCTION(openssl_pkey_export)
         ret = PEM_write_bio_PUBKEY(bio_out, key);
       else
       {
-        switch (EVP_PKEY_type(key->type))
+        int l;
+        l = i2d_PublicKey(key, NULL);
+        if (l > 0)
         {
-#ifndef OPENSSL_NO_EC
-          case EVP_PKEY_EC:
-            ret = i2d_EC_PUBKEY_bio(bio_out, key->pkey.ec);
-            break;
-#endif
-          default:
+          unsigned char* p = malloc(l);
+          unsigned char* pp = p;
+          l = i2d_PublicKey(key, &pp);
+          if (l > 0)
           {
-#if OPENSSL_VERSION_NUMBER > 0x10000000L
-            ret = i2b_PublicKey_bio(bio_out, key);
-#else
-
-            int l;
-            l = i2d_PublicKey(key, NULL);
-            if (l > 0)
-            {
-              unsigned char* p = malloc(l);
-              l = i2d_PublicKey(key, &p);
-              if (l > 0)
-              {
-                BIO_write(bio_out, p, l);
-                ret = 1;
-              } else
-                ret = 0;
-              free(p);
-            } else
-              ret = 0;
-#endif
-          }
-        }
+            BIO_write(bio_out, p, l);
+            ret = 1;
+          } else
+            ret = 0;
+          free(p);
+        } else
+          ret = 0;
       }
     }
     else
@@ -545,36 +535,7 @@ static LUA_FUNCTION(openssl_pkey_export)
       {
         if (passphrase == NULL)
         {
-          /* export raw key format */
-          switch (EVP_PKEY_type(key->type))
-          {
-#ifndef OPENSSL_NO_EC
-            case EVP_PKEY_EC:
-              ret = i2d_ECPrivateKey_bio(bio_out, key->pkey.ec);
-              break;
-#endif
-            default:
-            {
-#if OPENSSL_VERSION_NUMBER > 0x10000000L
-              ret = i2b_PrivateKey_bio(bio_out, key);
-#else
-              int l = i2d_PrivateKey(key, NULL);
-              if (l > 0)
-              {
-                unsigned char* p = malloc(l);
-                l = i2d_PrivateKey(key, &p);
-                if (l > 0)
-                {
-                  BIO_write(bio_out, p, l);
-                  ret = 1;
-                } else
-                  ret = 0;
-                free(p);
-              } else
-                ret = 0;
-#endif
-            }
-          }
+          ret = i2d_PrivateKey_bio(bio_out, key);
         }
         else
         {
@@ -586,6 +547,7 @@ static LUA_FUNCTION(openssl_pkey_export)
   else
   {
     /* export raw key format */
+
     switch (EVP_PKEY_type(key->type))
     {
     case EVP_PKEY_RSA:
@@ -598,7 +560,7 @@ static LUA_FUNCTION(openssl_pkey_export)
       else
       {
         ret = exppriv ? i2d_RSAPrivateKey_bio(bio_out, key->pkey.rsa)
-              : i2d_RSA_PUBKEY_bio(bio_out, key->pkey.rsa);
+              : i2d_RSAPublicKey_bio(bio_out, key->pkey.rsa);
       }
       break;
     case EVP_PKEY_DSA:
@@ -638,6 +600,7 @@ static LUA_FUNCTION(openssl_pkey_export)
       break;
     }
   }
+  
   if (ret)
   {
     char * bio_mem_ptr;
