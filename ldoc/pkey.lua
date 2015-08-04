@@ -42,9 +42,9 @@ function get_public() end
 
 --- read public/private key from data
 -- @tparam string|openssl.bio input string data or bio object
--- @tparam[opt=false] boolean prikey set true when input is private key
+-- @tparam[opt=false] boolean pem prikey set true when input is private key
 -- @tparam[opt='auto'] format format or encoding of input, support 'auto','pem','der'
--- @tparam[opt] string passhprase when not public need this
+-- @tparam[opt] string passhprase when input is private key, or key types 'ec','rsa','dsa','dh'
 -- @treturn evp_pkey public key
 -- @see evp_pkey
 function read() end
@@ -122,11 +122,19 @@ do  -- define class
 
 do  -- define evp_pkey
 
---- export evp_pkey as string 
--- @tparam[opt=false] boolean export_private, true for export private, or public only
--- @tparam[opt=false] boolean raw_key true for export low layer key just rsa,dsa,dc...
+--- export evp_pkey as pem string 
 -- @tparam[opt=true] boolean pem default export as pem format, false export as der string
--- @tparam[opt] string passphrase if given, export key will encrypt with des-cbc-ede
+-- @tparam[opt=false] boolean raw_key true for export low layer key just rsa,dsa,ec, and public key only support RSA
+-- @tparam[opt] string passphrase if given, export key will encrypt with des-cbc-ede,
+--    only need when export private key
+-- @treturn string 
+function export() end
+
+--- export evp_pkey as der string 
+-- @tparam boolean pem set false to export as der string
+-- @tparam[opt=false] boolean raw_key true for export low layer key just rsa,dsa,ec, and public key only support RSA
+-- @tparam[opt] string passphrase if given, export key will encrypt with des-cbc-ede,
+--    only need when export private key
 -- @treturn string 
 function export() end
 

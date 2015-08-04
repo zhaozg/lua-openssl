@@ -79,22 +79,23 @@ int openssl_pkey_is_private(EVP_PKEY* pkey)
   return 1;
 }
 
-int pkey_read_pass_cb(char *buf, int size, int rwflag, void *u)
-{
-  int len = size;
-
-  if (len <= 0) return 0;
-  strncpy(buf, (const char*)u, size);
-  len = strlen(buf);
-  return len;
-}
-
 static int openssl_pkey_read(lua_State*L)
 {
   EVP_PKEY * key = NULL;
   BIO* in = load_bio_object(L, 1);
   int priv = lua_isnoneornil(L, 2) ? 0 : auxiliar_checkboolean(L, 2);
   int fmt = luaL_checkoption(L, 3, "auto", format);
+  const char* passphrase = luaL_optstring(L, 4, NULL);
+  int type = -1;
+  if (passphrase)
+  {
+    if (strcmp(passphrase, "rsa") == 0 || strcmp(passphrase, "RSA") == 0)
+      type = EVP_PKEY_RSA;
+    else if (strcmp(passphrase, "dsa") == 0 || strcmp(passphrase, "DSA") == 0)
+      type = EVP_PKEY_DSA;
+    else if (strcmp(passphrase, "ec") == 0 || strcmp(passphrase, "EC") == 0)
+      type = EVP_PKEY_EC;
+  }
 
   if (fmt == FORMAT_AUTO)
   {
@@ -105,30 +106,57 @@ static int openssl_pkey_read(lua_State*L)
   {
     if (fmt == FORMAT_PEM)
     {
-      key = PEM_read_bio_PUBKEY(in, NULL, NULL, NULL);
+      key = PEM_read_bio_PUBKEY(in, NULL, NULL, (void*)passphrase);
       BIO_reset(in);
+      if (key == NULL && type == EVP_PKEY_RSA)
+      {
+        RSA* rsa = PEM_read_bio_RSAPublicKey(in, NULL, NULL, NULL);
+        if (rsa)
+        {
+          key = EVP_PKEY_new();
+          EVP_PKEY_assign_RSA(key, rsa);
+        }
+      }
     }else
     if (fmt == FORMAT_DER)
     {
       key = d2i_PUBKEY_bio(in, NULL);
       BIO_reset(in);
+      if (!key && type!=-1)
+      {
+        char * bio_mem_ptr;
+        long bio_mem_len;
+
+        bio_mem_len = BIO_get_mem_data(in, &bio_mem_ptr);
+        key = d2i_PublicKey(type, NULL, &bio_mem_ptr, bio_mem_len);
+        BIO_reset(in);
+      }
     }
   }
   else
   {
-    const char* passphrase = luaL_optstring(L, 4, NULL);
     if (fmt == FORMAT_PEM)
     {
-      key = PEM_read_bio_PrivateKey(in, NULL, passphrase ? pkey_read_pass_cb : NULL, (void*)passphrase);
+      key = PEM_read_bio_PrivateKey(in, NULL, NULL, (void*)passphrase);
       BIO_reset(in);
     }else
     if (fmt == FORMAT_DER)
     {
       if (passphrase)
-        d2i_PKCS8PrivateKey_bio(in, &key, NULL, (void*)passphrase);
+        key = d2i_PKCS8PrivateKey_bio(in, NULL, NULL, (void*)passphrase);
       else
-        d2i_PrivateKey_bio(in, &key);
+        key = d2i_PrivateKey_bio(in, NULL);
       BIO_reset(in);
+
+      if (!key && type != -1)
+      {
+        char * bio_mem_ptr;
+        long bio_mem_len;
+
+        bio_mem_len = BIO_get_mem_data(in, &bio_mem_ptr);
+        key = d2i_PrivateKey(type, NULL, &bio_mem_ptr, bio_mem_len);
+        BIO_reset(in);
+      }
     }
   }
   BIO_free(in);
@@ -465,7 +493,7 @@ static LUA_FUNCTION(openssl_pkey_new)
 static LUA_FUNCTION(openssl_pkey_export)
 {
   EVP_PKEY * key;
-  int exppriv = 0;
+  int ispriv = 0;
   int exraw = 0;
   int expem = 1;
   size_t passphrase_len = 0;
@@ -473,22 +501,21 @@ static LUA_FUNCTION(openssl_pkey_export)
   int ret = 0;
   const EVP_CIPHER * cipher;
   const char * passphrase = NULL;
-  int is_priv;
 
   key = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
-  if (!lua_isnoneornil(L, 2))
-    exppriv = lua_toboolean(L, 2);
-  if (!lua_isnoneornil(L, 3))
-    exraw = lua_toboolean(L, 3);
-  if (!lua_isnoneornil(L, 4))
-    expem = lua_toboolean(L, 4);
-  passphrase = luaL_optlstring(L, 5, NULL, &passphrase_len);
+  ispriv = openssl_pkey_is_private(key);
 
-  is_priv = openssl_pkey_is_private(key);
-  bio_out = BIO_new(BIO_s_mem());
-  if (!is_priv && exppriv)
+  if (!lua_isnoneornil(L, 2))
+    expem = lua_toboolean(L, 2);
+
+  if (expem)
   {
-    luaL_argerror(L, 2, "public key not support export private key");
+    if (!lua_isnoneornil(L, 3))
+      exraw = lua_toboolean(L, 3);
+    passphrase = luaL_optlstring(L, 4, NULL, &passphrase_len);
+  } else
+  {
+    passphrase = luaL_optlstring(L, 3, NULL, &passphrase_len);
   }
 
   if (passphrase)
@@ -500,106 +527,81 @@ static LUA_FUNCTION(openssl_pkey_export)
     cipher = NULL;
   }
 
-  if (!exraw)
+  bio_out = BIO_new(BIO_s_mem());
+  if (expem)
   {
-    /* export with EVP format */
-    if (!exppriv)
+    if (exraw==0)
     {
-      if (expem)
-        ret = PEM_write_bio_PUBKEY(bio_out, key);
-      else
-      {
-        int l;
-        l = i2d_PublicKey(key, NULL);
-        if (l > 0)
-        {
-          unsigned char* p = malloc(l);
-          unsigned char* pp = p;
-          l = i2d_PublicKey(key, &pp);
-          if (l > 0)
-          {
-            BIO_write(bio_out, p, l);
-            ret = 1;
-          } else
-            ret = 0;
-          free(p);
-        } else
-          ret = 0;
-      }
+      ret = ispriv ?
+        PEM_write_bio_PrivateKey(bio_out, key, cipher, (unsigned char *)passphrase, passphrase_len, NULL, NULL) :
+        PEM_write_bio_PUBKEY(bio_out, key);
     }
     else
     {
-      if (expem)
-        ret = PEM_write_bio_PrivateKey(bio_out, key, cipher, (unsigned char *)passphrase, passphrase_len, NULL, NULL);
-      else
+      /* export raw key format */
+      switch (EVP_PKEY_type(key->type))
       {
-        if (passphrase == NULL)
-        {
-          ret = i2d_PrivateKey_bio(bio_out, key);
-        }
-        else
-        {
-          ret = i2d_PKCS8PrivateKey_bio(bio_out, key, cipher, (char *)passphrase, passphrase_len, NULL, NULL);
-        }
+      case EVP_PKEY_RSA:
+      case EVP_PKEY_RSA2:
+        ret = ispriv ? PEM_write_bio_RSAPrivateKey(bio_out, key->pkey.rsa, cipher, (unsigned char *)passphrase, passphrase_len, NULL, NULL)
+          : PEM_write_bio_RSAPublicKey(bio_out, key->pkey.rsa);
+      break;
+      case EVP_PKEY_DSA:
+      case EVP_PKEY_DSA2:
+      case EVP_PKEY_DSA3:
+      case EVP_PKEY_DSA4:
+      {
+        ret = ispriv ? PEM_write_bio_DSAPrivateKey(bio_out, key->pkey.dsa, cipher, (unsigned char *)passphrase, passphrase_len, NULL, NULL)
+          : PEM_write_bio_DSA_PUBKEY(bio_out, key->pkey.dsa);
+      }
+      break;
+      case EVP_PKEY_DH:
+        ret = PEM_write_bio_DHparams(bio_out, key->pkey.dh);
+      break;
+#ifndef OPENSSL_NO_EC
+      case EVP_PKEY_EC:
+        ret = ispriv ? PEM_write_bio_ECPrivateKey(bio_out, key->pkey.ec, cipher, (unsigned char *)passphrase, passphrase_len, NULL, NULL)
+        : PEM_write_bio_EC_PUBKEY(bio_out, key->pkey.ec);
+      break;
+#endif
+      default:
+      ret = 0;
+      break;
       }
     }
   }
   else
   {
-    /* export raw key format */
-
-    switch (EVP_PKEY_type(key->type))
+    if (ispriv)
     {
-    case EVP_PKEY_RSA:
-    case EVP_PKEY_RSA2:
-      if (expem)
+      if (passphrase == NULL)
       {
-        ret = exppriv ? PEM_write_bio_RSAPrivateKey(bio_out, key->pkey.rsa, cipher, (unsigned char *)passphrase, passphrase_len, NULL, NULL)
-              : PEM_write_bio_RSAPublicKey(bio_out, key->pkey.rsa);
-      }
-      else
+        ret = i2d_PrivateKey_bio(bio_out, key);
+      } else
       {
-        ret = exppriv ? i2d_RSAPrivateKey_bio(bio_out, key->pkey.rsa)
-              : i2d_RSAPublicKey_bio(bio_out, key->pkey.rsa);
+        ret = i2d_PKCS8PrivateKey_bio(bio_out, key, cipher, (char *)passphrase, passphrase_len, NULL, NULL);
       }
-      break;
-    case EVP_PKEY_DSA:
-    case EVP_PKEY_DSA2:
-    case EVP_PKEY_DSA3:
-    case EVP_PKEY_DSA4:
-      if (expem)
+    } else
+    {
+      int l;
+      l = i2d_PublicKey(key, NULL);
+      if (l > 0)
       {
-        ret = exppriv ? PEM_write_bio_DSAPrivateKey(bio_out, key->pkey.dsa, cipher, (unsigned char *)passphrase, passphrase_len, NULL, NULL)
-              : PEM_write_bio_DSA_PUBKEY(bio_out, key->pkey.dsa);
-      }
-      else
-      {
-        ret = exppriv ? i2d_DSAPrivateKey_bio(bio_out, key->pkey.dsa)
-              : i2d_DSA_PUBKEY_bio(bio_out, key->pkey.dsa);
-      }
-      break;
-    case EVP_PKEY_DH:
-      if (expem)
-        ret = PEM_write_bio_DHparams(bio_out, key->pkey.dh);
-      else
-        ret = i2d_DHparams_bio(bio_out, key->pkey.dh);
-      break;
-#ifndef OPENSSL_NO_EC
-    case EVP_PKEY_EC:
-      if (expem)
-        ret = exppriv ? PEM_write_bio_ECPrivateKey(bio_out, key->pkey.ec, cipher, (unsigned char *)passphrase, passphrase_len, NULL, NULL)
-              : PEM_write_bio_EC_PUBKEY(bio_out, key->pkey.ec);
-      else
-        ret = exppriv ? i2d_ECPrivateKey_bio(bio_out, key->pkey.ec)
-              : i2d_EC_PUBKEY_bio(bio_out, key->pkey.ec);
-
-      break;
-#endif
-    default:
-      ret = 0;
-      break;
+        unsigned char* p = malloc(l);
+        unsigned char* pp = p;
+        l = i2d_PublicKey(key, &pp);
+        if (l > 0)
+        {
+          BIO_write(bio_out, p, l);
+          ret = 1;
+        } else
+          ret = 0;
+        free(p);
+      } else
+        ret = 0;
     }
   }
+
   
   if (ret)
   {
