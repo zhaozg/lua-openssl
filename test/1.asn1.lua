@@ -8,7 +8,7 @@ TestObject = {}
         self.oid = '2.5.4.6'
         self.nid = 14
         assertIsTable(asn1)
-        
+
         self.ne_sn = 'Good1'
         self.ne_ln = 'GoodString1'
         self.ne_oid = '1.2.3.4.1'
@@ -36,14 +36,14 @@ TestObject = {}
         o6 = o1:dup()
         assert(o1==o6)
 
-        
+
         local sn,ln = o1:name()
         local nid = o1:nid()
         local sn1,ln1 = o1:sn(), o2:ln()
         local txt = o1:txt()
         local oid = o1:txt(true)
         local dat = o1:data()
-            
+
         assertEquals(sn,self.sn)
         assertEquals(ln,self.ln)
         assertEquals(oid,self.oid)
@@ -53,14 +53,14 @@ TestObject = {}
         assertEquals(ln1,ln)
         assertEquals(txt, ln)
         assertEquals(o1:txt(false), txt)
-  
+
         assertErrorMsgContains('(need accept paramater)', asn1.new_object)
         local options = {
             oid ='1.2.840.10045.2.1.2.1',
             sn  ='gmsm21',
             ln  ='CCSTC GMSM2 EC1'
         }
-  
+
         o7 = asn1.new_object(options.sn)
         if not o7 then
             assertEquals(openssl.error(),218513530)
@@ -72,7 +72,7 @@ TestObject = {}
             assertEquals(asn1.txt2nid(options.ln), o7:nid())
             assertEquals(asn1.txt2nid(options.oid), o7:nid())
         end
-        
+
         assertEquals(asn1.txt2nid(self.ne_oid),nil)
         assertIsNil(asn1.new_object(self.ne_sn))
         assertIsNil(asn1.new_object(self.ne_ln))
@@ -85,7 +85,7 @@ TestObject = {}
 TestString = {}
     function TestString:setUp()
         self.bmp = 'abcd'
-        self.bmp_cn = '赵治国'
+        self.bmp_cn = '中文名字'
     end
 
     function TestString:tearDown()
@@ -93,29 +93,27 @@ TestString = {}
 
     function TestString:testAll()
         local s1,s2,s3,s4,s5,s6
-        s1 = asn1.new_string(self.bmp,'bmp')
-        s2 = asn1.new_string(self.bmp_cn,'bmp')
+        s1 = asn1.new_string(self.bmp,asn1.BMPSTRING)
+        s2 = asn1.new_string(self.bmp_cn,asn1.BMPSTRING)
         local utf_cn = s2:toutf8()
-        s3 = asn1.new_string(utf_cn,'utf8')
+        s3 = asn1.new_string(utf_cn,asn1.UTF8STRING)
         assertEquals(utf_cn,s3:data())
-        
+
         assertEquals(#s3,#utf_cn)
         assertEquals(s3:length(),#utf_cn)
-        assertEquals(s3:type(),'utf8')
-        assertEquals(s2:type(),'bmp')
-        s4 = asn1.new_string('','utf8')
+        assertEquals(s3:type(),asn1.UTF8STRING)
+        assertEquals(s2:type(),asn1.BMPSTRING)
+        s4 = asn1.new_string('',asn1.UTF8STRING)
         s4:data(utf_cn)
         assertEquals(s4, s3)
-        s6 = asn1.new_string(self.bmp,'ia5')
+        s6 = asn1.new_string(self.bmp,asn1.IA5STRING)
         assertEquals(s6:print(),self.bmp)
-        
+
         assertStrMatches(s1:print(),[[\U6162\U6364]])
-        assertStrMatches(s4:print(),[[\UD5D4\UD6CE\UB9FA]])
-        
+        assertStrMatches(s4:print(),[[\UD6D0\UCEC4\UC3FB\UD7D6]])
+
         s5 = s4:dup()
         assertEquals(s5,s3)
-        assertStrContains(tostring(s2),'bmp:')
-        assertStrContains(tostring(s3),'utf8:')
         assert(s4==s3)
-    end    
+    end
 

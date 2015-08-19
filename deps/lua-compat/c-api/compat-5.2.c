@@ -276,6 +276,42 @@ int luaL_fileresult (lua_State *L, int stat, const char *fname) {
     return 3;
   }
 }
+
+#if !defined(l_inspectstat) && \
+    (defined(unix) || defined(__unix) || defined(__unix__) || \
+     defined(__TOS_AIX__) || defined(_SYSTYPE_BSD))
+/* some form of unix; check feature macros in unistd.h for details */
+#  include <unistd.h>
+/* check poisix version; the relevant include files and macros probably
+ * were available before 2001, but I'm not sure */
+#  if defined(_POSIX_VERSION) && _POSIX_VERSION >= 200112L
+#    include <sys/wait.h>
+#    define l_inspectstat(stat,what) \
+  if (WIFEXITED(stat)) { stat = WEXITSTATUS(stat); } \
+  else if (WIFSIGNALED(stat)) { stat = WTERMSIG(stat); what = "signal"; }
+#  endif
+#endif
+
+/* provide default (no-op) version */
+#if !defined(l_inspectstat)
+#  define l_inspectstat(stat,what) ((void)0)
+#endif
+
+int luaL_execresult (lua_State *L, int stat) {
+  const char *what = "exit";
+  if (stat == -1)
+    return luaL_fileresult(L, 0, NULL);
+  else {
+    l_inspectstat(stat, what);
+    if (*what == 'e' && stat == 0)
+      lua_pushboolean(L, 1);
+    else
+      lua_pushnil(L);
+    lua_pushstring(L, what);
+    lua_pushnumber(L, (lua_Number)stat);
+    return 3;
+  }
+}
 #endif
 
 
@@ -399,6 +435,75 @@ union compat52_luai_Cast { double l_d; LUA_INT32 l_p[2]; };
 /********************************************************************/
 
 
+static void compat52_call_lua (lua_State *L, char const code[], size_t len,
+                               int nargs, int nret) {
+  lua_rawgetp(L, LUA_REGISTRYINDEX, (void*)code);
+  if (lua_type(L, -1) != LUA_TFUNCTION) {
+    lua_pop(L, 1);
+    if (luaL_loadbuffer(L, code, len, "=none"))
+      lua_error(L);
+    lua_pushvalue(L, -1);
+    lua_rawsetp(L, LUA_REGISTRYINDEX, (void*)code);
+  }
+  lua_insert(L, -nargs-1);
+  lua_call(L, nargs, nret);
+}
+
+static const char compat52_arith_code[] = {
+  "local op,a,b=...\n"
+  "if op==0 then return a+b\n"
+  "elseif op==1 then return a-b\n"
+  "elseif op==2 then return a*b\n"
+  "elseif op==3 then return a/b\n"
+  "elseif op==4 then return a%b\n"
+  "elseif op==5 then return a^b\n"
+  "elseif op==6 then return -a\n"
+  "end\n"
+};
+
+void lua_arith (lua_State *L, int op) {
+  if (op < LUA_OPADD || op > LUA_OPUNM)
+    luaL_error(L, "invalid 'op' argument for lua_arith");
+  luaL_checkstack(L, 5, "not enough stack slots");
+  if (op == LUA_OPUNM)
+    lua_pushvalue(L, -1);
+  lua_pushnumber(L, op);
+  lua_insert(L, -3);
+  compat52_call_lua(L, compat52_arith_code,
+                    sizeof(compat52_arith_code)-1, 3, 1);
+}
+
+
+static const char compat52_compare_code[] = {
+  "local a,b=...\n"
+  "return a<=b\n"
+};
+
+int lua_compare (lua_State *L, int idx1, int idx2, int op) {
+  int result = 0;
+  switch (op) {
+    case LUA_OPEQ:
+      return lua_equal(L, idx1, idx2);
+    case LUA_OPLT:
+      return lua_lessthan(L, idx1, idx2);
+    case LUA_OPLE:
+      luaL_checkstack(L, 5, "not enough stack slots");
+      idx1 = lua_absindex(L, idx1);
+      idx2 = lua_absindex(L, idx2);
+      lua_pushvalue(L, idx1);
+      lua_pushvalue(L, idx2);
+      compat52_call_lua(L, compat52_compare_code,
+                        sizeof(compat52_compare_code)-1, 2, 1);
+      result = lua_toboolean(L, -1);
+      lua_pop(L, 1);
+      return result;
+    default:
+      luaL_error(L, "invalid 'op' argument for lua_compare");
+  }
+  return 0;
+}
+
+
 void lua_pushunsigned (lua_State *L, lua_Unsigned n) {
   lua_pushnumber(L, lua_unsigned2number(n));
 }
@@ -440,7 +545,8 @@ void lua_len (lua_State *L, int i) {
   switch (lua_type(L, i)) {
     case LUA_TSTRING: /* fall through */
     case LUA_TTABLE:
-      lua_pushnumber(L, (int)lua_objlen(L, i));
+      if (!luaL_callmeta(L, i, "__len"))
+        lua_pushnumber(L, (int)lua_objlen(L, i));
       break;
     case LUA_TUSERDATA:
       if (luaL_callmeta(L, i, "__len"))
@@ -508,6 +614,63 @@ void luaL_requiref (lua_State *L, char const* modname,
     lua_pushvalue(L, -1);
     lua_setglobal(L, modname);
   }
+}
+
+
+void luaL_buffinit (lua_State *L, luaL_Buffer_52 *B) {
+  /* make it crash if used via pointer to a 5.1-style luaL_Buffer */
+  B->b.p = NULL;
+  B->b.L = NULL;
+  B->b.lvl = 0;
+  /* reuse the buffer from the 5.1-style luaL_Buffer though! */
+  B->ptr = B->b.buffer;
+  B->capacity = LUAL_BUFFERSIZE;
+  B->nelems = 0;
+  B->L2 = L;
+}
+
+
+char *luaL_prepbuffsize (luaL_Buffer_52 *B, size_t s) {
+  if (B->capacity - B->nelems < s) { /* needs to grow */
+    char* newptr = NULL;
+    size_t newcap = B->capacity * 2;
+    if (newcap - B->nelems < s)
+      newcap = B->nelems + s;
+    if (newcap < B->capacity) /* overflow */
+      luaL_error(B->L2, "buffer too large");
+    newptr = lua_newuserdata(B->L2, newcap);
+    memcpy(newptr, B->ptr, B->nelems);
+    if (B->ptr != B->b.buffer)
+      lua_replace(B->L2, -2); /* remove old buffer */
+    B->ptr = newptr;
+    B->capacity = newcap;
+  }
+  return B->ptr+B->nelems;
+}
+
+
+void luaL_addlstring (luaL_Buffer_52 *B, const char *s, size_t l) {
+  memcpy(luaL_prepbuffsize(B, l), s, l);
+  luaL_addsize(B, l);
+}
+
+
+void luaL_addvalue (luaL_Buffer_52 *B) {
+  size_t len = 0;
+  const char *s = lua_tolstring(B->L2, -1, &len);
+  if (!s)
+    luaL_error(B->L2, "cannot convert value to string");
+  if (B->ptr != B->b.buffer)
+    lua_insert(B->L2, -2); /* userdata buffer must be at stack top */
+  luaL_addlstring(B, s, len);
+  lua_remove(B->L2, B->ptr != B->b.buffer ? -2 : -1);
+}
+
+
+void luaL_pushresult (luaL_Buffer_52 *B) {
+  lua_pushlstring(B->L2, B->ptr, B->nelems);
+  if (B->ptr != B->b.buffer)
+    lua_replace(B->L2, -2); /* remove userdata buffer */
 }
 
 

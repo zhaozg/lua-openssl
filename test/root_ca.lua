@@ -1536,8 +1536,8 @@ rscL9yuwNwXsvFcj4jjSm2jzVhKIT0J8uDHEtdvkyCE06UgRNe76x5JXxZ805Mf2
 9w4LTJxoeHtxMcfrHuBnQfO3oKfN5XozNmr6mis=
 -----END CERTIFICATE-----
 ]],
--- Issuer: CN=TÜRKTRUST Elektronik Sertifika Hizmet Sağlayıcısı O=(c) 2005 TÜRKTRUST Bilgi İletişim ve Bilişim Güvenliği Hizmetleri A.Ş.
--- Subject: CN=TÜRKTRUST Elektronik Sertifika Hizmet Sağlayıcısı O=(c) 2005 TÜRKTRUST Bilgi İletişim ve Bilişim Güvenliği Hizmetleri A.Ş.
+-- Issuer: CN=T  RKTRUST Elektronik Sertifika Hizmet Sa  lay  c  s   O=(c) 2005 T  RKTRUST Bilgi   leti  im ve Bili  im G  venli  i Hizmetleri A.  .
+-- Subject: CN=T  RKTRUST Elektronik Sertifika Hizmet Sa  lay  c  s   O=(c) 2005 T  RKTRUST Bilgi   leti  im ve Bili  im G  venli  i Hizmetleri A.  .
 -- Label: "TURKTRUST Certificate Services Provider Root 1"
 -- Serial: 1
 -- MD5 Fingerprint: f1:6a:22:18:c9:cd:df:ce:82:1d:1d:b7:78:5c:a9:a5
@@ -1568,8 +1568,8 @@ aLX/7KfS0zgYnNN9aV3wxqUeJBujR/xpB2jn5Jq07Q+hh4cCzofSSE7hvP/L8XKS
 RGQDJereW26fyfJOrN3H
 -----END CERTIFICATE-----
 ]],
--- Issuer: CN=TÜRKTRUST Elektronik Sertifika Hizmet Sağlayıcısı O=TÜRKTRUST Bilgi İletişim ve Bilişim Güvenliği Hizmetleri A.Ş. (c) Kasım 2005
--- Subject: CN=TÜRKTRUST Elektronik Sertifika Hizmet Sağlayıcısı O=TÜRKTRUST Bilgi İletişim ve Bilişim Güvenliği Hizmetleri A.Ş. (c) Kasım 2005
+-- Issuer: CN=T  RKTRUST Elektronik Sertifika Hizmet Sa  lay  c  s   O=T  RKTRUST Bilgi   leti  im ve Bili  im G  venli  i Hizmetleri A.  . (c) Kas  m 2005
+-- Subject: CN=T  RKTRUST Elektronik Sertifika Hizmet Sa  lay  c  s   O=T  RKTRUST Bilgi   leti  im ve Bili  im G  venli  i Hizmetleri A.  . (c) Kas  m 2005
 -- Label: "TURKTRUST Certificate Services Provider Root 2"
 -- Serial: 1
 -- MD5 Fingerprint: 37:a5:6e:d4:b1:25:84:97:b7:fd:56:15:7a:f9:a2:00
@@ -2371,8 +2371,8 @@ W9c3rkIO3aQab3yIVMUWbuF6aC74Or8NpDyJO3inTmODBCEIZ43ygknQW/2xzQ+D
 hNQ+IIX3Sj0rnP0qCglN6oH4EZw=
 -----END CERTIFICATE-----
 ]],
--- Issuer: CN=TÜBİTAK UEKAE Kök Sertifika Hizmet Sağlayıcısı - Sürüm 3 O=Türkiye Bilimsel ve Teknolojik Araştırma Kurumu - TÜBİTAK OU=Ulusal Elektronik ve Kriptoloji Araştırma Enstitüsü - UEKAE/Kamu Sertifikasyon Merkezi
--- Subject: CN=TÜBİTAK UEKAE Kök Sertifika Hizmet Sağlayıcısı - Sürüm 3 O=Türkiye Bilimsel ve Teknolojik Araştırma Kurumu - TÜBİTAK OU=Ulusal Elektronik ve Kriptoloji Araştırma Enstitüsü - UEKAE/Kamu Sertifikasyon Merkezi
+-- Issuer: CN=T  B  TAK UEKAE K  k Sertifika Hizmet Sa  lay  c  s   - S  r  m 3 O=T  rkiye Bilimsel ve Teknolojik Ara  t  rma Kurumu - T  B  TAK OU=Ulusal Elektronik ve Kriptoloji Ara  t  rma Enstit  s   - UEKAE/Kamu Sertifikasyon Merkezi
+-- Subject: CN=T  B  TAK UEKAE K  k Sertifika Hizmet Sa  lay  c  s   - S  r  m 3 O=T  rkiye Bilimsel ve Teknolojik Ara  t  rma Kurumu - T  B  TAK OU=Ulusal Elektronik ve Kriptoloji Ara  t  rma Enstit  s   - UEKAE/Kamu Sertifikasyon Merkezi
 -- Label: "T\xc3\x9c\x42\xC4\xB0TAK UEKAE K\xC3\xB6k Sertifika Hizmet Sa\xC4\x9Flay\xc4\xb1\x63\xc4\xb1s\xc4\xb1 - S\xC3\xBCr\xC3\xBCm 3"
 -- Serial: 17
 -- MD5 Fingerprint: ed:41:f5:8c:50:c5:2b:9c:73:e6:ee:6c:eb:c2:a8:26
@@ -2465,8 +2465,8 @@ e/4qxFi7T/ye/QNlGioOw6UgFpRreaaiErS7GqQjel/wroQk5PMr+4okoyeYZdow
 dXb8GZHo2+ubPzK/QJcHJrrM85SFSnonk8+QQtS4Wxam58tAA915
 -----END CERTIFICATE-----
 ]],
--- Issuer: CN=EBG Elektronik Sertifika Hizmet Sağlayıcısı O=EBG Bilişim Teknolojileri ve Hizmetleri A.Ş.
--- Subject: CN=EBG Elektronik Sertifika Hizmet Sağlayıcısı O=EBG Bilişim Teknolojileri ve Hizmetleri A.Ş.
+-- Issuer: CN=EBG Elektronik Sertifika Hizmet Sa  lay  c  s   O=EBG Bili  im Teknolojileri ve Hizmetleri A.  .
+-- Subject: CN=EBG Elektronik Sertifika Hizmet Sa  lay  c  s   O=EBG Bili  im Teknolojileri ve Hizmetleri A.  .
 -- Label: "EBG Elektronik Sertifika Hizmet Sa\xC4\x9Flay\xc4\xb1\x63\xc4\xb1s\xc4\xb1"
 -- Serial: 5525761995591021570
 -- MD5 Fingerprint: 2c:20:26:9d:cb:1a:4a:00:85:b5:b7:5a:ae:c2:01:37
@@ -2772,9 +2772,9 @@ kf3upm7ktS5Jj4d4gYDs5bG1MAoGCCqGSM49BAMDA2gAMGUCMGYhDBgmYFo4e1ZC
 FRJZap7v1VmyHVIsmXHNxynfGyphe3HR3vPA5Q06Sqotp9iGKt0uEA==
 -----END CERTIFICATE-----
 ]],
--- Issuer: CN=NetLock Arany (Class Gold) Főtanúsítvány O=NetLock Kft. OU=Tanúsítványkiadók (Certification Services)
--- Subject: CN=NetLock Arany (Class Gold) Főtanúsítvány O=NetLock Kft. OU=Tanúsítványkiadók (Certification Services)
--- Label: "NetLock Arany (Class Gold) Főtanúsítvány"
+-- Issuer: CN=NetLock Arany (Class Gold) F  tan  s  tv  ny O=NetLock Kft. OU=Tan  s  tv  nykiad  k (Certification Services)
+-- Subject: CN=NetLock Arany (Class Gold) F  tan  s  tv  ny O=NetLock Kft. OU=Tan  s  tv  nykiad  k (Certification Services)
+-- Label: "NetLock Arany (Class Gold) F  tan  s  tv  ny"
 -- Serial: 80544274841616
 -- MD5 Fingerprint: c5:a1:b7:ff:73:dd:d6:d7:34:32:18:df:fc:3c:ad:88
 -- SHA1 Fingerprint: 06:08:3f:59:3f:15:a1:04:a0:69:a4:6b:a9:03:d0:06:b7:97:09:91
@@ -3527,9 +3527,9 @@ VoNzcOSGGtIxQbovvi0TWnZvTuhOgQ4/WwMioBK+ZlgRSssDxLQqKi2WF+A5VLxI
 03YnnZotBqbJ7DnSq9ufmgsnAjUpsUCV5/nonFWIGUbWtzT1fs45mtk48VH3Tyw=
 -----END CERTIFICATE-----
 ]],
--- Issuer: CN=Certinomis - Autorité Racine O=Certinomis OU=0002 433998903
--- Subject: CN=Certinomis - Autorité Racine O=Certinomis OU=0002 433998903
--- Label: "Certinomis - Autorité Racine"
+-- Issuer: CN=Certinomis - Autorit   Racine O=Certinomis OU=0002 433998903
+-- Subject: CN=Certinomis - Autorit   Racine O=Certinomis OU=0002 433998903
+-- Label: "Certinomis - Autorit   Racine"
 -- Serial: 1
 -- MD5 Fingerprint: 7f:30:78:8c:03:e3:ca:c9:0a:e2:c9:ea:1e:aa:55:1a
 -- SHA1 Fingerprint: 2e:14:da:ec:28:f0:fa:1e:8e:38:9a:4e:ab:eb:26:c0:0a:d3:83:c3
@@ -4036,8 +4036,8 @@ iAYLtqZLICjU3j2LrTcFU3T+bsy8QxdxXvnFzBqpYe73dgzzcvRyrc9yAjYHR8/v
 GVCJYMzpJJUPwssd8m92kMfMdcGWxZ0=
 -----END CERTIFICATE-----
 ]],
--- Issuer: CN=TÜRKTRUST Elektronik Sertifika Hizmet Sağlayıcısı O=TÜRKTRUST Bilgi İletişim ve Bilişim Güvenliği Hizmetleri A.Ş. (c) Aralık 2007
--- Subject: CN=TÜRKTRUST Elektronik Sertifika Hizmet Sağlayıcısı O=TÜRKTRUST Bilgi İletişim ve Bilişim Güvenliği Hizmetleri A.Ş. (c) Aralık 2007
+-- Issuer: CN=T  RKTRUST Elektronik Sertifika Hizmet Sa  lay  c  s   O=T  RKTRUST Bilgi   leti  im ve Bili  im G  venli  i Hizmetleri A.  . (c) Aral  k 2007
+-- Subject: CN=T  RKTRUST Elektronik Sertifika Hizmet Sa  lay  c  s   O=T  RKTRUST Bilgi   leti  im ve Bili  im G  venli  i Hizmetleri A.  . (c) Aral  k 2007
 -- Label: "TURKTRUST Certificate Services Provider Root 2007"
 -- Serial: 1
 -- MD5 Fingerprint: 2b:70:20:56:86:82:a0:18:c8:07:53:12:28:70:21:72
@@ -4519,8 +4519,8 @@ HL/EVlP6Y2XQ8xwOFvVrhlhNGNTkDY6lnVuR3HYkUD/GKvvZt5y11ubQ2egZixVx
 SK236thZiNSQvxaz2emsWWFUyBy6ysHK4bkgTI86k4mloMy/0/Z1pHWWbVY=
 -----END CERTIFICATE-----
 ]],
--- Issuer: CN=E-Tugra Certification Authority O=E-Tuğra EBG Bilişim Teknolojileri ve Hizmetleri A.Ş. OU=E-Tugra Sertifikasyon Merkezi
--- Subject: CN=E-Tugra Certification Authority O=E-Tuğra EBG Bilişim Teknolojileri ve Hizmetleri A.Ş. OU=E-Tugra Sertifikasyon Merkezi
+-- Issuer: CN=E-Tugra Certification Authority O=E-Tu  ra EBG Bili  im Teknolojileri ve Hizmetleri A.  . OU=E-Tugra Sertifikasyon Merkezi
+-- Subject: CN=E-Tugra Certification Authority O=E-Tu  ra EBG Bili  im Teknolojileri ve Hizmetleri A.  . OU=E-Tugra Sertifikasyon Merkezi
 -- Label: "E-Tugra Certification Authority"
 -- Serial: 7667447206703254355
 -- MD5 Fingerprint: b8:a1:03:63:b0:bd:21:71:70:8a:6f:13:3a:bb:79:49
@@ -4926,8 +4926,8 @@ OtzCWfHjXEa7ZywCRuoeSKbmW9m1vFGikpbbqsY3Iqb+zCB0oy2pLmvLwIIRIbWT
 ee5Ehr7XHuQe+w==
 -----END CERTIFICATE-----
 ]],
--- Issuer: CN=CA 沃通根证书 O=WoSign CA Limited
--- Subject: CN=CA 沃通根证书 O=WoSign CA Limited
+-- Issuer: CN=CA                 O=WoSign CA Limited
+-- Subject: CN=CA                 O=WoSign CA Limited
 -- Label: "WoSign China"
 -- Serial: 106921963437422998931660691310149453965
 -- MD5 Fingerprint: 78:83:5b:52:16:76:c4:24:3b:83:78:e8:ac:da:9a:93

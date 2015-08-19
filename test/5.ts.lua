@@ -2,10 +2,10 @@ local openssl = require'openssl'
 
 local asn1,ts,asn1,csr = openssl.asn1,openssl.ts,openssl.asn1, openssl.x509.req
 
-local timeStamping = openssl.asn1.new_string('timeStamping','octet')
+local timeStamping = openssl.asn1.new_string('timeStamping',asn1.OCTET_STRING)
 local timeStamping=asn1.new_type('timeStamping')
-timeStamping = timeStamping:i2d() 
-local cafalse = openssl.asn1.new_string('CA:FALSE','octet')
+timeStamping = timeStamping:i2d()
+local cafalse = openssl.asn1.new_string('CA:FALSE',asn1.OCTET_STRING)
 
 TestTS = {}
     function TestTS:setUp()
@@ -13,7 +13,7 @@ TestTS = {}
 
         self.cadn = {{commonName='CA'},{C='CN'}}
         self.tsadn = {{commonName='tsa'},{C='CN'}}
-        
+
         self.digest = 'sha1WithRSAEncryption'
         self.md = openssl.digest.get('sha1WithRSAEncryption')
         self.dat=[[
@@ -46,12 +46,12 @@ function TestTS:testAll()
             {
                 {
                     object='basicConstraints',
-                    type='octet',
+                    type=asn1.OCTET_STRING,
                     value=cafalse
                 }
             }
         )
-    local extensions = 
+    local extensions =
         openssl.x509.extension.new_sk_extension(
         {{
             object='extendedKeyUsage',
@@ -73,7 +73,7 @@ function TestTS:testAll()
     assert(x509:validat(os.time(), os.time() + 3600*24*365))
     assert(x509:extensions(extensions))
     assert(x509:sign(cakey,cacert))
-    t = assert(x509:parse())   
+    t = assert(x509:parse())
     assertEquals(type(t),'table')
     --print_r(t)
 
@@ -86,7 +86,7 @@ function TestTS:testAll()
     local t = req1:info()
     assertIsTable(t)
     --print_r(t)
-    
+
     local req_ctx = assert(ts.resp_ctx_new(x509, pkey, '1.2.3.4.1'))
     assert(req_ctx:md({'md5','sha1'}))
     --assert(req_ctx:policies({'1.1.3','1.1.4'}))
@@ -98,16 +98,16 @@ function TestTS:testAll()
     t = res:tst_info()
     assertIsTable(t)
     --print_r(t)
-    
+
     local skx = openssl.x509.store.new({cacert})
-    
+
     assert(x509:check(skx,nil,'timestamp_sign'))
 
     local res = assert(openssl.ts.resp_read(res:export()))
     local vry = assert(req:to_verify_ctx())
     assert(vry:store(skx))
     assert(vry:verify(res))
-    
+
     local vry = ts.verify_ctx_new(req)
     assert(vry:store(skx))
     assert(vry:verify(res))

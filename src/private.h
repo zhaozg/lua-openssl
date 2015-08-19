@@ -45,6 +45,12 @@
   lua_pop(L,1);                                             \
 }
 
+static size_t posrelat(ptrdiff_t pos, size_t len)
+{
+  if (pos >= 0) return (size_t)pos;
+  else if (0u - (size_t)pos > len) return 0;
+  else return len - ((size_t)-pos) + 1;
+}
 
 enum
 {
@@ -87,7 +93,6 @@ STACK_OF(X509)* openssl_sk_x509_dup(STACK_OF(X509)* sk);
 STACK_OF(X509_CRL)* openssl_sk_x509_crl_dup(STACK_OF(X509_CRL)* sk);
 
 int openssl_get_nid(lua_State*L, int idx);
-int openssl_get_asn1type(lua_State*L, int idx);
 EC_GROUP* openssl_get_ec_group(lua_State* L, int ec_name_idx, int param_enc_idx,
   int conv_form_idx);
 

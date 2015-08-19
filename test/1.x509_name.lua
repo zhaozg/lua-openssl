@@ -8,12 +8,12 @@ TestX509Name = {}
             {O='kkhub.com'},
             {CN='zhaozg'}
         }
-    
+
     end
 
     function TestX509Name:tearDown()
     end
-    
+
     function TestX509Name:testAll()
         local n1 = name.new(self.names)
         assertEquals(tostring(n1),n1:oneline())
@@ -22,10 +22,10 @@ TestX509Name = {}
         assert(n1:cmp(n2)==(n1==n2))
         assertEquals(n1,n2)
         assertEquals(n1:oneline(),'/C=CN/O=kkhub.com/CN=zhaozg')
-        
+
         assertIsNumber(n1:hash())
         assertEquals(#n1:digest('SHA1'),20)
-        
+
         local out = openssl.bio.mem()
         local out1 = openssl.bio.mem()
         n1:print(out)
@@ -33,25 +33,25 @@ TestX509Name = {}
 
         assert(out1:get_mem()==out:get_mem())
         assertEquals(out1:get_mem(),'C=CN, O=kkhub.com, CN=zhaozg')
-        
+
         local info = n1:info()
         assertIsTable(info)
         assert(n1:entry_count(),3)
-        
+
         assertEquals(n1:get_text('CN'),'zhaozg')
         assertEquals(n1:get_text('C'),'CN')
         assertEquals(n1:get_text('OU'),nil)
 
         assertIsTable(n1:get_entry(0))
-        
+
         assertIsTable(n1:get_entry(1))
         assertIsTable(n1:get_entry(2))
         assertIsNil(n1:get_entry(3))
 
-        local s2 = asn1.new_string('赵治国','bmp')
+        local s2 = asn1.new_string('中文名字',asn1.BMPSTRING)
         local utf_cn = s2:toutf8()
-        s3 = asn1.new_string(utf_cn,'utf8')
-        
+        s3 = asn1.new_string(utf_cn,asn1.UTF8STRING)
+
         assert(n1:add_entry('OU',utf_cn,true))
         local S, i = n1:get_text('OU')
         assertEquals(i,3)
@@ -59,9 +59,8 @@ TestX509Name = {}
         assertStrContains(tostring(k),'openssl.asn1_object')
 	_,_,opensslv = openssl.version(true)
         if opensslv > 0x10002000 then
-            assertStrContains(tostring(v),'utf8')  --bug on old version openssl, wrong type
-            assertEquals(v:print(),[[\UD5D4\UD6CE\UB9FA]])
-            assertEquals(tostring(v),'utf8:'..v:toutf8())
+            assertEquals(v:print(),[[\UD6D0\UCEC4\UC3FB\UD7D6]])
+            assertEquals(tostring(v), v:toutf8())
         end
     end
-    
+

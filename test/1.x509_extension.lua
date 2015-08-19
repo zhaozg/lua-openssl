@@ -1,10 +1,10 @@
 local ext = require'openssl'.x509.extension
-
+local asn1 = require'openssl'.asn1
 TestX509ext = {}
 
     function TestX509ext:setUp()
-        self.timeStamping = openssl.asn1.new_string('timeStamping','ia5')
-        self.cafalse = openssl.asn1.new_string('CA:FALSE','octet')
+        self.timeStamping = openssl.asn1.new_string('timeStamping',asn1.IA5STRING)
+        self.cafalse = openssl.asn1.new_string('CA:FALSE',asn1.OCTET_STRING)
         self.time = {
             object = 'extendedKeyUsage',
             critical = true,
@@ -27,7 +27,7 @@ TestX509ext = {}
 
     function TestX509ext:tearDown()
     end
-    
+
     function TestX509ext:testsk()
         local sk  = ext.new_sk_extension(self.exts)
         assert(#sk,3)
@@ -51,12 +51,12 @@ TestX509ext = {}
         assertEquals(n1:object():ln(),'X509v3 Basic Constraints')
         n1:object('extendedKeyUsage')
         assertEquals(n1:object():sn(),'extendedKeyUsage')
- 
-        assertEquals(tostring(n1:data()),'octet:CA:FALSE')
+
+        assertEquals(tostring(n1:data()),'CA:FALSE')
         assertErrorMsgEquals('bad argument #2 to \'?\' (asn1_string type must be octet)',n1.data, n1,self.timeStamping)
         assert(n1:data('CA:FALSE'))
         assertEquals(n1:data(), self.cafalse)
-        
+
         local time = ext.new_extension(self.time)
         local der = time:export()
         local t1 = ext.read_extension(der)

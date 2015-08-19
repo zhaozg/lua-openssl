@@ -1,4 +1,4 @@
---- 
+---
 -- Provide asn1_object, asn1_string, asn1_object as lua object.
 -- Sometime when you want to custome x509, you maybe need to use this.
 --
@@ -51,6 +51,35 @@ function new_string() end
 -- @treturn integer nid or nil on fail
 function txt2nid() end
 
+--- make tag, class number to string
+--
+-- @tparam number clsortag which to string
+-- @tparam string range only accept 'class' or 'tag'
+function tostring() end
+
+--- parse der encoded string
+-- @tparam string der string
+-- @tparam[opt=1] number start offset to parse
+-- @tparam[opt=-i] number stop offset to parse
+--  this like string.sub()
+-- @treturn[1] number tag
+-- @treturn[1] number class
+-- @treturn[1] number parsed data start offset
+-- @treturn[1] number parsed data stop offset
+-- @treturn[1] boolean true for constructed data
+-- @treturn[2] nil for fail
+-- @treturn[2] string error msg
+-- @treturn[2] number inner error code
+
+function get_object() end
+
+--- do der encode and return encoded string partly head or full
+-- @tparam number tag
+-- @tparam number class
+-- @tparam[opt=nil] number|string length or date to encode, defualt will make
+-- indefinite length constructed
+-- @tparam[opt=nil] boolean constructed or not
+-- @treturn string der encoded string or head when not give data
 end
 
 do  -- define class

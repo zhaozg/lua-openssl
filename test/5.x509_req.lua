@@ -1,17 +1,18 @@
 local csr = require'openssl'.x509.req
+local asn1 = require'openssl'.asn1
 
 TestCSR = {}
 
         function TestCSR:setUp()
-                self.digest='md5'    
+                self.digest='md5'
                 self.subject = openssl.x509.name.new({
                     {C='CN'},
                     {O='kkhub.com'},
                     {CN='zhaozg'}
                 })
 
-                self.timeStamping = openssl.asn1.new_string('timeStamping','ia5')
-                self.cafalse = openssl.asn1.new_string('CA:FALSE','octet')
+                self.timeStamping = openssl.asn1.new_string('timeStamping',asn1.IA5STRING)
+                self.cafalse = openssl.asn1.new_string('CA:FALSE',asn1.OCTET_STRING)
 
                 self.exts = {
                         {
@@ -28,25 +29,25 @@ TestCSR = {}
                                 value='CA:FALSE'
                         }
                 }
-        
+
                 self.attrs = {
                         {
                                 object = 'extendedKeyUsage',
-                                type='ia5',
+                                type=asn1.IA5STRING,
                                 value = 'timeStamping',
                         },
                         {
                                 object='basicConstraints',
-                                type='octet',
+                                type=asn1.OCTET_STRING,
                                 value=self.cafalse
                         },
                         {
                                 object='basicConstraints',
-                                type='octet',
+                                type=asn1.OCTET_STRING,
                                 value='CA:FALSE'
                         }
                 }
-                
+
                 self.extensions = openssl.x509.extension.new_sk_extension(self.exts)
                 self.attributes = openssl.x509.attribute.new_sk_attribute(self.attrs)
         end
@@ -64,21 +65,21 @@ TestCSR = {}
 
                 req1 = assert(csr.new(self.subject))
                 req2 = assert(csr.new(self.subject, pkey))
-                
+
                 t = req1:parse()
                 assertIsTable(t)
                 t = req2:parse()
                 assertIsTable(t)
                 assert(req1:verify()==false);
                 assert(req2:verify());
-                
+
                 req1 = assert(csr.new(self.subject,self.attributes))
                 req2 = assert(csr.new(self.subject,self.attributes, pkey))
                 t = req1:parse()
                 assertIsTable(t)
                 t = req2:parse()
                 assertIsTable(t)
-                
+
 
                 assert(req1:verify()==false);
                 assert(req2:verify());
@@ -87,7 +88,7 @@ TestCSR = {}
                 req2 = assert(csr.new(self.subject,self.attributes,self.extensions, pkey))
                 assert(req1:verify()==false);
                 assert(req2:verify());
-                
+
                 t = req1:parse()
                 assertIsTable(t)
                 t = req2:parse()
@@ -98,12 +99,12 @@ TestCSR = {}
 
                 req1 = assert(csr.new(self.subject,self.attributes,self.extensions,pkey))
                 req2 = assert(csr.new(self.subject,self.attributes,self.extensions,pkey,self.digest))
-                
+
                 t = req1:parse()
                 assertIsTable(t)
                 t = req2:parse()
                 assertIsTable(t)
-                
+
                 assert(req1:verify());
                 assert(req2:verify());
 
@@ -112,7 +113,7 @@ TestCSR = {}
                 req2 = assert(csr.read(pem,'pem'))
                 assertIsNil(csr.read(pem,'der'))
                 req2 = assert(csr.read(pem,'auto'))
-            
+
                 local der = req2:export('der')
                 assertIsString(der)
                 req2 = assert(csr.read(der,'der'))
@@ -130,7 +131,7 @@ TestCSR = {}
                 assertEquals(req1:attr_count(),2+1)
                 req1:attribute(attr)
                 assertEquals(req1:attr_count(),3+1)
-                
+
                 assertEquals(req1:version(),0)
                 assertEquals(req1:version(1),true)
                 assertEquals(req1:version(),1)
@@ -150,7 +151,7 @@ TestCSR = {}
                 assert(req2:check(pkey))
 
                 local cert = req2:to_x509(pkey, 3650) -- self sign
-                t = cert:parse()                
+                t = cert:parse()
                 assertStrContains(tostring(req1:to_x509(pkey, 3650)),'openssl.x509')
                 assertStrContains(tostring(req2:to_x509(pkey, 3650)),'openssl.x509')
 
@@ -180,5 +181,5 @@ wSpxg0VN6+i6u9C9n4xwCe1VyteOC2In0LbxMAGL3rVFm9yDFRU3LDy3EWG6DIg/
         assertIsTable(t.req_info)
         assertIsTable(t.req_info.pubkey)
         assertIsString(t.req_info.pubkey.algorithm)
-        assertIsUserdata(t.req_info.pubkey.pubkey)   
+        assertIsUserdata(t.req_info.pubkey.pubkey)
 end
