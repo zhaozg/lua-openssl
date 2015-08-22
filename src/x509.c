@@ -738,39 +738,95 @@ static int openssl_x509_new(lua_State* L)
 static int openssl_x509_sign(lua_State*L)
 {
   X509* x = CHECK_OBJECT(1, X509, "openssl.x509");
-  EVP_PKEY* pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
-  const EVP_MD *md;
-  int ret = 1;
-  int i = 3;
-  luaL_argcheck(L, openssl_pkey_is_private(pkey), 2, "must be private key");
-  if (auxiliar_isclass(L, "openssl.x509_name", 3))
+  if (lua_isnoneornil(L, 2) && x->cert_info != NULL)
   {
-    X509_NAME* xn = CHECK_OBJECT(3, X509_NAME, "openssl.x509_name");
-    ret = X509_set_issuer_name(x, xn);
-    i++;
-  }
-  else
+    unsigned char *out = NULL;
+    int len = i2d_X509_CINF(x->cert_info, &out);
+    if (len > 0)
+    {
+      lua_pushlstring(L, out, len);
+      OPENSSL_free(out);
+      return 1;
+    }
+    return openssl_pushresult(L, len);
+  } else if (auxiliar_isclass(L, "openssl.evp_pkey", 2))
   {
-    X509* ca = CHECK_OBJECT(3, X509, "openssl.x509");
-    X509_NAME* xn = X509_get_subject_name(ca);
-    ret = X509_check_private_key(ca, pkey);
+    EVP_PKEY* pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
+    const EVP_MD *md;
+    int ret = 1;
+    int i = 3;
+    luaL_argcheck(L, openssl_pkey_is_private(pkey), 2, "must be private key");
+    if (auxiliar_isclass(L, "openssl.x509_name", 3))
+    {
+      X509_NAME* xn = CHECK_OBJECT(3, X509_NAME, "openssl.x509_name");
+      ret = X509_set_issuer_name(x, xn);
+      i++;
+    } else
+    {
+      X509* ca = CHECK_OBJECT(3, X509, "openssl.x509");
+      X509_NAME* xn = X509_get_subject_name(ca);
+      ret = X509_check_private_key(ca, pkey);
+      if (ret == 1)
+      {
+        ret = X509_set_issuer_name(x, xn);
+      }
+      i++;
+    }
+
     if (ret == 1)
     {
-      ret = X509_set_issuer_name(x, xn);
+      md = lua_isnoneornil(L, i) ?
+        EVP_get_digestbyname("sha1") :
+        get_digest(L, i);
+      ret = X509_sign(x, pkey, md);
+      if (ret > 0)
+        ret = 1;
     }
-    i++;
-  }
-
-  if (ret == 1)
+    return openssl_pushresult(L, ret);
+  } else
   {
-    md = lua_isnoneornil(L, i) ?
-         EVP_get_digestbyname("sha1") :
-         get_digest(L, i);
-    ret = X509_sign(x, pkey, md);
-    if (ret > 0)
-      ret = 1;
+    size_t sig_len;
+    const char* sig = luaL_checklstring(L, 2, &sig_len);
+    int nid = openssl_get_nid(L, 3);
+    int ret = ASN1_BIT_STRING_set(x->signature, (unsigned char*)sig, (int)sig_len);
+    if (ret == 1)
+    {
+      ASN1_OBJECT *obj = OBJ_nid2obj(nid);
+      ret = X509_ALGOR_set0(x->sig_alg, obj, V_ASN1_UNDEF, NULL);
+    }
+    return openssl_pushresult(L, ret);
   }
-  return openssl_pushresult(L, ret);
+}
+
+static int openssl_x509_verify(lua_State*L)
+{
+  X509* x = CHECK_OBJECT(1, X509, "openssl.x509");
+  if (lua_isnoneornil(L, 2) && x->cert_info!=NULL)
+  {
+    unsigned char *out = NULL;
+    int len = i2d_X509_CINF(x->cert_info, &out);
+    if (len > 0)
+    {
+      lua_pushlstring(L, out, len);
+      OPENSSL_free(out);
+      if (x->signature != NULL)
+      {
+        lua_pushlstring(L, x->signature->data, x->signature->length);
+      } else
+        lua_pushnil(L);
+      if (x->sig_alg)
+        openssl_push_x509_algor(L, x->sig_alg);
+      else
+        lua_pushnil(L);
+      return 3;
+    }
+    return openssl_pushresult(L, len);
+  } else
+  {
+    EVP_PKEY *pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
+    int ret = X509_verify(x, pkey);
+    return openssl_pushresult(L, ret);
+  }
 }
 
 static luaL_Reg x509_funcs[] =
@@ -795,6 +851,7 @@ static luaL_Reg x509_funcs[] =
   {"validat",    openssl_x509_valid_at},
 
   {"sign",       openssl_x509_sign},
+  {"verify",     openssl_x509_verify},
 
   {NULL,      NULL},
 };
