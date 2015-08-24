@@ -258,6 +258,119 @@ static luaL_reg asn1type_funcs[] =
   {NULL,        NULL}
 };
 
+
+static int openssl_asn1int_new(lua_State* L)
+{
+  ASN1_INTEGER *ai = NULL;
+  if (lua_isnone(L, 1))
+  {
+    ai = ASN1_INTEGER_new();
+  } else
+  {
+    BIGNUM *bn = BN_get(L, 1);
+    ai = BN_to_ASN1_INTEGER(bn, NULL);
+    BN_free(bn);
+  }
+  PUSH_OBJECT(ai, "openssl.asn1_integer");
+  return 1;
+}
+
+static int openssl_asn1int_set(lua_State *L)
+{
+  ASN1_INTEGER *ai = CHECK_OBJECT(1, ASN1_INTEGER, "openssl.asn1_integer");
+  long v = luaL_checklong(L, 2);
+  int ret = ASN1_INTEGER_set(ai, v);
+  return openssl_pushresult(L, ret);
+}
+
+static int openssl_asn1int_get(lua_State *L)
+{
+  ASN1_INTEGER *ai = CHECK_OBJECT(1, ASN1_INTEGER, "openssl.asn1_integer");
+  long v = ASN1_INTEGER_get(ai);
+  lua_pushinteger(L, v);
+  return 1;
+}
+
+static int openssl_asn1int_bn(lua_State *L)
+{
+  ASN1_INTEGER *ai = CHECK_OBJECT(1, ASN1_INTEGER, "openssl.asn1_integer");
+  if (lua_isnone(L, 2))
+  {
+    BIGNUM* B = ASN1_INTEGER_to_BN(ai, NULL);
+    PUSH_OBJECT(B, "openssl.bn");
+    return 1;
+  } else
+  {
+    BIGNUM* B = BN_get(L, 2);
+    BN_to_ASN1_INTEGER(B, ai);
+    BN_free(B);
+    return 0;
+  }
+}
+
+static int openssl_asn1int_dup(lua_State *L)
+{
+  ASN1_INTEGER *ai = CHECK_OBJECT(1, ASN1_INTEGER, "openssl.asn1_integer");
+  PUSH_OBJECT(ASN1_INTEGER_dup(ai), "openssl.asn1_integer");
+  return 1;
+}
+
+static int openssl_asn1int_cmp(lua_State *L)
+{
+  ASN1_INTEGER *a1 = CHECK_OBJECT(1, ASN1_INTEGER, "openssl.asn1_integer");
+  ASN1_INTEGER *a2 = CHECK_OBJECT(2, ASN1_INTEGER, "openssl.asn1_integer");
+  lua_pushboolean(L, ASN1_INTEGER_cmp(a1, a2)==0);
+  return 1;
+}
+
+static int openssl_asn1int_der(lua_State *L)
+{
+  ASN1_INTEGER *ai = CHECK_OBJECT(1, ASN1_INTEGER, "openssl.asn1_integer");
+  if (lua_isnone(L, 2))
+  {
+    unsigned char* out = NULL;
+    int len = i2d_ASN1_INTEGER(ai, &out);
+    if (len > 0) {
+      lua_pushlstring(L, out, len);
+      return 1;
+    } else
+      return openssl_pushresult(L, len);
+  } else
+  {
+    size_t len;
+    const unsigned char* der = luaL_checklstring(L, 2, &len);
+    ai = d2i_ASN1_INTEGER(&ai, &der, (long)len);
+    if (ai == NULL)
+      return openssl_pushresult(L, -1);
+  }
+  return 0;
+}
+
+
+static int openssl_asn1int_gc(lua_State *L)
+{
+  ASN1_INTEGER *ai = CHECK_OBJECT(1, ASN1_INTEGER, "openssl.asn1_integer");
+  ASN1_INTEGER_free(ai);
+  return 0;
+}
+static luaL_reg asn1int_funcs[] =
+{
+  {"set", openssl_asn1int_set},
+  {"get", openssl_asn1int_get},
+  {"cmp", openssl_asn1int_cmp},
+  {"dup", openssl_asn1int_cmp},
+  {"bn",  openssl_asn1int_bn},
+
+  {"i2d", openssl_asn1int_der},
+  {"d2i", openssl_asn1int_der},
+
+  {"__tostring", auxiliar_tostring},
+  {"__eq", openssl_asn1int_cmp},
+  {"__gc", openssl_asn1int_gc},
+
+  {NULL, NULL}
+};
+
 static int openssl_asn1string_new(lua_State* L)
 {
   size_t size = 0;
@@ -768,8 +881,10 @@ static int openssl_asn1_tostring(lua_State*L)
 
 static luaL_reg R[] =
 {
+  {"new_integer", openssl_asn1int_new},
   {"new_string", openssl_asn1string_new},
   {"new_object", openssl_asn1object_new},
+  
   {"new_type", openssl_asn1type_new},
   {"d2i_asn1type", openssl_asn1type_d2i},
 
@@ -791,7 +906,8 @@ int luaopen_asn1(lua_State *L)
   auxiliar_newclass(L, "openssl.asn1_object", asn1obj_funcs);
   auxiliar_newclass(L, "openssl.asn1_string", asn1str_funcs);
   auxiliar_newclass(L, "openssl.asn1_type",   asn1type_funcs);
-
+  auxiliar_newclass(L, "openssl.asn1_integer", asn1int_funcs);
+  
   lua_newtable(L);
   luaL_setfuncs(L, R, 0);
 
