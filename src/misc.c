@@ -67,7 +67,7 @@ const EVP_MD* get_digest(lua_State* L, int idx)
     md = CHECK_OBJECT(idx, EVP_MD, "openssl.evp_digest");
   else
   {
-    luaL_error(L, "argument #1 must be a string, NID number or ans1_object identity digest method");
+    luaL_error(L, "argument #1 must be a string, NID number or asn1_object identity digest method");
   }
 
   return md;
@@ -87,7 +87,7 @@ const EVP_CIPHER* get_cipher(lua_State*L, int idx, const char* def_alg)
   else if (lua_isnoneornil(L, idx) && def_alg)
     cipher = EVP_get_cipherbyname(def_alg);
   else
-    luaL_argerror(L, idx, "must be a string, NID number or ans1_object identity cipher method");
+    luaL_argerror(L, idx, "must be a string, NID number or asn1_object identity cipher method");
   if (cipher == NULL)
     luaL_argerror(L, idx, "not valid cipher alg");
 
