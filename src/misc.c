@@ -112,12 +112,6 @@ BIGNUM *BN_get(lua_State *L, int i)
   case LUA_TUSERDATA:
     BN_copy(x, CHECK_OBJECT(i, BIGNUM, "openssl.bn"));
   }
-  if (BN_is_zero(x))
-  {
-    BN_free(x);
-    x = NULL;
-  }
-
   return x;
 }
 

@@ -332,6 +332,7 @@ static int openssl_asn1int_der(lua_State *L)
     int len = i2d_ASN1_INTEGER(ai, &out);
     if (len > 0) {
       lua_pushlstring(L, out, len);
+      OPENSSL_free(out);
       return 1;
     } else
       return openssl_pushresult(L, len);
@@ -510,6 +511,216 @@ static luaL_reg asn1str_funcs[] =
   {"__gc",      openssl_asn1string_free },
 
   {NULL,        NULL}
+};
+
+static int openssl_asn1generalizedtime_new(lua_State* L)
+{
+  ASN1_GENERALIZEDTIME* a = NULL;
+  int ret = 1;
+  if (lua_isnone(L,1))
+    a = ASN1_GENERALIZEDTIME_new();
+  else if (lua_isnumber(L, 1))
+  {
+    a = ASN1_GENERALIZEDTIME_new();
+    ASN1_GENERALIZEDTIME_set(a, luaL_checkinteger(L, 1));
+  } else if (lua_isstring(L, 1))
+  {
+    a = ASN1_GENERALIZEDTIME_new();
+    ret = ASN1_GENERALIZEDTIME_set_string(a, lua_tostring(L, 1));
+  } else
+    luaL_error(L, "error, because wrong parameter");
+  if (ret == 1)
+    PUSH_OBJECT(a, "openssl.asn1_generalizedtime");
+  else
+    return openssl_pushresult(L, ret);
+  return 1;
+}
+
+static int openssl_asn1generalizedtime_set(lua_State* L)
+{
+  ASN1_GENERALIZEDTIME *a = CHECK_OBJECT(1, ASN1_GENERALIZEDTIME, "openssl.asn1_generalizedtime");
+  int ret = 1;
+  if (lua_isnumber(L, 1))
+  {
+    ASN1_GENERALIZEDTIME_set(a, luaL_checkinteger(L, 1));
+  } else if (lua_isstring(L, 1))
+  {
+    ret = ASN1_GENERALIZEDTIME_set_string(a, lua_tostring(L, 1));
+  } else
+    luaL_error(L, "error, because wrong parameter");
+  return openssl_pushresult(L, ret);
+}
+
+static int openssl_asn1generalizedtime_check(lua_State* L)
+{
+  ASN1_GENERALIZEDTIME *a = CHECK_OBJECT(1, ASN1_GENERALIZEDTIME, "openssl.asn1_generalizedtime");
+  int ret = ASN1_GENERALIZEDTIME_check(a);
+  return openssl_pushresult(L, ret);
+}
+
+static int openssl_asn1generalizedtime_der(lua_State* L)
+{
+  ASN1_GENERALIZEDTIME *a = CHECK_OBJECT(1, ASN1_GENERALIZEDTIME, "openssl.asn1_generalizedtime");
+  if (lua_isnone(L, 2))
+  {
+    unsigned char* out = NULL;
+    int len = i2d_ASN1_GENERALIZEDTIME(a, &out);
+    if (len > 0) {
+      lua_pushlstring(L, out, len);
+      OPENSSL_free(out);
+      return 1;
+    }
+    return openssl_pushresult(L, len);
+  } else
+  {
+    size_t len;
+    const char* der = luaL_checklstring(L, 2, &len);
+    a = d2i_ASN1_GENERALIZEDTIME(&a, der, len);
+    if (a == NULL)
+      return openssl_pushresult(L, -1);
+    lua_pushboolean(L, 1);
+    return 1;
+  }
+}
+
+static int openssl_asn1generalizedtime_adj(lua_State* L)
+{
+  ASN1_GENERALIZEDTIME *a = CHECK_OBJECT(1, ASN1_GENERALIZEDTIME, "openssl.asn1_generalizedtime");
+  time_t t = luaL_checkinteger(L, 2);
+  int offset_day = luaL_checkint(L, 3);
+  long offset_sec = luaL_optlong(L, 4, 0);
+
+  ASN1_GENERALIZEDTIME_adj(a, t, offset_day, offset_sec);
+  return 0;
+}
+
+
+static int openssl_asn1generalizedtime_gc(lua_State* L)
+{
+  ASN1_GENERALIZEDTIME *a = CHECK_OBJECT(1, ASN1_GENERALIZEDTIME, "openssl.asn1_generalizedtime");
+  ASN1_GENERALIZEDTIME_free(a);
+  return 0;
+}
+
+static luaL_reg asn1generalizedtime_funcs[] =
+{
+  {"set", openssl_asn1generalizedtime_set},
+  {"check", openssl_asn1generalizedtime_check},
+
+  {"d2i", openssl_asn1generalizedtime_der},
+  {"i2d", openssl_asn1generalizedtime_der},
+  {"adj", openssl_asn1generalizedtime_adj},
+
+  {"__tostring", auxiliar_tostring},
+  {"__gc", openssl_asn1generalizedtime_gc},
+
+  {NULL, NULL}
+};
+
+
+static int openssl_asn1time_new(lua_State* L)
+{
+  ASN1_TIME* a = NULL;
+  int ret = 1;
+  if (lua_isnone(L, 1))
+    a = ASN1_TIME_new();
+  else if (lua_isnumber(L, 1))
+  {
+    a = ASN1_TIME_new();
+    ASN1_TIME_set(a, luaL_checkinteger(L, 1));
+  } else if (lua_isstring(L, 1))
+  {
+    a = ASN1_TIME_new();
+    ret = ASN1_TIME_set_string(a, lua_tostring(L, 1));
+  } else
+    luaL_error(L, "error, because wrong parameter");
+  if (ret == 1)
+    PUSH_OBJECT(a, "openssl.asn1_generalizedtime");
+  else
+    return openssl_pushresult(L, ret);
+  return 1;
+}
+
+static int openssl_asn1time_set(lua_State* L)
+{
+  ASN1_TIME *a = CHECK_OBJECT(1, ASN1_TIME, "openssl.asn1_time");
+  int ret = 1;
+  if (lua_isnumber(L, 1))
+  {
+    ASN1_TIME_set(a, luaL_checkinteger(L, 1));
+  } else if (lua_isstring(L, 1))
+  {
+    ret = ASN1_TIME_set_string(a, lua_tostring(L, 1));
+  } else
+    luaL_error(L, "error, because wrong parameter");
+  return openssl_pushresult(L, ret);
+}
+
+static int openssl_asn1time_check(lua_State* L)
+{
+  ASN1_TIME *a = CHECK_OBJECT(1, ASN1_TIME, "openssl.asn1_time");
+  int ret = ASN1_TIME_check(a);
+  return openssl_pushresult(L, ret);
+}
+
+static int openssl_asn1time_der(lua_State* L)
+{
+  ASN1_TIME *a = CHECK_OBJECT(1, ASN1_TIME, "openssl.asn1_time");
+  if (lua_isnone(L, 2))
+  {
+    unsigned char* out = NULL;
+    int len = i2d_ASN1_TIME(a, &out);
+    if (len > 0)
+    {
+      lua_pushlstring(L, out, len);
+      OPENSSL_free(out);
+      return 1;
+    }
+    return openssl_pushresult(L, len);
+  } else
+  {
+    size_t len;
+    const char* der = luaL_checklstring(L, 2, &len);
+    a = d2i_ASN1_TIME(&a, der, len);
+    if (a == NULL)
+      return openssl_pushresult(L, -1);
+    lua_pushboolean(L, 1);
+    return 1;
+  }
+}
+
+static int openssl_asn1time_adj(lua_State* L)
+{
+  ASN1_TIME *a = CHECK_OBJECT(1, ASN1_TIME, "openssl.asn1_time");
+  time_t t = luaL_checkinteger(L, 2);
+  int offset_day = luaL_checkint(L, 3);
+  long offset_sec = luaL_optlong(L, 4, 0);
+
+  ASN1_TIME_adj(a, t, offset_day, offset_sec);
+  return 0;
+}
+
+
+static int openssl_asn1time_gc(lua_State* L)
+{
+  ASN1_TIME *a = CHECK_OBJECT(1, ASN1_TIME, "openssl.asn1_time");
+  ASN1_TIME_free(a);
+  return 0;
+}
+
+static luaL_reg asn1time_funcs[] =
+{
+  {"set", openssl_asn1time_set},
+  {"check", openssl_asn1time_check},
+
+  {"d2i", openssl_asn1time_der},
+  {"i2d", openssl_asn1time_der},
+  {"adj", openssl_asn1time_adj},
+
+  {"__tostring", auxiliar_tostring},
+  {"__gc", openssl_asn1time_gc},
+
+  {NULL, NULL}
 };
 
 /*** asn1_object routines ***/
@@ -881,10 +1092,13 @@ static int openssl_asn1_tostring(lua_State*L)
 
 static luaL_reg R[] =
 {
+  {"new_object", openssl_asn1object_new},
+
   {"new_integer", openssl_asn1int_new},
   {"new_string", openssl_asn1string_new},
-  {"new_object", openssl_asn1object_new},
-  
+  {"new_time", openssl_asn1time_new},
+  {"new_generalizedtime", openssl_asn1generalizedtime_new},
+
   {"new_type", openssl_asn1type_new},
   {"d2i_asn1type", openssl_asn1type_d2i},
 
@@ -907,6 +1121,8 @@ int luaopen_asn1(lua_State *L)
   auxiliar_newclass(L, "openssl.asn1_string", asn1str_funcs);
   auxiliar_newclass(L, "openssl.asn1_type",   asn1type_funcs);
   auxiliar_newclass(L, "openssl.asn1_integer", asn1int_funcs);
+  auxiliar_newclass(L, "openssl.asn1_time", asn1int_funcs);
+  auxiliar_newclass(L, "openssl.asn1_generalizedtime", asn1generalizedtime_funcs);
   
   lua_newtable(L);
   luaL_setfuncs(L, R, 0);
