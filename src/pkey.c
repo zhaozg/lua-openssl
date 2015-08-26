@@ -128,7 +128,7 @@ static int openssl_pkey_read(lua_State*L)
         long bio_mem_len;
 
         bio_mem_len = BIO_get_mem_data(in, &bio_mem_ptr);
-        key = d2i_PublicKey(type, NULL, &bio_mem_ptr, bio_mem_len);
+        key = d2i_PublicKey(type, NULL, (const unsigned char **)&bio_mem_ptr, bio_mem_len);
         BIO_reset(in);
       }
     }
@@ -154,7 +154,7 @@ static int openssl_pkey_read(lua_State*L)
         long bio_mem_len;
 
         bio_mem_len = BIO_get_mem_data(in, &bio_mem_ptr);
-        key = d2i_PrivateKey(type, NULL, &bio_mem_ptr, bio_mem_len);
+        key = d2i_PrivateKey(type, NULL, (const unsigned char **)&bio_mem_ptr, bio_mem_len);
         BIO_reset(in);
       }
     }
