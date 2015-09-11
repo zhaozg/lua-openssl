@@ -1185,7 +1185,9 @@ int openssl_push_asn1object(lua_State* L, const ASN1_OBJECT* obj)
 
 int openssl_push_asn1(lua_State* L, ASN1_STRING* string, int type, int utf8)
 {
-  if (type && ((string->type & type) != type))
+  if (type == V_ASN1_UNDEF)
+    type = string->type;
+  if ((string->type & type) != type)
   {
     luaL_error(L, "need asn1_string type mismatch");
     return 0;
