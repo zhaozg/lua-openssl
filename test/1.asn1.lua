@@ -72,14 +72,16 @@ TestObject = {}
             assertEquals(asn1.txt2nid(options.ln), o7:nid())
             assertEquals(asn1.txt2nid(options.oid), o7:nid())
         end
-
         assertEquals(asn1.txt2nid(self.ne_oid),nil)
+
         assertIsNil(asn1.new_object(self.ne_sn))
         assertIsNil(asn1.new_object(self.ne_ln))
         assert(asn1.new_object(self.ne_oid))
+
         o1 = assert(asn1.new_object({oid=self.ne_oid,sn=self.ne_sn,ln=self.ne_ln}))
         o2 = assert(asn1.new_object(self.ne_oid))
         assertEquals(o1,o2)
+
     end
 
 TestString = {}
@@ -94,6 +96,8 @@ TestString = {}
     function TestString:testAll()
         local s1,s2,s3,s4,s5,s6
         s1 = asn1.new_string(self.bmp,asn1.BMPSTRING)
+        assertEquals(tostring(s1), self.bmp)
+        assert(#s1==#self.bmp)
         s2 = asn1.new_string(self.bmp_cn,asn1.BMPSTRING)
         local utf_cn = s2:toutf8()
         s3 = asn1.new_string(utf_cn,asn1.UTF8STRING)
@@ -107,10 +111,10 @@ TestString = {}
         s4:data(utf_cn)
         assertEquals(s4, s3)
         s6 = asn1.new_string(self.bmp,asn1.IA5STRING)
-        assertEquals(s6:print(),self.bmp)
+        assertEquals(s6:toprint(),self.bmp)
 
-        assertStrMatches(s1:print(),[[\U6162\U6364]])
-        assertStrMatches(s4:print(),[[\UD6D0\UCEC4\UC3FB\UD7D6]])
+        assertStrMatches(s1:toprint(),[[\U6162\U6364]])
+        assertStrMatches(s4:toprint(),[[\UD6D0\UCEC4\UC3FB\UD7D6]])
 
         s5 = s4:dup()
         assertEquals(s5,s3)

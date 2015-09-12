@@ -373,7 +373,7 @@ static int openssl_push_ts_msg_imprint(lua_State*L, TS_MSG_IMPRINT* imprint)
   return 1;
 };
 
-static int openssl_push_ts_tst_info(lua_State*L, TS_TST_INFO* info, int utf8)
+static int openssl_push_ts_tst_info(lua_State*L, TS_TST_INFO* info)
 {
   lua_newtable(L);
   if (info->version)
@@ -398,7 +398,7 @@ static int openssl_push_ts_tst_info(lua_State*L, TS_TST_INFO* info, int utf8)
   }
   if (info->time)
   {
-    PUSH_ASN1_GENERALIZEDTIME(L, info->time);
+    openssl_push_asn1(L, info->time, V_ASN1_GENERALIZEDTIME);
     lua_setfield(L, -2, "time");
   }
   if (info->accuracy)
@@ -416,7 +416,7 @@ static int openssl_push_ts_tst_info(lua_State*L, TS_TST_INFO* info, int utf8)
   }
   if (info->tsa)
   {
-    openssl_push_general_name(L, info->tsa, utf8);
+    openssl_push_general_name(L, info->tsa);
     lua_setfield(L, -2, "tsa");
   }
   if (info->extensions)
@@ -430,10 +430,9 @@ static int openssl_push_ts_tst_info(lua_State*L, TS_TST_INFO* info, int utf8)
 static LUA_FUNCTION(openssl_ts_resp_tst_info)
 {
   TS_RESP *resp = CHECK_OBJECT(1, TS_RESP, "openssl.ts_resp");
-  int utf8 = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L, 2);
   TS_TST_INFO *info = resp->tst_info;
   if (info)
-    openssl_push_ts_tst_info(L, info, utf8);
+    openssl_push_ts_tst_info(L, info);
   else
     lua_pushnil(L);
   return 1;
@@ -442,7 +441,6 @@ static LUA_FUNCTION(openssl_ts_resp_tst_info)
 static LUA_FUNCTION(openssl_ts_resp_info)
 {
   TS_RESP *res = CHECK_OBJECT(1, TS_RESP, "openssl.ts_resp");
-  int utf8 = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L, 2);
 
   lua_newtable(L);
 
@@ -454,7 +452,7 @@ static LUA_FUNCTION(openssl_ts_resp_info)
 
     if (res->status_info->failure_info)
     {
-      PUSH_ASN1_BIT_STRING(L, res->status_info->failure_info);
+      openssl_push_asn1(L, res->status_info->failure_info, V_ASN1_BIT_STRING);
       lua_setfield(L, -2, "failure_info");
     }
 
@@ -485,7 +483,7 @@ static LUA_FUNCTION(openssl_ts_resp_info)
 
   if (res->tst_info)
   {
-    openssl_push_ts_tst_info(L, res->tst_info, utf8);
+    openssl_push_ts_tst_info(L, res->tst_info);
     lua_setfield(L, -2, "tst_info");
   }
 
@@ -918,11 +916,10 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_md)
 static LUA_FUNCTION(openssl_ts_resp_ctx_tst_info)
 {
   TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
-  int utf8 = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L, 2);
   TS_TST_INFO *info = TS_RESP_CTX_get_tst_info(ctx);
   if (info)
   {
-    openssl_push_ts_tst_info(L, info, utf8);
+    openssl_push_ts_tst_info(L, info);
     TS_TST_INFO_ext_free(info);
   }
   else

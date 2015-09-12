@@ -68,12 +68,12 @@ static int openssl_xname_print(lua_State*L)
   return 1;
 };
 
-static int openssl_push_xname_entry(lua_State* L, X509_NAME_ENTRY* ne, int encode)
+static int openssl_push_xname_entry(lua_State* L, X509_NAME_ENTRY* ne)
 {
   ASN1_OBJECT* object = X509_NAME_ENTRY_get_object(ne);
   lua_newtable(L);
   openssl_push_asn1object(L, object);
-  PUSH_ASN1_STRING(L, X509_NAME_ENTRY_get_data(ne), encode);
+  PUSH_ASN1_STRING(L, X509_NAME_ENTRY_get_data(ne));
   lua_settable(L, -3);
   return 1;
 }
@@ -81,14 +81,13 @@ static int openssl_push_xname_entry(lua_State* L, X509_NAME_ENTRY* ne, int encod
 static int openssl_xname_info(lua_State*L)
 {
   X509_NAME* name = CHECK_OBJECT(1, X509_NAME, "openssl.x509_name");
-  int utf8 = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L, 2);
   int i;
   int n_entries = X509_NAME_entry_count(name);
   lua_newtable(L);
   for (i = 0; i < n_entries; i++)
   {
     X509_NAME_ENTRY* entry = X509_NAME_get_entry(name, i);
-    openssl_push_xname_entry(L, entry, utf8);
+    openssl_push_xname_entry(L, entry);
     lua_rawseti(L, -2, i + 1);
   }
   return 1;
@@ -160,11 +159,10 @@ static int openssl_xname_get_entry(lua_State*L)
 {
   X509_NAME* xn = CHECK_OBJECT(1, X509_NAME, "openssl.x509_name");
   int lastpos = luaL_checkint(L, 2);
-  int utf8 = lua_isnoneornil(L, 3) ? 1 : lua_toboolean(L, 3);
   X509_NAME_ENTRY *e = X509_NAME_get_entry(xn, lastpos);
   if (e)
   {
-    return openssl_push_xname_entry(L, e, utf8);
+    return openssl_push_xname_entry(L, e);
   }
   return 0;
 };

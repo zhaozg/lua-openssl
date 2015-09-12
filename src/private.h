@@ -75,16 +75,14 @@ void to_hex(const char* in, int length, char* out);
 
 int openssl_push_asn1type(lua_State* L, const ASN1_TYPE* type);
 int openssl_push_asn1object(lua_State* L, const ASN1_OBJECT* obj);
-int openssl_push_asn1(lua_State* L, ASN1_STRING* string, int type, int utf8);
+int openssl_push_asn1(lua_State* L, ASN1_STRING* string, int type);
 int openssl_push_x509_algor(lua_State*L, const X509_ALGOR* alg);
-int openssl_push_general_name(lua_State*L, const GENERAL_NAME* name,  int utf8);
+int openssl_push_general_name(lua_State*L, const GENERAL_NAME* name);
 
-#define PUSH_ASN1_TIME(L, tm)             openssl_push_asn1(L, (ASN1_STRING*)tm, V_ASN1_UTCTIME, 0)
-#define PUSH_ASN1_GENERALIZEDTIME(L, tm)  openssl_push_asn1(L, (ASN1_STRING*)tm, V_ASN1_GENERALIZEDTIME, 0)
-#define PUSH_ASN1_INTEGER(L, i)           openssl_push_asn1(L, (ASN1_STRING*)i,  V_ASN1_INTEGER, 0)
-#define PUSH_ASN1_OCTET_STRING(L, s)      openssl_push_asn1(L, (ASN1_STRING*)s,  V_ASN1_OCTET_STRING, 0)
-#define PUSH_ASN1_BIT_STRING(L, s)        openssl_push_asn1(L, (ASN1_STRING*)s,  V_ASN1_BIT_STRING, 0)
-#define PUSH_ASN1_STRING(L, s, utf)       openssl_push_asn1(L, (ASN1_STRING*)s, V_ASN1_UNDEF,  utf)
+#define PUSH_ASN1_TIME(L, tm)             openssl_push_asn1(L, (ASN1_STRING*)tm, V_ASN1_UTCTIME)
+#define PUSH_ASN1_INTEGER(L, i)           openssl_push_asn1(L, (ASN1_STRING*)i,  V_ASN1_INTEGER)
+#define PUSH_ASN1_OCTET_STRING(L, s)      openssl_push_asn1(L, (ASN1_STRING*)s,  V_ASN1_OCTET_STRING)
+#define PUSH_ASN1_STRING(L, s)            openssl_push_asn1(L, (ASN1_STRING*)s, V_ASN1_UNDEF)
 
 int openssl_push_xname_asobject(lua_State*L, X509_NAME* xname);
 int openssl_push_bit_string_bitname(lua_State* L, const BIT_STRING_BITNAME* name);

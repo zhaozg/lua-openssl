@@ -181,9 +181,9 @@ static X509_ATTRIBUTE* openssl_new_xattribute(lua_State*L, X509_ATTRIBUTE** a, i
   {
     data = lua_tolstring(L, -1, &len);
   }
-  else if (auxiliar_isclass(L, "openssl.asn1_string", -1))
+  else if (auxiliar_isgroup(L, "openssl.asn1group", -1))
   {
-    ASN1_STRING* value = CHECK_OBJECT(-1, ASN1_STRING, "openssl.asn1_string");
+    ASN1_STRING* value = CHECK_GROUP(-1, ASN1_STRING, "openssl.asn1group");
     if (ASN1_STRING_type(value) != arttype)
     {
       if (eprefix)

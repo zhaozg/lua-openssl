@@ -14,7 +14,7 @@ if uv then
       end
       uv.timer_start(timer, timeout, 0, ontimeout)
       return timer
-    end        
+    end
 
     function TestSSL:testUVSSL()
         local lcode
@@ -29,7 +29,7 @@ if uv then
           end
         end
 
-        local child, pid 
+        local child, pid
         child, pid = uv.spawn(arg[-1], {
           args = {"8.ssl_s.lua",'127.0.0.1',8082},
           stdio = {nil, stdout1, stderr1}
@@ -42,7 +42,7 @@ if uv then
             uv.read_start(stdout1, onread)
             uv.read_start(stderr1, onread)
             set_timeout(1000,function()
-                local child, pid 
+                local child, pid
                 child, pid = uv.spawn(arg[-1], {
                   args = {"8.ssl_c.lua",'127.0.0.1',8082},
                   stdio = {nil, stdout2, stderr2}
@@ -55,14 +55,14 @@ if uv then
                 uv.read_start(stderr2, onread)
             end)
         end
-        
+
         uv.run()
         assertEquals(lcode,0)
     end
 
 
     function TestSSL:testUVBio()
-        local lcode 
+        local lcode
         local stdout1 = uv.new_pipe(false)
         local stderr1 = uv.new_pipe(false)
         local stdout2 = uv.new_pipe(false)
@@ -87,6 +87,7 @@ if uv then
 
         set_timeout(1000,function()
             local child, pid
+            print('launch',arg[-1])
             child, pid = uv.spawn(arg[-1], {
               args = {"8.bio_c.lua",'127.0.0.1',8083},
               stdio = {nil, stdout2, stderr2}
@@ -98,7 +99,7 @@ if uv then
             uv.read_start(stdout2, onread)
             uv.read_start(stderr2, onread)
         end)
-        
+
         uv.run()
         assertEquals(lcode,0)
     end
@@ -128,7 +129,7 @@ if uv then
         uv.read_start(stderr1, onread)
 
         set_timeout(1000,function()
-            local child, pid 
+            local child, pid
             child, pid = uv.spawn(arg[-1], {
               args = {"8.ssl_c.lua",'127.0.0.1',8084},
               stdio = {nil, stdout2, stderr2}
@@ -140,7 +141,7 @@ if uv then
             uv.read_start(stdout2, onread)
             uv.read_start(stderr2, onread)
         end)
-        
+
         uv.run()
         assertEquals(lcode,0)
     end
@@ -155,7 +156,7 @@ if uv then
           assert(not err, err)
           if (chunk) then
             print(chunk)
-          
+
           end
         end
         local child, pid child, pid = uv.spawn(arg[-1], {
@@ -181,7 +182,7 @@ if uv then
             uv.read_start(stdout2, onread)
             uv.read_start(stderr2, onread)
         end)
-        
+
         uv.run()
         assertEquals(lcode,0)
     end
@@ -196,7 +197,7 @@ local lua_spawn do
     local function P(pipe, read)
       return {
         stream = pipe,
-        flags = luv.CREATE_PIPE + 
+        flags = luv.CREATE_PIPE +
                 (read and luv.READABLE_PIPE or luv.WRITABLE_PIPE)
       }
     end
@@ -237,7 +238,7 @@ local lua_spawn do
         local stderr1 = luv.pipe()
         local stdout2 = luv.pipe()
         local stderr2 = luv.pipe()
-        
+
         lua_spawn("8.ssl_s.lua", stdout1, stderr1, onclose)
         os.execute('ping -n 3 127.0.0.1')
         lua_spawn("8.ssl_c.lua", stdout2, stderr2, onclose)
@@ -256,7 +257,7 @@ local lua_spawn do
         local stderr1 = luv.pipe()
         local stdout2 = luv.pipe()
         local stderr2 = luv.pipe()
-        
+
         lua_spawn("8.bio_s.lua", stdout1, stderr1, onclose)
         os.execute('ping -n 3 127.0.0.1')
         lua_spawn("8.bio_c.lua", stdout2, stderr2, onclose)
@@ -275,7 +276,7 @@ local lua_spawn do
         local stderr1 = luv.pipe()
         local stdout2 = luv.pipe()
         local stderr2 = luv.pipe()
-        
+
         lua_spawn("8.bio_s.lua", stdout1, stderr1, onclose)
         os.execute('ping -n 3 127.0.0.1')
         lua_spawn("8.ssl_c.lua", stdout2, stderr2, onclose)
@@ -294,7 +295,7 @@ local lua_spawn do
         local stderr1 = luv.pipe()
         local stdout2 = luv.pipe()
         local stderr2 = luv.pipe()
-        
+
         lua_spawn("8.ssl_s.lua", stdout1, stderr1, onclose)
         os.execute('ping -n 3 127.0.0.1')
         lua_spawn("8.bio_c.lua", stdout2, stderr2, onclose)

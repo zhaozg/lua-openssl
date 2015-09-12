@@ -336,7 +336,7 @@ static LUA_FUNCTION(openssl_csr_parse)
 
   lua_newtable(L);
 
-  PUSH_ASN1_BIT_STRING(L, csr->signature);
+  openssl_push_asn1(L, csr->signature, V_ASN1_BIT_STRING);
   lua_setfield(L, -2, "signature");
 
   openssl_push_x509_algor(L, csr->sig_alg);

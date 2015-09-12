@@ -14,7 +14,7 @@
 
 #define MYNAME "x509.extension"
 
-static int openssl_xext_totable(lua_State* L, X509_EXTENSION *x, int utf8)
+static int openssl_xext_totable(lua_State* L, X509_EXTENSION *x)
 {
   lua_newtable(L);
   openssl_push_asn1object(L, x->object);
@@ -44,7 +44,7 @@ static int openssl_xext_totable(lua_State* L, X509_EXTENSION *x, int utf8)
     for (i = 0; i < n_general_names; i++)
     {
       GENERAL_NAME *general_name = sk_GENERAL_NAME_value(values, i);
-      openssl_push_general_name(L, general_name, utf8);
+      openssl_push_general_name(L, general_name);
       lua_rawseti(L, -2, i + 1);
     }
     lua_settable(L, -3);
@@ -58,8 +58,7 @@ static int openssl_xext_totable(lua_State* L, X509_EXTENSION *x, int utf8)
 static int openssl_xext_info(lua_State* L)
 {
   X509_EXTENSION *x = CHECK_OBJECT(1, X509_EXTENSION, "openssl.x509_extension");
-  int utf8 = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L, 2);
-  return openssl_xext_totable(L, x, utf8);
+  return openssl_xext_totable(L, x);
 };
 
 static int openssl_xext_dup(lua_State* L)
@@ -154,7 +153,7 @@ static int openssl_xext_data(lua_State* L)
   }
   else
   {
-    ASN1_STRING *s = CHECK_OBJECT(2, ASN1_STRING, "openssl.asn1_string");
+    ASN1_STRING* s = CHECK_GROUP(2, ASN1_STRING, "openssl.asn1group");
     if (ASN1_STRING_type(s) == V_ASN1_OCTET_STRING)
     {
       int ret;
@@ -191,6 +190,7 @@ static X509_EXTENSION* openssl_new_xextension(lua_State*L, int idx, int v3)
   int nid;
   int critical = 0;
   ASN1_OCTET_STRING* value = NULL;
+  X509_EXTENSION* y = NULL;
 
   lua_getfield(L, idx, "object");
   nid = openssl_get_nid(L, -1);
@@ -207,13 +207,12 @@ static X509_EXTENSION* openssl_new_xextension(lua_State*L, int idx, int v3)
   }
   lua_getfield(L, idx, "value");
 
-  luaL_argcheck(L, lua_isstring(L, -1) || auxiliar_isclass(L, "openssl.asn1_string", -1),
-                1, "field value must be string or openssl.asn1_string object");
+  luaL_argcheck(L, lua_isstring(L, -1) || auxiliar_isgroup(L, "openssl.asn1group", -1),
+                1, "field value must be string or openssl.asn1group object");
   if (lua_isstring(L, -1))
   {
     size_t size;
     const char* data = lua_tolstring(L, -1, &size);
-    X509_EXTENSION* y = NULL;
     if (v3)
     {
       const X509V3_EXT_METHOD *method = X509V3_EXT_get_nid(nid);
@@ -292,10 +291,10 @@ static X509_EXTENSION* openssl_new_xextension(lua_State*L, int idx, int v3)
   }
   else
   {
-    value = CHECK_OBJECT(-1, ASN1_STRING, "openssl.asn1_string");
+    value = CHECK_GROUP(-1, ASN1_STRING, "openssl.asn1group");
+    y = X509_EXTENSION_create_by_NID(NULL, nid, critical, value);
     lua_pop(L, 1);
-    luaL_argcheck(L, ASN1_STRING_type(value) == V_ASN1_OCTET_STRING, 1, "field value must be octet type openssl.asn1_string");
-    return X509_EXTENSION_create_by_NID(NULL, nid, critical, value);
+    return y;
   }
 }
 
@@ -366,7 +365,7 @@ static int openssl_xexts_totable(lua_State*L)
   {
     X509_EXTENSION* ext = sk_X509_EXTENSION_value(exts, i);
 
-    openssl_xext_totable(L, ext, utf8);
+    openssl_xext_totable(L, ext);
     lua_rawseti(L, -2, i + 1);
   };
   return 1;

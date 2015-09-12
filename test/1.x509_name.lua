@@ -59,7 +59,7 @@ TestX509Name = {}
         assertStrContains(tostring(k),'openssl.asn1_object')
 	_,_,opensslv = openssl.version(true)
         if opensslv > 0x10002000 then
-            assertEquals(v:print(),[[\UD6D0\UCEC4\UC3FB\UD7D6]])
+            assertEquals(v:toprint(),[[\UD6D0\UCEC4\UC3FB\UD7D6]])
             assertEquals(tostring(v), v:toutf8())
         end
     end

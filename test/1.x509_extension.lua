@@ -40,7 +40,7 @@ TestX509ext = {}
         assertIsTable(info)
         assertEquals(info.object, "X509v3 Basic Constraints")
         assertEquals(info.critical,true)
-        assertEquals(info.value, "CA:FALSE")
+        assertEquals(tostring(info.value), "CA:FALSE")
         local n2 = n1:dup()
         assertEquals(n2:info(),info)
         assertEquals(n1:critical(),false)

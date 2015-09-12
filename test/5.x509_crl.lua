@@ -40,7 +40,7 @@ TestCRL = {}
         assert(other:updateTime(50000000))
         assert(other:lastUpdate(os.time()))
         assert(other:nextUpdate(os.time()+50000000))
-        
+
 
         assert(other:add('21234',os.time()))
         assert(other:add('31234',os.time()))
@@ -76,16 +76,16 @@ mOKp8Jla1BibEZf14+/HqCi2hnZUiEXh
         local r1 = crl.read(e)
         assert(r:cmp(r1)==(r==r1))
         assert(r==r1)
-        
+
         assertEquals(r:version(),0)
         assertEquals(tostring(r:issuer()),'/O=European ICE-TEL Project/OU=Certification Authority')
-        assertEquals(r:lastUpdate(),'Jun  9 14:42:43 1997 GMT')
-        assertEquals(r:nextUpdate(),'Jul  9 14:42:43 1997 GMT')
+        assertEquals(r:lastUpdate():toprint(),'Jun  9 14:42:43 1997 GMT')
+        assertEquals(r:nextUpdate():toprint(),'Jul  9 14:42:43 1997 GMT')
         assertEquals(r:extensions(), nil)
         local l,n = r:updateTime()
         assertEquals(r:lastUpdate(),l)
         assertEquals(r:nextUpdate(),n)
-        
+
         assertEquals(r:count(),#r)
         assertEquals(#r,2)
     end

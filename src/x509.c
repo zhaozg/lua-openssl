@@ -26,7 +26,7 @@ int openssl_push_x509_algor(lua_State*L, const X509_ALGOR* alg)
   return 1;
 };
 
-int openssl_push_general_name(lua_State*L, const GENERAL_NAME* general_name, int utf8)
+int openssl_push_general_name(lua_State*L, const GENERAL_NAME* general_name)
 {
   lua_newtable(L);
 
@@ -37,7 +37,7 @@ int openssl_push_general_name(lua_State*L, const GENERAL_NAME* general_name, int
     OTHERNAME *otherName = general_name->d.otherName;
     lua_newtable(L);
     openssl_push_asn1object(L, otherName->type_id);
-    PUSH_ASN1_STRING(L, otherName->value->value.asn1_string, utf8);
+    PUSH_ASN1_STRING(L, otherName->value->value.asn1_string);
     lua_settable(L, -3);
     lua_setfield(L, -2, "otherName");
 
@@ -46,14 +46,14 @@ int openssl_push_general_name(lua_State*L, const GENERAL_NAME* general_name, int
     break;
   }
   case GEN_EMAIL:
-    PUSH_ASN1_STRING(L, general_name->d.rfc822Name, utf8);
+    PUSH_ASN1_STRING(L, general_name->d.rfc822Name);
     lua_setfield(L, -2, "rfc822Name");
 
     lua_pushstring(L, "rfc822Name");
     lua_setfield(L, -2, "type");
     break;
   case GEN_DNS:
-    PUSH_ASN1_STRING(L, general_name->d.dNSName, utf8);
+    PUSH_ASN1_STRING(L, general_name->d.dNSName);
     lua_setfield(L, -2, "dNSName");
     lua_pushstring(L, "dNSName");
     lua_setfield(L, -2, "type");
@@ -74,7 +74,7 @@ int openssl_push_general_name(lua_State*L, const GENERAL_NAME* general_name, int
   }
   break;
   case GEN_URI:
-    PUSH_ASN1_STRING(L, general_name->d.uniformResourceIdentifier, utf8);
+    PUSH_ASN1_STRING(L, general_name->d.uniformResourceIdentifier);
     lua_setfield(L, -2, "uniformResourceIdentifier");
     lua_pushstring(L, "uniformResourceIdentifier");
     lua_setfield(L, -2, "type");
@@ -88,9 +88,9 @@ int openssl_push_general_name(lua_State*L, const GENERAL_NAME* general_name, int
     break;
   case GEN_EDIPARTY:
     lua_newtable(L);
-    PUSH_ASN1_STRING(L, general_name->d.ediPartyName->nameAssigner, utf8);
+    PUSH_ASN1_STRING(L, general_name->d.ediPartyName->nameAssigner);
     lua_setfield(L, -2, "nameAssigner");
-    PUSH_ASN1_STRING(L, general_name->d.ediPartyName->partyName, utf8);
+    PUSH_ASN1_STRING(L, general_name->d.ediPartyName->partyName);
     lua_setfield(L, -2, "partyName");
     lua_setfield(L, -2, "ediPartyName");
 
