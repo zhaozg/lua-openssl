@@ -191,7 +191,7 @@ static X509_ATTRIBUTE* openssl_new_xattribute(lua_State*L, X509_ATTRIBUTE** a, i
       else
         luaL_argcheck(L, ASN1_STRING_type(value) == arttype, idx, "field value not match type");
     }
-    data = ASN1_STRING_data(value);
+    data = (const char *)ASN1_STRING_data(value);
     len  = ASN1_STRING_length(value);
   }
   else

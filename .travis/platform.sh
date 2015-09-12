@@ -11,5 +11,5 @@ if [ -z "$PLATFORM" ]; then
     PLATFORM="linux";
   else
     PLATFORM="macosx";
-  fi;
+  fi
 fi

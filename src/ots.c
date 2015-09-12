@@ -7,7 +7,7 @@
 #include "openssl.h"
 #include "private.h"
 #include <stdint.h>
-
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
 #include <openssl/ts.h>
 
 #define MYNAME    "ts"
@@ -196,7 +196,7 @@ static LUA_FUNCTION(openssl_ts_req_export)
   int len = i2d_TS_REQ(ts_req, &data);
   if (len > 0)
   {
-    lua_pushlstring(L, data, (size_t)len);
+    lua_pushlstring(L, (const char*)data, (size_t)len);
     OPENSSL_free(data);
     return 1;
   }
@@ -1239,7 +1239,7 @@ static int openssl_ts_verify_ctx_imprint(lua_State*L)
   TS_VERIFY_CTX *ctx = CHECK_OBJECT(1, TS_VERIFY_CTX, "openssl.ts_verify_ctx");
   if (lua_isnone(L, 2))
   {
-    lua_pushlstring(L, ctx->imprint, ctx->imprint_len);
+    lua_pushlstring(L, (const char*)ctx->imprint, ctx->imprint_len);
     return 1;
   }
   else
@@ -1286,7 +1286,7 @@ static LUA_FUNCTION(openssl_ts_verify_ctx_verify)
   else if (lua_isstring(L, 2))
   {
     size_t size;
-    const unsigned char* data = lua_tolstring(L, 2, &size);
+    const unsigned char* data = (const unsigned char*)lua_tolstring(L, 2, &size);
     TS_RESP *resp = d2i_TS_RESP(NULL, &data, size);
     if (resp)
     {
@@ -1330,9 +1330,10 @@ static luaL_Reg R[] =
 
   {NULL,    NULL}
 };
-
+#endif
 int luaopen_ts(lua_State *L)
 {
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
   auxiliar_newclass(L, "openssl.ts_req",        ts_req_funs);
   auxiliar_newclass(L, "openssl.ts_resp",       ts_resp_funs);
   auxiliar_newclass(L, "openssl.ts_resp_ctx",   ts_resp_ctx_funs);
@@ -1344,6 +1345,8 @@ int luaopen_ts(lua_State *L)
   lua_pushliteral(L, "version");    /** version */
   lua_pushliteral(L, MYVERSION);
   lua_settable(L, -3);
-
+#else
+  lua_pushnil(L);
+#endif
   return 1;
 }

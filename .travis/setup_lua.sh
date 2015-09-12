@@ -22,6 +22,10 @@ if [ "$PLATFORM" == "macosx" ]; then
   if [ "$LUA" == "luajit2.1" ]; then
     LUAJIT="yes";
   fi;
+  echo update openssl;
+  brew update;
+  brew install openssl;
+  brew link --force openssl;  
 elif [ "$(expr substr $LUA 1 6)" == "luajit" ]; then
   LUAJIT="yes";
 fi

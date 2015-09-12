@@ -744,7 +744,7 @@ static int openssl_x509_sign(lua_State*L)
     int len = i2d_X509_CINF(x->cert_info, &out);
     if (len > 0)
     {
-      lua_pushlstring(L, out, len);
+      lua_pushlstring(L, (const char *)out, len);
       OPENSSL_free(out);
       return 1;
     }
@@ -807,11 +807,11 @@ static int openssl_x509_verify(lua_State*L)
     int len = i2d_X509_CINF(x->cert_info, &out);
     if (len > 0)
     {
-      lua_pushlstring(L, out, len);
+      lua_pushlstring(L, (const char *)out, len);
       OPENSSL_free(out);
       if (x->signature != NULL)
       {
-        lua_pushlstring(L, x->signature->data, x->signature->length);
+        lua_pushlstring(L, (const char *)x->signature->data, x->signature->length);
       } else
         lua_pushnil(L);
       if (x->sig_alg)

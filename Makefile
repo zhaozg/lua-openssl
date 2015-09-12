@@ -19,8 +19,16 @@ endif
 
 #OS auto detect
 SYS := $(shell gcc -dumpmachine)
+
 ifneq (, $(findstring linux, $(SYS)))
 # Do linux things
+LDFLAGS		    = -fPIC -lrt -ldl
+OPENSSL_LIBS	?= $(shell pkg-config openssl --libs) 
+OPENSSL_CFLAGS	?= $(shell pkg-config openssl --cflags)
+CFLAGS		    = -fPIC $(OPENSSL_CFLAGS) $(LUA_CFLAGS)
+endif
+ifneq (, $(findstring apple, $(SYS)))
+# Do darwin things
 LDFLAGS		    = -fPIC -lrt -ldl
 OPENSSL_LIBS	?= $(shell pkg-config openssl --libs) 
 OPENSSL_CFLAGS	?= $(shell pkg-config openssl --cflags)
@@ -64,6 +72,7 @@ src/pkey.o src/rsa.o src/ssl.o src/th-lock.o src/util.o src/x509.o src/xattrs.o 
 	$(CC) -c -o $@ $?
 
 all: $T.so
+	echo $(SYS)
 
 $T.so: $(OBJS)
 	MACOSX_DEPLOYMENT_TARGET="10.3"; export MACOSX_DEPLOYMENT_TARGET; $(CC) $(CFLAGS) $(LIB_OPTION) -o $T.so $(OBJS) $(OPENSSL_LIBS) $(LUA_LIBS) $(LDFLAGS)

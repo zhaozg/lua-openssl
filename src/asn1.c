@@ -6,7 +6,7 @@
 \*=========================================================================*/
 #include "openssl.h"
 #include "private.h"
-
+#include <openssl/asn1.h>
 #define MYNAME    "asn1"
 #define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
   "based on OpenSSL " SHLIB_VERSION_NUMBER
@@ -129,7 +129,7 @@ static int openssl_asn1type_octet(lua_State*L)
     octet = OPENSSL_malloc(len + 1);
     len = ASN1_TYPE_get_octetstring(at, octet, len + 1);
     if (len >= 0)
-      lua_pushlstring(L, octet, (size_t)len);
+      lua_pushlstring(L, (const char *)octet, (size_t)len);
     else
       lua_pushnil(L);
     OPENSSL_free(octet);
@@ -180,7 +180,7 @@ static int openssl_asn1type_i2d(lua_State*L)
   unsigned char* out = NULL;
   int len = i2d_ASN1_TYPE(at, &out);
   if (len > 0)
-    lua_pushlstring(L, out, (size_t)len);
+    lua_pushlstring(L, (const char *)out, (size_t)len);
   else
     lua_pushnil(L);
   OPENSSL_free(out);
@@ -599,7 +599,7 @@ static int openssl_asn1group_i2d(lua_State *L)
     unsigned char* out = NULL;
     int len = i2d_ASN1_INTEGER(ai, &out);
     if (len > 0) {
-      lua_pushlstring(L, out, len);
+      lua_pushlstring(L, (const char *)out, len);
       OPENSSL_free(out);
       return 1;
     } else
@@ -612,7 +612,7 @@ static int openssl_asn1group_i2d(lua_State *L)
     unsigned char* out = NULL;
     int len = i2d_ASN1_TIME(a, &out);
     if (len > 0) {
-      lua_pushlstring(L, out, len);
+      lua_pushlstring(L, (const char *) out, len);
       OPENSSL_free(out);
       return 1;
     }
@@ -624,7 +624,7 @@ static int openssl_asn1group_i2d(lua_State *L)
     unsigned char* out = NULL;
     int len = i2d_ASN1_GENERALIZEDTIME(a, &out);
     if (len > 0) {
-      lua_pushlstring(L, out, len);
+      lua_pushlstring(L, (const char *) out, len);
       OPENSSL_free(out);
       return 1;
     }
@@ -643,7 +643,7 @@ static int openssl_asn1group_d2i(lua_State *L) {
   {
     size_t len;
     ASN1_INTEGER *ai = (ASN1_INTEGER *) s;
-    const unsigned char* der = luaL_checklstring(L, 2, &len);
+    const unsigned char* der = (const unsigned char*)luaL_checklstring(L, 2, &len);
     ai = d2i_ASN1_INTEGER(&ai, &der, (long) len);
     if (ai == NULL)
       return openssl_pushresult(L, -1);
@@ -657,7 +657,7 @@ static int openssl_asn1group_d2i(lua_State *L) {
     size_t len;
     ASN1_TIME *a = (ASN1_TIME *) s;
     const char* der = luaL_checklstring(L, 2, &len);
-    a = d2i_ASN1_TIME(&a, &der, len);
+    a = d2i_ASN1_TIME(&a, (const unsigned char **)&der, len);
     if (a == NULL)
       return openssl_pushresult(L, -1);
     else
@@ -669,7 +669,7 @@ static int openssl_asn1group_d2i(lua_State *L) {
     size_t len;
     ASN1_GENERALIZEDTIME *a = (ASN1_GENERALIZEDTIME *) s;
     const char* der = luaL_checklstring(L, 2, &len);
-    a = d2i_ASN1_GENERALIZEDTIME(&a, &der, len);
+    a = d2i_ASN1_GENERALIZEDTIME(&a, (const unsigned char **)&der, len);
     if (a == NULL)
       return openssl_pushresult(L, -1);
     lua_pushvalue(L, 1);
@@ -959,7 +959,7 @@ static int openssl_get_object(lua_State*L)
   if (off < 1) off = 1;
   if (length > l) length = l;
 
-  const unsigned char *p = asn1s + off -1;
+  const unsigned char *p = (const unsigned char *)asn1s + off -1;
   long len = 0;
   int tag = 0;
   int class = 0;
@@ -1017,7 +1017,7 @@ static int openssl_put_object(lua_State*L)
     constructed = lua_isnoneornil(L, 4) ? 0 : lua_toboolean(L, 4);
   }
   luaL_buffinit(L, &B);
-  p1 = luaL_prepbuffer(&B);
+  p1 = (unsigned char *)luaL_prepbuffer(&B);
   p2 = p1;
 
   ASN1_put_object(&p2, constructed, length, tag, cls);

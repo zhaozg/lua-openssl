@@ -18,7 +18,7 @@ local params = {
 }
 
 
-local certstore 
+local certstore
 if opensslv > 0x10002000 then
     certstore = openssl.x509.store:new()
     local cas = require'root_ca'
@@ -36,19 +36,16 @@ function ssl_mode()
         ctx:cert_store(certstore)
     end
     --ctx:set_cert_verify({always_continue=true,verify_depth=4})
-    --[[
-    ctx:set_cert_verify(function(arg) 
-
+    ctx:set_cert_verify(function(arg)
           --do some check
+          --[[
           for k,v in pairs(arg) do
                 print(k,v)
           end
-
+          --]]
           return true --return false will fail ssh handshake
     end)
-    --]]
 
-    
     local srv = assert(bio.accept(host..':'..port))
     local i = 0
     if srv then
@@ -61,9 +58,9 @@ function ssl_mode()
           else
             assert(s:accept())
           end
-          repeat 
+          repeat
               d = s:read()
-              if d then 
+              if d then
                 assert(#d==s:write(d))
               end
           until not d

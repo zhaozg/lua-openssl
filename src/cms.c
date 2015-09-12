@@ -7,6 +7,7 @@
 
 #include "openssl.h"
 #include "private.h"
+#if OPENSSL_VERSION_NUMBER > 0x00909000L
 #include <openssl/cms.h>
 
 #define MYNAME    "cms"
@@ -230,7 +231,7 @@ static int openssl_cms_EncryptedData_encrypt(lua_State*L)
   const char* key = luaL_checklstring(L, 3, &klen);
   unsigned int flags = luaL_optint(L, 4, 0);
 
-  CMS_ContentInfo *cms = CMS_EncryptedData_encrypt(in, ciphers, key, klen, flags);
+  CMS_ContentInfo *cms = CMS_EncryptedData_encrypt(in, ciphers, (const unsigned char*) key, klen, flags);
   if (cms)
   {
     PUSH_OBJECT(cms, "openssl.cms");
@@ -248,7 +249,7 @@ static int openssl_cms_EncryptedData_decrypt(lua_State*L)
   BIO* out = load_bio_object(L, 4);
   unsigned int flags = luaL_optint(L, 5, 0);
 
-  int ret = CMS_EncryptedData_decrypt(cms, key, klen, dcont, out, flags);
+  int ret = CMS_EncryptedData_decrypt(cms, (const unsigned char*)key, klen, dcont, out, flags);
 
   return openssl_pushresult(L, ret);
 }
@@ -305,8 +306,8 @@ static int openssl_cms_encrypt(lua_State *L)
         unsigned char* key = (unsigned char*)luaL_checklstring(L, -2, &keylen);
         unsigned char* keyid = (unsigned char*) luaL_checklstring(L, -1, &keyidlen);
 
-        key = memdup(key, keylen);
-        keyid = memdup(keyid, keyidlen);
+        key = memdup((const char*) key, keylen);
+        keyid = (unsigned char*) memdup((const char*)keyid, keyidlen);
 
         recipient = CMS_add0_recipient_key(cms, NID_undef,
           key, keylen,
@@ -581,19 +582,22 @@ static const luaL_Reg R[] =
 
   {NULL,  NULL}
 };
+#endif
 
 int luaopen_cms(lua_State *L)
 {
+#if OPENSSL_VERSION_NUMBER > 0x00909000L
   ERR_load_CMS_strings();
 
   auxiliar_newclass(L, "openssl.cms",  cms_ctx_funs);
 
   lua_newtable(L);
   luaL_setfuncs(L, R, 0);
-
   lua_pushliteral(L, "version");    /** version */
   lua_pushliteral(L, MYVERSION);
   lua_settable(L, -3);
-
+#else
+  lua_pushnil(L);
+#endif
   return 1;
 }

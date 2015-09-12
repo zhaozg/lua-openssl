@@ -64,7 +64,7 @@ static int openssl_hmac_final(lua_State *L)
   else
   {
     char hex[2 * EVP_MAX_MD_SIZE + 1];
-    to_hex(digest, len, hex);
+    to_hex((const char*) digest, len, hex);
     lua_pushstring(L, hex);
   }
   return 1;
@@ -118,7 +118,7 @@ static int openssl_hmac(lua_State *L)
     else
     {
       char hex[2 * EVP_MAX_MD_SIZE + 1];
-      to_hex(digest, len, hex);
+      to_hex((const char*)digest, len, hex);
       lua_pushstring(L, hex);
     }
   }

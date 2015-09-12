@@ -76,7 +76,7 @@ static int openssl_xext_export(lua_State* L)
   int len = i2d_X509_EXTENSION(x, &p);
   if (len > 0)
   {
-    lua_pushlstring(L, p, len);
+    lua_pushlstring(L, (const char *) p, len);
   }
   else
     lua_pushnil(L);

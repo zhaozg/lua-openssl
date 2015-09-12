@@ -744,9 +744,9 @@ static LUA_FUNCTION(openssl_pkey_encrypt)
       if (EVP_PKEY_CTX_set_rsa_padding(ctx, padding) == 1)
       {
         byte* buf = malloc(clen);
-        if (EVP_PKEY_encrypt(ctx, buf, &clen, data, dlen) == 1)
+        if (EVP_PKEY_encrypt(ctx, buf, &clen, (const unsigned char*)data, dlen) == 1)
         {
-          lua_pushlstring(L, buf, clen);
+          lua_pushlstring(L, (const char*)buf, clen);
           ret = 1;
         }
         else
@@ -792,9 +792,9 @@ static LUA_FUNCTION(openssl_pkey_decrypt)
       {
         byte* buf = malloc(clen);
 
-        if (EVP_PKEY_decrypt(ctx, buf, &clen, data, dlen) == 1)
+        if (EVP_PKEY_decrypt(ctx, buf, &clen, (const unsigned char*)data, dlen) == 1)
         {
-          lua_pushlstring(L, buf, clen);
+          lua_pushlstring(L, (const char*)buf, clen);
           ret = 1;
         }
         else
@@ -1037,7 +1037,8 @@ static LUA_FUNCTION(openssl_seal)
     buf = malloc(len1);
 
 
-    if (!EVP_SealInit(&ctx, cipher, eks, eksl, iv, pkeys, nkeys) || !EVP_SealUpdate(&ctx, buf, &len1, (unsigned char *)data, data_len))
+    if (!EVP_SealInit(&ctx, cipher, eks, eksl, (unsigned char*) iv, pkeys, nkeys) 
+        || !EVP_SealUpdate(&ctx, buf, &len1, (unsigned char *)data, data_len))
     {
       luaL_error(L, "EVP_SealInit failed");
     }
@@ -1154,7 +1155,7 @@ static LUA_FUNCTION(openssl_seal_init)
     {
       luaL_error(L, "EVP_EncryptInit failed");
     }
-    if (!EVP_SealInit(ctx, cipher, eks, eksl, iv, pkeys, nkeys))
+    if (!EVP_SealInit(ctx, cipher, eks, eksl, (unsigned char*) iv, pkeys, nkeys))
     {
       luaL_error(L, "EVP_SealInit failed");
     }
@@ -1202,7 +1203,7 @@ static LUA_FUNCTION(openssl_seal_update)
     luaL_error(L, "EVP_SealUpdate fail");
   }
 
-  lua_pushlstring(L, buf, len);
+  lua_pushlstring(L, (const char*)buf, len);
   free(buf);
   return 1;
 }
@@ -1247,7 +1248,7 @@ static LUA_FUNCTION(openssl_open)
     buf = malloc(len1);
 
     EVP_CIPHER_CTX_init(&ctx);
-    if (EVP_OpenInit(&ctx, cipher, (unsigned char *)ekey, ekey_len, iv, pkey) && EVP_OpenUpdate(&ctx, buf, &len1, (unsigned char *)data, data_len))
+    if (EVP_OpenInit(&ctx, cipher, (unsigned char *)ekey, ekey_len, (const unsigned char *)iv, pkey) && EVP_OpenUpdate(&ctx, buf, &len1, (unsigned char *)data, data_len))
     {
       len2 = data_len - len1;
       if (!EVP_OpenFinal(&ctx, buf + len1, &len2) || (len1 + len2 == 0))
@@ -1292,7 +1293,7 @@ static LUA_FUNCTION(openssl_open_init)
     EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
 
     EVP_CIPHER_CTX_init(ctx);
-    if (EVP_OpenInit(ctx, cipher, (unsigned char *)ekey, ekey_len, iv, pkey))
+    if (EVP_OpenInit(ctx, cipher, (unsigned char *)ekey, ekey_len, (const unsigned char *)iv, pkey))
     {
       PUSH_OBJECT(ctx, "openssl.evp_cipher_ctx");
       return 1;

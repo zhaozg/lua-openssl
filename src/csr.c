@@ -166,7 +166,7 @@ static LUA_FUNCTION(openssl_csr_digest)
   ret = X509_REQ_digest(csr, md, buf, &len);
   if (ret == 1)
   {
-    lua_pushlstring(L, buf, len);
+    lua_pushlstring(L, (const char*)buf, len);
     return 1;
   }
   return openssl_pushresult(L, ret);
@@ -289,14 +289,14 @@ static LUA_FUNCTION(openssl_csr_sign)
     int inl = ASN1_item_i2d((void*)csr->req_info, &tosign, it);
     if (inl > 0 && tosign)
     {
-      lua_pushlstring(L, tosign, inl);
+      lua_pushlstring(L, (const char*)tosign, inl);
       OPENSSL_free(tosign);
       return 1;
     }
     return openssl_pushresult(L, 0);
   } else {
     size_t siglen;
-    const unsigned char* sigdata = luaL_checklstring(L, 3, &siglen);
+    const unsigned char* sigdata = (const unsigned char*)luaL_checklstring(L, 3, &siglen);
     const EVP_MD* md = get_digest(L, 4);
 
     X509_REQ* x = csr;

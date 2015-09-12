@@ -562,13 +562,14 @@ static LUA_FUNCTION(openssl_crl_parse)
 
   openssl_push_x509_algor(L, crl->crl->sig_alg);
   lua_setfield(L, -2, "sig_alg");
-
+  
+#if OPENSSL_VERSION_NUMBER > 0x00909000L
   if (crl->crl_number)
   {
     PUSH_ASN1_INTEGER(L, crl->crl_number);
     lua_setfield(L, -2, "crl_number");
   }
-
+#endif
   if (crl->crl->extensions)
   {
     STACK_OF(X509_EXTENSION) *extensions = sk_X509_EXTENSION_dup(crl->crl->extensions);
@@ -786,19 +787,21 @@ static int openssl_revoked_info(lua_State* L)
 static int openssl_revoked_reason(lua_State* L)
 {
   X509_REVOKED* revoked = CHECK_OBJECT(1, X509_REVOKED, "openssl.x509_revoked");
-#if OPENSSL_VERSION_NUMBER > 0x10000000L
+#if OPENSSL_VERSION_NUMBER > 0x00909000L
   lua_pushstring(L, openssl_i2s_revoke_reason(revoked->reason));
   lua_pushinteger(L, revoked->reason);
+  return 2;
 #else
+  /*
   {
     int crit = 0;
     void* reason = X509_REVOKED_get_ext_d2i(revoked, NID_crl_reason, &crit, NULL);
     lua_pushstring(L, openssl_i2s_revoke_reason(ASN1_ENUMERATED_get(reason)).lname);
     lua_pushinteger(revoked->reason);
     ASN1_ENUMERATED_free(reason);
-  }
+  }*/
+  return 0;
 #endif
-  return 2;
 }
 
 static time_t ASN1_GetTimeT(ASN1_TIME* time)

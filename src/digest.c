@@ -95,7 +95,7 @@ static LUA_FUNCTION(openssl_digest)
       else
       {
         char hex[2 * EVP_MAX_MD_SIZE + 1];
-        to_hex(buf, blen, hex);
+        to_hex((const char*) buf, blen, hex);
         lua_pushstring(L, hex);
       }
     }
@@ -234,7 +234,7 @@ static LUA_FUNCTION(openssl_evp_digest_final)
       else
       {
         char hex[2 * EVP_MAX_MD_SIZE + 1];
-        to_hex(out, outl, hex);
+        to_hex((const char*)out, outl, hex);
         lua_pushstring(L, hex);
       }
       EVP_MD_CTX_destroy(d);
@@ -376,7 +376,7 @@ static LUA_FUNCTION(openssl_verifyFinal)
   size_t signature_len;
   const char* signature = luaL_checklstring(L, 2, &signature_len);
   EVP_PKEY *pkey = CHECK_OBJECT(3, EVP_PKEY, "openssl.evp_pkey");
-  int ret = EVP_VerifyFinal(ctx, signature, signature_len, pkey);
+  int ret = EVP_VerifyFinal(ctx, (const unsigned char*)signature, signature_len, pkey);
   EVP_MD_CTX_cleanup(ctx);
   return openssl_pushresult(L, ret);
 }

@@ -46,7 +46,7 @@ static int openssl_xname_digest(lua_State*L)
 
   int ret = X509_NAME_digest(xname, md, buf, &len);
   if (ret == 1)
-    lua_pushlstring(L, buf, len);
+    lua_pushlstring(L, (const char *) buf, len);
   else
     return openssl_pushresult(L, ret);
   return 1;
@@ -117,7 +117,7 @@ static int openssl_xname_i2d(lua_State*L)
   int len = i2d_X509_NAME(xn, &out);
   if (len > 0)
   {
-    lua_pushlstring(L, out, len);
+    lua_pushlstring(L, (const char *)out, len);
     CRYPTO_free(out);
     return 1;
   }
@@ -150,7 +150,7 @@ static int openssl_xname_get_text(lua_State*L)
 
   e = X509_NAME_get_entry(xn, lastpos);
   s = X509_NAME_ENTRY_get_data(e);
-  lua_pushlstring(L, ASN1_STRING_data(s), ASN1_STRING_length(s));
+  lua_pushlstring(L, (const char *)ASN1_STRING_data(s), ASN1_STRING_length(s));
   lua_pushinteger(L, lastpos);
   return 2;
 };
@@ -295,7 +295,7 @@ static int openssl_xname_new(lua_State*L)
 static int openssl_xname_d2i(lua_State*L)
 {
   size_t len;
-  const unsigned char* dat = luaL_checklstring(L, 1, &len);
+  const unsigned char* dat = (const unsigned char*)luaL_checklstring(L, 1, &len);
   X509_NAME* xn = d2i_X509_NAME(NULL, &dat, len);
   if (xn)
     PUSH_OBJECT(xn, "openssl.x509_name");

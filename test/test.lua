@@ -3,10 +3,10 @@ EXPORT_ASSERT_TO_GLOBALS = true
 require'luaunit'
 
 openssl.rand_load()
-
+v = {openssl.version(true)}
 dofile('0.engine.lua')
 dofile('0.misc.lua')
-dofile('0.tcp.lua')
+--dofile('0.tcp.lua')
 dofile('1.asn1.lua')
 dofile('2.asn1.lua')
 dofile('1.x509_name.lua')
@@ -23,7 +23,7 @@ dofile('5.ts.lua')
 dofile('6.pkcs7.lua')
 dofile('7.pkcs12.lua')
 dofile('8.ssl_options.lua')
-dofile('8.ssl.lua')
+--dofile('8.ssl.lua')
 dofile('rsa.lua')
 dofile('ec.lua')
 
