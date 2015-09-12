@@ -1020,7 +1020,7 @@ static int openssl_verify_cert_error_string(lua_State*L)
   return 1;
 }
 
-static luaL_reg R[] =
+static luaL_Reg R[] =
 {
   {"new",           openssl_x509_new },
   {"read",          openssl_x509_read },

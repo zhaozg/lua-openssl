@@ -302,7 +302,7 @@ static int openssl_asn1type_d2i(lua_State*L)
   return 1;
 }
 
-static luaL_reg asn1type_funcs[] =
+static luaL_Reg asn1type_funcs[] =
 {
   {"type",      openssl_asn1type_type},
   {"octet",     openssl_asn1type_octet},
@@ -392,7 +392,7 @@ static int openssl_asn1object_dup(lua_State* L) {
   return 1;
 }
 
-static luaL_reg asn1obj_funcs[] =
+static luaL_Reg asn1obj_funcs[] =
 {
   {"nid",         openssl_asn1object_nid},
   {"name",        openssl_asn1object_name},
@@ -917,7 +917,7 @@ static int openssl_asn1time_adj(lua_State* L)
   return 0;
 }
 
-static luaL_reg asn1str_funcs[] =
+static luaL_Reg asn1str_funcs[] =
 {
   /* asn1string */
   {"length",    openssl_asn1group_length},
@@ -1071,7 +1071,7 @@ static int openssl_asn1_tostring(lua_State*L)
   return 0;
 }
 
-static luaL_reg R[] =
+static luaL_Reg R[] =
 {
   {"new_object", openssl_asn1object_new},
 

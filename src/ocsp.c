@@ -445,7 +445,7 @@ int openssl_ocsp_response_free(lua_State*L)
   OCSP_RESPONSE_free(res);
   return 0;
 }
-static luaL_reg ocsp_req_cfuns[] =
+static luaL_Reg ocsp_req_cfuns[] =
 {
   {"export",      openssl_ocsp_request_export },
   {"parse",     openssl_ocsp_request_parse  },
@@ -457,7 +457,7 @@ static luaL_reg ocsp_req_cfuns[] =
   {NULL,        NULL  }
 };
 
-static luaL_reg ocsp_res_cfuns[] =
+static luaL_Reg ocsp_res_cfuns[] =
 {
   {"export",      openssl_ocsp_response_export  },
   {"parse",     openssl_ocsp_response_parse },
@@ -468,7 +468,7 @@ static luaL_reg ocsp_res_cfuns[] =
   {NULL,        NULL  }
 };
 
-static luaL_reg R[] =
+static luaL_Reg R[] =
 {
   {"request_read", openssl_ocsp_request_new},
   {"request_new",  openssl_ocsp_request_new},

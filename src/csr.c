@@ -509,7 +509,7 @@ static LUA_FUNCTION(openssl_csr_attr_count)
   return 1;
 }
 
-static luaL_reg csr_cfuns[] =
+static luaL_Reg csr_cfuns[] =
 {
   {"to_x509",           openssl_csr_to_x509},
   {"export",            openssl_csr_export},
@@ -538,7 +538,7 @@ static luaL_reg csr_cfuns[] =
   {NULL,        NULL  }
 };
 
-static luaL_reg R[] =
+static luaL_Reg R[] =
 {
   {"new",       openssl_csr_new },
   {"read",      openssl_csr_read  },

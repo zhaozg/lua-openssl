@@ -1853,7 +1853,7 @@ static luaL_Reg ssl_funcs[] =
   {NULL,      NULL},
 };
 
-static luaL_reg R[] =
+static luaL_Reg R[] =
 {
   {"ctx_new",       openssl_ssl_ctx_new },
   {"alert_string",  openssl_ssl_alert_string },

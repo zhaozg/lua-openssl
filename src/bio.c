@@ -678,7 +678,7 @@ static LUA_FUNCTION(openssl_bio_pending)
   return 2;
 }
 
-static luaL_reg bio_funs[] =
+static luaL_Reg bio_funs[] =
 {
   /* generate operation */
   {"read",  openssl_bio_read  },
@@ -717,7 +717,7 @@ static luaL_reg bio_funs[] =
   {NULL,    NULL}
 };
 
-static luaL_reg R[] =
+static luaL_Reg R[] =
 {
   {"mem",     openssl_bio_new_mem    },
   {"socket",  openssl_bio_new_socket   },

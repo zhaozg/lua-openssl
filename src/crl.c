@@ -906,7 +906,7 @@ static int openssl_crl_reason(lua_State *L)
   return 1;
 }
 
-static luaL_reg R[] =
+static luaL_Reg R[] =
 {
   {"new",       openssl_crl_new },
   {"read",      openssl_crl_read},

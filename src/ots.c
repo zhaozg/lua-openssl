@@ -1319,7 +1319,7 @@ static luaL_Reg ts_verify_ctx_funs[] =
   { NULL, NULL }
 };
 
-static luaL_reg R[] =
+static luaL_Reg R[] =
 {
   {"req_new",         openssl_ts_req_new},
   {"req_read",        openssl_ts_req_read},

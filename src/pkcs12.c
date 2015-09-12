@@ -112,7 +112,7 @@ static LUA_FUNCTION(openssl_pkcs12_read)
   return ret;
 }
 
-static luaL_reg R[] =
+static luaL_Reg R[] =
 {
   {"read",    openssl_pkcs12_read },
   {"export",    openssl_pkcs12_export  },
