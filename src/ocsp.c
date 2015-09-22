@@ -163,7 +163,7 @@ static int openssl_ocsp_request_sign(lua_State*L)
   {
     others = CHECK_OBJECT(4, STACK_OF(X509), "openssl.stack_of_x509");
   }
-  sflags = luaL_optint(L, 6, sflags);
+  sflags = luaL_optinteger(L, 6, sflags);
   if (!lua_isnoneornil(L, 7))
     md = CHECK_OBJECT(7, EVP_MD, "openssl.evp_digest");
 
@@ -261,9 +261,9 @@ static int openssl_ocsp_response(lua_State *L)
     X509* rcert = CHECK_OBJECT(3, X509, "openssl.x509");
     EVP_PKEY *rkey = CHECK_OBJECT(4, EVP_PKEY, "openssl.evp_pkey");
 
-    unsigned long flag = luaL_optint(L, 6, 0);
-    int nmin = luaL_optint(L, 7, 0);
-    int nday = luaL_optint(L, 8, 1);
+    unsigned long flag = luaL_optinteger(L, 6, 0);
+    int nmin = luaL_optinteger(L, 7, 0);
+    int nday = luaL_optinteger(L, 8, 1);
     STACK_OF(X509) *rother = lua_isnoneornil(L, 9) ? NULL : CHECK_OBJECT(9, STACK_OF(X509), "openssl.stack_of_x509");
 
     int i, id_count, type;
@@ -327,7 +327,7 @@ static int openssl_ocsp_response(lua_State *L)
             if (!lua_isnil(L, -1))
             {
               revtm = ASN1_TIME_new();
-              ASN1_TIME_set(revtm, luaL_checkint(L, -1));
+              ASN1_TIME_set(revtm, luaL_checkinteger(L, -1));
             }
             lua_pop(L, 1);
 
@@ -335,7 +335,7 @@ static int openssl_ocsp_response(lua_State *L)
             if (lua_isstring(L, -1))
               reason = openssl_s2i_revoke_reason(lua_tostring(L, -1));
             else
-              reason = luaL_checkint(L, -1);
+              reason = luaL_checkinteger(L, -1);
             lua_pop(L, 1);
           }
           else

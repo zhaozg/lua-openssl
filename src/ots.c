@@ -780,9 +780,9 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_accuracy)
   }
   else
   {
-    int seconds = luaL_checkint(L, 2);
-    int millis  = luaL_checkint(L, 3);
-    int micros  = luaL_checkint(L, 4);
+    int seconds = luaL_checkinteger(L, 2);
+    int millis  = luaL_checkinteger(L, 3);
+    int micros  = luaL_checkinteger(L, 4);
     int ret = TS_RESP_CTX_set_accuracy(ctx, seconds, millis, micros);
     return openssl_pushresult(L, ret);
   }
@@ -800,7 +800,7 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_clock_precision_digits)
   else
   {
     int ret;
-    int clock_precision_digits = luaL_checkint(L, 2);
+    int clock_precision_digits = luaL_checkinteger(L, 2);
     if (clock_precision_digits > TS_MAX_CLOCK_PRECISION_DIGITS)
       clock_precision_digits = TS_MAX_CLOCK_PRECISION_DIGITS;
     if (clock_precision_digits < 0)
@@ -814,7 +814,7 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_clock_precision_digits)
 static LUA_FUNCTION(openssl_ts_resp_ctx_set_status_info)
 {
   TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
-  int status = luaL_checkint(L, 2);
+  int status = luaL_checkinteger(L, 2);
   const char* text = luaL_checkstring(L, 3);
   int ret = TS_RESP_CTX_set_status_info(ctx, status, text);
   return openssl_pushresult(L, ret);
@@ -823,7 +823,7 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_set_status_info)
 static LUA_FUNCTION(openssl_ts_resp_ctx_set_status_info_cond)
 {
   TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
-  int status = luaL_checkint(L, 2);
+  int status = luaL_checkinteger(L, 2);
   const char* text = luaL_checkstring(L, 3);
   int ret = TS_RESP_CTX_set_status_info_cond(ctx, status, text);
   return openssl_pushresult(L, ret);
@@ -832,7 +832,7 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_set_status_info_cond)
 static LUA_FUNCTION(openssl_ts_resp_ctx_add_failure_info)
 {
   TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
-  int failure = luaL_checkint(L, 2);
+  int failure = luaL_checkinteger(L, 2);
   int ret = TS_RESP_CTX_add_failure_info(ctx, failure);
   return openssl_pushresult(L, ret);
 }
@@ -846,7 +846,7 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_flags)
   }
   else if (lua_isnumber(L, 2))
   {
-    int flags = luaL_checkint(L, 2);
+    int flags = luaL_checkinteger(L, 2);
     ctx->flags = flags;
     lua_pushboolean(L, 1);
   }

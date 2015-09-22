@@ -85,7 +85,7 @@ static LUA_FUNCTION(openssl_bio_new_mem)
 
 static LUA_FUNCTION(openssl_bio_new_socket)
 {
-  int s = luaL_checkint(L, 1);
+  int s = luaL_checkinteger(L, 1);
   int closeflag = luaL_checkoption(L, 2, "noclose", close_flags);
   BIO *bio = BIO_new_socket(s, closeflag);
 
@@ -95,7 +95,7 @@ static LUA_FUNCTION(openssl_bio_new_socket)
 
 static LUA_FUNCTION(openssl_bio_new_dgram)
 {
-  int s = luaL_checkint(L, 1);
+  int s = luaL_checkinteger(L, 1);
   int closeflag = luaL_checkoption(L, 2, "noclose", close_flags);
   BIO *bio = BIO_new_dgram(s, closeflag);
   PUSH_OBJECT(bio, "openssl.bio");
@@ -104,7 +104,7 @@ static LUA_FUNCTION(openssl_bio_new_dgram)
 
 static LUA_FUNCTION(openssl_bio_new_fd)
 {
-  int fd = luaL_checkint(L, 1);
+  int fd = luaL_checkinteger(L, 1);
   int closeflag = luaL_checkoption(L, 2, "noclose", close_flags);
   BIO *bio = BIO_new_fd(fd, closeflag);
 
@@ -253,7 +253,7 @@ static LUA_FUNCTION(openssl_bio_new_filter)
 static LUA_FUNCTION(openssl_bio_read)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
-  int len = luaL_optint(L, 2, BIO_pending(bio));
+  int len = luaL_optinteger(L, 2, BIO_pending(bio));
   char* buf = NULL;
   int ret = 1;
 
@@ -284,7 +284,7 @@ static LUA_FUNCTION(openssl_bio_read)
 static LUA_FUNCTION(openssl_bio_gets)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
-  int len = luaL_optint(L, 2, BIO_pending(bio));
+  int len = luaL_optinteger(L, 2, BIO_pending(bio));
   char* buf;
   int ret = 1;
   len = len > 0 ? len : 1024;
@@ -318,7 +318,7 @@ static LUA_FUNCTION(openssl_bio_write)
   size_t size = 0;
   const char* d = luaL_checklstring(L, 2, &size);
   int ret = 1;
-  int len = luaL_optint(L, 3, size);
+  int len = luaL_optinteger(L, 3, size);
 
   len = BIO_write(bio, d, len);
   if (len > 0)

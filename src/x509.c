@@ -619,7 +619,7 @@ static int openssl_x509_version(lua_State *L)
   else
   {
     int ret;
-    version = luaL_checkint(L, 2);
+    version = luaL_checkinteger(L, 2);
     ret = X509_set_version(cert, version);
     return openssl_pushresult(L, ret);
   }
@@ -1014,7 +1014,7 @@ static int openssl_x509_certtypes(lua_State*L)
 
 static int openssl_verify_cert_error_string(lua_State*L)
 {
-  int v = luaL_checkint(L, 1);
+  int v = luaL_checkinteger(L, 1);
   const char*s = X509_verify_cert_error_string(v);
   lua_pushstring(L, s);
   return 1;
