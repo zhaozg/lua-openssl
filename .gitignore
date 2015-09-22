@@ -24,6 +24,8 @@
 
 #MSVC
 msvc/
+*.exp
+*.dll.manifest
 
 #ldoc
 doc/doc/
