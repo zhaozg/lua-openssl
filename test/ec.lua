@@ -8,9 +8,9 @@ testEC = {}
         local factor = {
           alg = "ec",
           ec_name = 415,
-          x = openssl.base64('fBEMZtz9qAf25p5F3bPHT2mhSE0gPo3Frajpqd18s8c=',false),
-          y = openssl.base64('DfRImG5RveXRV2+ZkB+cLGqAakf9kHZDpyuDVZfvyMY=',false),
-          d = openssl.base64('H+M5UMX0YRJK6ZLCvf3xxzsWFfVxvVZ+YNGaofSM30I=',false),
+          x = assert(openssl.base64('fBEMZtz9qAf25p5F3bPHT2mhSE0gPo3Frajpqd18s8c=',false)),
+          y = assert(openssl.base64('DfRImG5RveXRV2+ZkB+cLGqAakf9kHZDpyuDVZfvyMY=',false)),
+          d = assert(openssl.base64('H+M5UMX0YRJK6ZLCvf3xxzsWFfVxvVZ+YNGaofSM30I=',false)),
         }
         local ec = assert(pkey.new(factor))
         local pem = assert(ec:export(true))
@@ -25,12 +25,12 @@ jcWtqOmp3Xyzxw30SJhuUb3l0VdvmZAfnCxqgGpH/ZB2Q6crg1WX78jG
     function testEC:testEC()
         local nec =  {'ec','prime256v1'}
         local ec = pkey.new(unpack(nec))
-        local t = ec:parse().ec:parse(true) --make basic table 
+        local t = ec:parse().ec:parse(true) --make basic table
         assertEquals(type(t.curve_name), 'number')
         assertStrContains(t.x.version, 'bn library')
         assertStrContains(t.y.version, 'bn library')
         assertStrContains(t.d.version, 'bn library')
-        
+
         local k1 = pkey.get_public(ec)
         assert(not k1:is_private())
         local t = k1:parse()
@@ -38,7 +38,7 @@ jcWtqOmp3Xyzxw30SJhuUb3l0VdvmZAfnCxqgGpH/ZB2Q6crg1WX78jG
         assert(t.type=='ec')
         assert(t.size==72)
         local r = t.ec
-        t = r:parse(true) --make basic table 
+        t = r:parse(true) --make basic table
         assertEquals(type(t.curve_name), 'number')
         assertStrContains(t.x.version, 'bn library')
         assertStrContains(t.y.version, 'bn library')

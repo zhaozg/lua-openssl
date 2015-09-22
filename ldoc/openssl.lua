@@ -1,4 +1,4 @@
---- 
+---
 -- Provide openssl base function in lua.
 --
 -- @module openssl
@@ -8,8 +8,8 @@
 
 do  -- define module function
 
--- Most lua-openssl function or methods return nil or false when error or 
--- failed, followed by string type error _reason_ and number type error _code_, 
+-- Most lua-openssl function or methods return nil or false when error or
+-- failed, followed by string type error _reason_ and number type error _code_,
 -- _code_ can pass to openssl.error() to get more error information.
 
 --- hex encode or decode string
@@ -21,6 +21,7 @@ function hex() end
 --- base64 encode or decode
 -- @tparam string|bio input
 -- @tparam[opt=true] boolean encode true to encoed, false to decode
+-- @tparam[opt=true] boolean NO_NL true with newline, false without newline
 -- @treturn string
 function base64() end
 
@@ -31,7 +32,7 @@ function list() end
 
 --- get last or given error infomation
 -- @tparam[opt] number error, default use ERR_get_error() return value
--- @tparam[opt=false] boolean clear the current thread's error queue. 
+-- @tparam[opt=false] boolean clear the current thread's error queue.
 -- @treturn number errcode
 -- @treturn string reason
 -- @treturn string library name
@@ -42,7 +43,7 @@ function error() end
 --- get random bytes
 -- @tparam number length
 -- @tparam[opt=false] boolean strong true to generate strong randome bytes
--- @treturn string 
+-- @treturn string
 function random() end
 
 --- get random generator state
@@ -59,12 +60,12 @@ function rand_load() end
 -- @treturn bool result
 function rand_write() end
 
---- cleanup random genrator 
+--- cleanup random genrator
 function rand_cleanup() end
 
 --- get openssl engine object
 -- @tparam string engine_id
--- @treturn engine 
+-- @treturn engine
 function engine() end
 
 -- get lua-openssl version
