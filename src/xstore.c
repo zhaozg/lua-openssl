@@ -65,7 +65,7 @@ static int openssl_xstore_add_lookup(lua_State* L)
 static int openssl_xstore_depth(lua_State* L)
 {
   X509_STORE* ctx = CHECK_OBJECT(1, X509_STORE, "openssl.x509_store");
-  int depth = luaL_checkint(L, 2);
+  int depth = luaL_checkinteger(L, 2);
   int ret = X509_STORE_set_depth(ctx, depth);
   return openssl_pushresult(L, ret);
 }
@@ -73,7 +73,7 @@ static int openssl_xstore_depth(lua_State* L)
 static int openssl_xstore_flags(lua_State* L)
 {
   X509_STORE* ctx = CHECK_OBJECT(1, X509_STORE, "openssl.x509_store");
-  int flags = luaL_checkint(L, 2);
+  int flags = luaL_checkinteger(L, 2);
   int ret = X509_STORE_set_flags(ctx, flags);
   return openssl_pushresult(L, ret);
 }
@@ -81,7 +81,7 @@ static int openssl_xstore_flags(lua_State* L)
 static int openssl_xstore_purpose(lua_State* L)
 {
   X509_STORE* ctx = CHECK_OBJECT(1, X509_STORE, "openssl.x509_store");
-  int purpose = luaL_checkint(L, 2);
+  int purpose = luaL_checkinteger(L, 2);
   int ret = X509_STORE_set_purpose(ctx, purpose);
   return openssl_pushresult(L, ret);
 }

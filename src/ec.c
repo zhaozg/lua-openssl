@@ -137,7 +137,7 @@ static int openssl_ec_group_asn1_flag(lua_State*L)
     EC_GROUP_set_asn1_flag(group, asn1_flag);
   } else if (lua_isnumber(L, 2))
   {
-    asn1_flag = luaL_checkint(L, 2);
+    asn1_flag = luaL_checkinteger(L, 2);
     EC_GROUP_set_asn1_flag(group, asn1_flag);
   } else
     luaL_argerror(L, 2, "not accept type of asn1 flag");
@@ -177,7 +177,7 @@ static int openssl_ec_group_point_conversion_form(lua_State*L)
     EC_GROUP_set_point_conversion_form(group, form);
   } else if (lua_isnumber(L, 2))
   {
-    form = luaL_checkint(L, 2);
+    form = luaL_checkinteger(L, 2);
     EC_GROUP_set_point_conversion_form(group, form);
   } else
     luaL_argerror(L, 2, "not accept type of point_conversion_form");
@@ -239,7 +239,7 @@ EC_GROUP* openssl_get_ec_group(lua_State* L, int ec_name_idx, int param_enc_idx,
         EC_GROUP_set_point_conversion_form(g, form);
       } else if (lua_isnumber(L, param_enc_idx))
       {
-        form = luaL_checkint(L, param_enc_idx);
+        form = luaL_checkinteger(L, param_enc_idx);
         EC_GROUP_set_point_conversion_form(g, form);
       } else if (lua_isnoneornil(L, param_enc_idx))
       {
@@ -260,7 +260,7 @@ EC_GROUP* openssl_get_ec_group(lua_State* L, int ec_name_idx, int param_enc_idx,
         EC_GROUP_set_asn1_flag(g, asn1_flag);
       } else if (lua_isnumber(L, conv_form_idx))
       {
-        asn1_flag = luaL_checkint(L, conv_form_idx);
+        asn1_flag = luaL_checkinteger(L, conv_form_idx);
         EC_GROUP_set_asn1_flag(g, asn1_flag);
       } else if (lua_isnoneornil(L, conv_form_idx))
       {
@@ -353,14 +353,15 @@ static int openssl_ec_key_parse(lua_State*L)
   lua_newtable(L);
   if (basic)
   {
+    BIGNUM* x = BN_new();
+    BIGNUM* y = BN_new();
+
     AUXILIAR_SET(L, -1, "enc_flag", EC_KEY_get_enc_flags(ec), integer);
     AUXILIAR_SET(L, -1, "conv_form", EC_KEY_get_conv_form(ec), integer);
     AUXILIAR_SET(L, -1, "curve_name", EC_GROUP_get_curve_name(group), integer);
 
     AUXILIAR_SETOBJECT(L, BN_dup(priv), "openssl.bn", -1, "d");
 
-    BIGNUM* x = BN_new();
-    BIGNUM* y = BN_new();
     if (EC_POINT_get_affine_coordinates_GFp(group, point, x, y, NULL) == 1)
     {
       AUXILIAR_SETOBJECT(L, x, "openssl.bn", -1, "x");

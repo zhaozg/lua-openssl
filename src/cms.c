@@ -78,7 +78,7 @@ static int openssl_cms_write(lua_State *L)
   CMS_ContentInfo *cms = CHECK_OBJECT(1, CMS_ContentInfo, "openssl.cms");
   BIO *out = load_bio_object(L, 2);
   BIO *in = load_bio_object(L, 3);
-  int flags = luaL_optint(L, 4, 0);
+  int flags = luaL_optinteger(L, 4, 0);
   int fmt = luaL_checkoption(L, 5, "smime", format);
   int ret = 0;
 
@@ -110,12 +110,12 @@ static int openssl_cms_create(lua_State*L)
     if (lua_isuserdata(L, 2))
     {
       const EVP_MD* md = get_digest(L, 2);
-      int flags = luaL_optint(L, 3, 0);
+      int flags = luaL_optinteger(L, 3, 0);
       cms = CMS_digest_create(in, md, flags);
     }
     else
     {
-      int flags = luaL_optint(L, 2, 0);
+      int flags = luaL_optinteger(L, 2, 0);
       cms = CMS_data_create(in, flags);
     }
   }
@@ -138,7 +138,7 @@ static int openssl_cms_compress(lua_State *L)
   };
   CMS_ContentInfo *cms;
   nid = luaL_checkoption(L, 2, "zlib", compress_options);
-  flags = luaL_optint(L, 3, 0);
+  flags = luaL_optinteger(L, 3, 0);
 
   cms = CMS_compress(in, nid, flags);
 
@@ -155,7 +155,7 @@ static int openssl_cms_uncompress(lua_State *L)
   CMS_ContentInfo *cms = CHECK_OBJECT(1, CMS_ContentInfo, "openssl.cms");
   BIO *in = load_bio_object(L, 2);
   BIO *out = load_bio_object(L, 3);
-  int flags = luaL_optint(L, 4, 0);
+  int flags = luaL_optinteger(L, 4, 0);
 
   int ret = CMS_uncompress(cms, in, out, flags);
   return openssl_pushresult(L, ret);
@@ -167,7 +167,7 @@ static int openssl_cms_sign(lua_State *L)
   EVP_PKEY* pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
   STACK_OF(X509)* certs = CHECK_OBJECT(3, STACK_OF(X509), "openssl.stack_of_x509");
   BIO* data = load_bio_object(L, 4);
-  unsigned int flags = luaL_optint(L, 5, 0);
+  unsigned int flags = luaL_optinteger(L, 5, 0);
   CMS_ContentInfo *cms;
   luaL_argcheck(L, openssl_pkey_is_private(pkey), 2, "must be private key");
   cms = CMS_sign(signcert, pkey, certs, data, flags);
@@ -194,7 +194,7 @@ static int openssl_cms_verify(lua_State *L)
   {
     BIO* in = load_bio_object(L, 3);
     BIO* out = load_bio_object(L, 4);
-    unsigned int flags = luaL_optint(L, 5, 0);
+    unsigned int flags = luaL_optinteger(L, 5, 0);
 
     int ret = CMS_digest_verify(cms, in, out, flags);
     return openssl_pushresult(L, ret);
@@ -204,7 +204,7 @@ static int openssl_cms_verify(lua_State *L)
     CMS_ContentInfo *src = CHECK_OBJECT(3, CMS_ContentInfo, "openssl.cms");
     STACK_OF(X509) *other = CHECK_OBJECT(4, STACK_OF(X509), "openssl.stack_of_x509");
     X509_STORE* store = CHECK_OBJECT(5, X509_STORE, "openssl.x509_store");
-    unsigned int flags = luaL_optint(L, 6, 0);
+    unsigned int flags = luaL_optinteger(L, 6, 0);
     int ret = CMS_verify_receipt(cms, src, other, store, flags);
     return openssl_pushresult(L, ret);
   }
@@ -214,7 +214,7 @@ static int openssl_cms_verify(lua_State *L)
     X509_STORE* store = CHECK_OBJECT(4, X509_STORE, "openssl.x509_store");
     BIO* in = load_bio_object(L, 5);
     BIO* out = load_bio_object(L, 6);
-    unsigned int flags = luaL_optint(L, 7, 0);
+    unsigned int flags = luaL_optinteger(L, 7, 0);
     int ret = CMS_verify(cms, other, store, in, out, flags);
     return openssl_pushresult(L, ret);
   }
@@ -229,7 +229,7 @@ static int openssl_cms_EncryptedData_encrypt(lua_State*L)
   const EVP_CIPHER* ciphers = get_cipher(L, 2, NULL);
   size_t klen;
   const char* key = luaL_checklstring(L, 3, &klen);
-  unsigned int flags = luaL_optint(L, 4, 0);
+  unsigned int flags = luaL_optinteger(L, 4, 0);
 
   CMS_ContentInfo *cms = CMS_EncryptedData_encrypt(in, ciphers, (const unsigned char*) key, klen, flags);
   if (cms)
@@ -247,7 +247,7 @@ static int openssl_cms_EncryptedData_decrypt(lua_State*L)
   const char* key = luaL_checklstring(L, 2, &klen);
   BIO* dcont = load_bio_object(L, 3);
   BIO* out = load_bio_object(L, 4);
-  unsigned int flags = luaL_optint(L, 5, 0);
+  unsigned int flags = luaL_optinteger(L, 5, 0);
 
   int ret = CMS_EncryptedData_decrypt(cms, (const unsigned char*)key, klen, dcont, out, flags);
 
@@ -289,7 +289,7 @@ static int openssl_cms_encrypt(lua_State *L)
   STACK_OF(X509)* encerts =  CHECK_OBJECT(1, STACK_OF(X509), "openssl.stack_of_x509");
   BIO* in = load_bio_object(L, 2);
   const EVP_CIPHER* ciphers = get_cipher(L, 3, NULL);
-  unsigned int flags = luaL_optint(L, 4, 0);
+  unsigned int flags = luaL_optinteger(L, 4, 0);
   int ret = 0;
   CMS_ContentInfo *cms = CMS_encrypt(encerts, in, ciphers, flags);
   CMS_RecipientInfo *recipient;
@@ -364,7 +364,7 @@ static int openssl_cms_decrypt(lua_State *L)
   X509* x509 = CHECK_OBJECT(3, X509, "openssl.x509");
   BIO* dcont = load_bio_object(L, 4);
   BIO* out = load_bio_object(L, 5);
-  unsigned int flags = luaL_optint(L, 6, 0);
+  unsigned int flags = luaL_optinteger(L, 6, 0);
   int ret = 1;
 
   if (lua_istable(L, 7))
@@ -493,7 +493,7 @@ static int openssl_cms_data(lua_State *L)
 {
   CMS_ContentInfo *cms = CHECK_OBJECT(1, CMS_ContentInfo, "openssl.cms");
   BIO *out = load_bio_object(L, 2);
-  unsigned int flags = luaL_optint(L, 3, 0);
+  unsigned int flags = luaL_optinteger(L, 3, 0);
   int ret = CMS_data(cms, out, flags);
   return openssl_pushresult(L, ret);
 }
@@ -503,7 +503,7 @@ static int openssl_cms_final(lua_State*L)
 {
   CMS_ContentInfo *cms = CHECK_OBJECT(1, CMS_ContentInfo, "openssl.cms");
   BIO* in = load_bio_object(L, 2);
-  int flags = luaL_optint(L, 3, 0);
+  int flags = luaL_optinteger(L, 3, 0);
 
   int ret = CMS_final(cms, in, NULL, flags);
   return openssl_pushresult(L, ret);
@@ -515,7 +515,7 @@ static int openssl_cms_sign_receipt(lua_State*L)
   X509 *signcert = CHECK_OBJECT(2, X509, "openssl.x509");
   EVP_PKEY* pkey = CHECK_OBJECT(3, EVP_PKEY, "openssl.evp_pkey");
   STACK_OF(X509) *other = CHECK_OBJECT(4, STACK_OF(X509), "openssl.stack_of_x509");
-  unsigned int flags = luaL_optint(L, 5, 0);
+  unsigned int flags = luaL_optinteger(L, 5, 0);
 
   STACK_OF(CMS_SignerInfo) *sis = CMS_get0_SignerInfos(cms);
   if (sis)

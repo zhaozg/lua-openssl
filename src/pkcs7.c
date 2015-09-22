@@ -62,7 +62,7 @@ static LUA_FUNCTION(openssl_pkcs7_sign)
   X509 *cert = CHECK_OBJECT(2, X509, "openssl.x509");
   EVP_PKEY *privkey = CHECK_OBJECT(3, EVP_PKEY, "openssl.evp_pkey");
   STACK_OF(X509) *others = lua_isnoneornil(L, 4) ? 0 : CHECK_OBJECT(4, STACK_OF(X509), "openssl.stack_of_x509");
-  long flags =  luaL_optint(L, 5, 0);
+  long flags =  luaL_optinteger(L, 5, 0);
 
   PKCS7 *p7 = NULL;
   luaL_argcheck(L, openssl_pkey_is_private(privkey), 3, "must be private key");
@@ -92,7 +92,7 @@ static LUA_FUNCTION(openssl_pkcs7_verify)
   STACK_OF(X509) *signers = lua_isnoneornil(L, 2) ? NULL : CHECK_OBJECT(2, STACK_OF(X509), "openssl.stack_of_x509");
   X509_STORE *store = lua_isnoneornil(L, 3) ? NULL : CHECK_OBJECT(3, X509_STORE, "openssl.x509_store");
   BIO* in = lua_isnoneornil(L, 4) ? NULL : load_bio_object(L, 4);
-  long flags = luaL_optint(L, 5, 0);
+  long flags = luaL_optinteger(L, 5, 0);
   BIO* out = BIO_new(BIO_s_mem());
 
   if (!store)
@@ -140,7 +140,7 @@ static LUA_FUNCTION(openssl_pkcs7_encrypt)
   BIO *infile = load_bio_object(L, 1);
   STACK_OF(X509) *recipcerts = CHECK_OBJECT(2, STACK_OF(X509), "openssl.stack_of_x509");
   const EVP_CIPHER *cipher = get_cipher(L, 3, "des3");
-  long flags = luaL_optint(L, 4, 0);
+  long flags = luaL_optinteger(L, 4, 0);
 
   if (cipher == NULL)
   {
@@ -167,7 +167,7 @@ static LUA_FUNCTION(openssl_pkcs7_decrypt)
   PKCS7 *p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
   X509 *cert = CHECK_OBJECT(2, X509, "openssl.x509");
   EVP_PKEY *key = CHECK_OBJECT(3, EVP_PKEY, "openssl.evp_pkey");
-  long flags = luaL_optint(L, 4, 0);
+  long flags = luaL_optinteger(L, 4, 0);
   BIO *out = BIO_new(BIO_s_mem());
 
   if (PKCS7_decrypt(p7, key, cert, out, flags))

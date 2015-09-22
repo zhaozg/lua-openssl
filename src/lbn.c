@@ -367,7 +367,7 @@ static int Bsqrtmod(lua_State *L)   /** sqrtmod(x) */
 
 static int Brandom(lua_State *L)    /** random(bits) */
 {
-  int bits = luaL_optint(L, 1, 32);
+  int bits = luaL_optinteger(L, 1, 32);
   BIGNUM *x = Bnew(L);
   BN_rand(x, bits, -1, 0);
   return 1;
@@ -375,7 +375,7 @@ static int Brandom(lua_State *L)    /** random(bits) */
 
 static int Baprime(lua_State *L)    /** aprime(bits) */
 {
-  int bits = luaL_optint(L, 1, 32);
+  int bits = luaL_optinteger(L, 1, 32);
   BIGNUM *x = Bnew(L);
   if (BN_generate_prime_ex(x, bits, 0, NULL, NULL, NULL))
     return 1;
@@ -386,7 +386,7 @@ static int Baprime(lua_State *L)    /** aprime(bits) */
 
 static int Bisprime(lua_State *L)   /** isprime(x,[checks]) */
 {
-  int checks = luaL_optint(L, 2, BN_prime_checks);
+  int checks = luaL_optinteger(L, 2, BN_prime_checks);
   BIGNUM *a = Bget(L, 1);
   lua_pushboolean(L, BN_is_prime_fasttest_ex(a, checks, ctx, 1, NULL));
   return 1;

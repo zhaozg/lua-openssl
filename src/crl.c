@@ -210,7 +210,7 @@ static LUA_FUNCTION(openssl_crl_new)
     }
   }
   md = lua_isnoneornil(L, 4) ? EVP_get_digestbyname("sha1") : get_digest(L, 4);
-  step = lua_isnoneornil(L, 5) ? 7 * 24 * 3600 : luaL_checkint(L, 5);
+  step = lua_isnoneornil(L, 5) ? 7 * 24 * 3600 : luaL_checkinteger(L, 5);
 
   if (ret == 1)
   {
@@ -332,7 +332,7 @@ static LUA_FUNCTION(openssl_crl_lastUpdate)
   else
   {
     int ret;
-    time_t time = luaL_checkint(L, 2);
+    time_t time = luaL_checkinteger(L, 2);
     ASN1_TIME *tm = ASN1_TIME_new();
     ASN1_TIME_set(tm, time);
 
@@ -354,7 +354,7 @@ static LUA_FUNCTION(openssl_crl_nextUpdate)
   else
   {
     int ret;
-    time_t time = luaL_checkint(L, 2);
+    time_t time = luaL_checkinteger(L, 2);
     ASN1_TIME *tm = ASN1_TIME_new();
     ASN1_TIME_set(tm, time);
 
@@ -386,12 +386,12 @@ static LUA_FUNCTION(openssl_crl_updateTime)
     if (lua_gettop(L) == 2)
     {
       time(&last);
-      next = last + luaL_checkint(L, 2);
+      next = last + luaL_checkinteger(L, 2);
     }
     else
     {
-      last = luaL_checkint(L, 2);
-      next = last + luaL_checkint(L, 3);
+      last = luaL_checkinteger(L, 2);
+      next = last + luaL_checkinteger(L, 3);
       luaL_argcheck(L, next > last, 3, "value must after #2");
     }
 
@@ -679,7 +679,7 @@ static LUA_FUNCTION(openssl_crl_count)
 static LUA_FUNCTION(openssl_crl_get)
 {
   X509_CRL * crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
-  int n = luaL_checkint(L, 2);
+  int n = luaL_checkinteger(L, 2);
   if (n >= 0 && n < sk_X509_REVOKED_num(crl->crl->revoked))
   {
     X509_REVOKED *revoked = sk_X509_REVOKED_value(crl->crl->revoked, n);

@@ -142,8 +142,6 @@ void luaL_pushresult (luaL_Buffer_52 *B);
 
 void luaL_checkversion (lua_State *L);
 
-#endif /* Lua 5.0 *or* 5.1 */
-
 int lua_absindex (lua_State *L, int i);
 void lua_copy (lua_State *L, int from, int to);
 void lua_rawgetp (lua_State *L, int i, const void *p);
@@ -159,3 +157,11 @@ void luaL_traceback (lua_State *L, lua_State *L1, const char *msg, int level);
 int luaL_fileresult (lua_State *L, int stat, const char *fname);
 int luaL_execresult (lua_State *L, int stat);
 
+#endif /* Lua 5.0 *or* 5.1 */
+
+#if defined(LUA_VERSION_NUM) && LUA_VERSION_NUM == 503
+/* Lua 5.3 */
+#define luaL_checklong    luaL_checkinteger
+#define luaL_optlong      luaL_optinteger
+
+#endif

@@ -47,7 +47,7 @@ int openssl_refrence(lua_State*L, void*p, int op)
   int ref;
   lua_rawgetp(L, LUA_REGISTRYINDEX, p);
   lua_getfield(L, -1, "refrence");
-  ref = lua_isnil(L, -1) ? 0 : luaL_checkint(L, -1);
+  ref = lua_isnil(L, -1) ? 0 : luaL_checkinteger(L, -1);
   lua_pop(L, 1);
   if (ref >= 0 && op == 1)
   {

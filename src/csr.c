@@ -91,7 +91,7 @@ static LUA_FUNCTION(openssl_csr_to_x509)
 {
   X509_REQ * csr  = CHECK_OBJECT(1, X509_REQ, "openssl.x509_req");
   EVP_PKEY * pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
-  int days = luaL_optint(L, 3, 365);
+  int days = luaL_optinteger(L, 3, 365);
   X509* cert = X509_REQ_to_X509_a(csr, days, pkey);
 
   luaL_argcheck(L, openssl_pkey_is_private(pkey), 2, "must be private key");
@@ -421,7 +421,7 @@ static LUA_FUNCTION(openssl_csr_version)
   }
   else
   {
-    long version = luaL_checkint(L, 2);
+    long version = luaL_checkinteger(L, 2);
     int ret = X509_REQ_set_version(csr, version);
     return openssl_pushresult(L, ret);
   }
@@ -480,7 +480,7 @@ static LUA_FUNCTION(openssl_csr_attribute)
   }
   else if (lua_isnumber(L, 2))
   {
-    int loc = luaL_checkint(L, 2);
+    int loc = luaL_checkinteger(L, 2);
     X509_ATTRIBUTE *attr = NULL;
     if (lua_isnone(L, 3))
     {

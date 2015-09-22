@@ -412,7 +412,7 @@ static luaL_Reg asn1obj_funcs[] =
 
 static int openssl_asn1object_new(lua_State* L) {
   if (lua_isnumber(L, 1)) {
-    int nid = luaL_checkint(L, 1);
+    int nid = luaL_checkinteger(L, 1);
     ASN1_OBJECT* obj = OBJ_nid2obj(nid);
     if (obj)
       PUSH_OBJECT(obj, "openssl.asn1_object");
@@ -485,7 +485,7 @@ static int openssl_txt2nid(lua_State*L) {
 static int openssl_asn1string_new(lua_State* L) {
   size_t size = 0;
   const char* data = luaL_checklstring(L, 1, &size);
-  int type = luaL_checkint(L, 2);
+  int type = luaL_checkinteger(L, 2);
   ASN1_STRING *s = ASN1_STRING_type_new(type);
   ASN1_STRING_set(s, data, size);
   PUSH_OBJECT(s, "openssl.asn1_string");
@@ -779,7 +779,7 @@ static int openssl_asn1group_tostring(lua_State* L)
 static int openssl_asn1group_toprint(lua_State* L)
 {
   ASN1_STRING* s = CHECK_GROUP(1, ASN1_STRING, "openssl.asn1group");
-  unsigned long flags = luaL_optint(L, 2, 0);
+  unsigned long flags = luaL_optinteger(L, 2, 0);
   BIO* out = BIO_new(BIO_s_mem());
   BUF_MEM *mem;
   switch (s->type) {
@@ -900,7 +900,7 @@ static int openssl_asn1time_adj(lua_State* L)
   {
     ASN1_TIME *a = CHECK_OBJECT(1, ASN1_TIME, "openssl.asn1_time");
     time_t t = luaL_checkinteger(L, 2);
-    int offset_day = luaL_checkint(L, 3);
+    int offset_day = luaL_checkinteger(L, 3);
     long offset_sec = luaL_optlong(L, 4, 0);
 
     ASN1_TIME_adj(a, t, offset_day, offset_sec);
@@ -908,7 +908,7 @@ static int openssl_asn1time_adj(lua_State* L)
   } else if (auxiliar_isclass(L, "openssl.asn1_generalizedtime", 1)) {
     ASN1_GENERALIZEDTIME *a = CHECK_OBJECT(1, ASN1_GENERALIZEDTIME, "openssl.asn1_generalizedtime");
     time_t t = luaL_checkinteger(L, 2);
-    int offset_day = luaL_checkint(L, 3);
+    int offset_day = luaL_checkinteger(L, 3);
     long offset_sec = luaL_optlong(L, 4, 0);
 
     ASN1_GENERALIZEDTIME_adj(a, t, offset_day, offset_sec);
@@ -956,15 +956,18 @@ static int openssl_get_object(lua_State*L)
   const char* asn1s = luaL_checklstring(L, 1, &l);
   size_t off = posrelat(luaL_optinteger(L, 2, 1), l);
   size_t length = posrelat(luaL_optinteger(L, 3, -1), l);
-  if (off < 1) off = 1;
-  if (length > l) length = l;
 
-  const unsigned char *p = (const unsigned char *)asn1s + off -1;
+  const unsigned char *p;
   long len = 0;
   int tag = 0;
   int class = 0;
+  int ret;
 
-  int ret = ASN1_get_object(&p, &len, &tag, &class, length - off + 1);
+  if (off < 1) off = 1;
+  if (length > l) length = l;
+  p = (const unsigned char *)asn1s + off -1;
+
+  ret = ASN1_get_object(&p, &len, &tag, &class, length - off + 1);
   if (ret & 0x80)
   {
     lua_pushnil(L);
@@ -983,8 +986,8 @@ static int openssl_get_object(lua_State*L)
 
 static int openssl_put_object(lua_State*L)
 {
-  int tag = luaL_checkint(L, 1);
-  int cls = luaL_checkint(L, 2);
+  int tag = luaL_checkinteger(L, 1);
+  int cls = luaL_checkinteger(L, 2);
   int length;
   int constructed;
   unsigned char *p1, *p2;
@@ -1032,7 +1035,7 @@ static int openssl_put_object(lua_State*L)
 
 static int openssl_asn1_tostring(lua_State*L)
 {
-  int val = luaL_checkint(L, 1);
+  int val = luaL_checkinteger(L, 1);
   const char* range = luaL_optstring(L, 2, NULL);
   int i;
 
@@ -1132,7 +1135,7 @@ int openssl_get_nid(lua_State*L, int idx)
 {
   if (lua_isnumber(L, idx))
   {
-    return luaL_checkint(L, idx);
+    return luaL_checkinteger(L, idx);
   }
   else if (lua_isstring(L, idx))
   {

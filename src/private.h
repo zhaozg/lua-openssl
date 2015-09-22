@@ -4,7 +4,7 @@
 
 #define luaL_checktable(L, n) luaL_checktype(L, n, LUA_TTABLE)
 
-#if LUA_VERSION_NUM == 502
+#if LUA_VERSION_NUM >= 502
 #ifndef lua_equal
 #define lua_equal( L, a, b) lua_compare( L, a, b, LUA_OPEQ)
 #endif

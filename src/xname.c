@@ -56,7 +56,7 @@ static int openssl_xname_print(lua_State*L)
 {
   X509_NAME* xname = CHECK_OBJECT(1, X509_NAME, "openssl.x509_name");
   BIO* bio = load_bio_object(L, 2);
-  int indent = luaL_optint(L, 3, 0);
+  int indent = luaL_optinteger(L, 3, 0);
   unsigned long flags = luaL_optinteger(L, 4, 0);
 
   int ret = X509_NAME_print_ex(bio, xname, indent, flags);
@@ -138,7 +138,7 @@ static int openssl_xname_get_text(lua_State*L)
 {
   X509_NAME* xn = CHECK_OBJECT(1, X509_NAME, "openssl.x509_name");
   int nid = openssl_get_nid(L, 2);
-  int lastpos = luaL_optint(L, 3, -1);
+  int lastpos = luaL_optinteger(L, 3, -1);
   X509_NAME_ENTRY *e;
   ASN1_STRING *s;
   if (nid == NID_undef)
@@ -158,7 +158,7 @@ static int openssl_xname_get_text(lua_State*L)
 static int openssl_xname_get_entry(lua_State*L)
 {
   X509_NAME* xn = CHECK_OBJECT(1, X509_NAME, "openssl.x509_name");
-  int lastpos = luaL_checkint(L, 2);
+  int lastpos = luaL_checkinteger(L, 2);
   X509_NAME_ENTRY *e = X509_NAME_get_entry(xn, lastpos);
   if (e)
   {
@@ -191,7 +191,7 @@ static int openssl_xname_add_entry(lua_State*L)
 static int openssl_xname_delete_entry(lua_State*L)
 {
   X509_NAME* xn = CHECK_OBJECT(1, X509_NAME, "openssl.x509_name");
-  int loc = luaL_checkint(L, 2);
+  int loc = luaL_checkinteger(L, 2);
 
   X509_NAME_ENTRY *xe = X509_NAME_delete_entry(xn, loc);
   if (xe)

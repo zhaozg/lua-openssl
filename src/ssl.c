@@ -100,7 +100,7 @@ static int openssl_ssl_ctx_new(lua_State*L)
 
 static int openssl_ssl_alert_string(lua_State*L)
 {
-  int v = luaL_checkint(L, 1);
+  int v = luaL_checkinteger(L, 1);
   int _long = lua_isnoneornil(L, 2) ? 0 : auxiliar_checkboolean(L, 2);
   const char* val;
 
@@ -187,7 +187,7 @@ static int openssl_ssl_ctx_timeout(lua_State*L)
   long t;
   if (!lua_isnoneornil(L, 2))
   {
-    t = SSL_CTX_set_timeout(ctx, luaL_checkint(L, 2));
+    t = SSL_CTX_set_timeout(ctx, luaL_checkinteger(L, 2));
     lua_pushinteger(L, t);
     return 1;
   }
@@ -320,7 +320,7 @@ static int openssl_ssl_ctx_quiet_shutdown(lua_State*L)
   }
   else
   {
-    int m = luaL_checkint(L, 2);
+    int m = luaL_checkinteger(L, 2);
     SSL_CTX_set_quiet_shutdown(s, m);
     return 0;
   }
@@ -389,7 +389,7 @@ static int openssl_ssl_ctx_new_ssl(lua_State*L)
   }
   else if (lua_isnumber(L, 2))
   {
-    ret = SSL_set_fd(ssl, luaL_checkint(L, 2));
+    ret = SSL_set_fd(ssl, luaL_checkinteger(L, 2));
     mode_idx = 3;
   }
 
@@ -479,7 +479,7 @@ static int openssl_ssl_ctx_verify_depth(lua_State*L)
   int depth;
   if (!lua_isnoneornil(L, 2))
   {
-    depth = luaL_checkint(L, 2);
+    depth = luaL_checkinteger(L, 2);
     SSL_CTX_set_verify_depth(ctx, depth);
   }
   depth = SSL_CTX_get_verify_depth(ctx);
@@ -1473,15 +1473,15 @@ static int openssl_ssl_set(lua_State*L)
     const char* what = luaL_checklstring(L, i, NULL);
     if (strcmp(what, "fd") == 0)
     {
-      ret = SSL_set_fd(s, luaL_checkint(L, i + 1));
+      ret = SSL_set_fd(s, luaL_checkinteger(L, i + 1));
     }
     else if (strcmp(what, "rfd") == 0)
     {
-      ret = SSL_set_wfd(s, luaL_checkint(L, i + 1));
+      ret = SSL_set_wfd(s, luaL_checkinteger(L, i + 1));
     }
     else if (strcmp(what, "wfd") == 0)
     {
-      ret = SSL_set_wfd(s, luaL_checkint(L, i + 1));
+      ret = SSL_set_wfd(s, luaL_checkinteger(L, i + 1));
     }
     else if (strcmp(what, "client_CA") == 0)
     {
@@ -1500,25 +1500,25 @@ static int openssl_ssl_set(lua_State*L)
     }
     else if (strcmp(what, "verify_depth") == 0)
     {
-      int depth = luaL_checkint(L, i + 1);
+      int depth = luaL_checkinteger(L, i + 1);
       SSL_set_verify_depth(s, depth);
     }
 
     else if (strcmp(what, "purpose") == 0)
     {
       //FIX
-      int purpose = luaL_checkint(L, i + 1);
+      int purpose = luaL_checkinteger(L, i + 1);
       ret = SSL_set_purpose(s, purpose);
     }
     else if (strcmp(what, "trust") == 0)
     {
       //FIX
-      int trust = luaL_checkint(L, i + 1);
+      int trust = luaL_checkinteger(L, i + 1);
       ret = SSL_set_trust(s, trust);
     }
     else if (strcmp(what, "verify_result") == 0)
     {
-      int result = luaL_checkint(L, i + 1);
+      int result = luaL_checkinteger(L, i + 1);
       SSL_set_verify_result(s, result);
     }
     else if (strcmp(what, "hostname") == 0)
@@ -1530,7 +1530,7 @@ static int openssl_ssl_set(lua_State*L)
 #if OPENSSL_VERSION_NUMBER > 0x10000000L
     else if (strcmp(what, "state") == 0)
     {
-      int l = luaL_checkint(L, 2);
+      int l = luaL_checkinteger(L, 2);
       SSL_set_state(s, l);
     }
 #endif
@@ -1560,7 +1560,7 @@ static int openssl_ssl_connect(lua_State*L)
 static int openssl_ssl_read(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
-  int num = luaL_optint(L, 2, SSL_pending(s));
+  int num = luaL_optinteger(L, 2, SSL_pending(s));
   void* buf;
   int ret;
   num = num ? num : 4096;
@@ -1582,7 +1582,7 @@ static int openssl_ssl_read(lua_State*L)
 static int openssl_ssl_peek(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
-  int num = luaL_optint(L, 2, SSL_pending(s));
+  int num = luaL_optinteger(L, 2, SSL_pending(s));
   void* buf;
   int ret;
 
@@ -1736,7 +1736,7 @@ static int openssl_ssl_cache_hit(lua_State*L)
 static int openssl_ssl_set_debug(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
-  int debug = luaL_checkint(L, 2);
+  int debug = luaL_checkinteger(L, 2);
   SSL_set_debug(s, debug);
   return 0;
 }

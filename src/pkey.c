@@ -253,8 +253,8 @@ static LUA_FUNCTION(openssl_pkey_new)
 
     if (strcasecmp(alg, "rsa") == 0)
     {
-      int bits = luaL_optint(L, 2, 1024);
-      int e = luaL_optint(L, 3, 65537);
+      int bits = luaL_optinteger(L, 2, 1024);
+      int e = luaL_optinteger(L, 3, 65537);
       RSA* rsa = RSA_new();
 
       BIGNUM *E = BN_new();
@@ -270,7 +270,7 @@ static LUA_FUNCTION(openssl_pkey_new)
     }
     else if (strcasecmp(alg, "dsa") == 0)
     {
-      int bits = luaL_optint(L, 2, 1024);
+      int bits = luaL_optinteger(L, 2, 1024);
       size_t seed_len = 0;
       const char* seed = luaL_optlstring(L, 3, NULL, &seed_len);
 
@@ -286,8 +286,8 @@ static LUA_FUNCTION(openssl_pkey_new)
     }
     else if (strcasecmp(alg, "dh") == 0)
     {
-      int bits = luaL_optint(L, 2, 512);
-      int generator = luaL_optint(L, 3, 2);
+      int bits = luaL_optinteger(L, 2, 512);
+      int generator = luaL_optinteger(L, 3, 2);
 
       DH* dh = DH_new();
       if (DH_generate_parameters_ex(dh, bits, generator, NULL))

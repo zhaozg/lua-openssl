@@ -213,7 +213,7 @@ static int openssl_random_cleanup(lua_State *L)
 
 static LUA_FUNCTION(openssl_random_bytes)
 {
-  long length = luaL_checkint(L, 1);
+  long length = luaL_checkinteger(L, 1);
   int strong = lua_isnil(L, 2) ? 0 : lua_toboolean(L, 2);
 
   char *buffer = NULL;

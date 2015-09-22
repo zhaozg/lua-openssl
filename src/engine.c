@@ -208,7 +208,7 @@ static int openssl_engine_ctrl(lua_State*L)
 
   if (lua_isnumber(L, 2))
   {
-    int cmd = luaL_checkint(L, 2);
+    int cmd = luaL_checkinteger(L, 2);
     if (lua_isnoneornil(L, 3))
     {
       int ret = ENGINE_cmd_is_executable(eng, cmd);
@@ -229,14 +229,14 @@ static int openssl_engine_ctrl(lua_State*L)
     {
       long i = (long)luaL_checknumber(L, 3);
       void* p = lua_touserdata(L, 4);
-      int opt = luaL_optint(L, 5, 0);
+      int opt = luaL_optinteger(L, 5, 0);
       int ret = ENGINE_ctrl_cmd(eng, cmd, i, p, NULL, opt);
       lua_pushboolean(L, ret);
     }
     else
     {
       const char* arg  = luaL_optstring(L, 3, NULL);
-      int opt = luaL_optint(L, 4, 0);
+      int opt = luaL_optinteger(L, 4, 0);
       int ret = ENGINE_ctrl_cmd_string(eng, cmd, arg, opt);
       lua_pushboolean(L, ret);
     }
@@ -292,7 +292,7 @@ static int openssl_engine_flags(lua_State*L)
   int ret = 0;
   if (lua_isstring(L, 2))
   {
-    int flags = luaL_checkint(L, 2);
+    int flags = luaL_checkinteger(L, 2);
     ret = ENGINE_set_flags(eng, flags);
     lua_pushboolean(L, ret);
     return 1;
@@ -333,7 +333,7 @@ static int openssl_engine_set_default(lua_State*L)
   {
     if (lua_isnumber(L, 2))
     {
-      int methods = luaL_checkint(L, 2);
+      int methods = luaL_checkinteger(L, 2);
       ret = ENGINE_set_default(eng, methods);
     }
     else if (lua_isstring(L, 2))

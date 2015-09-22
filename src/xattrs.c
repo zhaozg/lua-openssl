@@ -67,7 +67,7 @@ static int openssl_xattr_data(lua_State*L)
   X509_ATTRIBUTE* attr = CHECK_OBJECT(1, X509_ATTRIBUTE, "openssl.x509_attribute");
   if (lua_type(L, 2) == LUA_TSTRING)
   {
-    int attrtype = luaL_checkint(L, 2);
+    int attrtype = luaL_checkinteger(L, 2);
     size_t size;
     int ret;
     const char *data = luaL_checklstring(L, 3, &size);
@@ -82,8 +82,8 @@ static int openssl_xattr_data(lua_State*L)
   }
   else
   {
-    int idx = luaL_checkint(L, 2);
-    int attrtype = luaL_checkint(L, 3);
+    int idx = luaL_checkinteger(L, 2);
+    int attrtype = luaL_checkinteger(L, 3);
     ASN1_STRING *as = (ASN1_STRING *)X509_ATTRIBUTE_get0_data(attr, idx, attrtype, NULL);
     as = ASN1_STRING_dup(as);
     PUSH_OBJECT(as, "openssl.asn1_string");
@@ -94,7 +94,7 @@ static int openssl_xattr_data(lua_State*L)
 static int openssl_xattr_type(lua_State*L)
 {
   X509_ATTRIBUTE* attr = CHECK_OBJECT(1, X509_ATTRIBUTE, "openssl.x509_attribute");
-  int loc = luaL_optint(L, 2, 0);
+  int loc = luaL_optinteger(L, 2, 0);
   ASN1_TYPE *type = X509_ATTRIBUTE_get0_type(attr, loc);
   if (type)
   {
@@ -164,7 +164,7 @@ static X509_ATTRIBUTE* openssl_new_xattribute(lua_State*L, X509_ATTRIBUTE** a, i
   lua_pop(L, 1);
 
   lua_getfield(L, idx, "type");
-  arttype = luaL_checkint(L, -1);
+  arttype = luaL_checkinteger(L, -1);
   if (arttype == V_ASN1_UNDEF || arttype == 0)
   {
     if (eprefix)
