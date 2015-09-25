@@ -353,14 +353,15 @@ static int openssl_ec_key_parse(lua_State*L)
   lua_newtable(L);
   if (basic)
   {
+    BIGNUM* x = BN_new();
+    BIGNUM* y = BN_new();
+
     AUXILIAR_SET(L, -1, "enc_flag", EC_KEY_get_enc_flags(ec), integer);
     AUXILIAR_SET(L, -1, "conv_form", EC_KEY_get_conv_form(ec), integer);
     AUXILIAR_SET(L, -1, "curve_name", EC_GROUP_get_curve_name(group), integer);
 
     AUXILIAR_SETOBJECT(L, BN_dup(priv), "openssl.bn", -1, "d");
 
-    BIGNUM* x = BN_new();
-    BIGNUM* y = BN_new();
     if (EC_POINT_get_affine_coordinates_GFp(group, point, x, y, NULL) == 1)
     {
       AUXILIAR_SETOBJECT(L, x, "openssl.bn", -1, "x");

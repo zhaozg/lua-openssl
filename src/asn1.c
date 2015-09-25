@@ -956,15 +956,17 @@ static int openssl_get_object(lua_State*L)
   const char* asn1s = luaL_checklstring(L, 1, &l);
   size_t off = posrelat(luaL_optinteger(L, 2, 1), l);
   size_t length = posrelat(luaL_optinteger(L, 3, -1), l);
-  if (off < 1) off = 1;
-  if (length > l) length = l;
 
   const unsigned char *p = (const unsigned char *)asn1s + off -1;
   long len = 0;
   int tag = 0;
   int class = 0;
+  int ret;
 
-  int ret = ASN1_get_object(&p, &len, &tag, &class, length - off + 1);
+  if (off < 1) off = 1;
+  if (length > l) length = l;
+  p = (const unsigned char *)asn1s + off -1;
+  ret = ASN1_get_object(&p, &len, &tag, &class, length - off + 1);
   if (ret & 0x80)
   {
     lua_pushnil(L);
