@@ -1,10 +1,10 @@
 #include "openssl.h"
 
-#include "lua-compat/c-api/compat-5.2.h"
+#include "lua-compat/c-api/compat-5.3.h"
 
 #define luaL_checktable(L, n) luaL_checktype(L, n, LUA_TTABLE)
 
-#if LUA_VERSION_NUM == 502
+#if LUA_VERSION_NUM >= 502
 #ifndef lua_equal
 #define lua_equal( L, a, b) lua_compare( L, a, b, LUA_OPEQ)
 #endif
@@ -12,6 +12,21 @@
 #define lua_lessthan( L, a, b) lua_compare( L, a, b, LUA_OPLT)
 #endif
 #define luaG_registerlibfuncs( L, _funcs) luaL_setfuncs( L, _funcs, 0)
+#endif
+
+#if LUA_VERSION_NUM >= 503
+#ifndef luaL_checkint
+#define luaL_checkint(L,n) ((int)luaL_checkinteger(L, (n)))
+#endif
+#ifndef luaL_optint
+#define luaL_optint(L,n,d) ((int)luaL_optinteger(L, (n), (d)))
+#endif
+#ifndef luaL_checklong
+#define luaL_checklong(L,n)	((long)luaL_checkinteger(L, (n)))
+#endif
+#ifndef luaL_optlong
+#define luaL_optlong(L,n,d)	((long)luaL_optinteger(L, (n), (d)))
+#endif
 #endif
 
 #define AUXILIAR_SETOBJECT(L, cval, ltype, idx, lvar) \

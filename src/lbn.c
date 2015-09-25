@@ -20,7 +20,7 @@
 #include "lauxlib.h"
 #include "lualib.h"
 
-#include "lua-compat/c-api/compat-5.2.h"
+#include "private.h"
 
 #define lua_boxpointer(L,u) \
   (*(void **)(lua_newuserdata(L, sizeof(void *))) = (u))

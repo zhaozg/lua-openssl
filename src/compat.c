@@ -4,4 +4,4 @@
 #include <lauxlib.h>
 
 
-#include "lua-compat/c-api/compat-5.2.c"
+#include "lua-compat/c-api/compat-5.3.c"

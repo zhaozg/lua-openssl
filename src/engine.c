@@ -7,6 +7,7 @@
 
 #include <openssl/engine.h>
 #include "openssl.h"
+#include "private.h"
 
 enum
 {
