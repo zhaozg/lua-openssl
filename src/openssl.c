@@ -373,8 +373,10 @@ LUALIB_API int luaopen_openssl(lua_State*L)
   luaopen_dsa(L);
   luaopen_dh(L);
 
+#ifdef ENABLE_OPENSSL_GLOBAL
   lua_pushvalue(L, -1);
   lua_setglobal(L, "openssl");
+#endif
 
   return 1;
 }
