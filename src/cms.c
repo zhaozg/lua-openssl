@@ -7,7 +7,7 @@
 
 #include "openssl.h"
 #include "private.h"
-#if OPENSSL_VERSION_NUMBER > 0x00909000L
+#if OPENSSL_VERSION_NUMBER > 0x00909000L && !defined (LIBRESSL_VERSION_NUMBER)
 #include <openssl/cms.h>
 
 #define MYNAME    "cms"
@@ -586,7 +586,7 @@ static const luaL_Reg R[] =
 
 int luaopen_cms(lua_State *L)
 {
-#if OPENSSL_VERSION_NUMBER > 0x00909000L
+#if OPENSSL_VERSION_NUMBER > 0x00909000L && !defined (LIBRESSL_VERSION_NUMBER)
   ERR_load_CMS_strings();
 
   auxiliar_newclass(L, "openssl.cms",  cms_ctx_funs);
