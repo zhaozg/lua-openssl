@@ -11,6 +11,30 @@ TestLhtml = {}
     end
 
     function testBase64()
+        local ano = openssl.base64(msg)
+        --default without newline
+        assert(#ano>#msg)
+        assert(not string.find(ano,'\n'))
+        assertEquals(openssl.base64(msg,true),ano)
+        local raw = openssl.base64(ano,false)
+        assertEquals(raw,msg)
+
+        --without newline
+        local ano = openssl.base64(msg,true,true)
+        assert(#ano>#msg)
+        assert(not string.find(ano,'\n'))
+        assertEquals(openssl.base64(msg,true,true),ano)
+        local raw = openssl.base64(ano,false,true)
+        assertEquals(raw,msg)
+
+        --with newline
+        local ano = openssl.base64(msg,true,false)
+        assert(#ano>#msg)
+        assert(string.find(ano,'\n'))
+        assertEquals(openssl.base64(msg,true,false),ano)
+        local raw = openssl.base64(ano,false,false)
+        assertEquals(raw,msg)
+
         local msg = msg..msg..msg
         local ano = openssl.base64(msg)
         --default without newline
