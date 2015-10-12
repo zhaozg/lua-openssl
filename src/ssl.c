@@ -1258,6 +1258,7 @@ static int openssl_ssl_want(lua_State*L)
   lua_pushinteger(L, st);
   return 2;
 }
+#ifndef LIBRESSL_VERSION_NUMBER
 static int openssl_ssl_current_compression(lua_State *L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
@@ -1268,6 +1269,7 @@ static int openssl_ssl_current_compression(lua_State *L)
     lua_pushnil(L);
   return 1;
 }
+#endif
 
 static int openssl_ssl_current_cipher(lua_State *L)
 {
@@ -1815,7 +1817,9 @@ static luaL_Reg ssl_funcs[] =
   {"getfd",     openssl_ssl_getfd},
 
   {"current_cipher",        openssl_ssl_current_cipher},
+#ifndef LIBRESSL_VERSION_NUMBER
   {"current_compression",   openssl_ssl_current_compression},
+#endif
   {"getpeerverification",   openssl_ssl_getpeerverification},
 
   {"session",    openssl_ssl_session},

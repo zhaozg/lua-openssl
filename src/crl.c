@@ -489,7 +489,7 @@ static LUA_FUNCTION(openssl_crl_cmp)
   return 1;
 }
 
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined (LIBRESSL_VERSION_NUMBER)
 static LUA_FUNCTION(openssl_crl_diff)
 {
   X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
@@ -723,7 +723,7 @@ static luaL_Reg crl_funcs[] =
   {"sign",            openssl_crl_sign},
   {"digest",          openssl_crl_digest},
 
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined (LIBRESSL_VERSION_NUMBER)
   {"diff",            openssl_crl_diff},
   {"check",           openssl_crl_check},
 #endif
