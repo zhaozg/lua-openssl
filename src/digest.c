@@ -291,6 +291,23 @@ static LUA_FUNCTION(openssl_digest_ctx_clone)
   return 1;
 }
 
+static LUA_FUNCTION(openssl_digest_ctx_data) {
+  EVP_MD_CTX *ctx = CHECK_OBJECT(1, EVP_MD_CTX, "openssl.evp_digest_ctx");
+  if (lua_isnone(L, 2)) {
+    lua_pushlstring(L, ctx->md_data, ctx->digest->ctx_size);
+    return 1;
+  } else {
+    size_t l;
+    const char* d = luaL_checklstring(L, 2, &l);
+    if (l == ctx->digest->ctx_size) {
+      memcpy(ctx->md_data, d, l);
+    } else
+      luaL_error(L, "data with wrong data");
+  }
+
+  return 0;
+}
+
 static LUA_FUNCTION(openssl_signInit)
 {
   const EVP_MD *md = get_digest(L, 1);
@@ -403,6 +420,8 @@ static luaL_Reg digest_ctx_funs[] =
   {"clone",       openssl_digest_ctx_clone},
   {"reset",       openssl_digest_ctx_reset},
   {"close",       openssl_digest_ctx_free},
+  {"data",        openssl_digest_ctx_data},
+
 
   {"signUpdate",  openssl_signUpdate},
   {"signFinal",   openssl_signFinal},
