@@ -97,7 +97,7 @@ TestString = {}
     function TestString:testAll()
         local s1,s2,s3,s4,s5,s6
         s1 = asn1.new_string(self.bmp,asn1.BMPSTRING)
-        assertEquals(tostring(s1), self.bmp)
+        assertEquals(s1:tostring(), self.bmp)
         assert(#s1==#self.bmp)
         s2 = asn1.new_string(self.bmp_cn,asn1.BMPSTRING)
         local utf_cn = s2:toutf8()

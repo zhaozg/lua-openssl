@@ -41,7 +41,7 @@ TestX509ext = {}
         assertIsTable(info)
         assertEquals(info.object, "X509v3 Basic Constraints")
         assertEquals(info.critical,true)
-        assertEquals(tostring(info.value), "CA:FALSE")
+        assertEquals(info.value:tostring(), "CA:FALSE")
         local n2 = n1:dup()
         assertEquals(n2:info(),info)
         assertEquals(n1:critical(),false)
@@ -53,7 +53,7 @@ TestX509ext = {}
         n1:object('extendedKeyUsage')
         assertEquals(n1:object():sn(),'extendedKeyUsage')
 
-        assertEquals(tostring(n1:data()),'CA:FALSE')
+        assertEquals(n1:data():tostring(),'CA:FALSE')
         assertErrorMsgEquals('bad argument #2 to \'?\' (asn1_string type must be octet)',n1.data, n1,self.timeStamping)
         assert(n1:data('CA:FALSE'))
         assertEquals(n1:data(), self.cafalse)

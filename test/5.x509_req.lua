@@ -138,13 +138,13 @@ TestCSR = {}
                 assertEquals(req1:version(),1)
                 assert(req1:version(0))
 
-                assertEquals(tostring(req1:subject()),tostring(self.subject))
+                assertEquals(req1:subject():tostring(),self.subject:tostring())
                 assert(req1:subject(self.subject))
-                assertEquals(tostring(req1:subject()),tostring(self.subject))
+                assertEquals(req1:subject():tostring(),self.subject:tostring())
 
                 assertStrContains(tostring(req1:extensions()),'openssl.stack_of_x509_extension')
                 assert(req1:extensions(self.extensions))
-                assertEquals(tostring(req1:subject()),tostring(self.subject))
+                assertEquals(req1:subject():tostring(),self.subject:tostring())
 
                 local s = req1:digest()
                 local r = req1:digest('sha1')

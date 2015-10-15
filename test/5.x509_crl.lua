@@ -78,7 +78,7 @@ mOKp8Jla1BibEZf14+/HqCi2hnZUiEXh
         assert(r==r1)
 
         assertEquals(r:version(),0)
-        assertEquals(tostring(r:issuer()),'/O=European ICE-TEL Project/OU=Certification Authority')
+        assertEquals(r:issuer():tostring(),'/O=European ICE-TEL Project/OU=Certification Authority')
         assertEquals(r:lastUpdate():toprint(),'Jun  9 14:42:43 1997 GMT')
         assertEquals(r:nextUpdate():toprint(),'Jul  9 14:42:43 1997 GMT')
         assertEquals(r:extensions(), nil)

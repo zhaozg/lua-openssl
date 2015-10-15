@@ -61,5 +61,5 @@ TestX509attr = {}
         n1:object('extendedKeyUsage')
         assertEquals(n1:object():sn(),'extendedKeyUsage')
 
-        assertEquals(tostring(n1:data(0,asn1.OCTET_STRING)),'CA:FALSE')
+        assertEquals(n1:data(0,asn1.OCTET_STRING):tostring(),'CA:FALSE')
     end

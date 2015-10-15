@@ -224,10 +224,11 @@ static luaL_Reg xname_funcs[] =
   {"add_entry",         openssl_xname_add_entry},
   {"delete_entry",      openssl_xname_delete_entry},
   {"cmp",               openssl_xname_cmp},
+  {"tostring",          openssl_xname_oneline},
 
   {"__eq",              openssl_xname_cmp},
   {"__len",             openssl_xname_entry_count},
-  {"__tostring",        openssl_xname_oneline},
+  {"__tostring",        auxiliar_tostring},
   {"__gc",              openssl_xname_gc},
 
   {NULL,          NULL},

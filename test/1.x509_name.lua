@@ -17,7 +17,7 @@ TestX509Name = {}
 
     function TestX509Name:testAll()
         local n1 = name.new(self.names)
-        assertEquals(tostring(n1),n1:oneline())
+        assertEquals(n1:tostring(),n1:oneline())
         local der = n1:i2d()
         local n2 = name.d2i(der)
         assert(n1:cmp(n2)==(n1==n2))
@@ -61,7 +61,7 @@ TestX509Name = {}
 	_,_,opensslv = openssl.version(true)
         if opensslv > 0x10002000 then
             assertEquals(v:toprint(),[[\UD6D0\UCEC4\UC3FB\UD7D6]])
-            assertEquals(tostring(v), v:toutf8())
+            assertEquals(v:tostring(), v:toutf8())
         end
     end
 

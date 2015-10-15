@@ -928,9 +928,10 @@ static luaL_Reg asn1str_funcs[] =
 
   {"toutf8",    openssl_asn1group_toutf8},
   {"toprint",   openssl_asn1group_toprint},
+  {"tostring",  openssl_asn1group_tostring},
 
   {"__len",     openssl_asn1group_length},
-  {"__tostring", openssl_asn1group_tostring},
+  {"__tostring",auxiliar_tostring},
 
   {"__eq",      openssl_asn1group_eq},
   {"__gc",      openssl_asn1group_free},
