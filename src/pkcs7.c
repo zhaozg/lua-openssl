@@ -55,6 +55,49 @@ static LUA_FUNCTION(openssl_pkcs7_read)
   }
   return openssl_pushresult(L, 0);
 }
+#if OPENSSL_VERSION_NUMBER > 0x10000000L
+static PKCS7 *PKCS7_sign_ex(X509 *signcert, EVP_PKEY *pkey, STACK_OF(X509) *certs,
+                            BIO *data, const EVP_MD* md, int flags) {
+  PKCS7 *p7;
+  int i;
+
+  if (!(p7 = PKCS7_new())) {
+    PKCS7err(PKCS7_F_PKCS7_SIGN, ERR_R_MALLOC_FAILURE);
+    return NULL;
+  }
+
+  if (!PKCS7_set_type(p7, NID_pkcs7_signed))
+    goto err;
+
+  if (!PKCS7_content_new(p7, NID_pkcs7_data))
+    goto err;
+
+  if (pkey && !PKCS7_sign_add_signer(p7, signcert, pkey, md, flags)) {
+    PKCS7err(PKCS7_F_PKCS7_SIGN, PKCS7_R_PKCS7_ADD_SIGNER_ERROR);
+    goto err;
+  }
+
+  if (!(flags & PKCS7_NOCERTS)) {
+    for (i = 0; i < sk_X509_num(certs); i++) {
+      if (!PKCS7_add_certificate(p7, sk_X509_value(certs, i)))
+        goto err;
+    }
+  }
+
+  if (flags & PKCS7_DETACHED)
+    PKCS7_set_detached(p7, 1);
+
+  if (flags & (PKCS7_STREAM | PKCS7_PARTIAL))
+    return p7;
+
+  if (PKCS7_final(p7, data, flags))
+    return p7;
+
+err:
+  PKCS7_free(p7);
+  return NULL;
+}
+#endif
 
 static LUA_FUNCTION(openssl_pkcs7_sign)
 {
@@ -63,14 +106,19 @@ static LUA_FUNCTION(openssl_pkcs7_sign)
   EVP_PKEY *privkey = CHECK_OBJECT(3, EVP_PKEY, "openssl.evp_pkey");
   STACK_OF(X509) *others = lua_isnoneornil(L, 4) ? 0 : CHECK_OBJECT(4, STACK_OF(X509), "openssl.stack_of_x509");
   long flags =  luaL_optint(L, 5, 0);
-
+#if OPENSSL_VERSION_NUMBER > 0x10000000L
+  const EVP_MD* md = get_digest(L, 6);
+#endif
   PKCS7 *p7 = NULL;
   luaL_argcheck(L, openssl_pkey_is_private(privkey), 3, "must be private key");
 
   if (!X509_check_private_key(cert, privkey))
     luaL_error(L, "sigcert and private key not match");
-
-  p7 = PKCS7_sign(cert, privkey, others, in, flags);
+#if OPENSSL_VERSION_NUMBER > 0x10000000L
+  p7 = PKCS7_sign_ex(cert, privkey, others, in, md, flags);
+#else
+  p7 = PKCS7_sign_ex(cert, privkey, others, in, flags);
+#endif
   BIO_free(in);
   if (p7)
   {
@@ -84,6 +132,27 @@ static LUA_FUNCTION(openssl_pkcs7_sign)
 
   return 0;
 }
+
+#if 0
+static LUA_FUNCTION(openssl_pkcs7_sign_add_signer) {
+  int ret = 0;
+  PKCS7 *p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
+  X509 *signcert = CHECK_OBJECT(2, X509, "openssl.x509");
+  EVP_PKEY *pkey = CHECK_OBJECT(3, EVP_PKEY, "openssl.evp_pkey");
+  const EVP_MD* md = get_digest(L, 4);
+  long flags = luaL_optint(L, 5, 0);
+
+  PKCS7_SIGNER_INFO *signer = PKCS7_sign_add_signer(p7,signcert, pkey, md, flags);
+  return openssl_pushresult(L, signcert!=NULL ? 1 : 0);
+}
+
+static LUA_FUNCTION(openssl_pkcs7_final) {
+  PKCS7 *p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
+  BIO *in = load_bio_object(L, 2);
+  long flags = luaL_optint(L, 5, 0);
+  return openssl_pushresult(L, PKCS7_final(p7, in, flags));
+}
+#endif
 
 static LUA_FUNCTION(openssl_pkcs7_verify)
 {
@@ -434,8 +503,8 @@ static luaL_Reg pkcs7_funcs[] =
   {"decrypt",       openssl_pkcs7_decrypt},
   {"verify",        openssl_pkcs7_verify},
 
-  {"__gc",          openssl_pkcs7_gc       },
-  {"__tostring",    auxiliar_tostring },
+  {"__gc",          openssl_pkcs7_gc},
+  {"__tostring",    auxiliar_tostring},
 
   {NULL,      NULL}
 };
@@ -451,8 +520,31 @@ static const luaL_Reg R[] =
   {NULL,  NULL}
 };
 
+static LuaL_Enum pkcs7_const[] =
+{
+  {"TEXT",         PKCS7_TEXT},
+  {"NOCERTS",      PKCS7_NOCERTS},
+  {"NOSIGS",       PKCS7_NOSIGS},
+  {"NOCHAIN",      PKCS7_NOCHAIN},
+  {"NOINTERN",     PKCS7_NOINTERN},
+  {"NOVERIFY",     PKCS7_NOVERIFY},
+  {"DETACHED",     PKCS7_DETACHED},
+  {"BINARY",       PKCS7_BINARY},
+  {"NOATTR",       PKCS7_NOATTR},
+  {"NOSMIMECAP",   PKCS7_NOSMIMECAP},
+  {"NOOLDMIMETYPE",PKCS7_NOOLDMIMETYPE},
+  {"CRLFEOL",      PKCS7_CRLFEOL},
+  {"STREAM",       PKCS7_STREAM},
+  {"NOCRL",        PKCS7_NOCRL},
+  {"PARTIAL",      PKCS7_PARTIAL},
+  {"REUSE_DIGEST", PKCS7_REUSE_DIGEST},
+
+  {NULL,           0}
+};
+
 int luaopen_pkcs7(lua_State *L)
 {
+  int i;
   auxiliar_newclass(L, "openssl.pkcs7", pkcs7_funcs);
 
   lua_newtable(L);
@@ -462,5 +554,10 @@ int luaopen_pkcs7(lua_State *L)
   lua_pushliteral(L, MYVERSION);
   lua_settable(L, -3);
 
+  for (i = 0; i < sizeof(pkcs7_const) / sizeof(LuaL_Enum) - 1; i++) {
+    LuaL_Enum e = pkcs7_const[i];
+    lua_pushinteger(L, e.val);
+    lua_setfield(L, -2, e.name);
+  }
   return 1;
 }
