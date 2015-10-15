@@ -1,4 +1,4 @@
---- 
+---
 -- Provide pkcs7 function in lua.
 --
 -- @module pkcs7
@@ -8,7 +8,7 @@
 
 do  -- define module function
 
---- read pkcs7 
+--- read pkcs7
 -- read string or bio object, which include pkcs7 content
 -- @tparam bio|string input
 -- @tparam[opt='auto'] format allow 'auto','der','pem','smime'
@@ -18,15 +18,14 @@ do  -- define module function
 -- @treturn string content exist only smime format
 function read() end
 
---- sign message wight signcert and signpkey to create pkcs7 object
+--- sign message with signcert and signpkey to create pkcs7 object
 -- @tparam string|bio msg
 -- @tparam x509 sigcert
 -- @tparam evp_pkey signkey
 -- @tparam[opt] stack_of_x509 cacerts
--- @tparam[opt] string|bio msg
 -- @tparam[opt=0] number flags
 -- @treturn pkcs7 object
-function export() end
+function sign() end
 
 --- verify pkcs7 object, and return msg content, follow by singers
 -- @tparam pkcs7 in
@@ -35,7 +34,7 @@ function export() end
 -- @tparam[opt] string|bio msg
 -- @tparam[opt=0] number flags
 -- @treturn string content
--- @treturn stack_of_x509 signers 
+-- @treturn stack_of_x509 signers
 function verify() end
 
 --- encrypt message with recipcerts certificates return encrypted pkcs7 object
@@ -63,12 +62,12 @@ do  -- define class
 
 do  -- define pkcs7
 
---- export pkcs7 as string 
+--- export pkcs7 as string
 -- @tparam[opt=true] boolean pem default export as pem format, false export as der string
--- @treturn string 
+-- @treturn string
 function export() end
 
---- export pkcs7 as a string 
+--- export pkcs7 as a string
 -- @treturn table  a table has pkcs7 infomation, include type,and other things relate to types
 function parse() end
 
@@ -79,7 +78,7 @@ function parse() end
 -- @tparam[opt] string|bio msg
 -- @tparam[opt=0] number flags
 -- @treturn string content
--- @treturn stack_of_x509 signers 
+-- @treturn stack_of_x509 signers
 function verify() end
 
 --- decrypt encrypted pkcs7 message

@@ -65,7 +65,7 @@ function sign() end
 function verify() end
 
 --- encrypt message with public key
--- encrypt length of message must not longer than key size, if shorter will do padding,currently supports 6 padding modes. 
+-- encrypt length of message must not longer than key size, if shorter will do padding,currently supports 6 padding modes.
 -- They are: pkcs1, sslv23, no, oaep, x931, pss.
 -- @tparam evp_pkey key key used to encrypted message
 -- @tparam string data data to be encrypted
@@ -74,7 +74,7 @@ function verify() end
 function encrypt() end
 
 --- decrypt message with private key
--- pair with encrypt 
+-- pair with encrypt
 -- @tparam evp_pkey key key used to decrypted message
 -- @tparam string data data to be decrypted
 -- @tparam string[opt='pkcs1'] string padding padding mode
@@ -85,7 +85,7 @@ function decrypt() end
 --- seal  and encrypt  message with one public key
 -- data be encrypt with secret key, secret key be encrypt with public key
 -- encrypts data using pubkeys in table, so that only owners of the respective private keys and ekeys can decrypt and read the data.
--- @tparam table pubkeys public keys to encrypt secret key 
+-- @tparam table pubkeys public keys to encrypt secret key
 -- @tparam string data data to be encrypted
 -- @tparam[opt='RC4'] cipher|string alg
 -- @treturn string data encrypted
@@ -95,7 +95,7 @@ function seal() end
 
 --- seal and encrypt message with one public key
 -- data be encrypt with secret key, secret key be encrypt with public key
--- @tparam evp_pkey pubkey public keys to encrypt secret key 
+-- @tparam evp_pkey pubkey public keys to encrypt secret key
 -- @tparam string data data to be encrypted
 -- @tparam[opt='RC4'] cipher|string alg
 -- @treturn string data encrypted
@@ -107,7 +107,7 @@ function seal() end
 -- @tparam evp_pkey pkey private key used to open encrypted secret key
 -- @tparam string ekey encrypted secret key
 -- @tparam string string iv
--- @tparam[opt='RC4'] evp_cipher|string md_alg 
+-- @tparam[opt='RC4'] evp_cipher|string md_alg
 -- @treturn string data decrypted message or nil on failure
 function open() end
 
@@ -122,20 +122,20 @@ do  -- define class
 
 do  -- define evp_pkey
 
---- export evp_pkey as pem string 
+--- export evp_pkey as pem string
 -- @tparam[opt=true] boolean pem default export as pem format, false export as der string
 -- @tparam[opt=false] boolean raw_key true for export low layer key just rsa,dsa,ec, and public key only support RSA
 -- @tparam[opt] string passphrase if given, export key will encrypt with des-cbc-ede,
 --    only need when export private key
--- @treturn string 
+-- @treturn string
 function export() end
 
---- export evp_pkey as der string 
+--- export evp_pkey as der string
 -- @tparam boolean pem set false to export as der string
 -- @tparam[opt=false] boolean raw_key true for export low layer key just rsa,dsa,ec, and public key only support RSA
 -- @tparam[opt] string passphrase if given, export key will encrypt with des-cbc-ede,
 --    only need when export private key
--- @treturn string 
+-- @treturn string
 function export() end
 
 --- get key details as table
@@ -163,11 +163,11 @@ function sign() end
 -- @tparam string data data be signed
 -- @tparam string signature signed result
 -- @tparam[opt='SHA1'] string|env_digest md_alg default use sha-1
--- @tparam boolean true for pass verify
+-- @treturn boolean true for pass verify
 function verify() end
 
 --- encrypt message with public key
--- encrypt length of message must not longer than key size, if shorter will do padding,currently supports 6 padding modes. 
+-- encrypt length of message must not longer than key size, if shorter will do padding,currently supports 6 padding modes.
 -- They are: pkcs1, sslv23, no, oaep, x931, pss.
 -- @tparam string data data to be encrypted
 -- @tparam string[opt='pkcs1'] string padding padding mode
@@ -175,7 +175,7 @@ function verify() end
 function encrypt() end
 
 --- decrypt message with private key
--- pair with encrypt 
+-- pair with encrypt
 -- @tparam string data data to be decrypted
 -- @tparam string[opt='pkcs1'] string padding padding mode
 -- @treturn[1] string result
@@ -194,7 +194,7 @@ function seal() end
 --- open and ecrypted seal data with private key
 -- @tparam string ekey encrypted secret key
 -- @tparam string string iv
--- @tparam[opt='RC4'] evp_cipher|string md_alg 
+-- @tparam[opt='RC4'] evp_cipher|string md_alg
 -- @treturn string data decrypted message or nil on failure
 function open() end
 
