@@ -1,6 +1,6 @@
-local asn1 = require'openssl'.asn1
-local hex = require'openssl'.hex
-local base64 = require'openssl'.base64
+local openssl = require'openssl'
+local asn1,hex,base64 = openssl.asn1,openssl.hex,openssl.base64
+
 
 local pem = "MHcCAQEEINUs3GRVhC8h1y84gcW89XB9cyjUifwO3ZEH/Redb7w8oAoGCCqBHM9VAYItoUQDQgAE"
 .."9YFSq5ZO6I+YXsIpYFzCYTcgtotrg6UW5xX8+e8arpoU5SsojLjRG1PA028kbi139zZlH2Gh/JPNiMEzRClIVg=="

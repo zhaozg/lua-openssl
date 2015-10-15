@@ -1,3 +1,4 @@
+local openssl = require'openssl'
 local ext = require'openssl'.x509.extension
 local asn1 = require'openssl'.asn1
 TestX509ext = {}

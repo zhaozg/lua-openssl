@@ -1,3 +1,4 @@
+local openssl = require'openssl'
 local cipher = require'openssl'.cipher
 
 TestCipherCompat = {}
@@ -27,7 +28,7 @@ TestCipherCompat = {}
         d = cipher.decrypt(self.alg,c,self.key)
         assertEquals(d,self.msg)
     end
-    
+
     function TestCipherCompat:testObject()
         local a,b,c,aa,bb,cc
         local obj,obj1
@@ -55,10 +56,10 @@ TestCipherCompat = {}
         assertEquals(self.msg,bb)
         assert(#self.msg < #aa)
     end
-    
+
 
 TestCipherMY = {}
-    
+
     function TestCipherMY:setUp()
         self.msg='abcdabcdabcdabcdabcdabcd'
         self.msg1='abcd'
@@ -112,4 +113,3 @@ TestCipherMY = {}
         assertEquals(#k,t.key_length)
         assertEquals(#i,t.iv_length)
     end
-    

@@ -1,3 +1,4 @@
+local openssl = require'openssl'
 local attr = require'openssl'.x509.attribute
 local asn1 = require'openssl'.asn1
 

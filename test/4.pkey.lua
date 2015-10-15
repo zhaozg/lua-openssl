@@ -1,3 +1,4 @@
+local openssl = require'openssl'
 local pkey = require('openssl').pkey
 local unpack = unpack or table.unpack
 

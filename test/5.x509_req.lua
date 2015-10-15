@@ -1,3 +1,4 @@
+local openssl = require'openssl'
 local csr = require'openssl'.x509.req
 local asn1 = require'openssl'.asn1
 

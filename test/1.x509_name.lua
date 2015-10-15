@@ -1,3 +1,4 @@
+local openssl = require'openssl'
 local name = require'openssl'.x509.name
 local asn1 = require'openssl'.asn1
 

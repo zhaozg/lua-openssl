@@ -164,11 +164,6 @@ static LUA_FUNCTION(openssl_pkcs7_verify)
   long flags = luaL_optint(L, 5, 0);
   BIO* out = BIO_new(BIO_s_mem());
 
-  if (!store)
-  {
-    luaL_error(L, "can't setup veirfy cainfo");
-  }
-
   if (PKCS7_verify(p7, signers, store, in, out, flags) == 1)
   {
     STACK_OF(X509) *signers1 = PKCS7_get0_signers(p7, NULL, flags);

@@ -1,3 +1,4 @@
+local openssl = require'openssl'
 local digest = require'openssl'.digest
 
 TestDigestCompat = {}
@@ -68,10 +69,10 @@ TestDigestMY = {}
         end
         assert(t1.size==20)
     end
-    
+
 local function mk_key(args)
         assert(type(args),'table')
-        
+
         local k = assert(openssl.pkey.new(unpack(args)))
         return k
 end
@@ -106,4 +107,4 @@ TestSignVry = {}
         assert(vctx:verifyUpdate(self.msg))
         assert(vctx:verifyUpdate(self.msg))
         assert(vctx:verifyFinal(sig,self.pubk))
-    end   
+    end

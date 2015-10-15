@@ -1,4 +1,5 @@
-local asn1 = require'openssl'.asn1
+local openssl = require'openssl'
+local asn1 = openssl.asn1
 
 TestObject = {}
 

@@ -1,3 +1,4 @@
+local openssl = require'openssl'
 local hmac = require'openssl'.hmac
 
 TestHMACCompat = {}
@@ -23,8 +24,8 @@ TestHMACCompat = {}
         a:update(self.msg)
         a = a:final()
         assertEquals(a,b)
-        
+
         c = hmac.new(self.alg,self.key)
         c = c:final(self.msg)
-        assertEquals(c,b)        
+        assertEquals(c,b)
     end

@@ -1,3 +1,4 @@
+local openssl = require'openssl'
 local pkey = require'openssl'.pkey
 local unpack = unpack or table.unpack
 
@@ -16,7 +17,7 @@ testRSA = {}
         t.alg = 'rsa'
         local r2 = pkey.new(t)
         local msg = openssl.random(128-11)
-        
+
         local out = pkey.encrypt(r2,msg)
         local raw = pkey.decrypt(rsa,out)
         assert(msg==raw)
