@@ -165,6 +165,64 @@ static BIO *PKCS7_find_digest(EVP_MD_CTX **pmd, BIO *bio, int nid) {
   return NULL;
 }
 
+static int PKCS7_SIGNER_INFO_sign_0(PKCS7_SIGNER_INFO *si) {
+  EVP_MD_CTX mctx;
+  EVP_PKEY_CTX *pctx;
+  unsigned char *abuf = NULL;
+  int alen;
+  size_t siglen;
+  const EVP_MD *md = NULL;
+
+  md = EVP_get_digestbyobj(si->digest_alg->algorithm);
+  if (md == NULL)
+    return 0;
+
+  EVP_MD_CTX_init(&mctx);
+  if (EVP_DigestSignInit(&mctx, &pctx, md, NULL, si->pkey) <= 0)
+    goto err;
+
+  if (EVP_PKEY_CTX_ctrl(pctx, -1, EVP_PKEY_OP_SIGN,
+                        EVP_PKEY_CTRL_PKCS7_SIGN, 0, si) <= 0) {
+    PKCS7err(PKCS7_F_PKCS7_SIGNER_INFO_SIGN, PKCS7_R_CTRL_ERROR);
+    goto err;
+  }
+
+  alen = ASN1_item_i2d((ASN1_VALUE *) si->auth_attr, &abuf,
+                       ASN1_ITEM_rptr(PKCS7_ATTR_SIGN));
+  if (!abuf)
+    goto err;
+  if (EVP_DigestSignUpdate(&mctx, abuf, alen) <= 0)
+    goto err;
+  OPENSSL_free(abuf);
+  abuf = NULL;
+  if (EVP_DigestSignFinal(&mctx, NULL, &siglen) <= 0)
+    goto err;
+  abuf = OPENSSL_malloc(siglen);
+  if (!abuf)
+    goto err;
+
+  if (EVP_DigestSignFinal(&mctx, abuf, &siglen) <= 0)
+    goto err;
+  if (EVP_PKEY_CTX_ctrl(pctx, -1, EVP_PKEY_OP_SIGN,
+                        EVP_PKEY_CTRL_PKCS7_SIGN, 1, si) <= 0) {
+    PKCS7err(PKCS7_F_PKCS7_SIGNER_INFO_SIGN, PKCS7_R_CTRL_ERROR);
+    goto err;
+  }
+
+  EVP_MD_CTX_cleanup(&mctx);
+
+  ASN1_STRING_set0(si->enc_digest, abuf, siglen);
+
+  return 1;
+
+err:
+  if (abuf)
+    OPENSSL_free(abuf);
+  EVP_MD_CTX_cleanup(&mctx);
+  return 0;
+
+}
+
 static int do_pkcs7_signed_attrib(PKCS7_SIGNER_INFO *si, EVP_MD_CTX *mctx) {
   unsigned char md_data[EVP_MAX_MD_SIZE];
   unsigned int md_len;
@@ -188,7 +246,7 @@ static int do_pkcs7_signed_attrib(PKCS7_SIGNER_INFO *si, EVP_MD_CTX *mctx) {
   }
 
   /* Now sign the attributes */
-  if (!PKCS7_SIGNER_INFO_sign(si))
+  if (!PKCS7_SIGNER_INFO_sign_0(si))
     return 0;
 
   return 1;
@@ -226,7 +284,6 @@ static LUA_FUNCTION(openssl_pkcs7_sign_digest) {
   size_t l;
   const char* data = luaL_checklstring(L, 2, &l);
   long flags = luaL_optint(L, 3, 0);
-  int hash = lua_isnoneornil(L, 4) ? 0 : lua_toboolean(L, 4);
 
   int ret = 0;
   int i, j;
@@ -242,9 +299,8 @@ static LUA_FUNCTION(openssl_pkcs7_sign_digest) {
     luaL_error(L, "pkcs7 without content");
     return 0;
   }
-  if (hash || flags|PKCS7_DETACHED) {
-    PKCS7_set_detached(p7, 1);
-  }
+  flags |= PKCS7_DETACHED;
+  PKCS7_set_detached(p7, 1);
 
   EVP_MD_CTX_init(&mdc);
   i = OBJ_obj2nid(p7->type);
@@ -313,15 +369,12 @@ static LUA_FUNCTION(openssl_pkcs7_sign_digest) {
       j = OBJ_obj2nid(si->digest_alg->algorithm);
       md = EVP_get_digestbynid(j);
       EVP_DigestInit_ex(&mdc, md, NULL);
-      if (hash) {
-        if (l == mdc.digest->ctx_size) {
-          memcpy(mdc.md_data, data, l);
-        } else {
-          EVP_MD_CTX_cleanup(&mdc);
-          luaL_error(L, "data with wrong data");
-        }
+
+      if (l == mdc.digest->ctx_size) {
+        memcpy(mdc.md_data, data, l);
       } else {
-        EVP_DigestUpdate(&mdc, data, l);
+        EVP_MD_CTX_cleanup(&mdc);
+        luaL_error(L, "data with wrong data");
       }
 
       sk = si->auth_attr;
@@ -353,15 +406,11 @@ static LUA_FUNCTION(openssl_pkcs7_sign_digest) {
     unsigned int md_len;
     md = EVP_get_digestbynid(OBJ_obj2nid(p7->d.digest->md->algorithm));
     EVP_DigestInit_ex(&mdc, md, NULL);
-    if (hash) {
-      if (l == mdc.digest->ctx_size) {
-        memcpy(mdc.md_data, data, l);
-      } else {
-        EVP_MD_CTX_cleanup(&mdc);
-        luaL_error(L, "data with wrong data");
-      }
+    if (l == mdc.digest->ctx_size) {
+      memcpy(mdc.md_data, data, l);
     } else {
-      EVP_DigestUpdate(&mdc, data, l);
+      EVP_MD_CTX_cleanup(&mdc);
+      luaL_error(L, "data with wrong data");
     }
     if (!EVP_DigestFinal_ex(&mdc, md_data, &md_len))
       goto err;
@@ -393,7 +442,7 @@ int PKCS7_signatureVerify_digest(PKCS7 *p7, PKCS7_SIGNER_INFO *si,
                           X509 *x509, const unsigned char* data, size_t len) {
   ASN1_OCTET_STRING *os;
   const EVP_MD* md;
-  EVP_MD_CTX mdc;
+  EVP_MD_CTX mdc,mdc_tmp;
   int ret = 0, i;
   int md_type;
   STACK_OF(X509_ATTRIBUTE) *sk;
@@ -415,6 +464,13 @@ int PKCS7_signatureVerify_digest(PKCS7 *p7, PKCS7_SIGNER_INFO *si,
     goto err;
   memcpy(mdc.md_data, data, len);
 
+  /*
+  * mdc is the digest ctx that we want, unless there are attributes, in
+  * which case the digest is the signed attributes
+  */
+  EVP_MD_CTX_init(&mdc_tmp);
+  if (!EVP_MD_CTX_copy_ex(&mdc_tmp, &mdc))
+    goto err;
   sk = si->auth_attr;
   if ((sk != NULL) && (sk_X509_ATTRIBUTE_num(sk) != 0)) {
     unsigned char md_dat[EVP_MAX_MD_SIZE], *abuf = NULL;
@@ -422,7 +478,7 @@ int PKCS7_signatureVerify_digest(PKCS7 *p7, PKCS7_SIGNER_INFO *si,
     int alen;
     ASN1_OCTET_STRING *message_digest;
 
-    if (!EVP_DigestFinal_ex(&mdc, md_dat, &md_len))
+    if (!EVP_DigestFinal_ex(&mdc_tmp, md_dat, &md_len))
       goto err;
     message_digest = PKCS7_digest_from_attributes(sk);
     if (!message_digest) {
@@ -432,13 +488,11 @@ int PKCS7_signatureVerify_digest(PKCS7 *p7, PKCS7_SIGNER_INFO *si,
     }
     if ((message_digest->length != (int) md_len) ||
         (memcmp(message_digest->data, md_dat, md_len))) {
-
     PKCS7err(PKCS7_F_PKCS7_SIGNATUREVERIFY, PKCS7_R_DIGEST_FAILURE);
     ret = -1;
     goto err;
     }
-
-    if (!EVP_VerifyInit_ex(&mdc, EVP_get_digestbynid(md_type), NULL))
+    if (!EVP_DigestVerifyInit(&mdc_tmp, NULL, EVP_get_digestbynid(md_type), NULL, X509_get_pubkey(x509)))
       goto err;
 
     alen = ASN1_item_i2d((ASN1_VALUE *) sk, &abuf,
@@ -448,7 +502,7 @@ int PKCS7_signatureVerify_digest(PKCS7 *p7, PKCS7_SIGNER_INFO *si,
       ret = -1;
       goto err;
     }
-    if (!EVP_VerifyUpdate(&mdc, abuf, alen))
+    if (!EVP_VerifyUpdate(&mdc_tmp, abuf, alen))
       goto err;
 
     OPENSSL_free(abuf);
@@ -460,8 +514,7 @@ int PKCS7_signatureVerify_digest(PKCS7 *p7, PKCS7_SIGNER_INFO *si,
     ret = -1;
     goto err;
   }
-
-  i = EVP_VerifyFinal(&mdc, os->data, os->length, pkey);
+  i = EVP_VerifyFinal(&mdc_tmp, os->data, os->length, pkey);
   EVP_PKEY_free(pkey);
   if (i <= 0) {
     PKCS7err(PKCS7_F_PKCS7_SIGNATUREVERIFY, PKCS7_R_SIGNATURE_FAILURE);
@@ -471,6 +524,8 @@ int PKCS7_signatureVerify_digest(PKCS7 *p7, PKCS7_SIGNER_INFO *si,
     ret = 1;
 err:
   EVP_MD_CTX_cleanup(&mdc);
+  EVP_MD_CTX_cleanup(&mdc_tmp);
+  
   return (ret);
 }
 
@@ -481,8 +536,8 @@ static LUA_FUNCTION(openssl_pkcs7_verify_digest) {
   size_t len;
   const char* data = luaL_checklstring(L, 4, &len);
   long flags = luaL_optint(L, 5, 0);
-  int hash = lua_isnoneornil(L, 6) ? 0 : lua_toboolean(L, 6);
 
+  flags |= PKCS7_DETACHED;
   STACK_OF(X509) *signers;
   X509 *signer;
   STACK_OF(PKCS7_SIGNER_INFO) *sinfos;
@@ -625,8 +680,7 @@ static LUA_FUNCTION(openssl_pkcs7_verify)
   }
   else
   {
-    lua_pushnil(L);
-    ret = 1;
+    ret = openssl_pushresult(L, 0);
   }
 
   if (out)

@@ -30,7 +30,7 @@ function sign() end
 --- verify pkcs7 object, and return msg content, follow by singers
 -- @tparam pkcs7 in
 -- @tparam[opt] stack_of_x509 signercerts
--- @tparam[opt] stack_of_x509 cacerts
+-- @tparam[opt] x509_store cacerts
 -- @tparam[opt] string|bio msg
 -- @tparam[opt=0] number flags
 -- @treturn string content
@@ -73,8 +73,7 @@ function parse() end
 
 --- verify pkcs7 object, and return msg content, follow by singers
 -- @tparam[opt] stack_of_x509 signercerts
--- @tparam[opt] stack_of_x509 cacerts
--- @tparam[opt] stack_of_x509 extracerts
+-- @tparam[opt] x509_store cacerts
 -- @tparam[opt] string|bio msg
 -- @tparam[opt=0] number flags
 -- @treturn string content

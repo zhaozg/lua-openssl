@@ -70,7 +70,6 @@ function tostring() end
 -- @treturn[2] nil for fail
 -- @treturn[2] string error msg
 -- @treturn[2] number inner error code
-
 function get_object() end
 
 --- do der encode and return encoded string partly head or full
@@ -80,6 +79,8 @@ function get_object() end
 -- indefinite length constructed
 -- @tparam[opt=nil] boolean constructed or not
 -- @treturn string der encoded string or head when not give data
+function put_object() end
+
 end
 
 do  -- define class
