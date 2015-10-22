@@ -11,6 +11,9 @@
 #define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
   "based on OpenSSL " SHLIB_VERSION_NUMBER
 
+#ifdef WIN32
+#define timezone _timezone
+#endif
 
 static LuaL_Enum asn1_const[] =
 {
@@ -556,7 +559,7 @@ static int openssl_asn1group_set(lua_State *L) {
   return 0;
 }
 
-static time_t ASN1_TIME_get(ASN1_TIME* time, time_t timezone) {
+static time_t ASN1_TIME_get(ASN1_TIME* time, time_t off) {
   struct tm t;
   const char* str = (const char*) time->data;
   size_t i = 0;
@@ -587,7 +590,7 @@ static time_t ASN1_TIME_get(ASN1_TIME* time, time_t timezone) {
   t.tm_sec += (str[i++] - '0');
 
   /* Note: we did not adjust the time based on time zone information */
-  return mktime(&t) + timezone;
+  return mktime(&t) + off;
 }
 
 static int openssl_asn1group_get(lua_State *L) {
@@ -604,7 +607,8 @@ static int openssl_asn1group_get(lua_State *L) {
   case V_ASN1_GENERALIZEDTIME:
   {
     ASN1_TIME *at = CHECK_OBJECT(1, ASN1_TIME, "openssl.asn1_time");
-    time_t get = ASN1_TIME_get(at, -_timezone);
+    time_t offset = timezone;
+    time_t get = ASN1_TIME_get(at, -offset);
     lua_pushinteger(L, (lua_Integer) get);
     return 1;
   }
