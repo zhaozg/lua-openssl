@@ -76,7 +76,7 @@ static int reason_get(lua_State*L, int reasonidx)
   return reason;
 }
 
-static X509_REVOKED *create_revoked(lua_State*L, const BIGNUM* bn, time_t t, int reason)
+static X509_REVOKED *create_revoked(const BIGNUM* bn, time_t t, int reason)
 {
   X509_REVOKED *revoked = X509_REVOKED_new();
   ASN1_TIME *tm = ASN1_TIME_new();
@@ -117,7 +117,7 @@ static LUA_FUNCTION(openssl_crl_add_revocked)
   int reason = reason_get(L, 4);
 
   int ret = 0;
-  X509_REVOKED* revoked = create_revoked(L, sn, t, reason);
+  X509_REVOKED* revoked = create_revoked(sn, t, reason);
   ret = X509_CRL_add0_revoked(crl, revoked);
   lua_pushboolean(L, ret);
   BN_free(sn);
@@ -151,7 +151,6 @@ static int openssl_crl_extensions(lua_State* L)
     };
     return openssl_pushresult(L, ret);
   }
-  return 0;
 }
 
 static LUA_FUNCTION(openssl_crl_new)
@@ -186,7 +185,7 @@ static LUA_FUNCTION(openssl_crl_new)
           lua_getfield(L, -2, "time");
           lua_getfield(L, -3, "sn");
           sn = BN_get(L, -1);
-          revoked = create_revoked(L, sn, lua_tointeger(L, -2), reason_get(L, -3));
+          revoked = create_revoked(sn, lua_tointeger(L, -2), reason_get(L, -3));
           if (revoked)
           {
             ret = X509_CRL_add0_revoked(crl, revoked);
@@ -407,7 +406,6 @@ static LUA_FUNCTION(openssl_crl_updateTime)
     openssl_pushresult(L, ret);
     return 1;
   }
-  return 0;
 }
 
 static LUA_FUNCTION(openssl_crl_sort)
@@ -525,7 +523,7 @@ static LUA_FUNCTION(openssl_crl_check)
 static LUA_FUNCTION(openssl_crl_parse)
 {
   X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
-  int n, i;
+  int num, i;
 
   lua_newtable(L);
   AUXILIAR_SET(L, -1, "version", X509_CRL_get_version(crl), integer);
@@ -577,9 +575,9 @@ static LUA_FUNCTION(openssl_crl_parse)
     lua_setfield(L, -2, "extensions");
   }
 
-  n = sk_X509_REVOKED_num(crl->crl->revoked);
+  num = sk_X509_REVOKED_num(crl->crl->revoked);
   lua_newtable(L);
-  for (i = 0; i < n; i++)
+  for (i = 0; i < num; i++)
   {
     X509_REVOKED *revoked = sk_X509_REVOKED_value(crl->crl->revoked, i);
     lua_newtable(L);
@@ -679,10 +677,10 @@ static LUA_FUNCTION(openssl_crl_count)
 static LUA_FUNCTION(openssl_crl_get)
 {
   X509_CRL * crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
-  int n = luaL_checkint(L, 2);
-  if (n >= 0 && n < sk_X509_REVOKED_num(crl->crl->revoked))
+  int i = luaL_checkint(L, 2);
+  if (i >= 0 && i < sk_X509_REVOKED_num(crl->crl->revoked))
   {
-    X509_REVOKED *revoked = sk_X509_REVOKED_value(crl->crl->revoked, n);
+    X509_REVOKED *revoked = sk_X509_REVOKED_value(crl->crl->revoked, i);
 
     lua_newtable(L);
 

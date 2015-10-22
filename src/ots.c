@@ -786,7 +786,6 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_accuracy)
     int ret = TS_RESP_CTX_set_accuracy(ctx, seconds, millis, micros);
     return openssl_pushresult(L, ret);
   }
-  return 0;
 }
 
 static LUA_FUNCTION(openssl_ts_resp_ctx_clock_precision_digits)
@@ -808,7 +807,6 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_clock_precision_digits)
     ret = TS_RESP_CTX_set_clock_precision_digits(ctx, clock_precision_digits);
     return openssl_pushresult(L, ret);
   }
-  return 0;
 }
 
 static LUA_FUNCTION(openssl_ts_resp_ctx_set_status_info)
@@ -957,6 +955,7 @@ static ASN1_INTEGER* openssl_serial_cb(TS_RESP_CTX*ctx, void*data)
   lua_State* L = arg->L;
   ASN1_INTEGER *ai = NULL;
   int err;
+  (void)ctx;
   lua_rawgeti(L, LUA_REGISTRYINDEX, arg->callback);
   lua_rawgeti(L, LUA_REGISTRYINDEX, arg->ctx);
   lua_rawgeti(L, LUA_REGISTRYINDEX, arg->cb_arg);
@@ -1007,7 +1006,7 @@ static int openssl_time_cb(TS_RESP_CTX *ctx, void *data, long *sec, long *usec)
   TS_CB_ARG *arg = (TS_CB_ARG*)data;
   lua_State* L = arg->L;
   int err;
-
+  (void) ctx;
   lua_rawgeti(L, LUA_REGISTRYINDEX, arg->callback);
   lua_rawgeti(L, LUA_REGISTRYINDEX, arg->ctx);
   lua_rawgeti(L, LUA_REGISTRYINDEX, arg->cb_arg);
@@ -1231,7 +1230,6 @@ static int openssl_ts_verify_ctx_data(lua_State*L)
     lua_pushboolean(L, 1);
     return 1;
   }
-  return 0;
 }
 
 static int openssl_ts_verify_ctx_imprint(lua_State*L)

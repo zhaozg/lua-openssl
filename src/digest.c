@@ -299,7 +299,7 @@ static LUA_FUNCTION(openssl_digest_ctx_data) {
   } else {
     size_t l;
     const char* d = luaL_checklstring(L, 2, &l);
-    if (l == ctx->digest->ctx_size) {
+    if (l == (size_t)ctx->digest->ctx_size) {
       memcpy(ctx->md_data, d, l);
     } else
       luaL_error(L, "data with wrong data");
@@ -311,12 +311,13 @@ static LUA_FUNCTION(openssl_digest_ctx_data) {
 static LUA_FUNCTION(openssl_signInit)
 {
   const EVP_MD *md = get_digest(L, 1);
-  ENGINE *e = lua_isnoneornil(L, 2) ? NULL : CHECK_OBJECT(2, ENGINE, "openssl.engine");
-  int ret = 0;
+  EVP_PKEY* pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
+  ENGINE*     e = lua_gettop(L) > 2 ? CHECK_OBJECT(3, ENGINE, "openssl.engine") : NULL;
+  EVP_PKEY_CTX *pctx;
   EVP_MD_CTX *ctx = EVP_MD_CTX_create();
   if (ctx)
   {
-    ret = EVP_SignInit_ex(ctx, md, e);
+    int ret = EVP_DigestSignInit(ctx, &pctx, md, e, pkey);
     if (ret)
     {
       PUSH_OBJECT(ctx, "openssl.evp_digest_ctx");
@@ -330,12 +331,14 @@ static LUA_FUNCTION(openssl_signInit)
 static LUA_FUNCTION(openssl_verifyInit)
 {
   const EVP_MD *md = get_digest(L, 1);
-  ENGINE *e = lua_isnoneornil(L, 2) ? NULL : CHECK_OBJECT(2, ENGINE, "openssl.engine");
-  int ret = 0;
+  EVP_PKEY* pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
+  ENGINE*     e = lua_gettop(L) > 2 ? CHECK_OBJECT(3, ENGINE, "openssl.engine") : NULL;
+  luaL_argcheck(L, !openssl_pkey_is_private(pkey), 2, "need public key");
+  EVP_PKEY_CTX *pctx;
   EVP_MD_CTX *ctx = EVP_MD_CTX_create();
   if (ctx)
   {
-    ret = EVP_VerifyInit_ex(ctx, md, e);
+    int ret = EVP_DigestVerifyInit(ctx, &pctx, md, e, pkey);
     if (ret)
     {
       PUSH_OBJECT(ctx, "openssl.evp_digest_ctx");
@@ -354,7 +357,7 @@ static LUA_FUNCTION(openssl_signUpdate)
   int ret;
   EVP_MD_CTX *ctx = CHECK_OBJECT(1, EVP_MD_CTX, "openssl.evp_digest_ctx");
   const char* data = luaL_checklstring(L, 2, &l);
-  ret = EVP_SignUpdate(ctx, data, l);
+  ret = EVP_DigestSignUpdate(ctx, data, l);
   return openssl_pushresult(L, ret);
 }
 
@@ -364,21 +367,24 @@ static LUA_FUNCTION(openssl_verifyUpdate)
   int ret;
   EVP_MD_CTX *ctx = CHECK_OBJECT(1, EVP_MD_CTX, "openssl.evp_digest_ctx");
   const char* data = luaL_checklstring(L, 2, &l);
-  ret = EVP_VerifyUpdate(ctx, data, l);
+  ret = EVP_DigestVerifyUpdate(ctx, data, l);
   return openssl_pushresult(L, ret);
 }
 
 static LUA_FUNCTION(openssl_signFinal)
 {
   EVP_MD_CTX *ctx = CHECK_OBJECT(1, EVP_MD_CTX, "openssl.evp_digest_ctx");
-  EVP_PKEY *pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
+  EVP_PKEY *pkey = lua_gettop(L) > 1 ? CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey") : NULL;
   unsigned int siglen = EVP_PKEY_size(pkey);
   unsigned char *sigbuf = malloc(siglen + 1);
   int ret = 0;
-  if (EVP_SignFinal(ctx, sigbuf, &siglen, pkey))
+  if (pkey)
+    ret = EVP_SignFinal(ctx, sigbuf, &siglen, pkey);
+  else
+    ret = EVP_DigestSignFinal(ctx, sigbuf, &siglen);
+  if (ret==1)
   {
     lua_pushlstring(L, (char *)sigbuf, siglen);
-    ret = 1;
   }
   free(sigbuf);
   EVP_MD_CTX_cleanup(ctx);
@@ -392,8 +398,13 @@ static LUA_FUNCTION(openssl_verifyFinal)
   EVP_MD_CTX *ctx = CHECK_OBJECT(1, EVP_MD_CTX, "openssl.evp_digest_ctx");
   size_t signature_len;
   const char* signature = luaL_checklstring(L, 2, &signature_len);
-  EVP_PKEY *pkey = CHECK_OBJECT(3, EVP_PKEY, "openssl.evp_pkey");
-  int ret = EVP_VerifyFinal(ctx, (const unsigned char*)signature, signature_len, pkey);
+  EVP_PKEY *pkey = lua_gettop(L) > 2 ? CHECK_OBJECT(3, EVP_PKEY, "openssl.evp_pkey") : NULL;
+  int ret = 0;
+  if (pkey)
+    ret = EVP_VerifyFinal(ctx, (const unsigned char*) signature, signature_len, pkey);
+  else
+    ret = EVP_DigestVerifyFinal(ctx, (const unsigned char*) signature, signature_len);
+
   EVP_MD_CTX_cleanup(ctx);
   return openssl_pushresult(L, ret);
 }

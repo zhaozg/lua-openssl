@@ -56,11 +56,11 @@ static int openssl_ocsp_request_new(lua_State*L)
         }
         else
         {
-          size_t len;
-          char *serial = (char *)luaL_checklstring(L, -1, &len);
+          size_t size;
+          char *serial = (char *)luaL_checklstring(L, -1, &size);
           ASN1_INTEGER *sno = ASN1_INTEGER_new();
           BIO* bio = BIO_new(BIO_s_mem());
-          BIO_write(bio, serial, len);
+          BIO_write(bio, serial, size);
           if (a2i_ASN1_INTEGER(bio, sno, buf, 1024) == 1)
           {
             id = OCSP_cert_id_new(EVP_sha1(), iname, ikey, sno);

@@ -538,31 +538,56 @@ static int openssl_asn1group_set(lua_State *L) {
     return openssl_pushresult(L, ret);
   }
   case V_ASN1_UTCTIME:
-  {
-    ASN1_TIME *a = CHECK_OBJECT(1, ASN1_TIME, "openssl.asn1_time");
-    if (lua_type(L, 1) == LUA_TNUMBER) {
-      ASN1_TIME_set(a, luaL_checkinteger(L, 1));
-    } else if (lua_isstring(L, 1)) {
-      ret = ASN1_TIME_set_string(a, lua_tostring(L, 1));
-    } else
-      luaL_error(L, "error, because wrong parameter");
-    return openssl_pushresult(L, ret);
-  }
   case V_ASN1_GENERALIZEDTIME:
   {
-    ASN1_GENERALIZEDTIME *a = CHECK_OBJECT(1, ASN1_GENERALIZEDTIME, "openssl.asn1_generalizedtime");
-    if (lua_type(L, 1) == LUA_TNUMBER) {
-      ASN1_GENERALIZEDTIME_set(a, luaL_checkinteger(L, 1));
-    } else if (lua_isstring(L, 1)) {
-      ret = ASN1_GENERALIZEDTIME_set_string(a, lua_tostring(L, 1));
+    ASN1_TIME *a = CHECK_OBJECT(1, ASN1_TIME, "openssl.asn1_time");
+    if (lua_type(L, 2) == LUA_TNUMBER) {
+      time_t t = luaL_checkinteger(L, 2);
+      ASN1_TIME_set(a, t);
+    } else if (lua_isstring(L, 2)) {
+      ret = ASN1_TIME_set_string(a, lua_tostring(L, 2));
     } else
-      luaL_error(L, "error, because wrong parameter");
+      luaL_error(L, "only accpet number or string");
     return openssl_pushresult(L, ret);
   }
   default:
     break;
   }
   return 0;
+}
+
+static time_t ASN1_TIME_get(ASN1_TIME* time, time_t timezone) {
+  struct tm t;
+  const char* str = (const char*) time->data;
+  size_t i = 0;
+
+  memset(&t, 0, sizeof(t));
+
+  if (time->type == V_ASN1_UTCTIME) {/* two digit year */
+    t.tm_year = (str[i++] - '0') * 10;
+    t.tm_year += (str[i++] - '0');
+    if (t.tm_year < 70)
+      t.tm_year += 100;
+  } else if (time->type == V_ASN1_GENERALIZEDTIME) {/* four digit year */
+    t.tm_year = (str[i++] - '0') * 1000;
+    t.tm_year += (str[i++] - '0') * 100;
+    t.tm_year += (str[i++] - '0') * 10;
+    t.tm_year += (str[i++] - '0');
+    t.tm_year -= 1900;
+  }
+  t.tm_mon = (str[i++] - '0') * 10;
+  t.tm_mon += (str[i++] - '0') - 1; // -1 since January is 0 not 1.
+  t.tm_mday = (str[i++] - '0') * 10;
+  t.tm_mday += (str[i++] - '0');
+  t.tm_hour = (str[i++] - '0') * 10;
+  t.tm_hour += (str[i++] - '0');
+  t.tm_min = (str[i++] - '0') * 10;
+  t.tm_min += (str[i++] - '0');
+  t.tm_sec = (str[i++] - '0') * 10;
+  t.tm_sec += (str[i++] - '0');
+
+  /* Note: we did not adjust the time based on time zone information */
+  return mktime(&t) + timezone;
 }
 
 static int openssl_asn1group_get(lua_State *L) {
@@ -576,12 +601,12 @@ static int openssl_asn1group_get(lua_State *L) {
     return 1;
   }
   case V_ASN1_UTCTIME:
-  {
-    ASN1_TIME *a = CHECK_OBJECT(1, ASN1_TIME, "openssl.asn1_time");
-  }
   case V_ASN1_GENERALIZEDTIME:
   {
-    ASN1_GENERALIZEDTIME *a = CHECK_OBJECT(1, ASN1_GENERALIZEDTIME, "openssl.asn1_generalizedtime");
+    ASN1_TIME *at = CHECK_OBJECT(1, ASN1_TIME, "openssl.asn1_time");
+    time_t get = ASN1_TIME_get(at, -_timezone);
+    lua_pushinteger(L, (lua_Integer) get);
+    return 1;
   }
   default:
     break;
@@ -763,9 +788,9 @@ static int openssl_asn1group_tostring(lua_State* L)
     case V_ASN1_BIT_STRING:
     {
       BIGNUM *bn = BN_bin2bn((const unsigned char*)ASN1_STRING_data(s), ASN1_STRING_length(s), NULL);
-      char* s = BN_bn2hex(bn);
-      lua_pushstring(L, s);
-      OPENSSL_free(s);
+      char* str = BN_bn2hex(bn);
+      lua_pushstring(L, str);
+      OPENSSL_free(str);
       return 1;
     }
     default:
@@ -829,44 +854,44 @@ static int openssl_asn1group_dup(lua_State* L)
 static int openssl_asn1generalizedtime_new(lua_State* L)
 {
   ASN1_GENERALIZEDTIME* a = NULL;
-  int ret = 1;
-  if (lua_isnone(L,1))
-    a = ASN1_GENERALIZEDTIME_new();
-  else if (lua_type(L, 1) == LUA_TNUMBER)
-  {
-    a = ASN1_GENERALIZEDTIME_new();
-    ASN1_GENERALIZEDTIME_set(a, luaL_checkinteger(L, 1));
-  } else if (lua_isstring(L, 1))
-  {
-    a = ASN1_GENERALIZEDTIME_new();
+  int ret = 1; 
+  luaL_argcheck(L,
+                1,
+                lua_isnone(L, 1) || lua_isnumber(L, 1) || lua_isstring(L, 1),
+                "must be number, string or none"
+                );
+  a = ASN1_GENERALIZEDTIME_new();
+  if (lua_isnumber(L, 1))
+   ASN1_GENERALIZEDTIME_set(a, luaL_checkinteger(L, 1));
+  else if (lua_isstring(L, 1))
     ret = ASN1_GENERALIZEDTIME_set_string(a, lua_tostring(L, 1));
-  } else
-    luaL_error(L, "error, because wrong parameter");
+
   if (ret == 1)
-    PUSH_OBJECT(a, "openssl.asn1_generalizedtime");
+    PUSH_OBJECT(a, "openssl.asn1_time");
   else
     return openssl_pushresult(L, ret);
   return 1;
 }
 
-static int openssl_asn1time_new(lua_State* L)
+static int openssl_asn1utctime_new(lua_State* L)
 {
-  ASN1_TIME* a = NULL;
+  ASN1_UTCTIME* a = NULL;
   int ret = 1;
-  if (lua_isnone(L, 1))
-    a = ASN1_TIME_new();
-  else if (lua_type(L, 1) == LUA_TNUMBER)
-  {
-    a = ASN1_TIME_new();
-    ASN1_TIME_set(a, luaL_checkinteger(L, 1));
-  } else if (lua_isstring(L, 1))
-  {
-    a = ASN1_TIME_new();
+  luaL_argcheck(L,
+                1,
+                lua_isnone(L, 1) || lua_isnumber(L, 1) || lua_isstring(L, 1),
+                "must be number, string or none"
+                );
+  a = ASN1_UTCTIME_new();
+  if (lua_isnumber(L, 1)) {
+    time_t t = luaL_checkinteger(L, 1);
+    ASN1_TIME_set(a, t);
+  }
+  else if (lua_isstring(L, 1))
     ret = ASN1_TIME_set_string(a, lua_tostring(L, 1));
-  } else
-    luaL_error(L, "error, because wrong parameter");
+
   if (ret == 1)
-    PUSH_OBJECT(a, "openssl.asn1_generalizedtime");
+    PUSH_OBJECT(a, "openssl.asn1_time");
   else
     return openssl_pushresult(L, ret);
   return 1;
@@ -874,46 +899,19 @@ static int openssl_asn1time_new(lua_State* L)
 
 static int openssl_asn1time_check(lua_State* L)
 {
-  luaL_argcheck(L,
-                auxiliar_isgroup(L, "openssl.asn1_time", 1) || auxiliar_isgroup(L, "openssl.asn1_generalizedtime", 1),
-                1,
-                "only accept openssl.asn1_time or openssl.asn1_generalizedtime");
-  if (auxiliar_isclass(L, "openssl.asn1_time", 1)) {
-    ASN1_TIME *a = CHECK_OBJECT(1, ASN1_TIME, "openssl.asn1_time");
-    int ret = ASN1_TIME_check(a);
-    return openssl_pushresult(L, ret);
-  } else if (auxiliar_isclass(L, "openssl.asn1_generalizedtime", 1)) {
-    ASN1_GENERALIZEDTIME *a = CHECK_OBJECT(1, ASN1_GENERALIZEDTIME, "openssl.asn1_generalizedtime");
-    int ret = ASN1_GENERALIZEDTIME_check(a);
-    return openssl_pushresult(L, ret);
-  }
-  return 0;
+  ASN1_TIME *a = CHECK_OBJECT(1, ASN1_TIME, "openssl.asn1_time");
+  int ret = ASN1_TIME_check(a);
+  return openssl_pushresult(L, ret);
 }
 
 static int openssl_asn1time_adj(lua_State* L)
 {
-  luaL_argcheck(L,
-                auxiliar_isgroup(L, "openssl.asn1_time", 1) || auxiliar_isgroup(L, "openssl.asn1_generalizedtime", 1),
-                1,
-                "only accept openssl.asn1_time or openssl.asn1_generalizedtime");
-  if (auxiliar_isclass(L, "openssl.asn1_time", 1))
-  {
-    ASN1_TIME *a = CHECK_OBJECT(1, ASN1_TIME, "openssl.asn1_time");
-    time_t t = luaL_checkinteger(L, 2);
-    int offset_day = luaL_checkint(L, 3);
-    long offset_sec = luaL_optlong(L, 4, 0);
+  ASN1_TIME *a = CHECK_OBJECT(1, ASN1_TIME, "openssl.asn1_time");
+  time_t t = luaL_checkinteger(L, 2);
+  int offset_day = luaL_optint(L, 3, 0);
+  long offset_sec = luaL_optlong(L, 4, 0);
 
-    ASN1_TIME_adj(a, t, offset_day, offset_sec);
-    return 0;
-  } else if (auxiliar_isclass(L, "openssl.asn1_generalizedtime", 1)) {
-    ASN1_GENERALIZEDTIME *a = CHECK_OBJECT(1, ASN1_GENERALIZEDTIME, "openssl.asn1_generalizedtime");
-    time_t t = luaL_checkinteger(L, 2);
-    int offset_day = luaL_checkint(L, 3);
-    long offset_sec = luaL_optlong(L, 4, 0);
-
-    ASN1_GENERALIZEDTIME_adj(a, t, offset_day, offset_sec);
-    return 0;
-  }
+  ASN1_TIME_adj(a, t, offset_day, offset_sec);
   return 0;
 }
 
@@ -988,7 +986,7 @@ static int openssl_put_object(lua_State*L)
 {
   int tag = luaL_checkint(L, 1);
   int cls = luaL_checkint(L, 2);
-  int length;
+  int length = 0;
   int constructed;
   unsigned char *p1, *p2;
   const char* dat = NULL;
@@ -1080,7 +1078,7 @@ static luaL_Reg R[] =
 
   {"new_integer", openssl_asn1int_new},
   {"new_string", openssl_asn1string_new},
-  {"new_time", openssl_asn1time_new},
+  {"new_utctime", openssl_asn1utctime_new},
   {"new_generalizedtime", openssl_asn1generalizedtime_new},
 
   {"new_type", openssl_asn1type_new},
@@ -1100,19 +1098,17 @@ static luaL_Reg R[] =
 int luaopen_asn1(lua_State *L)
 {
   int i;
-
+  tzset();
   auxiliar_newclass(L, "openssl.asn1_object", asn1obj_funcs);
   auxiliar_newclass(L, "openssl.asn1_type", asn1type_funcs);
 
   auxiliar_newclass(L, "openssl.asn1_string", asn1str_funcs);
   auxiliar_newclass(L, "openssl.asn1_integer", asn1str_funcs);
   auxiliar_newclass(L, "openssl.asn1_time", asn1str_funcs);
-  auxiliar_newclass(L, "openssl.asn1_generalizedtime", asn1str_funcs);
 
   auxiliar_add2group(L, "openssl.asn1_time", "openssl.asn1group"); 
   auxiliar_add2group(L, "openssl.asn1_string", "openssl.asn1group");
   auxiliar_add2group(L, "openssl.asn1_integer", "openssl.asn1group");
-  auxiliar_add2group(L, "openssl.asn1_generalizedtime", "openssl.asn1group");
 
   lua_newtable(L);
   luaL_setfuncs(L, R, 0);
@@ -1190,13 +1186,9 @@ int openssl_push_asn1(lua_State* L, ASN1_STRING* string, int type)
     return 1;
   }
   case V_ASN1_UTCTIME:
-  {
-    PUSH_OBJECT((ASN1_TIME*) ASN1_STRING_dup(string), "openssl.asn1_time");
-    return 1;
-  }
   case V_ASN1_GENERALIZEDTIME:
   {
-    PUSH_OBJECT((ASN1_GENERALIZEDTIME*) ASN1_STRING_dup(string), "openssl.asn1_generalizedtime");
+    PUSH_OBJECT((ASN1_TIME*) ASN1_STRING_dup(string), "openssl.asn1_time");
     return 1;
   }
   case V_ASN1_OCTET_STRING:
@@ -1208,5 +1200,4 @@ int openssl_push_asn1(lua_State* L, ASN1_STRING* string, int type)
   }
   }
 
-  return 0;
 }

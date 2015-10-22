@@ -156,7 +156,6 @@ static int openssl_xext_data(lua_State* L)
     ASN1_STRING* s = CHECK_GROUP(2, ASN1_STRING, "openssl.asn1group");
     if (ASN1_STRING_type(s) == V_ASN1_OCTET_STRING)
     {
-      int ret;
       ret = X509_EXTENSION_set_data(x, s);
       return openssl_pushresult(L, ret);
     }
@@ -356,7 +355,6 @@ static int openssl_xext_new_sk(lua_State* L)
 static int openssl_xexts_totable(lua_State*L)
 {
   STACK_OF(X509_EXTENSION) *exts = CHECK_OBJECT(1, STACK_OF(X509_EXTENSION), "openssl.stack_of_x509_extension");
-  int utf8 = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L, 2);
   int i;
   int n = sk_X509_EXTENSION_num(exts);
   lua_newtable(L);

@@ -368,7 +368,6 @@ static int openssl_ssl_ctx_new_ssl(lua_State*L)
   int mode_idx = 2;
   SSL *ssl = SSL_new(ctx);
   int ret = 1;
-  BIO* bio = NULL;
 
   if (auxiliar_isclass(L, "openssl.bio", 2))
   {
@@ -465,7 +464,6 @@ static int openssl_ssl_getpeerverification(lua_State *L)
 {
   long err;
   SSL* ssl = CHECK_OBJECT(1, SSL, "openssl.ssl");
-  SSL_CTX* ctx = SSL_get_SSL_CTX(ssl);
 
   err = SSL_get_verify_result(ssl);
   lua_pushboolean(L, err == X509_V_OK);
@@ -566,7 +564,6 @@ static int openssl_ssl_ctx_verify_mode(lua_State*L)
     }
     return i;
   }
-  return 0;
 }
 
 static int openssl_ssl_ctx_set_cert_verify(lua_State*L)
@@ -820,7 +817,8 @@ static int tlsext_servername_callback(SSL *ssl, int *ad, void *arg)
   SSL_CTX *ctx = SSL_get_SSL_CTX(ssl);
   lua_State *L = SSL_CTX_get_app_data(ctx);
   const char *name = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
-
+  (void) ad;
+  (void) arg;
   /* No name, use default context */
   if (!name)
     return SSL_TLSEXT_ERR_NOACK;
@@ -1618,7 +1616,6 @@ static int openssl_ssl_write(lua_State*L)
   {
     return openssl_ssl_pushresult(L, s, ret);
   }
-  return 0;
 }
 
 static int openssl_ssl_do_handshake(lua_State*L)

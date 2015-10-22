@@ -405,7 +405,7 @@ static luaL_Reg ec_point_funs[] =
 
 static LUA_FUNCTION(openssl_ec_list_curve_name)
 {
-  size_t n = 0;
+  size_t i = 0;
   size_t crv_len = EC_get_builtin_curves(NULL, 0);
   EC_builtin_curve *curves = OPENSSL_malloc((int)(sizeof(EC_builtin_curve) * crv_len));
 
@@ -419,12 +419,12 @@ static LUA_FUNCTION(openssl_ec_list_curve_name)
   }
 
   lua_newtable(L);
-  for (n = 0; n < crv_len; n++)
+  for (i = 0; i < crv_len; i++)
   {
     const char *comment;
     const char *sname;
-    comment = curves[n].comment;
-    sname   = OBJ_nid2sn(curves[n].nid);
+    comment = curves[i].comment;
+    sname   = OBJ_nid2sn(curves[i].nid);
     if (comment == NULL) comment = "CURVE DESCRIPTION NOT AVAILABLE";
     if (sname == NULL)  sname = "";
 

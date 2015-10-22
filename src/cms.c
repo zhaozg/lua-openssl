@@ -303,15 +303,15 @@ static int openssl_cms_encrypt(lua_State *L)
       {
         size_t keylen, keyidlen;
 
-        unsigned char* key = (unsigned char*)luaL_checklstring(L, -2, &keylen);
-        unsigned char* keyid = (unsigned char*) luaL_checklstring(L, -1, &keyidlen);
+        const char* key = luaL_checklstring(L, -2, &keylen);
+        const char* keyid = luaL_checklstring(L, -1, &keyidlen);
 
-        key = memdup((const char*) key, keylen);
-        keyid = (unsigned char*) memdup((const char*)keyid, keyidlen);
+        key = memdup(key, keylen);
+        keyid =  memdup(keyid, keyidlen);
 
         recipient = CMS_add0_recipient_key(cms, NID_undef,
-          key, keylen,
-          keyid, keyidlen,
+          (unsigned char*)key, keylen,
+          (unsigned char*)keyid, keyidlen,
           NULL, NULL, NULL);
         if (!recipient)
           ret = 0;

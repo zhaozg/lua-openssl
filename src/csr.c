@@ -299,14 +299,6 @@ static LUA_FUNCTION(openssl_csr_sign)
     const unsigned char* sigdata = (const unsigned char*)luaL_checklstring(L, 3, &siglen);
     const EVP_MD* md = get_digest(L, 4);
 
-    X509_REQ* x = csr;
-    const ASN1_ITEM *it = ASN1_ITEM_rptr(X509_REQ_INFO);
-    X509_ALGOR *algor1 = csr->sig_alg;
-    X509_ALGOR *algor2 = NULL;
-    ASN1_BIT_STRING *signature = x->signature;
-    void *asn = x->req_info;
-    EVP_PKEY* pkey = X509_REQ_get_pubkey(csr);
-
     /* (pkey->ameth->pkey_flags & ASN1_PKEY_SIGPARAM_NULL) ? V_ASN1_NULL : V_ASN1_UNDEF, */
     X509_ALGOR_set0(csr->sig_alg, OBJ_nid2obj(md->pkey_type), V_ASN1_NULL, NULL);
 
@@ -329,7 +321,6 @@ static LUA_FUNCTION(openssl_csr_sign)
 static LUA_FUNCTION(openssl_csr_parse)
 {
   X509_REQ * csr = CHECK_OBJECT(1, X509_REQ, "openssl.x509_req");
-  int utf8 = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L, 2);
 
   X509_NAME * subject = X509_REQ_get_subject_name(csr);
   STACK_OF(X509_EXTENSION) *exts  = X509_REQ_get_extensions(csr);
@@ -354,15 +345,15 @@ static LUA_FUNCTION(openssl_csr_parse)
 
   {
     X509_REQ_INFO* ri = csr->req_info;
-    int i, n;
+    int i, c;
     EVP_PKEY *pubkey = X509_REQ_get_pubkey(csr);
 
     lua_newtable(L);
-    n = X509_REQ_get_attr_count(csr);
-    if (n > 0)
+    c = X509_REQ_get_attr_count(csr);
+    if (c > 0)
     {
       lua_newtable(L);
-      for (i = 0; i < n ; i++)
+      for (i = 0; i < c ; i++)
       {
         X509_ATTRIBUTE *attr = X509_REQ_get_attr(csr, i);
         attr = X509_ATTRIBUTE_dup(attr);

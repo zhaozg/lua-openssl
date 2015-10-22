@@ -38,7 +38,8 @@ static int openssl_xstore_add_lookup(lua_State* L)
   const static char* sMode[] = {"file", "dir", NULL};
   int mode = luaL_checkoption(L, 3, "file", sMode);
   const static char* sFormat[] = {"pem", "asn1", "default", NULL};
-  int fmt = luaL_checkoption(L, 4, "default", sFormat);
+  int iFormat[] = {X509_FILETYPE_PEM, X509_FILETYPE_ASN1, X509_FILETYPE_DEFAULT, -1};
+  int fmt = auxiliar_checkoption(L, 4, "default", sFormat, iFormat);
   int ret = 0;
   X509_LOOKUP *lookup = NULL;
   if (mode == 0)
@@ -46,7 +47,7 @@ static int openssl_xstore_add_lookup(lua_State* L)
     lookup = X509_STORE_add_lookup(ctx, X509_LOOKUP_file());
     if (lookup)
     {
-      ret = X509_LOOKUP_load_file(lookup, path, X509_FILETYPE_DEFAULT);
+      ret = X509_LOOKUP_load_file(lookup, path, fmt);
     }
   }
   else
@@ -54,7 +55,7 @@ static int openssl_xstore_add_lookup(lua_State* L)
     lookup = X509_STORE_add_lookup(ctx, X509_LOOKUP_hash_dir());
     if (lookup)
     {
-      ret = X509_LOOKUP_add_dir(lookup, path, X509_FILETYPE_DEFAULT);
+      ret = X509_LOOKUP_add_dir(lookup, path, fmt);
     }
   }
 

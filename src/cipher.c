@@ -474,7 +474,7 @@ static LUA_FUNCTION(openssl_evp_cipher_update)
   int outl = inl + EVP_MAX_BLOCK_LENGTH;
   char* out = OPENSSL_malloc(outl);
   CIPHER_MODE mode;
-  int ret;
+  int ret = 0;
 
   lua_rawgetp(L, LUA_REGISTRYINDEX, c);
   mode = lua_tointeger(L, -1);
@@ -504,7 +504,7 @@ static LUA_FUNCTION(openssl_evp_cipher_final)
   char out[EVP_MAX_BLOCK_LENGTH];
   int outl = sizeof(out);
   CIPHER_MODE mode;
-  int ret;
+  int ret = 0;
 
   lua_rawgetp(L, LUA_REGISTRYINDEX, c);
   mode = lua_tointeger(L, -1);

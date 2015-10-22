@@ -10,6 +10,7 @@
 #include <openssl/rsa.h>
 #include <openssl/dh.h>
 #include <openssl/dsa.h>
+#include <openssl/engine.h>
 
 #define MYNAME    "pkey"
 #define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
@@ -306,7 +307,6 @@ static LUA_FUNCTION(openssl_pkey_new)
 #ifndef OPENSSL_NO_EC
     else if (strcasecmp(alg, "ec") == 0)
     {
-      int ec_name = NID_undef;
       EC_KEY *ec = NULL;
       EC_GROUP *group = openssl_get_ec_group(L, 2, 3, 4);
       if (!group)
@@ -849,18 +849,45 @@ static LUA_FUNCTION(openssl_pkey_get_public)
   return ret;
 }
 
+static LUA_FUNCTION(openssl_ec_userId) {
+  EVP_PKEY* pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
+  ENGINE* engine = CHECK_OBJECT(2, ENGINE, "openssl.engine");
+
+  int ret = 0;
+  if (!pkey || EVP_PKEY_type(pkey->type) != EVP_PKEY_EC || !pkey->pkey.ec) {
+    luaL_argerror(L, 1, "only support EC key");
+  }
+  if (!engine)
+    luaL_argerror(L, 1, "EC key must have engine field");
+
+  if (lua_gettop(L) == 2) {
+    ASN1_OCTET_STRING *s = ASN1_OCTET_STRING_new();
+    ret = ENGINE_ctrl(engine, 0x474554, 0x4944, pkey->pkey.ec, (void(*)(void))s);
+    if (ret == 1)
+      lua_pushlstring(L, (const char*) ASN1_STRING_data(s), ASN1_STRING_length(s));
+    else
+      ret = openssl_pushresult(L, ret);
+    return ret;
+  } else {
+    ASN1_OCTET_STRING *s = ASN1_OCTET_STRING_new();
+    size_t l;
+    const char* data = luaL_checklstring(L, 3, &l);
+    ASN1_OCTET_STRING_set(s, (const unsigned char*) data, l);
+    ret = ENGINE_ctrl(engine, 0x534554, 0x4944, pkey->pkey.ec, (void(*)(void))s);
+    return openssl_pushresult(L, ret);
+  }
+}
+
 static LUA_FUNCTION(openssl_dh_compute_key)
 {
-  const char *pub_str;
-  size_t pub_len;
-  EVP_PKEY *pkey;
   BIGNUM *pub;
   char *data;
   int len;
   int ret = 0;
 
-  pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
-  pub_str = luaL_checklstring(L, 1, &pub_len);
+  EVP_PKEY* pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
+  size_t pub_len;
+  const char* pub_str = luaL_checklstring(L, 2, &pub_len);
 
   if (!pkey || EVP_PKEY_type(pkey->type) != EVP_PKEY_DH || !pkey->pkey.dh)
   {
@@ -966,7 +993,6 @@ static LUA_FUNCTION(openssl_seal)
   const char *data = NULL;
   int nkeys = 0;
   const EVP_CIPHER *cipher = NULL;
-  int top = lua_gettop(L);
 
   if (lua_istable(L, 1))
   {
@@ -998,7 +1024,6 @@ static LUA_FUNCTION(openssl_seal)
     int len1, len2;
     unsigned char *buf;
     char iv[EVP_MAX_MD_SIZE] = {0};
-    int ivlen = 0;
 
     pkeys = malloc(nkeys * sizeof(EVP_PKEY *));
     eksl = malloc(nkeys * sizeof(int));
@@ -1086,8 +1111,6 @@ static LUA_FUNCTION(openssl_seal_init)
   int nkeys = 0;
   const EVP_CIPHER *cipher = NULL;
 
-  int top = lua_gettop(L);
-
   if (lua_istable(L, 1))
   {
     nkeys = lua_rawlen(L, 1);
@@ -1110,14 +1133,10 @@ static LUA_FUNCTION(openssl_seal_init)
     EVP_PKEY **pkeys;
     unsigned char **eks;
     int *eksl;
-
     EVP_CIPHER_CTX *ctx = NULL;
-    int ret = 0;
 
     int i;
-
     char iv[EVP_MAX_MD_SIZE] = {0};
-    int ivlen = 0;
 
     pkeys = malloc(nkeys * sizeof(*pkeys));
     eksl = malloc(nkeys * sizeof(*eksl));
@@ -1232,7 +1251,7 @@ static LUA_FUNCTION(openssl_open)
   const char *data = luaL_checklstring(L, 2, &data_len);
   const char *ekey = luaL_checklstring(L, 3, &ekey_len);
   const char *iv = luaL_checklstring(L, 4, &iv_len);
-  int top = lua_gettop(L);
+
   int ret = 0;
   int len1, len2 = 0;
   unsigned char *buf;
@@ -1280,9 +1299,6 @@ static LUA_FUNCTION(openssl_open_init)
   size_t ekey_len, iv_len;
   const char *ekey = luaL_checklstring(L, 2, &ekey_len);
   const char *iv = luaL_checklstring(L, 3, &iv_len);
-  int top = lua_gettop(L);
-  int ret = 0;
-  int len2 = 0;
 
   const EVP_CIPHER *cipher = NULL;
 
@@ -1360,7 +1376,8 @@ static luaL_Reg pkey_funcs[] =
   {"open",          openssl_open},
 
   {"compute_key",   openssl_dh_compute_key},
-
+  {"ec_userId",     openssl_ec_userId},
+  
   {"__gc",          openssl_pkey_free},
   {"__tostring",    auxiliar_tostring},
 
@@ -1387,10 +1404,10 @@ static const luaL_Reg R[] =
   {"parse",         openssl_pkey_parse},
   {"bits",          openssl_pkey_bits},
 
-  {"encrypt",     openssl_pkey_encrypt},
-  {"decrypt",     openssl_pkey_decrypt},
-  {"sign",        openssl_sign},
-  {"verify",      openssl_verify},
+  {"encrypt",       openssl_pkey_encrypt},
+  {"decrypt",       openssl_pkey_decrypt},
+  {"sign",          openssl_sign},
+  {"verify",        openssl_verify},
 
   {"compute_key",   openssl_dh_compute_key},
 
@@ -1409,5 +1426,3 @@ int luaopen_pkey(lua_State *L)
 
   return 1;
 }
-
-

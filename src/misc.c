@@ -140,7 +140,6 @@ int openssl_pushresult(lua_State*L, int result)
   }
   else
   {
-    int i = 0;
     unsigned long val = ERR_get_error();
     lua_pushnil(L);
     if (val)
@@ -155,7 +154,6 @@ int openssl_pushresult(lua_State*L, int result)
     }
     return 3;
   }
-  return 0;
 }
 
 static const char* hex_tab = "0123456789abcdef";

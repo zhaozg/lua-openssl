@@ -122,3 +122,20 @@ TestString = {}
         assert(s4==s3)
     end
 
+TestTime = {}
+    function TestTime:setUp()
+        self.time = os.time()
+    end
+
+    function TestTime:testUTCTime()
+        local at = openssl.asn1.new_utctime()
+        assert(at:set(self.time))
+        local t1 = at:get(self.time)
+        assertEquals(self.time,t1)
+    end
+    function TestTime:testUTCTime()
+        local at = openssl.asn1.new_generalizedtime()
+        assert(at:set(self.time))
+        local t1 = at:get(self.time)
+        assertEquals(self.time,t1)
+    end

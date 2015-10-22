@@ -64,7 +64,6 @@ static LUA_FUNCTION(openssl_hex)
 
 static LUA_FUNCTION(openssl_base64)
 {
-  size_t l = 0;
   BIO *inp = load_bio_object(L, 1);
   int encode = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L, 2);
   int nonl = lua_isnoneornil(L, 3) ? BIO_FLAGS_BASE64_NO_NL
@@ -207,6 +206,7 @@ static int openssl_random_status(lua_State *L)
 
 static int openssl_random_cleanup(lua_State *L)
 {
+  (void) L;
   RAND_cleanup();
   return 0;
 }

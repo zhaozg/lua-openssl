@@ -11,7 +11,7 @@
 
 #define MYNAME "x509.attribute"
 
-static int openssl_xattr_totable(lua_State*L, X509_ATTRIBUTE *attr, int utf8)
+static int openssl_xattr_totable(lua_State*L, X509_ATTRIBUTE *attr)
 {
   lua_newtable(L);
   openssl_push_asn1object(L, attr->object);
@@ -41,8 +41,7 @@ static int openssl_xattr_totable(lua_State*L, X509_ATTRIBUTE *attr, int utf8)
 static int openssl_xattr_info(lua_State*L)
 {
   X509_ATTRIBUTE* attr = CHECK_OBJECT(1, X509_ATTRIBUTE, "openssl.x509_attribute");
-  int utf8 = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L, 2);
-  return openssl_xattr_totable(L, attr, utf8);
+  return openssl_xattr_totable(L, attr);
 }
 
 static int openssl_xattr_dup(lua_State*L)
@@ -146,9 +145,9 @@ static luaL_Reg x509_attribute_funs[] =
 static X509_ATTRIBUTE* openssl_new_xattribute(lua_State*L, X509_ATTRIBUTE** a, int idx, const char* eprefix)
 {
   int arttype;
-  size_t len;
+  size_t len = 0;
   int nid;
-  const char* data;
+  const char* data=NULL;
 
   lua_getfield(L, idx, "object");
   nid = openssl_get_nid(L, -1);
@@ -204,8 +203,9 @@ static X509_ATTRIBUTE* openssl_new_xattribute(lua_State*L, X509_ATTRIBUTE** a, i
       luaL_argerror(L, idx, "filed value only accept string or asn1_string");
   }
   lua_pop(L, 1);
-
-  return X509_ATTRIBUTE_create_by_NID(a, nid, arttype, data, len);
+  if (data)
+    return X509_ATTRIBUTE_create_by_NID(a, nid, arttype, data, len);
+  return 0;
 }
 
 

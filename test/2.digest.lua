@@ -86,24 +86,24 @@ TestSignVry = {}
     end
     function TestSignVry:testSignVry()
         local md = digest.get(self.alg)
-        local sctx = digest.signInit(md);
+        local sctx = digest.signInit(md,self.pubk);
         assert(sctx:signUpdate(self.msg))
         assert(sctx:signUpdate(self.msg))
         local sig = sctx:signFinal(self.prik)
         assertEquals(#sig,256)
-        local vctx = digest.verifyInit(md)
+        local vctx = digest.verifyInit(md,self.pubk)
         assert(vctx:verifyUpdate(self.msg))
         assert(vctx:verifyUpdate(self.msg))
-        assert(vctx:verifyFinal(sig,self.pubk))
+        assert(vctx:verifyFinal(sig))
     end
      function TestSignVry:testSignVry1()
         local md = digest.get(self.alg)
-        local sctx = md:signInit();
+        local sctx = md:signInit(self.prik);
         assert(sctx:signUpdate(self.msg))
         assert(sctx:signUpdate(self.msg))
         local sig = sctx:signFinal(self.prik)
         assertEquals(#sig,256)
-        local vctx = md:verifyInit()
+        local vctx = md:verifyInit(self.pubk)
         assert(vctx:verifyUpdate(self.msg))
         assert(vctx:verifyUpdate(self.msg))
         assert(vctx:verifyFinal(sig,self.pubk))

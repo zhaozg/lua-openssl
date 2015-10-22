@@ -128,7 +128,6 @@ static int openssl_xname_i2d(lua_State*L)
 static int openssl_xname_entry_count(lua_State*L)
 {
   X509_NAME* xn = CHECK_OBJECT(1, X509_NAME, "openssl.x509_name");
-  unsigned char* out = NULL;
   int len = X509_NAME_entry_count(xn);
   lua_pushinteger(L, len);
   return 1;

@@ -219,7 +219,8 @@ static int openssl_engine_ctrl(lua_State*L)
     {
       long i = (long)luaL_checknumber(L, 3);
       void* p = lua_touserdata(L, 4);
-      int ret = ENGINE_ctrl(eng, cmd, i, p, NULL);
+      void* arg = lua_isnoneornil(L, 5) ? NULL : lua_touserdata(L, 5);
+      int ret = ENGINE_ctrl(eng, cmd, i, p, arg);
       lua_pushboolean(L, ret);
     }
   }
@@ -230,8 +231,9 @@ static int openssl_engine_ctrl(lua_State*L)
     {
       long i = (long)luaL_checknumber(L, 3);
       void* p = lua_touserdata(L, 4);
-      int opt = luaL_optint(L, 5, 0);
-      int ret = ENGINE_ctrl_cmd(eng, cmd, i, p, NULL, opt);
+      void* arg = lua_isnoneornil(L, 5) ? NULL : lua_touserdata(L, 5);
+      int opt = luaL_optint(L, 6, 0);
+      int ret = ENGINE_ctrl_cmd(eng, cmd, i, p, arg, opt);
       lua_pushboolean(L, ret);
     }
     else

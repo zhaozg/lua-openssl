@@ -246,7 +246,6 @@ static LUA_FUNCTION(openssl_bio_new_filter)
       BIO_free(bio);
     return openssl_pushresult(L, ret);
   }
-  return 0;
 }
 
 /* bio object method */
@@ -444,9 +443,11 @@ static LUA_FUNCTION(openssl_bio_push)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
   BIO* append = CHECK_OBJECT(2, BIO, "openssl.bio");
-  BIO* end = BIO_push(bio, append);
-  assert(bio == end);
-  lua_pushvalue(L, 1);
+  bio = BIO_push(bio, append);
+  if (bio)
+    lua_pushvalue(L, 1);
+  else
+    lua_pushnil(L);
   return 1;
 }
 
@@ -586,7 +587,8 @@ void BIO_info_callback(BIO *bio, int cmd, const char *argp,
   char *p;
   long r = 1;
   size_t p_maxlen;
-
+  (void) argl;
+  (void) argp;
   if (BIO_CB_RETURN & cmd)
     r = ret;
 

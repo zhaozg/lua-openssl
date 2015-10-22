@@ -136,6 +136,8 @@ void CRYPTO_thread_cleanup(void)
 
 static void win32_locking_callback(int mode, int type, const char *file, int line)
 {
+  (void) file;
+  (void) line;
   if (mode & CRYPTO_LOCK)
   {
     WaitForSingleObject(lock_cs[type], INFINITE);
