@@ -1,4 +1,4 @@
---- 
+---
 -- Provide ssl function in lua.
 --
 -- @module ssl
@@ -15,12 +15,12 @@ do  -- define module function
 function ctx_new() end
 
 --- get alert_string for ssl state
--- @tparam number alert 
--- @tparam[opt=false] boolean long 
+-- @tparam number alert
+-- @tparam[opt=false] boolean long
 -- @treturn string alert type
 -- @treturn string desc string, if long set true will return long info
 function alert_string() end
- 
+
 end
 
 do  -- define class
@@ -38,12 +38,12 @@ do  -- define ssl_ctx
 function use() end
 
 --- add client ca cert and option extra chain cert
--- @tparam x509 clientca 
+-- @tparam x509 clientca
 -- @tparam[opt] table extra_chain_cert_array
 -- @treturn boolean result
 function add() end
 
---- set temp callback 
+--- set temp callback
 -- @tparam string keytype, 'dh','ecdh',or 'rsa'
 -- @tparam function tmp_cb
 -- @param[opt] vararg
@@ -62,13 +62,13 @@ function set_tmp() emd
 --- clean given mode
 -- mode support 'enable_partial_write','accept_moving_write_buffer','auto_retry','no_auto_chain','release_buffers'
 -- @tparam boolean clear must be true
--- @tparam string mode 
+-- @tparam string mode
 -- @param[opt] ...
 -- @treturn string
 -- @treturn ...
 -- @usage
 --  modes = { ssl_ctx:mode('enable_partial_write','accept_moving_write_buffer','auto_retry') },
---   
+--
 --   for  i, v in ipairs(modes)
 --     print(v)
 --  end
@@ -78,8 +78,8 @@ function mode() end
 --- get options
 -- @treturn table string list of current options
 function options() end
-  
---- set options 
+
+--- set options
 -- @tparam string option, support "microsoft_sess_id_bug", "netscape_challenge_bug", "netscape_reuse_cipher_change_bug",
 -- "sslref2_reuse_cert_type_bug", "microsoft_big_sslv3_buffer", "msie_sslv3_rsa_padding","ssleay_080_client_dh_bug",
 -- "tls_d5_bug","tls_block_padding_bug","dont_insert_empty_fragments","all", please to see ssl_options.h
@@ -87,7 +87,7 @@ function options() end
 function options() end
 
 --- clear options
--- @tparam boolean clear set true to clear options 
+-- @tparam boolean clear set true to clear options
 -- @tparam string option, support "microsoft_sess_id_bug", "netscape_challenge_bug", "netscape_reuse_cipher_change_bug",
 -- "sslref2_reuse_cert_type_bug", "microsoft_big_sslv3_buffer", "msie_sslv3_rsa_padding","ssleay_080_client_dh_bug",
 -- "tls_d5_bug","tls_block_padding_bug","dont_insert_empty_fragments","all",  please to see ssl_options.h
@@ -95,7 +95,7 @@ function options() end
 function options() end
 
 --- get timeout
--- @return number 
+-- @return number
 function timeout() end
 
 --- set timeout
@@ -109,8 +109,8 @@ function timeout() end
 -- @treturn boolean result
 function quiet_shutdown() end
 
---- set quiet_shutdown 
--- @tparam boolean quiet 
+--- set quiet_shutdown
+-- @tparam boolean quiet
 -- When setting the "quiet shutdown" flag to 1, ***SSL:shutdown*** will set the internal flags
 -- to SSL_SENT_SHUTDOWN|SSL_RECEIVED_SHUTDOWN. ***SSL:shutdown*** then behaves like
 -- ***SSL:set_shutdown*** called with SSL_SENT_SHUTDOWN|SSL_RECEIVED_SHUTDOWN.
@@ -139,12 +139,12 @@ function cert_store() end
 function cert_store() end
 
 --- get verify depth when cert chain veirition
--- @treturn number depth 
+-- @treturn number depth
 function verify_depth() end
 
 --- set verify depth when cert chain veirition
 -- @tparam number depth
--- @treturn number depth 
+-- @treturn number depth
 function verify_depth() end
 
 --- get verify_mode, return number mode and all string modes list
@@ -152,7 +152,7 @@ function verify_depth() end
 -- @return ...
  --  none: not verify client cert
  --  peer: verify client cert
- --  fail_if_no_peer_cert: if client not have cert, will failure
+ --  fail: if client not have cert, will failure
  --  once: verify client only once.
 -- @usage
 --  mode = {ctx:verify_mode()}
@@ -162,26 +162,25 @@ function verify_depth() end
 --  end
 function verify_mode() end
 
---- set verify mode and callback
--- @tparam table modes, array of mode set to ctx verify_cb
--- @tparam[opt=nil] function verify_cb nil will use default, when mode is 'none', will be ignore this, 
--- verify_cb must be boolean function(verifyarg) return false to end,true to continue
+--- set ssl verify mode and callback
+-- @tparam number mode, mode set to ctx, must be ssl.none or ssl.peer, and ssl.peer support combine with ssl.fail or ssl.once
+-- @tparam[opt=nil] function ssl verify callback in lua function, not give will use default openssl callback, when mode is 'none', will be ignore this
+-- verify_cb must be boolean function(verifyarg) prototype, return true to continue or false to end ssl handshake
 -- verifyarg has field 'error', 'error_string','error_depth','current_cert', and 'preverify_ok'
 -- @treturn boolean result
 function verify_mode() end
 
 --- set certificate verify callback function
--- @tparam function cert_verify_cb boolean function(verifyarg), if nil or none will use openssl default
--- verifyarg has field 'error', 'error_string','error_depth','current_cert'
--- @param[opt] arg pass to cert_verify_cb
+-- @tparam[opt] function cert_verify_cb with boolean function(verifyargs) prototype, if nil or none will use openssl default callback
+-- verifyargs has field 'error', 'error_string','error_depth','current_cert'
 function set_cert_verify() end
 
 --- set certificate verify options
--- @tparam table verify_cb_flag
+-- @tparam table verify_cb_flag support field always_continue with boolean value and verify_depth with number value.
 function set_cert_verify() end
 
 --- get current session cache mode
--- @ table modes as array, mode is 'no_auto_clear','server','client','both','off' 
+-- @ table modes as array, mode is 'no_auto_clear','server','client','both','off'
 function session_cache_mode()
 
 --- set session cache mode,and return old mode
@@ -197,16 +196,16 @@ function session_cache_mode(...)
 function bio() end
 
 --- create ssl object
--- @tparam bio bio 
+-- @tparam bio bio
 -- @tparam[opt=false] boolean server, true will make ssl server
--- @treturn ssl 
+-- @treturn ssl
 function ssl() end
 
 --- create ssl object
 -- @tparam bio input
 -- @tparam bio ouput
 -- @tparam[opt=false] boolean server, true will make ssl server
--- @treturn ssl 
+-- @treturn ssl
 function ssl() end
 
 end
@@ -214,16 +213,16 @@ end
 do  --define ssl object
 
 --- openssl.ssl object
---  All SSL object IO operation methods(connect, accept, handshake, read, 
+--  All SSL object IO operation methods(connect, accept, handshake, read,
 --  peek or write) return nil or false when fail or error.
---  When nil returned, it followed by 'ssl' or 'syscall', means SSL layer or 
---  system layer error. When false returned, it followed by number 0, 
---  'want_read','want_write','want_x509_lookup','want_connect','want_accept'. 
---  Numnber 0 means SSL connection closed, others means you should do some 
+--  When nil returned, it followed by 'ssl' or 'syscall', means SSL layer or
+--  system layer error. When false returned, it followed by number 0,
+--  'want_read','want_write','want_x509_lookup','want_connect','want_accept'.
+--  Numnber 0 means SSL connection closed, others means you should do some
 --  SSL operation.
 -- @type ssl
 
---- get value according to what, arg can be list, arg must be in below list 
+--- get value according to what, arg can be list, arg must be in below list
 -- @tparam string arg
 --  certificate:  return SSL certificates
 --  fd: return file or network connect fd
@@ -249,7 +248,7 @@ do  --define ssl object
 -- @return according to arg
 function get() end
 
---- set value according to what, arg can be list, arg must be in below list 
+--- set value according to what, arg can be list, arg must be in below list
 -- @tparam string arg
 --  certificate:  return SSL certificates
 --  fd: return file or network connect fd
@@ -263,7 +262,7 @@ function get() end
 --  trust:
 --  verify_result
 --  state
--- @param value val type accroding to arg 
+-- @param value val type accroding to arg
 -- @return value
 function set() end
 
@@ -284,39 +283,39 @@ function getfd() end
 
 --- get current cipher info
 -- @treturn table include name,version,id,bits,algbits and description
-function current_cipher() end 
+function current_cipher() end
 
 --- get current compression name
--- @treturn string 
-function current_compression() end 
+-- @treturn string
+function current_compression() end
 
 --- get peer certificate verify result
--- @treturn boolean true for success 
+-- @treturn boolean true for success
 -- @treturn table all certificate in chains verify result
 --  preverify_ok as boolean verify result
 --  error as number error code
---  error_string as string error message 
+--  error_string as string error message
 --  error_depth as number verify depth
 --  current_cert as x509 certificate to verified
 function getpeerverification() end
 
---- get ssl session 
+--- get ssl session
 -- @treturn ssl_session session object
-function session() end 
+function session() end
 
---- set ssl session 
+--- set ssl session
 -- @tparam string|ssl_session sesion
 --  reuse session would speed up ssl handshake
 -- @treturn boolean result
-function session() end 
+function session() end
 
 --- duplicate ssl object
--- @treturn ssl 
-function dup() end 
+-- @treturn ssl
+function dup() end
 
 --- get ssl_ctx associate with current ssl
 -- @treturn ssl_ctx
-function ctx() end 
+function ctx() end
 
 --- set ssl_ctx associate to current ssl
 -- @tparam ssl_ctx ctx
@@ -327,43 +326,43 @@ function ctx() end
 -- @treturn boolean result true for success
 function clear() end
 
---- get want to do 
+--- get want to do
 -- @treturn string 'nothing', 'reading', 'writing', 'x509_lookup'
 -- @treturn number state want
 function want() end
 
 --- get number of bytes available inside SSL fro immediate read
--- treturn number 
+-- treturn number
 function pending() end
 
---- do ssl server accept 
+--- do ssl server accept
 -- @treturn boolean true for success
--- @treturn string fail reason 
+-- @treturn string fail reason
 function accept() end
 
 --- do ssl client connect
 -- @treturn boolean true for success
 -- @treturn string fail reasion
 function connect() end
- 
+
 --- do ssl read
 -- @tparam[opt=4096] number length to read
 -- @treturn string data, nil or false for fail
--- @treturn string fail reason 
+-- @treturn string fail reason
 function read() end
 
 --- do ssl peak, data can be read again
 -- @tparam[opt=4096] number length to read
 -- @treturn string data, nil or false for fail
--- @treturn string fail reason 
+-- @treturn string fail reason
 function peek() end
 
 --- do ssl write
 -- @tparam string data
 -- @treturn number count of bytes write successfully
--- @treturn string fail reason 
+-- @treturn string fail reason
 function write() end
- 
+
 --- do ssl renegotiate
 -- @treturn boolean true for success
 -- @treturn string fail reasion
@@ -377,14 +376,14 @@ function handshake() end
 --- shutdown SSL connection
 function shutdown() end
 
---- shutdown ssl connect with special mode, disable read or write, 
+--- shutdown ssl connect with special mode, disable read or write,
 -- enable or disable quite shutdown
 -- @tparam string mode support 'read','write', 'quite', 'noquite'
 function shutdown() end
 
---- shutdown ssl connection with quite or noquite mode 
+--- shutdown ssl connection with quite or noquite mode
 -- @tparam boolean mode
--- @treturn[1] boolean if mode is true, return true or false for quite 
+-- @treturn[1] boolean if mode is true, return true or false for quite
 -- @treturn[2] string if mode is false, return 'read' or 'write' for shutdown direction
 function shutdown() end
 

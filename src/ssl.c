@@ -498,8 +498,8 @@ static const char* sVerifyMode_Options[] =
 {
   "none",
   "peer",
-  "fail_if_no_peer_cert",
-  "client_once",
+  "fail", /* fail_if_no_peer_cert */
+  "once",
   NULL
 };
 
@@ -508,16 +508,16 @@ static int openssl_ssl_ctx_verify_mode(lua_State*L)
   SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
   if (lua_gettop(L) > 1)
   {
-    size_t i;
-    int mode = 0;
-    luaL_checktable(L, 2);
-    for (i = 0; i < lua_rawlen(L, 2); i++)
-    {
-      lua_rawgeti(L, 2, i + 1);
-      mode |= auxiliar_checkoption(L, -1, NULL, sVerifyMode_Options, iVerifyMode_Options);
-      lua_pop(L, 1);
-    }
-    luaL_argcheck(L, lua_isnoneornil(L, 3) || lua_isfunction(L, 3), 3, "must be function callback");
+    int mode = luaL_checkint(L, 2);
+    luaL_argcheck(L,
+                  mode == SSL_VERIFY_NONE ||
+                  (mode & ~(SSL_VERIFY_PEER |
+                            SSL_VERIFY_FAIL_IF_NO_PEER_CERT |
+                            SSL_VERIFY_CLIENT_ONCE)) == 0,
+                  2,
+                  "must be none or peer(combined with fail, once or none");
+
+    luaL_argcheck(L, lua_isnoneornil(L, 3) || lua_isfunction(L, 3), 3, "must be callback function");
 
     if (lua_isfunction(L, 3))
     {
@@ -527,9 +527,10 @@ static int openssl_ssl_ctx_verify_mode(lua_State*L)
     }
     else
     {
+      lua_pushnil(L);
+      openssl_setvalue(L, ctx, "verify_cb");
       SSL_CTX_set_verify(ctx, mode, openssl_verify_cb);
     }
-
     return 0;
   }
   else
@@ -550,16 +551,15 @@ static int openssl_ssl_ctx_verify_mode(lua_State*L)
       {
         lua_pushstring(L, "peer");
         i += 1;
-      }
-      if (mode & SSL_VERIFY_FAIL_IF_NO_PEER_CERT)
-      {
-        lua_pushstring(L, "fail_if_no_peer_cert");
-        i += 1;
-      }
-      if (mode & SSL_VERIFY_CLIENT_ONCE)
-      {
-        lua_pushstring(L, "client_once");
-        i += 1;
+
+        if (mode & SSL_VERIFY_FAIL_IF_NO_PEER_CERT) {
+          lua_pushstring(L, "fail");
+          i += 1;
+        }
+        if (mode & SSL_VERIFY_CLIENT_ONCE) {
+          lua_pushstring(L, "once");
+          i += 1;
+        }
       }
     }
     return i;
@@ -569,26 +569,18 @@ static int openssl_ssl_ctx_verify_mode(lua_State*L)
 static int openssl_ssl_ctx_set_cert_verify(lua_State*L)
 {
   SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
-  if (lua_isfunction(L, 2) || lua_istable(L, 2))
+  luaL_argcheck(L, 
+                lua_isnone(L, 2) || (L, 2) || lua_istable(L, 2), 
+                2,
+                "need function or table contains flags");
+  if (lua_istable(L, 2)) {
+    lua_pushvalue(L, 2);
+    openssl_setvalue(L, ctx, "verify_cb_flags");
+    SSL_CTX_set_cert_verify_callback(ctx, openssl_cert_verify_cb, L);
+  }else if (lua_isfunction(L, 2))
   {
     lua_pushvalue(L, 2);
-    if (lua_istable(L, 2))
-    {
-      openssl_setvalue(L, ctx, "verify_cb_flags");
-      lua_pushvalue(L, 2);
-    }
     openssl_setvalue(L, ctx, "cert_verify_cb");
-    lua_pushvalue(L, 3);
-    openssl_setvalue(L, ctx, "cert_verify_data");
-    /*
-    X509_VERIFY_PARAM *param = X509_STORE_CTX_get0_param(xctx);
-    lua_getfield(L, -1, "ignore_purpose");
-    if (lua_toboolean(L, -1) && param)
-    {
-    X509_VERIFY_PARAM_set_purpose(param, X509_PURPOSE_SSL_SERVER);
-    X509_VERIFY_PARAM_set_trust(param, X509_TRUST_SSL_SERVER);
-    }
-    */
     SSL_CTX_set_cert_verify_callback(ctx, openssl_cert_verify_cb, L);
   }
   else
@@ -1888,6 +1880,10 @@ int luaopen_ssl(lua_State *L)
     LuaL_Enum e = ssl_options[i];
     lua_pushinteger(L, e.val);
     lua_setfield(L, -2, e.name);
+  }
+  for (i = 0; sVerifyMode_Options[i]; i++) {
+    lua_pushinteger(L, iVerifyMode_Options[i]);
+    lua_setfield(L, -2, sVerifyMode_Options[i]);
   }
 
   return 1;

@@ -13,7 +13,7 @@ local params = {
    key = "luasec/certs/serverAkey.pem",
    certificate = "luasec/certs/serverA.pem",
    cafile = "luasec/certs/rootA.pem",
-   verify = {"peer", "fail_if_no_peer_cert"},
+   verify = ssl.peer + ssl.fail,
    options = {"all", "no_sslv2"},
 }
 
@@ -74,6 +74,6 @@ function ssl_mode()
     end
 end
 
-pcall(ssl_mode)
+ssl_mode()
 debug.traceback()
 print(openssl.error(true))

@@ -13,7 +13,7 @@ local params = {
    key = "luasec/certs/clientAkey.pem",
    certificate = "luasec/certs/clientA.pem",
    cafile = "luasec/certs/rootA.pem",
-   verify = {"peer", "fail_if_no_peer_cert"},
+   verify = ssl.peer+ssl.fail,
    options = {"all", "no_sslv2"},
 }
 
@@ -35,7 +35,7 @@ function mk_connection(host,port,i)
       if (certstore) then
           ctx:cert_store(certstore)
       end
-      ctx:verify_mode({'peer'},function(arg)
+      ctx:verify_mode(ssl.peer,function(arg)
       --[[
             print(arg)
             --do some check

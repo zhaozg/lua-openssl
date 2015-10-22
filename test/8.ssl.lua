@@ -60,7 +60,6 @@ if uv then
         assertEquals(lcode,0)
     end
 
-
     function TestSSL:testUVBio()
         local lcode
         local stdout1 = uv.new_pipe(false)
@@ -103,7 +102,6 @@ if uv then
         uv.run()
         assertEquals(lcode,0)
     end
-
 
     function TestSSL:testUVsslconnectbio()
         local lcode
@@ -186,6 +184,7 @@ if uv then
         uv.run()
         assertEquals(lcode,0)
     end
+
 end
 
 
