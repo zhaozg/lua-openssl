@@ -809,7 +809,7 @@ static LUA_FUNCTION(openssl_pkcs7_parse)
     PKCS7_SIGNED *sign = p7->d.sign;
     PKCS7* c = sign->contents;
     PKCS7_SIGNER_INFO* si = sk_PKCS7_SIGNER_INFO_value(sign->signer_info, 0);
-    (void*)si;
+    (void)si;
     certs = sign->cert ? sign->cert : NULL;
     crls = sign->crl ? sign->crl : NULL;
 #if 0

@@ -5,13 +5,24 @@ local LUA = arg[-1]
 TestTCP = {}
 
 if uv then
-    function TestTCP:testUVTcp() 
+    local function set_timeout(timeout, callback)
+      local timer = uv.new_timer()
+      local function ontimeout()
+        uv.timer_stop(timer)
+        uv.close(timer)
+        callback(timer)
+      end
+      uv.timer_start(timer, timeout, 0, ontimeout)
+      return timer
+    end
+
+    function TestTCP:testUVTcp()
         local lcode = 1
         local stdout1 = uv.new_pipe(false)
         local stderr1 = uv.new_pipe(false)
         local stdout2 = uv.new_pipe(false)
         local stderr2 = uv.new_pipe(false)
-        
+
         local function onread(err, chunk)
           assert(not err, err)
           if (chunk) then
@@ -31,21 +42,23 @@ if uv then
         if pid then
             uv.read_start(stdout1, onread)
             uv.read_start(stderr1, onread)
-            local child, pid
-            child, pid = uv.spawn(LUA, {
-              args = {"0.tcp_c.lua",'127.0.0.1',8081},
-              stdio = {nil, stdout2, stderr2}
-            }, function (code, signal)
-                assertEquals(code,0)
-                uv.close(child)
-                lcode = 0
+            set_timeout(1000,function()
+                local child, pid
+                child, pid = uv.spawn(LUA, {
+                  args = {"0.tcp_c.lua",'127.0.0.1',8081},
+                  stdio = {nil, stdout2, stderr2}
+                }, function (code, signal)
+                    assertEquals(code,0)
+                    uv.close(child)
+                    lcode = 0
+                end)
+                if pid then
+                    uv.read_start(stdout2, onread)
+                    uv.read_start(stderr2, onread)
+                end
             end)
-            if pid then
-                uv.read_start(stdout2, onread)
-                uv.read_start(stderr2, onread)
-            end
         end
-        
+
         uv.run()
         uv.loop_close()
         assertEquals(lcode,0)
@@ -61,7 +74,7 @@ if luv then
     local function P(pipe, read)
       return {
         stream = pipe,
-        flags = luv.CREATE_PIPE + 
+        flags = luv.CREATE_PIPE +
                 (read and luv.READABLE_PIPE or luv.WRITABLE_PIPE)
       }
     end
@@ -72,7 +85,7 @@ if luv then
           stdio = {{}, P(o, false), P(e, false)}
         }, c)
     end
-    
+
     function TestTCP:testLUVTCP()
         local function onread(pipe, err, chunk)
             if err then

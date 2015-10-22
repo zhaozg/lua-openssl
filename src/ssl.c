@@ -570,7 +570,7 @@ static int openssl_ssl_ctx_set_cert_verify(lua_State*L)
 {
   SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
   luaL_argcheck(L, 
-                lua_isnone(L, 2) || (L, 2) || lua_istable(L, 2), 
+                lua_isnone(L, 2) || lua_isfunction(L, 2) || lua_istable(L, 2), 
                 2,
                 "need function or table contains flags");
   if (lua_istable(L, 2)) {

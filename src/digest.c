@@ -375,11 +375,11 @@ static LUA_FUNCTION(openssl_signFinal)
 {
   EVP_MD_CTX *ctx = CHECK_OBJECT(1, EVP_MD_CTX, "openssl.evp_digest_ctx");
   EVP_PKEY *pkey = lua_gettop(L) > 1 ? CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey") : NULL;
-  unsigned int siglen = EVP_PKEY_size(pkey);
+  size_t siglen = EVP_PKEY_size(pkey);
   unsigned char *sigbuf = malloc(siglen + 1);
   int ret = 0;
   if (pkey)
-    ret = EVP_SignFinal(ctx, sigbuf, &siglen, pkey);
+    ret = EVP_SignFinal(ctx, sigbuf, (unsigned int *)&siglen, pkey);
   else
     ret = EVP_DigestSignFinal(ctx, sigbuf, &siglen);
   if (ret==1)
