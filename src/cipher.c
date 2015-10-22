@@ -101,7 +101,7 @@ static LUA_FUNCTION(openssl_evp_encrypt)
           if (ret == 1)
           {
             output_len += len;
-            lua_pushlstring(L, (char*) buffer, output_len);
+            lua_pushlstring(L,  buffer, output_len);
           }
         }
         OPENSSL_free(buffer);
@@ -178,7 +178,7 @@ static LUA_FUNCTION(openssl_evp_decrypt)
           if (ret == 1)
           {
             output_len += len;
-            lua_pushlstring(L, (char*) buffer, output_len);
+            lua_pushlstring(L, buffer, output_len);
           }
         }
         OPENSSL_free(buffer);
@@ -262,7 +262,7 @@ static LUA_FUNCTION(openssl_evp_cipher)
           if (ret == 1)
           {
             output_len += len;
-            lua_pushlstring(L, (char*) buffer, output_len);
+            lua_pushlstring(L, buffer, output_len);
           }
         }
         OPENSSL_free(buffer);

@@ -104,7 +104,8 @@ int openssl_verify_cb(int preverify_ok, X509_STORE_CTX *xctx)
                                         SSL_get_ex_data_X509_STORE_CTX_idx());
   SSL_CTX *ctx = ssl ? SSL_get_SSL_CTX(ssl) : NULL;
   lua_State *L = ctx ? SSL_CTX_get_app_data(ctx) : NULL;
-  openssl_newvalue(L, ssl);
+  if (ssl)
+    openssl_newvalue(L, ssl);
   return ctx ? verify_cb(preverify_ok, xctx, L, ssl, ctx) : 0;
 };
 
@@ -114,6 +115,8 @@ int openssl_cert_verify_cb(X509_STORE_CTX *xctx, void* u)
   SSL *ssl = X509_STORE_CTX_get_ex_data(xctx,
                                         SSL_get_ex_data_X509_STORE_CTX_idx());
   SSL_CTX *ctx = ssl ? SSL_get_SSL_CTX(ssl) : NULL;
+  if (ssl)
+    openssl_newvalue(L, ssl);
   int preverify_ok = ctx ? verify_cb(-1, xctx, L, ssl, ctx) : 0;
   return preverify_ok == -1 ? 0 : preverify_ok;
 };

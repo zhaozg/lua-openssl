@@ -33,7 +33,7 @@ static int openssl_xname_hash(lua_State*L)
 {
   X509_NAME* xname = CHECK_OBJECT(1, X509_NAME, "openssl.x509_name");
   unsigned long hash = X509_NAME_hash(xname);
-  lua_pushinteger(L, hash);
+  lua_pushnumber(L, hash);
   return 1;
 };
 
