@@ -245,6 +245,9 @@ static LUA_FUNCTION(openssl_x509_parse)
   lua_setfield(L, -2, "notBefore");
   PUSH_ASN1_TIME(L, X509_get_notAfter(cert));
   lua_setfield(L, -2, "notAfter");
+  
+  PUSH_OBJECT(X509_ALGOR_dup(cert->sig_alg), "openssl.x509_algor");
+  lua_setfield(L, -2, "sig_alg");
 
   {
     int l = 0;
@@ -1047,6 +1050,8 @@ int luaopen_x509(lua_State *L)
   lua_setfield(L, -2, "extension");
   openssl_register_xstore(L);
   lua_setfield(L, -2, "store");
+  openssl_register_xalgor(L);
+  lua_setfield(L, -2, "algor");
 
   luaopen_x509_req(L);
   lua_setfield(L, -2, "req");

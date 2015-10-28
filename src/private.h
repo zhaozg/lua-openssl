@@ -113,6 +113,7 @@ int openssl_register_xname(lua_State*L);
 int openssl_register_xattribute(lua_State*L);
 int openssl_register_xextension(lua_State*L);
 int openssl_register_xstore(lua_State*L);
+int openssl_register_xalgor(lua_State*L);
 int openssl_sk_index(lua_State*L, int i, int num, int idx);
 
 int openssl_pushresult(lua_State*L, int result);
