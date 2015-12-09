@@ -128,6 +128,8 @@ int openssl_verify_cb(int preverify_ok, X509_STORE_CTX *xctx);
 int openssl_cert_verify_cb(X509_STORE_CTX *xctx, void* u);
 void openssl_xstore_free(X509_STORE* ctx);
 
+STACK_OF(X509_ALGOR)* openssl_sk_x509_algor_dup(STACK_OF(X509_ALGOR)*);
+
 #ifdef HAVE_USER_CUSTOME
 #include HAVE_USER_CUSTOME
 #endif

@@ -7,6 +7,8 @@
 
 #include "openssl.h"
 #include "private.h"
+#include "sk.h"
+IMP_LUA_SK(X509_ALGOR, x509_algor)
 
 #define MYNAME "x509.algor"
 
@@ -135,5 +137,8 @@ int openssl_register_xalgor(lua_State*L)
   auxiliar_newclass(L, "openssl.x509_algor", xalgor_funcs);
   lua_newtable(L);
   luaL_setfuncs(L, R, 0);
+
+  openssl_register_sk_x509_algor(L);
+
   return 1;
 }

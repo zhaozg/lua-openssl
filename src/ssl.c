@@ -1373,7 +1373,7 @@ static int openssl_ssl_get(lua_State*L)
     else if (strcmp(what, "client_CA_list") == 0)
     {
       STACK_OF(X509_NAME)* sn = SSL_get_client_CA_list(s);
-      PUSH_OBJECT(sn, "openssl.sk_x509_name");
+      PUSH_OBJECT(sn, "openssl.stack_of_x509_name");
     }
     else if (strcmp(what, "read_ahead") == 0)
     {

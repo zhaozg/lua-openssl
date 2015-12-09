@@ -669,21 +669,17 @@ static LUA_FUNCTION(openssl_pkcs7_verify)
   if (PKCS7_verify(p7, signers, store, in, out, flags) == 1)
   {
     STACK_OF(X509) *signers1 = PKCS7_get0_signers(p7, NULL, flags);
-    if (out)
+    if (signers1) {
+      signers1 = openssl_sk_x509_dup(signers1);
+      PUSH_OBJECT(signers1, "openssl.stack_of_x509");
+      ret += 1;
+    }
+    if (out && (flags & PKCS7_DETACHED) == 0)
     {
       BUF_MEM *bio_buf;
 
       BIO_get_mem_ptr(out, &bio_buf);
       lua_pushlstring(L, bio_buf->data, bio_buf->length);
-      ret = 1;
-    }
-    else
-      ret = 0;
-
-    if (signers1)
-    {
-      signers1 = openssl_sk_x509_dup(signers1);
-      PUSH_OBJECT(signers1, "openssl.sk_x509");
       ret += 1;
     }
   }
@@ -824,8 +820,10 @@ static LUA_FUNCTION(openssl_pkcs7_parse)
       struct pkcs7_st     *contents;
     } PKCS7_SIGNED;
 #endif
-    AUXILIAR_SETOBJECT(L, sk_X509_ALGOR_dup(sign->md_algs), "openssl.stack_of_x509_algor", -1, "md_algs");
+    AUXILIAR_SETOBJECT(L, openssl_sk_x509_algor_dup(sign->md_algs), "openssl.stack_of_x509_algor", -1, "md_algs");
+#if 0
     AUXILIAR_SETOBJECT(L, sk_PKCS7_SIGNER_INFO_dup(sign->signer_info), "openssl.stack_of_pkcs7_signer_info", -1, "signer_info");
+#endif
     AUXILIAR_SET(L, -1, "detached", PKCS7_is_detached(p7), boolean);
 
     if (c)
