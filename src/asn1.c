@@ -339,13 +339,21 @@ static int openssl_asn1object_name(lua_State* L) {
 
 static int openssl_asn1object_ln(lua_State* L) {
   ASN1_OBJECT* o = CHECK_OBJECT(1, ASN1_OBJECT, "openssl.asn1_object");
-  lua_pushstring(L, o->ln);
+  const char* s = OBJ_nid2ln(OBJ_obj2nid(o));
+  if (s != NULL)
+    lua_pushstring(L, s);
+  else
+    lua_pushnil(L);
   return 1;
 }
 
 static int openssl_asn1object_sn(lua_State* L) {
   ASN1_OBJECT* o = CHECK_OBJECT(1, ASN1_OBJECT, "openssl.asn1_object");
-  lua_pushstring(L, o->sn);
+  const char* s = OBJ_nid2sn(OBJ_obj2nid(o));
+  if (s != NULL)
+    lua_pushstring(L, s);
+  else
+    lua_pushnil(L);
   return 1;
 }
 
@@ -1165,11 +1173,7 @@ int openssl_get_nid(lua_State*L, int idx)
 
 int openssl_push_asn1object(lua_State* L, const ASN1_OBJECT* obj)
 {
-  luaL_Buffer B;
-  luaL_buffinit(L, &B);
-
-  luaL_addsize(&B, OBJ_obj2txt(luaL_prepbuffer(&B), LUAL_BUFFERSIZE, obj, 0));
-  luaL_pushresult(&B);
+  PUSH_OBJECT(OBJ_dup(obj), "openssl.asn1_object");
   return 1;
 }
 
