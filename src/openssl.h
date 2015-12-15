@@ -53,8 +53,8 @@
 * (Prior to 0.9.5a beta1, a different scheme was used: MMNNFFRBB for
 *  major minor fix final patch/beta)
 */
-#define LOPENSSL_VERSION_NUM  0x00400001
-#define LOPENSSL_VERSION  "0.4.1"
+#define LOPENSSL_VERSION_NUM  0x00500001
+#define LOPENSSL_VERSION  "0.5.1"
 
 #if OPENSSL_VERSION_NUMBER >= 0x10000000L
 #include <openssl/lhash.h>
