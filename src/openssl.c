@@ -294,26 +294,30 @@ void CRYPTO_thread_cleanup(void);
 
 LUALIB_API int luaopen_openssl(lua_State*L)
 {
+  static int init = 0;
+  if (init == 0) {
 #if defined(OPENSSL_THREADS)
-  CRYPTO_thread_setup();
+    CRYPTO_thread_setup();
 #endif
 
-  OpenSSL_add_all_ciphers();
-  OpenSSL_add_all_digests();
-  SSL_library_init();
+    OpenSSL_add_all_ciphers();
+    OpenSSL_add_all_digests();
+    SSL_library_init();
 
-  ERR_load_ERR_strings();
-  ERR_load_EVP_strings();
-  ERR_load_crypto_strings();
+    ERR_load_ERR_strings();
+    ERR_load_EVP_strings();
+    ERR_load_crypto_strings();
 
-  ENGINE_load_dynamic();
-  ENGINE_load_openssl();
+    ENGINE_load_dynamic();
+    ENGINE_load_openssl();
 #ifdef LOAD_ENGINE_CUSTOM
-  LOAD_ENGINE_CUSTOM();
+    LOAD_ENGINE_CUSTOM();
 #endif
 #ifdef OPENSSL_SYS_WINDOWS
-  RAND_screen();
+    RAND_screen();
 #endif
+    init = 1;
+  }
 
   lua_newtable(L);
   luaL_setfuncs(L, eay_functions, 0);
