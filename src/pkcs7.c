@@ -435,12 +435,11 @@ static LUA_FUNCTION(openssl_pkcs7_sign_digest) {
       ASN1_STRING_set0(os, (unsigned char *) cont, contlen);
     }
   }
+
   ret = 1;
-  lua_pushboolean(L, 1);
-  return 1;
-  err:
-    EVP_MD_CTX_cleanup(&mdc);
-  return openssl_pushresult(L, 0);
+err:
+  EVP_MD_CTX_cleanup(&mdc);
+  return openssl_pushresult(L, ret);
 }
 
 int PKCS7_signatureVerify_digest(PKCS7 *p7, PKCS7_SIGNER_INFO *si, X509 *x509,
@@ -451,7 +450,7 @@ int PKCS7_signatureVerify_digest(PKCS7 *p7, PKCS7_SIGNER_INFO *si, X509 *x509,
   int ret = 0, i;
   int md_type;
   STACK_OF(X509_ATTRIBUTE) *sk;
-  EVP_PKEY *pkey;
+  EVP_PKEY *pkey = NULL;
 
   EVP_MD_CTX_init(&mdc);
   EVP_MD_CTX_init(&mdc_tmp);
@@ -472,6 +471,11 @@ int PKCS7_signatureVerify_digest(PKCS7 *p7, PKCS7_SIGNER_INFO *si, X509 *x509,
   else
     EVP_DigestUpdate(&mdc, data, len);
 
+  pkey = X509_get_pubkey(x509);
+  if (!pkey) {
+    ret = -1;
+    goto err;
+  }
   /*
   * mdc is the digest ctx that we want, unless there are attributes, in
   * which case the digest is the signed attributes
@@ -499,7 +503,7 @@ int PKCS7_signatureVerify_digest(PKCS7 *p7, PKCS7_SIGNER_INFO *si, X509 *x509,
     ret = -1;
     goto err;
     }
-    if (!EVP_DigestVerifyInit(&mdc_tmp, NULL, EVP_get_digestbynid(md_type), NULL, X509_get_pubkey(x509)))
+    if (!EVP_DigestVerifyInit(&mdc_tmp, NULL, EVP_get_digestbynid(md_type), NULL, pkey))
       goto err;
 
     alen = ASN1_item_i2d((ASN1_VALUE *) sk, &abuf,
@@ -516,13 +520,7 @@ int PKCS7_signatureVerify_digest(PKCS7 *p7, PKCS7_SIGNER_INFO *si, X509 *x509,
   }
 
   os = si->enc_digest;
-  pkey = X509_get_pubkey(x509);
-  if (!pkey) {
-    ret = -1;
-    goto err;
-  }
   i = EVP_VerifyFinal(&mdc_tmp, os->data, os->length, pkey);
-  EVP_PKEY_free(pkey);
   if (i <= 0) {
     PKCS7err(PKCS7_F_PKCS7_SIGNATUREVERIFY, PKCS7_R_SIGNATURE_FAILURE);
     ret = -1;
@@ -530,6 +528,7 @@ int PKCS7_signatureVerify_digest(PKCS7 *p7, PKCS7_SIGNER_INFO *si, X509 *x509,
   } else
     ret = 1;
 err:
+  EVP_PKEY_free(pkey);
   EVP_MD_CTX_cleanup(&mdc);
   EVP_MD_CTX_cleanup(&mdc_tmp);
   
@@ -668,20 +667,16 @@ static LUA_FUNCTION(openssl_pkcs7_verify)
     flags |= PKCS7_NOVERIFY;
   if (PKCS7_verify(p7, signers, store, in, out, flags) == 1)
   {
-    STACK_OF(X509) *signers1 = PKCS7_get0_signers(p7, NULL, flags);
-    if (signers1) {
-      signers1 = openssl_sk_x509_dup(signers1);
-      PUSH_OBJECT(signers1, "openssl.stack_of_x509");
-      ret += 1;
-    }
     if (out && (flags & PKCS7_DETACHED) == 0)
     {
       BUF_MEM *bio_buf;
 
       BIO_get_mem_ptr(out, &bio_buf);
       lua_pushlstring(L, bio_buf->data, bio_buf->length);
-      ret += 1;
+    } else {
+      lua_pushboolean(L, 1);
     }
+    ret += 1;
   }
   else
   {

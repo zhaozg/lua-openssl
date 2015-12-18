@@ -33,8 +33,8 @@ function sign() end
 -- @tparam[opt] x509_store cacerts
 -- @tparam[opt] string|bio msg
 -- @tparam[opt=0] number flags
--- @treturn string content
--- @treturn stack_of_x509 signers
+-- @treturn[1] string content
+-- @treturn[1] boolean result
 function verify() end
 
 --- encrypt message with recipcerts certificates return encrypted pkcs7 object
