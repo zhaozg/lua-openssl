@@ -56,9 +56,16 @@ TestX509Name = {}
         assert(n1:add_entry('OU',utf_cn,true))
         local S, i = n1:get_text('OU')
         assertEquals(i,3)
+
+        local t = n1:info()
+        for i=1,#t do
+                v = t[i]
+                assertIsTable(v)
+        end
+
         local k,v = n1:delete_entry(3)
         assertStrContains(tostring(k),'openssl.asn1_object')
-	_,_,opensslv = openssl.version(true)
+        _,_,opensslv = openssl.version(true)
         if opensslv > 0x10002000 then
             assertEquals(v:toprint(),[[\UD6D0\UCEC4\UC3FB\UD7D6]])
             assertEquals(v:tostring(), v:toutf8())

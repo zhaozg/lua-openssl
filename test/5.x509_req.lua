@@ -181,6 +181,7 @@ wSpxg0VN6+i6u9C9n4xwCe1VyteOC2In0LbxMAGL3rVFm9yDFRU3LDy3EWG6DIg/
         assertIsNumber(t.version)
         assertIsTable(t.req_info)
         assertIsTable(t.req_info.pubkey)
-        assertIsString(t.req_info.pubkey.algorithm)
+
+        assertIsUserdata(t.req_info.pubkey.algorithm)
         assertIsUserdata(t.req_info.pubkey.pubkey)
 end

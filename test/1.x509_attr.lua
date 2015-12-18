@@ -42,7 +42,7 @@ TestX509attr = {}
         local info = n1:info()
 
         assertIsTable(info)
-        assertEquals(info.object, "X509v3 Basic Constraints")
+        assertEquals(info.object:ln(), "X509v3 Basic Constraints")
         assertEquals(info.single,false)
         assertEquals(info.value[1].type, asn1.OCTET_STRING)
         assertEquals(info.value[1].value, "CA:FALSE")

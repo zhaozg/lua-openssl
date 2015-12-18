@@ -11,7 +11,7 @@ TestX509 = {}
 
         self.digest = 'sha1WithRSAEncryption'
     end
-    
+
 function TestX509:testNew()
         --cacert, self sign
         local pkey = assert(openssl.pkey.new())
@@ -33,7 +33,7 @@ function TestX509:testNew()
         assert(d=='abcd')
         assert(cacert:check(pkey),'self sign check failed')
         assert(cacert:check(openssl.x509.store.new({cacert}) ))
-        
+
         --sign cert by cacert
 
         local dkey = openssl.pkey.new()
@@ -75,11 +75,14 @@ sggwDQYJKoZIhvcNAQEEBQADQQCU5SSgapJSdRXJoX+CpCvFy+JVh9HpSjCpSNKO
         assert(x:notbefore())
         assert(x:notafter())
 
+        print(os.date('%c', x:notafter():get()))
+
         assertIsNil(x:extensions())
-        
+
         assert(x:subject())
         assert(x:issuer())
-        
+
+
         x = x509.purpose()
         assert(#x==9)
 end

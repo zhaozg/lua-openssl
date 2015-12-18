@@ -39,7 +39,7 @@ TestX509ext = {}
         assertStrContains(tostring(n1),'openssl.x509_extension')
         local info = n1:info()
         assertIsTable(info)
-        assertEquals(info.object, "X509v3 Basic Constraints")
+        assertEquals(info.object:ln(), "X509v3 Basic Constraints")
         assertEquals(info.critical,true)
         assertEquals(info.value:tostring(), "CA:FALSE")
         local n2 = n1:dup()
