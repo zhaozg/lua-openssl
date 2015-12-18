@@ -60,9 +60,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#ifdef LINUX
-#include <typedefs.h>
-#endif
 #ifdef OPENSSL_SYS_WIN32
 #include <windows.h>
 #endif

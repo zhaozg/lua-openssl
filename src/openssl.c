@@ -287,12 +287,16 @@ static const luaL_Reg eay_functions[] =
   {NULL, NULL}
 };
 
+#if defined(OPENSSL_THREADS)
 void CRYPTO_thread_setup(void);
 void CRYPTO_thread_cleanup(void);
+#endif
 
 LUALIB_API int luaopen_openssl(lua_State*L)
 {
-  //CRYPTO_thread_setup();
+#if defined(OPENSSL_THREADS)
+  CRYPTO_thread_setup();
+#endif
 
   OpenSSL_add_all_ciphers();
   OpenSSL_add_all_digests();
