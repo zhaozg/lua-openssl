@@ -142,7 +142,7 @@ static luaL_Reg x509_attribute_funs[] =
   { NULL, NULL }
 };
 
-static X509_ATTRIBUTE* openssl_new_xattribute(lua_State*L, X509_ATTRIBUTE** a, int idx, const char* eprefix)
+X509_ATTRIBUTE* openssl_new_xattribute(lua_State*L, X509_ATTRIBUTE** a, int idx, const char* eprefix)
 {
   int arttype;
   size_t len = 0;

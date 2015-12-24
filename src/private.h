@@ -133,6 +133,8 @@ STACK_OF(X509_EXTENSION)* openssl_sk_x509_extension_fromtable(lua_State *L, int 
 int openssl_sk_x509_extension_totable(lua_State *L, STACK_OF(X509_EXTENSION)* sk);
 int openssl_sk_x509_algor_totable(lua_State *L, STACK_OF(X509_ALGOR)* sk);
 
+X509_ATTRIBUTE* openssl_new_xattribute(lua_State*L, X509_ATTRIBUTE** a, int idx, const char* eprefix);
+
 #ifdef HAVE_USER_CUSTOME
 #include HAVE_USER_CUSTOME
 #endif

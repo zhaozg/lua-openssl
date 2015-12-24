@@ -194,8 +194,11 @@ static LUA_FUNCTION(openssl_csr_verify)
 {
   X509_REQ *csr = CHECK_OBJECT(1, X509_REQ, "openssl.x509_req");
   EVP_PKEY * self_key = X509_REQ_get_pubkey(csr);
-  lua_pushboolean(L, X509_REQ_verify(csr, self_key) == 1);
-  EVP_PKEY_free(self_key);
+  if (self_key) {
+    lua_pushboolean(L, X509_REQ_verify(csr, self_key) == 1);
+    EVP_PKEY_free(self_key);
+  } else
+    lua_pushboolean(L, 0);
   return 1;
 };
 
@@ -259,8 +262,15 @@ static LUA_FUNCTION(openssl_csr_sign)
   EVP_PKEY *pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
   if (openssl_pkey_is_private(pkey))
   {
-    const EVP_MD* md = get_digest(L, 3);
-    return openssl_pushresult(L, X509_REQ_sign(csr, pkey, md));
+    const EVP_MD* md = lua_isnone(L, 3) ? EVP_get_digestbyname("sha1") : get_digest(L, 3);
+    int ret = X509_REQ_set_pubkey(csr, pkey);
+    if (ret == 1) {
+      ret = X509_REQ_sign(csr, pkey, md);
+      if (ret > 0)
+        ret = 1;
+    }
+
+    return openssl_pushresult(L, 1);
   } else if (lua_isnoneornil(L, 3) && X509_REQ_set_pubkey(csr, pkey))
   {
     unsigned char* tosign = NULL;
@@ -469,7 +479,27 @@ static LUA_FUNCTION(openssl_csr_attribute)
     else
       lua_pushnil(L);
     return 1;
+  } else if (lua_istable(L, 2)) {
+    int ret = 1;
+    int n = lua_rawlen(L, 2);
+    for (int i = 1; ret==1 && i <= n; i++) {
+      X509_ATTRIBUTE *attr;
+      lua_rawgeti(L, 2, i);
+      attr = NULL;
+      if (lua_istable(L, -1)) {
+        attr = openssl_new_xattribute(L, &attr, -1, NULL);
+        ret = X509_REQ_add1_attr(csr, attr);
+        X509_ATTRIBUTE_free(attr);
+      }else{
+        attr = CHECK_OBJECT(-1, X509_ATTRIBUTE, "openssl.x509_attribute");
+        ret = X509_REQ_add1_attr(csr, attr);
+      }
+      lua_pop(L, 1);
+    }
+    openssl_pushresult(L, ret);
+    return 1;
   }
+
   return 0;
 }
 

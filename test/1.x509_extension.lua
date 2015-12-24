@@ -29,11 +29,6 @@ TestX509ext = {}
     function TestX509ext:tearDown()
     end
 
-    function TestX509ext:testsk()
-        local sk  = ext.new_sk_extension(self.exts)
-        assert(#sk,3)
-    end
-
     function TestX509ext:testAll()
         local n1 = ext.new_extension(self.ca)
         assertStrContains(tostring(n1),'openssl.x509_extension')

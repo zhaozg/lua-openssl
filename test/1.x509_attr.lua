@@ -31,10 +31,6 @@ TestX509attr = {}
     function TestX509attr:tearDown()
     end
 
-    function TestX509attr:testsk()
-        local sk  = attr.new_sk_attribute(self.attrs)
-        assert(#sk,3)
-    end
 
     function TestX509attr:testAll()
         local n1 = attr.new_attribute(self.ca)

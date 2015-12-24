@@ -133,7 +133,7 @@ void openssl_add_method(const OBJ_NAME *name, void *arg)
 
 int openssl_pushresult(lua_State*L, int result)
 {
-  if (result == 1)
+  if (result >= 1)
   {
     lua_pushboolean(L, 1);
     return 1;

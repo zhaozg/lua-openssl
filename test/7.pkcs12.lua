@@ -23,23 +23,22 @@ function TestCompat:testNew()
         )
         local dkey = openssl.pkey.new()
         req = assert(csr.new(self.dn,dkey))
-        
-        local extensions = 
-        openssl.x509.extension.new_sk_extension(
+
+        local extensions =
         {{
             object='nsCertType',
             value = 'email',
             --critical = true
         },{
             object='extendedKeyUsage',
-            value = 'emailProtection' 
-        }})
+            value = 'emailProtection'
+        }}
 
         local cert = openssl.x509.new(2,req,extensions)
         cert:validat(os.time(), os.time() + 3600*24*365)
         assert(cert:sign(pkey,cacert))
 
-        local certs = assert(x509.sk_x509_new({cert}))
+        local certs =  {cert}
 
         local ss = assert(openssl.pkcs12.export(cert,dkey,'secret','USER'))
         local tt = assert(openssl.pkcs12.read(ss,'secret'))

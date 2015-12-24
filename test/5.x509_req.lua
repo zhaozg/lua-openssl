@@ -16,19 +16,20 @@ TestCSR = {}
                 self.cafalse = openssl.asn1.new_string('CA:FALSE',asn1.OCTET_STRING)
 
                 self.exts = {
+                        openssl.x509.extension.new_extension(
                         {
                                 object = 'extendedKeyUsage',
                                 critical = true,
                                 value = 'timeStamping',
-                        },
-                        {
+                        }),
+                        openssl.x509.extension.new_extension({
                                 object='basicConstraints',
                                 value=self.cafalse
-                        },
-                        {
+                        }),
+                        openssl.x509.extension.new_extension({
                                 object='basicConstraints',
                                 value='CA:FALSE'
-                        }
+                        })
                 }
 
                 self.attrs = {
@@ -49,8 +50,8 @@ TestCSR = {}
                         }
                 }
 
-                self.extensions = openssl.x509.extension.new_sk_extension(self.exts)
-                self.attributes = openssl.x509.attribute.new_sk_attribute(self.attrs)
+                self.extensions = self.exts
+                self.attributes = self.attrs
         end
         function TestCSR:testNew()
                 local pkey = assert(openssl.pkey.new())
@@ -74,8 +75,9 @@ TestCSR = {}
                 assert(req1:verify()==false);
                 assert(req2:verify());
 
-                req1 = assert(csr.new(self.subject,self.attributes))
-                req2 = assert(csr.new(self.subject,self.attributes, pkey))
+                req1 = assert(csr.new(self.subject))
+                req2 = assert(csr.new(self.subject))
+                assert(req2:sign(pkey,'sha1WithRSAEncryption'))
                 t = req1:parse()
                 assertIsTable(t)
                 t = req2:parse()
@@ -85,8 +87,13 @@ TestCSR = {}
                 assert(req1:verify()==false);
                 assert(req2:verify());
 
-                req1 = assert(csr.new(self.subject,self.attributes,self.extensions))
-                req2 = assert(csr.new(self.subject,self.attributes,self.extensions, pkey))
+                req1 = assert(csr.new(self.subject))
+                req1:attribute(self.attributes)
+                req1:extensions(self.extensions)
+                req2 = assert(csr.new(self.subject))
+                req2:attribute(self.attributes)
+                req2:extensions(self.extensions)
+                assert(req2:sign(pkey))
                 assert(req1:verify()==false);
                 assert(req2:verify());
 
@@ -98,8 +105,14 @@ TestCSR = {}
                 assert(req1:verify()==false);
                 assert(req2:verify());
 
-                req1 = assert(csr.new(self.subject,self.attributes,self.extensions,pkey))
-                req2 = assert(csr.new(self.subject,self.attributes,self.extensions,pkey,self.digest))
+                req1 = assert(csr.new(self.subject))
+                req1:attribute(self.attributes)
+                req1:extensions(self.extensions)
+                assert(req1:sign(pkey))
+                req2 = assert(csr.new(self.subject))
+                req2:attribute(self.attributes)
+                req2:extensions(self.extensions)
+                assert(req2:sign(pkey,self.digest))
 
                 t = req1:parse()
                 assertIsTable(t)
@@ -132,7 +145,7 @@ TestCSR = {}
                 assertEquals(req1:attr_count(),2+1)
                 req1:attribute(attr)
                 assertEquals(req1:attr_count(),3+1)
-
+--]]
                 assertEquals(req1:version(),0)
                 assertEquals(req1:version(1),true)
                 assertEquals(req1:version(),1)
@@ -142,7 +155,7 @@ TestCSR = {}
                 assert(req1:subject(self.subject))
                 assertEquals(req1:subject():tostring(),self.subject:tostring())
 
-                assertStrContains(tostring(req1:extensions()),'openssl.stack_of_x509_extension')
+                assertStrContains(type(req1:extensions()),'table')
                 assert(req1:extensions(self.extensions))
                 assertEquals(req1:subject():tostring(),self.subject:tostring())
 

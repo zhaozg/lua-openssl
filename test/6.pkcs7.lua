@@ -33,7 +33,6 @@ TestCompat = {}
         },false
         )
         local extensions =
-        openssl.x509.extension.new_sk_extension(
         {{
             object='nsCertType',
             value = 'email',
@@ -41,7 +40,7 @@ TestCompat = {}
         },{
             object='extendedKeyUsage',
             value = 'emailProtection'
-        }})
+        }}
         --extensions:push(e)
 
         local cert = openssl.x509.new(2,req,extensions)
@@ -49,7 +48,7 @@ TestCompat = {}
         assert(cert:sign(cakey,cacert))
 
         msg = 'abcd'
-        skcert = assert(x509.sk_x509_new({cert}))
+        skcert = {cert}
         p7 = assert(pkcs7.encrypt(msg,skcert))
         --t = p7:parse()
         --print_r(t)
@@ -88,7 +87,6 @@ end
         },false
         )
         local extensions =
-        openssl.x509.extension.new_sk_extension(
         {{
             object='nsCertType',
             value = 'email',
@@ -96,8 +94,8 @@ end
         },{
             object='extendedKeyUsage',
             value = 'emailProtection'
-        }})
-        --extensions:push(e)
+        }}
+
 
         local cert = openssl.x509.new(2,req,extensions)
         cert:validat(os.time(), os.time() + 3600*24*365)

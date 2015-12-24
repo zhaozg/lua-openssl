@@ -42,7 +42,7 @@ function TestTS:testAll()
 
     local pkey = assert(openssl.pkey.new())
     local subject = openssl.x509.name.new(self.tsadn)
-    local attributes = openssl.x509.attribute.new_sk_attribute(
+    local attributes =
             {
                 {
                     object='basicConstraints',
@@ -50,14 +50,14 @@ function TestTS:testAll()
                     value=cafalse
                 }
             }
-        )
     local extensions =
-        openssl.x509.extension.new_sk_extension(
-        {{
+        {
+            openssl.x509.extension.new_extension(
+            {
             object='extendedKeyUsage',
             value = 'timeStamping',
             critical = true
-        }})
+        })}
     x = csr.new(
         subject,
         pkey
