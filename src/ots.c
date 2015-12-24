@@ -246,8 +246,9 @@ static LUA_FUNCTION(openssl_ts_req_info)
 
   if (req->extensions)
   {
-    STACK_OF(X509_EXTENSION) *extensions = sk_X509_EXTENSION_dup(req->extensions);
-    AUXILIAR_SETOBJECT(L, extensions, "openssl.stack_of_x509_extension", -1, "extensions");
+    lua_pushstring(L, "extensions");
+    openssl_sk_x509_extension_totable(L, req->extensions);
+    lua_rawset(L, -3);
   }
 
   return 1;
@@ -421,8 +422,9 @@ static int openssl_push_ts_tst_info(lua_State*L, TS_TST_INFO* info)
   }
   if (info->extensions)
   {
-    STACK_OF(X509_EXTENSION)* exts = sk_X509_EXTENSION_dup(info->extensions);
-    PUSH_OBJECT(exts, "openssl.stack_of_x509_extensions");
+    lua_pushstring(L, "extensions");
+    openssl_sk_x509_extension_totable(L, info->extensions);
+    lua_rawset(L, -3);
   }
   return 1;
 }
@@ -655,8 +657,7 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_certs)
   {
     if (ctx->certs)
     {
-      STACK_OF(X509) *certs = openssl_sk_x509_dup(ctx->certs);
-      PUSH_OBJECT(certs, "openssl.stack_of_x509");
+      openssl_sk_x509_totable(L, ctx->certs);
     }
     else
     {
@@ -665,12 +666,11 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_certs)
   }
   else
   {
-    STACK_OF(X509) *certs = CHECK_OBJECT(2, STACK_OF(X509), "openssl.stack_of_x509");
     if (ctx->certs)
     {
       sk_X509_pop_free(ctx->certs, X509_free);
     }
-    ctx->certs = openssl_sk_x509_dup(certs);
+    ctx->certs = openssl_sk_x509_fromtable(L, 2);
     lua_pushboolean(L, 1);
   }
   return 1;
@@ -704,23 +704,23 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_policies)
   {
     if (ctx->policies)
     {
-      STACK_OF(ASN1_OBJECT) *policies = sk_ASN1_OBJECT_dup(ctx->policies);
-      PUSH_OBJECT(policies, "openssl.stack_of_asn1_object");
+      int i, n;
+      lua_newtable(L);
+      n = sk_ASN1_OBJECT_num(ctx->policies);
+      for (i = 0; i < n; i++) {
+        lua_pushinteger(L, i + 1);
+        PUSH_OBJECT(sk_ASN1_OBJECT_value(ctx->policies, i), "openssl.asn1_object");
+        lua_rawset(L, -3);
+      }
     }
     else
       lua_pushnil(L);
   }
   else
   {
-    if (auxiliar_isclass(L, "openssl.stack_of_asn1_object", 2))
+    if (lua_istable(L, 2))
     {
-      STACK_OF(ASN1_OBJECT) *policies = CHECK_OBJECT(2, STACK_OF(ASN1_OBJECT), "openssl.stack_of_asn1_object");
-      if (ctx->policies)
-      {
-        sk_ASN1_OBJECT_pop_free(ctx->policies, ASN1_OBJECT_free);
-      }
-      ctx->policies = sk_ASN1_OBJECT_dup(policies);
-      lua_pushboolean(L, 1);
+
     }
     else
     {
@@ -1141,15 +1141,14 @@ static int openssl_ts_verify_ctx_store(lua_State*L)
   TS_VERIFY_CTX *ctx = CHECK_OBJECT(1, TS_VERIFY_CTX, "openssl.ts_verify_ctx");
   if (lua_isnone(L, 2))
   {
+    /*
     if (ctx->store)
     {
-      /*
-      STACK_OF(X509) *cas =  X509_STORE_get1_certs(ctx->store);
-      PUSH_OBJECT(cas, "openssl.stack_of_x509");
-      */
-      luaL_error(L, "NYI");
+      STACK_OF(X509) *cas =  X509_STORE_get1_certs(ctx->store, NULL);
+      openssl_sk_x509_totable(L, cas);
     }
     else
+    */
       lua_pushnil(L);
   }
   else
@@ -1173,18 +1172,17 @@ static int openssl_ts_verify_ctx_certs(lua_State*L)
   {
     if (ctx->certs)
     {
-      STACK_OF(X509) *certs =  openssl_sk_x509_dup(ctx->certs);
-      PUSH_OBJECT(certs, "openssl.stack_of_x509");
+      openssl_sk_x509_totable(L,ctx->certs);
     }
     else
       lua_pushnil(L);
   }
   else
   {
-    STACK_OF(X509) *cas = CHECK_OBJECT(2, STACK_OF(X509), "openssl.stack_of_x509");
     if (ctx->certs)
-      sk_X509_free(ctx->certs);
-    ctx->certs = openssl_sk_x509_dup(cas);
+      sk_X509_pop_free(ctx->certs, X509_free);
+
+    ctx->certs = openssl_sk_x509_fromtable(L, 2);
     lua_pushboolean(L, 1);
   }
   return 1;

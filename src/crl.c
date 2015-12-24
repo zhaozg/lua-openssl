@@ -132,8 +132,7 @@ static int openssl_crl_extensions(lua_State* L)
     STACK_OF(X509_EXTENSION) *exts = crl->crl->extensions;
     if (exts)
     {
-      exts = sk_X509_EXTENSION_dup(exts);
-      PUSH_OBJECT(exts, "openssl.stack_of_x509_extension");
+      openssl_sk_x509_extension_totable(L, exts);
     }
     else
       lua_pushnil(L);
@@ -141,15 +140,15 @@ static int openssl_crl_extensions(lua_State* L)
   }
   else
   {
-    STACK_OF(X509_EXTENSION) *exts = CHECK_OBJECT(1, STACK_OF(X509_EXTENSION), "openssl.stack_of_x509_extension");
-    int i, n, ret;
+    STACK_OF(X509_EXTENSION) *exts = openssl_sk_x509_extension_fromtable(L, 2);
+    int i, n;
     n = sk_X509_EXTENSION_num(exts);
-    for (i = 0, ret = 1; i < n && ret == 1; i++)
+    for (i = 0; i < n; i++)
     {
       X509_EXTENSION *ext = sk_X509_EXTENSION_value(exts, i);
-      X509_CRL_add_ext(crl, ext, i);
+      X509_CRL_add_ext(crl, X509_EXTENSION_dup(ext), i);
     };
-    return openssl_pushresult(L, ret);
+    return openssl_pushresult(L, 1);
   }
 }
 
@@ -570,9 +569,9 @@ static LUA_FUNCTION(openssl_crl_parse)
 #endif
   if (crl->crl->extensions)
   {
-    STACK_OF(X509_EXTENSION) *extensions = sk_X509_EXTENSION_dup(crl->crl->extensions);
-    PUSH_OBJECT(extensions, "openssl.stack_of_x509_extension");
-    lua_setfield(L, -2, "extensions");
+    lua_pushstring(L, "extensions");
+    openssl_sk_x509_extension_totable(L, crl->crl->extensions);
+    lua_rawset(L, -3);
   }
 
   num = sk_X509_REVOKED_num(crl->crl->revoked);
@@ -601,9 +600,9 @@ static LUA_FUNCTION(openssl_crl_parse)
 
     if (crl->crl->extensions)
     {
-      STACK_OF(X509_EXTENSION) *extensions = sk_X509_EXTENSION_dup(crl->crl->extensions);
-      PUSH_OBJECT(extensions, "openssl.stack_of_x509_extension");
-      lua_setfield(L, -2, "extensions");
+      lua_pushstring(L, "extensions");
+      openssl_sk_x509_extension_totable(L, crl->crl->extensions);
+      lua_rawset(L, -3);
     }
 
     lua_rawseti(L, -2, i + 1);
@@ -703,9 +702,9 @@ static LUA_FUNCTION(openssl_crl_get)
 
     if (crl->crl->extensions)
     {
-      STACK_OF(X509_EXTENSION) *extensions = sk_X509_EXTENSION_dup(crl->crl->extensions);
-      PUSH_OBJECT(extensions, "openssl.stack_of_x509_extension");
-      lua_setfield(L, -2, "extensions");
+      lua_pushstring(L, "extensions");
+      openssl_sk_x509_extension_totable(L, crl->crl->extensions);
+      lua_rawset(L, -3);
     }
     return 1;
   }
@@ -775,9 +774,9 @@ static int openssl_revoked_info(lua_State* L)
 
   if (revoked->extensions)
   {
-    STACK_OF(X509_EXTENSION) *extensions = sk_X509_EXTENSION_dup(revoked->extensions);
-    PUSH_OBJECT(extensions, "openssl.stack_of_x509_extension");
-    lua_setfield(L, -2, "extensions");
+    lua_pushstring(L, "extensions");
+    openssl_sk_x509_extension_totable(L, revoked->extensions);
+    lua_rawset(L, -3);
   }
   return 1;
 };
@@ -863,8 +862,7 @@ static int openssl_revoked_extensions(lua_State* L)
 
   if (revoked->extensions)
   {
-    STACK_OF(X509_EXTENSION) *extensions = sk_X509_EXTENSION_dup(revoked->extensions);
-    PUSH_OBJECT(extensions, "openssl.stack_of_x509_extension");
+    openssl_sk_x509_extension_totable(L, revoked->extensions);
   }
   else
     lua_pushnil(L);
@@ -921,7 +919,7 @@ int luaopen_x509_crl(lua_State *L)
 {
   auxiliar_newclass(L, "openssl.x509_crl", crl_funcs);
   auxiliar_newclass(L, "openssl.x509_revoked", revoked_funcs);
-  openssl_register_sk_x509_crl(L);
+
   lua_newtable(L);
   luaL_setfuncs(L, R, 0);
 

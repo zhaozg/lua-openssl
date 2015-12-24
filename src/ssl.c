@@ -1212,8 +1212,7 @@ static int openssl_ssl_peer(lua_State*L)
   PUSH_OBJECT(x, "openssl.x509");
   if (sk)
   {
-    sk = openssl_sk_x509_dup(sk);
-    PUSH_OBJECT(sk, "openssl.stack_of_x509");
+    openssl_sk_x509_totable(L, sk);
     return 2;
   }
   return 1;
@@ -1373,7 +1372,14 @@ static int openssl_ssl_get(lua_State*L)
     else if (strcmp(what, "client_CA_list") == 0)
     {
       STACK_OF(X509_NAME)* sn = SSL_get_client_CA_list(s);
-      PUSH_OBJECT(sn, "openssl.stack_of_x509_name");
+      int j, n;
+      n = sk_X509_NAME_num(sn);
+      lua_newtable(L);
+        for (j = 0; j < n; j++) {
+          lua_pushinteger(L, j + 1);
+          PUSH_OBJECT(X509_NAME_dup(sk_X509_NAME_value(sn, j)), "openssl.x509_name");
+          lua_rawset(L, -3);
+        }
     }
     else if (strcmp(what, "read_ahead") == 0)
     {

@@ -537,7 +537,7 @@ err:
 
 static LUA_FUNCTION(openssl_pkcs7_verify_digest) {
   PKCS7 *p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
-  STACK_OF(X509) *certs = lua_isnoneornil(L, 2) ? NULL : CHECK_OBJECT(2, STACK_OF(X509), "openssl.stack_of_x509");
+  STACK_OF(X509) *certs = lua_isnoneornil(L, 2) ? NULL : openssl_sk_x509_fromtable(L, 2);
   X509_STORE *store = lua_isnoneornil(L, 3) ? NULL : CHECK_OBJECT(3, X509_STORE, "openssl.x509_store");
   size_t len;
   const char* data = luaL_checklstring(L, 4, &len);
@@ -632,7 +632,7 @@ static LUA_FUNCTION(openssl_pkcs7_sign)
   BIO *in  = load_bio_object(L, 1);
   X509 *cert = CHECK_OBJECT(2, X509, "openssl.x509");
   EVP_PKEY *privkey = CHECK_OBJECT(3, EVP_PKEY, "openssl.evp_pkey");
-  STACK_OF(X509) *others = lua_isnoneornil(L, 4) ? 0 : CHECK_OBJECT(4, STACK_OF(X509), "openssl.stack_of_x509");
+  STACK_OF(X509) *others = lua_isnoneornil(L, 4) ? 0 : openssl_sk_x509_fromtable(L,4);
   long flags =  luaL_optint(L, 5, 0);
   PKCS7 *p7 = NULL;
   luaL_argcheck(L, openssl_pkey_is_private(privkey), 3, "must be private key");
@@ -658,7 +658,7 @@ static LUA_FUNCTION(openssl_pkcs7_verify)
 {
   int ret = 0;
   PKCS7 *p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
-  STACK_OF(X509) *signers = lua_isnoneornil(L, 2) ? NULL : CHECK_OBJECT(2, STACK_OF(X509), "openssl.stack_of_x509");
+  STACK_OF(X509) *signers = lua_isnoneornil(L, 2) ? NULL : openssl_sk_x509_fromtable(L,2);
   X509_STORE *store = lua_isnoneornil(L, 3) ? NULL : CHECK_OBJECT(3, X509_STORE, "openssl.x509_store");
   BIO* in = lua_isnoneornil(L, 4) ? NULL : load_bio_object(L, 4);
   long flags = luaL_optint(L, 5, 0);
@@ -694,7 +694,7 @@ static LUA_FUNCTION(openssl_pkcs7_encrypt)
 {
   PKCS7 * p7 = NULL;
   BIO *infile = load_bio_object(L, 1);
-  STACK_OF(X509) *recipcerts = CHECK_OBJECT(2, STACK_OF(X509), "openssl.stack_of_x509");
+  STACK_OF(X509) *recipcerts = openssl_sk_x509_fromtable(L, 2);
   const EVP_CIPHER *cipher = get_cipher(L, 3, "des3");
   long flags = luaL_optint(L, 4, 0);
 
@@ -784,6 +784,41 @@ static LUA_FUNCTION(openssl_pkcs7_export)
   return 1;
 }
 
+static int openssl_push_pkcs7_signer_info(lua_State *L, PKCS7_SIGNER_INFO *info) {
+  lua_newtable(L);
+  AUXILIAR_SET(L, -1, "version", ASN1_INTEGER_get(info->version), integer);
+
+  if (info->issuer_and_serial!=NULL) {
+    /*
+    if (info->issuer_and_serial->issuer)
+      AUXILIAR_SETOBJECT(L, X509_NAME_dup(info->issuer_and_serial->issuer), "openssl.x509_name", -1, "issuer");
+
+    if (info->issuer_and_serial->serial)
+      AUXILIAR_SETOBJECT(L, ASN1_INTEGER_dup(info->issuer_and_serial->serial), "openssl.asn1_integer", -1, "serial");
+      */
+  }
+  /*
+  if(info->digest_alg)
+    AUXILIAR_SETOBJECT(L, X509_ALGOR_dup(info->digest_alg), "openssl.x509_algor", -1, "digest_alg");
+  if (info->digest_enc_alg)
+    AUXILIAR_SETOBJECT(L, X509_ALGOR_dup(info->digest_alg), "openssl.x509_algor", -1, "digest_enc_alg");
+
+  if (info->enc_digest)
+    AUXILIAR_SETOBJECT(L, ASN1_STRING_dup(info->enc_digest), "openssl.asn1_string", -1, "enc_digest");
+    */
+  if (info->pkey){
+    info->pkey->references++;
+    AUXILIAR_SETOBJECT(L, info->pkey, "openssl.evp_pkey", -1, "pkey");
+  }
+  return 1;
+}
+
+static LUA_FUNCTION(openssl_pkcs7_signer_info_gc) {
+  PKCS7_SIGNER_INFO *info = CHECK_OBJECT(1, PKCS7_SIGNER_INFO, "openssl.pkcs7_signer_info");
+  PKCS7_SIGNER_INFO_free(info);
+  return 0;
+}
+
 static LUA_FUNCTION(openssl_pkcs7_parse)
 {
   PKCS7 * p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
@@ -798,36 +833,34 @@ static LUA_FUNCTION(openssl_pkcs7_parse)
   case NID_pkcs7_signed:
   {
     PKCS7_SIGNED *sign = p7->d.sign;
-    PKCS7* c = sign->contents;
-    PKCS7_SIGNER_INFO* si = sk_PKCS7_SIGNER_INFO_value(sign->signer_info, 0);
-    (void)si;
     certs = sign->cert ? sign->cert : NULL;
     crls = sign->crl ? sign->crl : NULL;
-#if 0
-    typedef struct pkcs7_signed_st
-    {
-      ASN1_INTEGER      *version; /* version 1 */
-      STACK_OF(X509_ALGOR)    *md_algs; /* md used */
-      STACK_OF(X509)      *cert;    /* [ 0 ] */
-      STACK_OF(X509_CRL)    *crl;   /* [ 1 ] */
-      STACK_OF(PKCS7_SIGNER_INFO) *signer_info;
 
-      struct pkcs7_st     *contents;
-    } PKCS7_SIGNED;
-#endif
-    AUXILIAR_SETOBJECT(L, openssl_sk_x509_algor_dup(sign->md_algs), "openssl.stack_of_x509_algor", -1, "md_algs");
-#if 0
-    AUXILIAR_SETOBJECT(L, sk_PKCS7_SIGNER_INFO_dup(sign->signer_info), "openssl.stack_of_pkcs7_signer_info", -1, "signer_info");
-#endif
+    AUXILIAR_SET(L, -1, "version", ASN1_INTEGER_get(sign->version), integer);
     AUXILIAR_SET(L, -1, "detached", PKCS7_is_detached(p7), boolean);
+    lua_pushstring(L, "md_algs");
+    openssl_sk_x509_algor_totable(L, sign->md_algs);
+    lua_rawset(L, -3);
 
-    if (c)
-    {
-      AUXILIAR_SETOBJECT(L, PKCS7_dup(c), "openssl.pkcs7", -1, "contents");
+    if (sign->signer_info) {
+      int j, n;
+      n = sk_PKCS7_SIGNER_INFO_num(sign->signer_info);
+      lua_pushstring(L, "signer_info");
+      lua_newtable(L);
+      for (j = 0; j < n; j++)
+      {
+        PKCS7_SIGNER_INFO *info = sk_PKCS7_SIGNER_INFO_value(sign->signer_info, j);
+        lua_pushinteger(L, j + 1);
+        openssl_push_pkcs7_signer_info(L, info);
+        lua_rawset(L, -3);
+      }
+      lua_rawset(L, -3);
     }
+
     if (!PKCS7_is_detached(p7))
     {
-      AUXILIAR_SETOBJECT(L, p7->d.sign->contents, "openssl.pkcs7", -1, "content");
+      PKCS7* c = sign->contents;
+      AUXILIAR_SETOBJECT(L, PKCS7_dup(c), "openssl.pkcs7", -1, "contents");
     }
   }
   break;
@@ -880,15 +913,19 @@ static LUA_FUNCTION(openssl_pkcs7_parse)
     break;
   }
 
+  /* NID_pkcs7_signed or NID_pkcs7_signedAndEnveloped */
   if (certs != NULL)
   {
-    AUXILIAR_SETOBJECT(L, openssl_sk_x509_dup(certs), "openssl.stack_of_x509", -1, "certs");
+    lua_pushstring(L, "certs");
+    openssl_sk_x509_totable(L, certs);
+    lua_rawset(L, -3);
   }
   if (crls != NULL)
   {
-    AUXILIAR_SETOBJECT(L, openssl_sk_x509_crl_dup(crls), "openssl.stack_of_crl", -1, "crls");
+    lua_pushstring(L, "crls");
+    openssl_sk_x509_crl_totable(L, crls);
+    lua_rawset(L, -3);
   }
-
   return 1;
 }
 

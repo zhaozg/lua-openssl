@@ -329,46 +329,6 @@ static int openssl_xext_read(lua_State* L)
   return 1;
 };
 
-static int openssl_xext_new_sk(lua_State* L)
-{
-  size_t i;
-  X509_EXTENSION *x = NULL;
-  STACK_OF(X509_EXTENSION) *exts;
-  int v3 = 1;
-  luaL_checktable(L, 1);
-  if (!lua_isnone(L, 2))
-    v3 = lua_toboolean(L, 2);
-
-  exts = sk_X509_EXTENSION_new_null();
-
-  for (i = 0; i < lua_rawlen(L, 1); i++)
-  {
-    lua_rawgeti(L, 1, i + 1);
-    x = openssl_new_xextension(L, lua_gettop(L), v3);
-    if (x)
-      sk_X509_EXTENSION_push(exts, x);
-  }
-  PUSH_OBJECT(exts, "openssl.stack_of_x509_extension");
-  return 1;
-};
-
-static int openssl_xexts_totable(lua_State*L)
-{
-  STACK_OF(X509_EXTENSION) *exts = CHECK_OBJECT(1, STACK_OF(X509_EXTENSION), "openssl.stack_of_x509_extension");
-  int i;
-  int n = sk_X509_EXTENSION_num(exts);
-  lua_newtable(L);
-
-  for (i = 0; i < n; i++)
-  {
-    X509_EXTENSION* ext = sk_X509_EXTENSION_value(exts, i);
-
-    openssl_xext_totable(L, ext);
-    lua_rawseti(L, -2, i + 1);
-  };
-  return 1;
-}
-
 static int openssl_xext_support(lua_State*L)
 {
   static const int supported_nids[] =
@@ -437,8 +397,6 @@ static luaL_Reg R[] =
   {"support",                 openssl_xext_support},
   {"new_extension",           openssl_xext_new},
   {"read_extension",          openssl_xext_read},
-  {"new_sk_extension",        openssl_xext_new_sk},
-  {"sktotable",               openssl_xexts_totable},
 
   {NULL,          NULL},
 };
@@ -448,7 +406,6 @@ IMP_LUA_SK(X509_EXTENSION, x509_extension)
 int openssl_register_xextension(lua_State*L)
 {
   auxiliar_newclass(L, "openssl.x509_extension", x509_extension_funs);
-  openssl_register_sk_x509_extension(L);
   lua_newtable(L);
   luaL_setfuncs(L, R, 0);
   return 1;

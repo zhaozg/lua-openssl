@@ -219,42 +219,9 @@ static int openssl_xattr_new(lua_State*L)
   return 1;
 }
 
-static int openssl_new_xattrs(lua_State*L)
-{
-  size_t i;
-  int idx = 1;
-  STACK_OF(X509_ATTRIBUTE) *attrs  = sk_X509_ATTRIBUTE_new_null();
-  luaL_checktable(L, idx);
-
-  for (i = 0; i < lua_rawlen(L, idx); i++)
-  {
-    X509_ATTRIBUTE* a = NULL;
-    const char* eprefix = NULL;
-    lua_rawgeti(L, idx, i + 1);
-    if (!lua_istable(L, -1))
-    {
-      lua_pushfstring(L, "value at %d is not table", i + 1);
-      luaL_argerror(L, idx, lua_tostring(L, -1));
-    }
-    lua_pushfstring(L, "table %d at argument #%d:", idx, i + 1);
-    eprefix = lua_tostring(L, -1);
-    lua_pop(L, 1);
-
-    a = openssl_new_xattribute(L, &a, lua_gettop(L), eprefix);
-    if (a)
-    {
-      sk_X509_ATTRIBUTE_push(attrs, a);
-    }
-    lua_pop(L, 1);
-  }
-  PUSH_OBJECT(attrs, "openssl.stack_of_x509_attribute");
-  return 1;
-}
-
 static luaL_Reg R[] =
 {
   {"new_attribute",         openssl_xattr_new},
-  {"new_sk_attribute",      openssl_new_xattrs},
 
   {NULL,          NULL},
 };
@@ -264,7 +231,6 @@ IMP_LUA_SK(X509_ATTRIBUTE, x509_attribute)
 int openssl_register_xattribute(lua_State*L)
 {
   auxiliar_newclass(L, "openssl.x509_attribute", x509_attribute_funs);
-  openssl_register_sk_x509_attribute(L);
   lua_newtable(L);
   luaL_setfuncs(L, R, 0);
   return 1;

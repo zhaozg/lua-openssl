@@ -30,13 +30,10 @@ static LUA_FUNCTION(openssl_pkcs12_export)
   {
     if (lua_isstring(L, 4))
       friendly_name = lua_tostring(L, 4);
-    else if (lua_isuserdata(L, 4))
-      ca = CHECK_OBJECT(4, STACK_OF(X509), "openssl.stack_of_x509");
+    else if (lua_istable(L, 4))
+      ca = openssl_sk_x509_fromtable(L,4);
     else
-      luaL_argerror(L, 4, "must be string as friendly_name or openssl.stack_of_x509 object as cacets");
-
-    if (top > 4)
-      ca = CHECK_OBJECT(5, STACK_OF(X509), "openssl.stack_of_x509");
+      luaL_argerror(L, 4, "must be string as friendly_name or table contians x509 object as cacets");
   }
 
   if (cert && !X509_check_private_key(cert, priv_key))
@@ -101,7 +98,9 @@ static LUA_FUNCTION(openssl_pkcs12_read)
 
     AUXILIAR_SETOBJECT(L, cert, "openssl.x509" , -1, "cert");
     AUXILIAR_SETOBJECT(L, pkey, "openssl.evp_pkey" , -1, "pkey");
-    AUXILIAR_SETOBJECT(L, ca, "openssl.stack_of_x509" , -1, "extracerts");
+    lua_pushstring(L, "extracerts");
+    openssl_sk_x509_totable(L, ca);
+    lua_rawset(L, -3);
 
     ret = 1;
   }

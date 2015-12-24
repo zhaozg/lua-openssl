@@ -102,9 +102,6 @@ int openssl_push_general_name(lua_State*L, const GENERAL_NAME* name);
 int openssl_push_xname_asobject(lua_State*L, X509_NAME* xname);
 int openssl_push_bit_string_bitname(lua_State* L, const BIT_STRING_BITNAME* name);
 
-STACK_OF(X509)* openssl_sk_x509_dup(STACK_OF(X509)* sk);
-STACK_OF(X509_CRL)* openssl_sk_x509_crl_dup(STACK_OF(X509_CRL)* sk);
-
 int openssl_get_nid(lua_State*L, int idx);
 EC_GROUP* openssl_get_ec_group(lua_State* L, int ec_name_idx, int param_enc_idx,
   int conv_form_idx);
@@ -128,7 +125,13 @@ int openssl_verify_cb(int preverify_ok, X509_STORE_CTX *xctx);
 int openssl_cert_verify_cb(X509_STORE_CTX *xctx, void* u);
 void openssl_xstore_free(X509_STORE* ctx);
 
-STACK_OF(X509_ALGOR)* openssl_sk_x509_algor_dup(STACK_OF(X509_ALGOR)*);
+STACK_OF(X509)* openssl_sk_x509_fromtable(lua_State *L, int idx);
+int openssl_sk_x509_totable(lua_State *L, STACK_OF(X509)* sk);
+STACK_OF(X509_CRL)* openssl_sk_x509_crl_fromtable(lua_State *L, int idx);
+int openssl_sk_x509_crl_totable(lua_State *L, STACK_OF(X509_CRL)* sk);
+STACK_OF(X509_EXTENSION)* openssl_sk_x509_extension_fromtable(lua_State *L, int idx);
+int openssl_sk_x509_extension_totable(lua_State *L, STACK_OF(X509_EXTENSION)* sk);
+int openssl_sk_x509_algor_totable(lua_State *L, STACK_OF(X509_ALGOR)* sk);
 
 #ifdef HAVE_USER_CUSTOME
 #include HAVE_USER_CUSTOME

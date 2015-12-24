@@ -161,7 +161,7 @@ static int openssl_ocsp_request_sign(lua_State*L)
   }
   else
   {
-    others = CHECK_OBJECT(4, STACK_OF(X509), "openssl.stack_of_x509");
+    others = openssl_sk_x509_fromtable(L, 4);
   }
   sflags = luaL_optint(L, 6, sflags);
   if (!lua_isnoneornil(L, 7))
@@ -214,9 +214,9 @@ static int openssl_ocsp_request_parse(lua_State*L)
 
   if (inf->requestExtensions)
   {
-    STACK_OF(X509_EXTENSION) *extensions = sk_X509_EXTENSION_dup(inf->requestExtensions);
-    PUSH_OBJECT(extensions, "openssl.stack_of_x509_extension");
-    lua_setfield(L, -2, "extensions");
+    lua_pushstring(L, "extensions");
+    openssl_sk_x509_extension_totable(L, inf->requestExtensions);
+    lua_rawset(L, -3);
   }
 
   if (sig)
@@ -264,7 +264,7 @@ static int openssl_ocsp_response(lua_State *L)
     unsigned long flag = luaL_optint(L, 6, 0);
     int nmin = luaL_optint(L, 7, 0);
     int nday = luaL_optint(L, 8, 1);
-    STACK_OF(X509) *rother = lua_isnoneornil(L, 9) ? NULL : CHECK_OBJECT(9, STACK_OF(X509), "openssl.stack_of_x509");
+    STACK_OF(X509) *rother = lua_isnoneornil(L, 9) ? NULL : openssl_sk_x509_fromtable(L, 9);
 
     int i, id_count, type;
     BIO* bio = NULL;

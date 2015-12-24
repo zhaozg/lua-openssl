@@ -138,7 +138,5 @@ int openssl_register_xalgor(lua_State*L)
   lua_newtable(L);
   luaL_setfuncs(L, R, 0);
 
-  openssl_register_sk_x509_algor(L);
-
   return 1;
 }

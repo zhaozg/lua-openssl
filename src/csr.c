@@ -209,35 +209,14 @@ static LUA_FUNCTION(openssl_csr_new)
   for (i = 1; ret == 1 && i <= n; i++)
   {
     luaL_argcheck(L,
-                  auxiliar_isclass(L, "openssl.stack_of_x509_extension", i) ||
-                  auxiliar_isclass(L, "openssl.stack_of_x509_attribute", i) ||
                   auxiliar_isclass(L, "openssl.x509_name", i) ||
                   auxiliar_isclass(L, "openssl.evp_pkey", i),
-
-                  i, "must be x509_name, stack_of_x509_extension or stack_of_x509_attribute");
+                  i, "must be x509_name");
     if (auxiliar_isclass(L, "openssl.x509_name", i))
     {
       X509_NAME * subject = CHECK_OBJECT(i, X509_NAME, "openssl.x509_name");
       ret = X509_REQ_set_subject_name(csr, subject);
     }
-    if (auxiliar_isclass(L, "openssl.stack_of_x509_attribute", i))
-    {
-      int j, m;
-      STACK_OF(X509_ATTRIBUTE) *attrs = CHECK_OBJECT(i, STACK_OF(X509_ATTRIBUTE), "openssl.stack_of_x509_attribute");
-      m = sk_X509_ATTRIBUTE_num(attrs);
-      for (j = 0; ret == 1 && j < m; j++)
-      {
-        ret = X509_REQ_add1_attr(csr, sk_X509_ATTRIBUTE_value(attrs, j));
-      }
-    }
-
-    if (auxiliar_isclass(L, "openssl.stack_of_x509_extension", i))
-    {
-      STACK_OF(X509_EXTENSION) *exts =
-        CHECK_OBJECT(i, STACK_OF(X509_EXTENSION), "openssl.stack_of_x509_extension");
-      ret = X509_REQ_add_extensions(csr, exts);
-    }
-
     if (auxiliar_isclass(L, "openssl.evp_pkey", i))
     {
       EVP_PKEY *pkey;
@@ -339,8 +318,9 @@ static LUA_FUNCTION(openssl_csr_parse)
   lua_setfield(L, -2, "subject");
   if (exts)
   {
-    PUSH_OBJECT(exts, "openssl.stack_of_x509_extension");
-    lua_setfield(L, -2, "extensions");
+    lua_pushstring(L, "extensions");
+    openssl_sk_x509_extension_totable(L, exts);
+    lua_rawset(L, -3);
   }
 
   {
@@ -446,7 +426,7 @@ static LUA_FUNCTION(openssl_csr_extensions)
     STACK_OF(X509_EXTENSION) *sk = X509_REQ_get_extensions(csr);
     if (sk)
     {
-      PUSH_OBJECT(sk, "openssl.stack_of_x509_extension");
+      openssl_sk_x509_extension_totable(L, sk);
     }
     else
       lua_pushnil(L);
@@ -454,7 +434,7 @@ static LUA_FUNCTION(openssl_csr_extensions)
   }
   else
   {
-    STACK_OF(X509_EXTENSION) *sk = CHECK_OBJECT(2,  STACK_OF(X509_EXTENSION), "openssl.stack_of_x509_extension");
+    STACK_OF(X509_EXTENSION) *sk = openssl_sk_x509_extension_fromtable(L, 2);
     int ret = X509_REQ_add_extensions(csr, sk);
     return openssl_pushresult(L, ret);
   }
