@@ -360,7 +360,8 @@ static int openssl_ec_key_parse(lua_State*L)
     AUXILIAR_SET(L, -1, "conv_form", EC_KEY_get_conv_form(ec), integer);
     AUXILIAR_SET(L, -1, "curve_name", EC_GROUP_get_curve_name(group), integer);
 
-    AUXILIAR_SETOBJECT(L, BN_dup(priv), "openssl.bn", -1, "d");
+    priv = BN_dup(priv);
+    AUXILIAR_SETOBJECT(L, priv, "openssl.bn", -1, "d");
 
     if (EC_POINT_get_affine_coordinates_GFp(group, point, x, y, NULL) == 1)
     {

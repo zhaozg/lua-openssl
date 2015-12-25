@@ -13,8 +13,6 @@
 static int openssl_xname_gc(lua_State* L)
 {
   X509_NAME* xn = CHECK_OBJECT(1, X509_NAME, "openssl.x509_name");
-  lua_pushnil(L);
-  lua_setmetatable(L, 1);
   X509_NAME_free(xn);
   return 0;
 }
@@ -71,9 +69,11 @@ static int openssl_xname_print(lua_State*L)
 static int openssl_push_xname_entry(lua_State* L, X509_NAME_ENTRY* ne)
 {
   ASN1_OBJECT* object = X509_NAME_ENTRY_get_object(ne);
+  ASN1_STRING *s;
   lua_newtable(L);
   openssl_push_asn1object(L, object);
-  PUSH_ASN1_STRING(L, X509_NAME_ENTRY_get_data(ne));
+  s = X509_NAME_ENTRY_get_data(ne);
+  PUSH_ASN1_STRING(L, s);
   lua_settable(L, -3);
   return 1;
 }

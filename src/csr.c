@@ -480,9 +480,10 @@ static LUA_FUNCTION(openssl_csr_attribute)
       lua_pushnil(L);
     return 1;
   } else if (lua_istable(L, 2)) {
+    int i;
     int ret = 1;
     int n = lua_rawlen(L, 2);
-    for (int i = 1; ret==1 && i <= n; i++) {
+    for (i = 1; ret==1 && i <= n; i++) {
       X509_ATTRIBUTE *attr;
       lua_rawgeti(L, 2, i);
       attr = NULL;

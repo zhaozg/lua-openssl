@@ -858,8 +858,7 @@ static int openssl_asn1group_toutf8(lua_State* L)
 static int openssl_asn1group_dup(lua_State* L)
 {
   ASN1_STRING* s = CHECK_GROUP(1, ASN1_STRING, "openssl.asn1group");
-  ASN1_STRING* ss = ASN1_STRING_dup(s);
-  PUSH_OBJECT(ss, "openssl.asn1_string");
+  openssl_push_asn1(L, s, s->type);
   return 1;
 }
 
@@ -1173,7 +1172,8 @@ int openssl_get_nid(lua_State*L, int idx)
 
 int openssl_push_asn1object(lua_State* L, const ASN1_OBJECT* obj)
 {
-  PUSH_OBJECT(OBJ_dup(obj), "openssl.asn1_object");
+  ASN1_OBJECT* dup = OBJ_dup(obj);
+  PUSH_OBJECT(dup, "openssl.asn1_object");
   return 1;
 }
 
@@ -1190,20 +1190,23 @@ int openssl_push_asn1(lua_State* L, ASN1_STRING* string, int type)
   switch (type) {
   case V_ASN1_INTEGER:
   {
-    PUSH_OBJECT(ASN1_INTEGER_dup((ASN1_INTEGER*) string), "openssl.asn1_integer");
+    ASN1_INTEGER*dup = ASN1_INTEGER_dup((ASN1_INTEGER*) string);
+    PUSH_OBJECT(dup, "openssl.asn1_integer");
     return 1;
   }
   case V_ASN1_UTCTIME:
   case V_ASN1_GENERALIZEDTIME:
   {
-    PUSH_OBJECT((ASN1_TIME*) ASN1_STRING_dup(string), "openssl.asn1_time");
+    ASN1_TIME* dup = (ASN1_TIME*) ASN1_STRING_dup(string);
+    PUSH_OBJECT(dup , "openssl.asn1_time");
     return 1;
   }
   case V_ASN1_OCTET_STRING:
   case V_ASN1_BIT_STRING:
   default:
   {
-    PUSH_OBJECT(ASN1_STRING_dup(string), "openssl.asn1_string");
+    ASN1_STRING* dup =  ASN1_STRING_dup(string);
+    PUSH_OBJECT(dup, "openssl.asn1_string");
     return 1;
   }
   }

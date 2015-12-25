@@ -16,8 +16,8 @@
 #define TAB2SK(TYPE, type)                                        \
 STACK_OF(TYPE)* openssl_sk_##type##_fromtable(lua_State*L, int idx) {     \
   STACK_OF(TYPE) * sk;                                            \
-  luaL_argcheck(L, lua_isnoneornil(L, idx)||lua_istable(L, idx),  \
-    idx, "must be a table as array or nil");                      \
+  luaL_argcheck(L, lua_istable(L, idx),  idx,                     \
+         "must be a table as array or nil");                      \
   sk = SKM_sk_new_null(TYPE);                                     \
   if (lua_istable(L,idx)) {                                       \
     int n = lua_rawlen(L, idx);                                   \
@@ -51,4 +51,3 @@ STACK_OF(TYPE)* openssl_sk_##type##_fromtable(lua_State*L, int idx) {     \
 #define IMP_LUA_SK(TYPE,type)   \
 TAB2SK(TYPE,type);              \
 SK2TAB(TYPE,type)
-

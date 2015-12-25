@@ -789,23 +789,28 @@ static int openssl_push_pkcs7_signer_info(lua_State *L, PKCS7_SIGNER_INFO *info)
   AUXILIAR_SET(L, -1, "version", ASN1_INTEGER_get(info->version), integer);
 
   if (info->issuer_and_serial!=NULL) {
-    /*
+    X509_NAME *i = X509_NAME_dup(info->issuer_and_serial->issuer);
+    ASN1_INTEGER *s = ASN1_INTEGER_dup(info->issuer_and_serial->serial);
     if (info->issuer_and_serial->issuer)
-      AUXILIAR_SETOBJECT(L, X509_NAME_dup(info->issuer_and_serial->issuer), "openssl.x509_name", -1, "issuer");
+      AUXILIAR_SETOBJECT(L, i, "openssl.x509_name", -1, "issuer");
 
     if (info->issuer_and_serial->serial)
-      AUXILIAR_SETOBJECT(L, ASN1_INTEGER_dup(info->issuer_and_serial->serial), "openssl.asn1_integer", -1, "serial");
-      */
+      AUXILIAR_SETOBJECT(L, s, "openssl.asn1_integer", -1, "serial");
   }
-  /*
-  if(info->digest_alg)
-    AUXILIAR_SETOBJECT(L, X509_ALGOR_dup(info->digest_alg), "openssl.x509_algor", -1, "digest_alg");
-  if (info->digest_enc_alg)
-    AUXILIAR_SETOBJECT(L, X509_ALGOR_dup(info->digest_alg), "openssl.x509_algor", -1, "digest_enc_alg");
 
-  if (info->enc_digest)
-    AUXILIAR_SETOBJECT(L, ASN1_STRING_dup(info->enc_digest), "openssl.asn1_string", -1, "enc_digest");
-    */
+  if(info->digest_alg) {
+    X509_ALGOR *dup = X509_ALGOR_dup(info->digest_alg);
+    AUXILIAR_SETOBJECT(L, dup, "openssl.x509_algor", -1, "digest_alg");
+  }
+  if (info->digest_enc_alg) {
+    X509_ALGOR *dup = X509_ALGOR_dup(info->digest_alg);
+    AUXILIAR_SETOBJECT(L, dup, "openssl.x509_algor", -1, "digest_enc_alg");
+  }
+  if (info->enc_digest) {
+    ASN1_STRING *dup = ASN1_STRING_dup(info->enc_digest);
+    AUXILIAR_SETOBJECT(L, dup, "openssl.asn1_string", -1, "enc_digest");
+  }
+    
   if (info->pkey){
     info->pkey->references++;
     AUXILIAR_SETOBJECT(L, info->pkey, "openssl.evp_pkey", -1, "pkey");
@@ -860,7 +865,8 @@ static LUA_FUNCTION(openssl_pkcs7_parse)
     if (!PKCS7_is_detached(p7))
     {
       PKCS7* c = sign->contents;
-      AUXILIAR_SETOBJECT(L, PKCS7_dup(c), "openssl.pkcs7", -1, "contents");
+      c = PKCS7_dup(c);
+      AUXILIAR_SETOBJECT(L, c, "openssl.pkcs7", -1, "contents");
     }
   }
   break;

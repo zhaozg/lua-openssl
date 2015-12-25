@@ -1376,8 +1376,9 @@ static int openssl_ssl_get(lua_State*L)
       n = sk_X509_NAME_num(sn);
       lua_newtable(L);
         for (j = 0; j < n; j++) {
+          X509_NAME *dup = X509_NAME_dup(sk_X509_NAME_value(sn, j));
           lua_pushinteger(L, j + 1);
-          PUSH_OBJECT(X509_NAME_dup(sk_X509_NAME_value(sn, j)), "openssl.x509_name");
+          PUSH_OBJECT(dup, "openssl.x509_name");
           lua_rawset(L, -3);
         }
     }

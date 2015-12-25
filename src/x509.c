@@ -224,7 +224,6 @@ static LUA_FUNCTION(openssl_x509_parse)
   {
     AUXILIAR_SET(L, -1, "name", cert->name, string);
   }
-
   AUXILIAR_SET(L, -1, "valid", cert->valid, boolean);
   AUXILIAR_SET(L, -1, "version", X509_get_version(cert), integer);
 
@@ -238,15 +237,16 @@ static LUA_FUNCTION(openssl_x509_parse)
     snprintf(buf, sizeof(buf), "%08lx", X509_subject_name_hash(cert));
     AUXILIAR_SET(L, -1, "hash", buf, string);
   }
-
   PUSH_ASN1_INTEGER(L, cert->cert_info->serialNumber);
   lua_setfield(L, -2, "serialNumber");
+
   PUSH_ASN1_TIME(L, X509_get_notBefore(cert));
   lua_setfield(L, -2, "notBefore");
   PUSH_ASN1_TIME(L, X509_get_notAfter(cert));
   lua_setfield(L, -2, "notAfter");
-  
-  PUSH_OBJECT(X509_ALGOR_dup(cert->sig_alg), "openssl.x509_algor");
+
+  X509_ALGOR* alg = X509_ALGOR_dup(cert->sig_alg);
+  PUSH_OBJECT(alg, "openssl.x509_algor");
   lua_setfield(L, -2, "sig_alg");
 
   {
@@ -293,14 +293,14 @@ static LUA_FUNCTION(openssl_x509_parse)
       for (i = 0; i < n; i++)
       {
         X509_EXTENSION *ext = X509_get_ext(cert, i);
+        ext = X509_EXTENSION_dup(ext);
         lua_pushinteger(L, i + 1);
-        PUSH_OBJECT(X509_EXTENSION_dup(ext), "openssl.x509_extension");
+        PUSH_OBJECT(ext, "openssl.x509_extension");
         lua_rawset(L, -3);
       }
       lua_rawset(L, -3);
     }
   }
-
   return 1;
 }
 
