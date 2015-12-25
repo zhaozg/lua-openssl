@@ -330,6 +330,33 @@ static LUA_FUNCTION(openssl_x509_public_key)
   }
 }
 
+static int verify_cb(int ok, X509_STORE_CTX *ctx) {
+  int err;
+  X509 *err_cert;
+
+  /*
+  * it is ok to use a self signed certificate This case will catch both
+  * the initial ok == 0 and the final ok == 1 calls to this function
+  */
+  err = X509_STORE_CTX_get_error(ctx);
+  if (err == X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT)
+    return 1;
+
+  /*
+  * BAD we should have gotten an error.  Normally if everything worked
+  * X509_STORE_CTX_get_error(ctx) will still be set to
+  * DEPTH_ZERO_SELF_....
+  */
+  if (ok) {
+    //BIO_printf(bio_err, "error with certificate to be certified - should be self signed\n");
+    return 0;
+  } else {
+    err_cert = X509_STORE_CTX_get_current_cert(ctx);
+    //print_name(bio_err, NULL, X509_get_subject_name(err_cert), 0);
+    //BIO_printf(bio_err, "error with certificate - error %d at depth %d\n%s\n", err, X509_STORE_CTX_get_error_depth(ctx), X509_verify_cert_error_string(err));
+    return 1;
+  }
+}
 
 static LUA_FUNCTION(openssl_x509_check)
 {
@@ -345,11 +372,11 @@ static LUA_FUNCTION(openssl_x509_check)
   {
     X509_STORE* store = CHECK_OBJECT(2, X509_STORE, "openssl.x509_store");
     STACK_OF(X509)* untrustedchain = lua_isnoneornil(L, 3) ?  NULL : openssl_sk_x509_fromtable(L, 3);
-    int purpose = X509_PURPOSE_get_by_sname((char*)luaL_optstring(L, 4, "any"));
+    int purpose = lua_isnone(L, 4) ? 0 : X509_PURPOSE_get_by_sname((char*)luaL_optstring(L, 4, "any"));
     int ret = 0;
-    /*
-    X509_STORE_set_verify_cb_func(cainfo,verify_cb);
-    */
+#if 0
+    X509_STORE_set_verify_cb_func(store,verify_cb);
+#endif
     ret = check_cert(store, cert, untrustedchain, purpose);
     lua_pushboolean(L, ret == X509_V_OK);
     lua_pushinteger(L, ret);
@@ -567,18 +594,23 @@ static int openssl_x509_valid_at(lua_State* L)
 
 static int openssl_x509_serial(lua_State *L)
 {
-  char *tmp;
   BIGNUM *bn;
   ASN1_INTEGER *serial;
   X509* cert = CHECK_OBJECT(1, X509, "openssl.x509");
-  if (lua_isnone(L, 2))
+
+  if (lua_isnone(L, 2) || lua_isboolean(L, 2))
   {
+    int asobj = lua_isnone(L, 2) ? 0 : lua_toboolean(L, 2);
     serial = X509_get_serialNumber(cert);
     bn = ASN1_INTEGER_to_BN(serial, NULL);
-    tmp = BN_bn2hex(bn);
-    lua_pushstring(L, tmp);
-    BN_free(bn);
-    OPENSSL_free(tmp);
+    if (asobj) {
+      PUSH_OBJECT(bn, "openssl.bn");
+    } else {
+      char *tmp = BN_bn2hex(bn);
+      lua_pushstring(L, tmp);
+      BN_free(bn);
+      OPENSSL_free(tmp);
+    }
     return 1;
   }
   else
