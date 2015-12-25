@@ -802,6 +802,7 @@ static int openssl_asn1group_tostring(lua_State* L)
       BIGNUM *bn = BN_bin2bn((const unsigned char*)ASN1_STRING_data(s), ASN1_STRING_length(s), NULL);
       char* str = BN_bn2hex(bn);
       lua_pushstring(L, str);
+      BN_free(bn);
       OPENSSL_free(str);
       return 1;
     }

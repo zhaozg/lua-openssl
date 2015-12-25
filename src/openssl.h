@@ -129,8 +129,10 @@ void openssl_add_method(const OBJ_NAME *name, void *arg);
 
 #define PUSH_OBJECT(o, tname)                                   \
   MULTI_LINE_MACRO_BEGIN                                        \
+  if(o) {                                                       \
   *(void **)(lua_newuserdata(L, sizeof(void *))) = (void*)(o);  \
   auxiliar_setclass(L,tname,-1);                                \
+  } else lua_pushnil(L);                                        \
   MULTI_LINE_MACRO_END
 
 int openssl_register_lhash(lua_State* L);

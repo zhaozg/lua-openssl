@@ -18,7 +18,7 @@ TestHMACCompat = {}
 
         b = hmac.hmac(self.alg,self.msg,self.key,false)
         assertEquals(#b,40)
-        assertEquals(openssl.hex(a),b)
+        assertEquals(openssl.hex(a):lower(),b)
 
         a = hmac.new(self.alg,self.key)
         a:update(self.msg)
