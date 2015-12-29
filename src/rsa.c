@@ -24,8 +24,6 @@ static LUA_FUNCTION(openssl_rsa_free)
 {
   RSA* rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");
   RSA_free(rsa);
-  lua_pushnil(L);
-  lua_setmetatable(L, 1);
   return 0;
 };
 

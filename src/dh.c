@@ -24,8 +24,6 @@ static LUA_FUNCTION(openssl_dh_free)
 {
   DH* dh = CHECK_OBJECT(1, DH, "openssl.dh");
   DH_free(dh);
-  lua_pushnil(L);
-  lua_setmetatable(L, 1);
   return 0;
 };
 

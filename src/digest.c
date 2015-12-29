@@ -248,8 +248,6 @@ static LUA_FUNCTION(openssl_evp_digest_final)
 static LUA_FUNCTION(openssl_digest_ctx_free)
 {
   EVP_MD_CTX *ctx = CHECK_OBJECT(1, EVP_MD_CTX, "openssl.evp_digest_ctx");
-  lua_pushnil(L);
-  lua_setmetatable(L, 1);
   EVP_MD_CTX_destroy(ctx);
   return 0;
 }

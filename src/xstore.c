@@ -25,8 +25,6 @@ void openssl_xstore_free(X509_STORE* ctx)
 static int openssl_xstore_gc(lua_State* L)
 {
   X509_STORE* ctx = CHECK_OBJECT(1, X509_STORE, "openssl.x509_store");
-  lua_pushnil(L);
-  lua_setmetatable(L, 1);
   openssl_xstore_free(ctx);
   return 0;
 }

@@ -338,8 +338,6 @@ static int openssl_ec_key_free(lua_State*L)
 {
   EC_KEY* p = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
   EC_KEY_free(p);
-  lua_pushnil(L);
-  lua_setmetatable(L, 1);
   return 0;
 }
 

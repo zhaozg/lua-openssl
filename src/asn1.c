@@ -159,8 +159,6 @@ static int openssl_asn1type_cmp(lua_State*L)
 static int openssl_asn1type_free(lua_State*L)
 {
   ASN1_TYPE* at = CHECK_OBJECT(1, ASN1_TYPE, "openssl.asn1_type");
-  lua_pushnil(L);
-  lua_setmetatable(L, 1);
   ASN1_TYPE_free(at);
   return 0;
 }

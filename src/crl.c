@@ -616,8 +616,6 @@ static LUA_FUNCTION(openssl_crl_parse)
 static LUA_FUNCTION(openssl_crl_free)
 {
   X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
-  lua_pushnil(L);
-  lua_setmetatable(L, 1);
   X509_CRL_free(crl);
   return 0;
 }
@@ -873,8 +871,6 @@ static int openssl_revoked_extensions(lua_State* L)
 static int openssl_revoked_free(lua_State* L)
 {
   X509_REVOKED* revoked = CHECK_OBJECT(1, X509_REVOKED, "openssl.x509_revoked");
-  lua_pushnil(L);
-  lua_setmetatable(L, 1);
   X509_REVOKED_free(revoked);
   return 1;
 }

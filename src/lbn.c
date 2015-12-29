@@ -65,7 +65,6 @@ static BIGNUM *Bget(lua_State *L, int i)
   default:
     return *((void**)luaL_checkudata(L, i, MYTYPE));
   }
-  return NULL;
 }
 
 static int Bbits(lua_State *L)      /** bits(x) */
@@ -396,8 +395,6 @@ static int Bgc(lua_State *L)
 {
   BIGNUM *a = Bget(L, 1);
   BN_free(a);
-  lua_pushnil(L);
-  lua_setmetatable(L, 1);
   return 0;
 }
 

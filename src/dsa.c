@@ -24,8 +24,6 @@ static LUA_FUNCTION(openssl_dsa_free)
 {
   DSA* dsa = CHECK_OBJECT(1, DSA, "openssl.dsa");
   DSA_free(dsa);
-  lua_pushnil(L);
-  lua_setmetatable(L, 1);
   return 0;
 };
 

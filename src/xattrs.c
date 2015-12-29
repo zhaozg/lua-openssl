@@ -55,8 +55,6 @@ static int openssl_xattr_dup(lua_State*L)
 static int openssl_xattr_free(lua_State*L)
 {
   X509_ATTRIBUTE* attr = CHECK_OBJECT(1, X509_ATTRIBUTE, "openssl.x509_attribute");
-  lua_pushnil(L);
-  lua_setmetatable(L, 1);
   X509_ATTRIBUTE_free(attr);
   return 0;
 }

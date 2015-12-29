@@ -1221,8 +1221,6 @@ static int openssl_ssl_peer(lua_State*L)
 static int openssl_ssl_gc(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
-  lua_pushnil(L);
-  lua_setmetatable(L, 1);
   openssl_freevalue(L, s);
   SSL_free(s);
 

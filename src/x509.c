@@ -307,8 +307,6 @@ static LUA_FUNCTION(openssl_x509_parse)
 static LUA_FUNCTION(openssl_x509_free)
 {
   X509 *cert = CHECK_OBJECT(1, X509, "openssl.x509");
-  lua_pushnil(L);
-  lua_setmetatable(L, 1);
   X509_free(cert);
   return 0;
 }

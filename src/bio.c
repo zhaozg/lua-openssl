@@ -392,8 +392,6 @@ static LUA_FUNCTION(openssl_bio_free)
   else
     BIO_free(bio);
 
-  lua_pushnil(L);
-  lua_setmetatable(L, 1);
   return 0;
 }
 

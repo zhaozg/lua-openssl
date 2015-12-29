@@ -162,8 +162,6 @@ static LUA_FUNCTION(openssl_ts_req_new)
 static LUA_FUNCTION(openssl_ts_req_gc)
 {
   TS_REQ *req = CHECK_OBJECT(1, TS_REQ, "openssl.ts_req");
-  lua_pushnil(L);
-  lua_setmetatable(L, 1);
   TS_REQ_free(req);
   return 0;
 }
@@ -313,8 +311,6 @@ static ASN1_INTEGER *tsa_serial_cb(TS_RESP_CTX *ctx, void *data)
 static LUA_FUNCTION(openssl_ts_resp_gc)
 {
   TS_RESP *res = CHECK_OBJECT(1, TS_RESP, "openssl.ts_resp");
-  lua_pushnil(L);
-  lua_setmetatable(L, 1);
   TS_RESP_free(res);
   return 0;
 }
@@ -1058,8 +1054,6 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_set_time_cb)
 static LUA_FUNCTION(openssl_ts_resp_ctx_gc)
 {
   TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
-  lua_pushnil(L);
-  lua_setmetatable(L, 1);
   openssl_freevalue(L, ctx);
   TS_RESP_CTX_free(ctx);
   return 0;
@@ -1260,8 +1254,6 @@ static LUA_FUNCTION(openssl_ts_verify_ctx_gc)
     openssl_xstore_free(ctx->store);
 
   ctx->store = NULL;
-  lua_pushnil(L);
-  lua_setmetatable(L, 1);
   TS_VERIFY_CTX_free(ctx);
   return 0;
 }

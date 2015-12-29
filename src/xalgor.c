@@ -21,8 +21,6 @@ void openssl_xalgor_free(X509_ALGOR* alg)
 static int openssl_xalgor_gc(lua_State* L)
 {
   X509_ALGOR* alg = CHECK_OBJECT(1, X509_ALGOR, "openssl.x509_algor");
-  lua_pushnil(L);
-  lua_setmetatable(L, 1);
   openssl_xalgor_free(alg);
   return 0;
 }
