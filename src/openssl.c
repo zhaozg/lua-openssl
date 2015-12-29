@@ -281,7 +281,6 @@ static const luaL_Reg eay_functions[] =
   {"random",      openssl_random_bytes},
 
   {"error",       openssl_error_string},
-
   {"engine",      openssl_engine},
 
   {NULL, NULL}

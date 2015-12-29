@@ -1159,9 +1159,7 @@ int openssl_get_nid(lua_State*L, int idx)
   else if (lua_isuserdata(L, idx))
   {
     ASN1_OBJECT* obj = CHECK_OBJECT(idx, ASN1_OBJECT, "openssl.asn1_object");
-    int nid = obj->nid;
-    ASN1_OBJECT_free(obj);
-    return nid;
+    return obj->nid;
   }
   else
   {

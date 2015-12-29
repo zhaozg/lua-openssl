@@ -4,12 +4,12 @@ local msg = 'The quick brown fox jumps over the lazy dog.'
 TestLhtml = {}
     function testHex()
         local ano = openssl.hex(msg)
-        --assertEquals(openssl.hex(msg,true),ano)
-        --local raw = openssl.hex(ano,false)
-        --assertEquals(raw,msg)
-        --assertEquals(#msg*2,#ano)
+        assertEquals(openssl.hex(msg,true),ano)
+        local raw = openssl.hex(ano,false)
+        assertEquals(raw,msg)
+        assertEquals(#msg*2,#ano)
     end
---[[
+
     function testBase64()
         local ano = openssl.base64(msg)
         --default without newline
@@ -67,6 +67,7 @@ TestLhtml = {}
         if f then
             local data = f:read('*a')
             f:close()
+
             local conf = assert(openssl.lhash_read(data))
             local t = conf:parse(false)
             assertIsTable(t)
@@ -83,6 +84,6 @@ TestLhtml = {}
             local c1 = openssl.lhash_load('openssl.cnf') or openssl.lhash_load('test/openssl.cnf')
             t = c1:parse()
             assertIsTable(t)
+
         end
     end
---]]

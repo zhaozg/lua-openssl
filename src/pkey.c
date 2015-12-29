@@ -445,7 +445,6 @@ static LUA_FUNCTION(openssl_pkey_new)
       EC_GET_FIELD(y);
       EC_GET_FIELD(z);
 
-
       pkey = EVP_PKEY_new();
       if (pkey)
       {
@@ -464,6 +463,7 @@ static LUA_FUNCTION(openssl_pkey_new)
               EC_POINT_set_Jprojective_coordinates_GFp(group, pnt, x, y, z, NULL);
 
             EC_KEY_set_public_key(ec, pnt);
+            EC_POINT_free(pnt);
           }
 
           if (!EVP_PKEY_assign_EC_KEY(pkey, ec))
@@ -476,8 +476,13 @@ static LUA_FUNCTION(openssl_pkey_new)
           {
             EC_KEY_generate_key_part(ec);
           }
+          BN_free(d);
+          BN_free(x);
+          BN_free(y);
+          BN_free(z);
         }
       }
+      EC_GROUP_free(group);
     }
   }
 

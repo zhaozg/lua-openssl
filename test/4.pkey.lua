@@ -15,11 +15,12 @@ TestPKEYMY = {}
         self.genalg = {
                 {nil}, --default to create rsa 1024 bits with 65537
                 {'rsa',1024,3}, --create rsa with give bits length and e
-                {'dsa',512},
-                {'dh',512},
+                {'dsa',256},
+                {'dh',256},
                 {'ec','prime256v1'}
         }
     end
+
     function TestPKEYMY:testModule()
         for i,v in ipairs(self.genalg ) do
                 --print(v)
@@ -239,6 +240,5 @@ vgPnEUG6Mk9bkxMZKRgsiKn6QGKDYGbOvnS1xmkMfRARBsJAq369VOTjMB/Qhs5q
                 local export = pri:export(false,'secret')
                 local k1 = pkey.read(export,true,'der','secret')
                 assertEquals(pri:export(),k1:export())
-
         end
     end

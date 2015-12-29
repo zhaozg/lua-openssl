@@ -57,4 +57,5 @@ TestX509ext = {}
         local der = time:export()
         local t1 = ext.read_extension(der)
         assert(der==t1:export())
+
     end

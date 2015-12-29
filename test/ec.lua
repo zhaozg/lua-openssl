@@ -13,6 +13,7 @@ testEC = {}
           d = assert(openssl.base64('H+M5UMX0YRJK6ZLCvf3xxzsWFfVxvVZ+YNGaofSM30I=',false)),
         }
         local ec = assert(pkey.new(factor))
+
         local pem = assert(ec:export(true))
         assertEquals(pem,[[
 -----BEGIN PRIVATE KEY-----
@@ -22,6 +23,7 @@ jcWtqOmp3Xyzxw30SJhuUb3l0VdvmZAfnCxqgGpH/ZB2Q6crg1WX78jG
 -----END PRIVATE KEY-----
 ]])
     end
+
     function testEC:testEC()
         local nec =  {'ec','prime256v1'}
         local ec = pkey.new(unpack(nec))
@@ -63,4 +65,3 @@ jcWtqOmp3Xyzxw30SJhuUb3l0VdvmZAfnCxqgGpH/ZB2Q6crg1WX78jG
         assert(ec2priv:is_private())
 
     end
---]==]

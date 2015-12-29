@@ -622,6 +622,8 @@ static LUA_FUNCTION(openssl_pkcs7_verify_digest) {
   ret = 1;
 
 err:
+  if(certs)
+    sk_X509_pop_free(certs, X509_free);
   sk_X509_free(signers);
   return openssl_pushresult(L, ret);
 }
@@ -641,6 +643,8 @@ static LUA_FUNCTION(openssl_pkcs7_sign)
     luaL_error(L, "sigcert and private key not match");
   p7 = PKCS7_sign(cert, privkey, others, in, flags);
   BIO_free(in);
+  if (others)
+    sk_X509_pop_free(others, X509_free);
   if (p7)
   {
     PUSH_OBJECT(p7, "openssl.pkcs7");
@@ -682,7 +686,8 @@ static LUA_FUNCTION(openssl_pkcs7_verify)
   {
     ret = openssl_pushresult(L, 0);
   }
-
+  if(signers)
+    sk_X509_pop_free(signers, X509_free);
   if (out)
     BIO_free(out);
   if (in)
@@ -693,7 +698,7 @@ static LUA_FUNCTION(openssl_pkcs7_verify)
 static LUA_FUNCTION(openssl_pkcs7_encrypt)
 {
   PKCS7 * p7 = NULL;
-  BIO *infile = load_bio_object(L, 1);
+  BIO *in = load_bio_object(L, 1);
   STACK_OF(X509) *recipcerts = openssl_sk_x509_fromtable(L, 2);
   const EVP_CIPHER *cipher = get_cipher(L, 3, "des3");
   long flags = luaL_optint(L, 4, 0);
@@ -703,9 +708,9 @@ static LUA_FUNCTION(openssl_pkcs7_encrypt)
     luaL_error(L, "Failed to get cipher");
   }
 
-  p7 = PKCS7_encrypt(recipcerts, infile, cipher, flags);
-  BIO_free(infile);
-
+  p7 = PKCS7_encrypt(recipcerts, in, cipher, flags);
+  BIO_free(in);
+  sk_X509_pop_free(recipcerts, X509_free);
   if (p7 == NULL)
   {
     lua_pushnil(L);

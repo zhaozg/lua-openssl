@@ -7,6 +7,7 @@ local timeStamping=asn1.new_type('timeStamping')
 timeStamping = timeStamping:i2d()
 local cafalse = openssl.asn1.new_string('CA:FALSE',asn1.OCTET_STRING)
 
+local first = true
 TestTS = {}
     function TestTS:setUp()
         self.alg='sha1'
@@ -23,9 +24,11 @@ keyUsage = nonRepudiation, digitalSignature, keyEncipherment
 extendedKeyUsage = critical,timeStamping
 ]]
         self.hash = assert(self.md:digest(self.dat))
-
-        assert(asn1.new_object({oid='1.2.3.4.5.6',sn='1.2.3.4.5.6_sn',ln='1.2.3.4.5.6_ln'}))
-        assert(asn1.new_object({oid='1.2.3.4.5.7',sn='1.2.3.4.5.7_sn',ln='1.2.3.4.5.7_ln'}))
+        if first then
+            assert(asn1.new_object({oid='1.2.3.4.5.6',sn='1.2.3.4.5.6_sn',ln='1.2.3.4.5.6_ln'}))
+            assert(asn1.new_object({oid='1.2.3.4.5.7',sn='1.2.3.4.5.7_sn',ln='1.2.3.4.5.7_ln'}))
+            first = false
+        end
     end
 
 function TestTS:testAll()
@@ -87,7 +90,7 @@ function TestTS:testAll()
     assertIsTable(t)
     --print_r(t)
 
-    local req_ctx = assert(ts.resp_ctx_new(x509, pkey, '1.2.3.4.1'))
+    local req_ctx = assert(ts.resp_ctx_new(x509, pkey, '1.2.3.4.5.7'))
     assert(req_ctx:md({'md5','sha1'}))
     --assert(req_ctx:policies({'1.1.3','1.1.4'}))
     local res = req_ctx:sign(req)

@@ -331,6 +331,7 @@ static LUA_FUNCTION(openssl_csr_parse)
     lua_pushstring(L, "extensions");
     openssl_sk_x509_extension_totable(L, exts);
     lua_rawset(L, -3);
+    sk_X509_EXTENSION_pop_free(exts, X509_EXTENSION_free);
   }
 
   {
@@ -369,8 +370,6 @@ static LUA_FUNCTION(openssl_csr_parse)
 static LUA_FUNCTION(openssl_csr_free)
 {
   X509_REQ *csr = CHECK_OBJECT(1, X509_REQ, "openssl.x509_req");
-  lua_pushnil(L);
-  lua_setmetatable(L, 1);
   X509_REQ_free(csr);
   return 0;
 }
@@ -437,6 +436,7 @@ static LUA_FUNCTION(openssl_csr_extensions)
     if (sk)
     {
       openssl_sk_x509_extension_totable(L, sk);
+      sk_X509_EXTENSION_pop_free(sk, X509_EXTENSION_free);
     }
     else
       lua_pushnil(L);
@@ -446,6 +446,7 @@ static LUA_FUNCTION(openssl_csr_extensions)
   {
     STACK_OF(X509_EXTENSION) *sk = openssl_sk_x509_extension_fromtable(L, 2);
     int ret = X509_REQ_add_extensions(csr, sk);
+    sk_X509_EXTENSION_pop_free(sk, X509_EXTENSION_free);
     return openssl_pushresult(L, ret);
   }
 }

@@ -1,6 +1,8 @@
 local openssl = require'openssl'
 local asn1 = openssl.asn1
 
+local first = true
+
 TestObject = {}
 
     function TestObject:setUp()
@@ -73,16 +75,27 @@ TestObject = {}
             assertEquals(asn1.txt2nid(options.ln), o7:nid())
             assertEquals(asn1.txt2nid(options.oid), o7:nid())
         end
-        assertEquals(asn1.txt2nid(self.ne_oid),nil)
 
-        assertIsNil(asn1.new_object(self.ne_sn))
-        assertIsNil(asn1.new_object(self.ne_ln))
-        assert(asn1.new_object(self.ne_oid))
+        if first then
+            assertIsNil(asn1.txt2nid(self.ne_oid))
+            first = false
 
-        o1 = assert(asn1.new_object({oid=self.ne_oid,sn=self.ne_sn,ln=self.ne_ln}))
-        o2 = assert(asn1.new_object(self.ne_oid))
-        assertEquals(o1,o2)
+            assertIsNil(asn1.new_object(self.ne_sn))
+            assertIsNil(asn1.new_object(self.ne_ln))
+            assert(asn1.new_object(self.ne_oid))
 
+            o1 = assert(asn1.new_object({oid=self.ne_oid,sn=self.ne_sn,ln=self.ne_ln}))
+            o2 = assert(asn1.new_object(self.ne_oid))
+            assertEquals(o1,o2)
+
+        else
+            assert(asn1.txt2nid(self.ne_oid))
+
+
+            assert(asn1.new_object(self.ne_sn))
+            assert(asn1.new_object(self.ne_ln))
+            assert(asn1.new_object(self.ne_oid))
+        end
     end
 
 TestString = {}

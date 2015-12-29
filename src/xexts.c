@@ -77,6 +77,7 @@ static int openssl_xext_export(lua_State* L)
   if (len > 0)
   {
     lua_pushlstring(L, (const char *) p, len);
+    OPENSSL_free(p);
   }
   else
     lua_pushnil(L);
@@ -86,8 +87,6 @@ static int openssl_xext_export(lua_State* L)
 static int openssl_xext_free(lua_State* L)
 {
   X509_EXTENSION *x = CHECK_OBJECT(1, X509_EXTENSION, "openssl.x509_extension");
-  lua_pushnil(L);
-  lua_setmetatable(L, 1);
   X509_EXTENSION_free(x);
   return 0;
 };
@@ -143,7 +142,8 @@ static int openssl_xext_data(lua_State* L)
   {
     size_t size;
     const char* data = lua_tolstring(L, 2, &size);
-    ASN1_STRING* s = ASN1_STRING_type_new(V_ASN1_OCTET_STRING);
+    int type = lua_isnone(L, 3) ? V_ASN1_OCTET_STRING : luaL_checkint(L, 3);
+    ASN1_STRING* s = ASN1_STRING_type_new(type);
     if (ASN1_STRING_set(s, data, size) == 1)
     {
       ret = X509_EXTENSION_set_data(x, s);
@@ -262,6 +262,7 @@ static X509_EXTENSION* openssl_new_xextension(lua_State*L, int idx, int v3)
           {
             value = ASN1_STRING_type_new(V_ASN1_OCTET_STRING);
             ASN1_STRING_set(value, ext_der, ext_len);
+            OPENSSL_free(ext_der);
           }
           else
             value = NULL;

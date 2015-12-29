@@ -53,6 +53,7 @@ TestCSR = {}
                 self.extensions = self.exts
                 self.attributes = self.attrs
         end
+
         function TestCSR:testNew()
                 local pkey = assert(openssl.pkey.new())
                 local req1,req2
@@ -82,7 +83,6 @@ TestCSR = {}
                 assertIsTable(t)
                 t = req2:parse()
                 assertIsTable(t)
-
 
                 assert(req1:verify()==false);
                 assert(req2:verify());
@@ -145,7 +145,7 @@ TestCSR = {}
                 assertEquals(req1:attr_count(),2+1)
                 req1:attribute(attr)
                 assertEquals(req1:attr_count(),3+1)
---]]
+
                 assertEquals(req1:version(),0)
                 assertEquals(req1:version(1),true)
                 assertEquals(req1:version(),1)

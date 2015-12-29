@@ -48,21 +48,18 @@ TestCompat = {}
         assert(cert:sign(cakey,cacert))
 
         msg = 'abcd'
+
         skcert = {cert}
         p7 = assert(pkcs7.encrypt(msg,skcert))
-        --t = p7:parse()
-        --print_r(t)
         local ret,signer = assert(pkcs7.decrypt(p7,cert,dkey))
         assertEquals(msg,ret)
-
         -------------------------------------
         p7 = assert(pkcs7.sign(msg,cert,dkey))
-        --t = p7:parse()
-        --print_r(t)
         assert(p7:export())
         local store = openssl.x509.store.new({cacert})
         local ret,signer = assert(p7:verify(skcert,store))
-end
+
+    end
 
     function TestCompat:testStep()
         local cakey = assert(openssl.pkey.new())
@@ -113,9 +110,8 @@ end
         assert(p7:add_signer(cert,dkey,md))
         local pp7 = p7:sign_digest(hash,pkcs7.DETACHED,true)
         assert(pp7)
-        --io.savedata('r:\\pkcs7.pem',p7:export())
-        --io.print_r(p7:parse())
 
         local ret,signer = assert(p7:verify(nil,nil,msg..msg,pkcs7.DETACHED))
         local ret,signer = assert(p7:verify_digest(nil,nil,hash,pkcs7.DETACHED,true))
     end
+

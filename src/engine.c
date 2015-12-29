@@ -42,11 +42,7 @@ static const char* const list[] =
 int openssl_engine(lua_State *L)
 {
   const ENGINE* eng = NULL;
-  if (lua_isnoneornil(L, 1))
-  {
-    eng = ENGINE_new();
-  }
-  else if (lua_isstring(L, 1))
+  if (lua_isstring(L, 1))
   {
     const char* id = luaL_checkstring(L, 1);
     eng = ENGINE_by_id(id);
@@ -61,10 +57,9 @@ int openssl_engine(lua_State *L)
   }
   else
     luaL_error(L,
-               "#1 may be string, boolean, nil, userdata for engine or none\n"
+               "#1 may be string or boolean\n"
                "\tstring for an engine id to load\n"
                "\ttrue for first engine, false or last engine\n"
-               "\tnil or none will create a new engine\n"
                "\tbut we get %s:%s", lua_typename(L, lua_type(L,  1)), lua_tostring(L, 1));
   if (eng)
   {
@@ -250,10 +245,9 @@ static int openssl_engine_ctrl(lua_State*L)
 static int openssl_engine_gc(lua_State*L)
 {
   ENGINE* eng = CHECK_OBJECT(1, ENGINE, "openssl.engine");
-  ENGINE_free(eng);
+  (void*) eng;
   return 0;
 }
-
 
 static int openssl_engine_id(lua_State*L)
 {
