@@ -53,12 +53,12 @@ static int openssl_cms_read(lua_State *L)
     cms = d2i_CMS_bio(in, NULL);
     //CMS_ContentInfo *cms = CMS_ContentInfo_new();
     //int ret = i2d_CMS_bio(bio, cms);
-  }else
-  if (fmt == FORMAT_PEM)
+  }
+  else if (fmt == FORMAT_PEM)
   {
     cms = PEM_read_bio_CMS(in, NULL, NULL, NULL);
-  }else
-  if (fmt == FORMAT_SMIME)
+  }
+  else if (fmt == FORMAT_SMIME)
   {
     BIO *indata = load_bio_object(L, 3);
     cms = SMIME_read_CMS(in, &indata);
@@ -310,16 +310,17 @@ static int openssl_cms_encrypt(lua_State *L)
         keyid =  memdup(keyid, keyidlen);
 
         recipient = CMS_add0_recipient_key(cms, NID_undef,
-          (unsigned char*)key, keylen,
-          (unsigned char*)keyid, keyidlen,
-          NULL, NULL, NULL);
+                                           (unsigned char*)key, keylen,
+                                           (unsigned char*)keyid, keyidlen,
+                                           NULL, NULL, NULL);
         if (!recipient)
           ret = 0;
       }
       else if (!lua_isnil(L, -1) || !lua_isnil(L, -2))
       {
         luaL_argerror(L, 5, "key and keyid field must be string");
-      } else
+      }
+      else
         ret = 1;
       lua_pop(L, 2);
 
@@ -330,8 +331,8 @@ static int openssl_cms_encrypt(lua_State *L)
         {
           unsigned char*passwd = (unsigned char*)lua_tostring(L, -1);
           recipient = CMS_add0_recipient_password(cms,
-            -1, NID_undef, NID_undef,
-            passwd, -1, NULL);
+                                                  -1, NID_undef, NID_undef,
+                                                  passwd, -1, NULL);
           if (!recipient)
             ret = 0;
         }

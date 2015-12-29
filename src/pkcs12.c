@@ -31,7 +31,7 @@ static LUA_FUNCTION(openssl_pkcs12_export)
     if (lua_isstring(L, 4))
       friendly_name = lua_tostring(L, 4);
     else if (lua_istable(L, 4))
-      ca = openssl_sk_x509_fromtable(L,4);
+      ca = openssl_sk_x509_fromtable(L, 4);
     else
       luaL_argerror(L, 4, "must be string as friendly_name or table contians x509 object as cacets");
   }

@@ -22,10 +22,10 @@
 #define luaL_optint(L,n,d) ((int)luaL_optinteger(L, (n), (d)))
 #endif
 #ifndef luaL_checklong
-#define luaL_checklong(L,n)	((long)luaL_checkinteger(L, (n)))
+#define luaL_checklong(L,n) ((long)luaL_checkinteger(L, (n)))
 #endif
 #ifndef luaL_optlong
-#define luaL_optlong(L,n,d)	((long)luaL_optinteger(L, (n), (d)))
+#define luaL_optlong(L,n,d) ((long)luaL_optinteger(L, (n), (d)))
 #endif
 #endif
 
@@ -64,7 +64,7 @@ static size_t posrelat(ptrdiff_t pos, size_t len)
 {
   if (pos >= 0) return (size_t)pos;
   else if (0u - (size_t)pos > len) return 0;
-  else return len - ((size_t)-pos) + 1;
+  else return len - ((size_t) - pos) + 1;
 }
 
 enum
@@ -104,7 +104,7 @@ int openssl_push_bit_string_bitname(lua_State* L, const BIT_STRING_BITNAME* name
 
 int openssl_get_nid(lua_State*L, int idx);
 EC_GROUP* openssl_get_ec_group(lua_State* L, int ec_name_idx, int param_enc_idx,
-  int conv_form_idx);
+                               int conv_form_idx);
 
 int openssl_register_xname(lua_State*L);
 int openssl_register_xattribute(lua_State*L);

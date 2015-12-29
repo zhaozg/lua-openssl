@@ -21,7 +21,8 @@ static int openssl_version(lua_State*L)
     lua_pushinteger(L, LUA_VERSION_NUM);
     lua_pushinteger(L, OPENSSL_VERSION_NUMBER);
 
-  } else
+  }
+  else
   {
     lua_pushstring(L, LOPENSSL_VERSION);
     lua_pushstring(L, LUA_VERSION);
@@ -37,7 +38,8 @@ static LUA_FUNCTION(openssl_hex)
   int encode = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L, 2);
   char* h = NULL;
   BIGNUM *B = NULL;
-  if (l == 0) {
+  if (l == 0)
+  {
     lua_pushstring(L, "");
     return 1;
   }
@@ -67,7 +69,7 @@ static LUA_FUNCTION(openssl_base64)
   BIO *inp = load_bio_object(L, 1);
   int encode = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L, 2);
   int nonl = lua_isnoneornil(L, 3) ? BIO_FLAGS_BASE64_NO_NL
-    : (lua_toboolean(L, 3) ? BIO_FLAGS_BASE64_NO_NL : 0);
+             : (lua_toboolean(L, 3) ? BIO_FLAGS_BASE64_NO_NL : 0);
   BIO *b64 = BIO_new(BIO_f_base64());
   BIO *out = BIO_new(BIO_s_mem());
   BUF_MEM* mem = {0};
@@ -135,7 +137,8 @@ static LUA_FUNCTION(openssl_error_string)
   {
     val = (unsigned long)lua_tonumber(L, 1);
     clear = lua_toboolean(L, 2);
-  } else
+  }
+  else
   {
     val = ERR_get_error();
     clear = lua_toboolean(L, 1);
@@ -147,12 +150,12 @@ static LUA_FUNCTION(openssl_error_string)
     lua_pushstring (L, ERR_reason_error_string(val));
     lua_pushstring (L, ERR_lib_error_string   (val));
     lua_pushstring (L, ERR_func_error_string  (val));
-    #ifdef ERR_FATAL_ERROR
+#ifdef ERR_FATAL_ERROR
     lua_pushboolean(L, ERR_FATAL_ERROR        (val));
     ret = 5;
-    #else
+#else
     ret = 4;
-    #endif
+#endif
   }
 
   if (clear)
@@ -294,7 +297,8 @@ void CRYPTO_thread_cleanup(void);
 LUALIB_API int luaopen_openssl(lua_State*L)
 {
   static int init = 0;
-  if (init == 0) {
+  if (init == 0)
+  {
 #if defined(OPENSSL_THREADS)
     CRYPTO_thread_setup();
 #endif

@@ -703,7 +703,8 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_policies)
       int i, n;
       lua_newtable(L);
       n = sk_ASN1_OBJECT_num(ctx->policies);
-      for (i = 0; i < n; i++) {
+      for (i = 0; i < n; i++)
+      {
         lua_pushinteger(L, i + 1);
         ASN1_OBJECT* obj = sk_ASN1_OBJECT_value(ctx->policies, i);
         PUSH_OBJECT(obj, "openssl.asn1_object");
@@ -1144,7 +1145,7 @@ static int openssl_ts_verify_ctx_store(lua_State*L)
     }
     else
     */
-      lua_pushnil(L);
+    lua_pushnil(L);
   }
   else
   {
@@ -1167,7 +1168,7 @@ static int openssl_ts_verify_ctx_certs(lua_State*L)
   {
     if (ctx->certs)
     {
-      openssl_sk_x509_totable(L,ctx->certs);
+      openssl_sk_x509_totable(L, ctx->certs);
     }
     else
       lua_pushnil(L);

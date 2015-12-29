@@ -289,17 +289,23 @@ static LUA_FUNCTION(openssl_digest_ctx_clone)
   return 1;
 }
 
-static LUA_FUNCTION(openssl_digest_ctx_data) {
+static LUA_FUNCTION(openssl_digest_ctx_data)
+{
   EVP_MD_CTX *ctx = CHECK_OBJECT(1, EVP_MD_CTX, "openssl.evp_digest_ctx");
-  if (lua_isnone(L, 2)) {
+  if (lua_isnone(L, 2))
+  {
     lua_pushlstring(L, ctx->md_data, ctx->digest->ctx_size);
     return 1;
-  } else {
+  }
+  else
+  {
     size_t l;
     const char* d = luaL_checklstring(L, 2, &l);
-    if (l == (size_t)ctx->digest->ctx_size) {
+    if (l == (size_t)ctx->digest->ctx_size)
+    {
       memcpy(ctx->md_data, d, l);
-    } else
+    }
+    else
       luaL_error(L, "data with wrong data");
   }
 
@@ -319,9 +325,11 @@ static LUA_FUNCTION(openssl_signInit)
     if (ret)
     {
       PUSH_OBJECT(ctx, "openssl.evp_digest_ctx");
-    }else
+    }
+    else
       return openssl_pushresult(L, ret);
-  }else
+  }
+  else
     lua_pushnil(L);
   return 1;
 }
@@ -380,7 +388,7 @@ static LUA_FUNCTION(openssl_signFinal)
     ret = EVP_SignFinal(ctx, sigbuf, (unsigned int *)&siglen, pkey);
   else
     ret = EVP_DigestSignFinal(ctx, sigbuf, &siglen);
-  if (ret==1)
+  if (ret == 1)
   {
     lua_pushlstring(L, (char *)sigbuf, siglen);
   }
@@ -434,7 +442,7 @@ static luaL_Reg digest_ctx_funs[] =
 
   {"signUpdate",  openssl_signUpdate},
   {"signFinal",   openssl_signFinal},
-  {"verifyUpdate",openssl_verifyUpdate},
+  {"verifyUpdate", openssl_verifyUpdate},
   {"verifyFinal", openssl_verifyFinal},
 
   {"__tostring",  auxiliar_tostring},

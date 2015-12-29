@@ -118,12 +118,12 @@ static int openssl_pkey_read(lua_State*L)
           EVP_PKEY_assign_RSA(key, rsa);
         }
       }
-    }else
-    if (fmt == FORMAT_DER)
+    }
+    else if (fmt == FORMAT_DER)
     {
       key = d2i_PUBKEY_bio(in, NULL);
       BIO_reset(in);
-      if (!key && type!=-1)
+      if (!key && type != -1)
       {
         char * bio_mem_ptr;
         long bio_mem_len;
@@ -140,8 +140,8 @@ static int openssl_pkey_read(lua_State*L)
     {
       key = PEM_read_bio_PrivateKey(in, NULL, NULL, (void*)passphrase);
       BIO_reset(in);
-    }else
-    if (fmt == FORMAT_DER)
+    }
+    else if (fmt == FORMAT_DER)
     {
       if (passphrase)
         key = d2i_PKCS8PrivateKey_bio(in, NULL, NULL, (void*)passphrase);
@@ -518,7 +518,8 @@ static LUA_FUNCTION(openssl_pkey_export)
     if (!lua_isnoneornil(L, 3))
       exraw = lua_toboolean(L, 3);
     passphrase = luaL_optlstring(L, 4, NULL, &passphrase_len);
-  } else
+  }
+  else
   {
     passphrase = luaL_optlstring(L, 3, NULL, &passphrase_len);
   }
@@ -535,11 +536,11 @@ static LUA_FUNCTION(openssl_pkey_export)
   bio_out = BIO_new(BIO_s_mem());
   if (expem)
   {
-    if (exraw==0)
+    if (exraw == 0)
     {
       ret = ispriv ?
-        PEM_write_bio_PrivateKey(bio_out, key, cipher, (unsigned char *)passphrase, passphrase_len, NULL, NULL) :
-        PEM_write_bio_PUBKEY(bio_out, key);
+            PEM_write_bio_PrivateKey(bio_out, key, cipher, (unsigned char *)passphrase, passphrase_len, NULL, NULL) :
+            PEM_write_bio_PUBKEY(bio_out, key);
     }
     else
     {
@@ -549,29 +550,29 @@ static LUA_FUNCTION(openssl_pkey_export)
       case EVP_PKEY_RSA:
       case EVP_PKEY_RSA2:
         ret = ispriv ? PEM_write_bio_RSAPrivateKey(bio_out, key->pkey.rsa, cipher, (unsigned char *)passphrase, passphrase_len, NULL, NULL)
-          : PEM_write_bio_RSAPublicKey(bio_out, key->pkey.rsa);
-      break;
+              : PEM_write_bio_RSAPublicKey(bio_out, key->pkey.rsa);
+        break;
       case EVP_PKEY_DSA:
       case EVP_PKEY_DSA2:
       case EVP_PKEY_DSA3:
       case EVP_PKEY_DSA4:
       {
         ret = ispriv ? PEM_write_bio_DSAPrivateKey(bio_out, key->pkey.dsa, cipher, (unsigned char *)passphrase, passphrase_len, NULL, NULL)
-          : PEM_write_bio_DSA_PUBKEY(bio_out, key->pkey.dsa);
+              : PEM_write_bio_DSA_PUBKEY(bio_out, key->pkey.dsa);
       }
       break;
       case EVP_PKEY_DH:
         ret = PEM_write_bio_DHparams(bio_out, key->pkey.dh);
-      break;
+        break;
 #ifndef OPENSSL_NO_EC
       case EVP_PKEY_EC:
         ret = ispriv ? PEM_write_bio_ECPrivateKey(bio_out, key->pkey.ec, cipher, (unsigned char *)passphrase, passphrase_len, NULL, NULL)
-        : PEM_write_bio_EC_PUBKEY(bio_out, key->pkey.ec);
-      break;
+              : PEM_write_bio_EC_PUBKEY(bio_out, key->pkey.ec);
+        break;
 #endif
       default:
-      ret = 0;
-      break;
+        ret = 0;
+        break;
       }
     }
   }
@@ -582,11 +583,13 @@ static LUA_FUNCTION(openssl_pkey_export)
       if (passphrase == NULL)
       {
         ret = i2d_PrivateKey_bio(bio_out, key);
-      } else
+      }
+      else
       {
         ret = i2d_PKCS8PrivateKey_bio(bio_out, key, cipher, (char *)passphrase, passphrase_len, NULL, NULL);
       }
-    } else
+    }
+    else
     {
       int l;
       l = i2d_PublicKey(key, NULL);
@@ -599,15 +602,17 @@ static LUA_FUNCTION(openssl_pkey_export)
         {
           BIO_write(bio_out, p, l);
           ret = 1;
-        } else
+        }
+        else
           ret = 0;
         free(p);
-      } else
+      }
+      else
         ret = 0;
     }
   }
 
-  
+
   if (ret)
   {
     char * bio_mem_ptr;
@@ -736,7 +741,8 @@ static LUA_FUNCTION(openssl_pkey_encrypt)
   EVP_PKEY_CTX *ctx = NULL;
   int ret = 0;
 
-  if (pkey->type != EVP_PKEY_RSA && pkey->type != EVP_PKEY_RSA2) {
+  if (pkey->type != EVP_PKEY_RSA && pkey->type != EVP_PKEY_RSA2)
+  {
     luaL_argerror(L, 2, "EVP_PKEY must be of type RSA or RSA2");
     return ret;
   }
@@ -783,7 +789,8 @@ static LUA_FUNCTION(openssl_pkey_decrypt)
   EVP_PKEY_CTX *ctx = NULL;
   int ret = 0;
 
-  if (pkey->type != EVP_PKEY_RSA && pkey->type != EVP_PKEY_RSA2) {
+  if (pkey->type != EVP_PKEY_RSA && pkey->type != EVP_PKEY_RSA2)
+  {
     luaL_argerror(L, 2, "EVP_PKEY must be of type RSA or RSA2");
     return ret;
   }
@@ -854,18 +861,21 @@ static LUA_FUNCTION(openssl_pkey_get_public)
   return ret;
 }
 
-static LUA_FUNCTION(openssl_ec_userId) {
+static LUA_FUNCTION(openssl_ec_userId)
+{
   EVP_PKEY* pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
   ENGINE* engine = CHECK_OBJECT(2, ENGINE, "openssl.engine");
 
   int ret = 0;
-  if (!pkey || EVP_PKEY_type(pkey->type) != EVP_PKEY_EC || !pkey->pkey.ec) {
+  if (!pkey || EVP_PKEY_type(pkey->type) != EVP_PKEY_EC || !pkey->pkey.ec)
+  {
     luaL_argerror(L, 1, "only support EC key");
   }
   if (!engine)
     luaL_argerror(L, 1, "EC key must have engine field");
 
-  if (lua_gettop(L) == 2) {
+  if (lua_gettop(L) == 2)
+  {
     ASN1_OCTET_STRING *s = ASN1_OCTET_STRING_new();
     ret = ENGINE_ctrl(engine, 0x474554, 0x4944, pkey->pkey.ec, (void(*)(void))s);
     if (ret == 1)
@@ -873,7 +883,9 @@ static LUA_FUNCTION(openssl_ec_userId) {
     else
       ret = openssl_pushresult(L, ret);
     return ret;
-  } else {
+  }
+  else
+  {
     ASN1_OCTET_STRING *s = ASN1_OCTET_STRING_new();
     size_t l;
     const char* data = luaL_checklstring(L, 3, &l);
@@ -1067,7 +1079,7 @@ static LUA_FUNCTION(openssl_seal)
     buf = malloc(len1);
 
 
-    if (!EVP_SealInit(&ctx, cipher, eks, eksl, (unsigned char*) iv, pkeys, nkeys) 
+    if (!EVP_SealInit(&ctx, cipher, eks, eksl, (unsigned char*) iv, pkeys, nkeys)
         || !EVP_SealUpdate(&ctx, buf, &len1, (unsigned char *)data, data_len))
     {
       luaL_error(L, "EVP_SealInit failed");
@@ -1355,12 +1367,12 @@ static LUA_FUNCTION(openssl_open_final)
   int len = EVP_CIPHER_CTX_block_size(ctx);
   unsigned char *buf = malloc(len);
   int ret = EVP_OpenFinal(ctx, buf, &len);
-  if (ret==1)
+  if (ret == 1)
   {
     lua_pushlstring(L, (const char*)buf, len);
   }
   free(buf);
-  return ret==1 ? ret : openssl_pushresult(L, ret);
+  return ret == 1 ? ret : openssl_pushresult(L, ret);
 }
 
 static luaL_Reg pkey_funcs[] =
@@ -1382,7 +1394,7 @@ static luaL_Reg pkey_funcs[] =
 
   {"compute_key",   openssl_dh_compute_key},
   {"ec_userId",     openssl_ec_userId},
-  
+
   {"__gc",          openssl_pkey_free},
   {"__tostring",    auxiliar_tostring},
 

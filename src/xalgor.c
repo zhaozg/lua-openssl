@@ -25,7 +25,8 @@ static int openssl_xalgor_gc(lua_State* L)
   return 0;
 }
 
-static int openssl_xalgor_dup(lua_State* L) {
+static int openssl_xalgor_dup(lua_State* L)
+{
   X509_ALGOR* alg = CHECK_OBJECT(1, X509_ALGOR, "openssl.x509_algor");
   X509_ALGOR* ano = X509_ALGOR_dup(alg);
   PUSH_OBJECT(ano, "openssl.x509_algor");
@@ -33,7 +34,8 @@ static int openssl_xalgor_dup(lua_State* L) {
 }
 
 #if OPENSSL_VERSION_NUMBER >= 0x10002000L
-static int openssl_xalgor_cmp(lua_State* L) {
+static int openssl_xalgor_cmp(lua_State* L)
+{
   X509_ALGOR* alg = CHECK_OBJECT(1, X509_ALGOR, "openssl.x509_algor");
   X509_ALGOR* ano = CHECK_OBJECT(2, X509_ALGOR, "openssl.x509_algor");
   lua_pushboolean(L, X509_ALGOR_cmp(alg, ano) == 0);
@@ -42,7 +44,8 @@ static int openssl_xalgor_cmp(lua_State* L) {
 #endif
 
 #if OPENSSL_VERSION_NUMBER >= 0x10001000L
-static int openssl_xalgor_md(lua_State* L) {
+static int openssl_xalgor_md(lua_State* L)
+{
   X509_ALGOR* alg = CHECK_OBJECT(1, X509_ALGOR, "openssl.x509_algor");
   const EVP_MD* md = get_digest(L, 2);
   X509_ALGOR_set_md(alg, md);
@@ -50,7 +53,8 @@ static int openssl_xalgor_md(lua_State* L) {
 }
 #endif
 
-static int openssl_xalgor_get(lua_State* L) {
+static int openssl_xalgor_get(lua_State* L)
+{
   int type;
   void* val;
   ASN1_OBJECT *obj, *dup;
@@ -58,7 +62,8 @@ static int openssl_xalgor_get(lua_State* L) {
   X509_ALGOR* alg = CHECK_OBJECT(1, X509_ALGOR, "openssl.x509_algor");
 
   X509_ALGOR_get0(&obj, &type, &val, alg);
-  if (obj != NULL) {
+  if (obj != NULL)
+  {
     dup = OBJ_dup(obj);
     PUSH_OBJECT(dup, "openssl.asn1_object");
   }
@@ -66,7 +71,8 @@ static int openssl_xalgor_get(lua_State* L) {
     lua_pushnil(L);
   if (type == V_ASN1_UNDEF)
     lua_pushnil(L);
-  else {
+  else
+  {
     ASN1_STRING *s = ASN1_STRING_dup(val);
     PUSH_OBJECT(s, "openssl.asn1_string");
   }
@@ -74,18 +80,20 @@ static int openssl_xalgor_get(lua_State* L) {
   return 2;
 }
 
-static int openssl_xalgor_set(lua_State* L) {
+static int openssl_xalgor_set(lua_State* L)
+{
   X509_ALGOR* alg = CHECK_OBJECT(1, X509_ALGOR, "openssl.x509_algor");
   ASN1_OBJECT* obj = CHECK_OBJECT(2, ASN1_OBJECT, "openssl.asn1_object");
-  ASN1_STRING* val = lua_isnoneornil(L,3) ? 
-    NULL : auxiliar_checkgroup(L, "openssl.asn1_group", 3);
+  ASN1_STRING* val = lua_isnoneornil(L, 3) ?
+                     NULL : auxiliar_checkgroup(L, "openssl.asn1_group", 3);
   obj = OBJ_dup(obj);
   val = ASN1_STRING_dup(val);
   int ret = X509_ALGOR_set0(alg, obj , val->type, val);
   return openssl_pushresult(L, ret);
 }
 
-static int openssl_xalgor_tostring(lua_State* L) {
+static int openssl_xalgor_tostring(lua_State* L)
+{
   int type;
   void* val;
   ASN1_OBJECT *obj;
@@ -93,7 +101,8 @@ static int openssl_xalgor_tostring(lua_State* L) {
   X509_ALGOR* alg = CHECK_OBJECT(1, X509_ALGOR, "openssl.x509_algor");
 
   X509_ALGOR_get0(&obj, &type, &val, alg);
-  if (obj != NULL) {
+  if (obj != NULL)
+  {
     luaL_Buffer B;
     luaL_buffinit(L, &B);
 

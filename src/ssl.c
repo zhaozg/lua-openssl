@@ -552,11 +552,13 @@ static int openssl_ssl_ctx_verify_mode(lua_State*L)
         lua_pushstring(L, "peer");
         i += 1;
 
-        if (mode & SSL_VERIFY_FAIL_IF_NO_PEER_CERT) {
+        if (mode & SSL_VERIFY_FAIL_IF_NO_PEER_CERT)
+        {
           lua_pushstring(L, "fail");
           i += 1;
         }
-        if (mode & SSL_VERIFY_CLIENT_ONCE) {
+        if (mode & SSL_VERIFY_CLIENT_ONCE)
+        {
           lua_pushstring(L, "once");
           i += 1;
         }
@@ -569,15 +571,17 @@ static int openssl_ssl_ctx_verify_mode(lua_State*L)
 static int openssl_ssl_ctx_set_cert_verify(lua_State*L)
 {
   SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
-  luaL_argcheck(L, 
-                lua_isnone(L, 2) || lua_isfunction(L, 2) || lua_istable(L, 2), 
+  luaL_argcheck(L,
+                lua_isnone(L, 2) || lua_isfunction(L, 2) || lua_istable(L, 2),
                 2,
                 "need function or table contains flags");
-  if (lua_istable(L, 2)) {
+  if (lua_istable(L, 2))
+  {
     lua_pushvalue(L, 2);
     openssl_setvalue(L, ctx, "verify_cb_flags");
     SSL_CTX_set_cert_verify_callback(ctx, openssl_cert_verify_cb, L);
-  }else if (lua_isfunction(L, 2))
+  }
+  else if (lua_isfunction(L, 2))
   {
     lua_pushvalue(L, 2);
     openssl_setvalue(L, ctx, "cert_verify_cb");
@@ -1174,10 +1178,10 @@ SSL_SESSION *d2i_SSL_SESSION(SSL_SESSION **a, const unsigned char **pp,
                              void *SSL_SESSION_get_ex_data(const SSL_SESSION *ss, int idx);
 #endif
 
-/***************************SSL**********************************/
+                             /***************************SSL**********************************/
 
-/* need more think */
-static int openssl_ssl_clear(lua_State*L)
+                             /* need more think */
+                             static int openssl_ssl_clear(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
   lua_pushboolean(L, SSL_clear(s));
@@ -1373,12 +1377,13 @@ static int openssl_ssl_get(lua_State*L)
       int j, n;
       n = sk_X509_NAME_num(sn);
       lua_newtable(L);
-        for (j = 0; j < n; j++) {
-          X509_NAME *dup = X509_NAME_dup(sk_X509_NAME_value(sn, j));
-          lua_pushinteger(L, j + 1);
-          PUSH_OBJECT(dup, "openssl.x509_name");
-          lua_rawset(L, -3);
-        }
+      for (j = 0; j < n; j++)
+      {
+        X509_NAME *dup = X509_NAME_dup(sk_X509_NAME_value(sn, j));
+        lua_pushinteger(L, j + 1);
+        PUSH_OBJECT(dup, "openssl.x509_name");
+        lua_rawset(L, -3);
+      }
     }
     else if (strcmp(what, "read_ahead") == 0)
     {
@@ -1570,7 +1575,7 @@ static int openssl_ssl_read(lua_State*L)
   }
   else
   {
-    ret = openssl_ssl_pushresult(L,s,ret);
+    ret = openssl_ssl_pushresult(L, s, ret);
   }
   free(buf);
   return ret;
@@ -1590,7 +1595,8 @@ static int openssl_ssl_peek(lua_State*L)
   {
     lua_pushlstring(L, buf, ret);
     ret = 1;
-  } else
+  }
+  else
   {
     ret = openssl_ssl_pushresult(L, s, ret);
   }
@@ -1713,7 +1719,7 @@ static int openssl_ssl_dup(lua_State*L)
   return 1;
 }
 
-static int openssl_ssl_session_reused(lua_State*L) 
+static int openssl_ssl_session_reused(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
   int ret = SSL_session_reused(s);
@@ -1886,7 +1892,8 @@ int luaopen_ssl(lua_State *L)
     lua_pushinteger(L, e.val);
     lua_setfield(L, -2, e.name);
   }
-  for (i = 0; sVerifyMode_Options[i]; i++) {
+  for (i = 0; sVerifyMode_Options[i]; i++)
+  {
     lua_pushinteger(L, iVerifyMode_Options[i]);
     lua_setfield(L, -2, sVerifyMode_Options[i]);
   }

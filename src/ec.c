@@ -130,16 +130,20 @@ static int openssl_ec_group_asn1_flag(lua_State*L)
       lua_pushnil(L);
     lua_pushinteger(L, asn1_flag);
     return 2;
-  } else if (lua_isstring(L, 2))
-  {           /* OPENSSL_EC_NAMED_CURVE,   0 */
+  }
+  else if (lua_isstring(L, 2))
+  {
+    /* OPENSSL_EC_NAMED_CURVE,   0 */
     const char* const options[] = {"named_curve", "explicit", NULL};
     asn1_flag = luaL_checkoption(L, 2, NULL, options);
     EC_GROUP_set_asn1_flag(group, asn1_flag);
-  } else if (lua_isnumber(L, 2))
+  }
+  else if (lua_isnumber(L, 2))
   {
     asn1_flag = luaL_checkint(L, 2);
     EC_GROUP_set_asn1_flag(group, asn1_flag);
-  } else
+  }
+  else
     luaL_argerror(L, 2, "not accept type of asn1 flag");
 
   return 0;
@@ -162,7 +166,8 @@ static int openssl_ec_group_point_conversion_form(lua_State*L)
       lua_pushnil(L);
     lua_pushinteger(L, form);
     return 2;
-  } else if (lua_isstring(L, 2))
+  }
+  else if (lua_isstring(L, 2))
   {
     const char* options[] = {"compressed", "uncompressed", "hybrid", NULL};
     int f = luaL_checkoption(L, 2, NULL, options);
@@ -175,18 +180,20 @@ static int openssl_ec_group_point_conversion_form(lua_State*L)
     else
       luaL_argerror(L, 2, "not accept value point_conversion_form");
     EC_GROUP_set_point_conversion_form(group, form);
-  } else if (lua_isnumber(L, 2))
+  }
+  else if (lua_isnumber(L, 2))
   {
     form = luaL_checkint(L, 2);
     EC_GROUP_set_point_conversion_form(group, form);
-  } else
+  }
+  else
     luaL_argerror(L, 2, "not accept type of point_conversion_form");
   return 0;
 }
 
 
 EC_GROUP* openssl_get_ec_group(lua_State* L, int ec_name_idx, int param_enc_idx,
-  int conv_form_idx)
+                               int conv_form_idx)
 {
   int nid = NID_undef;
   EC_GROUP* g = NULL;
@@ -196,7 +203,8 @@ EC_GROUP* openssl_get_ec_group(lua_State* L, int ec_name_idx, int param_enc_idx,
   {
     const char* name = luaL_checkstring(L, ec_name_idx);
     nid = OBJ_sn2nid(name);
-  } else if (lua_isuserdata(L, ec_name_idx))
+  }
+  else if (lua_isuserdata(L, ec_name_idx))
   {
     if (auxiliar_isclass(L, "openssl.evp_pkey", ec_name_idx))
     {
@@ -207,7 +215,8 @@ EC_GROUP* openssl_get_ec_group(lua_State* L, int ec_name_idx, int param_enc_idx,
         g = (EC_GROUP*)EC_KEY_get0_group(ec_key);
         EC_KEY_free(ec_key);
       }
-    } else if (auxiliar_isclass(L, "openssl.ec_key", ec_name_idx))
+    }
+    else if (auxiliar_isclass(L, "openssl.ec_key", ec_name_idx))
     {
       EC_KEY* ec_key = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
       g = (EC_GROUP*)EC_KEY_get0_group(ec_key);
@@ -237,38 +246,45 @@ EC_GROUP* openssl_get_ec_group(lua_State* L, int ec_name_idx, int param_enc_idx,
         else
           luaL_argerror(L, param_enc_idx, "not accept value point_conversion_form");
         EC_GROUP_set_point_conversion_form(g, form);
-      } else if (lua_isnumber(L, param_enc_idx))
+      }
+      else if (lua_isnumber(L, param_enc_idx))
       {
         form = luaL_checkint(L, param_enc_idx);
         EC_GROUP_set_point_conversion_form(g, form);
-      } else if (lua_isnoneornil(L, param_enc_idx))
+      }
+      else if (lua_isnoneornil(L, param_enc_idx))
       {
         EC_GROUP_set_point_conversion_form(g, POINT_CONVERSION_UNCOMPRESSED);
       }
       else
         luaL_argerror(L, param_enc_idx, "not accept type of point_conversion_form");
-    }else
+    }
+    else
       EC_GROUP_set_point_conversion_form(g, POINT_CONVERSION_UNCOMPRESSED);
 
     if (conv_form_idx)
     {
       int asn1_flag = 0;
       if (lua_isstring(L, conv_form_idx))
-      {           /* OPENSSL_EC_NAMED_CURVE,   0 */
+      {
+        /* OPENSSL_EC_NAMED_CURVE,   0 */
         const char* const options[] = {"named_curve", "explicit", NULL};
         asn1_flag = luaL_checkoption(L, conv_form_idx, NULL, options);
         EC_GROUP_set_asn1_flag(g, asn1_flag);
-      } else if (lua_isnumber(L, conv_form_idx))
+      }
+      else if (lua_isnumber(L, conv_form_idx))
       {
         asn1_flag = luaL_checkint(L, conv_form_idx);
         EC_GROUP_set_asn1_flag(g, asn1_flag);
-      } else if (lua_isnoneornil(L, conv_form_idx))
+      }
+      else if (lua_isnoneornil(L, conv_form_idx))
       {
         EC_GROUP_set_asn1_flag(g, OPENSSL_EC_NAMED_CURVE);
       }
       else
         luaL_argerror(L, conv_form_idx, "not accept type of asn1 flag");
-    }else
+    }
+    else
       EC_GROUP_set_asn1_flag(g, OPENSSL_EC_NAMED_CURVE);
   }
 
@@ -344,7 +360,7 @@ static int openssl_ec_key_free(lua_State*L)
 static int openssl_ec_key_parse(lua_State*L)
 {
   EC_KEY* ec = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
-  int basic = luaL_opt(L,lua_toboolean, 2, 0);
+  int basic = luaL_opt(L, lua_toboolean, 2, 0);
   const EC_POINT* point = EC_KEY_get0_public_key(ec);
   const EC_GROUP* group = EC_KEY_get0_group(ec);
   const BIGNUM *priv = EC_KEY_get0_private_key(ec);

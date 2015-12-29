@@ -262,8 +262,8 @@ static LUA_FUNCTION(openssl_crl_read)
   {
     crl = PEM_read_bio_X509_CRL(in, NULL, NULL, NULL);
     BIO_reset(in);
-  }else
-  if (fmt == FORMAT_DER)
+  }
+  else if (fmt == FORMAT_DER)
   {
     crl = d2i_X509_CRL_bio(in, NULL);
     BIO_reset(in);
@@ -560,7 +560,7 @@ static LUA_FUNCTION(openssl_crl_parse)
 
   openssl_push_x509_algor(L, crl->crl->sig_alg);
   lua_setfield(L, -2, "sig_alg");
-  
+
 #if OPENSSL_VERSION_NUMBER > 0x00909000L
   if (crl->crl_number)
   {

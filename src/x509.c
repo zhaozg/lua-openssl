@@ -151,8 +151,8 @@ static LUA_FUNCTION(openssl_x509_read)
   {
     cert = d2i_X509_bio(in, NULL);
     BIO_reset(in);
-  }else
-  if (fmt == FORMAT_PEM)
+  }
+  else if (fmt == FORMAT_PEM)
   {
     cert = PEM_read_bio_X509(in, NULL, NULL, NULL);
     BIO_reset(in);
@@ -328,7 +328,8 @@ static LUA_FUNCTION(openssl_x509_public_key)
   }
 }
 
-static int verify_cb(int ok, X509_STORE_CTX *ctx) {
+static int verify_cb(int ok, X509_STORE_CTX *ctx)
+{
   int err;
   X509 *err_cert;
 
@@ -345,10 +346,13 @@ static int verify_cb(int ok, X509_STORE_CTX *ctx) {
   * X509_STORE_CTX_get_error(ctx) will still be set to
   * DEPTH_ZERO_SELF_....
   */
-  if (ok) {
+  if (ok)
+  {
     //BIO_printf(bio_err, "error with certificate to be certified - should be self signed\n");
     return 0;
-  } else {
+  }
+  else
+  {
     err_cert = X509_STORE_CTX_get_current_cert(ctx);
     //print_name(bio_err, NULL, X509_get_subject_name(err_cert), 0);
     //BIO_printf(bio_err, "error with certificate - error %d at depth %d\n%s\n", err, X509_STORE_CTX_get_error_depth(ctx), X509_verify_cert_error_string(err));
@@ -373,7 +377,7 @@ static LUA_FUNCTION(openssl_x509_check)
     int purpose = lua_isnone(L, 4) ? 0 : X509_PURPOSE_get_by_sname((char*)luaL_optstring(L, 4, "any"));
     int ret = 0;
 #if 0
-    X509_STORE_set_verify_cb_func(store,verify_cb);
+    X509_STORE_set_verify_cb_func(store, verify_cb);
 #endif
     ret = check_cert(store, cert, untrustedchain, purpose);
     lua_pushboolean(L, ret == X509_V_OK);
@@ -601,9 +605,12 @@ static int openssl_x509_serial(lua_State *L)
     int asobj = lua_isnone(L, 2) ? 0 : lua_toboolean(L, 2);
     serial = X509_get_serialNumber(cert);
     bn = ASN1_INTEGER_to_BN(serial, NULL);
-    if (asobj) {
+    if (asobj)
+    {
       PUSH_OBJECT(bn, "openssl.bn");
-    } else {
+    }
+    else
+    {
       char *tmp = BN_bn2hex(bn);
       lua_pushstring(L, tmp);
       BN_free(bn);
@@ -748,7 +755,8 @@ static int openssl_x509_sign(lua_State*L)
       return 1;
     }
     return openssl_pushresult(L, len);
-  } else if (auxiliar_isclass(L, "openssl.evp_pkey", 2))
+  }
+  else if (auxiliar_isclass(L, "openssl.evp_pkey", 2))
   {
     EVP_PKEY* pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
     const EVP_MD *md;
@@ -760,7 +768,8 @@ static int openssl_x509_sign(lua_State*L)
       X509_NAME* xn = CHECK_OBJECT(3, X509_NAME, "openssl.x509_name");
       ret = X509_set_issuer_name(x, xn);
       i++;
-    } else
+    }
+    else
     {
       X509* ca = CHECK_OBJECT(3, X509, "openssl.x509");
       X509_NAME* xn = X509_get_subject_name(ca);
@@ -775,14 +784,15 @@ static int openssl_x509_sign(lua_State*L)
     if (ret == 1)
     {
       md = lua_isnoneornil(L, i) ?
-        EVP_get_digestbyname("sha1") :
-        get_digest(L, i);
+           EVP_get_digestbyname("sha1") :
+           get_digest(L, i);
       ret = X509_sign(x, pkey, md);
       if (ret > 0)
         ret = 1;
     }
     return openssl_pushresult(L, ret);
-  } else
+  }
+  else
   {
     size_t sig_len;
     const char* sig = luaL_checklstring(L, 2, &sig_len);
@@ -800,7 +810,7 @@ static int openssl_x509_sign(lua_State*L)
 static int openssl_x509_verify(lua_State*L)
 {
   X509* x = CHECK_OBJECT(1, X509, "openssl.x509");
-  if (lua_isnoneornil(L, 2) && x->cert_info!=NULL)
+  if (lua_isnoneornil(L, 2) && x->cert_info != NULL)
   {
     unsigned char *out = NULL;
     int len = i2d_X509_CINF(x->cert_info, &out);
@@ -811,7 +821,8 @@ static int openssl_x509_verify(lua_State*L)
       if (x->signature != NULL)
       {
         lua_pushlstring(L, (const char *)x->signature->data, x->signature->length);
-      } else
+      }
+      else
         lua_pushnil(L);
       if (x->sig_alg)
         openssl_push_x509_algor(L, x->sig_alg);
@@ -820,7 +831,8 @@ static int openssl_x509_verify(lua_State*L)
       return 3;
     }
     return openssl_pushresult(L, len);
-  } else
+  }
+  else
   {
     EVP_PKEY *pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
     int ret = X509_verify(x, pkey);
