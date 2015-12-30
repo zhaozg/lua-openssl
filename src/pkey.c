@@ -486,11 +486,12 @@ static LUA_FUNCTION(openssl_pkey_new)
     }
   }
 
-  if (pkey)
+  if (pkey && pkey->pkey.ptr)
   {
     PUSH_OBJECT(pkey, "openssl.evp_pkey");
     return 1;
-  }
+  } else
+    EVP_PKEY_free(pkey);
   return 0;
 
 }
