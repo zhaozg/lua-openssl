@@ -707,37 +707,12 @@ static LUA_FUNCTION(openssl_pkey_parse)
 };
 /* }}} */
 
-static const char* sPadding[] =
-{
-  "pkcs1",
-  "sslv23",
-  "no",
-  "oaep",
-  "x931",
-#if OPENSSL_VERSION_NUMBER > 0x10000000L
-  "pss",
-#endif
-  NULL,
-};
-
-static int iPadding[] =
-{
-  RSA_PKCS1_PADDING,
-  RSA_SSLV23_PADDING,
-  RSA_NO_PADDING,
-  RSA_PKCS1_OAEP_PADDING,
-  RSA_X931_PADDING,
-#if OPENSSL_VERSION_NUMBER > 0x10000000L
-  RSA_PKCS1_PSS_PADDING
-#endif
-};
-
 static LUA_FUNCTION(openssl_pkey_encrypt)
 {
   size_t dlen = 0;
   EVP_PKEY *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
   const char *data = luaL_checklstring(L, 2, &dlen);
-  int padding = auxiliar_checkoption(L, 3, "pkcs1", sPadding, iPadding);
+  int padding = openssl_get_padding(L, 3, "pkcs1");
   size_t clen = EVP_PKEY_size(pkey);
   EVP_PKEY_CTX *ctx = NULL;
   int ret = 0;
@@ -785,7 +760,7 @@ static LUA_FUNCTION(openssl_pkey_decrypt)
   size_t dlen = 0;
   EVP_PKEY *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
   const char *data = luaL_checklstring(L, 2, &dlen);
-  int padding = auxiliar_checkoption(L, 3, "pkcs1", sPadding, iPadding);
+  int padding = openssl_get_padding(L, 3, "pkcs1");
   size_t clen = EVP_PKEY_size(pkey);
   EVP_PKEY_CTX *ctx = NULL;
   int ret = 0;

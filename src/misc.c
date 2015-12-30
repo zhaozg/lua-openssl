@@ -175,14 +175,32 @@ int openssl_push_bit_string_bitname(lua_State* L, const BIT_STRING_BITNAME* name
   return 1;
 }
 
-int openssl_sk_index(lua_State*L, int i, int num, int idx)
+static const char* sPadding[] =
 {
-  int ret = i;
-  if (i < 0)
-    ret = num + i;
-  else
-    ret = i - 1;
+  "pkcs1",
+  "sslv23",
+  "no",
+  "oaep",
+  "x931",
+#if OPENSSL_VERSION_NUMBER > 0x10000000L
+  "pss",
+#endif
+  NULL,
+};
 
-  luaL_argcheck(L, ret >= 0 && ret < num, idx, "out of range");
-  return ret;
+static int iPadding[] =
+{
+  RSA_PKCS1_PADDING,
+  RSA_SSLV23_PADDING,
+  RSA_NO_PADDING,
+  RSA_PKCS1_OAEP_PADDING,
+  RSA_X931_PADDING,
+#if OPENSSL_VERSION_NUMBER > 0x10000000L
+  RSA_PKCS1_PSS_PADDING
+#endif
+};
+
+int openssl_get_padding(lua_State *L, int idx, const char *defval) 
+{
+  return auxiliar_checkoption(L, idx, defval, sPadding, iPadding);
 }

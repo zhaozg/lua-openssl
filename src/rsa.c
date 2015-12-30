@@ -27,6 +27,63 @@ static LUA_FUNCTION(openssl_rsa_free)
   return 0;
 };
 
+static int is_private(const RSA* rsa)
+{
+  if (NULL == rsa->p || NULL ==rsa->q) {
+    return 0;
+  }
+  return 1;
+};
+
+static LUA_FUNCTION(openssl_rsa_isprivate)
+{
+  RSA* rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");
+  lua_pushboolean(L, is_private(rsa));
+  return 1;
+};
+
+static LUA_FUNCTION(openssl_rsa_encrypt)
+{
+  RSA* rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");
+  size_t l;
+  const unsigned char* from = (const unsigned char *)luaL_checklstring(L, 2, &l);
+  int padding = openssl_get_padding(L, 3, "pkcs1");
+  unsigned char* to = OPENSSL_malloc(RSA_size(rsa));
+  int flen = l;
+
+  flen = is_private(rsa) 
+    ? RSA_private_encrypt(flen, from, to, rsa, padding)
+    : RSA_public_encrypt(flen, from, to, rsa, padding);
+  if (flen > 0) {
+    lua_pushlstring(L, to, flen);
+    OPENSSL_free(to);
+    return 1;
+  }
+  OPENSSL_free(to);
+  return openssl_pushresult(L, flen);
+};
+
+static LUA_FUNCTION(openssl_rsa_decrypt)
+{
+  RSA* rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");
+  size_t l;
+  const unsigned char* from = (const unsigned char *) luaL_checklstring(L, 2, &l);
+  int padding = openssl_get_padding(L, 3, "pkcs1");
+  unsigned char* to = OPENSSL_malloc(RSA_size(rsa));
+  int flen = l;
+
+  flen = is_private(rsa)
+    ? RSA_private_decrypt(flen, from, to, rsa, padding)
+    : RSA_public_decrypt(flen, from, to, rsa, padding);
+  if (flen > 0) {
+    lua_pushlstring(L, to, flen);
+    OPENSSL_free(to);
+    return 1;
+  }
+  OPENSSL_free(to);
+  return openssl_pushresult(L, flen);
+};
+
 static LUA_FUNCTION(openssl_rsa_parse)
 {
   RSA* rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");
@@ -45,6 +102,9 @@ static LUA_FUNCTION(openssl_rsa_parse)
 static luaL_Reg rsa_funs[] =
 {
   {"parse",       openssl_rsa_parse},
+  {"isprivate",   openssl_rsa_isprivate},
+  {"encrypt",     openssl_rsa_encrypt},
+  {"decrypt",     openssl_rsa_decrypt},
 
   {"__gc",        openssl_rsa_free},
   {"__tostring",  auxiliar_tostring},
@@ -52,17 +112,24 @@ static luaL_Reg rsa_funs[] =
   { NULL, NULL }
 };
 
+static luaL_Reg R[] =
+{
+  {"parse",       openssl_rsa_parse},
+  {"isprivate",   openssl_rsa_isprivate},
+  {"encrypt",     openssl_rsa_encrypt},
+  {"decrypt",     openssl_rsa_decrypt},
+
+  {NULL, NULL}
+};
+
 int luaopen_rsa(lua_State *L)
 {
   auxiliar_newclass(L, "openssl.rsa",     rsa_funs);
-  return 0;
-  /*
-    lua_newtable(L);
-    luaL_setfuncs(L, R, 0);
-    lua_pushliteral(L, "version");
-    lua_pushliteral(L, MYVERSION);
-    lua_settable(L, -3);
+  lua_newtable(L);
+  luaL_setfuncs(L, R, 0);
+  lua_pushliteral(L, "version");
+  lua_pushliteral(L, MYVERSION);
+  lua_settable(L, -3);
 
-    return 1;
-  */
+  return 1;
 }

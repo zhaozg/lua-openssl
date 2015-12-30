@@ -49,16 +49,19 @@ static luaL_Reg dsa_funs[] =
   { NULL, NULL }
 };
 
+static luaL_Reg R[] =
+{
+  {NULL, NULL}
+};
+
 int luaopen_dsa(lua_State *L)
 {
   auxiliar_newclass(L, "openssl.dsa",     dsa_funs);
-  return 0;
-  /*
-    lua_newtable(L);
-    luaL_setfuncs(L, R, 0);
-    lua_pushliteral(L, "version");
-    lua_pushliteral(L, MYVERSION);
-    lua_settable(L, -3);
-    return 1;
-  */
+
+  lua_newtable(L);
+  luaL_setfuncs(L, R, 0);
+  lua_pushliteral(L, "version");
+  lua_pushliteral(L, MYVERSION);
+  lua_settable(L, -3);
+  return 1;
 }

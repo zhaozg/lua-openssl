@@ -381,8 +381,11 @@ LUALIB_API int luaopen_openssl(lua_State*L)
   lua_setfield(L, -2, "bn");
 
   luaopen_rsa(L);
+  lua_setfield(L, -2, "rsa");
   luaopen_dsa(L);
+  lua_setfield(L, -2, "dsa");
   luaopen_dh(L);
+  lua_setfield(L, -2, "dh");
 
 #ifdef ENABLE_OPENSSL_GLOBAL
   lua_pushvalue(L, -1);

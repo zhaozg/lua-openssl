@@ -105,13 +105,13 @@ int openssl_push_bit_string_bitname(lua_State* L, const BIT_STRING_BITNAME* name
 int openssl_get_nid(lua_State*L, int idx);
 EC_GROUP* openssl_get_ec_group(lua_State* L, int ec_name_idx, int param_enc_idx,
                                int conv_form_idx);
+int openssl_get_padding(lua_State *L, int idx, const char *defval);
 
 int openssl_register_xname(lua_State*L);
 int openssl_register_xattribute(lua_State*L);
 int openssl_register_xextension(lua_State*L);
 int openssl_register_xstore(lua_State*L);
 int openssl_register_xalgor(lua_State*L);
-int openssl_sk_index(lua_State*L, int i, int num, int idx);
 
 int openssl_pushresult(lua_State*L, int result);
 
