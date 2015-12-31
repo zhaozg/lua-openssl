@@ -1,6 +1,6 @@
 local openssl = require'openssl'
 local digest = require'openssl'.digest
-
+local unpack = unpack or table.unpack
 TestDigestCompat = {}
     function TestDigestCompat:setUp()
         self.msg='abcd'
