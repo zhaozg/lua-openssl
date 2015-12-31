@@ -1163,25 +1163,11 @@ static luaL_Reg ssl_session_funcs[] =
   {NULL,      NULL},
 };
 
-#if 0
-#define d2i_SSL_SESSION_bio(bp,s_id) ASN1_d2i_bio_of(SSL_SESSION,SSL_SESSION_new,d2i_SSL_SESSION,bp,s_id)
-#define i2d_SSL_SESSION_bio(bp,s_id) ASN1_i2d_bio_of(SSL_SESSION,i2d_SSL_SESSION,bp,s_id)
-DECLARE_PEM_rw(SSL_SESSION, SSL_SESSION)
 
-int SSL_SESSION_print_fp(FILE *fp, const SSL_SESSION *ses);
-int SSL_SESSION_print(BIO *fp, const SSL_SESSION *ses);
+/***************************SSL**********************************/
 
-int i2d_SSL_SESSION(SSL_SESSION *in, unsigned char **pp);
-
-SSL_SESSION *d2i_SSL_SESSION(SSL_SESSION **a, const unsigned char **pp,
-                             int SSL_SESSION_set_ex_data(SSL_SESSION *ss, int idx, void *data);
-                             void *SSL_SESSION_get_ex_data(const SSL_SESSION *ss, int idx);
-#endif
-
-                             /***************************SSL**********************************/
-
-                             /* need more think */
-                             static int openssl_ssl_clear(lua_State*L)
+/* need more think */
+static int openssl_ssl_clear(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
   lua_pushboolean(L, SSL_clear(s));
@@ -1374,16 +1360,7 @@ static int openssl_ssl_get(lua_State*L)
     else if (strcmp(what, "client_CA_list") == 0)
     {
       STACK_OF(X509_NAME)* sn = SSL_get_client_CA_list(s);
-      int j, n;
-      n = sk_X509_NAME_num(sn);
-      lua_newtable(L);
-      for (j = 0; j < n; j++)
-      {
-        X509_NAME *dup = X509_NAME_dup(sk_X509_NAME_value(sn, j));
-        lua_pushinteger(L, j + 1);
-        PUSH_OBJECT(dup, "openssl.x509_name");
-        lua_rawset(L, -3);
-      }
+      openssl_sk_x509_name_totable(L, sn);
     }
     else if (strcmp(what, "read_ahead") == 0)
     {

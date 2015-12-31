@@ -902,7 +902,7 @@ static int openssl_push_pkcs7_signer_info(lua_State *L, PKCS7_SIGNER_INFO *info)
 
   if (info->pkey)
   {
-    info->pkey->references++;
+    CRYPTO_add(&info->pkey->references, 1, CRYPTO_LOCK_EVP_PKEY);
     AUXILIAR_SETOBJECT(L, info->pkey, "openssl.evp_pkey", -1, "pkey");
   }
   return 1;

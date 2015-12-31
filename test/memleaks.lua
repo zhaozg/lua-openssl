@@ -28,7 +28,10 @@ dofile('5.ts.lua')
 dofile('6.pkcs7.lua')
 dofile('7.pkcs12.lua')
 dofile('8.ssl_options.lua')
-
+--[[
+dofile('0.tcp.lua')
+dofile('8.ssl.lua')
+--]]
 LuaUnit:setVerbosity(0)
 for i=1, 1000000 do
     LuaUnit:run()

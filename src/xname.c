@@ -8,6 +8,8 @@
 #include "openssl.h"
 #include "private.h"
 
+#include "sk.h"
+
 #define MYNAME "x509.name"
 
 static int openssl_xname_gc(lua_State* L)
@@ -311,6 +313,8 @@ static luaL_Reg R[] =
 
   {NULL,          NULL},
 };
+
+IMP_LUA_SK(X509_NAME, x509_name)
 
 int openssl_register_xname(lua_State*L)
 {
