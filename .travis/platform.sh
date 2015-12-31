@@ -13,3 +13,10 @@ if [ -z "$PLATFORM" ]; then
     PLATFORM="macosx";
   fi;
 fi
+
+if [ "$PLATFORM" == "macosx" ]; then
+  echo update openssl;
+  brew update;
+  brew install openssl;
+  brew link --force openssl;
+fi
