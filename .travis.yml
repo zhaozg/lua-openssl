@@ -1,31 +1,32 @@
 language: c
 
-os:
-  - linux
-  - osx
-
+sudo: required
 env:
   global:
-    - LUAROCKS=2.2.0
+    - LUAROCKS=2.2.2
   matrix:
     - LUA=lua5.1
     - LUA=lua5.2
     - LUA=lua5.3
     - LUA=luajit
+    
+os:
+  - linux
+  - osx
+
 
 branches:
   only:
     - master
 
 before_install:
-  - bash .travis/setup_lua.sh
+  - source .travis/setenv_lua.sh
   - bash .travis/setup_uv.sh
-  #- sudo luarocks install lluv UV_DIR=$TRAVIS_BUILD_DIR/libuv
   - git submodule update --init --recursive
   - git submodule update --recursive
 
 install: 
-  - sudo luarocks make rockspecs/openssl-scm-1.rockspec
+  - sudo $HOME/.lua/luarocks make rockspecs/openssl-scm-1.rockspec
 
 script: 
   - cd test
