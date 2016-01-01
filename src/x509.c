@@ -427,7 +427,7 @@ static int openssl_x509_subject(lua_State* L)
   }
   else
   {
-    X509_NAME *xn = CHECK_OBJECT(2, X509_NAME, "openssl.x509");
+    X509_NAME *xn = CHECK_OBJECT(2, X509_NAME, "openssl.x509_name");
     int ret = X509_set_subject_name(cert, xn);
     return openssl_pushresult(L, ret);
   }
