@@ -528,15 +528,16 @@ static int openssl_asn1string_new(lua_State* L)
 
 static int openssl_asn1int_new(lua_State* L)
 {
-  ASN1_INTEGER *ai = NULL;
-  if (lua_isnone(L, 1))
+  ASN1_INTEGER *ai = ASN1_INTEGER_new();
+  if (lua_isinteger(L, 1))
   {
-    ai = ASN1_INTEGER_new();
+    long v = luaL_checklong(L, 1);
+    ASN1_INTEGER_set(ai, v);
   }
-  else
+  else if (!lua_isnone(L, 1))
   {
     BIGNUM *bn = BN_get(L, 1);
-    ai = BN_to_ASN1_INTEGER(bn, NULL);
+    ai = BN_to_ASN1_INTEGER(bn, ai);
     BN_free(bn);
   }
   PUSH_OBJECT(ai, "openssl.asn1_integer");
@@ -1016,7 +1017,7 @@ static int openssl_get_object(lua_State*L)
   size_t l = 0;
   const char* asn1s = luaL_checklstring(L, 1, &l);
   size_t off = posrelat(luaL_optinteger(L, 2, 1), l);
-  size_t length = posrelat(luaL_optinteger(L, 3, -1), l);
+  size_t length = posrelat(luaL_optinteger(L, 3, l), l);
 
   const unsigned char *p = (const unsigned char *)asn1s + off - 1;
   long len = 0;
@@ -1024,8 +1025,6 @@ static int openssl_get_object(lua_State*L)
   int class = 0;
   int ret;
 
-  if (off < 1) off = 1;
-  if (length > l) length = l;
   p = (const unsigned char *)asn1s + off - 1;
   ret = ASN1_get_object(&p, &len, &tag, &class, length - off + 1);
   if (ret & 0x80)

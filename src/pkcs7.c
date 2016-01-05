@@ -609,7 +609,6 @@ static LUA_FUNCTION(openssl_pkcs7_verify_digest)
   long flags = luaL_optint(L, 5, 0);
   int hash = lua_isnoneornil(L, 6) ? 0 : lua_toboolean(L, 6);
 
-  flags |= PKCS7_DETACHED;
   STACK_OF(X509) *signers;
   X509 *signer;
   STACK_OF(PKCS7_SIGNER_INFO) *sinfos;
