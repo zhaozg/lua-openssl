@@ -204,16 +204,16 @@ static int EC_KEY_generate_key_part(EC_KEY *eckey)
     pub_key = EC_POINT_new(group);
     if (pub_key == NULL)
       goto err;
-	EC_KEY_set_public_key(eckey, pub_key);
-	EC_POINT_free(pub_key);
-	pub_key = (EC_POINT *)EC_KEY_get0_public_key(eckey);
+    EC_KEY_set_public_key(eckey, pub_key);
+    EC_POINT_free(pub_key);
+    pub_key = (EC_POINT *)EC_KEY_get0_public_key(eckey);
   }
 
   if (!EC_POINT_mul(group, pub_key, priv_key, NULL, NULL, ctx))
     goto err;
   EC_POINT_make_affine(EC_KEY_get0_group(eckey),
-	  pub_key,
-	  NULL);
+                       pub_key,
+                       NULL);
   ok = 1;
 
 err:
@@ -462,10 +462,11 @@ static LUA_FUNCTION(openssl_pkey_new)
 
             EC_KEY_set_public_key(ec, pnt);
             EC_POINT_free(pnt);
-          }else
-			  EC_KEY_generate_key_part(ec);
+          }
+          else
+            EC_KEY_generate_key_part(ec);
 
-          if (EC_KEY_check_key(ec)==0 || EVP_PKEY_assign_EC_KEY(pkey, ec)==0)
+          if (EC_KEY_check_key(ec) == 0 || EVP_PKEY_assign_EC_KEY(pkey, ec) == 0)
           {
             EC_KEY_free(ec);
             EVP_PKEY_free(pkey);
@@ -486,7 +487,8 @@ static LUA_FUNCTION(openssl_pkey_new)
   {
     PUSH_OBJECT(pkey, "openssl.evp_pkey");
     return 1;
-  } else
+  }
+  else
     EVP_PKEY_free(pkey);
   return 0;
 

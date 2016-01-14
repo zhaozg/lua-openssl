@@ -29,7 +29,8 @@ static LUA_FUNCTION(openssl_rsa_free)
 
 static int is_private(const RSA* rsa)
 {
-  if (NULL == rsa->p || NULL ==rsa->q) {
+  if (NULL == rsa->p || NULL == rsa->q)
+  {
     return 0;
   }
   return 1;
@@ -51,10 +52,11 @@ static LUA_FUNCTION(openssl_rsa_encrypt)
   unsigned char* to = OPENSSL_malloc(RSA_size(rsa));
   int flen = l;
 
-  flen = is_private(rsa) 
-    ? RSA_private_encrypt(flen, from, to, rsa, padding)
-    : RSA_public_encrypt(flen, from, to, rsa, padding);
-  if (flen > 0) {
+  flen = is_private(rsa)
+         ? RSA_private_encrypt(flen, from, to, rsa, padding)
+         : RSA_public_encrypt(flen, from, to, rsa, padding);
+  if (flen > 0)
+  {
     lua_pushlstring(L, to, flen);
     OPENSSL_free(to);
     return 1;
@@ -73,9 +75,10 @@ static LUA_FUNCTION(openssl_rsa_decrypt)
   int flen = l;
 
   flen = is_private(rsa)
-    ? RSA_private_decrypt(flen, from, to, rsa, padding)
-    : RSA_public_decrypt(flen, from, to, rsa, padding);
-  if (flen > 0) {
+         ? RSA_private_decrypt(flen, from, to, rsa, padding)
+         : RSA_public_decrypt(flen, from, to, rsa, padding);
+  if (flen > 0)
+  {
     lua_pushlstring(L, to, flen);
     OPENSSL_free(to);
     return 1;

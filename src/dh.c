@@ -57,7 +57,7 @@ static luaL_Reg R[] =
 int luaopen_dh(lua_State *L)
 {
   auxiliar_newclass(L, "openssl.dh",     dh_funs);
-  
+
   lua_newtable(L);
   luaL_setfuncs(L, R, 0);
   lua_pushliteral(L, "version");
