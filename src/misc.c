@@ -200,7 +200,64 @@ static int iPadding[] =
 #endif
 };
 
-int openssl_get_padding(lua_State *L, int idx, const char *defval) 
+int openssl_get_padding(lua_State *L, int idx, const char *defval)
 {
   return auxiliar_checkoption(L, idx, defval, sPadding, iPadding);
+}
+
+size_t posrelat(ptrdiff_t pos, size_t len)
+{
+  if (pos >= 0) return (size_t)pos;
+  else if (0u - (size_t)pos > len) return 0;
+  else return len - ((size_t) - pos) + 1;
+}
+
+static const char hex[] = { '0', '1', '2', '3', '4', '5', '6', '7',
+                            '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
+                          };
+static const char bin[256] =
+{
+  /*       0, 1, 2, 3, 4, 5, 6, 7, 8, 9, a, b, c, d, e, f */
+  /* 00 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  /* 10 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  /* 20 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  /* 30 */ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 0, 0, 0, 0, 0,
+  /* 40 */ 0, 10, 11, 12, 13, 14, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  /* 50 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  /* 60 */ 0, 10, 11, 12, 13, 14, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  /* 70 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  /* 80 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  /* 90 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  /* a0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  /* b0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  /* c0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  /* d0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  /* e0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  /* f0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+};
+
+int hex2bin(const char * src, unsigned char *dst, int len)
+{
+  int i;
+  if (len == 0)
+    len = strlen(src);
+  for (i = 0; i < len; i += 2)
+  {
+    unsigned char h = src[i];
+    unsigned char l = src[i + 1];
+    dst[i / 2] = bin[h] << 4 | bin[l];
+  }
+  return i / 2;
+}
+int bin2hex(const unsigned char * src, char *dst, int len)
+{
+  int i;
+  for (i = 0; i < len; i++)
+  {
+    unsigned char c = src[i];
+    dst[i * 2] = hex[c >> 4];
+    dst[i * 2 + 1] = hex[c & 0xf];
+  }
+  dst[i * 2] = '\0';
+  return i * 2;
 }

@@ -37,29 +37,24 @@ static LUA_FUNCTION(openssl_hex)
   const char* s = luaL_checklstring(L, 1, &l);
   int encode = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L, 2);
   char* h = NULL;
-  BIGNUM *B = NULL;
+
   if (l == 0)
   {
     lua_pushstring(L, "");
     return 1;
   }
-  B = BN_new();
   if (encode)
   {
-    B = BN_bin2bn((unsigned const char*)s, l, B);
-    h = BN_bn2hex(B);
-    l = l * 2;
+    h = OPENSSL_malloc(2 * l + 1);
+    l = bin2hex((const unsigned char *)s, h, l);
   }
   else
   {
-    BN_hex2bn(&B, s);
-    h = OPENSSL_malloc(BN_num_bytes(B) + 1);
-    l = BN_bn2bin(B, (unsigned char*)h);
-    h[l] = '\0';
+    h = OPENSSL_malloc(l / 2 + 1);
+    l = hex2bin(s, (unsigned char *)h, l);
   };
   lua_pushlstring(L, (const char*)h, l);
   OPENSSL_free(h);
-  BN_free(B);
 
   return 1;
 }
