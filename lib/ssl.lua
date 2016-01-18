@@ -19,21 +19,25 @@ function M.newcontext(params)
         ..string.sub(params.protocol,4,-1) or 'SSLv3'
     local ctx = ssl.ctx_new(protocol,params.ciphers)
     local xkey = nil
-    if (type(params.password)=='nil') then
-        xkey = assert(pkey.read(load(params.key),true,'pem'))
-    elseif (type(params.password)=='string')  then
-        xkey = assert(pkey.read(load(params.key),true,'pem',params.password))
-    elseif (type(params.password)=='function') then
-        local p = assert(params.password())
-        xkey = assert(pkey.read(load(params.key),true,'pem',p))
-    end
+  
+    if params.key then
+       if (type(params.password)=='nil') then
+           xkey = assert(pkey.read(load(params.key),true,'pem'))
+       elseif (type(params.password)=='string')  then
+           xkey = assert(pkey.read(load(params.key),true,'pem',params.password))
+       elseif (type(params.password)=='function') then
+           local p = assert(params.password())
+           xkey = assert(pkey.read(load(params.key),true,'pem',p))
+       end
 
-    assert(xkey)
-    local xcert = nil
-    if (params.certificate) then
-        xcert = assert(x509.read(load(params.certificate)))
+       assert(xkey)
+       
+       local xcert = nil
+       if (params.certificate) then
+           xcert = assert(x509.read(load(params.certificate)))
+       end
+       assert(ctx:use( xkey, xcert))
     end
-    assert(ctx:use( xkey, xcert))
 
     if(params.cafile or params.capath) then
         ctx:verify_locations(params.cafile,params.capath)
@@ -41,13 +45,27 @@ function M.newcontext(params)
 
     unpack = unpack or table.unpack   
     if(params.verify) then
+        if type(params.verify) ~= "table" then
+            params.verify = {params.verify}
+        end
+        
+        local luasec_flags = {
+            ["none"] = "none",
+            ["peer"] = "peer",
+            ["client_once"] = "once",
+            ["fail_if_no_peer_cert"] = "fail"
+        }
+       
         local args = {}
         for i=1,#params.verify do
-            table.insert(args, params.verify[i])
+            table.insert(args, ssl[luasec_flags[params.verify[i]] or params.verify[i]] or params.verify[i])
         end
-        ctx:verify_mode(args)
+        ctx:verify_mode(unpack(args))
     end
     if params.options then
+        if type(params.options) ~= "table" then
+            params.options = {params.options}
+        end
         ctx:options(unpack(params.options))
     end
     if params.verifyext then
@@ -82,7 +100,6 @@ S.__index = {
             if (msg=='want_read' or msg=='want_write') then
                 ret,msg = self.ssl:handshake()
             else
-                print(ret,msg)
                 return ret,msg
             end
         end           
@@ -143,8 +160,9 @@ S.__index = {
         end
         return self.bio:write(m) and self.bio:flush()
     end,
-    receive = function(self,fmt)
-        self.buff = self.buff or ''
+    receive = function(self,fmt,prev)
+        self.buff = prev or ''
+       
         local r,m = socket.select({self.ssl},nil,self.timeout)
         if #r==0 then
             return nil,'timeout'
@@ -152,35 +170,39 @@ S.__index = {
         
         local s = nil
         if type(fmt)=='number' then
-            if len > #self.buf then
-                s = self.bio:read(len-#self.buf)
-                if s == nil then
-                    return nil, 'closed'
-                else
-                    self.buff = self.buff..s
-                end
+            local len = fmt
+            
+            if len > #self.buff then
+                s = self.bio:read(len-#self.buff)
             else
                 s = self.bio:gets()
-                if s == nil then
-                    return nil,'closed'
-                else
-                    self.buf = self.buf..s
-                end
             end
-            
-            if #self.buf>=len then
-                s = string.sub(self.buf,1,len)
-                self.buf = string.sub(self.buf,len+1,-1)
+
+            if s == '' then
+               if not self.timeout then
+                  return self:receive(fmt)
+               else
+                  return nil, 'timeout'
+               end
+            elseif s == nil then
+               return nil, 'closed'
             else
-                s = self.buff 
+               self.buff = self.buff..s
+            end
+                        
+            if #self.buff>=len then
+                s = string.sub(self.buff,1,len)
+                self.buff = string.sub(self.buff,len+1,-1)
+            else
+                s = self.buff
                 self.buff = ''
             end
             return s
         end
         
-        fmt = fmt and string.sub(fmt,1,2) or '*a'
+        fmt = fmt and string.sub(fmt,1,2) or '*l'
         if (fmt=='*l') then
-            _,_,s, s1 = string.find(self.buff,'(.-)\n(.*)')
+            _,_,s, s1 = string.find(self.buff,'(.-)\r\n(.*)')
             if not s then
                 local r, m = self.bio:gets(245)
                 if r then
@@ -195,7 +217,7 @@ S.__index = {
                         return r,m
                     end
                 end
-                _,_,s, s1 = string.find(self.buff,'(.-)\n(.*)')
+                _,_,s, s1 = string.find(self.buff,'(.-)\r\n(.*)')
             end
             if s then
                 self.buff = s1
