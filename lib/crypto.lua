@@ -14,10 +14,8 @@ function M.hex(s)
 end
 M.digest = openssl.digest
 local dm = {}
-dm.__call = function(self,alg,msg,raw) 
+dm.__call = function(self,alg,msg,raw)
     raw = raw or true
---    print('MSG:',msg)
---    print('RAW:',raw)
     return M.digest.digest(alg,msg)
 end
 setmetatable(M.digest,dm)
@@ -37,7 +35,7 @@ C.__index = {
             end
             if(#key>I.key_length) then
                 error('invalid key')
-            end        
+            end
             local t = {}
             t.ctx = c
             setmetatable(t,C)
@@ -66,7 +64,7 @@ C.__call = function(self,alg,input,key,iv)
 end
 
 setmetatable(C,C)
-M.encrypt = C 
+M.encrypt = C
 
 local D = {}
 
@@ -80,7 +78,7 @@ D.__index = {
             end
             if(#key>I.key_length) then
                 error('invalid key')
-            end        
+            end
             local t = {}
             t.ctx = c
             setmetatable(t,D)
@@ -103,7 +101,7 @@ D.__call = function(self,alg,input,key,iv)
     end
     if(#key>I.key_length) then
         error('invalid key')
-    end        
+    end
     local r,s =  cipher.decrypt(alg,input,key,iv)
     return r,s
 end
@@ -113,19 +111,19 @@ M.decrypt = D
 
 -----------crypto random compat------------------
 local R = {}
-function R.load(file) 
+function R.load(file)
     return openssl.rand_load(file)
 end
 
-function R.write(file) 
+function R.write(file)
     return openssl.rand_write(file)
 end
 
-function R.cleanup() 
+function R.cleanup()
     return openssl.rand_cleanup()
 end
 
-function R.status() 
+function R.status()
     return openssl.rand_status()
 end
 
@@ -145,14 +143,19 @@ local pkey = openssl.pkey
 
 local PKEY_M = {}
 PKEY_M.__index = {}
-function PKEY_M.__index.to_pem(self,ispriv)
-    local raw = ispriv and true or false
-    local pem =  self.evp_pkey:export(ispriv,raw,'pem')
-    return pem
+function PKEY_M.__index.to_pem(self,ispriv, israw)
+    israw = israw or false
+    if (ispriv) then
+        return self.evp_pkey:export(true, israw)
+    else
+        return self.evp_pkey:is_private()
+            and self.evp_pkey:get_public():export(true, israw)
+             or self.evp_pkey:export(true, israw)
+    end
 end
 
 function PKEY_M.__index.write(self,pubfile,prifile)
-    local PUB,PRI = self:to_pem(false),self:to_pem(true)
+    local PUB,PRI = self:to_pem(false), self:to_pem(true)
     local f = io.open(pubfile,'w+')
     if f then
         f:write(PUB)
@@ -191,7 +194,7 @@ function P.generate(alg,bits)
         key.evp_pkey = k
         setmetatable(key,PKEY_M)
         return key
-    end    
+    end
 end
 
 M.pkey = P
@@ -211,12 +214,12 @@ end
 -----------------crypto seal/open compat
 local S = {}
 S.__index = {
-    new = function(alg,pubkey)  
+    new = function(alg,pubkey)
         local c,key,iv = pkey.seal_init(pubkey.evp_pkey,alg)
         if c then
             local t = {}
             t.ctx = c
-            t.key = key 
+            t.key = key
             t.iv = iv
             setmetatable(t,S)
             return t
@@ -231,10 +234,10 @@ S.__index = {
     end,
 }
 S.__call = function(self,alg,input,pubkey)
-    local msg, key,iv = pkey.seal(pubkey.evp_pkey, input, alg) 
+    local msg, key,iv = pkey.seal(pubkey.evp_pkey, input, alg)
     return msg,key,iv
 end
-   
+
 setmetatable(S,S)
 
 M.seal = S
@@ -246,7 +249,7 @@ O.__index = {
         if c then
             local t = {}
             t.ctx = c
-            t.key = key 
+            t.key = key
             t.iv = iv
             setmetatable(t,O)
             return t
@@ -263,7 +266,7 @@ O.__index = {
 O.__call = function(self,alg,input,prikey,ek,iv)
     return pkey.open(prikey.evp_pkey,input,ek,iv,alg)
 end
-   
+
 setmetatable(O,O)
 
 M.open = O
@@ -274,7 +277,7 @@ X.__index = {
     add_pem = function(self,pem)
         local ret,x = pcall(openssl.x509.read,pem)
         if ret then
-            self.sk_x509:push(x)
+            self[#self+1] = x
             return x
         end
         return nil
@@ -282,21 +285,15 @@ X.__index = {
     verify_pem = function(self,pem)
         local ret,x = pcall(openssl.x509.read,pem)
         if ret then
-            local t = {}
-            for i=1,#self.sk_x509 do
-                table.insert(t,self.sk_x509:get(i-1))
-            end
-            local store = openssl.x509.store.new(t)
+            local store = openssl.x509.store.new(self)
             return x:check(store)
         end
-        return false    
+        return false
     end
 }
 
 function M.x509_ca()
-    local ca = openssl.x509.sk_x509_new()
     local t = {}
-    t.sk_x509 = ca
     setmetatable(t,X)
     return t
 end

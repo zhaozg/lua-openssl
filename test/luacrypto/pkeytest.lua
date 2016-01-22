@@ -49,7 +49,7 @@ kpub = assert(crypto.pkey.from_pem(RSA_PUBLIC_KEY))
 kpriv = assert(crypto.pkey.from_pem(RSA_PRIV_KEY, true))
 
 assert(kpub:to_pem() == RSA_PUBLIC_KEY)
-assert(kpriv:to_pem(true) == RSA_PRIV_KEY)
+assert(kpriv:to_pem(true,true) == RSA_PRIV_KEY)
 
 test_verify(kpub, kpriv)
 
