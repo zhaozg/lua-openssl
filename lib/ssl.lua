@@ -105,10 +105,10 @@ S.__index = {
         end           
 
         if ret then
-            local b = assert(openssl.bio.filter('buffer'))
-            local s = assert(openssl.bio.filter('ssl',self.ssl,'noclose'))
+            self._bbf = assert(openssl.bio.filter('buffer'))
+            self._sbf = assert(openssl.bio.filter('ssl',self.ssl,'noclose'))
 
-            self.bio = assert(b:push(s))
+            self.bio = assert(self._bbf:push(self._sbf))
         else
             msg = msg and string.gsub(msg,'_','') or msg
         end
