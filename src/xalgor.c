@@ -82,13 +82,14 @@ static int openssl_xalgor_get(lua_State* L)
 
 static int openssl_xalgor_set(lua_State* L)
 {
+  int ret = 0;
   X509_ALGOR* alg = CHECK_OBJECT(1, X509_ALGOR, "openssl.x509_algor");
   ASN1_OBJECT* obj = CHECK_OBJECT(2, ASN1_OBJECT, "openssl.asn1_object");
   ASN1_STRING* val = lua_isnoneornil(L, 3) ?
                      NULL : auxiliar_checkgroup(L, "openssl.asn1_group", 3);
   obj = OBJ_dup(obj);
   val = ASN1_STRING_dup(val);
-  int ret = X509_ALGOR_set0(alg, obj , val->type, val);
+  ret = X509_ALGOR_set0(alg, obj , val->type, val);
   return openssl_pushresult(L, ret);
 }
 

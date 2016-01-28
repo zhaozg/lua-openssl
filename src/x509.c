@@ -218,6 +218,7 @@ static LUA_FUNCTION(openssl_x509_parse)
 {
   int i;
   X509 * cert = CHECK_OBJECT(1, X509, "openssl.x509");
+  X509_ALGOR* alg = 0;
   lua_newtable(L);
 
   if (cert->name)
@@ -244,7 +245,7 @@ static LUA_FUNCTION(openssl_x509_parse)
   PUSH_ASN1_TIME(L, X509_get_notAfter(cert));
   lua_setfield(L, -2, "notAfter");
 
-  X509_ALGOR* alg = X509_ALGOR_dup(cert->sig_alg);
+  alg = X509_ALGOR_dup(cert->sig_alg);
   PUSH_OBJECT(alg, "openssl.x509_algor");
   lua_setfield(L, -2, "sig_alg");
 
