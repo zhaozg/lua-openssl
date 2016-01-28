@@ -339,9 +339,9 @@ static LUA_FUNCTION(openssl_verifyInit)
   const EVP_MD *md = get_digest(L, 1);
   EVP_PKEY* pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
   ENGINE*     e = lua_gettop(L) > 2 ? CHECK_OBJECT(3, ENGINE, "openssl.engine") : NULL;
-  luaL_argcheck(L, !openssl_pkey_is_private(pkey), 2, "need public key");
-  EVP_PKEY_CTX *pctx;
+  EVP_PKEY_CTX *pctx = 0;
   EVP_MD_CTX *ctx = EVP_MD_CTX_create();
+  luaL_argcheck(L, !openssl_pkey_is_private(pkey), 2, "need public key");
   if (ctx)
   {
     int ret = EVP_DigestVerifyInit(ctx, &pctx, md, e, pkey);
