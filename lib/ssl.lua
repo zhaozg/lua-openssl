@@ -56,11 +56,11 @@ function M.newcontext(params)
             ["fail_if_no_peer_cert"] = "fail"
         }
        
-        local args = {}
-        for i=1,#params.verify do
-            table.insert(args, ssl[luasec_flags[params.verify[i]] or params.verify[i]] or params.verify[i])
+        local verify = 0
+        for i,v in ipairs(params.verify) do
+            verify = verify + (ssl[luasec_flags[v] or v] or v)
         end
-        ctx:verify_mode(unpack(args))
+        ctx:verify_mode(verify)
     end
     if params.options then
         if type(params.options) ~= "table" then
