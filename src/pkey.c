@@ -27,7 +27,7 @@ static int openssl_pkey_bits(lua_State *L)
 int openssl_pkey_is_private(EVP_PKEY* pkey)
 {
   assert(pkey != NULL);
-
+  int ret = 1;
   switch (pkey->type)
   {
 #ifndef OPENSSL_NO_RSA
@@ -36,7 +36,7 @@ int openssl_pkey_is_private(EVP_PKEY* pkey)
     assert(pkey->pkey.rsa != NULL);
     if (pkey->pkey.rsa != NULL && (NULL == pkey->pkey.rsa->p || NULL == pkey->pkey.rsa->q))
     {
-      return 0;
+      ret = pkey->pkey.rsa->meth->rsa_sign != NULL;
     }
     break;
 #endif
@@ -50,7 +50,7 @@ int openssl_pkey_is_private(EVP_PKEY* pkey)
 
     if (NULL == pkey->pkey.dsa->p || NULL == pkey->pkey.dsa->q || NULL == pkey->pkey.dsa->priv_key)
     {
-      return 0;
+      ret = 0;
     }
     break;
 #endif
@@ -60,7 +60,7 @@ int openssl_pkey_is_private(EVP_PKEY* pkey)
 
     if (NULL == pkey->pkey.dh->p || NULL == pkey->pkey.dh->priv_key)
     {
-      return 0;
+      ret = 0;
     }
     break;
 #endif
@@ -69,15 +69,15 @@ int openssl_pkey_is_private(EVP_PKEY* pkey)
     assert(pkey->pkey.ec != NULL);
     if (NULL == EC_KEY_get0_private_key(pkey->pkey.ec))
     {
-      return 0;
+      ret = 0;
     }
     break;
 #endif
   default:
-    return -1;
+    ret = 0;
     break;
   }
-  return 1;
+  return ret;
 }
 
 static int openssl_pkey_read(lua_State*L)
