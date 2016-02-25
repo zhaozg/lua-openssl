@@ -60,6 +60,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <openssl/crypto.h>
 #ifdef OPENSSL_SYS_WIN32
 #include <windows.h>
 #endif
@@ -76,12 +77,6 @@
 #include <pthread.h>
 #endif
 #endif
-#include <openssl/lhash.h>
-#include <openssl/crypto.h>
-#include <openssl/buffer.h>
-#include <openssl/x509.h>
-#include <openssl/ssl.h>
-#include <openssl/err.h>
 
 void CRYPTO_thread_setup(void);
 void CRYPTO_thread_cleanup(void);
