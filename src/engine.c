@@ -8,6 +8,7 @@
 #include <openssl/engine.h>
 #include "openssl.h"
 #include "private.h"
+#include <openssl/ssl.h>
 
 enum
 {
@@ -201,22 +202,20 @@ static int openssl_engine_register(lua_State*L)
 static int openssl_engine_ctrl(lua_State*L)
 {
   ENGINE* eng = CHECK_OBJECT(1, ENGINE, "openssl.engine");
-
+  int ret = 0;
   if (lua_isnumber(L, 2))
   {
     int cmd = luaL_checkint(L, 2);
     if (lua_isnoneornil(L, 3))
     {
-      int ret = ENGINE_cmd_is_executable(eng, cmd);
-      lua_pushboolean(L, ret);
+      ret = ENGINE_cmd_is_executable(eng, cmd);
     }
     else
     {
       long i = (long)luaL_checknumber(L, 3);
       void* p = lua_touserdata(L, 4);
       void* arg = lua_isnoneornil(L, 5) ? NULL : lua_touserdata(L, 5);
-      int ret = ENGINE_ctrl(eng, cmd, i, p, arg);
-      lua_pushboolean(L, ret);
+      ret = ENGINE_ctrl(eng, cmd, i, p, arg);
     }
   }
   else
@@ -225,21 +224,29 @@ static int openssl_engine_ctrl(lua_State*L)
     if (lua_isnumber(L, 3))
     {
       long i = (long)luaL_checknumber(L, 3);
-      void* p = lua_touserdata(L, 4);
-      void* arg = lua_isnoneornil(L, 5) ? NULL : lua_touserdata(L, 5);
-      int opt = luaL_optint(L, 6, 0);
-      int ret = ENGINE_ctrl_cmd(eng, cmd, i, p, arg, opt);
-      lua_pushboolean(L, ret);
+      if (lua_isstring(L, 4))
+      {
+        const char* s = lua_tostring(L, 4);
+        void* arg = lua_isnoneornil(L, 5) ? NULL : lua_touserdata(L, 5);
+        int opt = luaL_optint(L, 6, 0);
+        ret = ENGINE_ctrl_cmd(eng, cmd, i, (void*)s, arg, opt);
+      }
+      else
+      {
+        void* p = lua_touserdata(L, 4);
+        void* arg = lua_isnoneornil(L, 5) ? NULL : lua_touserdata(L, 5);
+        int opt = luaL_optint(L, 6, 0);
+        ret = ret = ENGINE_ctrl_cmd(eng, cmd, i, p, arg, opt);
+      }
     }
     else
     {
       const char* arg  = luaL_optstring(L, 3, NULL);
       int opt = luaL_optint(L, 4, 0);
-      int ret = ENGINE_ctrl_cmd_string(eng, cmd, arg, opt);
-      lua_pushboolean(L, ret);
+      ret = ENGINE_ctrl_cmd_string(eng, cmd, arg, opt);
     }
   }
-  return 1;
+  return openssl_pushresult(L, ret);
 }
 
 static int openssl_engine_gc(lua_State*L)
@@ -388,6 +395,62 @@ static int openssl_engine_set_default(lua_State*L)
   return 1;
 };
 
+int openssl_engine_load_private_key(lua_State *L)
+{
+  ENGINE* eng = CHECK_OBJECT(1, ENGINE, "openssl.engine");
+  const char* key_id = luaL_checkstring(L, 2);
+  EVP_PKEY *pkey = ENGINE_load_private_key(eng, key_id, NULL, NULL);
+  if (pkey != NULL)
+  {
+    PUSH_OBJECT(pkey, "openssl.evp_pkey");
+    return 1;
+  }
+  return openssl_pushresult(L, 0);
+}
+
+int openssl_engine_load_public_key(lua_State *L)
+{
+  ENGINE* eng = CHECK_OBJECT(1, ENGINE, "openssl.engine");
+  const char* key_id = luaL_checkstring(L, 2);
+  EVP_PKEY *pkey = ENGINE_load_public_key(eng, key_id, NULL, NULL);
+  if (pkey != NULL)
+  {
+    PUSH_OBJECT(pkey, "openssl.evp_pkey");
+    return 1;
+  }
+  return openssl_pushresult(L, 0);
+}
+
+int openssl_engine_load_ssl_client_cert(lua_State *L)
+{
+  ENGINE* eng = CHECK_OBJECT(1, ENGINE, "openssl.engine");
+  SSL* s = CHECK_OBJECT(2, SSL, "openssl.ssl");
+  STACK_OF(X509_NAME) *ca_dn = SSL_get_client_CA_list(s);
+
+  X509 *pcert = NULL;
+  EVP_PKEY *pkey = NULL;
+  STACK_OF(X509) *pothers = NULL;
+
+  int ret = ENGINE_load_ssl_client_cert(eng, s, ca_dn,
+                                        &pcert, &pkey, &pothers, NULL, NULL);
+  if (ret == 1)
+  {
+    PUSH_OBJECT(pcert, "openssl.x509");
+    if (pkey != NULL)
+    {
+      PUSH_OBJECT(pkey, "openssl.pkey");
+      ret++;
+    }
+    if (pothers != NULL)
+    {
+      openssl_sk_x509_totable(L, pothers);
+      ret++;
+    }
+    return ret;
+  }
+  return openssl_pushresult(L, 0);
+}
+
 static luaL_Reg eng_funcs[] =
 {
   {"next",      openssl_engine_next},
@@ -399,6 +462,10 @@ static luaL_Reg eng_funcs[] =
   {"id",        openssl_engine_id},
   {"name",      openssl_engine_name},
   {"flags",     openssl_engine_flags},
+
+  {"load_private_key", openssl_engine_load_private_key},
+  {"load_public_key",  openssl_engine_load_public_key },
+  {"load_ssl_client_cert",  openssl_engine_load_ssl_client_cert},
 
   {"init",      openssl_engine_init},
   {"finish",      openssl_engine_finish},
