@@ -88,12 +88,12 @@ static LUA_FUNCTION(openssl_pkcs7_sign_add_signer)
   EVP_PKEY *pkey = CHECK_OBJECT(3, EVP_PKEY, "openssl.evp_pkey");
   const EVP_MD* md = get_digest(L, 4);
   long flags = luaL_optint(L, 5, 0);
-
+  PKCS7_SIGNER_INFO *signer = 0;
   luaL_argcheck(L, openssl_pkey_is_private(pkey), 3, "must be private key");
   luaL_argcheck(L, X509_check_private_key(signcert, pkey), 3,
                 "sigcert and private key not match");
 
-  PKCS7_SIGNER_INFO *signer = PKCS7_sign_add_signer(p7, signcert, pkey, md, flags);
+  signer = PKCS7_sign_add_signer(p7, signcert, pkey, md, flags);
   (void) signer;
   return openssl_pushresult(L, signcert != NULL ? 1 : 0);
 }

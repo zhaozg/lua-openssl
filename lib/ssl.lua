@@ -16,7 +16,7 @@ end
 
 function M.newcontext(params)  
     local protocol = params.protocol and string.upper(string.sub(params.protocol,1,3))
-        ..string.sub(params.protocol,4,-1) or 'SSLv3'
+        ..string.sub(params.protocol,4,-1) or 'TLSv1_2'
     local ctx = ssl.ctx_new(protocol,params.ciphers)
     local xkey = nil
   
@@ -56,11 +56,11 @@ function M.newcontext(params)
             ["fail_if_no_peer_cert"] = "fail"
         }
        
-        local args = {}
-        for i=1,#params.verify do
-            table.insert(args, ssl[luasec_flags[params.verify[i]] or params.verify[i]] or params.verify[i])
+        local verify = 0
+        for i,v in ipairs(params.verify) do
+            verify = verify + (ssl[luasec_flags[v] or v] or v)
         end
-        ctx:verify_mode(unpack(args))
+        ctx:verify_mode(verify)
     end
     if params.options then
         if type(params.options) ~= "table" then
@@ -105,10 +105,10 @@ S.__index = {
         end           
 
         if ret then
-            local b = assert(openssl.bio.filter('buffer'))
-            local s = assert(openssl.bio.filter('ssl',self.ssl,'noclose'))
+            self._bbf = assert(openssl.bio.filter('buffer'))
+            self._sbf = assert(openssl.bio.filter('ssl',self.ssl,'noclose'))
 
-            self.bio = assert(b:push(s))
+            self.bio = assert(self._bbf:push(self._sbf))
         else
             msg = msg and string.gsub(msg,'_','') or msg
         end
@@ -149,8 +149,10 @@ S.__index = {
         return chains
     end,
     close = function(self)
-        self.ssl:shutdown()
-        self.ssl = nil
+        if self.ssl then
+           self.ssl:shutdown()
+           self.ssl = nil
+        end
     end,
     send = function(self,msg,i,j)
         local m = msg
@@ -161,76 +163,58 @@ S.__index = {
         return self.bio:write(m) and self.bio:flush()
     end,
     receive = function(self,fmt,prev)
-        self.buff = prev or ''
-       
-        local r,m = socket.select({self.ssl},nil,self.timeout)
-        if #r==0 then
-            return nil,'timeout'
-        end
-        
-        local s = nil
-        if type(fmt)=='number' then
+        if type(fmt) == 'number' then
+            local buff = prev and {prev} or {''}
+            local buffsize = string.len(buff[1])
+            local s = nil
             local len = fmt
-            
-            if len > #self.buff then
-                s = self.bio:read(len-#self.buff)
-            else
-                s = self.bio:gets()
+
+            while buffsize < len do
+                local r, m = socket.select({self.ssl}, nil, self.timeout)
+                if #r == 0 then
+                    return nil, 'timeout', buff
+                end
+
+                s = self.bio:read(len - buffsize)
+                if s == nil then
+                    return nil, 'closed', table.concat(buff)
+                elseif type(s) == "string" and s ~= '' then
+                    table.insert(buff, s)
+                    buffsize = buffsize + string.len(s)
+                end
             end
 
-            if s == '' then
-               if not self.timeout then
-                  return self:receive(fmt)
-               else
-                  return nil, 'timeout'
-               end
-            elseif s == nil then
-               return nil, 'closed'
-            else
-               self.buff = self.buff..s
+            buff = table.concat(buff)
+            if buffsize > len then
+                s = string.sub(buff, len + 1, -1)
+                buff = string.sub(buff, 1, len)
             end
-                        
-            if #self.buff>=len then
-                s = string.sub(self.buff,1,len)
-                self.buff = string.sub(self.buff,len+1,-1)
-            else
-                s = self.buff
-                self.buff = ''
-            end
-            return s
+
+            return buff
         end
-        
-        fmt = fmt and string.sub(fmt,1,2) or '*l'
-        if (fmt=='*l') then
-            _,_,s, s1 = string.find(self.buff,'(.-)\r\n(.*)')
-            if not s then
-                local r, m = self.bio:gets(245)
-                if r then
-                    self.buff = self.buff .. r
-                elseif(m==-2) then
-                    return nil,'closed',self.buff
-                else
-                    if not self.timeout then
-                        repeat
-                            r, m = self:receive(fmt)
-                        until (not r) or (m=='closed')
-                        return r,m
-                    end
+
+        fmt = fmt and string.sub(fmt, 1, 2) or '*l'
+        if (fmt == '*l') then
+            local s = nil
+            local buff = prev or ''
+            local _, _, p1, p2 = string.find(buff, '(.-)\r\n(.*)')
+
+            while not p1 do
+                local r, m = socket.select({self.ssl}, nil, self.timeout)
+                if #r == 0 then
+                    return nil, 'timeout', buff
                 end
-                _,_,s, s1 = string.find(self.buff,'(.-)\r\n(.*)')
+
+                s = self.bio:gets(1024)
+                if s == nil then
+                    return nil, 'closed', buff
+                elseif type(s) == "string" and s ~= '' then
+                    buff = buff .. s
+                end
+                _, _, p1, p2 = string.find(buff, '(.-)\r\n(.*)')
             end
-            if s then
-                self.buff = s1
-                return s
-            else
-                return nil, 'wantread',self.buff
-            end
-        end
-        
-        s = self.bio:read(65535)
-        if s then
-            s = self.buff .. s
-            self.buff = ''
+
+            return p1
         end
     end,
     sni = function(self,arg)

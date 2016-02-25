@@ -111,13 +111,14 @@ int openssl_verify_cb(int preverify_ok, X509_STORE_CTX *xctx)
 
 int openssl_cert_verify_cb(X509_STORE_CTX *xctx, void* u)
 {
+  int preverify_ok = 0;
   lua_State *L = (lua_State *)u;
   SSL *ssl = X509_STORE_CTX_get_ex_data(xctx,
                                         SSL_get_ex_data_X509_STORE_CTX_idx());
   SSL_CTX *ctx = ssl ? SSL_get_SSL_CTX(ssl) : NULL;
   if (ssl)
     openssl_newvalue(L, ssl);
-  int preverify_ok = ctx ? verify_cb(-1, xctx, L, ssl, ctx) : 0;
+  preverify_ok = ctx ? verify_cb(-1, xctx, L, ssl, ctx) : 0;
   return preverify_ok == -1 ? 0 : preverify_ok;
 };
 
