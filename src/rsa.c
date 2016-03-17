@@ -57,7 +57,7 @@ static LUA_FUNCTION(openssl_rsa_encrypt)
          : RSA_public_encrypt(flen, from, to, rsa, padding);
   if (flen > 0)
   {
-    lua_pushlstring(L, to, flen);
+    lua_pushlstring(L, (const char*)to, flen);
     OPENSSL_free(to);
     return 1;
   }
@@ -79,7 +79,7 @@ static LUA_FUNCTION(openssl_rsa_decrypt)
          : RSA_public_decrypt(flen, from, to, rsa, padding);
   if (flen > 0)
   {
-    lua_pushlstring(L, to, flen);
+    lua_pushlstring(L, (const char*)to, flen);
     OPENSSL_free(to);
     return 1;
   }

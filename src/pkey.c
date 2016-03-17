@@ -69,7 +69,7 @@ int openssl_pkey_is_private(EVP_PKEY* pkey)
     assert(pkey->pkey.ec != NULL);
     if (NULL == EC_KEY_get0_private_key(pkey->pkey.ec))
     {
-      ret = 0;
+      ret = 1;
     }
     break;
 #endif
@@ -950,7 +950,6 @@ static LUA_FUNCTION(openssl_verify)
   EVP_PKEY *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
   const char* data = luaL_checklstring(L, 2, &data_len);
   const char* signature = luaL_checklstring(L, 3, &signature_len);
-
   const EVP_MD *mdtype = NULL;
   int top = lua_gettop(L);
   if (top > 3)
@@ -964,7 +963,7 @@ static LUA_FUNCTION(openssl_verify)
     int result;
     EVP_MD_CTX     md_ctx;
 
-    EVP_VerifyInit   (&md_ctx, mdtype);
+    EVP_VerifyInit(&md_ctx, mdtype);
     EVP_VerifyUpdate (&md_ctx, data, data_len);
     result = EVP_VerifyFinal (&md_ctx, (unsigned char *)signature, signature_len, pkey);
     EVP_MD_CTX_cleanup(&md_ctx);

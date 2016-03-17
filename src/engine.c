@@ -483,4 +483,3 @@ int openssl_register_engine(lua_State* L)
   auxiliar_newclass(L, "openssl.engine", eng_funcs);
   return 0;
 }
-

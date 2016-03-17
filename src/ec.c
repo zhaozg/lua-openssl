@@ -311,32 +311,28 @@ static int openssl_ecdsa_sign(lua_State*L)
   size_t l;
   const char* s = luaL_checklstring(L, 2, &l);
   ECDSA_SIG* sig = ECDSA_do_sign((const unsigned char*)s, l, ec);
-  if (sig)
+  unsigned char*p = NULL;
+  l = i2d_ECDSA_SIG(sig, &p);
+  if (l>0)
   {
-    PUSH_BN(BN_dup(sig->r));
-    PUSH_BN(BN_dup(sig->s));
-    ECDSA_SIG_free(sig);
-    return 2;
+    lua_pushlstring(L, (const char*)p, l);
+    OPENSSL_free(p);
+    return 1;
   }
   return 0;
 }
 
 static int openssl_ecdsa_verify(lua_State*L)
 {
-  size_t l;
+  size_t l,sigl;
   int ret;
   EC_KEY* ec = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
   const char* dgst = luaL_checklstring(L, 2, &l);
-  BIGNUM *r = CHECK_OBJECT(3, BIGNUM, "openssl.bn");
-  BIGNUM *s = CHECK_OBJECT(4, BIGNUM, "openssl.bn");
-
-  ECDSA_SIG* sig = ECDSA_SIG_new();
-  BN_copy(sig->r, r);
-  BN_copy(sig->s, s);
-
+  const char* s = luaL_checklstring(L, 3, &sigl);;
+  ECDSA_SIG* sig = d2i_ECDSA_SIG(NULL, (const unsigned char**)&s, sigl);
   ret = ECDSA_do_verify((const unsigned char*)dgst, l, sig, ec);
   if (ret == -1)
-    lua_pushnil(L);
+    openssl_pushresult(L, -1);
   else
     lua_pushboolean(L, ret);
   ECDSA_SIG_free(sig);
