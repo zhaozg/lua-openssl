@@ -169,7 +169,7 @@ static int openssl_cms_sign(lua_State *L)
   BIO* data = load_bio_object(L, 4);
   unsigned int flags = luaL_optint(L, 5, 0);
   CMS_ContentInfo *cms;
-  luaL_argcheck(L, openssl_pkey_is_private(pkey), 2, "must be private key");
+
   cms = CMS_sign(signcert, pkey, certs, data, flags);
   if (cms)
   {

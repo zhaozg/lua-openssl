@@ -313,7 +313,7 @@ static int openssl_ecdsa_sign(lua_State*L)
   ECDSA_SIG* sig = ECDSA_do_sign((const unsigned char*)s, l, ec);
   unsigned char*p = NULL;
   l = i2d_ECDSA_SIG(sig, &p);
-  if (l>0)
+  if (l > 0)
   {
     lua_pushlstring(L, (const char*)p, l);
     OPENSSL_free(p);
@@ -324,7 +324,7 @@ static int openssl_ecdsa_sign(lua_State*L)
 
 static int openssl_ecdsa_verify(lua_State*L)
 {
-  size_t l,sigl;
+  size_t l, sigl;
   int ret;
   EC_KEY* ec = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
   const char* dgst = luaL_checklstring(L, 2, &l);

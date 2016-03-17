@@ -93,9 +93,6 @@ static LUA_FUNCTION(openssl_csr_to_x509)
   EVP_PKEY * pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
   int days = luaL_optint(L, 3, 365);
   X509* cert = X509_REQ_to_X509_a(csr, days, pkey);
-
-  luaL_argcheck(L, openssl_pkey_is_private(pkey), 2, "must be private key");
-
   if (cert)
   {
     PUSH_OBJECT(cert, "openssl.x509");
@@ -176,9 +173,7 @@ static LUA_FUNCTION(openssl_csr_check)
 {
   X509_REQ *csr = CHECK_OBJECT(1, X509_REQ, "openssl.x509_req");
   EVP_PKEY *pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
-  int ret;
-  luaL_argcheck(L, openssl_pkey_is_private(pkey), 2, "must be private key");
-  ret = X509_REQ_check_private_key(csr, pkey);
+  int ret = X509_REQ_check_private_key(csr, pkey);
   return openssl_pushresult(L, ret);
 };
 
@@ -230,8 +225,6 @@ static LUA_FUNCTION(openssl_csr_new)
 
       pkey = CHECK_OBJECT(i, EVP_PKEY, "openssl.evp_pkey");
 
-      luaL_argcheck(L, openssl_pkey_is_private(pkey), i, "must be private key");
-
       if (i == n - 1)
         md = get_digest(L, n);
       else
@@ -261,50 +254,52 @@ static LUA_FUNCTION(openssl_csr_new)
 static LUA_FUNCTION(openssl_csr_sign)
 {
   X509_REQ * csr = CHECK_OBJECT(1, X509_REQ, "openssl.x509_req");
-	luaL_argcheck(L, csr->req_info->pubkey, 1, "has not set public key!!!");
-	if (auxiliar_isclass(L, "openssl.evp_pkey", 2)) {
-		EVP_PKEY *pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
-		const EVP_MD* md = lua_isnone(L, 3) ? EVP_get_digestbyname("sha1") : get_digest(L, 3);
-		luaL_argcheck(L, openssl_pkey_is_private(pkey), 2, "must be private key");
-		int ret = X509_REQ_sign(csr, pkey, md);
-		if (ret > 0)
-			ret = 1;
-		return openssl_pushresult(L, ret);
-	}
-	else if (lua_isstring(L, 2)) {
-		size_t siglen;
-		const unsigned char* sigdata = (const unsigned char*)luaL_checklstring(L, 2, &siglen);
-		const EVP_MD* md = get_digest(L, 3);
+  luaL_argcheck(L, csr->req_info->pubkey, 1, "has not set public key!!!");
+  if (auxiliar_isclass(L, "openssl.evp_pkey", 2))
+  {
+    EVP_PKEY *pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
+    const EVP_MD* md = lua_isnone(L, 3) ? EVP_get_digestbyname("sha1") : get_digest(L, 3);
+    int ret = X509_REQ_sign(csr, pkey, md);
+    if (ret > 0)
+      ret = 1;
+    return openssl_pushresult(L, ret);
+  }
+  else if (lua_isstring(L, 2))
+  {
+    size_t siglen;
+    const unsigned char* sigdata = (const unsigned char*)luaL_checklstring(L, 2, &siglen);
+    const EVP_MD* md = get_digest(L, 3);
 
-		/* (pkey->ameth->pkey_flags & ASN1_PKEY_SIGPARAM_NULL) ? V_ASN1_NULL : V_ASN1_UNDEF, */
-		X509_ALGOR_set0(csr->sig_alg, OBJ_nid2obj(md->pkey_type), V_ASN1_NULL, NULL);
+    /* (pkey->ameth->pkey_flags & ASN1_PKEY_SIGPARAM_NULL) ? V_ASN1_NULL : V_ASN1_UNDEF, */
+    X509_ALGOR_set0(csr->sig_alg, OBJ_nid2obj(md->pkey_type), V_ASN1_NULL, NULL);
 
-		if (csr->signature->data != NULL)
-			OPENSSL_free(csr->signature->data);
-		csr->signature->data = OPENSSL_malloc(siglen);
-		memcpy(csr->signature->data, sigdata, siglen);
-		csr->signature->length = siglen;
-		/*
-		* In the interests of compatibility, I'll make sure that the bit string
-		* has a 'not-used bits' value of 0
-		*/
-		csr->signature->flags &= ~(ASN1_STRING_FLAG_BITS_LEFT | 0x07);
-		csr->signature->flags |= ASN1_STRING_FLAG_BITS_LEFT;
-		lua_pushboolean(L, 1);
-		return 1;
-	}
-	else {
-		unsigned char* tosign = NULL;
-		const ASN1_ITEM *it = ASN1_ITEM_rptr(X509_REQ_INFO);
-		int inl = ASN1_item_i2d((void*)csr->req_info, &tosign, it);
-		if (inl > 0 && tosign)
-		{
-			lua_pushlstring(L, (const char*)tosign, inl);
-			OPENSSL_free(tosign);
-			return 1;
-		}
-		return openssl_pushresult(L, 0);
-	}
+    if (csr->signature->data != NULL)
+      OPENSSL_free(csr->signature->data);
+    csr->signature->data = OPENSSL_malloc(siglen);
+    memcpy(csr->signature->data, sigdata, siglen);
+    csr->signature->length = siglen;
+    /*
+    * In the interests of compatibility, I'll make sure that the bit string
+    * has a 'not-used bits' value of 0
+    */
+    csr->signature->flags &= ~(ASN1_STRING_FLAG_BITS_LEFT | 0x07);
+    csr->signature->flags |= ASN1_STRING_FLAG_BITS_LEFT;
+    lua_pushboolean(L, 1);
+    return 1;
+  }
+  else
+  {
+    unsigned char* tosign = NULL;
+    const ASN1_ITEM *it = ASN1_ITEM_rptr(X509_REQ_INFO);
+    int inl = ASN1_item_i2d((void*)csr->req_info, &tosign, it);
+    if (inl > 0 && tosign)
+    {
+      lua_pushlstring(L, (const char*)tosign, inl);
+      OPENSSL_free(tosign);
+      return 1;
+    }
+    return openssl_pushresult(L, 0);
+  }
 }
 
 static LUA_FUNCTION(openssl_csr_parse)

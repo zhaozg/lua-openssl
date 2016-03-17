@@ -69,7 +69,7 @@ int openssl_pkey_is_private(EVP_PKEY* pkey)
     assert(pkey->pkey.ec != NULL);
     if (NULL == EC_KEY_get0_private_key(pkey->pkey.ec))
     {
-      ret = 1;
+      ret = 0;
     }
     break;
 #endif
@@ -721,34 +721,27 @@ static LUA_FUNCTION(openssl_pkey_encrypt)
     return ret;
   }
 
-  if (openssl_pkey_is_private(pkey) == 0)
+  ctx = EVP_PKEY_CTX_new(pkey, pkey->engine);
+  if (EVP_PKEY_encrypt_init(ctx) == 1)
   {
-    ctx = EVP_PKEY_CTX_new(pkey, pkey->engine);
-    if (EVP_PKEY_encrypt_init(ctx) == 1)
+    if (EVP_PKEY_CTX_set_rsa_padding(ctx, padding) == 1)
     {
-      if (EVP_PKEY_CTX_set_rsa_padding(ctx, padding) == 1)
+      byte* buf = malloc(clen);
+      if (EVP_PKEY_encrypt(ctx, buf, &clen, (const unsigned char*)data, dlen) == 1)
       {
-        byte* buf = malloc(clen);
-        if (EVP_PKEY_encrypt(ctx, buf, &clen, (const unsigned char*)data, dlen) == 1)
-        {
-          lua_pushlstring(L, (const char*)buf, clen);
-          ret = 1;
-        }
-        else
-          ret = openssl_pushresult(L, 0);
-        free(buf);
+        lua_pushlstring(L, (const char*)buf, clen);
+        ret = 1;
       }
       else
         ret = openssl_pushresult(L, 0);
+      free(buf);
     }
     else
       ret = openssl_pushresult(L, 0);
-    EVP_PKEY_CTX_free(ctx);
   }
   else
-  {
-    luaL_argerror(L, 2, "EVP_PKEY must be public key");
-  }
+    ret = openssl_pushresult(L, 0);
+  EVP_PKEY_CTX_free(ctx);
 
   return ret;
 }
@@ -768,36 +761,28 @@ static LUA_FUNCTION(openssl_pkey_decrypt)
     luaL_argerror(L, 2, "EVP_PKEY must be of type RSA or RSA2");
     return ret;
   }
-
-  if (openssl_pkey_is_private(pkey))
+  ctx = EVP_PKEY_CTX_new(pkey, pkey->engine);
+  if (EVP_PKEY_decrypt_init(ctx) == 1)
   {
-    ctx = EVP_PKEY_CTX_new(pkey, pkey->engine);
-    if (EVP_PKEY_decrypt_init(ctx) == 1)
+    if (EVP_PKEY_CTX_set_rsa_padding(ctx, padding) == 1)
     {
-      if (EVP_PKEY_CTX_set_rsa_padding(ctx, padding) == 1)
-      {
-        byte* buf = malloc(clen);
+      byte* buf = malloc(clen);
 
-        if (EVP_PKEY_decrypt(ctx, buf, &clen, (const unsigned char*)data, dlen) == 1)
-        {
-          lua_pushlstring(L, (const char*)buf, clen);
-          ret = 1;
-        }
-        else
-          ret = openssl_pushresult(L, 0);
-        free(buf);
+      if (EVP_PKEY_decrypt(ctx, buf, &clen, (const unsigned char*)data, dlen) == 1)
+      {
+        lua_pushlstring(L, (const char*)buf, clen);
+        ret = 1;
       }
       else
         ret = openssl_pushresult(L, 0);
+      free(buf);
     }
     else
       ret = openssl_pushresult(L, 0);
-    EVP_PKEY_CTX_free(ctx);
   }
   else
-  {
-    luaL_argerror(L, 2, "EVP_PKEY must be private key");
-  }
+    ret = openssl_pushresult(L, 0);
+  EVP_PKEY_CTX_free(ctx);
   return ret;
 }
 
@@ -817,21 +802,15 @@ LUA_FUNCTION(openssl_pkey_is_private1)
 static LUA_FUNCTION(openssl_pkey_get_public)
 {
   EVP_PKEY *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
-  int private = openssl_pkey_is_private(pkey);
   int ret = 0;
-  if (private == 0)
-    luaL_argerror(L, 1, "alreay public key");
-  else
+  BIO* bio = BIO_new(BIO_s_mem());
+  if (i2d_PUBKEY_bio(bio, pkey))
   {
-    BIO* bio = BIO_new(BIO_s_mem());
-    if (i2d_PUBKEY_bio(bio, pkey))
-    {
-      EVP_PKEY *pub = d2i_PUBKEY_bio(bio, NULL);
-      PUSH_OBJECT(pub, "openssl.evp_pkey");
-      ret = 1;
-    }
-    BIO_free(bio);
+    EVP_PKEY *pub = d2i_PUBKEY_bio(bio, NULL);
+    PUSH_OBJECT(pub, "openssl.evp_pkey");
+    ret = 1;
   }
+  BIO_free(bio);
   return ret;
 }
 

@@ -127,7 +127,6 @@ static int openssl_ssl_ctx_use(lua_State*L)
   EVP_PKEY* pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
   X509* cert = CHECK_OBJECT(3, X509, "openssl.x509");
 
-  luaL_argcheck(L, openssl_pkey_is_private(pkey), 2, "must be private key");
   ret = SSL_CTX_use_certificate(ctx, cert);
   if (ret == 1)
   {
@@ -1181,7 +1180,6 @@ static int openssl_ssl_use(lua_State*L)
   EVP_PKEY* pkey = CHECK_OBJECT(3, EVP_PKEY, "openssl.evp_pkey");
   int ret;
 
-  luaL_argcheck(L, openssl_pkey_is_private(pkey), 3, "must be private key");
   ret = SSL_use_PrivateKey(s, pkey);
   if (ret == 1)
   {

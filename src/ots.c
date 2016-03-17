@@ -564,7 +564,6 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_new)
     else if (auxiliar_isclass(L, "openssl.evp_pkey", i))
     {
       pkey = CHECK_OBJECT(i, EVP_PKEY, "openssl.evp_pkey");
-      luaL_argcheck(L, openssl_pkey_is_private(pkey), i, "must be private key");
     }
     else if (lua_isnumber(L, i) || lua_isstring(L, i) || auxiliar_isclass(L, "openssl.asn1_object", i))
     {
@@ -631,9 +630,7 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_singer)
   {
     X509 *signer = CHECK_OBJECT(2, X509, "openssl.x509");
     EVP_PKEY *pkey = CHECK_OBJECT(3, EVP_PKEY, "openssl.evp_pkey");
-    int ret;
-    luaL_argcheck(L, openssl_pkey_is_private(pkey), 3, "must be private key");
-    ret = X509_check_private_key(signer, pkey);
+    int ret = X509_check_private_key(signer, pkey);
     if (ret != 1)
     {
       luaL_error(L, "signer cert and private key not match");
