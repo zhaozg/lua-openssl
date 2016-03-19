@@ -150,12 +150,10 @@ static LUA_FUNCTION(openssl_x509_read)
   if (fmt == FORMAT_DER)
   {
     cert = d2i_X509_bio(in, NULL);
-    BIO_reset(in);
   }
   else if (fmt == FORMAT_PEM)
   {
     cert = PEM_read_bio_X509(in, NULL, NULL, NULL);
-    BIO_reset(in);
   }
 
   BIO_free(in);

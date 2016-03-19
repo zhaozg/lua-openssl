@@ -236,7 +236,7 @@ static int openssl_engine_ctrl(lua_State*L)
         void* p = lua_touserdata(L, 4);
         void* arg = lua_isnoneornil(L, 5) ? NULL : lua_touserdata(L, 5);
         int opt = luaL_optint(L, 6, 0);
-        ret = ret = ENGINE_ctrl_cmd(eng, cmd, i, p, arg, opt);
+        ret = ENGINE_ctrl_cmd(eng, cmd, i, p, arg, opt);
       }
     }
     else
