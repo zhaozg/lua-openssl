@@ -311,15 +311,29 @@ static int openssl_ecdsa_sign(lua_State*L)
   size_t l;
   const char* s = luaL_checklstring(L, 2, &l);
   ECDSA_SIG* sig = ECDSA_do_sign((const unsigned char*)s, l, ec);
-  unsigned char*p = NULL;
-  l = i2d_ECDSA_SIG(sig, &p);
-  if (l > 0)
-  {
-    lua_pushlstring(L, (const char*)p, l);
-    OPENSSL_free(p);
-    return 1;
-  }
-  return 0;
+	int der = lua_isnoneornil(L, 3) ? 1 : lua_toboolean(L, 3);
+	int ret = 0;
+
+	if (der)
+	{
+		unsigned char*p = NULL;
+		l = i2d_ECDSA_SIG(sig, &p);
+		if (l > 0)
+		{
+			lua_pushlstring(L, (const char*)p, l);
+			OPENSSL_free(p);
+			ret = 1;
+		}
+	}
+	else {
+		BIGNUM *bn = BN_dup(sig->r);
+		PUSH_OBJECT(bn, "openssl.bn");
+		bn = BN_dup(sig->s);
+		PUSH_OBJECT(bn, "openssl.bn");
+		ret = 2;
+	}
+	ECDSA_SIG_free(sig);
+  return ret;
 }
 
 static int openssl_ecdsa_verify(lua_State*L)
@@ -328,15 +342,40 @@ static int openssl_ecdsa_verify(lua_State*L)
   int ret;
   EC_KEY* ec = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
   const char* dgst = luaL_checklstring(L, 2, &l);
-  const char* s = luaL_checklstring(L, 3, &sigl);;
-  ECDSA_SIG* sig = d2i_ECDSA_SIG(NULL, (const unsigned char**)&s, sigl);
-  ret = ECDSA_do_verify((const unsigned char*)dgst, l, sig, ec);
-  if (ret == -1)
-    openssl_pushresult(L, -1);
-  else
-    lua_pushboolean(L, ret);
-  ECDSA_SIG_free(sig);
-  return 1;
+	int top = lua_gettop(L);
+	if (top == 3)
+	{
+		const char* s = luaL_checklstring(L, 3, &sigl);;
+		ECDSA_SIG* sig = d2i_ECDSA_SIG(NULL, (const unsigned char**)&s, sigl);
+		ret = ECDSA_do_verify((const unsigned char*)dgst, l, sig, ec);
+		if (ret == -1)
+			ret = openssl_pushresult(L, -1);
+		else 
+		{
+			lua_pushboolean(L, ret);
+			ret = 1;
+		}
+		ECDSA_SIG_free(sig);
+		return ret;
+	}
+	else
+	{
+		BIGNUM *r = BN_get(L, 3);
+		BIGNUM *s = BN_get(L, 4);
+		ECDSA_SIG* sig = ECDSA_SIG_new();
+		BN_copy(sig->r, r);
+		BN_copy(sig->s, s);
+		ret = ECDSA_do_verify((const unsigned char*)dgst, l, sig, ec);
+		if (ret == -1)
+			ret = openssl_pushresult(L, -1);
+		else
+		{
+			lua_pushboolean(L, ret);
+			ret = 1;
+		}
+		ECDSA_SIG_free(sig);
+		return ret;
+	}
 }
 
 static int openssl_ec_point_free(lua_State*L)
@@ -448,8 +487,8 @@ static LUA_FUNCTION(openssl_ec_list_curve_name)
 
 static luaL_Reg R[] =
 {
-  {"list", openssl_ec_list_curve_name},
-  {"group", openssl_eckey_group},
+  {"list",     openssl_ec_list_curve_name},
+  {"group",    openssl_eckey_group},
 
   { NULL, NULL }
 };
