@@ -25,7 +25,7 @@ ifneq (, $(findstring linux, $(SYS)))
 LDFLAGS		    = -fPIC -lrt -ldl
 OPENSSL_LIBS	?= $(shell pkg-config openssl --libs) 
 OPENSSL_CFLAGS	?= $(shell pkg-config openssl --cflags)
-CFLAGS		    = -fPIC $(OPENSSL_CFLAGS) $(LUA_CFLAGS)
+CFLAGS		    = -fPIC $(OPENSSL_CFLAGS) $(LUA_CFLAGS) 
 endif
 ifneq (, $(findstring apple, $(SYS)))
 # Do darwin things

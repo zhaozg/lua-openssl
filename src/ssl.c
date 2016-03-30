@@ -567,6 +567,16 @@ static int openssl_ssl_ctx_verify_mode(lua_State*L)
   }
 }
 
+#ifndef OPENSSL_NO_ENGINE
+static int openssl_ssl_ctx_set_engine(lua_State*L)
+{
+  SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
+  ENGINE* eng = CHECK_OBJECT(2, ENGINE,  "openssl.engine");
+  int ret = SSL_CTX_set_client_cert_engine(ctx, eng);
+  return openssl_pushresult(L, ret);
+}
+#endif
+
 static int openssl_ssl_ctx_set_cert_verify(lua_State*L)
 {
   SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
@@ -626,7 +636,6 @@ static DH *tmp_dh_callback(SSL *ssl, int is_export, int keylength)
     lua_error(L);
   }
 
-
   lua_pop(L, 2);    /* Remove values from stack */
   return dh_tmp;
 }
@@ -653,11 +662,9 @@ static RSA *tmp_rsa_callback(SSL *ssl, int is_export, int keylength)
       lua_pop(L, 2);  /* Remove values from stack */
       return NULL;
     }
-    bio = BIO_new_mem_buf((void*)lua_tostring(L, -1),
-                          lua_rawlen(L, -1));
+    bio = BIO_new_mem_buf((void*)lua_tostring(L, -1), lua_rawlen(L, -1));
     if (bio)
     {
-
       rsa_tmp = PEM_read_bio_RSAPrivateKey(bio, NULL, NULL, NULL);
       BIO_free(bio);
     }
@@ -666,7 +673,6 @@ static RSA *tmp_rsa_callback(SSL *ssl, int is_export, int keylength)
   {
     lua_error(L);
   }
-
 
   lua_pop(L, 2);    /* Remove values from stack */
   return rsa_tmp;
@@ -699,7 +705,6 @@ static EC_KEY *tmp_ecdh_callback(SSL *ssl, int is_export, int keylength)
                           lua_rawlen(L, -1));
     if (bio)
     {
-
       ec_tmp = PEM_read_bio_ECPrivateKey(bio, NULL, NULL, NULL);
       BIO_free(bio);
     }
@@ -708,7 +713,6 @@ static EC_KEY *tmp_ecdh_callback(SSL *ssl, int is_export, int keylength)
   {
     lua_error(L);
   }
-
 
   lua_pop(L, 2);    /* Remove values from stack */
   return ec_tmp;
@@ -976,18 +980,20 @@ static luaL_Reg ssl_ctx_funcs[] =
   {"timeout",         openssl_ssl_ctx_timeout},
   {"options",         openssl_ssl_ctx_options},
   {"quiet_shutdown",  openssl_ssl_ctx_quiet_shutdown},
-  {"verify_locations", openssl_ssl_ctx_load_verify_locations},
+  {"verify_locations",openssl_ssl_ctx_load_verify_locations},
   {"cert_store",      openssl_ssl_ctx_cert_store},
-
+#ifndef OPENSSL_NO_ENGINE
+  {"set_engine",      openssl_ssl_ctx_set_engine},
+#endif
   {"verify_mode",     openssl_ssl_ctx_verify_mode },
-  {"set_cert_verify",    openssl_ssl_ctx_set_cert_verify},
-  {"set_servername_callback",    openssl_ssl_ctx_set_servername_callback},
+  {"set_cert_verify", openssl_ssl_ctx_set_cert_verify},
 
   {"verify_depth",    openssl_ssl_ctx_verify_depth},
   {"set_tmp",         openssl_ssl_ctx_set_tmp},
   {"flush_sessions",  openssl_ssl_ctx_flush_sessions},
   {"session",         openssl_ssl_ctx_sessions},
   {"session_cache_mode",        openssl_session_cache_mode },
+  {"set_servername_callback",   openssl_ssl_ctx_set_servername_callback },
 
   {"__gc",            openssl_ssl_ctx_gc},
   {"__tostring",      auxiliar_tostring},
@@ -1480,7 +1486,6 @@ static int openssl_ssl_set(lua_State*L)
       int depth = luaL_checkint(L, i + 1);
       SSL_set_verify_depth(s, depth);
     }
-
     else if (strcmp(what, "purpose") == 0)
     {
       //FIX
@@ -1852,7 +1857,6 @@ int luaopen_ssl(lua_State *L)
   auxiliar_newclass(L, "openssl.ssl_ctx",       ssl_ctx_funcs);
   auxiliar_newclass(L, "openssl.ssl_session",   ssl_session_funcs);
   auxiliar_newclass(L, "openssl.ssl",           ssl_funcs);
-
 
   lua_newtable(L);
   luaL_setfuncs(L, R, 0);
