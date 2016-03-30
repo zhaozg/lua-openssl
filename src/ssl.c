@@ -73,10 +73,9 @@ static int openssl_ssl_ctx_new(lua_State*L)
   else if (strcmp(meth, "SSLv2_client") == 0)
     method = SSLv2_client_method();
 #endif
+#endif
 #ifdef LOAD_SSL_CUSTOM
   LOAD_SSL_CUSTOM
-#endif
-
 #endif
   else
     luaL_error(L, "#1:%s not supported\n"
@@ -969,12 +968,19 @@ static int openssl_session_cache_mode(lua_State *L)
   return 1;
 }
 
+#ifdef SSL_CTX_EXT_DEFINE
+SSL_CTX_EXT_DEFINE
+#endif
+
 static luaL_Reg ssl_ctx_funcs[] =
 {
   {"ssl",             openssl_ssl_ctx_new_ssl},
   {"bio",             openssl_ssl_ctx_new_bio},
-
+#ifndef SSL_CTX_USE_EXT
   {"use",             openssl_ssl_ctx_use},
+#else
+  SSL_CTX_USE_EXT
+#endif
   {"add",             openssl_ssl_ctx_add},
   {"mode",            openssl_ssl_ctx_mode},
   {"timeout",         openssl_ssl_ctx_timeout},

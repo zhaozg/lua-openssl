@@ -433,11 +433,20 @@ static int openssl_ec_key_parse(lua_State*L)
   return 1;
 };
 
+#ifdef EC_EXT
+EC_EXT_DEFINE
+#endif
+
 static luaL_Reg ec_key_funs[] =
 {
   {"parse",       openssl_ec_key_parse},
   {"sign",        openssl_ecdsa_sign},
   {"verify",      openssl_ecdsa_verify},
+
+#ifdef EC_EXT
+  EC_EXT
+#endif
+
   {"__gc",        openssl_ec_key_free},
   {"__tostring",  auxiliar_tostring},
 
@@ -497,7 +506,7 @@ int luaopen_ec(lua_State *L)
 {
   auxiliar_newclass(L, "openssl.ec_point",   ec_point_funs);
   auxiliar_newclass(L, "openssl.ec_group",   ec_group_funs);
-  auxiliar_newclass(L, "openssl.ec_key",   ec_key_funs);
+  auxiliar_newclass(L, "openssl.ec_key",     ec_key_funs);
 
   lua_newtable(L);
   luaL_setfuncs(L, R, 0);
