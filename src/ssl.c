@@ -274,7 +274,7 @@ static int openssl_ssl_ctx_options(lua_State*L)
         for (j = 0; ssl_options[j].name; j++)
         {
           LuaL_Enum e = ssl_options[j];
-          if (strcasecmp(s, e.name))
+          if (strcasecmp(s, e.name)==0)
           {
             options |= e.val;
             break;
@@ -297,7 +297,7 @@ static int openssl_ssl_ctx_options(lua_State*L)
   for (i = 0; ssl_options[i].name; i++)
   {
     LuaL_Enum e = ssl_options[i];
-    if (options && e.val)
+    if (options & e.val)
     {
       lua_pushstring(L, e.name);
       ret++;

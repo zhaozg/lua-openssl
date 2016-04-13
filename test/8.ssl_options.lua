@@ -18,7 +18,7 @@ TestSSLOptions = {}
             local t, e = self.ctx:options()
             assert(type(t) == "table", e or type(t))
             t = SET(t)
-            
+
             t = self.ctx:options(ssl.no_sslv3, "no_ticket")
             t = SET(t)
             assertIsTable(t)
