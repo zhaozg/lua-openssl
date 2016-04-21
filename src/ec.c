@@ -345,7 +345,7 @@ static int openssl_ecdsa_verify(lua_State*L)
 	int top = lua_gettop(L);
 	if (top == 3)
 	{
-		const char* s = luaL_checklstring(L, 3, &sigl);;
+		const char* s = luaL_checklstring(L, 3, &sigl);
 		ECDSA_SIG* sig = d2i_ECDSA_SIG(NULL, (const unsigned char**)&s, sigl);
 		ret = ECDSA_do_verify((const unsigned char*)dgst, l, sig, ec);
 		if (ret == -1)
