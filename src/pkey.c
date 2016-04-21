@@ -26,8 +26,8 @@ static int openssl_pkey_bits(lua_State *L)
 
 int openssl_pkey_is_private(EVP_PKEY* pkey)
 {
-  assert(pkey != NULL);
   int ret = 1;
+  assert(pkey != NULL);
   switch (pkey->type)
   {
 #ifndef OPENSSL_NO_RSA
