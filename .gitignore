@@ -26,7 +26,7 @@
 msvc/
 
 #ldoc
-doc/doc/
+doc/
 
 #lake deps
 *.d
@@ -34,4 +34,6 @@ doc/doc/
 #misc
 *.orgi
 /doc
-/test/sm2
+/src/custom.h
+oscca/
+tmp/
