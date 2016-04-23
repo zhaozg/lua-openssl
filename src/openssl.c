@@ -20,7 +20,6 @@ static int openssl_version(lua_State*L)
     lua_pushinteger(L, LOPENSSL_VERSION_NUM);
     lua_pushinteger(L, LUA_VERSION_NUM);
     lua_pushinteger(L, OPENSSL_VERSION_NUMBER);
-
   }
   else
   {

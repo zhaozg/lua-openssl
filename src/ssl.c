@@ -274,7 +274,7 @@ static int openssl_ssl_ctx_options(lua_State*L)
         for (j = 0; ssl_options[j].name; j++)
         {
           LuaL_Enum e = ssl_options[j];
-          if (strcasecmp(s, e.name)==0)
+          if (strcasecmp(s, e.name) == 0)
           {
             options |= e.val;
             break;
@@ -986,7 +986,7 @@ static luaL_Reg ssl_ctx_funcs[] =
   {"timeout",         openssl_ssl_ctx_timeout},
   {"options",         openssl_ssl_ctx_options},
   {"quiet_shutdown",  openssl_ssl_ctx_quiet_shutdown},
-  {"verify_locations",openssl_ssl_ctx_load_verify_locations},
+  {"verify_locations", openssl_ssl_ctx_load_verify_locations},
   {"cert_store",      openssl_ssl_ctx_cert_store},
 #ifndef OPENSSL_NO_ENGINE
   {"set_engine",      openssl_ssl_ctx_set_engine},

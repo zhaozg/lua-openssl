@@ -259,9 +259,18 @@ static LUA_FUNCTION(openssl_csr_sign)
   {
     EVP_PKEY *pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
     const EVP_MD* md = lua_isnone(L, 3) ? EVP_get_digestbyname("sha1") : get_digest(L, 3);
-    int ret = X509_REQ_sign(csr, pkey, md);
-    if (ret > 0)
-      ret = 1;
+    int ret = 1;
+    if (X509_REQ_get_pubkey(csr) == NULL)
+    {
+      BIO* bio = BIO_new(BIO_s_mem());
+      if ( ret = i2d_PUBKEY_bio(bio, pkey))
+      {
+        ret = X509_REQ_set_pubkey(csr, d2i_PUBKEY_bio(bio, NULL));
+      }
+      BIO_free(bio);
+    }
+    if (ret == 1)
+      ret = X509_REQ_sign(csr, pkey, md);
     return openssl_pushresult(L, ret);
   }
   else if (lua_isstring(L, 2))

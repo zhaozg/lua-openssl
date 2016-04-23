@@ -463,9 +463,9 @@ static luaL_Reg eng_funcs[] =
   {"name",      openssl_engine_name},
   {"flags",     openssl_engine_flags},
 
-  {"load_private_key",    openssl_engine_load_private_key},
-  {"load_public_key",     openssl_engine_load_public_key },
-  {"load_ssl_client_cert",openssl_engine_load_ssl_client_cert},
+  {"load_private_key",      openssl_engine_load_private_key},
+  {"load_public_key",       openssl_engine_load_public_key },
+  {"load_ssl_client_cert",  openssl_engine_load_ssl_client_cert},
 
   {"init",          openssl_engine_init},
   {"finish",        openssl_engine_finish},

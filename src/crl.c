@@ -673,15 +673,18 @@ static LUA_FUNCTION(openssl_crl_get)
   X509_CRL * crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
   int i = 0;
   X509_REVOKED *revoked = NULL;
-  if (lua_isinteger(L, 2)) {
+  if (lua_isinteger(L, 2))
+  {
     i = lua_tointeger(L, 2);
     luaL_argcheck(L, (i >= 0 && i < sk_X509_REVOKED_num(crl->crl->revoked)), 2, "Out of range");
     revoked = sk_X509_REVOKED_value(crl->crl->revoked, i);
   }
-  else {
+  else
+  {
     ASN1_STRING *sn = CHECK_OBJECT(2, ASN1_STRING, "openssl.asn1_string");
     int cnt = sk_X509_REVOKED_num(crl->crl->revoked);
-    for (i = 0; i < cnt; i++) {
+    for (i = 0; i < cnt; i++)
+    {
       X509_REVOKED *rev = sk_X509_REVOKED_value(crl->crl->revoked, i);
       if (ASN1_STRING_cmp(rev->serialNumber, sn) == 0)
       {
