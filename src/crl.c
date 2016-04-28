@@ -681,7 +681,7 @@ static LUA_FUNCTION(openssl_crl_get)
   }
   else
   {
-    ASN1_STRING *sn = CHECK_OBJECT(2, ASN1_STRING, "openssl.asn1_string");
+    ASN1_STRING *sn = CHECK_OBJECT(2, ASN1_STRING, "openssl.asn1_integer");
     int cnt = sk_X509_REVOKED_num(crl->crl->revoked);
     for (i = 0; i < cnt; i++)
     {
