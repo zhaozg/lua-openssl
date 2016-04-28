@@ -704,7 +704,7 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_policies)
       {
         ASN1_OBJECT* obj = sk_ASN1_OBJECT_value(ctx->policies, i);
         lua_pushinteger(L, i + 1);
-        PUSH_OBJECT(obj, "openssl.asn1_object");
+        openssl_push_asn1object(L, obj);
         lua_rawset(L, -3);
       }
     }

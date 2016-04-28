@@ -197,10 +197,8 @@ static int openssl_xname_delete_entry(lua_State*L)
   X509_NAME_ENTRY *xe = X509_NAME_delete_entry(xn, loc);
   if (xe)
   {
-    ASN1_OBJECT *obj = OBJ_dup(xe->object);
-    ASN1_STRING *as = ASN1_STRING_dup(xe->value);
-    PUSH_OBJECT(obj, "openssl.asn1_object");
-    PUSH_OBJECT(as, "openssl.asn1_string");
+    openssl_push_asn1object(L, xe->object);
+    PUSH_ASN1_STRING(L, xe->value);
     X509_NAME_ENTRY_free(xe);
     return 2;
   }

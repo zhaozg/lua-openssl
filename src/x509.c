@@ -601,7 +601,7 @@ static int openssl_x509_serial(lua_State *L)
     int asobj = lua_toboolean(L, 2);
     if (asobj)
     {
-      PUSH_OBJECT(serial, "openssl.asn1_string");
+      PUSH_ASN1_STRING(L, serial);
     }
     else
     {

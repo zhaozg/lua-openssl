@@ -82,8 +82,7 @@ static int openssl_xattr_data(lua_State*L)
     int idx = luaL_checkint(L, 2);
     int attrtype = luaL_checkint(L, 3);
     ASN1_STRING *as = (ASN1_STRING *)X509_ATTRIBUTE_get0_data(attr, idx, attrtype, NULL);
-    as = ASN1_STRING_dup(as);
-    PUSH_OBJECT(as, "openssl.asn1_string");
+    PUSH_ASN1_STRING(L, as);
     return 1;
   }
 }
@@ -109,8 +108,7 @@ static int openssl_xattr_object(lua_State*L)
   if (lua_isnone(L, 2))
   {
     ASN1_OBJECT* obj = X509_ATTRIBUTE_get0_object(attr);
-    obj = OBJ_dup(obj);
-    PUSH_OBJECT(obj, "openssl.asn1_object");
+    openssl_push_asn1object(L, obj);
     return 1;
   }
   else

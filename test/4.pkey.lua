@@ -236,8 +236,8 @@ vgPnEUG6Mk9bkxMZKRgsiKn6QGKDYGbOvnS1xmkMfRARBsJAq369VOTjMB/Qhs5q
                         assertEquals(p1,pub:export())
                 end
                 -- pkcs8 der
-                -- pem=false, export_private=true, passphrase='secret'
-                local export = pri:export(false,'secret')
+                -- pem=false, raw=true, passphrase='secret'
+                local export = pri:export(false,false,'secret')
                 local k1 = pkey.read(export,true,'der','secret')
                 assertEquals(pri:export(),k1:export())
         end

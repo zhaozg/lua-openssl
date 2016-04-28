@@ -511,17 +511,9 @@ static LUA_FUNCTION(openssl_pkey_export)
 
   if (!lua_isnoneornil(L, 2))
     expem = lua_toboolean(L, 2);
-
-  if (expem)
-  {
-    if (!lua_isnoneornil(L, 3))
-      exraw = lua_toboolean(L, 3);
-    passphrase = luaL_optlstring(L, 4, NULL, &passphrase_len);
-  }
-  else
-  {
-    passphrase = luaL_optlstring(L, 3, NULL, &passphrase_len);
-  }
+  if (!lua_isnoneornil(L, 3))
+    exraw = lua_toboolean(L, 3);
+  passphrase = luaL_optlstring(L, 4, NULL, &passphrase_len);
 
   if (passphrase)
   {
