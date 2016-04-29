@@ -418,9 +418,27 @@ static LUA_FUNCTION(openssl_crl_sort)
 static LUA_FUNCTION(openssl_crl_verify)
 {
   X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
-  X509* cacert = CHECK_OBJECT(2, X509, "openssl.x509");
+  EVP_PKEY *pub = NULL;
+  int ret;
+  luaL_argcheck(L, 
+    auxiliar_isclass(L, "openssl.x509", 2) ||
+    auxiliar_isclass(L, "openssl.evp_pkey", 2),
+    2,
+    "must be x509 or evp_pkey object");
+  if (auxiliar_isclass(L, "openssl.evp_pkey", 2))
+  {
+    pub = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
+    ret = X509_CRL_verify(crl, pub);
+  }
+  else 
+  {
+    X509* cacert = CHECK_OBJECT(2, X509, "openssl.x509");
+    pub = X509_get_pubkey(cacert);
+    ret = X509_CRL_verify(crl, pub);
+    EVP_PKEY_free(pub);
+  }
 
-  int ret = X509_CRL_verify(crl, cacert->cert_info->key->pkey);
+  
   return openssl_pushresult(L, ret);
 }
 
