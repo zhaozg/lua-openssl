@@ -98,7 +98,7 @@ static int openssl_xname_info(lua_State*L)
 static int openssl_xname_cmp(lua_State*L)
 {
   X509_NAME* a = CHECK_OBJECT(1, X509_NAME, "openssl.x509_name");
-  X509_NAME* b = CHECK_OBJECT(1, X509_NAME, "openssl.x509_name");
+  X509_NAME* b = CHECK_OBJECT(2, X509_NAME, "openssl.x509_name");
   int ret = X509_NAME_cmp(a, b);
   lua_pushboolean(L, ret == 0);
   return 1;
