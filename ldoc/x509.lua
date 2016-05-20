@@ -76,6 +76,11 @@ function sign() end
 -- @treturn boolean result true for check pass
 function check() end
 
+--- check x509 for host
+-- @tparam string host hostname to check for match match with x509 subject
+-- @treturn boolean result true if host is present and matches the certificate
+function check_host() end
+
 --- check x509 with ca certchian and option purpose
 -- purpose can be one of: ssl_client, ssl_server, ns_ssl_server, smime_sign, smime_encrypt, crl_sign, any, ocsp_helper, timestamp_sign
 -- @tparam x509_store cacerts 

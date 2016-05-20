@@ -385,6 +385,19 @@ static LUA_FUNCTION(openssl_x509_check)
   }
 }
 
+static LUA_FUNCTION(openssl_x509_check_host)
+{
+  X509 * cert = CHECK_OBJECT(1, X509, "openssl.x509");
+  if (lua_isstring(L, 2))
+  {
+    const char *testName = lua_tostring(L, 2);
+    lua_pushboolean(L, X509_check_host(cert, testName, strlen(testName), 0, NULL));
+  } else {
+    lua_pushboolean(L, 0);
+  }
+  return 1;
+}
+
 IMP_LUA_SK(X509, x509)
 
 static STACK_OF(X509) * load_all_certs_from_file(BIO *in)
@@ -852,6 +865,7 @@ static luaL_Reg x509_funcs[] =
   {"parse",       openssl_x509_parse},
   {"export",      openssl_x509_export},
   {"check",       openssl_x509_check},
+  {"check_host",  openssl_x509_check_host},
   {"pubkey",      openssl_x509_public_key},
   {"version",     openssl_x509_version},
 
