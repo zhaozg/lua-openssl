@@ -418,7 +418,7 @@ static LUA_FUNCTION(openssl_x509_check_ip_asc)
   if (lua_isstring(L, 2))
   {
     const char *ip_asc = lua_tostring(L, 2);
-    lua_pushboolean(L, X509_check_ip_asc(cert, ip_asc, strlen(ip_asc), 0));
+    lua_pushboolean(L, X509_check_ip_asc(cert, ip_asc, 0));
   } else {
     lua_pushboolean(L, 0);
   }
