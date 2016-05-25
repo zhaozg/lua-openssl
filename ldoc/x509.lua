@@ -76,6 +76,21 @@ function sign() end
 -- @treturn boolean result true for check pass
 function check() end
 
+--- check x509 for host (only for openssl 1.0.2 or greater)
+-- @tparam string host hostname to check for match match with x509 subject
+-- @treturn boolean result true if host is present and matches the certificate
+function check_host() end
+
+--- check x509 for email address (only for openssl 1.0.2 or greater)
+-- @tparam string email to check for match match with x509 subject
+-- @treturn boolean result true if host is present and matches the certificate
+function check_email() end
+
+--- check x509 for ip address (ipv4 or ipv6, only for openssl 1.0.2 or greater)
+-- @tparam string ip to check for match match with x509 subject
+-- @treturn boolean result true if host is present and matches the certificate
+function check_ip_asc() end
+
 --- check x509 with ca certchian and option purpose
 -- purpose can be one of: ssl_client, ssl_server, ns_ssl_server, smime_sign, smime_encrypt, crl_sign, any, ocsp_helper, timestamp_sign
 -- @tparam x509_store cacerts 
