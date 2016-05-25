@@ -385,9 +385,9 @@ static LUA_FUNCTION(openssl_x509_check)
   }
 }
 
+#if OPENSSL_VERSION_NUMBER > 0x10002000L
 static LUA_FUNCTION(openssl_x509_check_host)
 {
-#if OPENSSL_VERSION_NUMBER > 0x10002000L
   X509 * cert = CHECK_OBJECT(1, X509, "openssl.x509");
   if (lua_isstring(L, 2))
   {
@@ -397,11 +397,10 @@ static LUA_FUNCTION(openssl_x509_check_host)
     lua_pushboolean(L, 0);
   }
   return 1;
-#else
   luaL_error(L, "This feature is not supported before openssl 1.0.2");
   return 0;
-#endif
 }
+#endif
 
 IMP_LUA_SK(X509, x509)
 
@@ -870,7 +869,9 @@ static luaL_Reg x509_funcs[] =
   {"parse",       openssl_x509_parse},
   {"export",      openssl_x509_export},
   {"check",       openssl_x509_check},
+#if OPENSSL_VERSION_NUMBER > 0x10002000L
   {"check_host",  openssl_x509_check_host},
+#endif
   {"pubkey",      openssl_x509_public_key},
   {"version",     openssl_x509_version},
 
