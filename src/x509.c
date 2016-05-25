@@ -391,14 +391,38 @@ static LUA_FUNCTION(openssl_x509_check_host)
   X509 * cert = CHECK_OBJECT(1, X509, "openssl.x509");
   if (lua_isstring(L, 2))
   {
-    const char *testName = lua_tostring(L, 2);
-    lua_pushboolean(L, X509_check_host(cert, testName, strlen(testName), 0, NULL));
+    const char *hostname = lua_tostring(L, 2);
+    lua_pushboolean(L, X509_check_host(cert, hostname, strlen(hostname), 0, NULL));
   } else {
     lua_pushboolean(L, 0);
   }
   return 1;
-  luaL_error(L, "This feature is not supported before openssl 1.0.2");
-  return 0;
+}
+
+static LUA_FUNCTION(openssl_x509_check_email)
+{
+  X509 * cert = CHECK_OBJECT(1, X509, "openssl.x509");
+  if (lua_isstring(L, 2))
+  {
+    const char *email = lua_tostring(L, 2);
+    lua_pushboolean(L, X509_check_email(cert, email, strlen(email), 0, NULL));
+  } else {
+    lua_pushboolean(L, 0);
+  }
+  return 1;
+}
+
+static LUA_FUNCTION(openssl_x509_check_ip_asc)
+{
+  X509 * cert = CHECK_OBJECT(1, X509, "openssl.x509");
+  if (lua_isstring(L, 2))
+  {
+    const char *ip_asc = lua_tostring(L, 2);
+    lua_pushboolean(L, X509_check_ip_asc(cert, ip_asc, strlen(ip_asc), 0, NULL));
+  } else {
+    lua_pushboolean(L, 0);
+  }
+  return 1;
 }
 #endif
 
@@ -871,6 +895,8 @@ static luaL_Reg x509_funcs[] =
   {"check",       openssl_x509_check},
 #if OPENSSL_VERSION_NUMBER > 0x10002000L
   {"check_host",  openssl_x509_check_host},
+  {"check_email", openssl_x509_check_email},
+  {"check_ip_asc",openssl_x509_check_ip_asc},
 #endif
   {"pubkey",      openssl_x509_public_key},
   {"version",     openssl_x509_version},
