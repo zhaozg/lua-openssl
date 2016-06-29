@@ -481,6 +481,10 @@ static LUA_FUNCTION(openssl_pkey_new)
       }
       EC_GROUP_free(group);
     }
+  } else if (auxiliar_isclass(L, "openssl.rsa", 1)) {
+    RSA* rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");
+    pkey = EVP_PKEY_new();
+    EVP_PKEY_assign_RSA(pkey, rsa);
   }
 
   if (pkey && pkey->pkey.ptr)
