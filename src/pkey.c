@@ -894,19 +894,29 @@ static LUA_FUNCTION(openssl_sign)
   if (mdtype)
   {
     int ret = 0;
-    EVP_MD_CTX md_ctx;
     unsigned int siglen = EVP_PKEY_size(pkey);
     unsigned char *sigbuf = malloc(siglen + 1);
+    EVP_MD_CTX *ctx = EVP_MD_CTX_create();
 
-    EVP_SignInit(&md_ctx, mdtype);
-    EVP_SignUpdate(&md_ctx, data, data_len);
-    if (EVP_SignFinal (&md_ctx, sigbuf, &siglen, pkey))
-    {
-      lua_pushlstring(L, (char *)sigbuf, siglen);
-      ret = 1;
+    ret = EVP_DigestSignInit(ctx, NULL, mdtype, NULL, pkey);
+    if (ret == 1) {
+      ret = EVP_DigestSignUpdate(ctx, data, data_len);
+      if (ret == 1) {
+        ret = EVP_DigestSignFinal(ctx, sigbuf, &siglen);
+        if (ret == 1) {
+          lua_pushlstring(L, (char *)sigbuf, siglen);
+        }
+        else
+          ret = openssl_pushresult(L, ret);
+      }
+      else
+        ret = openssl_pushresult(L, ret);
     }
+    else
+      ret = openssl_pushresult(L, ret);
+
     free(sigbuf);
-    EVP_MD_CTX_cleanup(&md_ctx);
+    EVP_MD_CTX_destroy(ctx);
     return ret;
   }
   else
@@ -931,16 +941,27 @@ static LUA_FUNCTION(openssl_verify)
     mdtype = EVP_get_digestbyname("sha1");
   if (mdtype)
   {
-    int result;
-    EVP_MD_CTX     md_ctx;
+    int ret;
+    EVP_MD_CTX *ctx = EVP_MD_CTX_create();
 
-    EVP_VerifyInit(&md_ctx, mdtype);
-    EVP_VerifyUpdate (&md_ctx, data, data_len);
-    result = EVP_VerifyFinal (&md_ctx, (unsigned char *)signature, signature_len, pkey);
-    EVP_MD_CTX_cleanup(&md_ctx);
-    lua_pushboolean(L, result == 1);
+    ret = EVP_DigestVerifyInit(ctx, NULL, mdtype, NULL, pkey);
+    if (ret == 1) {
+      ret = EVP_DigestVerifyUpdate(ctx, data, data_len);
+      if (ret == 1) {
+        ret = EVP_DigestVerifyFinal(ctx, (unsigned char *)signature, signature_len);
+        if (ret == 1) {
+          lua_pushboolean(L, ret == 1);
+        }
+        else
+          ret = openssl_pushresult(L, ret);
+      }else
+        ret = openssl_pushresult(L, ret);
+    }
+    else
+      ret = openssl_pushresult(L, ret);
 
-    return 1;
+    EVP_MD_CTX_destroy(ctx);
+    return ret;
   }
   else
     luaL_argerror(L, 4, "Not support digest alg");
