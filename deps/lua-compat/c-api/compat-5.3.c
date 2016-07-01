@@ -380,7 +380,8 @@ COMPAT53_API int luaL_fileresult (lua_State *L, int stat, const char *fname) {
 
 #if !defined(l_inspectstat) && \
     (defined(unix) || defined(__unix) || defined(__unix__) || \
-     defined(__TOS_AIX__) || defined(_SYSTYPE_BSD))
+     defined(__TOS_AIX__) || defined(_SYSTYPE_BSD) || \
+     (defined(__APPLE__) && defined(__MACH__)))
 /* some form of unix; check feature macros in unistd.h for details */
 #  include <unistd.h>
 /* check posix version; the relevant include files and macros probably
