@@ -372,8 +372,17 @@ static LUA_FUNCTION(openssl_x509_check)
   {
     X509_STORE* store = CHECK_OBJECT(2, X509_STORE, "openssl.x509_store");
     STACK_OF(X509)* untrustedchain = lua_isnoneornil(L, 3) ?  NULL : openssl_sk_x509_fromtable(L, 3);
-    int purpose = lua_isnone(L, 4) ? 0 : X509_PURPOSE_get_by_sname((char*)luaL_optstring(L, 4, "any"));
+    int purpose = 0;
     int ret = 0;
+    if (!lua_isnone(L, 4)) {
+      int purpose_id = X509_PURPOSE_get_by_sname((char*)luaL_optstring(L, 4, "any"));
+      if (purpose_id >= 0) {
+        X509_PURPOSE* ppurpose = X509_PURPOSE_get0(purpose_id);
+        if (ppurpose) {
+          purpose = ppurpose->purpose;
+        }
+      }
+    }
 #if 0
     X509_STORE_set_verify_cb_func(store, verify_cb);
 #endif
