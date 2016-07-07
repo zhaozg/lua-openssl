@@ -894,17 +894,25 @@ static LUA_FUNCTION(openssl_sign)
   if (mdtype)
   {
     int ret = 0;
-    unsigned int siglen = EVP_PKEY_size(pkey);
-    unsigned char *sigbuf = malloc(siglen + 1);
     EVP_MD_CTX *ctx = EVP_MD_CTX_create();
 
     ret = EVP_DigestSignInit(ctx, NULL, mdtype, NULL, pkey);
     if (ret == 1) {
       ret = EVP_DigestSignUpdate(ctx, data, data_len);
       if (ret == 1) {
-        ret = EVP_DigestSignFinal(ctx, sigbuf, &siglen);
+        size_t siglen = 0;
+        unsigned char *sigbuf = NULL;
+        ret = EVP_DigestSignFinal(ctx, NULL, &siglen);
         if (ret == 1) {
-          lua_pushlstring(L, (char *)sigbuf, siglen);
+          siglen += 2;
+          sigbuf = OPENSSL_malloc(siglen);
+          ret = EVP_DigestSignFinal(ctx, sigbuf, &siglen);
+          if (ret == 1) {
+            lua_pushlstring(L, (char *)sigbuf, siglen);
+          }
+          else
+            ret = openssl_pushresult(L, ret);
+          OPENSSL_free(sigbuf);
         }
         else
           ret = openssl_pushresult(L, ret);
@@ -915,7 +923,6 @@ static LUA_FUNCTION(openssl_sign)
     else
       ret = openssl_pushresult(L, ret);
 
-    free(sigbuf);
     EVP_MD_CTX_destroy(ctx);
     return ret;
   }
