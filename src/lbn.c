@@ -30,9 +30,6 @@
       "based on OpenSSL " SHLIB_VERSION_NUMBER
 #define MYTYPE    "openssl.bn"
 
-
-static BN_CTX *ctx = NULL;
-
 static void error(lua_State *L, const char *message)
 {
   luaL_error(L, "(bn) %s %s", message, ERR_reason_error_string(ERR_get_error()));
@@ -183,7 +180,9 @@ static int Bsqr(lua_State *L)     /** sqr(x) */
 {
   BIGNUM *a = Bget(L, 1);
   BIGNUM *c = Bnew(L);
+  BN_CTX *ctx = BN_CTX_new();
   BN_sqr(c, a, ctx);
+  BN_CTX_free(ctx);
   return 1;
 }
 
@@ -236,7 +235,9 @@ static int Bmul(lua_State *L)     /** mul(x,y) */
   BIGNUM *a = Bget(L, 1);
   BIGNUM *b = Bget(L, 2);
   BIGNUM *c = Bnew(L);
+  BN_CTX *ctx = BN_CTX_new();
   BN_mul(c, a, b, ctx);
+  BN_CTX_free(ctx);
   return 1;
 }
 
@@ -246,7 +247,9 @@ static int Bdiv(lua_State *L)     /** div(x,y) */
   BIGNUM *b = Bget(L, 2);
   BIGNUM *q = Bnew(L);
   BIGNUM *r = NULL;
+  BN_CTX *ctx = BN_CTX_new();
   BN_div(q, r, a, b, ctx);
+  BN_CTX_free(ctx);
   return 1;
 }
 
@@ -256,7 +259,9 @@ static int Bmod(lua_State *L)     /** mod(x,y) */
   BIGNUM *b = Bget(L, 2);
   BIGNUM *q = NULL;
   BIGNUM *r = Bnew(L);
+  BN_CTX *ctx = BN_CTX_new();
   BN_div(q, r, a, b, ctx);
+  BN_CTX_free(ctx);
   return 1;
 }
 
@@ -265,7 +270,9 @@ static int Brmod(lua_State *L)      /** rmod(x,y) */
   BIGNUM *a = Bget(L, 1);
   BIGNUM *b = Bget(L, 2);
   BIGNUM *r = Bnew(L);
+  BN_CTX *ctx = BN_CTX_new();
   BN_nnmod(r, a, b, ctx);
+  BN_CTX_free(ctx);
   return 1;
 }
 
@@ -275,7 +282,9 @@ static int Bdivmod(lua_State *L)    /** divmod(x,y) */
   BIGNUM *b = Bget(L, 2);
   BIGNUM *q = Bnew(L);
   BIGNUM *r = Bnew(L);
+  BN_CTX *ctx = BN_CTX_new();
   BN_div(q, r, a, b, ctx);
+  BN_CTX_free(ctx);
   return 2;
 }
 
@@ -284,7 +293,9 @@ static int Bgcd(lua_State *L)     /** gcd(x,y) */
   BIGNUM *a = Bget(L, 1);
   BIGNUM *b = Bget(L, 2);
   BIGNUM *c = Bnew(L);
+  BN_CTX *ctx = BN_CTX_new();
   BN_gcd(c, a, b, ctx);
+  BN_CTX_free(ctx);
   return 1;
 }
 
@@ -293,7 +304,9 @@ static int Bpow(lua_State *L)     /** pow(x,y) */
   BIGNUM *a = Bget(L, 1);
   BIGNUM *b = Bget(L, 2);
   BIGNUM *c = Bnew(L);
+  BN_CTX *ctx = BN_CTX_new();
   BN_exp(c, a, b, ctx);
+  BN_CTX_free(ctx);
   return 1;
 }
 
@@ -303,7 +316,9 @@ static int Baddmod(lua_State *L)    /** addmod(x,y,m) */
   BIGNUM *b = Bget(L, 2);
   BIGNUM *m = Bget(L, 3);
   BIGNUM *c = Bnew(L);
+  BN_CTX *ctx = BN_CTX_new();
   BN_mod_add(c, a, b, m, ctx);
+  BN_CTX_free(ctx);
   return 1;
 }
 
@@ -313,7 +328,9 @@ static int Bsubmod(lua_State *L)    /** submod(x,y,m) */
   BIGNUM *b = Bget(L, 2);
   BIGNUM *m = Bget(L, 3);
   BIGNUM *c = Bnew(L);
+  BN_CTX *ctx = BN_CTX_new();
   BN_mod_sub(c, a, b, m, ctx);
+  BN_CTX_free(ctx);
   return 1;
 }
 
@@ -323,7 +340,9 @@ static int Bmulmod(lua_State *L)    /** mulmod(x,y,m) */
   BIGNUM *b = Bget(L, 2);
   BIGNUM *m = Bget(L, 3);
   BIGNUM *c = Bnew(L);
+  BN_CTX *ctx = BN_CTX_new();
   BN_mod_mul(c, a, b, m, ctx);
+  BN_CTX_free(ctx);
   return 1;
 }
 
@@ -333,7 +352,9 @@ static int Bpowmod(lua_State *L)    /** powmod(x,y,m) */
   BIGNUM *b = Bget(L, 2);
   BIGNUM *m = Bget(L, 3);
   BIGNUM *c = Bnew(L);
+  BN_CTX *ctx = BN_CTX_new();
   BN_mod_exp(c, a, b, m, ctx);
+  BN_CTX_free(ctx);
   return 1;
 }
 
@@ -342,7 +363,9 @@ static int Bsqrmod(lua_State *L)    /** sqrmod(x) */
   BIGNUM *a = Bget(L, 1);
   BIGNUM *m = Bget(L, 2);
   BIGNUM *c = Bnew(L);
+  BN_CTX *ctx = BN_CTX_new();
   BN_mod_sqr(c, a, m, ctx);
+  BN_CTX_free(ctx);
   return 1;
 }
 
@@ -351,7 +374,9 @@ static int Binvmod(lua_State *L)    /** invmod(x) */
   BIGNUM *a = Bget(L, 1);
   BIGNUM *m = Bget(L, 2);
   BIGNUM *c = Bnew(L);
+  BN_CTX *ctx = BN_CTX_new();
   BN_mod_inverse(c, a, m, ctx);
+  BN_CTX_free(ctx);
   return 1;
 }
 
@@ -360,7 +385,9 @@ static int Bsqrtmod(lua_State *L)   /** sqrtmod(x) */
   BIGNUM *a = Bget(L, 1);
   BIGNUM *m = Bget(L, 2);
   BIGNUM *c = Bnew(L);
+  BN_CTX *ctx = BN_CTX_new();
   BN_mod_sqrt(c, a, m, ctx);
+  BN_CTX_free(ctx);
   return 1;
 }
 
@@ -387,7 +414,9 @@ static int Bisprime(lua_State *L)   /** isprime(x,[checks]) */
 {
   int checks = luaL_optint(L, 2, BN_prime_checks);
   BIGNUM *a = Bget(L, 1);
+  BN_CTX *ctx = BN_CTX_new();
   lua_pushboolean(L, BN_is_prime_fasttest_ex(a, checks, ctx, 1, NULL));
+  BN_CTX_free(ctx);
   return 1;
 }
 
@@ -450,7 +479,6 @@ static const luaL_Reg R[] =
 
 int luaopen_bn(lua_State *L)
 {
-  ctx = BN_CTX_new();
   ERR_load_BN_strings();
   RAND_seed(MYVERSION, sizeof(MYVERSION));
 

@@ -162,6 +162,7 @@ static int openssl_random_load(lua_State*L)
 {
   const char *file = luaL_optstring(L, 1, NULL);
   char buffer[MAX_PATH];
+  int len;
 
   if (file == NULL)
     file = RAND_file_name(buffer, sizeof buffer);
@@ -173,7 +174,8 @@ static int openssl_random_load(lua_State*L)
     return 1;
   }
 
-  if (file == NULL || !RAND_load_file(file, 2048))
+  len = luaL_optinteger(L, 2, 2048);
+  if (file == NULL || !RAND_load_file(file, len))
   {
     return openssl_pushresult(L, 0);
   }
