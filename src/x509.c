@@ -538,7 +538,7 @@ static int openssl_x509_notbefore(lua_State *L)
       at = ASN1_TIME_new();
       ASN1_TIME_set(at, time);
     }
-    if (lua_isstring(L, 2))
+    else if (lua_isstring(L, 2))
     {
       const char* time = lua_tostring(L, 2);
       at = ASN1_TIME_new();
@@ -575,7 +575,7 @@ static int openssl_x509_notafter(lua_State *L)
       at = ASN1_TIME_new();
       ASN1_TIME_set(at, time);
     }
-    if (lua_isstring(L, 2))
+    else if (lua_isstring(L, 2))
     {
       const char* time = lua_tostring(L, 2);
       at = ASN1_TIME_new();
