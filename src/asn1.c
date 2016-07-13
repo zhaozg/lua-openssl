@@ -1231,7 +1231,11 @@ int openssl_push_asn1object(lua_State* L, const ASN1_OBJECT* obj)
 
 int openssl_push_asn1(lua_State* L, ASN1_STRING* string, int type)
 {
-  if (type == V_ASN1_UNDEF)
+  if ((string->type & V_ASN1_GENERALIZEDTIME) == V_ASN1_GENERALIZEDTIME && type == V_ASN1_UTCTIME)
+    type = V_ASN1_GENERALIZEDTIME;
+  else if ((string->type & V_ASN1_UTCTIME) == V_ASN1_UTCTIME && type == V_ASN1_GENERALIZEDTIME)
+    type = V_ASN1_UTCTIME;
+  else if (type == V_ASN1_UNDEF)
     type = string->type;
   if ((string->type & type) != type)
   {
