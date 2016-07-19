@@ -881,8 +881,10 @@ static int openssl_x509_verify(lua_State*L)
       }
       else
         lua_pushnil(L);
-      if (x->sig_alg)
-        openssl_push_x509_algor(L, x->sig_alg);
+      if (x->sig_alg) {
+        X509_ALGOR *alg = X509_ALGOR_dup(x->sig_alg);
+        PUSH_OBJECT(alg, "openssl.x509_algor");
+      }
       else
         lua_pushnil(L);
       return 3;

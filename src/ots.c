@@ -110,9 +110,8 @@ static int openssl_ts_req_msg_imprint(lua_State*L)
       ASN1_OCTET_STRING *s = TS_MSG_IMPRINT_get_msg(msg);
       X509_ALGOR *a = TS_MSG_IMPRINT_get_algo(msg);
       PUSH_ASN1_OCTET_STRING(L, s);
-      openssl_push_x509_algor(L, a);
+      PUSH_OBJECT(a, "openssl.x509_algor");
       ASN1_OCTET_STRING_free(s);
-      X509_ALGOR_free(a);
       return 2;
     }
     return 1;
@@ -236,8 +235,10 @@ static LUA_FUNCTION(openssl_ts_req_info)
   lua_newtable(L);
   {
     ASN1_OCTET_STRING *os = req->msg_imprint->hashed_msg;
+    X509_ALGOR *alg;
     AUXILIAR_SETLSTR(L, -1, "content", (const char*)os->data, os->length);
-    openssl_push_x509_algor(L, req->msg_imprint->hash_algo);
+    alg = X509_ALGOR_dup(req->msg_imprint->hash_algo);
+    PUSH_OBJECT(alg, "openssl.x509_algor");
     lua_setfield(L, -2, "hash_algo");
   }
   lua_setfield(L, -2, "msg_imprint");
@@ -358,7 +359,7 @@ static int openssl_push_ts_msg_imprint(lua_State*L, TS_MSG_IMPRINT* imprint)
   lua_newtable(L);
   if (alg)
   {
-    openssl_push_x509_algor(L, alg);
+    PUSH_OBJECT(alg, "openssl.x509_algor");
     lua_setfield(L, -2, "algo");
   }
   if (str)

@@ -44,7 +44,6 @@ static LUA_FUNCTION(openssl_lhash_read)
     lua_pushfstring(L, "ERROR at LINE %d", eline);
     return luaL_argerror(L, 1, lua_tostring(L, -1));
   }
-  return 0;
 }
 
 

@@ -194,7 +194,8 @@ static int openssl_ocsp_request_parse(lua_State*L)
     OCSP_CERTID *a = one->reqCert;
     lua_newtable(L);
     {
-      openssl_push_x509_algor(L, a->hashAlgorithm);
+      X509_ALGOR *alg = X509_ALGOR_dup(a->hashAlgorithm);
+      PUSH_OBJECT(alg, "openssl.x509_algor");
       lua_setfield(L, -2, "hashAlgorithm");
 
       PUSH_ASN1_OCTET_STRING(L, a->issuerNameHash);

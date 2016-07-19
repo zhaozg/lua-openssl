@@ -179,7 +179,6 @@ static BIO *PKCS7_find_digest(EVP_MD_CTX **pmd, BIO *bio, int nid)
       return bio;
     bio = BIO_next(bio);
   }
-  return NULL;
 }
 
 static int PKCS7_SIGNER_INFO_sign_0(PKCS7_SIGNER_INFO *si)

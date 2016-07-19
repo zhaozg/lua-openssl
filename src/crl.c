@@ -538,6 +538,7 @@ static LUA_FUNCTION(openssl_crl_parse)
 {
   X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
   int num, i;
+  X509_ALGOR *alg;
 
   lua_newtable(L);
   AUXILIAR_SET(L, -1, "version", X509_CRL_get_version(crl), integer);
@@ -572,7 +573,8 @@ static LUA_FUNCTION(openssl_crl_parse)
   PUSH_ASN1_TIME(L, X509_CRL_get_nextUpdate(crl));
   lua_setfield(L, -2, "nextUpdate");
 
-  openssl_push_x509_algor(L, crl->crl->sig_alg);
+  alg = X509_ALGOR_dup(crl->crl->sig_alg);
+  PUSH_OBJECT(alg, "openssl.x509_algor");
   lua_setfield(L, -2, "sig_alg");
 
 #if OPENSSL_VERSION_NUMBER > 0x00909000L

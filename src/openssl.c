@@ -190,7 +190,7 @@ static int openssl_random_write(lua_State *L)
   char buffer[MAX_PATH];
   int n;
 
-  if (!file && !(file = RAND_file_name(buffer, sizeof buffer)))
+  if (file==NULL && (file = RAND_file_name(buffer, sizeof buffer))==NULL)
     return openssl_pushresult(L, 0);
 
   n = RAND_write_file(file);
