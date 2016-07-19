@@ -551,6 +551,7 @@ static int openssl_x509_notbefore(lua_State *L)
     if (at)
     {
       ret = X509_set_notBefore(cert, at);
+      ASN1_TIME_free(at);
     }
     else
       ret = 0;
@@ -588,6 +589,7 @@ static int openssl_x509_notafter(lua_State *L)
     if (at)
     {
       ret = X509_set_notAfter(cert, at);
+      ASN1_TIME_free(at);
     }
     else
       ret = 0;
