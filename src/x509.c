@@ -13,19 +13,6 @@
 #define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
   "based on OpenSSL " SHLIB_VERSION_NUMBER
 
-int openssl_push_x509_algor(lua_State*L, const X509_ALGOR* alg)
-{
-  lua_newtable(L);
-  openssl_push_asn1object(L, alg->algorithm);
-  lua_setfield(L, -2, "algorithm");
-  if (alg->parameter)
-  {
-    openssl_push_asn1type(L, alg->parameter);
-    lua_setfield(L, -2, "parameter");
-  }
-  return 1;
-};
-
 int openssl_push_general_name(lua_State*L, const GENERAL_NAME* general_name)
 {
   lua_newtable(L);

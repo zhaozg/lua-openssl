@@ -12,16 +12,10 @@ IMP_LUA_SK(X509_ALGOR, x509_algor)
 
 #define MYNAME "x509.algor"
 
-void openssl_xalgor_free(X509_ALGOR* alg)
-{
-  X509_ALGOR_free(alg);
-}
-
-
 static int openssl_xalgor_gc(lua_State* L)
 {
   X509_ALGOR* alg = CHECK_OBJECT(1, X509_ALGOR, "openssl.x509_algor");
-  openssl_xalgor_free(alg);
+  X509_ALGOR_free(alg);
   return 0;
 }
 

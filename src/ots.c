@@ -110,6 +110,7 @@ static int openssl_ts_req_msg_imprint(lua_State*L)
       ASN1_OCTET_STRING *s = TS_MSG_IMPRINT_get_msg(msg);
       X509_ALGOR *a = TS_MSG_IMPRINT_get_algo(msg);
       PUSH_ASN1_OCTET_STRING(L, s);
+      a = X509_ALGOR_dup(a);
       PUSH_OBJECT(a, "openssl.x509_algor");
       ASN1_OCTET_STRING_free(s);
       return 2;
@@ -359,6 +360,7 @@ static int openssl_push_ts_msg_imprint(lua_State*L, TS_MSG_IMPRINT* imprint)
   lua_newtable(L);
   if (alg)
   {
+    alg = X509_ALGOR_dup(alg);
     PUSH_OBJECT(alg, "openssl.x509_algor");
     lua_setfield(L, -2, "algo");
   }
