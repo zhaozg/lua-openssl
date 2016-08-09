@@ -40,6 +40,10 @@ function list() end
 -- @treturn boolean is this is fatal error
 function error() end
 
+--- get all error information as an array of tables
+-- @treturn table as array
+function errors() end
+
 --- get random bytes
 -- @tparam number length
 -- @tparam[opt=false] boolean strong true to generate strong randome bytes
