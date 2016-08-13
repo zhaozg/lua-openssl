@@ -717,6 +717,16 @@ static EC_KEY *tmp_ecdh_callback(SSL *ssl, int is_export, int keylength)
   return ec_tmp;
 }
 
+#if defined(SSL_CTX_set_ecdh_auto)
+static int openssl_ssl_ctx_set_ecdh_auto(lua_State *L)
+{
+  SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
+  int on_off = lua_toboolean(L, 2);
+  SSL_CTX_set_ecdh_auto(ctx, on_off);
+  return 0;
+}
+#endif
+
 static int openssl_ssl_ctx_set_tmp(lua_State *L)
 {
   SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
@@ -996,6 +1006,9 @@ static luaL_Reg ssl_ctx_funcs[] =
 
   {"verify_depth",    openssl_ssl_ctx_verify_depth},
   {"set_tmp",         openssl_ssl_ctx_set_tmp},
+#if defined(SSL_CTX_set_ecdh_auto)
+  {"set_ecdh_auto",   openssl_ssl_ctx_set_ecdh_auto},
+#endif
   {"flush_sessions",  openssl_ssl_ctx_flush_sessions},
   {"session",         openssl_ssl_ctx_sessions},
   {"session_cache_mode",        openssl_session_cache_mode },
@@ -1297,6 +1310,7 @@ static int openssl_ssl_pending(lua_State*L)
 static int openssl_ssl_pushresult(lua_State* L, SSL*ssl, int ret_code)
 {
   int err = SSL_get_error(ssl, ret_code);
+
   switch (err)
   {
   case SSL_ERROR_NONE:
