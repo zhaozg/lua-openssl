@@ -49,10 +49,11 @@ static LUA_FUNCTION(openssl_rsa_encrypt)
   size_t l;
   const unsigned char* from = (const unsigned char *)luaL_checklstring(L, 2, &l);
   int padding = openssl_get_padding(L, 3, "pkcs1");
+  int ispriv = lua_isnone(L, 4) ? is_private(rsa) : lua_toboolean(L, 4);
   unsigned char* to = OPENSSL_malloc(RSA_size(rsa));
   int flen = l;
 
-  flen = is_private(rsa)
+  flen = ispriv
          ? RSA_private_encrypt(flen, from, to, rsa, padding)
          : RSA_public_encrypt(flen, from, to, rsa, padding);
   if (flen > 0)
@@ -71,10 +72,11 @@ static LUA_FUNCTION(openssl_rsa_decrypt)
   size_t l;
   const unsigned char* from = (const unsigned char *) luaL_checklstring(L, 2, &l);
   int padding = openssl_get_padding(L, 3, "pkcs1");
+  int ispriv = lua_isnone(L, 4) ? is_private(rsa) : lua_toboolean(L, 4);
   unsigned char* to = OPENSSL_malloc(RSA_size(rsa));
   int flen = l;
 
-  flen = is_private(rsa)
+  flen = ispriv
          ? RSA_private_decrypt(flen, from, to, rsa, padding)
          : RSA_public_decrypt(flen, from, to, rsa, padding);
   if (flen > 0)
