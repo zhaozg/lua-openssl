@@ -43,6 +43,13 @@ static LUA_FUNCTION(openssl_rsa_isprivate)
   return 1;
 };
 
+static LUA_FUNCTION(openssl_rsa_size)
+{
+  RSA* rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");
+  lua_pushinteger(L, RSA_size(rsa));
+  return 1;
+};
+
 static LUA_FUNCTION(openssl_rsa_encrypt)
 {
   RSA* rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");
@@ -97,7 +104,7 @@ static LUA_FUNCTION(openssl_rsa_sign)
   int type = luaL_optint(L, 3, NID_md5_sha1);
   unsigned char* sig = OPENSSL_malloc(RSA_size(rsa));
   int flen = l;
-  int slen = RSA_size(rsa);
+  unsigned int slen = RSA_size(rsa);
   
   int ret = RSA_sign(type, msg, flen, sig, &slen, rsa);
   if (ret == 1)
@@ -166,6 +173,7 @@ static luaL_Reg rsa_funs[] =
   {"decrypt",     openssl_rsa_decrypt},
   {"sign",        openssl_rsa_sign},
   {"verify",      openssl_rsa_verify},
+  {"size",        openssl_rsa_size},
 
   {"__gc",        openssl_rsa_free},
   {"__tostring",  auxiliar_tostring},
@@ -181,6 +189,7 @@ static luaL_Reg R[] =
   {"decrypt",     openssl_rsa_decrypt},
   {"sign",        openssl_rsa_sign},
   {"verify",      openssl_rsa_verify},
+  {"size",        openssl_rsa_size},
   {"read",        openssl_rsa_read},
 
   {NULL, NULL}
