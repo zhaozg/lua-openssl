@@ -56,6 +56,14 @@ build = {
           defines = {"LUA_BUILD_AS_DLL", "LUA_LIB", "WIN32_LEAN_AND_MEAN"},
         }
       }
+    },
+    macosx = {
+      modules = {
+        openssl = {
+          incdirs = {"/usr/local/opt/openssl/include"},
+          libdirs = {"/usr/local/opt/openssl/lib"},
+        }
+      }    
     }
   },
 }
