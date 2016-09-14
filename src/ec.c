@@ -434,6 +434,50 @@ static int openssl_ec_key_parse(lua_State*L)
   return 1;
 };
 
+# ifndef OPENSSL_NO_ECDH
+static const int KDF1_SHA1_len = 20;
+static void *KDF1_SHA1(const void *in, size_t inlen, void *out,
+  size_t *outlen)
+{
+#  ifndef OPENSSL_NO_SHA
+  if (*outlen < SHA_DIGEST_LENGTH)
+    return NULL;
+  else
+    *outlen = SHA_DIGEST_LENGTH;
+  return SHA1(in, inlen, out);
+#  else
+  return NULL;
+#  endif                        /* OPENSSL_NO_SHA */
+}
+# endif                         /* OPENSSL_NO_ECDH */
+
+# define MAX_ECDH_SIZE 256
+
+static int openssl_ecdh_compute_key(lua_State*L) {
+  EC_KEY *ec = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
+  EC_KEY *peer = CHECK_OBJECT(2, EC_KEY, "openssl.ec_key");
+
+  int field_size, outlen, secret_size_a;
+  unsigned char secret_a[MAX_ECDH_SIZE];
+  void *(*kdf) (const void *in, size_t inlen, void *out, size_t *xoutlen);
+  field_size =
+    EC_GROUP_get_degree(EC_KEY_get0_group(ec));
+  if (field_size <= 24 * 8) {
+    outlen = KDF1_SHA1_len;
+    kdf = KDF1_SHA1;
+  }
+  else {
+    outlen = (field_size + 7) / 8;
+    kdf = NULL;
+  }
+  secret_size_a =
+    ECDH_compute_key(secret_a, outlen,
+      EC_KEY_get0_public_key(peer),
+      ec, kdf);
+  lua_pushlstring(L, (const char*)secret_a, secret_size_a);
+  return 1;
+}
+
 #ifdef EC_EXT
 EC_EXT_DEFINE
 #endif
@@ -443,6 +487,7 @@ static luaL_Reg ec_key_funs[] =
   {"parse",       openssl_ec_key_parse},
   {"sign",        openssl_ecdsa_sign},
   {"verify",      openssl_ecdsa_verify},
+  {"compute_key", openssl_ecdh_compute_key},
 
 #ifdef EC_EXT
   EC_EXT

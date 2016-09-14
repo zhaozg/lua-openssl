@@ -63,5 +63,24 @@ jcWtqOmp3Xyzxw30SJhuUb3l0VdvmZAfnCxqgGpH/ZB2Q6crg1WX78jG
         ec2p.d = ec:parse().ec:parse().priv_key
         local ec2priv = pkey.new(ec2p)
         assert(ec2priv:is_private())
+    end
 
+    function testEC:testEC()
+        local nec =  {'ec','prime256v1'}
+        local key1 = pkey.new(unpack(nec))
+        local key2 = pkey.new(unpack(nec))
+        local ec1 = key1:parse().ec
+        local ec2 = key2:parse().ec
+        local secret1 = ec1:compute_key(ec2)
+        local secret2 = ec2:compute_key(ec1)
+        assert(secret1==secret2)
+
+        local pub1 = pkey.get_public(key1)
+        local pub2 = pkey.get_public(key2)
+        pub1 = pub1:parse().ec
+        pub2 = pub2:parse().ec
+
+        secret1 = ec1:compute_key(pub2)
+        secret2 = ec2:compute_key(pub1)
+        assert(secret1==secret2)
     end
