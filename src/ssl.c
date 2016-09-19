@@ -24,12 +24,17 @@ static int openssl_ssl_ctx_new(lua_State*L)
   SSL_METHOD* method = NULL;
   const char* ciphers;
   SSL_CTX* ctx;
-  if (strcmp(meth, "SSLv3") == 0)
+  if (0);
+
+#ifndef OPENSSL_NO_SSL3
+  else if (strcmp(meth, "SSLv3") == 0)
     method = SSLv3_method();    /* SSLv3 */
   else if (strcmp(meth, "SSLv3_server") == 0)
     method = SSLv3_server_method(); /* SSLv3 */
   else if (strcmp(meth, "SSLv3_client") == 0)
     method = SSLv3_client_method(); /* SSLv3 */
+#endif
+
   else if (strcmp(meth, "SSLv23") == 0)
     method = SSLv23_method();   /* SSLv3 but can rollback to v2 */
   else if (strcmp(meth, "SSLv23_server") == 0)
@@ -79,15 +84,15 @@ static int openssl_ssl_ctx_new(lua_State*L)
 #endif
   else
     luaL_error(L, "#1:%s not supported\n"
-               "Maybe SSLv3 SSLv23 TLSv1 TLSv1_1 TLSv1_2 DTLSv1 [SSLv2], option followed by _client or _server\n",
-               "default is SSLv3",
+               "Maybe [SSLv3] SSLv23 TLSv1 TLSv1_1 TLSv1_2 DTLSv1 [SSLv2], option followed by _client or _server\n",
+               "default is TLSv1",
                meth);
   ciphers = luaL_optstring(L, 2, SSL_DEFAULT_CIPHER_LIST);
   ctx = SSL_CTX_new(method);
   if (!ctx)
     luaL_error(L, "#1:%s not supported\n"
-               "Maybe SSLv3 SSLv23 TLSv1 TLSv1_1 TLSv1_2 DTLSv1 [SSLv2], option followed by _client or _server\n",
-               "default is SSLv3",
+               "Maybe [SSLv3] SSLv23 TLSv1 TLSv1_1 TLSv1_2 DTLSv1 [SSLv2], option followed by _client or _server\n",
+               "default is TLSv1",
                meth);
   openssl_newvalue(L, ctx);
   SSL_CTX_set_cipher_list(ctx, ciphers);
