@@ -123,6 +123,39 @@ static LUA_FUNCTION(openssl_list)
   return 1;
 }
 
+static LUA_FUNCTION(openssl_error_stack)
+{
+  int flags, line, idx=0;
+  const char *data, *file;
+  unsigned long code;
+  char *errstr, errbuf[256];
+
+  lua_newtable(L);
+  code = ERR_get_error_line_data(&file, &line, &data, &flags);
+  while (code)
+  {
+    idx++;
+    lua_pushinteger(L, idx);
+    lua_newtable(L);
+    lua_pushnumber(L, (double) code);
+    lua_setfield(L, -2, "code");
+    lua_pushstring(L, ERR_error_string(code, errbuf));
+    lua_setfield(L, -2, "err");
+    lua_pushstring(L, file);
+    lua_setfield(L, -2, "file");
+    lua_pushinteger(L, line);
+    lua_setfield(L, -2, "line");
+    if (data && (flags & ERR_TXT_STRING))
+    {
+      lua_pushstring(L, data);
+      lua_setfield(L, -2, "data");
+    }
+    lua_settable(L, -3);
+    code = ERR_get_error_line_data(&file, &line, &data, &flags);
+  }
+  return 1;
+}
+
 static LUA_FUNCTION(openssl_error_string)
 {
   unsigned long val;
@@ -280,6 +313,7 @@ static const luaL_Reg eay_functions[] =
   {"random",      openssl_random_bytes},
 
   {"error",       openssl_error_string},
+  {"errors",      openssl_error_stack},
   {"engine",      openssl_engine},
 
   {NULL, NULL}
