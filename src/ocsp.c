@@ -148,7 +148,7 @@ static int openssl_ocsp_request_sign(lua_State*L)
   OCSP_REQUEST *req = CHECK_OBJECT(1, OCSP_REQUEST, "openssl.ocsp_request");
   X509 *signer = CHECK_OBJECT(2, X509, "openssl.x509");
   EVP_PKEY *pkey = CHECK_OBJECT(3, EVP_PKEY, "openssl.evp_pkey");
-  STACK_OF(X509) *others = NULL;
+  const STACK_OF(X509) *others = NULL;
   const EVP_MD *md = EVP_sha1();
   int ret;
   int sflags = 0;
@@ -170,16 +170,46 @@ static int openssl_ocsp_request_sign(lua_State*L)
   return 1;
 }
 
+static int openssl_push_ocsp_certid(lua_State*L, OCSP_CERTID* cid)
+{
+  ASN1_OCTET_STRING *iNameHash = NULL;
+  ASN1_OBJECT *md = NULL;
+  ASN1_OCTET_STRING *ikeyHash = NULL;
+  ASN1_INTEGER *serial = NULL;
+
+  int ret = OCSP_id_get0_info(&iNameHash, &md, &ikeyHash, &serial, cid);
+  if (ret == 1) {
+    lua_newtable(L);
+
+    PUSH_ASN1_OCTET_STRING(L, iNameHash);
+    lua_setfield(L, -2, "issuerNameHash");
+
+    PUSH_ASN1_OCTET_STRING(L, ikeyHash);
+    lua_setfield(L, -2, "issuerKeyHash");
+
+    PUSH_ASN1_INTEGER(L, serial);
+    lua_setfield(L, -2, "serialNumber");
+
+    PUSH_OBJECT(md, "openssl.asn1_object");
+    lua_setfield(L, -2, "hashAlgorithm");
+  }
+  else
+    lua_pushnil(L);
+  return 1;
+}
 
 static int openssl_ocsp_request_parse(lua_State*L)
 {
   OCSP_REQUEST *req = CHECK_OBJECT(1, OCSP_REQUEST, "openssl.ocsp_request");
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
   OCSP_REQINFO *inf = req->tbsRequest;
   OCSP_SIGNATURE *sig = req->optionalSignature;
-
+#endif
   BIO* bio = BIO_new(BIO_s_mem());
   int i, num;
   lua_newtable(L);
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
   AUXILIAR_SET(L, -1, "version", ASN1_INTEGER_get(inf->version), integer);
   if (inf->requestorName)
   {
@@ -187,37 +217,29 @@ static int openssl_ocsp_request_parse(lua_State*L)
     lua_setfield(L, -2, "requestorName");
   }
   num = sk_OCSP_ONEREQ_num(inf->requestList);
+#endif
+
+  num = OCSP_request_onereq_count(req);
   lua_newtable(L);
   for (i = 0; i < num; i++)
   {
-    OCSP_ONEREQ *one = sk_OCSP_ONEREQ_value(inf->requestList, i);
-    OCSP_CERTID *a = one->reqCert;
-    lua_newtable(L);
-    {
-      X509_ALGOR *alg = X509_ALGOR_dup(a->hashAlgorithm);
-      PUSH_OBJECT(alg, "openssl.x509_algor");
-      lua_setfield(L, -2, "hashAlgorithm");
-
-      PUSH_ASN1_OCTET_STRING(L, a->issuerNameHash);
-      lua_setfield(L, -2, "issuerNameHash");
-
-      PUSH_ASN1_OCTET_STRING(L, a->issuerKeyHash);
-      lua_setfield(L, -2, "issuerKeyHash");
-
-      PUSH_ASN1_INTEGER(L, a->serialNumber);
-      lua_setfield(L, -2, "serialNumber");
-    }
+    OCSP_ONEREQ *one = OCSP_request_onereq_get0(req, i);
+    OCSP_CERTID *cid = OCSP_onereq_get0_id(one);
+    openssl_push_ocsp_certid(L, cid);
     lua_rawseti(L, -2, i + 1);
   }
   lua_setfield(L, -2, "requestList");
 
-  if (inf->requestExtensions)
-  {
-    lua_pushstring(L, "extensions");
-    openssl_sk_x509_extension_totable(L, inf->requestExtensions);
-    lua_rawset(L, -3);
+  num = OCSP_REQUEST_get_ext_count(req);
+  lua_newtable(L);
+  for (i = 0; i < num; i++) {
+    X509_EXTENSION* e = OCSP_REQUEST_get_ext(req, i);
+    PUSH_OBJECT(e, "openssl.x509_extension");
+    lua_rawseti(L, -2, i + 1);
   }
+  lua_setfield(L, -2, "extensions");
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
   if (sig)
   {
     BIO_reset(bio);
@@ -228,7 +250,7 @@ static int openssl_ocsp_request_parse(lua_State*L)
       PEM_write_bio_X509(bio, sk_X509_value(sig->certs, i));
     }
   }
-
+#endif
   BIO_free(bio);
   return 1;
 }
@@ -263,7 +285,7 @@ static int openssl_ocsp_response(lua_State *L)
     unsigned long flag = luaL_optint(L, 6, 0);
     int nmin = luaL_optint(L, 7, 0);
     int nday = luaL_optint(L, 8, 1);
-    STACK_OF(X509) *rother = lua_isnoneornil(L, 9) ? NULL : openssl_sk_x509_fromtable(L, 9);
+    const STACK_OF(X509) *rother = lua_isnoneornil(L, 9) ? NULL : openssl_sk_x509_fromtable(L, 9);
 
     int i, id_count, type;
     BIO* bio = NULL;

@@ -13,7 +13,7 @@ static int verify_cb(int preverify_ok, X509_STORE_CTX *xctx, lua_State*L, SSL* s
 {
   int err = X509_STORE_CTX_get_error(xctx);
   int depth = X509_STORE_CTX_get_error_depth(xctx);
-  X509 *current = xctx->current_cert;
+  X509 *current = X509_STORE_CTX_get_current_cert(xctx);
 
   if (L)
   {
@@ -42,7 +42,7 @@ static int verify_cb(int preverify_ok, X509_STORE_CTX *xctx, lua_State*L, SSL* s
     if (current)
     {
       PUSH_OBJECT(current, "openssl.x509");
-      CRYPTO_add(&current->references, 1, CRYPTO_LOCK_X509);
+      X509_up_ref(current);
       lua_setfield(L, -2, "current_cert");
     }
 

@@ -16,16 +16,18 @@
 
 static int openssl_xext_totable(lua_State* L, X509_EXTENSION *x)
 {
+  ASN1_OBJECT *obj = X509_EXTENSION_get_object(x);
+  int nid = OBJ_obj2nid(obj);
   lua_newtable(L);
-  openssl_push_asn1object(L, x->object);
+  openssl_push_asn1object(L, obj);
   lua_setfield(L, -2, "object");
 
-  PUSH_ASN1_OCTET_STRING(L, x->value);
+  PUSH_ASN1_OCTET_STRING(L, X509_EXTENSION_get_data(x));
   lua_setfield(L, -2, "value");
 
-  AUXILIAR_SET(L, -1, "critical", x->critical, boolean);
+  AUXILIAR_SET(L, -1, "critical", X509_EXTENSION_get_critical(x), boolean);
 
-  switch (x->object->nid)
+  switch (nid)
   {
   case NID_subject_alt_name:
   {
@@ -38,7 +40,7 @@ static int openssl_xext_totable(lua_State* L, X509_EXTENSION *x)
       break;
 
     /* Push ret[oid] */
-    openssl_push_asn1object(L, x->object);
+    openssl_push_asn1object(L, obj);
     lua_newtable(L);
     n_general_names = sk_GENERAL_NAME_num(values);
     for (i = 0; i < n_general_names; i++)

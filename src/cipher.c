@@ -457,8 +457,8 @@ static LUA_FUNCTION(openssl_evp_BytesToKey)
   ret = EVP_BytesToKey(c, m, (unsigned char*)salt, (unsigned char*)k, lk, 1, (unsigned char*)key, (unsigned char*)iv);
   if (ret > 1)
   {
-    lua_pushlstring(L, key, c->key_len);
-    lua_pushlstring(L, iv, c->iv_len);
+    lua_pushlstring(L, key, EVP_CIPHER_key_length(c));
+    lua_pushlstring(L, iv, EVP_CIPHER_iv_length(c));
     return 2;
   }
   return openssl_pushresult(L, ret);

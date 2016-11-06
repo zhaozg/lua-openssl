@@ -29,12 +29,24 @@ static LUA_FUNCTION(openssl_dh_free)
 
 static LUA_FUNCTION(openssl_dh_parse)
 {
+  const BIGNUM *p = NULL, *q = NULL, *g = NULL, *pub = NULL, *pri = NULL;
   DH* dh = CHECK_OBJECT(1, DH, "openssl.dh");
   lua_newtable(L);
-  OPENSSL_PKEY_GET_BN(dh->p, p);
-  OPENSSL_PKEY_GET_BN(dh->g, g);
-  OPENSSL_PKEY_GET_BN(dh->priv_key, priv_key);
-  OPENSSL_PKEY_GET_BN(dh->pub_key, pub_key);
+  
+  lua_pushinteger(L, DH_size(dh));
+  lua_setfield(L, -2, "size");
+
+  lua_pushinteger(L, DH_bits(dh));
+  lua_setfield(L, -2, "bits");
+
+  DH_get0_pqg(dh, &p, &q, &g);
+  DH_get0_key(dh, &pub, &pri);
+
+  OPENSSL_PKEY_GET_BN(p, p);
+  OPENSSL_PKEY_GET_BN(q, q);
+  OPENSSL_PKEY_GET_BN(g, g);
+  OPENSSL_PKEY_GET_BN(pub, priv_key);
+  OPENSSL_PKEY_GET_BN(pri, pub_key);
 
   return 1;
 }

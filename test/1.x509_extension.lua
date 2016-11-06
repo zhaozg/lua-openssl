@@ -35,8 +35,9 @@ TestX509ext = {}
         local info = n1:info()
         assertIsTable(info)
         assertEquals(info.object:ln(), "X509v3 Basic Constraints")
-        assertEquals(info.critical,true)
+        assertEquals(info.critical,false)
         assertEquals(info.value:tostring(), "CA:FALSE")
+
         local n2 = n1:dup()
         assertEquals(n2:info(),info)
         assertEquals(n1:critical(),false)
@@ -54,6 +55,7 @@ TestX509ext = {}
         assertEquals(n1:data(), self.cafalse)
 
         local time = ext.new_extension(self.time)
+        assertEquals(time:critical(),true)
         local der = time:export()
         local t1 = ext.read_extension(der)
         assert(der==t1:export())

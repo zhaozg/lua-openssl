@@ -217,37 +217,39 @@ static LUA_FUNCTION(openssl_ts_req_info)
     STACK_OF(X509_EXTENSION) *extensions; /* [0] OPTIONAL */
   } TS_REQ;
 #endif
-  PUSH_ASN1_INTEGER(L, req->version);
+  lua_pushinteger(L, TS_REQ_get_version(req));
   lua_setfield(L, -2, "version");
 
-  AUXILIAR_SET(L, -1, "cert_req", req->cert_req, boolean);
+  AUXILIAR_SET(L, -1, "cert_req", TS_REQ_get_cert_req(req), boolean);
 
-  if (req->policy_id)
+  if (TS_REQ_get_policy_id(req))
   {
-    openssl_push_asn1object(L, req->policy_id);
+    openssl_push_asn1object(L, TS_REQ_get_policy_id(req));
     lua_setfield(L, -2, "policy_id");
   }
-  if (req->nonce)
+  if (TS_REQ_get_nonce(req))
   {
-    PUSH_ASN1_INTEGER(L, req->nonce);
+    PUSH_ASN1_INTEGER(L, TS_REQ_get_nonce(req));
     lua_setfield(L, -2, "nonce");
   }
 
   lua_newtable(L);
   {
-    ASN1_OCTET_STRING *os = req->msg_imprint->hashed_msg;
-    X509_ALGOR *alg;
+    TS_MSG_IMPRINT *msg_inprint = TS_REQ_get_msg_imprint(req);
+    ASN1_OCTET_STRING *os = TS_MSG_IMPRINT_get_msg(msg_inprint);
+    X509_ALGOR *alg = TS_MSG_IMPRINT_get_algo(msg_inprint);
+
     AUXILIAR_SETLSTR(L, -1, "content", (const char*)os->data, os->length);
-    alg = X509_ALGOR_dup(req->msg_imprint->hash_algo);
+    alg = X509_ALGOR_dup(alg);
     PUSH_OBJECT(alg, "openssl.x509_algor");
     lua_setfield(L, -2, "hash_algo");
   }
   lua_setfield(L, -2, "msg_imprint");
 
-  if (req->extensions)
+  if (TS_REQ_get_exts(req))
   {
     lua_pushstring(L, "extensions");
-    openssl_sk_x509_extension_totable(L, req->extensions);
+    openssl_sk_x509_extension_totable(L, TS_REQ_get_exts(req));
     lua_rawset(L, -3);
   }
 
@@ -342,13 +344,18 @@ static LUA_FUNCTION(openssl_ts_resp_export)
 
 static int openssl_push_ts_accuracy(lua_State*L, const TS_ACCURACY* accuracy)
 {
-  lua_newtable(L);
-  PUSH_ASN1_INTEGER(L, accuracy->micros);
-  lua_setfield(L, -2, "micros");
-  PUSH_ASN1_INTEGER(L, accuracy->millis);
-  lua_setfield(L, -2, "millis");
-  PUSH_ASN1_INTEGER(L, accuracy->seconds);
-  lua_setfield(L, -2, "seconds");
+  if (accuracy) {
+    lua_newtable(L);
+
+    PUSH_ASN1_INTEGER(L, TS_ACCURACY_get_micros(accuracy));
+    lua_setfield(L, -2, "micros");
+    PUSH_ASN1_INTEGER(L, TS_ACCURACY_get_millis(accuracy));
+    lua_setfield(L, -2, "millis");
+    PUSH_ASN1_INTEGER(L, TS_ACCURACY_get_seconds(accuracy));
+    lua_setfield(L, -2, "seconds");
+  }
+  else
+    lua_pushnil(L);
 
   return 1;
 }
@@ -376,62 +383,48 @@ static int openssl_push_ts_msg_imprint(lua_State*L, TS_MSG_IMPRINT* imprint)
 static int openssl_push_ts_tst_info(lua_State*L, TS_TST_INFO* info)
 {
   lua_newtable(L);
-  if (info->version)
-  {
-    PUSH_ASN1_INTEGER(L, info->version);
-    lua_setfield(L, -2, "version");
-  }
-  if (info->policy_id)
-  {
-    openssl_push_asn1object(L, info->policy_id);
-    lua_setfield(L, -2, "policy_id");
-  }
-  if (info->msg_imprint)
-  {
-    openssl_push_ts_msg_imprint(L, info->msg_imprint);
-    lua_setfield(L, -2, "msg_imprint");
-  }
-  if (info->serial)
-  {
-    PUSH_ASN1_INTEGER(L, info->serial);
-    lua_setfield(L, -2, "serial");
-  }
-  if (info->time)
-  {
-    openssl_push_asn1(L, info->time, V_ASN1_GENERALIZEDTIME);
-    lua_setfield(L, -2, "time");
-  }
-  if (info->accuracy)
-  {
-    openssl_push_ts_accuracy(L, info->accuracy);
-    lua_setfield(L, -2, "accuracy");
-  }
+  
+  lua_pushinteger(L, TS_TST_INFO_get_version(info));
+  lua_setfield(L, -2, "version");
 
-  AUXILIAR_SET(L, -1, "ordering", info->ordering, boolean);
+  openssl_push_asn1object(L, TS_TST_INFO_get_policy_id(info));
+  lua_setfield(L, -2, "policy_id");
 
-  if (info->nonce)
-  {
-    PUSH_ASN1_INTEGER(L, info->nonce);
-    lua_setfield(L, -2, "nonce");
-  }
-  if (info->tsa)
-  {
-    openssl_push_general_name(L, info->tsa);
-    lua_setfield(L, -2, "tsa");
-  }
-  if (info->extensions)
+  openssl_push_ts_msg_imprint(L, TS_TST_INFO_get_msg_imprint(info));
+  lua_setfield(L, -2, "msg_imprint");
+  
+  PUSH_ASN1_INTEGER(L, TS_TST_INFO_get_serial(info));
+  lua_setfield(L, -2, "serial");
+
+  openssl_push_asn1(L, TS_TST_INFO_get_time(info), V_ASN1_GENERALIZEDTIME);
+  lua_setfield(L, -2, "time");
+
+  openssl_push_ts_accuracy(L, TS_TST_INFO_get_accuracy(info));
+  lua_setfield(L, -2, "accuracy");
+
+  AUXILIAR_SET(L, -1, "ordering", TS_TST_INFO_get_ordering(info), boolean);
+
+  PUSH_ASN1_INTEGER(L, TS_TST_INFO_get_nonce(info));
+  lua_setfield(L, -2, "nonce");
+
+  openssl_push_general_name(L, TS_TST_INFO_get_tsa(info));
+  lua_setfield(L, -2, "tsa");
+
+  if (TS_TST_INFO_get_exts(info))
   {
     lua_pushstring(L, "extensions");
-    openssl_sk_x509_extension_totable(L, info->extensions);
+    openssl_sk_x509_extension_totable(L, TS_TST_INFO_get_exts(info));
     lua_rawset(L, -3);
   }
+
   return 1;
 }
 
 static LUA_FUNCTION(openssl_ts_resp_tst_info)
 {
   TS_RESP *resp = CHECK_OBJECT(1, TS_RESP, "openssl.ts_resp");
-  TS_TST_INFO *info = resp->tst_info;
+  TS_TST_INFO *info = TS_RESP_get_tst_info(resp);
+
   if (info)
     openssl_push_ts_tst_info(L, info);
   else
@@ -447,19 +440,19 @@ static LUA_FUNCTION(openssl_ts_resp_info)
 
   {
     lua_newtable(L);
-
-    PUSH_ASN1_INTEGER(L, res->status_info->status);
+    TS_STATUS_INFO *si = TS_RESP_get_status_info(res);
+    PUSH_ASN1_INTEGER(L, TS_STATUS_INFO_get0_status(si));
     lua_setfield(L, -2, "status");
 
-    if (res->status_info->failure_info)
+    if (TS_STATUS_INFO_get0_failure_info(si))
     {
-      openssl_push_asn1(L, res->status_info->failure_info, V_ASN1_BIT_STRING);
+      openssl_push_asn1(L, TS_STATUS_INFO_get0_failure_info(si), V_ASN1_BIT_STRING);
       lua_setfield(L, -2, "failure_info");
     }
 
-    if (res->status_info->text)
+    if (TS_STATUS_INFO_get0_text(si))
     {
-      STACK_OF(ASN1_UTF8STRING) * sk = res->status_info->text;
+      const STACK_OF(ASN1_UTF8STRING) * sk = TS_STATUS_INFO_get0_text(si);
       int i = 0, n = 0;
       lua_newtable(L);
       n = SKM_sk_num(ASN1_UTF8STRING, sk);
@@ -476,15 +469,15 @@ static LUA_FUNCTION(openssl_ts_resp_info)
   }
 
 
-  if (res->token)
+  if (TS_RESP_get_token(res))
   {
-    PKCS7* token = PKCS7_dup(res->token);
+    PKCS7* token = PKCS7_dup(TS_RESP_get_token(res));
     AUXILIAR_SETOBJECT(L, token, "openssl.pkcs7", -1, "token");
   }
 
-  if (res->tst_info)
+  if (TS_RESP_get_tst_info(res))
   {
-    openssl_push_ts_tst_info(L, res->tst_info);
+    openssl_push_ts_tst_info(L, TS_RESP_get_tst_info(res));
     lua_setfield(L, -2, "tst_info");
   }
 
@@ -622,7 +615,7 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_singer)
     if (ctx->signer_key)
     {
       EVP_PKEY* pkey = ctx->signer_key;
-      CRYPTO_add(&pkey->references, 1, CRYPTO_LOCK_EVP_PKEY);
+      EVP_PKEY_up_ref(pkey);
       PUSH_OBJECT(pkey, "openssl.evp_pkey");
     }
     else
@@ -685,10 +678,8 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_default_policy)
   else
   {
     int nid = openssl_get_nid(L, 2);
-    if (ctx->default_policy)
-      ASN1_OBJECT_free(ctx->default_policy);
-    ctx->default_policy = OBJ_nid2obj(nid);
-    lua_pushboolean(L, 1);
+    int ret = TS_RESP_CTX_set_def_policy(ctx, OBJ_nid2obj(nid));
+    return openssl_pushresult(L, ret);
   }
   return 1;
 }
@@ -1207,7 +1198,7 @@ static int openssl_ts_verify_ctx_data(lua_State*L)
     if (ctx->data)
     {
       BIO* bio = ctx->data;
-      CRYPTO_add(&bio->references, 1, CRYPTO_LOCK_BIO);
+      BIO_up_ref(bio);
       PUSH_OBJECT(bio, "openssl.bio");
     }
     else

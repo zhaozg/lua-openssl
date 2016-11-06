@@ -29,11 +29,9 @@ static LUA_FUNCTION(openssl_rsa_free)
 
 static int is_private(const RSA* rsa)
 {
-  if (NULL == rsa->p || NULL == rsa->q)
-  {
-    return 0;
-  }
-  return 1;
+  const BIGNUM* d = NULL;
+  RSA_get0_key(rsa, NULL, NULL, &d);
+  return d == NULL;
 };
 
 static LUA_FUNCTION(openssl_rsa_isprivate)
@@ -134,16 +132,29 @@ static LUA_FUNCTION(openssl_rsa_verify)
 
 static LUA_FUNCTION(openssl_rsa_parse)
 {
+  const BIGNUM *n = NULL, *e = NULL, *d = NULL;
+  const BIGNUM *p = NULL, *q = NULL;
+  const BIGNUM *dmp1 = NULL, *dmq1 = NULL, *iqmp = NULL;
+
   RSA* rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");
+  RSA_get0_key(rsa, &n, &e, &d);
+  RSA_get0_factors(rsa, &p, &q);
+  RSA_get0_crt_params(rsa, &dmp1, &dmq1,&iqmp);
+
+
   lua_newtable(L);
-  OPENSSL_PKEY_GET_BN(rsa->n, n);
-  OPENSSL_PKEY_GET_BN(rsa->e, e);
-  OPENSSL_PKEY_GET_BN(rsa->d, d);
-  OPENSSL_PKEY_GET_BN(rsa->p, p);
-  OPENSSL_PKEY_GET_BN(rsa->q, q);
-  OPENSSL_PKEY_GET_BN(rsa->dmp1, dmp1);
-  OPENSSL_PKEY_GET_BN(rsa->dmq1, dmq1);
-  OPENSSL_PKEY_GET_BN(rsa->iqmp, iqmp);
+  lua_pushinteger(L, RSA_size(rsa));
+  lua_setfield(L, -2, "size");
+  lua_pushinteger(L, RSA_bits(rsa));
+  lua_setfield(L, -2, "bits");
+  OPENSSL_PKEY_GET_BN(n, n);
+  OPENSSL_PKEY_GET_BN(e, e);
+  OPENSSL_PKEY_GET_BN(d, d);
+  OPENSSL_PKEY_GET_BN(p, p);
+  OPENSSL_PKEY_GET_BN(q, q);
+  OPENSSL_PKEY_GET_BN(dmp1, dmp1);
+  OPENSSL_PKEY_GET_BN(dmq1, dmq1);
+  OPENSSL_PKEY_GET_BN(iqmp, iqmp);
   return 1;
 }
 

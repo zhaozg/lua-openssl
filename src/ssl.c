@@ -158,7 +158,7 @@ static int openssl_ssl_ctx_add(lua_State*L)
       lua_rawgeti(L, 3, i);
       x = CHECK_OBJECT(2, X509, "openssl.x509");
       lua_pop(L, 1);
-      CRYPTO_add(&x->references, 1, CRYPTO_LOCK_X509);
+      X509_up_ref(x);
       ret = SSL_CTX_add_extra_chain_cert(ctx, x);
     }
   }
@@ -346,14 +346,14 @@ static int openssl_ssl_ctx_cert_store(lua_State*L)
   if (lua_isnoneornil(L, 2))
   {
     store = SSL_CTX_get_cert_store(ctx);
-    CRYPTO_add(&store->references, 1, CRYPTO_LOCK_X509_STORE);
+    X509_STORE_up_ref(store);
     PUSH_OBJECT(store, "openssl.x509_store");
     return 1;
   }
   else
   {
     store = CHECK_OBJECT(2, X509_STORE, "openssl.x509_store");
-    CRYPTO_add(&store->references, 1, CRYPTO_LOCK_X509_STORE);
+    X509_STORE_up_ref(store);
     SSL_CTX_set_cert_store(ctx, store);
     X509_STORE_set_trust(store, 1);
     return 0;
@@ -376,11 +376,11 @@ static int openssl_ssl_ctx_new_ssl(lua_State*L)
   {
     BIO *bi = CHECK_OBJECT(2, BIO, "openssl.bio");
     BIO *bo = bi;
-    CRYPTO_add(&bi->references, 1, CRYPTO_LOCK_BIO);
+    BIO_up_ref(bi);
     if (auxiliar_isclass(L, "openssl.bio", 3))
     {
       bo = CHECK_OBJECT(3, BIO, "openssl.bio");
-      CRYPTO_add(&bo->references, 1, CRYPTO_LOCK_BIO);
+      BIO_up_ref(bo);
       mode_idx = 4;
     }
     else

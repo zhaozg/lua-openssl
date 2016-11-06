@@ -120,7 +120,7 @@ static int openssl_xname_i2d(lua_State*L)
   if (len > 0)
   {
     lua_pushlstring(L, (const char *)out, len);
-    CRYPTO_free(out);
+    OPENSSL_free(out);
     return 1;
   }
   else
@@ -197,8 +197,8 @@ static int openssl_xname_delete_entry(lua_State*L)
   X509_NAME_ENTRY *xe = X509_NAME_delete_entry(xn, loc);
   if (xe)
   {
-    openssl_push_asn1object(L, xe->object);
-    PUSH_ASN1_STRING(L, xe->value);
+    openssl_push_asn1object(L, X509_NAME_ENTRY_get_object(xe));
+    PUSH_ASN1_STRING(L, X509_NAME_ENTRY_get_data(xe));
     X509_NAME_ENTRY_free(xe);
     return 2;
   }

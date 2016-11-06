@@ -309,8 +309,8 @@ static int openssl_ecdsa_sign(lua_State*L)
 {
   EC_KEY* ec = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
   size_t l;
-  const char* s = luaL_checklstring(L, 2, &l);
-  ECDSA_SIG* sig = ECDSA_do_sign((const unsigned char*)s, l, ec);
+  const char* sdata = luaL_checklstring(L, 2, &l);
+  ECDSA_SIG* sig = ECDSA_do_sign((const unsigned char*)sdata, l, ec);
   int der = lua_isnoneornil(L, 3) ? 1 : lua_toboolean(L, 3);
   int ret = 0;
 
@@ -327,10 +327,14 @@ static int openssl_ecdsa_sign(lua_State*L)
   }
   else
   {
-    BIGNUM *bn = BN_dup(sig->r);
-    PUSH_OBJECT(bn, "openssl.bn");
-    bn = BN_dup(sig->s);
-    PUSH_OBJECT(bn, "openssl.bn");
+    BIGNUM *r = NULL, *s = NULL;
+    ECDSA_SIG_get0(sig, &r, &s);
+
+    r = BN_dup(r);
+    s = BN_dup(s);
+
+    PUSH_OBJECT(r, "openssl.bn");
+    PUSH_OBJECT(s, "openssl.bn");
     ret = 2;
   }
   ECDSA_SIG_free(sig);
@@ -364,8 +368,7 @@ static int openssl_ecdsa_verify(lua_State*L)
     BIGNUM *r = BN_get(L, 3);
     BIGNUM *s = BN_get(L, 4);
     ECDSA_SIG* sig = ECDSA_SIG_new();
-    BN_copy(sig->r, r);
-    BN_copy(sig->s, s);
+    ECDSA_SIG_set0(sig, r, s);
     ret = ECDSA_do_verify((const unsigned char*)dgst, l, sig, ec);
     if (ret == -1)
       ret = openssl_pushresult(L, -1);

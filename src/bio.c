@@ -454,13 +454,13 @@ static LUA_FUNCTION(openssl_bio_pop)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
   BIO* end = BIO_pop(bio);
-  if (end)
+  if (end == NULL)
   {
     lua_pushnil(L);
   }
   else
   {
-    CRYPTO_add(&end->references, 1, CRYPTO_LOCK_BIO);
+    BIO_up_ref(end);
     PUSH_OBJECT(end, "openssl.bio");
   }
   return 1;
@@ -597,36 +597,36 @@ void BIO_info_callback(BIO *bio, int cmd, const char *argp,
   switch (cmd)
   {
   case BIO_CB_FREE:
-    BIO_snprintf(p, p_maxlen, "Free - %s\n", bio->method->name);
+    BIO_snprintf(p, p_maxlen, "Free - %s\n", BIO_method_name(bio));
     break;
   case BIO_CB_READ:
-    if (bio->method->type & BIO_TYPE_DESCRIPTOR)
+    if (BIO_method_type(bio) & BIO_TYPE_DESCRIPTOR)
       BIO_snprintf(p, p_maxlen, "read(%d,%lu) - %s fd=%d\n",
-                   bio->num, (unsigned long)argi,
-                   bio->method->name, bio->num);
+                   BIO_number_read(bio), (unsigned long)argi,
+                   BIO_method_name(bio), BIO_number_read(bio));
     else
       BIO_snprintf(p, p_maxlen, "read(%d,%lu) - %s\n",
-                   bio->num, (unsigned long)argi,
-                   bio->method->name);
+                   BIO_number_read(bio), (unsigned long)argi,
+                   BIO_method_name(bio));
     break;
   case BIO_CB_WRITE:
-    if (bio->method->type & BIO_TYPE_DESCRIPTOR)
+    if (BIO_method_type(bio) & BIO_TYPE_DESCRIPTOR)
       BIO_snprintf(p, p_maxlen, "write(%d,%lu) - %s fd=%d\n",
-                   bio->num, (unsigned long)argi,
-                   bio->method->name, bio->num);
+                   BIO_number_written(bio), (unsigned long)argi,
+                   BIO_method_name(bio), BIO_number_written(bio));
     else
       BIO_snprintf(p, p_maxlen, "write(%d,%lu) - %s\n",
-                   bio->num, (unsigned long)argi,
-                   bio->method->name);
+                   BIO_number_written(bio), (unsigned long)argi,
+                   BIO_method_name(bio));
     break;
   case BIO_CB_PUTS:
-    BIO_snprintf(p, p_maxlen, "puts() - %s\n", bio->method->name);
+    BIO_snprintf(p, p_maxlen, "puts() - %s\n", BIO_method_name(bio));
     break;
   case BIO_CB_GETS:
-    BIO_snprintf(p, p_maxlen, "gets(%lu) - %s\n", (unsigned long)argi, bio->method->name);
+    BIO_snprintf(p, p_maxlen, "gets(%lu) - %s\n", (unsigned long)argi, BIO_method_name(bio));
     break;
   case BIO_CB_CTRL:
-    BIO_snprintf(p, p_maxlen, "ctrl(%lu) - %s\n", (unsigned long)argi, bio->method->name);
+    BIO_snprintf(p, p_maxlen, "ctrl(%lu) - %s\n", (unsigned long)argi, BIO_method_name(bio));
     break;
   case BIO_CB_RETURN|BIO_CB_READ:
     BIO_snprintf(p, p_maxlen, "read return %ld\n", ret);
@@ -648,7 +648,7 @@ void BIO_info_callback(BIO *bio, int cmd, const char *argp,
     break;
   }
 
-  b = (BIO *)bio->cb_arg;
+  b = (BIO *)BIO_get_callback_arg(bio);
   if (b != NULL)
     BIO_write(b, buf, strlen(buf));
 #if !defined(OPENSSL_NO_STDIO) && !defined(OPENSSL_SYS_WIN16)

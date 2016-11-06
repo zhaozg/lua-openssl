@@ -13,6 +13,7 @@
 
 static int openssl_xattr_totable(lua_State*L, X509_ATTRIBUTE *attr)
 {
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
   lua_newtable(L);
   openssl_push_asn1object(L, attr->object);
   lua_setfield(L, -2, "object");
@@ -36,6 +37,23 @@ static int openssl_xattr_totable(lua_State*L, X509_ATTRIBUTE *attr)
     lua_setfield(L, -2, "value");
   }
   return 1;
+#else
+  int i;
+
+  lua_newtable(L);
+  openssl_push_asn1object(L, X509_ATTRIBUTE_get0_object(attr));
+  lua_setfield(L, -2, "object");
+
+  lua_newtable(L);
+  for (i = 0; i < X509_ATTRIBUTE_count(attr); i++)
+  {
+    ASN1_TYPE* t = X509_ATTRIBUTE_get0_type(attr, i);
+    openssl_push_asn1type(L, t);
+    lua_rawseti(L, -2, i + 1);
+  }
+  lua_setfield(L, -2, "set");
+  return 1;
+#endif
 }
 
 static int openssl_xattr_info(lua_State*L)
@@ -68,12 +86,14 @@ static int openssl_xattr_data(lua_State*L)
     size_t size;
     int ret;
     const char *data = luaL_checklstring(L, 3, &size);
-    if (attr->single)
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+    if (X509_ATTRIBUTE_count(attr)==1)
       ASN1_TYPE_free((ASN1_TYPE*)attr->value.ptr);
     else
       sk_ASN1_TYPE_pop_free(attr->value.set, ASN1_TYPE_free);
     attr->value.ptr = NULL;
-
+#else
+#endif
     ret = X509_ATTRIBUTE_set1_data(attr, attrtype, data, size);
     return openssl_pushresult(L, ret);
   }

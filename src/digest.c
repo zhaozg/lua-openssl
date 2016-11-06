@@ -40,6 +40,8 @@ static LUA_FUNCTION(openssl_digest_new)
     ENGINE* e =  (!lua_isnoneornil(L, 2)) ? CHECK_OBJECT(2, ENGINE, "openssl.engine") : NULL;
     EVP_MD_CTX* ctx = EVP_MD_CTX_create();
     EVP_MD_CTX_init(ctx);
+    lua_pushlightuserdata(L, e);
+    lua_rawseti(L,LUA_REGISTRYINDEX, (int)ctx);
     ret = EVP_DigestInit_ex(ctx, md, e);
     if (ret == 1)
     {
@@ -248,6 +250,8 @@ static LUA_FUNCTION(openssl_evp_digest_final)
 static LUA_FUNCTION(openssl_digest_ctx_free)
 {
   EVP_MD_CTX *ctx = CHECK_OBJECT(1, EVP_MD_CTX, "openssl.evp_digest_ctx");
+  lua_pushnil(L);
+  lua_rawseti(L, LUA_REGISTRYINDEX, (int)ctx);
   EVP_MD_CTX_destroy(ctx);
   return 0;
 }
@@ -256,8 +260,13 @@ static LUA_FUNCTION(openssl_digest_ctx_reset)
 {
   EVP_MD_CTX *ctx = CHECK_OBJECT(1, EVP_MD_CTX, "openssl.evp_digest_ctx");
   const EVP_MD *md = EVP_MD_CTX_md(ctx);
-  ENGINE* e = ctx->engine;
-  int ret = EVP_MD_CTX_cleanup(ctx);
+
+  ENGINE* e = NULL;
+  int ret;
+
+  lua_rawgeti(L, LUA_REGISTRYINDEX, (int)ctx);
+  e = (ENGINE*)lua_topointer(L, -1);
+  ret = EVP_MD_CTX_cleanup(ctx);
   if (ret)
   {
     EVP_MD_CTX_init(ctx);
@@ -292,6 +301,7 @@ static LUA_FUNCTION(openssl_digest_ctx_clone)
 static LUA_FUNCTION(openssl_digest_ctx_data)
 {
   EVP_MD_CTX *ctx = CHECK_OBJECT(1, EVP_MD_CTX, "openssl.evp_digest_ctx");
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
   if (lua_isnone(L, 2))
   {
     lua_pushlstring(L, ctx->md_data, ctx->digest->ctx_size);
@@ -308,7 +318,24 @@ static LUA_FUNCTION(openssl_digest_ctx_data)
     else
       luaL_error(L, "data with wrong data");
   }
-
+#else
+  size_t ctx_size = EVP_MD_meth_get_app_datasize(EVP_MD_CTX_md(ctx));
+  if (lua_isnone(L, 2))
+  {
+    lua_pushlstring(L, EVP_MD_CTX_md_data(ctx), ctx_size);
+    return 1;
+  }
+  else
+  {
+    const char* d = luaL_checklstring(L, 2, &ctx_size);
+    if (ctx_size == (size_t)EVP_MD_meth_get_app_datasize(EVP_MD_CTX_md(ctx)))
+    {
+      memcpy(EVP_MD_CTX_md_data(ctx), d, ctx_size);
+    }
+    else
+      luaL_error(L, "data with wrong data");
+  }
+#endif
   return 0;
 }
 

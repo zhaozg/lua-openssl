@@ -7,7 +7,6 @@
 
 #include "openssl.h"
 #include "private.h"
-#include <openssl/hmac.h>
 
 #define MYNAME    "hmac"
 #define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
@@ -20,8 +19,7 @@ static int openssl_hmac_new(lua_State *L)
   const char *k = luaL_checklstring(L, 2, &l);
   ENGINE* e = lua_isnoneornil(L, 3) ? NULL : CHECK_OBJECT(3, ENGINE, "openssl.engine");
 
-  HMAC_CTX *c = OPENSSL_malloc(sizeof(HMAC_CTX));
-  HMAC_CTX_init(c);
+  HMAC_CTX *c = HMAC_CTX_new();
   HMAC_Init_ex(c, k, (int)l, type, e);
   PUSH_OBJECT(c, "openssl.hmac_ctx");
 
@@ -80,8 +78,7 @@ static int openssl_hmac_reset(lua_State *L)
 static int openssl_hmac_free(lua_State *L)
 {
   HMAC_CTX *c = CHECK_OBJECT(1, HMAC_CTX, "openssl.hmac_ctx");
-  HMAC_CTX_cleanup(c);
-  OPENSSL_free(c);
+  HMAC_CTX_free(c);
   return 0;
 }
 
@@ -109,16 +106,14 @@ static int openssl_hmac(lua_State *L)
 
     unsigned char digest[EVP_MAX_MD_SIZE];
 
-    HMAC_CTX ctx;
-    HMAC_CTX *c = &ctx;
-    HMAC_CTX_init(c);
+    HMAC_CTX *c = HMAC_CTX_new();
     HMAC_Init_ex(c, k, (int)l, type, e);
 
     HMAC_Update(c, (unsigned char *)dat, len);
     len = EVP_MAX_MD_SIZE;
     HMAC_Final(c, digest, (unsigned int*)&len);
 
-    HMAC_CTX_cleanup(c);
+    HMAC_CTX_free(c);
 
     if (raw)
       lua_pushlstring(L, (char *)digest, len);

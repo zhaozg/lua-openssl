@@ -1,5 +1,5 @@
-#include "openssl.h"
-
+#ifndef OPENSSL_PRIVATE_H
+#define OPENSSL_PRIVATE_H
 #include "lua-compat/c-api/compat-5.3.h"
 
 #define luaL_checktable(L, n) luaL_checktype(L, n, LUA_TTABLE)
@@ -27,6 +27,77 @@
 #ifndef luaL_optlong
 #define luaL_optlong(L,n,d) ((long)luaL_optinteger(L, (n), (d)))
 #endif
+#endif
+
+#include "openssl.h"
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+int BIO_up_ref(BIO *b);
+int X509_up_ref(X509 *x);
+int X509_STORE_up_ref(X509_STORE *s);
+int EVP_PKEY_up_ref(EVP_PKEY *pkey);
+
+DH *EVP_PKEY_get0_DH(EVP_PKEY *pkey);
+int DH_bits(const DH *dh);
+void DH_get0_key(const DH *dh,
+  const BIGNUM **pub_key, const BIGNUM **priv_key);
+int DH_set0_key(DH *dh, BIGNUM *pub_key, BIGNUM *priv_key);
+void DH_get0_pqg(const DH *dh,
+  const BIGNUM **p, const BIGNUM **q, const BIGNUM **g);
+int DH_set0_pqg(DH *dh, BIGNUM *p, BIGNUM *q, BIGNUM *g);
+void DSA_get0_pqg(const DSA *dsa,
+  const BIGNUM **p, const BIGNUM **q, const BIGNUM **g);
+
+EC_KEY *EVP_PKEY_get0_EC_KEY(EVP_PKEY *pkey);
+void ECDSA_SIG_get0(const ECDSA_SIG *sig,
+  const BIGNUM **pr, const BIGNUM **ps);
+int ECDSA_SIG_set0(ECDSA_SIG *sig, BIGNUM *r, BIGNUM *s);
+int RSA_bits(const RSA *r);
+void RSA_get0_key(const RSA *r,
+  const BIGNUM **n, const BIGNUM **e, const BIGNUM **d);
+int RSA_set0_key(RSA *r, BIGNUM *n, BIGNUM *e, BIGNUM *d);
+int RSA_set0_factors(RSA *r, BIGNUM *p, BIGNUM *q);
+int RSA_set0_crt_params(RSA *r, BIGNUM *dmp1, BIGNUM *dmq1, BIGNUM *iqmp);
+void RSA_get0_factors(const RSA *r, const BIGNUM **p, const BIGNUM **q);
+void RSA_get0_crt_params(const RSA *r, const BIGNUM **dmp1, const BIGNUM **dmq1, const BIGNUM **iqmp);
+RSA *EVP_PKEY_get0_RSA(EVP_PKEY *pkey);
+
+DSA *EVP_PKEY_get0_DSA(EVP_PKEY *pkey);
+int DSA_bits(const DSA *dsa);
+void DSA_get0_key(const DSA *d,
+  const BIGNUM **pub_key, const BIGNUM **priv_key);
+int DSA_set0_key(DSA *d, BIGNUM *pub_key, BIGNUM *priv_key);
+void DSA_get0_pqg(const DSA *d,
+  const BIGNUM **p, const BIGNUM **q, const BIGNUM **g);
+int DSA_set0_pqg(DSA *d, BIGNUM *p, BIGNUM *q, BIGNUM *g);
+
+HMAC_CTX *HMAC_CTX_new(void);
+void HMAC_CTX_free(HMAC_CTX *ctx);
+
+EVP_MD_CTX *EVP_MD_CTX_new(void);
+int EVP_MD_CTX_reset(EVP_MD_CTX *ctx);
+void EVP_MD_CTX_free(EVP_MD_CTX *ctx);
+void X509_REQ_get0_signature(const X509_REQ *req, const ASN1_BIT_STRING **psig,
+  const X509_ALGOR **palg);
+X509_PUBKEY *X509_REQ_get_X509_PUBKEY(X509_REQ *req);
+int X509_PUBKEY_get0_param(ASN1_OBJECT **ppkalg,
+  const unsigned char **pk, int *ppklen,
+  X509_ALGOR **pa, X509_PUBKEY *pub);
+const ASN1_INTEGER *X509_get0_serialNumber(const X509 *a);
+const STACK_OF(X509_EXTENSION) *X509_get0_extensions(const X509 *x);
+int i2d_re_X509_REQ_tbs(X509_REQ *req, unsigned char **pp);
+const ASN1_INTEGER *X509_REVOKED_get0_serialNumber(const X509_REVOKED *x);
+int X509_REVOKED_set_revocationDate(X509_REVOKED *x, ASN1_TIME *tm);
+const ASN1_TIME *X509_REVOKED_get0_revocationDate(const X509_REVOKED *x);
+const STACK_OF(X509_EXTENSION) *X509_REVOKED_get0_extensions(const X509_REVOKED *r);
+const STACK_OF(X509_EXTENSION) *X509_CRL_get0_extensions(const X509_CRL *crl);
+
+void X509_CRL_get0_signature(const X509_CRL *crl, const ASN1_BIT_STRING **psig,
+  const X509_ALGOR **palg);
+const ASN1_INTEGER *TS_STATUS_INFO_get0_status(const TS_STATUS_INFO *a);
+const STACK_OF(ASN1_UTF8STRING) *
+TS_STATUS_INFO_get0_text(const TS_STATUS_INFO *a);
+const ASN1_BIT_STRING *TS_STATUS_INFO_get0_failure_info(const TS_STATUS_INFO *a);
 #endif
 
 #define AUXILIAR_SETOBJECT(L, cval, ltype, idx, lvar) \
@@ -87,7 +158,7 @@ void to_hex(const char* in, int length, char* out);
 
 int openssl_push_asn1type(lua_State* L, const ASN1_TYPE* type);
 int openssl_push_asn1object(lua_State* L, const ASN1_OBJECT* obj);
-int openssl_push_asn1(lua_State* L, ASN1_STRING* string, int type);
+int openssl_push_asn1(lua_State* L, const ASN1_STRING* string, int type);
 int openssl_push_general_name(lua_State*L, const GENERAL_NAME* name);
 
 #define PUSH_ASN1_TIME(L, tm)             openssl_push_asn1(L, (ASN1_STRING*)tm, V_ASN1_UTCTIME)
@@ -121,17 +192,26 @@ int openssl_verify_cb(int preverify_ok, X509_STORE_CTX *xctx);
 int openssl_cert_verify_cb(X509_STORE_CTX *xctx, void* u);
 void openssl_xstore_free(X509_STORE* ctx);
 
-STACK_OF(X509)* openssl_sk_x509_fromtable(lua_State *L, int idx);
-int openssl_sk_x509_totable(lua_State *L, STACK_OF(X509)* sk);
-STACK_OF(X509_CRL)* openssl_sk_x509_crl_fromtable(lua_State *L, int idx);
-int openssl_sk_x509_crl_totable(lua_State *L, STACK_OF(X509_CRL)* sk);
-STACK_OF(X509_EXTENSION)* openssl_sk_x509_extension_fromtable(lua_State *L, int idx);
-int openssl_sk_x509_extension_totable(lua_State *L, STACK_OF(X509_EXTENSION)* sk);
-int openssl_sk_x509_algor_totable(lua_State *L, STACK_OF(X509_ALGOR)* sk);
-int openssl_sk_x509_name_totable(lua_State *L, STACK_OF(X509_NAME)* sk);
+const STACK_OF(X509)* openssl_sk_x509_fromtable(lua_State *L, int idx);
+int openssl_sk_x509_totable(lua_State *L, const STACK_OF(X509)* sk);
+const STACK_OF(X509_CRL)* openssl_sk_x509_crl_fromtable(lua_State *L, int idx);
+int openssl_sk_x509_crl_totable(lua_State *L, const STACK_OF(X509_CRL)* sk);
+const STACK_OF(X509_EXTENSION)* openssl_sk_x509_extension_fromtable(lua_State *L, int idx);
+int openssl_sk_x509_extension_totable(lua_State *L, const STACK_OF(X509_EXTENSION)* sk);
+int openssl_sk_x509_algor_totable(lua_State *L, const STACK_OF(X509_ALGOR)* sk);
+int openssl_sk_x509_name_totable(lua_State *L, const STACK_OF(X509_NAME)* sk);
 
 X509_ATTRIBUTE* openssl_new_xattribute(lua_State*L, X509_ATTRIBUTE** a, int idx, const char* eprefix);
+
+#if OPENSSL_VERSION_NUMBER < 0x10002000L
+int i2d_re_X509_tbs(X509 *x, unsigned char **pp);
+void X509_get0_signature(ASN1_BIT_STRING **psig, X509_ALGOR **palg,
+  const X509 *x);
+int X509_get_signature_nid(const X509 *x);
+#endif
 
 #ifdef HAVE_USER_CUSTOME
 #include HAVE_USER_CUSTOME
 #endif
+
+#endif /* OPENSSL_PRIVATE_H */

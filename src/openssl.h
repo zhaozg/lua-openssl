@@ -26,7 +26,8 @@
 #include <openssl/pkcs12.h>
 #include <openssl/opensslv.h>
 #include <openssl/bn.h>
-
+#include <openssl/hmac.h>
+#include <openssl/ts.h>
 
 /*-
 * Numeric release version identifier:
@@ -78,7 +79,7 @@ __pragma(warning(pop))
 /* Common */
 #include <time.h>
 #ifndef MAX_PATH
-#define MAX_PATH PATH_MAX
+#define MAX_PATH 260
 #endif
 
 #ifdef NETWARE
