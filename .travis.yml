@@ -26,7 +26,8 @@ before_install:
   - git submodule update --recursive
 
 install: 
-  - sudo $HOME/.lua/luarocks make rockspecs/openssl-scm-1.rockspec
+  - 'if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then sudo $HOME/.lua/luarocks make rockspecs/openssl-scm-1.rockspec OPENSSL_DIR="/usr/local/opt/openssl"; fi'
+  - 'if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo $HOME/.lua/luarocks make rockspecs/openssl-scm-1.rockspec; fi'
 
 script: 
   - cd test
