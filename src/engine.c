@@ -14,13 +14,22 @@ enum
 {
   TYPE_RSA,
   TYPE_DSA,
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
   TYPE_ECDH,
   TYPE_ECDSA,
+#else
+  TYPE_EC,
+#endif
   TYPE_DH,
   TYPE_RAND,
-  TYPE_STORE,
   TYPE_CIPHERS,
   TYPE_DIGESTS,
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+  TYPE_STORE,
+#else
+  TYPE_PKEY_METHODS,
+  TYPE_PKEY_ASN1_METHODS,
+#endif
   TYPE_COMPLETE
 };
 
@@ -141,6 +150,7 @@ static int openssl_engine_register(lua_State*L)
       else
         ENGINE_register_DSA(eng);
       break;
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
     case TYPE_ECDH:
       if (unregister)
         ENGINE_unregister_ECDH(eng);
@@ -153,6 +163,14 @@ static int openssl_engine_register(lua_State*L)
       else
         ENGINE_register_ECDSA(eng);
       break;
+#else
+    case TYPE_EC:
+      if (unregister)
+        ENGINE_unregister_EC(eng);
+      else
+        ENGINE_register_EC(eng);
+      break;
+#endif
     case TYPE_DH:
       if (unregister)
         ENGINE_unregister_DH(eng);
@@ -165,12 +183,27 @@ static int openssl_engine_register(lua_State*L)
       else
         ENGINE_register_RAND(eng);
       break;
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
     case TYPE_STORE:
       if (unregister)
         ENGINE_unregister_STORE(eng);
       else
         ENGINE_register_STORE(eng);
       break;
+#else
+    case TYPE_PKEY_METHODS:
+      if (unregister)
+        ENGINE_unregister_pkey_meths(eng);
+      else
+        ENGINE_register_pkey_meths(eng);
+      break;
+    case TYPE_PKEY_ASN1_METHODS:
+      if (unregister)
+        ENGINE_unregister_pkey_asn1_meths(eng);
+      else
+        ENGINE_register_pkey_asn1_meths(eng);
+      break;
+#endif
     case TYPE_CIPHERS:
       if (unregister)
         ENGINE_unregister_ciphers(eng);
@@ -362,12 +395,18 @@ static int openssl_engine_set_default(lua_State*L)
     case TYPE_DSA:
       ret = ENGINE_set_default_DSA(eng);
       break;
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
     case TYPE_ECDH:
       ret = ENGINE_set_default_ECDH(eng);
       break;
     case TYPE_ECDSA:
       ret = ENGINE_set_default_ECDSA(eng);
       break;
+#else
+    case TYPE_EC:
+      ret = ENGINE_set_default_EC(eng);
+      break;
+#endif
     case TYPE_DH:
       ret = ENGINE_set_default_DH(eng);
       break;

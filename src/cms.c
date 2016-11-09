@@ -165,7 +165,7 @@ static int openssl_cms_sign(lua_State *L)
 {
   X509* signcert = CHECK_OBJECT(1, X509, "openssl.x509");
   EVP_PKEY* pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
-  const STACK_OF(X509)* certs = openssl_sk_x509_fromtable(L, 3);
+  STACK_OF(X509)* certs = (STACK_OF(X509)*)openssl_sk_x509_fromtable(L, 3);
   BIO* data = load_bio_object(L, 4);
   unsigned int flags = luaL_optint(L, 5, 0);
   CMS_ContentInfo *cms;
@@ -202,7 +202,7 @@ static int openssl_cms_verify(lua_State *L)
   if (mode == 2)
   {
     CMS_ContentInfo *src = CHECK_OBJECT(3, CMS_ContentInfo, "openssl.cms");
-    const STACK_OF(X509) *other = openssl_sk_x509_fromtable(L, 4);
+    STACK_OF(X509) *other = (STACK_OF(X509)*)openssl_sk_x509_fromtable(L, 4);
     X509_STORE* store = CHECK_OBJECT(5, X509_STORE, "openssl.x509_store");
     unsigned int flags = luaL_optint(L, 6, 0);
     int ret = CMS_verify_receipt(cms, src, other, store, flags);
@@ -210,7 +210,7 @@ static int openssl_cms_verify(lua_State *L)
   }
   if (mode == 0)
   {
-    const STACK_OF(X509) *other = openssl_sk_x509_fromtable(L, 3);
+    STACK_OF(X509) *other = (STACK_OF(X509) *)openssl_sk_x509_fromtable(L, 3);
     X509_STORE* store = CHECK_OBJECT(4, X509_STORE, "openssl.x509_store");
     BIO* in = load_bio_object(L, 5);
     BIO* out = load_bio_object(L, 6);
@@ -286,7 +286,7 @@ static char *memdup(const char *src, size_t buffer_length)
 
 static int openssl_cms_encrypt(lua_State *L)
 {
-  const STACK_OF(X509)* encerts = openssl_sk_x509_fromtable(L, 1);
+  STACK_OF(X509)* encerts = (STACK_OF(X509)*)openssl_sk_x509_fromtable(L, 1);
   BIO* in = load_bio_object(L, 2);
   const EVP_CIPHER* ciphers = get_cipher(L, 3, NULL);
   unsigned int flags = luaL_optint(L, 4, 0);
@@ -514,7 +514,7 @@ static int openssl_cms_sign_receipt(lua_State*L)
   CMS_ContentInfo *cms = CHECK_OBJECT(1, CMS_ContentInfo, "openssl.cms");
   X509 *signcert = CHECK_OBJECT(2, X509, "openssl.x509");
   EVP_PKEY* pkey = CHECK_OBJECT(3, EVP_PKEY, "openssl.evp_pkey");
-  const STACK_OF(X509) *other = openssl_sk_x509_fromtable(L, 4);
+  STACK_OF(X509) *other = (STACK_OF(X509)*)openssl_sk_x509_fromtable(L, 4);
   unsigned int flags = luaL_optint(L, 5, 0);
 
   STACK_OF(CMS_SignerInfo) *sis = CMS_get0_SignerInfos(cms);

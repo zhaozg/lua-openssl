@@ -722,6 +722,7 @@ static EC_KEY *tmp_ecdh_callback(SSL *ssl, int is_export, int keylength)
   return ec_tmp;
 }
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 static int openssl_ssl_ctx_set_tmp(lua_State *L)
 {
   SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
@@ -813,6 +814,7 @@ static int openssl_ssl_ctx_set_tmp(lua_State *L)
 
   return openssl_pushresult(L, ret);
 }
+#endif
 
 static int tlsext_servername_callback(SSL *ssl, int *ad, void *arg)
 {
@@ -1000,7 +1002,9 @@ static luaL_Reg ssl_ctx_funcs[] =
   {"set_cert_verify", openssl_ssl_ctx_set_cert_verify},
 
   {"verify_depth",    openssl_ssl_ctx_verify_depth},
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
   {"set_tmp",         openssl_ssl_ctx_set_tmp},
+#endif
   {"flush_sessions",  openssl_ssl_ctx_flush_sessions},
   {"session",         openssl_ssl_ctx_sessions},
   {"session_cache_mode",        openssl_session_cache_mode },
@@ -1444,7 +1448,7 @@ static int openssl_ssl_get(lua_State*L)
     }
     else if (strcmp(what, "state") == 0)
     {
-      lua_pushinteger(L, SSL_state(s));
+      lua_pushinteger(L, SSL_get_state(s));
     }
     else if (strcmp(what, "hostname") == 0)
     {
@@ -1519,14 +1523,6 @@ static int openssl_ssl_set(lua_State*L)
       const char* hostname = luaL_checkstring(L, i + 1);
       SSL_set_tlsext_host_name(s, hostname);
     }
-
-#if OPENSSL_VERSION_NUMBER > 0x10000000L
-    else if (strcmp(what, "state") == 0)
-    {
-      int l = luaL_checkint(L, 2);
-      SSL_set_state(s, l);
-    }
-#endif
     else
       luaL_argerror(L, i, "don't understand");
 

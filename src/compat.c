@@ -358,7 +358,10 @@ EVP_MD_CTX *EVP_MD_CTX_new(void)
 {
   return OPENSSL_malloc(sizeof(EVP_MD_CTX));
 }
-int EVP_MD_CTX_reset(EVP_MD_CTX *ctx);
+int EVP_MD_CTX_reset(EVP_MD_CTX *ctx)
+{
+  return EVP_MD_CTX_cleanup(ctx);
+}
 void EVP_MD_CTX_free(EVP_MD_CTX *ctx)
 {
   EVP_MD_CTX_cleanup(ctx);
@@ -373,6 +376,7 @@ void X509_REQ_get0_signature(const X509_REQ *req, const ASN1_BIT_STRING **psig,
   if (palg != NULL)
     *palg = req->sig_alg;
 }
+
 X509_PUBKEY *X509_REQ_get_X509_PUBKEY(X509_REQ *req)
 {
   return req->req_info->pubkey;
@@ -433,6 +437,7 @@ const ASN1_BIT_STRING *TS_STATUS_INFO_get0_failure_info(const TS_STATUS_INFO *a)
 {
   return a->failure_info;
 }
+
 #if OPENSSL_VERSION_NUMBER < 0x10002000L
 int i2d_re_X509_tbs(X509 *x, unsigned char **pp)
 {
@@ -455,4 +460,45 @@ int X509_get_signature_nid(const X509 *x)
 }
 
 #endif /* < 1.0.2 */
-#endif
+
+
+int TS_VERIFY_CTX_add_flags(TS_VERIFY_CTX *ctx, int f)
+{
+  ctx->flags |= f;
+  return ctx->flags;
+}
+
+int TS_VERIFY_CTX_set_flags(TS_VERIFY_CTX *ctx, int f)
+{
+  ctx->flags = f;
+  return ctx->flags;
+}
+
+BIO *TS_VERIFY_CTX_set_data(TS_VERIFY_CTX *ctx, BIO *b)
+{
+  ctx->data = b;
+  return ctx->data;
+}
+
+X509_STORE *TS_VERIFY_CTX_set_store(TS_VERIFY_CTX *ctx, X509_STORE *s)
+{
+  ctx->store = s;
+  return ctx->store;
+}
+
+STACK_OF(X509) *TS_VERIFY_CTS_set_certs(TS_VERIFY_CTX *ctx,
+  STACK_OF(X509) *certs)
+{
+  ctx->certs = certs;
+  return ctx->certs;
+}
+
+unsigned char *TS_VERIFY_CTX_set_imprint(TS_VERIFY_CTX *ctx,
+  unsigned char *hexstr, long len)
+{
+  ctx->imprint = hexstr;
+  ctx->imprint_len = len;
+  return ctx->imprint;
+}
+
+#endif /* < 1.1.0 */

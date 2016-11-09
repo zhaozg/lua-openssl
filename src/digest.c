@@ -266,7 +266,7 @@ static LUA_FUNCTION(openssl_digest_ctx_reset)
 
   lua_rawgeti(L, LUA_REGISTRYINDEX, (int)ctx);
   e = (ENGINE*)lua_topointer(L, -1);
-  ret = EVP_MD_CTX_cleanup(ctx);
+  ret = EVP_MD_CTX_reset(ctx);
   if (ret)
   {
     EVP_MD_CTX_init(ctx);
@@ -420,7 +420,7 @@ static LUA_FUNCTION(openssl_signFinal)
     lua_pushlstring(L, (char *)sigbuf, siglen);
   }
   free(sigbuf);
-  EVP_MD_CTX_cleanup(ctx);
+  EVP_MD_CTX_reset(ctx);
   if (ret == 1)
     return 1;
   return openssl_pushresult(L, ret);
@@ -438,7 +438,7 @@ static LUA_FUNCTION(openssl_verifyFinal)
   else
     ret = EVP_DigestVerifyFinal(ctx, (const unsigned char*) signature, signature_len);
 
-  EVP_MD_CTX_cleanup(ctx);
+  EVP_MD_CTX_reset(ctx);
   return openssl_pushresult(L, ret);
 }
 

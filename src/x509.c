@@ -378,7 +378,7 @@ static LUA_FUNCTION(openssl_x509_check)
   else
   {
     X509_STORE* store = CHECK_OBJECT(2, X509_STORE, "openssl.x509_store");
-    STACK_OF(X509)* untrustedchain = lua_isnoneornil(L, 3) ?  NULL : openssl_sk_x509_fromtable(L, 3);
+    STACK_OF(X509)* untrustedchain = lua_isnoneornil(L, 3) ?  NULL : (STACK_OF(X509)*)openssl_sk_x509_fromtable(L, 3);
     int purpose = 0;
     int ret = 0;
     if (!lua_isnone(L, 4)) {
@@ -719,7 +719,7 @@ static int openssl_x509_version(lua_State *L)
 static int openssl_x509_extensions(lua_State* L)
 {
   X509 *self = CHECK_OBJECT(1, X509, "openssl.x509");
-  const STACK_OF(X509_EXTENSION) *exts = X509_get0_extensions(self);
+  STACK_OF(X509_EXTENSION) *exts = (STACK_OF(X509_EXTENSION) *)X509_get0_extensions(self);
   if (lua_isnone(L, 2))
   {
     if (exts)
@@ -732,7 +732,7 @@ static int openssl_x509_extensions(lua_State* L)
   }
   else
   {
-    STACK_OF(X509_EXTENSION) *others = openssl_sk_x509_extension_fromtable(L, 2);
+    STACK_OF(X509_EXTENSION) *others = (STACK_OF(X509_EXTENSION) *)openssl_sk_x509_extension_fromtable(L, 2);
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
     sk_X509_EXTENSION_pop_free(self->cert_info->extensions, X509_EXTENSION_free);
     self->cert_info->extensions = others;

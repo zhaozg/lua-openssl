@@ -166,6 +166,7 @@ static int openssl_random_load(lua_State*L)
 
   if (file == NULL)
     file = RAND_file_name(buffer, sizeof buffer);
+#ifndef OPENSSL_NO_EGD
   else if (RAND_egd(file) > 0)
   {
     /* we try if the given filename is an EGD socket.
@@ -173,7 +174,7 @@ static int openssl_random_load(lua_State*L)
     lua_pushboolean(L, 1);
     return 1;
   }
-
+#endif
   len = luaL_optinteger(L, 2, 2048);
   if (file == NULL || !RAND_load_file(file, len))
   {
@@ -251,7 +252,7 @@ static LUA_FUNCTION(openssl_random_bytes)
   free(buffer);
   return 1;
 }
-
+#ifndef OPENSSL_NO_CRYPTO_MDEBUG
 static int openssl_mem_leaks(lua_State*L)
 {
   BIO *bio = BIO_new(BIO_s_mem());
@@ -264,15 +265,16 @@ static int openssl_mem_leaks(lua_State*L)
   BIO_free(bio);
   return 1;
 }
-
+#endif
 static const luaL_Reg eay_functions[] =
 {
   {"version",     openssl_version},
   {"list",        openssl_list},
   {"hex",         openssl_hex},
   {"base64",      openssl_base64},
+#ifndef OPENSSL_NO_CRYPTO_MDEBUG
   {"mem_leaks",   openssl_mem_leaks},
-
+#endif
   {"rand_status", openssl_random_status},
   {"rand_load",   openssl_random_load},
   {"rand_write",  openssl_random_write},

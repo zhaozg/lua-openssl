@@ -127,7 +127,10 @@ static void dump_value_doall_arg(CONF_VALUE *a, lua_State *L)
     }
   }
 }
-#if OPENSSL_VERSION_NUMBER >= 0x10000002L
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+IMPLEMENT_LHASH_DOALL_ARG_CONST(CONF_VALUE, lua_State);
+#elif OPENSSL_VERSION_NUMBER >= 0x10000002L
 static IMPLEMENT_LHASH_DOALL_ARG_FN(dump_value, CONF_VALUE, lua_State)
 #endif
 #define LHM_lh_doall_arg(type, lh, fn, arg_type, arg) \
@@ -139,7 +142,9 @@ static LUA_FUNCTION(openssl_lhash_parse)
   LHASH* lhash = CHECK_OBJECT(1, LHASH, "openssl.lhash");
 
   lua_newtable(L);
-#if OPENSSL_VERSION_NUMBER >= 0x10000002L
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+  lh_CONF_VALUE_doall_lua_State(lhash, dump_value_doall_arg, L);
+#elif OPENSSL_VERSION_NUMBER >= 0x10000002L
   lh_CONF_VALUE_doall_arg(lhash, LHASH_DOALL_ARG_FN(dump_value), lua_State, L);
 #else
   lh_doall_arg(lhash, (LHASH_DOALL_ARG_FN_TYPE)dump_value_doall_arg, L);

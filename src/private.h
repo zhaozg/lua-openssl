@@ -98,6 +98,24 @@ const ASN1_INTEGER *TS_STATUS_INFO_get0_status(const TS_STATUS_INFO *a);
 const STACK_OF(ASN1_UTF8STRING) *
 TS_STATUS_INFO_get0_text(const TS_STATUS_INFO *a);
 const ASN1_BIT_STRING *TS_STATUS_INFO_get0_failure_info(const TS_STATUS_INFO *a);
+
+
+int TS_VERIFY_CTX_add_flags(TS_VERIFY_CTX *ctx, int f);
+int TS_VERIFY_CTX_set_flags(TS_VERIFY_CTX *ctx, int f);
+BIO *TS_VERIFY_CTX_set_data(TS_VERIFY_CTX *ctx, BIO *b);
+X509_STORE *TS_VERIFY_CTX_set_store(TS_VERIFY_CTX *ctx, X509_STORE *s);
+STACK_OF(X509) *TS_VERIFY_CTS_set_certs(TS_VERIFY_CTX *ctx,
+  STACK_OF(X509) *certs);
+unsigned char *TS_VERIFY_CTX_set_imprint(TS_VERIFY_CTX *ctx,
+  unsigned char *hexstr, long len);
+
+#if OPENSSL_VERSION_NUMBER < 0x10002000L
+int i2d_re_X509_tbs(X509 *x, unsigned char **pp);
+void X509_get0_signature(ASN1_BIT_STRING **psig, X509_ALGOR **palg,
+  const X509 *x);
+int X509_get_signature_nid(const X509 *x);
+#endif
+
 #endif
 
 #define AUXILIAR_SETOBJECT(L, cval, ltype, idx, lvar) \
@@ -202,13 +220,6 @@ int openssl_sk_x509_algor_totable(lua_State *L, const STACK_OF(X509_ALGOR)* sk);
 int openssl_sk_x509_name_totable(lua_State *L, const STACK_OF(X509_NAME)* sk);
 
 X509_ATTRIBUTE* openssl_new_xattribute(lua_State*L, X509_ATTRIBUTE** a, int idx, const char* eprefix);
-
-#if OPENSSL_VERSION_NUMBER < 0x10002000L
-int i2d_re_X509_tbs(X509 *x, unsigned char **pp);
-void X509_get0_signature(ASN1_BIT_STRING **psig, X509_ALGOR **palg,
-  const X509 *x);
-int X509_get_signature_nid(const X509 *x);
-#endif
 
 #ifdef HAVE_USER_CUSTOME
 #include HAVE_USER_CUSTOME
