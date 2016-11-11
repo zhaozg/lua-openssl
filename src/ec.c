@@ -311,7 +311,7 @@ static int openssl_ecdsa_sign(lua_State*L)
   size_t l;
   const char* sdata = luaL_checklstring(L, 2, &l);
   ECDSA_SIG* sig = ECDSA_do_sign((const unsigned char*)sdata, l, ec);
-  int der = lua_isnoneornil(L, 3) ? 1 : lua_toboolean(L, 3);
+  int der = lua_isnone(L, 3) ? 1 : lua_toboolean(L, 3);
   int ret = 0;
 
   if (der)
