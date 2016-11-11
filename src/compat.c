@@ -10,19 +10,23 @@
 #include "private.h"
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
-int BIO_up_ref(BIO *b) {
+int BIO_up_ref(BIO *b)
+{
   CRYPTO_add(&b->references, 1, CRYPTO_LOCK_BIO);
   return 1;
 }
-int X509_up_ref(X509 *x) {
+int X509_up_ref(X509 *x)
+{
   CRYPTO_add(&x->references, 1, CRYPTO_LOCK_X509);
   return 1;
 }
-int X509_STORE_up_ref(X509_STORE *s) {
+int X509_STORE_up_ref(X509_STORE *s)
+{
   CRYPTO_add(&s->references, 1, CRYPTO_LOCK_X509_STORE);
   return 1;
 }
-int EVP_PKEY_up_ref(EVP_PKEY *pkey) {
+int EVP_PKEY_up_ref(EVP_PKEY *pkey)
+{
   CRYPTO_add(&pkey->references, 1, CRYPTO_LOCK_EVP_PKEY);
   return 1;
 }
@@ -32,7 +36,8 @@ int RSA_bits(const RSA *r)
   return (BN_num_bits(r->n));
 }
 
-void ECDSA_SIG_get0(const ECDSA_SIG *sig, const BIGNUM **pr, const BIGNUM **ps) {
+void ECDSA_SIG_get0(const ECDSA_SIG *sig, const BIGNUM **pr, const BIGNUM **ps)
+{
   *pr = sig->r;
   *ps = sig->s;
 }
@@ -47,7 +52,7 @@ int ECDSA_SIG_set0(ECDSA_SIG *sig, BIGNUM *r, BIGNUM *s)
   return 1;
 }
 void RSA_get0_key(const RSA *r,
-  const BIGNUM **n, const BIGNUM **e, const BIGNUM **d)
+                  const BIGNUM **n, const BIGNUM **e, const BIGNUM **d)
 {
   if (n != NULL)
     *n = r->n;
@@ -66,8 +71,8 @@ void RSA_get0_factors(const RSA *r, const BIGNUM **p, const BIGNUM **q)
 }
 
 void RSA_get0_crt_params(const RSA *r,
-  const BIGNUM **dmp1, const BIGNUM **dmq1,
-  const BIGNUM **iqmp)
+                         const BIGNUM **dmp1, const BIGNUM **dmq1,
+                         const BIGNUM **iqmp)
 {
   if (dmp1 != NULL)
     *dmp1 = r->dmp1;
@@ -81,7 +86,8 @@ HMAC_CTX *HMAC_CTX_new(void)
 {
   HMAC_CTX *ctx = OPENSSL_malloc(sizeof(HMAC_CTX));
 
-  if (ctx != NULL) {
+  if (ctx != NULL)
+  {
     HMAC_CTX_init(ctx);
   }
   return ctx;
@@ -89,7 +95,8 @@ HMAC_CTX *HMAC_CTX_new(void)
 
 void HMAC_CTX_free(HMAC_CTX *ctx)
 {
-  if (ctx != NULL) {
+  if (ctx != NULL)
+  {
     HMAC_CTX_cleanup(ctx);
     OPENSSL_free(ctx);
   }
@@ -98,7 +105,8 @@ void HMAC_CTX_free(HMAC_CTX *ctx)
 #ifndef OPENSSL_NO_DSA
 DSA *EVP_PKEY_get0_DSA(EVP_PKEY *pkey)
 {
-  if (pkey->type != EVP_PKEY_DSA) {
+  if (pkey->type != EVP_PKEY_DSA)
+  {
     return NULL;
   }
   return pkey->pkey.dsa;
@@ -110,7 +118,7 @@ int DSA_bits(const DSA *dsa)
 }
 
 void DSA_get0_pqg(const DSA *d,
-  const BIGNUM **p, const BIGNUM **q, const BIGNUM **g)
+                  const BIGNUM **p, const BIGNUM **q, const BIGNUM **g)
 {
   if (p != NULL)
     *p = d->p;
@@ -126,19 +134,22 @@ int DSA_set0_pqg(DSA *d, BIGNUM *p, BIGNUM *q, BIGNUM *g)
   * parameters MUST be non-NULL.
   */
   if ((d->p == NULL && p == NULL)
-    || (d->q == NULL && q == NULL)
-    || (d->g == NULL && g == NULL))
+      || (d->q == NULL && q == NULL)
+      || (d->g == NULL && g == NULL))
     return 0;
 
-  if (p != NULL) {
+  if (p != NULL)
+  {
     BN_free(d->p);
     d->p = p;
   }
-  if (q != NULL) {
+  if (q != NULL)
+  {
     BN_free(d->q);
     d->q = q;
   }
-  if (g != NULL) {
+  if (g != NULL)
+  {
     BN_free(d->g);
     d->g = g;
   }
@@ -147,7 +158,7 @@ int DSA_set0_pqg(DSA *d, BIGNUM *p, BIGNUM *q, BIGNUM *g)
 }
 
 void DSA_get0_key(const DSA *d,
-  const BIGNUM **pub_key, const BIGNUM **priv_key)
+                  const BIGNUM **pub_key, const BIGNUM **priv_key)
 {
   if (pub_key != NULL)
     *pub_key = d->pub_key;
@@ -164,11 +175,13 @@ int DSA_set0_key(DSA *d, BIGNUM *pub_key, BIGNUM *priv_key)
   if (d->pub_key == NULL && pub_key == NULL)
     return 0;
 
-  if (pub_key != NULL) {
+  if (pub_key != NULL)
+  {
     BN_free(d->pub_key);
     d->pub_key = pub_key;
   }
-  if (priv_key != NULL) {
+  if (priv_key != NULL)
+  {
     BN_free(d->priv_key);
     d->priv_key = priv_key;
   }
@@ -181,7 +194,8 @@ int DSA_set0_key(DSA *d, BIGNUM *pub_key, BIGNUM *priv_key)
 
 EC_KEY *EVP_PKEY_get0_EC_KEY(EVP_PKEY *pkey)
 {
-  if (pkey->type != EVP_PKEY_EC) {
+  if (pkey->type != EVP_PKEY_EC)
+  {
     return NULL;
   }
   return pkey->pkey.ec;
@@ -192,7 +206,8 @@ EC_KEY *EVP_PKEY_get0_EC_KEY(EVP_PKEY *pkey)
 #ifndef OPENSSL_NO_DH
 DH *EVP_PKEY_get0_DH(EVP_PKEY *pkey)
 {
-  if (pkey->type != EVP_PKEY_DH) {
+  if (pkey->type != EVP_PKEY_DH)
+  {
     return NULL;
   }
   return pkey->pkey.dh;
@@ -220,11 +235,13 @@ int DH_set0_key(DH *dh, BIGNUM *pub_key, BIGNUM *priv_key)
   if (dh->pub_key == NULL && pub_key == NULL)
     return 0;
 
-  if (pub_key != NULL) {
+  if (pub_key != NULL)
+  {
     BN_free(dh->pub_key);
     dh->pub_key = pub_key;
   }
-  if (priv_key != NULL) {
+  if (priv_key != NULL)
+  {
     BN_free(dh->priv_key);
     dh->priv_key = priv_key;
   }
@@ -232,7 +249,7 @@ int DH_set0_key(DH *dh, BIGNUM *pub_key, BIGNUM *priv_key)
   return 1;
 }
 void DH_get0_pqg(const DH *dh,
-  const BIGNUM **p, const BIGNUM **q, const BIGNUM **g)
+                 const BIGNUM **p, const BIGNUM **q, const BIGNUM **g)
 {
   if (p != NULL)
     *p = dh->p;
@@ -248,23 +265,27 @@ int DH_set0_pqg(DH *dh, BIGNUM *p, BIGNUM *q, BIGNUM *g)
   * parameters MUST be non-NULL.  q may remain NULL.
   */
   if ((dh->p == NULL && p == NULL)
-    || (dh->g == NULL && g == NULL))
+      || (dh->g == NULL && g == NULL))
     return 0;
 
-  if (p != NULL) {
+  if (p != NULL)
+  {
     BN_free(dh->p);
     dh->p = p;
   }
-  if (q != NULL) {
+  if (q != NULL)
+  {
     BN_free(dh->q);
     dh->q = q;
   }
-  if (g != NULL) {
+  if (g != NULL)
+  {
     BN_free(dh->g);
     dh->g = g;
   }
 
-  if (q != NULL) {
+  if (q != NULL)
+  {
     dh->length = BN_num_bits(q);
   }
 
@@ -275,7 +296,8 @@ int DH_set0_pqg(DH *dh, BIGNUM *p, BIGNUM *q, BIGNUM *g)
 #ifndef OPENSSL_NO_RSA
 RSA *EVP_PKEY_get0_RSA(EVP_PKEY *pkey)
 {
-  if (pkey->type != EVP_PKEY_RSA) {
+  if (pkey->type != EVP_PKEY_RSA)
+  {
     return NULL;
   }
   return pkey->pkey.rsa;
@@ -287,18 +309,21 @@ int RSA_set0_key(RSA *r, BIGNUM *n, BIGNUM *e, BIGNUM *d)
   * left NULL (in case only the public key is used).
   */
   if ((r->n == NULL && n == NULL)
-    || (r->e == NULL && e == NULL))
+      || (r->e == NULL && e == NULL))
     return 0;
 
-  if (n != NULL) {
+  if (n != NULL)
+  {
     BN_free(r->n);
     r->n = n;
   }
-  if (e != NULL) {
+  if (e != NULL)
+  {
     BN_free(r->e);
     r->e = e;
   }
-  if (d != NULL) {
+  if (d != NULL)
+  {
     BN_free(r->d);
     r->d = d;
   }
@@ -312,14 +337,16 @@ int RSA_set0_factors(RSA *r, BIGNUM *p, BIGNUM *q)
   * parameters MUST be non-NULL.
   */
   if ((r->p == NULL && p == NULL)
-    || (r->q == NULL && q == NULL))
+      || (r->q == NULL && q == NULL))
     return 0;
 
-  if (p != NULL) {
+  if (p != NULL)
+  {
     BN_free(r->p);
     r->p = p;
   }
-  if (q != NULL) {
+  if (q != NULL)
+  {
     BN_free(r->q);
     r->q = q;
   }
@@ -333,19 +360,22 @@ int RSA_set0_crt_params(RSA *r, BIGNUM *dmp1, BIGNUM *dmq1, BIGNUM *iqmp)
   * parameters MUST be non-NULL.
   */
   if ((r->dmp1 == NULL && dmp1 == NULL)
-    || (r->dmq1 == NULL && dmq1 == NULL)
-    || (r->iqmp == NULL && iqmp == NULL))
+      || (r->dmq1 == NULL && dmq1 == NULL)
+      || (r->iqmp == NULL && iqmp == NULL))
     return 0;
 
-  if (dmp1 != NULL) {
+  if (dmp1 != NULL)
+  {
     BN_free(r->dmp1);
     r->dmp1 = dmp1;
   }
-  if (dmq1 != NULL) {
+  if (dmq1 != NULL)
+  {
     BN_free(r->dmq1);
     r->dmq1 = dmq1;
   }
-  if (iqmp != NULL) {
+  if (iqmp != NULL)
+  {
     BN_free(r->iqmp);
     r->iqmp = iqmp;
   }
@@ -369,7 +399,7 @@ void EVP_MD_CTX_free(EVP_MD_CTX *ctx)
 }
 
 void X509_REQ_get0_signature(const X509_REQ *req, const ASN1_BIT_STRING **psig,
-  const X509_ALGOR **palg)
+                             const X509_ALGOR **palg)
 {
   if (psig != NULL)
     *psig = req->signature;
@@ -416,7 +446,7 @@ const STACK_OF(X509_EXTENSION) *X509_CRL_get0_extensions(const X509_CRL *crl)
 }
 
 void X509_CRL_get0_signature(const X509_CRL *crl, const ASN1_BIT_STRING **psig,
-  const X509_ALGOR **palg)
+                             const X509_ALGOR **palg)
 {
   if (psig != NULL)
     *psig = crl->signature;
@@ -446,7 +476,7 @@ int i2d_re_X509_tbs(X509 *x, unsigned char **pp)
 }
 
 void X509_get0_signature(ASN1_BIT_STRING **psig, X509_ALGOR **palg,
-  const X509 *x)
+                         const X509 *x)
 {
   if (psig)
     *psig = x->signature;
@@ -487,14 +517,14 @@ X509_STORE *TS_VERIFY_CTX_set_store(TS_VERIFY_CTX *ctx, X509_STORE *s)
 }
 
 STACK_OF(X509) *TS_VERIFY_CTS_set_certs(TS_VERIFY_CTX *ctx,
-  STACK_OF(X509) *certs)
+                                        STACK_OF(X509) *certs)
 {
   ctx->certs = certs;
   return ctx->certs;
 }
 
 unsigned char *TS_VERIFY_CTX_set_imprint(TS_VERIFY_CTX *ctx,
-  unsigned char *hexstr, long len)
+    unsigned char *hexstr, long len)
 {
   ctx->imprint = hexstr;
   ctx->imprint_len = len;

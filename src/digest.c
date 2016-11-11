@@ -41,7 +41,7 @@ static LUA_FUNCTION(openssl_digest_new)
     EVP_MD_CTX* ctx = EVP_MD_CTX_create();
     EVP_MD_CTX_init(ctx);
     lua_pushlightuserdata(L, e);
-    lua_rawseti(L,LUA_REGISTRYINDEX, (int)ctx);
+    lua_rawseti(L, LUA_REGISTRYINDEX, (int)ctx);
     ret = EVP_DigestInit_ex(ctx, md, e);
     if (ret == 1)
     {

@@ -368,7 +368,7 @@ static int openssl_pkcs7_dataFinal(PKCS7 *p7, BIO *bio)
       os = M_ASN1_OCTET_STRING_new();
 #else
       os = ASN1_OCTET_STRING_new();
-#endif	  
+#endif
       if (!os)
       {
         PKCS7err(PKCS7_F_PKCS7_DATAFINAL, ERR_R_MALLOC_FAILURE);
@@ -478,7 +478,7 @@ static int openssl_pkcs7_dataFinal(PKCS7 *p7, BIO *bio)
     M_ASN1_OCTET_STRING_set(p7->d.digest->digest, md_data, md_len);
 #else
     ASN1_OCTET_STRING_set(p7->d.digest->digest, md_data, md_len);
-#endif	  
+#endif
   }
 
   if (!PKCS7_is_detached(p7))
@@ -602,7 +602,7 @@ static LUA_FUNCTION(openssl_pkcs7_sign_digest)
       os = M_ASN1_OCTET_STRING_new();
 #else
       os = ASN1_OCTET_STRING_new();
-#endif	
+#endif
       if (!os)
       {
         PKCS7err(PKCS7_F_PKCS7_DATAFINAL, ERR_R_MALLOC_FAILURE);
@@ -620,7 +620,7 @@ static LUA_FUNCTION(openssl_pkcs7_sign_digest)
       os = M_ASN1_OCTET_STRING_new();
 #else
       os = ASN1_OCTET_STRING_new();
-#endif	
+#endif
       if (!os)
       {
         PKCS7err(PKCS7_F_PKCS7_DATAFINAL, ERR_R_MALLOC_FAILURE);
@@ -688,7 +688,7 @@ static LUA_FUNCTION(openssl_pkcs7_sign_digest)
         {
           memcpy(EVP_MD_CTX_md_data(mdc), data, l);
         }
-#endif	  
+#endif
         else
         {
           EVP_MD_CTX_free(mdc);

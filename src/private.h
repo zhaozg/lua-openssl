@@ -40,21 +40,21 @@ int EVP_PKEY_up_ref(EVP_PKEY *pkey);
 DH *EVP_PKEY_get0_DH(EVP_PKEY *pkey);
 int DH_bits(const DH *dh);
 void DH_get0_key(const DH *dh,
-  const BIGNUM **pub_key, const BIGNUM **priv_key);
+                 const BIGNUM **pub_key, const BIGNUM **priv_key);
 int DH_set0_key(DH *dh, BIGNUM *pub_key, BIGNUM *priv_key);
 void DH_get0_pqg(const DH *dh,
-  const BIGNUM **p, const BIGNUM **q, const BIGNUM **g);
+                 const BIGNUM **p, const BIGNUM **q, const BIGNUM **g);
 int DH_set0_pqg(DH *dh, BIGNUM *p, BIGNUM *q, BIGNUM *g);
 void DSA_get0_pqg(const DSA *dsa,
-  const BIGNUM **p, const BIGNUM **q, const BIGNUM **g);
+                  const BIGNUM **p, const BIGNUM **q, const BIGNUM **g);
 
 EC_KEY *EVP_PKEY_get0_EC_KEY(EVP_PKEY *pkey);
 void ECDSA_SIG_get0(const ECDSA_SIG *sig,
-  const BIGNUM **pr, const BIGNUM **ps);
+                    const BIGNUM **pr, const BIGNUM **ps);
 int ECDSA_SIG_set0(ECDSA_SIG *sig, BIGNUM *r, BIGNUM *s);
 int RSA_bits(const RSA *r);
 void RSA_get0_key(const RSA *r,
-  const BIGNUM **n, const BIGNUM **e, const BIGNUM **d);
+                  const BIGNUM **n, const BIGNUM **e, const BIGNUM **d);
 int RSA_set0_key(RSA *r, BIGNUM *n, BIGNUM *e, BIGNUM *d);
 int RSA_set0_factors(RSA *r, BIGNUM *p, BIGNUM *q);
 int RSA_set0_crt_params(RSA *r, BIGNUM *dmp1, BIGNUM *dmq1, BIGNUM *iqmp);
@@ -65,10 +65,10 @@ RSA *EVP_PKEY_get0_RSA(EVP_PKEY *pkey);
 DSA *EVP_PKEY_get0_DSA(EVP_PKEY *pkey);
 int DSA_bits(const DSA *dsa);
 void DSA_get0_key(const DSA *d,
-  const BIGNUM **pub_key, const BIGNUM **priv_key);
+                  const BIGNUM **pub_key, const BIGNUM **priv_key);
 int DSA_set0_key(DSA *d, BIGNUM *pub_key, BIGNUM *priv_key);
 void DSA_get0_pqg(const DSA *d,
-  const BIGNUM **p, const BIGNUM **q, const BIGNUM **g);
+                  const BIGNUM **p, const BIGNUM **q, const BIGNUM **g);
 int DSA_set0_pqg(DSA *d, BIGNUM *p, BIGNUM *q, BIGNUM *g);
 
 HMAC_CTX *HMAC_CTX_new(void);
@@ -78,11 +78,11 @@ EVP_MD_CTX *EVP_MD_CTX_new(void);
 int EVP_MD_CTX_reset(EVP_MD_CTX *ctx);
 void EVP_MD_CTX_free(EVP_MD_CTX *ctx);
 void X509_REQ_get0_signature(const X509_REQ *req, const ASN1_BIT_STRING **psig,
-  const X509_ALGOR **palg);
+                             const X509_ALGOR **palg);
 X509_PUBKEY *X509_REQ_get_X509_PUBKEY(X509_REQ *req);
 int X509_PUBKEY_get0_param(ASN1_OBJECT **ppkalg,
-  const unsigned char **pk, int *ppklen,
-  X509_ALGOR **pa, X509_PUBKEY *pub);
+                           const unsigned char **pk, int *ppklen,
+                           X509_ALGOR **pa, X509_PUBKEY *pub);
 const ASN1_INTEGER *X509_get0_serialNumber(const X509 *a);
 const STACK_OF(X509_EXTENSION) *X509_get0_extensions(const X509 *x);
 int i2d_re_X509_REQ_tbs(X509_REQ *req, unsigned char **pp);
@@ -93,7 +93,7 @@ const STACK_OF(X509_EXTENSION) *X509_REVOKED_get0_extensions(const X509_REVOKED 
 const STACK_OF(X509_EXTENSION) *X509_CRL_get0_extensions(const X509_CRL *crl);
 
 void X509_CRL_get0_signature(const X509_CRL *crl, const ASN1_BIT_STRING **psig,
-  const X509_ALGOR **palg);
+                             const X509_ALGOR **palg);
 const ASN1_INTEGER *TS_STATUS_INFO_get0_status(const TS_STATUS_INFO *a);
 const STACK_OF(ASN1_UTF8STRING) *
 TS_STATUS_INFO_get0_text(const TS_STATUS_INFO *a);
@@ -105,14 +105,14 @@ int TS_VERIFY_CTX_set_flags(TS_VERIFY_CTX *ctx, int f);
 BIO *TS_VERIFY_CTX_set_data(TS_VERIFY_CTX *ctx, BIO *b);
 X509_STORE *TS_VERIFY_CTX_set_store(TS_VERIFY_CTX *ctx, X509_STORE *s);
 STACK_OF(X509) *TS_VERIFY_CTS_set_certs(TS_VERIFY_CTX *ctx,
-  STACK_OF(X509) *certs);
+                                        STACK_OF(X509) *certs);
 unsigned char *TS_VERIFY_CTX_set_imprint(TS_VERIFY_CTX *ctx,
-  unsigned char *hexstr, long len);
+    unsigned char *hexstr, long len);
 
 #if OPENSSL_VERSION_NUMBER < 0x10002000L
 int i2d_re_X509_tbs(X509 *x, unsigned char **pp);
 void X509_get0_signature(ASN1_BIT_STRING **psig, X509_ALGOR **palg,
-  const X509 *x);
+                         const X509 *x);
 int X509_get_signature_nid(const X509 *x);
 #endif
 

@@ -32,7 +32,7 @@ static LUA_FUNCTION(openssl_dh_parse)
   const BIGNUM *p = NULL, *q = NULL, *g = NULL, *pub = NULL, *pri = NULL;
   DH* dh = CHECK_OBJECT(1, DH, "openssl.dh");
   lua_newtable(L);
-  
+
   lua_pushinteger(L, DH_size(dh));
   lua_setfield(L, -2, "size");
 

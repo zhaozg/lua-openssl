@@ -1232,7 +1232,8 @@ int openssl_push_asn1object(lua_State* L, const ASN1_OBJECT* obj)
 
 int openssl_push_asn1(lua_State* L, const ASN1_STRING* string, int type)
 {
-  if (string == NULL) {
+  if (string == NULL)
+  {
     lua_pushnil(L);
     return 1;
   }

@@ -87,7 +87,7 @@ static int openssl_xattr_data(lua_State*L)
     int ret;
     const char *data = luaL_checklstring(L, 3, &size);
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
-    if (X509_ATTRIBUTE_count(attr)==1)
+    if (X509_ATTRIBUTE_count(attr) == 1)
       ASN1_TYPE_free((ASN1_TYPE*)attr->value.ptr);
     else
       sk_ASN1_TYPE_pop_free(attr->value.set, ASN1_TYPE_free);

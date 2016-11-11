@@ -344,7 +344,8 @@ static LUA_FUNCTION(openssl_ts_resp_export)
 
 static int openssl_push_ts_accuracy(lua_State*L, const TS_ACCURACY* accuracy)
 {
-  if (accuracy) {
+  if (accuracy)
+  {
     lua_newtable(L);
 
     PUSH_ASN1_INTEGER(L, TS_ACCURACY_get_micros(accuracy));
@@ -383,7 +384,7 @@ static int openssl_push_ts_msg_imprint(lua_State*L, TS_MSG_IMPRINT* imprint)
 static int openssl_push_ts_tst_info(lua_State*L, TS_TST_INFO* info)
 {
   lua_newtable(L);
-  
+
   lua_pushinteger(L, TS_TST_INFO_get_version(info));
   lua_setfield(L, -2, "version");
 
@@ -392,7 +393,7 @@ static int openssl_push_ts_tst_info(lua_State*L, TS_TST_INFO* info)
 
   openssl_push_ts_msg_imprint(L, TS_TST_INFO_get_msg_imprint(info));
   lua_setfield(L, -2, "msg_imprint");
-  
+
   PUSH_ASN1_INTEGER(L, TS_TST_INFO_get_serial(info));
   lua_setfield(L, -2, "serial");
 

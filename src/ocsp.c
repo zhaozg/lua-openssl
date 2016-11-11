@@ -178,7 +178,8 @@ static int openssl_push_ocsp_certid(lua_State*L, OCSP_CERTID* cid)
   ASN1_INTEGER *serial = NULL;
 
   int ret = OCSP_id_get0_info(&iNameHash, &md, &ikeyHash, &serial, cid);
-  if (ret == 1) {
+  if (ret == 1)
+  {
     lua_newtable(L);
 
     PUSH_ASN1_OCTET_STRING(L, iNameHash);
@@ -232,7 +233,8 @@ static int openssl_ocsp_request_parse(lua_State*L)
 
   num = OCSP_REQUEST_get_ext_count(req);
   lua_newtable(L);
-  for (i = 0; i < num; i++) {
+  for (i = 0; i < num; i++)
+  {
     X509_EXTENSION* e = OCSP_REQUEST_get_ext(req, i);
     PUSH_OBJECT(e, "openssl.x509_extension");
     lua_rawseti(L, -2, i + 1);

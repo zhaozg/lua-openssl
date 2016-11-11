@@ -12,7 +12,7 @@
 
 void openssl_xstore_free(X509_STORE* ctx)
 {
-/* hack openssl bugs */
+  /* hack openssl bugs */
 #if OPENSSL_VERSION_NUMBER < 0x10002000L
   if (ctx->references > 1)
     CRYPTO_add(&ctx->references, -1, CRYPTO_LOCK_X509_STORE);

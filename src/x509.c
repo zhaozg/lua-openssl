@@ -381,11 +381,14 @@ static LUA_FUNCTION(openssl_x509_check)
     STACK_OF(X509)* untrustedchain = lua_isnoneornil(L, 3) ?  NULL : (STACK_OF(X509)*)openssl_sk_x509_fromtable(L, 3);
     int purpose = 0;
     int ret = 0;
-    if (!lua_isnone(L, 4)) {
+    if (!lua_isnone(L, 4))
+    {
       int purpose_id = X509_PURPOSE_get_by_sname((char*)luaL_optstring(L, 4, "any"));
-      if (purpose_id >= 0) {
+      if (purpose_id >= 0)
+      {
         X509_PURPOSE* ppurpose = X509_PURPOSE_get0(purpose_id);
-        if (ppurpose) {
+        if (ppurpose)
+        {
           purpose = ppurpose->purpose;
         }
       }
@@ -409,7 +412,9 @@ static LUA_FUNCTION(openssl_x509_check_host)
   {
     const char *hostname = lua_tostring(L, 2);
     lua_pushboolean(L, X509_check_host(cert, hostname, strlen(hostname), 0, NULL));
-  } else {
+  }
+  else
+  {
     lua_pushboolean(L, 0);
   }
   return 1;
@@ -422,7 +427,9 @@ static LUA_FUNCTION(openssl_x509_check_email)
   {
     const char *email = lua_tostring(L, 2);
     lua_pushboolean(L, X509_check_email(cert, email, strlen(email), 0));
-  } else {
+  }
+  else
+  {
     lua_pushboolean(L, 0);
   }
   return 1;
@@ -435,7 +442,9 @@ static LUA_FUNCTION(openssl_x509_check_ip_asc)
   {
     const char *ip_asc = lua_tostring(L, 2);
     lua_pushboolean(L, X509_check_ip_asc(cert, ip_asc, 0));
-  } else {
+  }
+  else
+  {
     lua_pushboolean(L, 0);
   }
   return 1;
@@ -742,7 +751,8 @@ static int openssl_x509_extensions(lua_State* L)
     for (i = 0; i < n; i++)
       sk_X509_EXTENSION_delete(exts, i);
     n = sk_X509_EXTENSION_num(others);
-    for (i = 0; i < n; i++) {
+    for (i = 0; i < n; i++)
+    {
       X509_EXTENSION* ext = sk_X509_EXTENSION_value(others, i);
       sk_X509_EXTENSION_push(exts, ext);
     }
@@ -914,7 +924,8 @@ static int openssl_x509_verify(lua_State*L)
       else
         lua_pushnil(L);
 
-      if (palg) {
+      if (palg)
+      {
         X509_ALGOR *alg = X509_ALGOR_dup((X509_ALGOR *)palg);
         PUSH_OBJECT(alg, "openssl.x509_algor");
       }
@@ -940,7 +951,7 @@ static luaL_Reg x509_funcs[] =
 #if OPENSSL_VERSION_NUMBER > 0x10002000L
   {"check_host",  openssl_x509_check_host},
   {"check_email", openssl_x509_check_email},
-  {"check_ip_asc",openssl_x509_check_ip_asc},
+  {"check_ip_asc", openssl_x509_check_ip_asc},
 #endif
   {"pubkey",      openssl_x509_public_key},
   {"version",     openssl_x509_version},

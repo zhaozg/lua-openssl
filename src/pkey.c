@@ -384,8 +384,8 @@ static LUA_FUNCTION(openssl_pkey_new)
           lua_pop(L, 1);
 
           if (RSA_set0_key(rsa, n, e, d) == 1
-            && RSA_set0_factors(rsa, p, q) == 1
-            && RSA_set0_crt_params(rsa, dmp1, dmq1, iqmp) == 1)
+              && RSA_set0_factors(rsa, p, q) == 1
+              && RSA_set0_crt_params(rsa, dmp1, dmq1, iqmp) == 1)
           {
             if (!EVP_PKEY_assign_RSA(pkey, rsa))
             {
@@ -395,7 +395,8 @@ static LUA_FUNCTION(openssl_pkey_new)
               pkey = NULL;
             }
           }
-          else {
+          else
+          {
             RSA_free(rsa);
             rsa = NULL;
             EVP_PKEY_free(pkey);
@@ -435,8 +436,8 @@ static LUA_FUNCTION(openssl_pkey_new)
           pub_key = BN_get(L, -1);
           lua_pop(L, 1);
 
-          if (DSA_set0_key(dsa, pub_key, priv_key)==1
-            && DSA_set0_pqg(dsa, p, q, g))
+          if (DSA_set0_key(dsa, pub_key, priv_key) == 1
+              && DSA_set0_pqg(dsa, p, q, g))
           {
             if (!EVP_PKEY_assign_DSA(pkey, dsa))
             {
@@ -445,7 +446,8 @@ static LUA_FUNCTION(openssl_pkey_new)
               pkey = NULL;
             }
           }
-          else {
+          else
+          {
             DSA_free(dsa);
             dsa = NULL;
             EVP_PKEY_free(pkey);
@@ -487,7 +489,7 @@ static LUA_FUNCTION(openssl_pkey_new)
           lua_pop(L, 1);
 
           if (DH_set0_key(dh, pub_key, priv_key) == 1
-            && DH_set0_pqg(dh, p, q, g))
+              && DH_set0_pqg(dh, p, q, g))
           {
             if (!EVP_PKEY_assign_DH(pkey, dh))
             {
@@ -497,7 +499,8 @@ static LUA_FUNCTION(openssl_pkey_new)
               pkey = NULL;
             }
           }
-          else {
+          else
+          {
             DH_free(dh);
             dh = NULL;
             EVP_PKEY_free(pkey);
@@ -567,13 +570,15 @@ static LUA_FUNCTION(openssl_pkey_new)
       }
       EC_GROUP_free(group);
     }
-  } else if (auxiliar_isclass(L, "openssl.rsa", 1)) {
+  }
+  else if (auxiliar_isclass(L, "openssl.rsa", 1))
+  {
     RSA* rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");
     pkey = EVP_PKEY_new();
     EVP_PKEY_assign_RSA(pkey, rsa);
   }
 
-  if (pkey && EVP_PKEY_id(pkey)!=NID_undef)
+  if (pkey && EVP_PKEY_id(pkey) != NID_undef)
   {
     PUSH_OBJECT(pkey, "openssl.evp_pkey");
     return 1;
@@ -722,7 +727,7 @@ static LUA_FUNCTION(openssl_pkey_free)
 static LUA_FUNCTION(openssl_pkey_parse)
 {
   EVP_PKEY *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
-  if (EVP_PKEY_id(pkey)!=NID_undef)
+  if (EVP_PKEY_id(pkey) != NID_undef)
   {
     lua_newtable(L);
 
@@ -908,7 +913,7 @@ static LUA_FUNCTION(openssl_ec_userId)
 
   int ret = 0;
   if (!pkey || EVP_PKEY_type(EVP_PKEY_id(pkey)) != EVP_PKEY_EC
-    || (ec = EVP_PKEY_get0_EC_KEY(pkey)) == NULL )
+      || (ec = EVP_PKEY_get0_EC_KEY(pkey)) == NULL )
   {
     luaL_argerror(L, 1, "only support EC key");
   }
@@ -949,7 +954,7 @@ static LUA_FUNCTION(openssl_dh_compute_key)
   DH *dh = NULL;
 
   if (!pkey || EVP_PKEY_type(EVP_PKEY_id(pkey)) != EVP_PKEY_DH
-    || (dh = EVP_PKEY_get0_DH(pkey))==NULL)
+      || (dh = EVP_PKEY_get0_DH(pkey)) == NULL)
   {
     luaL_argerror(L, 1, "only support DH private key");
   }
@@ -995,17 +1000,21 @@ static LUA_FUNCTION(openssl_sign)
     EVP_MD_CTX *ctx = EVP_MD_CTX_create();
 
     ret = EVP_DigestSignInit(ctx, NULL, mdtype, NULL, pkey);
-    if (ret == 1) {
+    if (ret == 1)
+    {
       ret = EVP_DigestSignUpdate(ctx, data, data_len);
-      if (ret == 1) {
+      if (ret == 1)
+      {
         size_t siglen = 0;
         unsigned char *sigbuf = NULL;
         ret = EVP_DigestSignFinal(ctx, NULL, &siglen);
-        if (ret == 1) {
+        if (ret == 1)
+        {
           siglen += 2;
           sigbuf = OPENSSL_malloc(siglen);
           ret = EVP_DigestSignFinal(ctx, sigbuf, &siglen);
-          if (ret == 1) {
+          if (ret == 1)
+          {
             lua_pushlstring(L, (char *)sigbuf, siglen);
           }
           else
@@ -1050,16 +1059,20 @@ static LUA_FUNCTION(openssl_verify)
     EVP_MD_CTX *ctx = EVP_MD_CTX_create();
 
     ret = EVP_DigestVerifyInit(ctx, NULL, mdtype, NULL, pkey);
-    if (ret == 1) {
+    if (ret == 1)
+    {
       ret = EVP_DigestVerifyUpdate(ctx, data, data_len);
-      if (ret == 1) {
+      if (ret == 1)
+      {
         ret = EVP_DigestVerifyFinal(ctx, (unsigned char *)signature, signature_len);
-        if (ret == 1) {
+        if (ret == 1)
+        {
           lua_pushboolean(L, ret == 1);
         }
         else
           ret = openssl_pushresult(L, ret);
-      }else
+      }
+      else
         ret = openssl_pushresult(L, ret);
     }
     else
@@ -1355,7 +1368,7 @@ static LUA_FUNCTION(openssl_open)
 
     EVP_CIPHER_CTX_init(ctx);
     if (EVP_OpenInit(ctx, cipher, (unsigned char *)ekey, ekey_len, (const unsigned char *)iv, pkey)
-      && EVP_OpenUpdate(ctx, buf, &len1, (unsigned char *)data, data_len))
+        && EVP_OpenUpdate(ctx, buf, &len1, (unsigned char *)data, data_len))
     {
       len2 = data_len - len1;
       if (!EVP_OpenFinal(ctx, buf + len1, &len2) || (len1 + len2 == 0))

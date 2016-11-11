@@ -103,7 +103,7 @@ static LUA_FUNCTION(openssl_rsa_sign)
   unsigned char* sig = OPENSSL_malloc(RSA_size(rsa));
   int flen = l;
   unsigned int slen = RSA_size(rsa);
-  
+
   int ret = RSA_sign(type, msg, flen, sig, &slen, rsa);
   if (ret == 1)
   {
@@ -139,7 +139,7 @@ static LUA_FUNCTION(openssl_rsa_parse)
   RSA* rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");
   RSA_get0_key(rsa, &n, &e, &d);
   RSA_get0_factors(rsa, &p, &q);
-  RSA_get0_crt_params(rsa, &dmp1, &dmq1,&iqmp);
+  RSA_get0_crt_params(rsa, &dmp1, &dmq1, &iqmp);
 
 
   lua_newtable(L);

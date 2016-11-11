@@ -91,7 +91,8 @@ static int reason_get(lua_State*L, int reasonidx)
   return reason;
 }
 
-static int openssl_x509_revoked_get_reason(X509_REVOKED *revoked) {
+static int openssl_x509_revoked_get_reason(X509_REVOKED *revoked)
+{
   int crit = 0;
   int reason;
   ASN1_ENUMERATED *areason = X509_REVOKED_get_ext_d2i(revoked, NID_crl_reason, &crit, NULL);
@@ -131,7 +132,8 @@ static X509_REVOKED *create_revoked(const BIGNUM* bn, time_t t, int reason)
   return revoked;
 }
 
-static int openssl_revoked2table(lua_State*L, X509_REVOKED *revoked) {
+static int openssl_revoked2table(lua_State*L, X509_REVOKED *revoked)
+{
   int reason = openssl_x509_revoked_get_reason(revoked);
   lua_newtable(L);
   AUXILIAR_SET(L, -1, "code", reason, number);
@@ -460,17 +462,17 @@ static LUA_FUNCTION(openssl_crl_verify)
   X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
   EVP_PKEY *pub = NULL;
   int ret;
-  luaL_argcheck(L, 
-    auxiliar_isclass(L, "openssl.x509", 2) ||
-    auxiliar_isclass(L, "openssl.evp_pkey", 2),
-    2,
-    "must be x509 or evp_pkey object");
+  luaL_argcheck(L,
+                auxiliar_isclass(L, "openssl.x509", 2) ||
+                auxiliar_isclass(L, "openssl.evp_pkey", 2),
+                2,
+                "must be x509 or evp_pkey object");
   if (auxiliar_isclass(L, "openssl.evp_pkey", 2))
   {
     pub = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
     ret = X509_CRL_verify(crl, pub);
   }
-  else 
+  else
   {
     X509* cacert = CHECK_OBJECT(2, X509, "openssl.x509");
     pub = X509_get_pubkey(cacert);
@@ -478,7 +480,7 @@ static LUA_FUNCTION(openssl_crl_verify)
     EVP_PKEY_free(pub);
   }
 
-  
+
   return openssl_pushresult(L, ret);
 }
 
@@ -625,7 +627,8 @@ static LUA_FUNCTION(openssl_crl_parse)
   }
   {
     ASN1_INTEGER *crl_number = X509_CRL_get_ext_d2i(crl, NID_crl_number, NULL, NULL);
-    if (crl_number) {
+    if (crl_number)
+    {
       PUSH_ASN1_INTEGER(L, crl_number);
       lua_setfield(L, -2, "crl_number");
     }
@@ -641,7 +644,8 @@ static LUA_FUNCTION(openssl_crl_parse)
 
   {
     STACK_OF(X509_REVOKED) *revokeds = X509_CRL_get_REVOKED(crl);
-    if (revokeds) {
+    if (revokeds)
+    {
       num = sk_X509_REVOKED_num(revokeds);
       lua_newtable(L);
       for (i = 0; i < num; i++)
@@ -713,7 +717,7 @@ static LUA_FUNCTION(openssl_crl_count)
 {
   X509_CRL * crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
   STACK_OF(X509_REVOKED) *revokeds = X509_CRL_get_REVOKED(crl);
-  int n = revokeds ? sk_X509_REVOKED_num(revokeds): 0;
+  int n = revokeds ? sk_X509_REVOKED_num(revokeds) : 0;
   lua_pushinteger(L, n);
   return 1;
 }
@@ -799,7 +803,8 @@ static int openssl_revoked_info(lua_State* L)
 static int openssl_revoked_reason(lua_State* L)
 {
   X509_REVOKED* revoked = CHECK_OBJECT(1, X509_REVOKED, "openssl.x509_revoked");
-  if (lua_isnone(L, 2)) {
+  if (lua_isnone(L, 2))
+  {
     int reason = openssl_x509_revoked_get_reason(revoked);
     lua_pushinteger(L, reason);
     lua_pushstring(L, openssl_i2s_revoke_reason(reason));

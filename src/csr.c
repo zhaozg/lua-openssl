@@ -215,7 +215,7 @@ static LUA_FUNCTION(openssl_csr_sign)
     if (pubkey == NULL)
     {
       BIO* bio = BIO_new(BIO_s_mem());
-      if ((ret = i2d_PUBKEY_bio(bio, pkey))==1)
+      if ((ret = i2d_PUBKEY_bio(bio, pkey)) == 1)
       {
         pubkey = d2i_PUBKEY_bio(bio, NULL);
         if (pubkey)
