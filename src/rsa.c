@@ -31,7 +31,7 @@ static int is_private(const RSA* rsa)
 {
   const BIGNUM* d = NULL;
   RSA_get0_key(rsa, NULL, NULL, &d);
-  return d == NULL;
+  return d != NULL;
 };
 
 static LUA_FUNCTION(openssl_rsa_isprivate)
