@@ -91,7 +91,7 @@ TestCipherMY = {}
         b = assert(obj1:update(a))
         b = b..assert(obj1:final())
         assertEquals(b,self.msg)
-        assert(#a>#self.msg)
+        assert(#a >= #self.msg)
 
         obj = C:encrypt_new(self.key)
         aa = assert(obj:update(self.msg))
@@ -101,7 +101,7 @@ TestCipherMY = {}
         bb = assert(obj1:update(aa))
         bb = bb..assert(obj1:final())
         assertEquals(self.msg,bb)
-        assert(#self.msg < #aa)
+        assert(#self.msg <= #aa)
 
         local r = openssl.random(16)
         local k,i = C:BytesToKey(r)
@@ -112,4 +112,34 @@ TestCipherMY = {}
         local t = obj:info()
         assertEquals(#k,t.key_length)
         assertEquals(#i,t.iv_length)
+    end
+
+    function TestCipherMY:testAesCTR()
+
+        local C = cipher.get('aes-128-ctr')
+        local key = '0123456789abcefg'
+        local iv = string.rep('\0',16)
+
+        local a,b,c,aa,bb,cc
+        local obj,obj1
+
+        obj = C:new(true,self.key)
+        a = assert(obj:update(self.msg))
+        a = a..obj:final()
+
+        obj1 = C:new(false,self.key)
+        b = assert(obj1:update(a))
+        b = b..assert(obj1:final())
+        assertEquals(b,self.msg)
+        assert(#a>=#self.msg)
+
+        obj = C:encrypt_new(self.key)
+        aa = assert(obj:update(self.msg))
+        aa = aa..assert(obj:final())
+
+        obj1 = C:decrypt_new(self.key)
+        bb = assert(obj1:update(aa))
+        bb = bb..assert(obj1:final())
+        assertEquals(self.msg,bb)
+        assert(#self.msg <= #aa)
     end
