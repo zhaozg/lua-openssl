@@ -440,8 +440,8 @@ static LUA_FUNCTION(openssl_ts_resp_info)
   lua_newtable(L);
 
   {
-    lua_newtable(L);
     TS_STATUS_INFO *si = TS_RESP_get_status_info(res);
+    lua_newtable(L);
     PUSH_ASN1_INTEGER(L, TS_STATUS_INFO_get0_status(si));
     lua_setfield(L, -2, "status");
 
