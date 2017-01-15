@@ -34,7 +34,6 @@ int openssl_pkey_is_private(EVP_PKEY* pkey)
   {
 #ifndef OPENSSL_NO_RSA
   case EVP_PKEY_RSA:
-  case EVP_PKEY_RSA2:
   {
     RSA *rsa = EVP_PKEY_get0_RSA(pkey);
     const BIGNUM *d = NULL;
@@ -46,10 +45,6 @@ int openssl_pkey_is_private(EVP_PKEY* pkey)
 #endif
 #ifndef OPENSSL_NO_DSA
   case EVP_PKEY_DSA:
-  case EVP_PKEY_DSA1:
-  case EVP_PKEY_DSA2:
-  case EVP_PKEY_DSA3:
-  case EVP_PKEY_DSA4:
   {
     DSA *dsa = EVP_PKEY_get0_DSA(pkey);
     const BIGNUM *p = NULL;
@@ -100,6 +95,8 @@ static int openssl_pkey_read(lua_State*L)
       type = EVP_PKEY_DSA;
     else if (strcmp(passphrase, "ec") == 0 || strcmp(passphrase, "EC") == 0)
       type = EVP_PKEY_EC;
+    else if (strcmp(passphrase, "dh") == 0 || strcmp(passphrase, "DH") == 0)
+      type = EVP_PKEY_DH;
   }
 
   if (fmt == FORMAT_AUTO)
@@ -111,9 +108,9 @@ static int openssl_pkey_read(lua_State*L)
   {
     if (fmt == FORMAT_PEM)
     {
-      key = PEM_read_bio_PUBKEY(in, NULL, NULL, (void*)passphrase);
-      BIO_reset(in);
-      if (key == NULL && type == EVP_PKEY_RSA)
+      switch (type)
+      {
+      case EVP_PKEY_RSA:
       {
         RSA* rsa = PEM_read_bio_RSAPublicKey(in, NULL, NULL, NULL);
         if (rsa)
@@ -121,21 +118,109 @@ static int openssl_pkey_read(lua_State*L)
           key = EVP_PKEY_new();
           EVP_PKEY_assign_RSA(key, rsa);
         }
+        break;
       }
+      case EVP_PKEY_DSA:
+      {
+        DSA* dsa = PEM_read_bio_DSA_PUBKEY(in, NULL, NULL, NULL);
+        if (dsa)
+        {
+          key = EVP_PKEY_new();
+          EVP_PKEY_assign_DSA(key, dsa);
+        }
+        break;
+      }
+      case EVP_PKEY_DH:
+      {
+        DH *dh = PEM_read_bio_DHparams(in, NULL, NULL, NULL);
+        if (dh)
+        {
+          key = EVP_PKEY_new();
+          EVP_PKEY_assign_DH(key, dh);
+        }
+        break;
+      }
+      case EVP_PKEY_EC:
+      {
+        EC_KEY *ec = PEM_read_bio_EC_PUBKEY(in, NULL, NULL, NULL);
+        if (ec)
+        {
+          key = EVP_PKEY_new();
+          EVP_PKEY_assign_EC_KEY(key, ec);
+        }
+        break;
+      }
+      default:
+      {
+        key = PEM_read_bio_PUBKEY(in, NULL, NULL, NULL);
+        break;
+      }
+      }
+      BIO_reset(in);
     }
     else if (fmt == FORMAT_DER)
     {
-      key = d2i_PUBKEY_bio(in, NULL);
-      BIO_reset(in);
-      if (!key && type != -1)
+      switch (type)
+      {
+      case EVP_PKEY_RSA:
+      {
+        RSA *rsa = d2i_RSAPublicKey_bio(in, NULL);
+        if (rsa)
+        {
+          key = EVP_PKEY_new();
+          EVP_PKEY_assign_RSA(key, rsa);
+        }
+        break;
+      }
+      case EVP_PKEY_DSA:
+      case EVP_PKEY_DH:
+      case EVP_PKEY_EC:
       {
         char * bio_mem_ptr;
         long bio_mem_len;
-
+        const unsigned char **pp;
         bio_mem_len = BIO_get_mem_data(in, &bio_mem_ptr);
-        key = d2i_PublicKey(type, NULL, (const unsigned char **)&bio_mem_ptr, bio_mem_len);
-        BIO_reset(in);
+        pp = (const unsigned char **)&bio_mem_ptr;
+
+        key = d2i_PublicKey(type, NULL, pp, bio_mem_len);
       }
+      /*
+      case EVP_PKEY_DSA:
+      {
+        DSA *dsa = d2i_DSA_PUBKEY_bio(in, NULL);
+        if (dsa)
+        {
+          key = EVP_PKEY_new();
+          EVP_PKEY_assign_DSA(key, dsa);
+        }
+        break;
+      }
+      case EVP_PKEY_DH:
+      {
+        DH *dh = d2i_DHparams_bio(in, NULL);
+        if (dh)
+        {
+          key = EVP_PKEY_new();
+          EVP_PKEY_assign_DH(key, dh);
+        }
+        break;
+      }
+      case EVP_PKEY_EC:
+      {
+        EC_KEY *ec = d2i_EC_PUBKEY_bio(in, NULL);
+        if (ec)
+        {
+          key = EVP_PKEY_new();
+          EVP_PKEY_assign_EC_KEY(key, ec);
+        }
+        break;
+      }
+      */
+      default:
+        key = d2i_PUBKEY_bio(in, NULL);
+        break;
+      }
+      BIO_reset(in);
     }
   }
   else
@@ -147,21 +232,57 @@ static int openssl_pkey_read(lua_State*L)
     }
     else if (fmt == FORMAT_DER)
     {
-      if (passphrase)
-        key = d2i_PKCS8PrivateKey_bio(in, NULL, NULL, (void*)passphrase);
-      else
-        key = d2i_PrivateKey_bio(in, NULL);
-      BIO_reset(in);
-
-      if (!key && type != -1)
+      switch (type)
       {
-        char * bio_mem_ptr;
-        long bio_mem_len;
-
-        bio_mem_len = BIO_get_mem_data(in, &bio_mem_ptr);
-        key = d2i_PrivateKey(type, NULL, (const unsigned char **)&bio_mem_ptr, bio_mem_len);
-        BIO_reset(in);
+      case EVP_PKEY_RSA:
+      {
+        RSA *rsa = d2i_RSAPrivateKey_bio(in, NULL);
+        if (rsa)
+        {
+          key = EVP_PKEY_new();
+          EVP_PKEY_assign_RSA(key, rsa);
+        }
+        break;
       }
+      case EVP_PKEY_DSA:
+      {
+        DSA *dsa = d2i_DSAPrivateKey_bio(in, NULL);
+        if (dsa)
+        {
+          key = EVP_PKEY_new();
+          EVP_PKEY_assign_DSA(key, dsa);
+        }
+        break;
+      }
+      case EVP_PKEY_DH:
+      {
+        DH *dh = d2i_DHparams_bio(in, NULL);
+        if (dh)
+        {
+          key = EVP_PKEY_new();
+          EVP_PKEY_assign_DH(key, dh);
+        }
+      }
+      case EVP_PKEY_EC:
+      {
+        EC_KEY *ec = d2i_ECPrivateKey_bio(in, NULL);
+        if (ec)
+        {
+          key = EVP_PKEY_new();
+          EVP_PKEY_assign_EC_KEY(key, ec);
+        }
+        break;
+      }
+      default:
+      {
+        if (passphrase)
+          key = d2i_PKCS8PrivateKey_bio(in, NULL, NULL, (void*)passphrase);
+        else
+          key = d2i_PrivateKey_bio(in, NULL);
+        break;
+      }
+      }
+      BIO_reset(in);
     }
   }
   BIO_free(in);
@@ -384,8 +505,8 @@ static LUA_FUNCTION(openssl_pkey_new)
           lua_pop(L, 1);
 
           if (RSA_set0_key(rsa, n, e, d) == 1
-              && RSA_set0_factors(rsa, p, q) == 1
-              && RSA_set0_crt_params(rsa, dmp1, dmq1, iqmp) == 1)
+              && (p == NULL || RSA_set0_factors(rsa, p, q) == 1)
+              && (dmp1 == NULL || RSA_set0_crt_params(rsa, dmp1, dmq1, iqmp) == 1) )
           {
             if (!EVP_PKEY_assign_RSA(pkey, rsa))
             {
@@ -634,14 +755,10 @@ static LUA_FUNCTION(openssl_pkey_export)
       switch (EVP_PKEY_type(EVP_PKEY_id(key)))
       {
       case EVP_PKEY_RSA:
-      case EVP_PKEY_RSA2:
         ret = ispriv ? PEM_write_bio_RSAPrivateKey(bio_out, EVP_PKEY_get0_RSA(key), cipher, (unsigned char *)passphrase, passphrase_len, NULL, NULL)
               : PEM_write_bio_RSAPublicKey(bio_out, EVP_PKEY_get0_RSA(key));
         break;
       case EVP_PKEY_DSA:
-      case EVP_PKEY_DSA2:
-      case EVP_PKEY_DSA3:
-      case EVP_PKEY_DSA4:
       {
         ret = ispriv ? PEM_write_bio_DSAPrivateKey(bio_out, EVP_PKEY_get0_DSA(key), cipher, (unsigned char *)passphrase, passphrase_len, NULL, NULL)
               : PEM_write_bio_DSA_PUBKEY(bio_out, EVP_PKEY_get0_DSA(key));
@@ -664,40 +781,68 @@ static LUA_FUNCTION(openssl_pkey_export)
   }
   else
   {
-    if (ispriv)
+    /* out put der */
+    if (exraw == 0)
     {
-      if (passphrase == NULL)
-      {
-        ret = i2d_PrivateKey_bio(bio_out, key);
-      }
-      else
-      {
-        ret = i2d_PKCS8PrivateKey_bio(bio_out, key, cipher, (char *)passphrase, passphrase_len, NULL, NULL);
-      }
+      ret = ispriv ?
+            (passphrase == NULL ? i2d_PrivateKey_bio(bio_out, key) :
+             i2d_PKCS8PrivateKey_bio(bio_out, key, cipher, (char *)passphrase, passphrase_len, NULL, NULL))
+            : i2d_PUBKEY_bio(bio_out, key);
     }
     else
     {
-      int l;
-      l = i2d_PublicKey(key, NULL);
-      if (l > 0)
+      /* output raw key, rsa, ec, dh, dsa */
+      if (ispriv)
       {
-        unsigned char* p = malloc(l);
-        unsigned char* pp = p;
-        l = i2d_PublicKey(key, &pp);
+        switch (EVP_PKEY_type(EVP_PKEY_id(key)))
+        {
+        case EVP_PKEY_RSA:
+          ret = ispriv ? i2d_RSAPrivateKey_bio(bio_out, EVP_PKEY_get0_RSA(key))
+                : i2d_RSAPublicKey_bio(bio_out, EVP_PKEY_get0_RSA(key));
+          break;
+        case EVP_PKEY_DSA:
+        {
+          ret = ispriv ? i2d_DSAPrivateKey_bio(bio_out, EVP_PKEY_get0_DSA(key))
+                : i2d_DSA_PUBKEY_bio(bio_out, EVP_PKEY_get0_DSA(key));
+        }
+        break;
+        case EVP_PKEY_DH:
+          ret = i2d_DHparams_bio(bio_out, EVP_PKEY_get0_DH(key));
+          break;
+#ifndef OPENSSL_NO_EC
+        case EVP_PKEY_EC:
+          ret = ispriv ? i2d_ECPrivateKey_bio(bio_out, EVP_PKEY_get0_EC_KEY(key))
+                : i2d_EC_PUBKEY_bio(bio_out, EVP_PKEY_get0_EC_KEY(key));
+
+          break;
+#endif
+        default:
+          ret = 0;
+          break;
+        }
+      }
+      else
+      {
+        int l = i2d_PublicKey(key, NULL);
         if (l > 0)
         {
-          BIO_write(bio_out, p, l);
-          ret = 1;
+          unsigned char* p = malloc(l);
+          unsigned char* pp = p;
+          l = i2d_PublicKey(key, &pp);
+          if (l > 0)
+          {
+            BIO_write(bio_out, p, l);
+            ret = 1;
+          }
+          else
+            ret = 0;
+          free(p);
         }
         else
           ret = 0;
-        free(p);
       }
-      else
-        ret = 0;
     }
   }
-
 
   if (ret)
   {
@@ -737,7 +882,6 @@ static LUA_FUNCTION(openssl_pkey_parse)
     switch (EVP_PKEY_type(EVP_PKEY_id(pkey)))
     {
     case EVP_PKEY_RSA:
-    case EVP_PKEY_RSA2:
     {
       RSA* rsa = EVP_PKEY_get1_RSA(pkey);
       PUSH_OBJECT(rsa, "openssl.rsa");
@@ -748,9 +892,6 @@ static LUA_FUNCTION(openssl_pkey_parse)
 
     break;
     case EVP_PKEY_DSA:
-    case EVP_PKEY_DSA2:
-    case EVP_PKEY_DSA3:
-    case EVP_PKEY_DSA4:
     {
       DSA* dsa = EVP_PKEY_get1_DSA(pkey);
       PUSH_OBJECT(dsa, "openssl.dsa");
