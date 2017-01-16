@@ -1,5 +1,5 @@
 ---
--- Provide asn1_object, asn1_string, asn1_object as lua object.
+-- Provide asn1\_object, asn1\_string, asn1\_object as lua object.
 -- Sometime when you want to custome x509, you maybe need to use this.
 --
 -- @module asn1

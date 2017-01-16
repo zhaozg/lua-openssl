@@ -37,3 +37,5 @@ doc/
 /src/custom.h
 oscca/
 tmp/
+/src/custom.c
+/src/custom.h
