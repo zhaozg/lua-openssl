@@ -13,14 +13,13 @@ do  -- define module function
 -- @tparam bio|string input
 -- @tparam[opt='auto'] format allow 'auto','der','pem','smime'
 --  auto will only try 'der' or 'pem'
--- @tparam string password for pkcs12
 -- @treturn pkcs7 object or nil
 -- @treturn string content exist only smime format
 function read() end
 
 --- sign message with signcert and signpkey to create pkcs7 object
 -- @tparam string|bio msg
--- @tparam x509 sigcert
+-- @tparam x509 signcert
 -- @tparam evp_pkey signkey
 -- @tparam[opt] stack_of_x509 cacerts
 -- @tparam[opt=0] number flags
@@ -50,6 +49,12 @@ function encrypt() end
 -- @tparam evp_pkey recipkey
 -- @treturn string decrypt message
 function decrypt() end
+
+--- create new empty pkcs7 object, which support flexble sign methods.
+-- @tparam[opt=NID_pkcs7_signed] int oid given pkcs7 type
+-- @tparam[opt=NID_pkcs7_data] int content given pkcs7 content type
+-- @treturn pkcs7 object
+function new() end
 
 end
 
@@ -85,6 +90,30 @@ function verify() end
 -- @tparam evp_pkey recipkey
 -- @treturn string decrypt message
 function decrypt() end
+
+--- pkcs7 sign add signer
+-- @tparam x509 cert used to sign data
+-- @tparam evp_pkey pkey used to sign data
+-- @tparam evp_md|int digest method when sign data
+-- @tparam[opt=0] int flags switch process when add signer
+-- @treturn boolean result true for success
+function add_signer() end
+
+--- pkcs7 sign data
+-- @tparam string data to sign data, maybe already hashed
+-- @tparam[opt=0] int flags when sign data
+-- @tparam[opt=false] boolean hashed when true will skip hash process
+-- @treturn boolean result true for success
+-- @see sign
+function sign_digest() end
+
+--- pkcs7 verify signature or digest
+-- @tparam[opt] table certs contains certificate used to sign data
+-- @tparam[opt] x509_store store to verify certs
+-- @tparam string data to be signed
+-- @tparam[opt=false] boolean hashed true for data already hashed
+-- @treturn boolean result true for success
+function verify_digest() end
 
 end
 

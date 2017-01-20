@@ -579,9 +579,11 @@ static LUA_FUNCTION(openssl_pkcs7_sign_digest)
     return 0;
   }
 
-  flags |= PKCS7_DETACHED;
-  PKCS7_set_detached(p7, 1);
-
+  if (flags & PKCS7_DETACHED)
+  {
+    PKCS7_set_detached(p7, 1);
+  }
+  
   mdc = EVP_MD_CTX_new();
   EVP_MD_CTX_init(mdc);
   i = OBJ_obj2nid(p7->type);
@@ -910,17 +912,11 @@ static LUA_FUNCTION(openssl_pkcs7_verify_digest)
 
   int i, j = 0, k, ret = 0;
 
-  if (!PKCS7_type_is_signed(p7))
-  {
-    luaL_error(L, "pkcs7 must be signedData");
-  }
-
   /* Check for no data and no content: no data to verify signature */
-  if (!PKCS7_get_detached(p7))
+  if (flags & PKCS7_DETACHED && (!PKCS7_get_detached(p7)))
   {
     luaL_error(L, "pkcs7 must be detached signedData");
   }
-
 
   sinfos = PKCS7_get_signer_info(p7);
   if (!sinfos || !sk_PKCS7_SIGNER_INFO_num(sinfos))
