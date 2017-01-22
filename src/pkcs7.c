@@ -899,8 +899,8 @@ static LUA_FUNCTION(openssl_pkcs7_verify_digest)
   PKCS7 *p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
   STACK_OF(X509) *certs = lua_isnoneornil(L, 2) ? NULL : openssl_sk_x509_fromtable(L, 2);
   X509_STORE *store = lua_isnoneornil(L, 3) ? NULL : CHECK_OBJECT(3, X509_STORE, "openssl.x509_store");
-  size_t len;
-  const char* data = luaL_checklstring(L, 4, &len);
+  size_t len = 0;
+  const char* data = luaL_optlstring(L, 4, NULL, &len);
   long flags = luaL_optint(L, 5, 0);
   int hash = lua_isnoneornil(L, 6) ? 0 : lua_toboolean(L, 6);
 
@@ -913,9 +913,22 @@ static LUA_FUNCTION(openssl_pkcs7_verify_digest)
   int i, j = 0, k, ret = 0;
 
   /* Check for no data and no content: no data to verify signature */
-  if (flags & PKCS7_DETACHED && (!PKCS7_get_detached(p7)))
+  if (flags & PKCS7_DETACHED)
   {
-    luaL_error(L, "pkcs7 must be detached signedData");
+    if (!PKCS7_get_detached(p7))
+    {
+      luaL_error(L, "pkcs7 must be detached signedData");
+    }
+    luaL_argcheck(L, data != NULL, 4, "need data to be verified");
+  }
+  else
+  {
+    ASN1_OCTET_STRING *os = NULL;
+
+    luaL_argcheck(L, data == NULL, 4, "must be nil or none");
+    os = PKCS7_get_octet_string(p7->d.sign->contents);
+    data = os->data;
+    len = os->length;
   }
 
   sinfos = PKCS7_get_signer_info(p7);
