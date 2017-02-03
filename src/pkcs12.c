@@ -21,7 +21,7 @@ static LUA_FUNCTION(openssl_pkcs12_export)
   BIO * bio_out = NULL;
   PKCS12 * p12 = NULL;
   const char * friendly_name = NULL;
-  STACK_OF(X509) *ca = NULL;
+  const STACK_OF(X509) *ca = NULL;
   int ret = 0;
 
   luaL_argcheck(L, openssl_pkey_is_private(priv_key), 2, "must be private key");

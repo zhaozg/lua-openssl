@@ -897,7 +897,7 @@ err:
 static LUA_FUNCTION(openssl_pkcs7_verify_digest)
 {
   PKCS7 *p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
-  STACK_OF(X509) *certs = lua_isnoneornil(L, 2) ? NULL : openssl_sk_x509_fromtable(L, 2);
+  const STACK_OF(X509) *certs = lua_isnoneornil(L, 2) ? NULL : openssl_sk_x509_fromtable(L, 2);
   X509_STORE *store = lua_isnoneornil(L, 3) ? NULL : CHECK_OBJECT(3, X509_STORE, "openssl.x509_store");
   size_t len = 0;
   const char* data = luaL_optlstring(L, 4, NULL, &len);
@@ -927,7 +927,7 @@ static LUA_FUNCTION(openssl_pkcs7_verify_digest)
 
     luaL_argcheck(L, data == NULL, 4, "must be nil or none");
     os = PKCS7_get_octet_string(p7->d.sign->contents);
-    data = os->data;
+    data = (const char*)os->data;
     len = os->length;
   }
 
@@ -1013,7 +1013,7 @@ static LUA_FUNCTION(openssl_pkcs7_sign)
   BIO *in  = load_bio_object(L, 1);
   X509 *cert = CHECK_OBJECT(2, X509, "openssl.x509");
   EVP_PKEY *privkey = CHECK_OBJECT(3, EVP_PKEY, "openssl.evp_pkey");
-  STACK_OF(X509) *others = lua_isnoneornil(L, 4) ? 0 : openssl_sk_x509_fromtable(L, 4);
+  const STACK_OF(X509) *others = lua_isnoneornil(L, 4) ? 0 : openssl_sk_x509_fromtable(L, 4);
   long flags =  luaL_optint(L, 5, 0);
   PKCS7 *p7 = NULL;
 
@@ -1040,10 +1040,10 @@ static LUA_FUNCTION(openssl_pkcs7_verify)
 {
   int ret = 0;
   PKCS7 *p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
-  STACK_OF(X509) *signers = lua_isnoneornil(L, 2) ? NULL : openssl_sk_x509_fromtable(L, 2);
+  const STACK_OF(X509) *signers = lua_isnoneornil(L, 2) ? NULL : openssl_sk_x509_fromtable(L, 2);
   X509_STORE *store = lua_isnoneornil(L, 3) ? NULL : CHECK_OBJECT(3, X509_STORE, "openssl.x509_store");
   BIO* in = lua_isnoneornil(L, 4) ? NULL : load_bio_object(L, 4);
-  long flags = luaL_optint(L, 5, 0);
+  long flags = luaL_optint(L, 5, PKCS7_DETACHED);
   BIO* out = BIO_new(BIO_s_mem());
   if (!store)
     flags |= PKCS7_NOVERIFY;
@@ -1079,7 +1079,7 @@ static LUA_FUNCTION(openssl_pkcs7_encrypt)
 {
   PKCS7 * p7 = NULL;
   BIO *in = load_bio_object(L, 1);
-  STACK_OF(X509) *recipcerts = openssl_sk_x509_fromtable(L, 2);
+  const STACK_OF(X509) *recipcerts = openssl_sk_x509_fromtable(L, 2);
   const EVP_CIPHER *cipher = get_cipher(L, 3, "des3");
   long flags = luaL_optint(L, 4, 0);
 

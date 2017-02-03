@@ -620,7 +620,7 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_singer)
 static LUA_FUNCTION(openssl_ts_resp_ctx_certs)
 {
   TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
-  STACK_OF(X509) *certs = openssl_sk_x509_fromtable(L, 2);
+  const STACK_OF(X509) *certs = openssl_sk_x509_fromtable(L, 2);
   TS_RESP_CTX_set_certs(ctx, certs);
   return 0;
 }
@@ -1028,7 +1028,7 @@ static int openssl_ts_verify_ctx_imprint(lua_State*L)
   TS_VERIFY_CTX *ctx = CHECK_OBJECT(1, TS_VERIFY_CTX, "openssl.ts_verify_ctx");
   size_t imprint_len;
   const char* imprint = luaL_checklstring(L, 2, &imprint_len);
-  const char* to = OPENSSL_malloc(imprint_len);
+  unsigned char* to = OPENSSL_malloc(imprint_len);
   memcpy(to, imprint, imprint_len);
   TS_VERIFY_CTX_set_imprint(ctx, to, imprint_len);
   return 0;

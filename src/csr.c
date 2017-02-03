@@ -425,7 +425,7 @@ static LUA_FUNCTION(openssl_csr_extensions)
   }
   else
   {
-    STACK_OF(X509_EXTENSION) *sk = openssl_sk_x509_extension_fromtable(L, 2);
+    const STACK_OF(X509_EXTENSION) *sk = openssl_sk_x509_extension_fromtable(L, 2);
     int ret = X509_REQ_add_extensions(csr, sk);
     sk_X509_EXTENSION_pop_free(sk, X509_EXTENSION_free);
     return openssl_pushresult(L, ret);
