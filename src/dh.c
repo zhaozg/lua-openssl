@@ -45,8 +45,8 @@ static LUA_FUNCTION(openssl_dh_parse)
   OPENSSL_PKEY_GET_BN(p, p);
   OPENSSL_PKEY_GET_BN(q, q);
   OPENSSL_PKEY_GET_BN(g, g);
-  OPENSSL_PKEY_GET_BN(pub, priv_key);
-  OPENSSL_PKEY_GET_BN(pri, pub_key);
+  OPENSSL_PKEY_GET_BN(pub, pub_key);
+  OPENSSL_PKEY_GET_BN(pri, priv_key);
 
   return 1;
 }
