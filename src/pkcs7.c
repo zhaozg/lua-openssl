@@ -583,7 +583,7 @@ static LUA_FUNCTION(openssl_pkcs7_sign_digest)
   {
     PKCS7_set_detached(p7, 1);
   }
-  
+
   mdc = EVP_MD_CTX_new();
   EVP_MD_CTX_init(mdc);
   i = OBJ_obj2nid(p7->type);
@@ -1216,6 +1216,16 @@ static LUA_FUNCTION(openssl_pkcs7_signer_info_gc)
   return 0;
 }
 
+static LUA_FUNCTION(openssl_pkcs7_type)
+{
+  PKCS7 * p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
+  int i = OBJ_obj2nid(p7->type);
+
+  lua_pushstring(L, OBJ_nid2sn(i));
+  lua_pushstring(L, OBJ_nid2ln(i));
+  return 2;
+}
+
 static LUA_FUNCTION(openssl_pkcs7_parse)
 {
   PKCS7 * p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
@@ -1327,6 +1337,7 @@ static LUA_FUNCTION(openssl_pkcs7_parse)
 
 static luaL_Reg pkcs7_funcs[] =
 {
+  {"type",          openssl_pkcs7_type},
   {"parse",         openssl_pkcs7_parse},
   {"export",        openssl_pkcs7_export},
   {"decrypt",       openssl_pkcs7_decrypt},
