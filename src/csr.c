@@ -163,7 +163,7 @@ static LUA_FUNCTION(openssl_csr_new)
     luaL_argcheck(L,
                   auxiliar_isclass(L, "openssl.x509_name", i) ||
                   auxiliar_isclass(L, "openssl.evp_pkey", i),
-                  i, "must be x509_name");
+                  i, "must be x509_name or evp_pkey");
     if (auxiliar_isclass(L, "openssl.x509_name", i))
     {
       X509_NAME * subject = CHECK_OBJECT(i, X509_NAME, "openssl.x509_name");
