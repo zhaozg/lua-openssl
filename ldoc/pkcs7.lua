@@ -68,7 +68,7 @@ do  -- define class
 do  -- define pkcs7
 
 --- export pkcs7 as string
--- @tparam[opt=true] boolean pem default export as pem format, false export as der string
+-- @tparam[opt='pem'] string support export as 'pem' or 'der' format, default is 'pem'
 -- @treturn string
 function export() end
 

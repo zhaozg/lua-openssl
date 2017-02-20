@@ -715,7 +715,7 @@ static LUA_FUNCTION(openssl_pkey_export)
   EVP_PKEY * key;
   int ispriv = 0;
   int exraw = 0;
-  int expem = 1;
+  int fmt = FORMAT_AUTO;
   size_t passphrase_len = 0;
   BIO * bio_out = NULL;
   int ret = 0;
@@ -725,8 +725,13 @@ static LUA_FUNCTION(openssl_pkey_export)
   key = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
   ispriv = openssl_pkey_is_private(key);
 
-  if (!lua_isnoneornil(L, 2))
-    expem = lua_toboolean(L, 2);
+  fmt = lua_type(L, 2);
+  luaL_argcheck(L, fmt == LUA_TSTRING || fmt == LUA_TNONE, 2,
+    "only accept 'pem','der' or none");
+  fmt = luaL_checkoption(L, 2, "pem", format);
+  luaL_argcheck(L, fmt == FORMAT_PEM || fmt == FORMAT_DER, 2,
+    "only accept pem or der, default is pem");
+
   if (!lua_isnoneornil(L, 3))
     exraw = lua_toboolean(L, 3);
   passphrase = luaL_optlstring(L, 4, NULL, &passphrase_len);
@@ -741,7 +746,7 @@ static LUA_FUNCTION(openssl_pkey_export)
   }
 
   bio_out = BIO_new(BIO_s_mem());
-  if (expem)
+  if (fmt == FORMAT_PEM)
   {
     if (exraw == 0)
     {

@@ -1133,15 +1133,17 @@ static LUA_FUNCTION(openssl_pkcs7_gc)
 
 static LUA_FUNCTION(openssl_pkcs7_export)
 {
-  int pem;
   PKCS7 * p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
-  int top = lua_gettop(L);
   BIO* bio_out = NULL;
-
-  pem = top > 1 ? lua_toboolean(L, 2) : 1;
+  int fmt = lua_type(L, 2);
+  luaL_argcheck(L, fmt == LUA_TSTRING || fmt == LUA_TNONE, 2,
+    "only accept 'pem','der' or none");
+  fmt = luaL_checkoption(L, 2, "pem", format);
+  luaL_argcheck(L, fmt == FORMAT_PEM || fmt == FORMAT_DER, 2, 
+    "only accept pem or der, default is pem");
 
   bio_out  = BIO_new(BIO_s_mem());
-  if (pem)
+  if (fmt == FORMAT_PEM)
   {
 
     if (PEM_write_bio_PKCS7(bio_out, p7))

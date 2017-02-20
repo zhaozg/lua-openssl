@@ -14,7 +14,7 @@ testEC = {}
         }
         local ec = assert(pkey.new(factor))
 
-        local pem = assert(ec:export(true))
+        local pem = assert(ec:export('pem'))
         assertEquals(pem,[[
 -----BEGIN PRIVATE KEY-----
 MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgH+M5UMX0YRJK6ZLC
@@ -27,7 +27,7 @@ jcWtqOmp3Xyzxw30SJhuUb3l0VdvmZAfnCxqgGpH/ZB2Q6crg1WX78jG
     function testEC:testEC()
         local nec =  {'ec','prime256v1'}
         local ec = pkey.new(unpack(nec))
-        local t = ec:parse().ec:parse(true) --make basic table
+        local t = ec:parse().ec:parse('pem') --make basic table
         assertEquals(type(t.curve_name), 'number')
         assertStrContains(t.x.version, 'bn library')
         assertStrContains(t.y.version, 'bn library')
