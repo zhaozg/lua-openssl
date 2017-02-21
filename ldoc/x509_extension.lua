@@ -1,4 +1,4 @@
---- 
+---
 -- Provide x509_extension as lua object.
 -- Sometime when you make CSR,TS or X509, you maybe need to use this.
 --
@@ -22,27 +22,19 @@ function new_extension() end
 -- @treturn x509_extension mappling to X509_EXTENSION in openssl
 function read_extension() end
 
---- Create stack_of_x509_extension object, which mapping to STACK_OF(X509_EXTENSION)
---
--- @tparam table node_array, each node is a x509_extension node
--- @treturn[1] sk_x509_extension mapping to STACK_OF(X509_EXTENSION) in openssl
---
--- @see new_extension, sk
-function new_sk_extension() end
-
 --- get all x509 certificate supported extensions
 -- @treturn table contain all support extension nid
 -- @treturn table contain all support extension info as table node {lname=..., sname=..., nid=...}
 function support() end
 
---- ask x509_extension object support or not 
--- @tparam x509_extension extension 
--- @tparam boolean true for supported, false or not 
+--- ask x509_extension object support or not
+-- @tparam x509_extension extension
+-- @tparam boolean true for supported, false or not
 function support() end
 
---- ask nid or name support or not 
--- @tparam number|string nid_or_name for extension 
--- @tparam boolean true for supported, false or not 
+--- ask nid or name support or not
+-- @tparam number|string nid_or_name for extension
+-- @tparam boolean true for supported, false or not
 function support() end
 
 end
@@ -57,7 +49,7 @@ do -- define module table
 -- @tfield string|asn1_object object, object of extension
 --
 -- @usage
--- xattr = x509.attr.new_extension {
+-- xattr = x509.attrextension.new_extension {
 --   object = asn1_object,
 --   critical = false,
 --   value = string or asn1_string value
@@ -83,7 +75,7 @@ do  -- defint x509_extension
 
 --- get infomation table of x509_extension.
 --
--- @tparam[opt] boolean|utf8 true for utf8 default 
+-- @tparam[opt] boolean|utf8 true for utf8 default
 -- @treturn[1] table info,  x509_extension infomation as table
 -- @see x509_extension_info_table
 function info() end
@@ -133,7 +125,7 @@ function data() end
 function data() end
 
 --- export x509_extenion to der encoded string
--- @treturn string 
+-- @treturn string
 function export() end
 
 end

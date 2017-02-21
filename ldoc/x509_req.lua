@@ -79,6 +79,17 @@ function attribute() end
 -- @treturn x509_attribute attribute
 function attribute() end
 
+--- get extensions of x509_req object
+-- @tparam[opt=false] boolean asobject, true for return as stack_of_x509_extension or as table
+-- @treturn[1] stack_of_x509_extension object when param set true
+-- @treturn[2] table contain all x509_extension when param set false or nothing
+function extensions() end
+
+--- set extension of x509_req object
+-- @tparam stack_of_x509_extension extensions
+-- @treturn boolean result true for success
+function extensions() end
+
 --- add attribute to x509_req object
 -- @tparam x509_attribute attribute attribute to add
 -- @treturn boolean result

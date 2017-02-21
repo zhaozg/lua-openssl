@@ -1,4 +1,4 @@
---- 
+---
 -- Provide x509_attribute as lua object.
 -- Sometime when you make CSR,TS or X509, you maybe need to use this.
 --
@@ -17,14 +17,6 @@ do  -- define module function
 -- @see x509_attribute_param_table
 function new_attribute() end
 
---- Create stack_of_x509_attribute object, which mapping to STACK_OF(X509_ATTRIBUTE)
---
--- @tparam table node_array, each node is a x509_attribute node
--- @treturn sk_x509_attribute mapping to STACK_OF(X509_ATTRIBUTE) in openssl
---
--- @see new_attribute, sk
-function new_sk_attribute() end
-
 end
 
 do -- define module table
@@ -37,12 +29,12 @@ do -- define module table
 -- @tfield string|asn1_object value, value of attribute
 --
 -- @usage
--- xattr = x509.attr.new_attribute {
+-- xattr = x509.attribute.new_attribute {
 --   object = asn1_object,
 --   type = Nid_or_String,
 --   value = string or asn1_string value
 -- }
--- 
+--
 function new_attribute() end
 
 --- x509_attribute infomation table
@@ -50,7 +42,7 @@ function new_attribute() end
 -- @table x509_attribute_info_table
 -- @tfield asn1_object|object object of asn1_object
 -- @tfield boolean single  true for single value
--- @tfield table value  if single, value is asn1_type or array have asn1_type node table  
+-- @tfield table value  if single, value is asn1_type or array have asn1_type node table
 
 --- asn1_type object as table
 --
@@ -58,7 +50,7 @@ function new_attribute() end
 -- @tfield string value, value data
 -- @tfield string type, type of value
 -- @tfield string format, value is 'der', only exist when type is not in 'bit','bmp','octet'
--- 
+--
 end
 
 do  -- define class
