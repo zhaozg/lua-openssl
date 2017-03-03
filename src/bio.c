@@ -213,7 +213,7 @@ static LUA_FUNCTION(openssl_bio_new_filter)
   break;
   case 3:
   {
-    const EVP_MD* md = get_digest(L, 2);
+    const EVP_MD* md = get_digest(L, 2, NULL);
     bio = BIO_new(BIO_f_md());
     ret = BIO_set_md(bio, md);
   }

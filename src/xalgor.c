@@ -41,7 +41,7 @@ static int openssl_xalgor_cmp(lua_State* L)
 static int openssl_xalgor_md(lua_State* L)
 {
   X509_ALGOR* alg = CHECK_OBJECT(1, X509_ALGOR, "openssl.x509_algor");
-  const EVP_MD* md = get_digest(L, 2);
+  const EVP_MD* md = get_digest(L, 2, NULL);
   X509_ALGOR_set_md(alg, md);
   return 0;
 }

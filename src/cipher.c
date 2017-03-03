@@ -445,7 +445,7 @@ static LUA_FUNCTION(openssl_evp_BytesToKey)
   size_t lsalt, lk;
   const char* k = luaL_checklstring(L, 2, &lk);
   const char* salt = luaL_optlstring(L, 3, NULL, &lsalt);
-  const EVP_MD* m = lua_isnoneornil(L, 4) ? EVP_get_digestbyname("sha1") : get_digest(L, 4);
+  const EVP_MD* m = get_digest(L, 4, "sha256");
   char key[EVP_MAX_KEY_LENGTH], iv[EVP_MAX_IV_LENGTH];
   int ret;
   if (salt != NULL && lsalt < PKCS5_SALT_LEN)

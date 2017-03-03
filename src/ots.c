@@ -126,9 +126,7 @@ static int openssl_ts_req_msg_imprint(lua_State*L)
   {
     size_t size;
     const char* data = luaL_checklstring(L, 2, &size);
-    const EVP_MD* md = lua_isnoneornil(L, 3)
-                       ? EVP_get_digestbyname("sha1")
-                       : get_digest(L, 3);
+    const EVP_MD* md = get_digest(L, 3, "sha256");
     TS_MSG_IMPRINT *msg = TS_MSG_IMPRINT_new();
     int ret = TS_MSG_IMPRINT_set_msg(msg, (unsigned char*)data, size);
     if (ret == 1)
@@ -666,12 +664,12 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_policies)
         {
           obj = CHECK_OBJECT(-1, ASN1_OBJECT, "openssl.asn1_object");
         }
-        else 
+        else
         {
           nid = openssl_get_nid(L, -1);
           obj = nid!=NID_undef ? OBJ_nid2obj(nid) : NULL;
         }
-        
+
         lua_pop(L, 1);
 
         if (obj)
@@ -776,7 +774,7 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_md)
     {
       const EVP_MD* md;
       lua_rawgeti(L, 2, i);
-      md = get_digest(L, -1);
+      md = get_digest(L, -1, NULL);
       lua_pop(L, 1);
       if (md)
       {
@@ -793,7 +791,7 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_md)
   }
   else
   {
-    const EVP_MD* md = get_digest(L, 2);
+    const EVP_MD* md = get_digest(L, 2, NULL);
     int ret = TS_RESP_CTX_add_md(ctx, md);
     return openssl_pushresult(L, ret);
   }

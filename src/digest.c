@@ -22,45 +22,43 @@ static LUA_FUNCTION(openssl_digest_list)
 
 static LUA_FUNCTION(openssl_digest_get)
 {
-  const EVP_MD* md = get_digest(L, 1);
+  const EVP_MD* md = get_digest(L, 1, NULL);
 
-  if (md)
-    PUSH_OBJECT((void*)md, "openssl.evp_digest");
-  else
-    lua_pushnil(L);
+  PUSH_OBJECT((void*)md, "openssl.evp_digest");
   return 1;
 }
 
 static LUA_FUNCTION(openssl_digest_new)
 {
-  const EVP_MD* md = get_digest(L, 1);
-  if (md)
+  const EVP_MD* md = get_digest(L, 1, NULL);
+  int ret;
+  ENGINE* e = (!lua_isnoneornil(L, 2)) ? CHECK_OBJECT(2, ENGINE, "openssl.engine") : NULL;
+  EVP_MD_CTX* ctx = EVP_MD_CTX_create();
+  EVP_MD_CTX_init(ctx);
+  lua_pushlightuserdata(L, e);
+  lua_rawseti(L, LUA_REGISTRYINDEX, (int)ctx);
+  ret = EVP_DigestInit_ex(ctx, md, e);
+  if (ret == 1)
   {
-    int ret;
-    ENGINE* e =  (!lua_isnoneornil(L, 2)) ? CHECK_OBJECT(2, ENGINE, "openssl.engine") : NULL;
-    EVP_MD_CTX* ctx = EVP_MD_CTX_create();
-    EVP_MD_CTX_init(ctx);
-    lua_pushlightuserdata(L, e);
-    lua_rawseti(L, LUA_REGISTRYINDEX, (int)ctx);
-    ret = EVP_DigestInit_ex(ctx, md, e);
-    if (ret == 1)
-    {
-      PUSH_OBJECT(ctx, "openssl.evp_digest_ctx");
-    }
-    else
-    {
-      EVP_MD_CTX_destroy(ctx);
-      return openssl_pushresult(L, ret);
-    }
+    PUSH_OBJECT(ctx, "openssl.evp_digest_ctx");
   }
   else
-    lua_pushnil(L);
+  {
+    EVP_MD_CTX_destroy(ctx);
+    return openssl_pushresult(L, ret);
+  }
   return 1;
 }
 
 static LUA_FUNCTION(openssl_digest)
 {
   const EVP_MD *md = NULL;
+  size_t inl;
+  unsigned char buf[EVP_MAX_MD_SIZE];
+  unsigned int  blen = sizeof(buf);
+  const char* in = NULL;
+  int raw, status;
+
   if (lua_istable(L, 1))
   {
     if (lua_getmetatable(L, 1) && lua_equal(L, 1, -1))
@@ -71,41 +69,24 @@ static LUA_FUNCTION(openssl_digest)
     else
       luaL_error(L, "call function with invalid state");
   }
-  if (lua_isstring(L, 1))
-  {
-    md = EVP_get_digestbyname(lua_tostring(L, 1));
-  }
-  else if (auxiliar_isclass(L, "openssl.evp_digest", 1))
-  {
-    md = CHECK_OBJECT(1, EVP_MD, "openssl.evp_digest");
-  }
-  else
-    luaL_error(L, "argument #1 must be a string identity digest method or an openssl.evp_digest object");
 
-  if (md)
+  md = get_digest(L, 1, NULL);
+  in = luaL_checklstring(L, 2, &inl);
+  raw = (lua_isnoneornil(L, 3)) ? 0 : lua_toboolean(L, 3);
+  status = EVP_Digest(in, inl, buf, &blen, md, NULL);
+  if (status)
   {
-    size_t inl;
-    unsigned char buf[EVP_MAX_MD_SIZE];
-    unsigned int  blen = sizeof(buf);
-    const char* in = luaL_checklstring(L, 2, &inl);
-    int raw = (lua_isnoneornil(L, 3)) ? 0 : lua_toboolean(L, 3);
-    int status = EVP_Digest(in, inl, buf, &blen, md, NULL);
-    if (status)
-    {
-      if (raw)
-        lua_pushlstring(L, (const char*)buf, blen);
-      else
-      {
-        char hex[2 * EVP_MAX_MD_SIZE + 1];
-        to_hex((const char*) buf, blen, hex);
-        lua_pushstring(L, hex);
-      }
-    }
+    if (raw)
+      lua_pushlstring(L, (const char*)buf, blen);
     else
-      luaL_error(L, "EVP_Digest method fail");
+    {
+      char hex[2 * EVP_MAX_MD_SIZE + 1];
+      to_hex((const char*)buf, blen, hex);
+      lua_pushstring(L, hex);
+    }
   }
   else
-    luaL_error(L, "argument #1 is not a valid digest algorithm or openssl.evp_digest object");
+    luaL_error(L, "EVP_Digest method fail");
   return 1;
 };
 
@@ -341,7 +322,7 @@ static LUA_FUNCTION(openssl_digest_ctx_data)
 
 static LUA_FUNCTION(openssl_signInit)
 {
-  const EVP_MD *md = get_digest(L, 1);
+  const EVP_MD *md = get_digest(L, 1, NULL);
   EVP_PKEY* pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
   ENGINE*     e = lua_gettop(L) > 2 ? CHECK_OBJECT(3, ENGINE, "openssl.engine") : NULL;
   EVP_PKEY_CTX *pctx;
@@ -363,7 +344,7 @@ static LUA_FUNCTION(openssl_signInit)
 
 static LUA_FUNCTION(openssl_verifyInit)
 {
-  const EVP_MD *md = get_digest(L, 1);
+  const EVP_MD *md = get_digest(L, 1, NULL);
   EVP_PKEY* pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
   ENGINE*     e = lua_gettop(L) > 2 ? CHECK_OBJECT(3, ENGINE, "openssl.engine") : NULL;
   EVP_PKEY_CTX *pctx = 0;

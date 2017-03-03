@@ -41,27 +41,38 @@ int  bio_is_der(BIO* bio)
   int len = BIO_read(bio, head, sizeof(head));
   BIO_reset(bio);
   if (len == sizeof(head) && head[0] == 0x30)
-  {
     return 1;
-  }
 
   return 0;
 }
 
-const EVP_MD* get_digest(lua_State* L, int idx)
+const EVP_MD* get_digest(lua_State* L, int idx, const char* def_alg)
 {
   const EVP_MD* md = NULL;
-  if (lua_isstring(L, idx))
-    md = EVP_get_digestbyname(lua_tostring(L, idx));
-  else if (lua_isnumber(L, idx))
-    md = EVP_get_digestbynid(lua_tointeger(L, idx));
-  else if (auxiliar_isclass(L, "openssl.asn1_object", idx))
-    md = EVP_get_digestbyobj(CHECK_OBJECT(1, ASN1_OBJECT, "openssl.asn1_object"));
-  else if (auxiliar_isclass(L, "openssl.evp_digest", idx))
-    md = CHECK_OBJECT(idx, EVP_MD, "openssl.evp_digest");
-  else
+  switch (lua_type(L, idx))
   {
-    luaL_error(L, "argument #1 must be a string, NID number or asn1_object identity digest method");
+  case LUA_TSTRING:
+    md = EVP_get_digestbyname(lua_tostring(L, idx));
+    break;
+  case LUA_TNUMBER:
+    md = EVP_get_digestbynid(lua_tointeger(L, idx));
+    break;
+  case LUA_TUSERDATA:
+    if (auxiliar_isclass(L, "openssl.asn1_object", idx))
+      md = EVP_get_digestbyobj(CHECK_OBJECT(idx, ASN1_OBJECT, "openssl.asn1_object"));
+    else if (auxiliar_isclass(L, "openssl.evp_digest", idx))
+      md = CHECK_OBJECT(idx, EVP_MD, "openssl.evp_digest");
+    break;
+  case LUA_TNONE:
+  case LUA_TNIL:
+    if (def_alg != NULL)
+      md = EVP_get_digestbyname(def_alg);
+    break;
+  }
+
+  if (md==NULL)
+  {
+    luaL_argerror(L, idx, "must be a string, NID number or asn1_object identity digest method");
   }
 
   return md;
@@ -70,20 +81,30 @@ const EVP_MD* get_digest(lua_State* L, int idx)
 const EVP_CIPHER* get_cipher(lua_State*L, int idx, const char* def_alg)
 {
   const EVP_CIPHER* cipher = NULL;
-  if (lua_isstring(L, idx))
+
+  switch (lua_type(L, idx))
+  {
+  case LUA_TSTRING:
     cipher = EVP_get_cipherbyname(lua_tostring(L, idx));
-  else if (lua_isnumber(L, idx))
+    break;
+  case LUA_TNUMBER:
     cipher = EVP_get_cipherbynid(lua_tointeger(L, idx));
-  else if (auxiliar_isclass(L, "openssl.asn1_object", idx))
-    cipher = EVP_get_cipherbyobj(CHECK_OBJECT(1, ASN1_OBJECT, "openssl.asn1_object"));
-  else if (auxiliar_isclass(L, "openssl.evp_cipher", idx))
-    cipher = CHECK_OBJECT(idx, EVP_CIPHER, "openssl.evp_cipher");
-  else if (lua_isnoneornil(L, idx) && def_alg)
-    cipher = EVP_get_cipherbyname(def_alg);
-  else
+    break;
+  case LUA_TUSERDATA:
+    if (auxiliar_isclass(L, "openssl.asn1_object", idx))
+      cipher = EVP_get_cipherbyobj(CHECK_OBJECT(idx, ASN1_OBJECT, "openssl.asn1_object"));
+    else if (auxiliar_isclass(L, "openssl.evp_cipher", idx))
+      cipher = CHECK_OBJECT(idx, EVP_CIPHER, "openssl.evp_cipher");
+    break;
+  case LUA_TNONE:
+  case LUA_TNIL:
+    if (def_alg != NULL)
+      cipher = EVP_get_cipherbyname(def_alg);
+    break;
+  }
+  
+  if (cipher==NULL)
     luaL_argerror(L, idx, "must be a string, NID number or asn1_object identity cipher method");
-  if (cipher == NULL)
-    luaL_argerror(L, idx, "not valid cipher alg");
 
   return cipher;
 }

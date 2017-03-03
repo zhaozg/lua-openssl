@@ -109,7 +109,7 @@ static int openssl_cms_create(lua_State*L)
     BIO* in = load_bio_object(L, 1);
     if (lua_isuserdata(L, 2))
     {
-      const EVP_MD* md = get_digest(L, 2);
+      const EVP_MD* md = get_digest(L, 2, NULL);
       int flags = luaL_optint(L, 3, 0);
       cms = CMS_digest_create(in, md, flags);
     }

@@ -97,7 +97,7 @@ static LUA_FUNCTION(openssl_csr_to_x509)
   X509_REQ * csr  = CHECK_OBJECT(1, X509_REQ, "openssl.x509_req");
   EVP_PKEY * pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
   int days = luaL_optint(L, 3, 365);
-  const EVP_MD* md = lua_isnone(L, 4) ? EVP_get_digestbyname("sha1") : get_digest(L, 4);
+  const EVP_MD* md = get_digest(L, 4, "sha256");
   X509* cert = X509_REQ_to_X509_ex(csr, days, pkey, md);
   if (cert)
   {
@@ -157,14 +157,10 @@ static LUA_FUNCTION(openssl_csr_export)
 static LUA_FUNCTION(openssl_csr_digest)
 {
   X509_REQ *csr = CHECK_OBJECT(1, X509_REQ, "openssl.x509_req");
-  const EVP_MD *md = NULL;
   unsigned char buf[EVP_MAX_MD_SIZE];
   unsigned int len = sizeof(buf);
   int ret;
-  if (lua_isnoneornil(L, 2))
-    md = EVP_get_digestbyname("SHA1");
-  else
-    md = get_digest(L, 2);
+  const EVP_MD *md = get_digest(L, 2, "sha256");
 
   ret = X509_REQ_digest(csr, md, buf, &len);
   if (ret == 1)
@@ -232,9 +228,9 @@ static LUA_FUNCTION(openssl_csr_new)
       pkey = CHECK_OBJECT(i, EVP_PKEY, "openssl.evp_pkey");
 
       if (i == n - 1)
-        md = get_digest(L, n);
+        md = get_digest(L, n, NULL);
       else
-        md = EVP_get_digestbyname("sha1");
+        md = EVP_get_digestbyname("sha256");
 
       ret = X509_REQ_set_pubkey(csr, pkey);
       if (ret == 1)
@@ -264,7 +260,7 @@ static LUA_FUNCTION(openssl_csr_sign)
   if (auxiliar_isclass(L, "openssl.evp_pkey", 2))
   {
     EVP_PKEY *pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
-    const EVP_MD* md = lua_isnone(L, 3) ? EVP_get_digestbyname("sha1") : get_digest(L, 3);
+    const EVP_MD* md = get_digest(L, 3, "sha256");
     int ret = 1;
     if (pubkey == NULL)
     {
@@ -296,7 +292,7 @@ static LUA_FUNCTION(openssl_csr_sign)
   {
     size_t siglen;
     unsigned char* sigdata = (unsigned char*)luaL_checklstring(L, 2, &siglen);
-    const EVP_MD* md = get_digest(L, 3);
+    const EVP_MD* md = get_digest(L, 3, NULL);
     ASN1_BIT_STRING *sig = NULL;
     X509_ALGOR *alg = NULL;
 

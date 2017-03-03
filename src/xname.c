@@ -40,7 +40,7 @@ static int openssl_xname_hash(lua_State*L)
 static int openssl_xname_digest(lua_State*L)
 {
   X509_NAME* xname = CHECK_OBJECT(1, X509_NAME, "openssl.x509_name");
-  const EVP_MD* md = get_digest(L, 2);
+  const EVP_MD* md = get_digest(L, 2, NULL);
   unsigned char buf [EVP_MAX_MD_SIZE];
   unsigned int len = sizeof(buf);
 

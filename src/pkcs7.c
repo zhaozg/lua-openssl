@@ -86,7 +86,7 @@ static LUA_FUNCTION(openssl_pkcs7_sign_add_signer)
   PKCS7 *p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
   X509 *signcert = CHECK_OBJECT(2, X509, "openssl.x509");
   EVP_PKEY *pkey = CHECK_OBJECT(3, EVP_PKEY, "openssl.evp_pkey");
-  const EVP_MD* md = get_digest(L, 4);
+  const EVP_MD* md = get_digest(L, 4, NULL);
   long flags = luaL_optint(L, 5, 0);
   PKCS7_SIGNER_INFO *signer = 0;
 
@@ -1048,7 +1048,7 @@ static LUA_FUNCTION(openssl_pkcs7_verify)
 
   if (!store)
     flags |= PKCS7_NOVERIFY;
-  if (flags&PKCS7_DETACHED != 0)
+  if ((flags&PKCS7_DETACHED) != 0)
     out = BIO_new(BIO_s_mem());
 
   if (PKCS7_verify(p7, signers, store, in, out, flags) == 1)

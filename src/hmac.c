@@ -14,7 +14,7 @@
 
 static int openssl_hmac_new(lua_State *L)
 {
-  const EVP_MD *type = get_digest(L, 1);
+  const EVP_MD *type = get_digest(L, 1, NULL);
   size_t l;
   const char *k = luaL_checklstring(L, 2, &l);
   ENGINE* e = lua_isnoneornil(L, 3) ? NULL : CHECK_OBJECT(3, ENGINE, "openssl.engine");
@@ -96,7 +96,7 @@ static int openssl_hmac(lua_State *L)
   }
   {
 
-    const EVP_MD *type = get_digest(L, 1);
+    const EVP_MD *type = get_digest(L, 1, NULL);
     size_t len;
     const char *dat = luaL_checklstring(L, 2, &len);
     size_t l;

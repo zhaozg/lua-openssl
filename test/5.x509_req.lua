@@ -160,7 +160,7 @@ TestCSR = {}
                 assertEquals(req1:subject():tostring(),self.subject:tostring())
 
                 local s = req1:digest()
-                local r = req1:digest('sha1')
+                local r = req1:digest('sha256')
                 assertEquals(r,s)
                 assert(req2:check(pkey))
 

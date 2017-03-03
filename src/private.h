@@ -166,7 +166,7 @@ extern const char* format[];
 
 BIO* load_bio_object(lua_State* L, int idx);
 int  bio_is_der(BIO* bio);
-const EVP_MD* get_digest(lua_State* L, int idx);
+const EVP_MD* get_digest(lua_State* L, int idx, const char* def_alg);
 const EVP_CIPHER* get_cipher(lua_State* L, int idx, const char* def_alg);
 BIGNUM *BN_get(lua_State *L, int i);
 int openssl_engine(lua_State *L);
