@@ -8,6 +8,7 @@
 #include "private.h"
 #include <openssl/conf.h>
 
+#if 0
 static void table2data(lua_State*L, int idx, BIO* bio)
 {
   lua_pushnil(L);
@@ -27,6 +28,7 @@ static void table2data(lua_State*L, int idx, BIO* bio)
     lua_pop(L, 1);
   }
 }
+#endif
 
 static LUA_FUNCTION(openssl_lhash_read)
 {

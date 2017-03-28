@@ -327,7 +327,7 @@ static int openssl_ecdsa_sign(lua_State*L)
   }
   else
   {
-    BIGNUM *r = NULL, *s = NULL;
+    const BIGNUM *r = NULL, *s = NULL;
     ECDSA_SIG_get0(sig, &r, &s);
 
     r = BN_dup(r);

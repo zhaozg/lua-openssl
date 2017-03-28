@@ -285,7 +285,7 @@ static int openssl_engine_ctrl(lua_State*L)
 static int openssl_engine_gc(lua_State*L)
 {
   ENGINE* eng = CHECK_OBJECT(1, ENGINE, "openssl.engine");
-  (void*) eng;
+  (void) eng;
   return 0;
 }
 

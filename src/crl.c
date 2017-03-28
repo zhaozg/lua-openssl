@@ -303,12 +303,12 @@ static LUA_FUNCTION(openssl_crl_read)
   if (fmt == FORMAT_PEM)
   {
     crl = PEM_read_bio_X509_CRL(in, NULL, NULL, NULL);
-    BIO_reset(in);
+    (void)BIO_reset(in);
   }
   else if (fmt == FORMAT_DER)
   {
     crl = d2i_X509_CRL_bio(in, NULL);
-    BIO_reset(in);
+    (void)BIO_reset(in);
   }
   BIO_free(in);
   if (crl)
@@ -576,7 +576,7 @@ static LUA_FUNCTION(openssl_crl_parse)
 {
   X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
   int num, i;
-  X509_ALGOR *alg;
+  const X509_ALGOR *alg;
 
   lua_newtable(L);
   AUXILIAR_SET(L, -1, "version", X509_CRL_get_version(crl), integer);
@@ -612,8 +612,8 @@ static LUA_FUNCTION(openssl_crl_parse)
   lua_setfield(L, -2, "nextUpdate");
 
   {
-    ASN1_BIT_STRING *sig = NULL;
-    X509_ALGOR *sig_alg = NULL;
+    const ASN1_BIT_STRING *sig = NULL;
+    const X509_ALGOR *sig_alg = NULL;
 
     X509_CRL_get0_signature(crl, &sig, &alg);
     PUSH_OBJECT(sig_alg, "openssl.x509_algor");

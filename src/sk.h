@@ -19,7 +19,7 @@
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
 #define TAB2SK(TYPE, type)                                        \
-const STACK_OF(TYPE)* openssl_sk_##type##_fromtable(lua_State*L, int idx) {     \
+STACK_OF(TYPE)* openssl_sk_##type##_fromtable(lua_State*L, int idx) {     \
   STACK_OF(TYPE) * sk;                                            \
   luaL_argcheck(L, lua_istable(L, idx),  idx,                     \
          "must be a table as array or nil");                      \
@@ -54,7 +54,7 @@ const STACK_OF(TYPE)* openssl_sk_##type##_fromtable(lua_State*L, int idx) {     
 }
 #else
 #define TAB2SK(TYPE, type)                                        \
-const STACK_OF(TYPE)* openssl_sk_##type##_fromtable(lua_State*L, int idx) {     \
+STACK_OF(TYPE)* openssl_sk_##type##_fromtable(lua_State*L, int idx) {     \
   STACK_OF(TYPE) * sk;                                            \
   luaL_argcheck(L, lua_istable(L, idx),  idx,                     \
          "must be a table as array or nil");                      \

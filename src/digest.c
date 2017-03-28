@@ -36,7 +36,7 @@ static LUA_FUNCTION(openssl_digest_new)
   EVP_MD_CTX* ctx = EVP_MD_CTX_create();
   EVP_MD_CTX_init(ctx);
   lua_pushlightuserdata(L, e);
-  lua_rawseti(L, LUA_REGISTRYINDEX, (int)ctx);
+  lua_rawsetp(L, LUA_REGISTRYINDEX, ctx);
   ret = EVP_DigestInit_ex(ctx, md, e);
   if (ret == 1)
   {
@@ -232,7 +232,7 @@ static LUA_FUNCTION(openssl_digest_ctx_free)
 {
   EVP_MD_CTX *ctx = CHECK_OBJECT(1, EVP_MD_CTX, "openssl.evp_digest_ctx");
   lua_pushnil(L);
-  lua_rawseti(L, LUA_REGISTRYINDEX, (int)ctx);
+  lua_rawsetp(L, LUA_REGISTRYINDEX, ctx);
   EVP_MD_CTX_destroy(ctx);
   return 0;
 }
@@ -245,7 +245,7 @@ static LUA_FUNCTION(openssl_digest_ctx_reset)
   ENGINE* e = NULL;
   int ret;
 
-  lua_rawgeti(L, LUA_REGISTRYINDEX, (int)ctx);
+  lua_rawgetp(L, LUA_REGISTRYINDEX, ctx);
   e = (ENGINE*)lua_topointer(L, -1);
   ret = EVP_MD_CTX_reset(ctx);
   if (ret)
@@ -417,7 +417,7 @@ static LUA_FUNCTION(openssl_verifyFinal)
   if (pkey)
     ret = EVP_VerifyFinal(ctx, (const unsigned char*) signature, signature_len, pkey);
   else
-    ret = EVP_DigestVerifyFinal(ctx, (const unsigned char*) signature, signature_len);
+    ret = EVP_DigestVerifyFinal(ctx, (unsigned char*) signature, signature_len);
 
   EVP_MD_CTX_reset(ctx);
   return openssl_pushresult(L, ret);

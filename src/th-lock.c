@@ -81,15 +81,6 @@
 void CRYPTO_thread_setup(void);
 void CRYPTO_thread_cleanup(void);
 
-static void irix_locking_callback(int mode, int type, const char *file, int line);
-static void solaris_locking_callback(int mode, int type, const char *file, int line);
-static void win32_locking_callback(int mode, int type, const char *file, int line);
-static void pthreads_locking_callback(int mode, int type, const char *file, int line);
-
-static unsigned long irix_thread_id(void );
-static unsigned long solaris_thread_id(void );
-static unsigned long pthreads_thread_id(void );
-
 /* usage:
  * CRYPTO_thread_setup();
  * application code
@@ -99,6 +90,8 @@ static unsigned long pthreads_thread_id(void );
 #define THREAD_STACK_SIZE (16*1024)
 
 #ifdef OPENSSL_SYS_WIN32
+
+static void win32_locking_callback(int mode, int type, const char *file, int line);
 
 static HANDLE *lock_cs;
 
@@ -143,6 +136,9 @@ static void win32_locking_callback(int mode, int type, const char *file, int lin
 #endif /* OPENSSL_SYS_WIN32 */
 
 #ifdef SOLARIS
+
+static void solaris_locking_callback(int mode, int type, const char *file, int line);
+static unsigned long solaris_thread_id(void );
 
 #define USE_MUTEX
 
@@ -241,6 +237,10 @@ unsigned long solaris_thread_id(void)
 #endif /* SOLARIS */
 
 #ifdef IRIX
+
+static void irix_locking_callback(int mode, int type, const char *file, int line);
+static unsigned long irix_thread_id(void );
+
 /* I don't think this works..... */
 
 static usptr_t *arena;
@@ -311,6 +311,10 @@ unsigned long irix_thread_id(void)
 /* Linux and a few others */
 #ifdef PTHREADS
 #ifndef OPENSSL_SYS_WIN32
+
+static void pthreads_locking_callback(int mode, int type, const char *file, int line);
+static unsigned long pthreads_thread_id(void );
+
 static pthread_mutex_t *lock_cs;
 static long *lock_count;
 

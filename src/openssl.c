@@ -74,7 +74,7 @@ static LUA_FUNCTION(openssl_base64)
     BIO_push(b64, out);
     BIO_get_mem_ptr(inp, &mem);
     BIO_write(b64, mem->data, mem->length);
-    BIO_flush(b64);
+    (void)BIO_flush(b64);
   }
   else
   {
@@ -83,7 +83,7 @@ static LUA_FUNCTION(openssl_base64)
     BIO_push(b64, inp);
     while ((inlen = BIO_read(b64, inbuf, 512)) > 0)
       BIO_write(out, inbuf, inlen);
-    BIO_flush(out);
+    (void)BIO_flush(out);
   }
 
   BIO_get_mem_ptr(out, &mem);

@@ -39,7 +39,7 @@ int  bio_is_der(BIO* bio)
 {
   byte head[1];
   int len = BIO_read(bio, head, sizeof(head));
-  BIO_reset(bio);
+  (void)BIO_reset(bio);
   if (len == sizeof(head) && head[0] == 0x30)
     return 1;
 
@@ -102,7 +102,7 @@ const EVP_CIPHER* get_cipher(lua_State*L, int idx, const char* def_alg)
       cipher = EVP_get_cipherbyname(def_alg);
     break;
   }
-  
+
   if (cipher==NULL)
     luaL_argerror(L, idx, "must be a string, NID number or asn1_object identity cipher method");
 

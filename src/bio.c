@@ -78,7 +78,7 @@ static LUA_FUNCTION(openssl_bio_new_mem)
     BIO_write(bio, d, l);
   }
 
-  BIO_set_close(bio, BIO_CLOSE);
+  (void)BIO_set_close(bio, BIO_CLOSE);
   PUSH_OBJECT(bio, "openssl.bio");
   return 1;
 }
@@ -433,7 +433,7 @@ static LUA_FUNCTION(openssl_bio_retry)
 static LUA_FUNCTION(openssl_bio_reset)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
-  BIO_reset(bio);
+  (void)BIO_reset(bio);
   return 0;
 }
 
@@ -520,7 +520,7 @@ static LUA_FUNCTION(openssl_bio_shutdown)
   }
   else if (BIO_method_type(bio) & (BIO_TYPE_SOCKET | BIO_TYPE_FD))
   {
-    BIO_shutdown_wr(bio);;
+    (void)BIO_shutdown_wr(bio);;
   }
   else
     luaL_error(L, "don't know how to shutdown");
@@ -601,21 +601,21 @@ void BIO_info_callback(BIO *bio, int cmd, const char *argp,
     break;
   case BIO_CB_READ:
     if (BIO_method_type(bio) & BIO_TYPE_DESCRIPTOR)
-      BIO_snprintf(p, p_maxlen, "read(%d,%lu) - %s fd=%d\n",
+      BIO_snprintf(p, p_maxlen, "read(%lu,%lu) - %s fd=%lu\n",
                    BIO_number_read(bio), (unsigned long)argi,
                    BIO_method_name(bio), BIO_number_read(bio));
     else
-      BIO_snprintf(p, p_maxlen, "read(%d,%lu) - %s\n",
+      BIO_snprintf(p, p_maxlen, "read(%lu,%lu) - %s\n",
                    BIO_number_read(bio), (unsigned long)argi,
                    BIO_method_name(bio));
     break;
   case BIO_CB_WRITE:
     if (BIO_method_type(bio) & BIO_TYPE_DESCRIPTOR)
-      BIO_snprintf(p, p_maxlen, "write(%d,%lu) - %s fd=%d\n",
+      BIO_snprintf(p, p_maxlen, "write(%lu,%lu) - %s fd=%lu\n",
                    BIO_number_written(bio), (unsigned long)argi,
                    BIO_method_name(bio), BIO_number_written(bio));
     else
-      BIO_snprintf(p, p_maxlen, "write(%d,%lu) - %s\n",
+      BIO_snprintf(p, p_maxlen, "write(%lu,%lu) - %s\n",
                    BIO_number_written(bio), (unsigned long)argi,
                    BIO_method_name(bio));
     break;

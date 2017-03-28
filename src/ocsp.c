@@ -148,7 +148,7 @@ static int openssl_ocsp_request_sign(lua_State*L)
   OCSP_REQUEST *req = CHECK_OBJECT(1, OCSP_REQUEST, "openssl.ocsp_request");
   X509 *signer = CHECK_OBJECT(2, X509, "openssl.x509");
   EVP_PKEY *pkey = CHECK_OBJECT(3, EVP_PKEY, "openssl.evp_pkey");
-  const STACK_OF(X509) *others = NULL;
+  STACK_OF(X509) *others = NULL;
   const EVP_MD *md = EVP_sha1();
   int ret;
   int sflags = 0;
@@ -244,7 +244,7 @@ static int openssl_ocsp_request_parse(lua_State*L)
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
   if (sig)
   {
-    BIO_reset(bio);
+    (void)BIO_reset(bio);
     X509_signature_print(bio, sig->signatureAlgorithm, sig->signature);
     for (i = 0; i < sk_X509_num(sig->certs); i++)
     {
@@ -287,7 +287,7 @@ static int openssl_ocsp_response(lua_State *L)
     unsigned long flag = luaL_optint(L, 6, 0);
     int nmin = luaL_optint(L, 7, 0);
     int nday = luaL_optint(L, 8, 1);
-    const STACK_OF(X509) *rother = lua_isnoneornil(L, 9) ? NULL : openssl_sk_x509_fromtable(L, 9);
+    STACK_OF(X509) *rother = lua_isnoneornil(L, 9) ? NULL : openssl_sk_x509_fromtable(L, 9);
 
     int i, id_count, type;
     BIO* bio = NULL;
@@ -327,7 +327,7 @@ static int openssl_ocsp_response(lua_State *L)
       if (lua_istable(L, 5))
       {
         BUF_MEM *buf;
-        BIO_reset(bio);
+        (void)BIO_reset(bio);
         i2a_ASN1_INTEGER(bio, serial);
 
         BIO_get_mem_ptr(bio, &buf);

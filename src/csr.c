@@ -21,12 +21,12 @@ static LUA_FUNCTION(openssl_csr_read)
   if (fmt == FORMAT_PEM)
   {
     csr = PEM_read_bio_X509_REQ(in, NULL, NULL, NULL);
-    BIO_reset(in);
+    (void)BIO_reset(in);
   }
   else if (fmt == FORMAT_DER)
   {
     csr = d2i_X509_REQ_bio(in, NULL);
-    BIO_reset(in);
+    (void)BIO_reset(in);
   }
   BIO_free(in);
 
@@ -39,7 +39,7 @@ static LUA_FUNCTION(openssl_csr_read)
 }
 
 
-static X509 *X509_REQ_to_X509_ex(X509_REQ *r, int days, EVP_PKEY *pkey, EVP_MD* md)
+static X509 *X509_REQ_to_X509_ex(X509_REQ *r, int days, EVP_PKEY *pkey, const EVP_MD* md)
 {
   X509 *ret = NULL;
   X509_CINF *xi = NULL;
@@ -298,11 +298,11 @@ static LUA_FUNCTION(openssl_csr_sign)
 
     luaL_argcheck(L, pubkey != NULL, 1, "has not set public key!!!");
 
-    X509_REQ_get0_signature(csr, &sig, &alg);
+    X509_REQ_get0_signature(csr, (const ASN1_BIT_STRING **)&sig, (const X509_ALGOR **)&alg);
     /* (pkey->ameth->pkey_flags & ASN1_PKEY_SIGPARAM_NULL) ? V_ASN1_NULL : V_ASN1_UNDEF, */
-    X509_ALGOR_set0(alg, OBJ_nid2obj(EVP_MD_pkey_type(md)), V_ASN1_NULL, NULL);
+    X509_ALGOR_set0((X509_ALGOR *)alg, OBJ_nid2obj(EVP_MD_pkey_type(md)), V_ASN1_NULL, NULL);
 
-    ASN1_BIT_STRING_set(sig, sigdata, siglen);
+    ASN1_BIT_STRING_set((ASN1_BIT_STRING *)sig, sigdata, siglen);
     /*
     * In the interests of compatibility, I'll make sure that the bit string
     * has a 'not-used bits' value of 0
@@ -337,14 +337,14 @@ static LUA_FUNCTION(openssl_csr_parse)
 
   lua_newtable(L);
   {
-    ASN1_BIT_STRING *sig = NULL;
-    X509_ALGOR *alg = NULL;
+    const ASN1_BIT_STRING *sig = NULL;
+    const X509_ALGOR *alg = NULL;
 
     X509_REQ_get0_signature(csr, &sig, &alg);
     openssl_push_asn1(L, sig, V_ASN1_BIT_STRING);
     lua_setfield(L, -2, "signature");
 
-    alg = X509_ALGOR_dup(alg);
+    alg = X509_ALGOR_dup((X509_ALGOR *)alg);
     PUSH_OBJECT(alg, "openssl.x509_algor");
     lua_setfield(L, -2, "sig_alg");
   }
@@ -475,7 +475,7 @@ static LUA_FUNCTION(openssl_csr_extensions)
   }
   else
   {
-    const STACK_OF(X509_EXTENSION) *sk = openssl_sk_x509_extension_fromtable(L, 2);
+    STACK_OF(X509_EXTENSION) *sk = openssl_sk_x509_extension_fromtable(L, 2);
     int ret = X509_REQ_add_extensions(csr, sk);
     sk_X509_EXTENSION_pop_free(sk, X509_EXTENSION_free);
     return openssl_pushresult(L, ret);

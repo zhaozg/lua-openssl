@@ -279,6 +279,7 @@ static luaL_Reg ts_req_funs[] =
 };
 
 /***********************************************************/
+#if 0
 static ASN1_INTEGER *tsa_serial_cb(TS_RESP_CTX *ctx, void *data)
 {
   lua_State *L = (lua_State*) data;
@@ -313,6 +314,7 @@ static ASN1_INTEGER *tsa_serial_cb(TS_RESP_CTX *ctx, void *data)
    * Modification made by JOUVE <opentsa@jouve-hdi.com>    *
    *********************************************************/
 }
+#endif
 
 /**************************************************************/
 static LUA_FUNCTION(openssl_ts_resp_gc)
@@ -629,7 +631,7 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_singer)
 static LUA_FUNCTION(openssl_ts_resp_ctx_certs)
 {
   TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
-  const STACK_OF(X509) *certs = openssl_sk_x509_fromtable(L, 2);
+  STACK_OF(X509) *certs = openssl_sk_x509_fromtable(L, 2);
   TS_RESP_CTX_set_certs(ctx, certs);
   return 0;
 }
@@ -832,8 +834,10 @@ typedef struct
   int cb_arg;
 } TS_CB_ARG;
 
+#if 0
 static const char* time_cb_key  = "time_cb_key";
 static const char* serial_cb_key = "serial_cb_key";
+#endif
 
 static ASN1_INTEGER* openssl_serial_cb(TS_RESP_CTX*ctx, void*data)
 {

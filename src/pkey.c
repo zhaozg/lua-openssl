@@ -156,7 +156,7 @@ static int openssl_pkey_read(lua_State*L)
         break;
       }
       }
-      BIO_reset(in);
+      (void)BIO_reset(in);
     }
     else if (fmt == FORMAT_DER)
     {
@@ -220,7 +220,7 @@ static int openssl_pkey_read(lua_State*L)
         key = d2i_PUBKEY_bio(in, NULL);
         break;
       }
-      BIO_reset(in);
+      (void)BIO_reset(in);
     }
   }
   else
@@ -228,7 +228,7 @@ static int openssl_pkey_read(lua_State*L)
     if (fmt == FORMAT_PEM)
     {
       key = PEM_read_bio_PrivateKey(in, NULL, NULL, (void*)passphrase);
-      BIO_reset(in);
+      (void)BIO_reset(in);
     }
     else if (fmt == FORMAT_DER)
     {
@@ -282,7 +282,7 @@ static int openssl_pkey_read(lua_State*L)
         break;
       }
       }
-      BIO_reset(in);
+      (void)BIO_reset(in);
     }
   }
   BIO_free(in);
@@ -1131,7 +1131,6 @@ static LUA_FUNCTION(openssl_sign)
   size_t data_len;
   EVP_PKEY *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
   const char * data = luaL_checklstring(L, 2, &data_len);
-  int top = lua_gettop(L);
   int ret = 0;
   EVP_MD_CTX *ctx = NULL;
 
@@ -1178,7 +1177,6 @@ static LUA_FUNCTION(openssl_verify)
   EVP_PKEY *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
   const char* data = luaL_checklstring(L, 2, &data_len);
   const char* signature = luaL_checklstring(L, 3, &signature_len);
-  int top = lua_gettop(L);
   const EVP_MD *md = get_digest(L, 4, "sha256");
   EVP_MD_CTX *ctx = EVP_MD_CTX_create();
 

@@ -61,7 +61,7 @@ WARN_MOST	= -Wall -W -Waggregate-return -Wcast-align -Wmissing-prototypes -Wnest
 WARN		= -Wall -Wno-unused-value
 WARN_MIN	= 
 CFLAGS		+= $(WARN_MIN) -DPTHREADS 
-CC= gcc -g $(CFLAGS) -Ideps
+CC= gcc -g -Wall $(CFLAGS) -Ideps
 
 
 OBJS=src/asn1.o src/auxiliar.o src/bio.o src/cipher.o src/cms.o src/compat.o src/crl.o src/csr.o src/dh.o src/digest.o src/dsa.o \

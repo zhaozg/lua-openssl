@@ -340,9 +340,9 @@ static int openssl_ssl_ctx_load_verify_locations(lua_State*L)
 
 static int openssl_ssl_ctx_cert_store(lua_State*L)
 {
+#if OPENSSL_VERSION_NUMBER >  0x10002000L
   SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
   X509_STORE *store = NULL;
-#if OPENSSL_VERSION_NUMBER >  0x10002000L
   if (lua_isnoneornil(L, 2))
   {
     store = SSL_CTX_get_cert_store(ctx);
@@ -1049,7 +1049,7 @@ static int openssl_ssl_session_read(lua_State*L)
   SSL_SESSION* ss = PEM_read_bio_SSL_SESSION(in, NULL, NULL, NULL);
   if (!ss)
   {
-    BIO_reset(in);
+    (void)BIO_reset(in);
     ss = d2i_SSL_SESSION_bio(in, NULL);
   }
   BIO_free(in);

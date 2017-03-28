@@ -210,11 +210,11 @@ int openssl_verify_cb(int preverify_ok, X509_STORE_CTX *xctx);
 int openssl_cert_verify_cb(X509_STORE_CTX *xctx, void* u);
 void openssl_xstore_free(X509_STORE* ctx);
 
-const STACK_OF(X509)* openssl_sk_x509_fromtable(lua_State *L, int idx);
+STACK_OF(X509)* openssl_sk_x509_fromtable(lua_State *L, int idx);
 int openssl_sk_x509_totable(lua_State *L, const STACK_OF(X509)* sk);
-const STACK_OF(X509_CRL)* openssl_sk_x509_crl_fromtable(lua_State *L, int idx);
+STACK_OF(X509_CRL)* openssl_sk_x509_crl_fromtable(lua_State *L, int idx);
 int openssl_sk_x509_crl_totable(lua_State *L, const STACK_OF(X509_CRL)* sk);
-const STACK_OF(X509_EXTENSION)* openssl_sk_x509_extension_fromtable(lua_State *L, int idx);
+STACK_OF(X509_EXTENSION)* openssl_sk_x509_extension_fromtable(lua_State *L, int idx);
 int openssl_sk_x509_extension_totable(lua_State *L, const STACK_OF(X509_EXTENSION)* sk);
 int openssl_sk_x509_algor_totable(lua_State *L, const STACK_OF(X509_ALGOR)* sk);
 int openssl_sk_x509_name_totable(lua_State *L, const STACK_OF(X509_NAME)* sk);
