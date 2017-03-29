@@ -451,4 +451,137 @@ extendedKeyUsage = critical,timeStamping
         vry:data(self.dat)
         vry:store(self.ca.store)
         assert(vry:verify(res))
-end
+    end
+
+testTSComplex = {}
+
+    function testTSComplex:setUp()
+        local timeStamping = openssl.asn1.new_string('timeStamping',asn1.OCTET_STRING)
+        local timeStamping=asn1.new_type('timeStamping')
+        self.timeStamping = timeStamping:i2d()
+        self.cafalse = openssl.asn1.new_string('CA:FALSE',asn1.OCTET_STRING)
+
+        self.dat=[[
+[test]
+basicConstraints=CA:FALSE
+keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+extendedKeyUsage = critical,timeStamping
+]]
+        self.alg='sha1'
+        self.digest = 'sha1WithRSAEncryption'
+        self.md = openssl.digest.get('sha1WithRSAEncryption')
+        self.hash = assert(self.md:digest(self.dat))
+        if first then
+            assert(asn1.new_object({oid='1.2.3.4.5.6',sn='1.2.3.4.5.6_sn',ln='1.2.3.4.5.6_ln'}))
+            assert(asn1.new_object({oid='1.2.3.4.5.7',sn='1.2.3.4.5.7_sn',ln='1.2.3.4.5.7_ln'}))
+            first = false
+        end
+
+        --setUp private key and certificate
+        local ca = {}
+        self.ca = ca
+        ca.dn = {{commonName='CA'},{C='CN'}}
+        ca.pkey = assert(openssl.pkey.new())
+        local subject = assert(openssl.x509.name.new(ca.dn))
+        ca.req = assert(csr.new(subject,ca.pkey))
+        ca.cert = assert(ca.req:to_x509(ca.pkey))
+
+        local attributes =
+        {
+            {
+                object='basicConstraints',
+                type=asn1.OCTET_STRING,
+                value=cafalse
+            }
+        }
+        local extensions =
+        {
+            openssl.x509.extension.new_extension(
+            {
+            object='extendedKeyUsage',
+            value = 'timeStamping',
+            critical = true
+        })}
+
+        local tsa = {}
+        self.tsa = tsa
+        tsa.dn  = {{commonName='tsa'},{C='CN'}}
+        tsa.pkey = assert(openssl.pkey.new())
+        subject = openssl.x509.name.new(tsa.dn)
+
+        tsa.req = csr.new(subject,tsa.pkey)
+        assertEquals(type(tsa.req:parse()),'table')
+
+        tsa.cert = openssl.x509.new(1, tsa.req)
+        assert(tsa.cert:validat(os.time(), os.time() + 3600*24*365))
+        assert(tsa.cert:extensions(extensions))
+        assert(tsa.cert:sign(ca.pkey,ca.cert))
+
+        assertEquals(type(tsa.cert:parse()),'table')
+
+        ca.store = openssl.x509.store.new({ca.cert})
+        assert(tsa.cert:check(ca.store,nil,'timestamp_sign'))
+
+        local args = {}
+        args.attribs = {}
+        args.extentions = {}
+        args.digest = 'sha1WithRSAEncryption'
+        args.num_days = 3650
+        args.serialNumber = 1
+    end
+
+    function testTSComplex:testCallback()
+        testTSRequest:setUp()
+        local req = testTSRequest:testReq3()
+
+        local tsa = self.tsa
+        local oid = '1.2.3.4.100'
+        local obj = assert(asn1.new_object(oid))
+        local req_ctx = assert(ts.resp_ctx_new(tsa.cert, tsa.pkey, obj))
+        assert(req_ctx:md({'md5','sha1'}))
+        assert(req_ctx:policies({assert(asn1.new_object('1.1.3')),assert(asn1.new_object('1.1.4'))}))
+
+        local sn = 0
+        req_ctx:set_serial_cb(function(self)
+            sn = sn + 1
+            return sn
+        end)
+
+        local now = os.time()
+        req_ctx:set_time_cb(function(self)
+            return now
+        end)
+
+        assert(pcall(function()
+        local res = req_ctx:sign(req)
+        t = assert(res:info())
+        assertIsTable(t)
+
+        assert(t.status_info.status:tostring()=='0')
+        assert(not t.status_info.text)
+        assert(not t.status_info.failure_info)
+        assertIsTable(t.tst_info)
+        assertIsUserdata(t.token)
+
+        local tst = t.tst_info
+        assertEquals(tst.serial:tostring(),string.format('%02x',sn))
+        assertEquals(tst.version,1)
+        assertEquals(tst.ordering,false)
+        assertEquals(tst.policy_id:txt(true),oid)
+
+        local function get_timezone()
+          local now = os.time()
+          return os.difftime(now, os.time(os.date("!*t", now)))
+        end
+        timezone = get_timezone()
+
+        assertEquals(tst.time:tostring(),os.date('%Y%m%d%H%M%SZ',now-timezone))
+        assertIsString(tst.nonce:tostring())
+        local vry = assert(ts.verify_ctx_new())
+        vry:imprint(self.hash)
+        vry:data(self.dat)
+        vry:store(self.ca.store)
+        assert(vry:verify(res))
+
+        end))
+    end
