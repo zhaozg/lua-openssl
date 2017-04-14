@@ -802,7 +802,6 @@ static ASN1_INTEGER* openssl_serial_cb(TS_RESP_CTX*ctx, void*data)
   int err;
   TS_CB_ARG *arg;
   lua_State* L = data;
-  int top = lua_gettop(L);
 
   openssl_getvalue(L, ctx, serial_cb_key);
   if (!lua_isuserdata(L, -1)) {
