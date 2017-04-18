@@ -1,3 +1,4 @@
+print('ENTER to continue')
 io.read()
 
 local openssl = require('openssl')
@@ -24,55 +25,46 @@ veFd3yM=
 -----END CERTIFICATE-----
 ]]
 
-function dump_x509ext(ext)
-
-    i = 3
-    t = ext.info(ext)
-
-    for k,v in pairs(t) do
-        if(type(v)=='table') then
-            print( string.rep('\t',i),k..'={')
-            dump_x509ext(v,i+1)
-            print( string.rep('\t',i),k..'=}')
-        else
-            if(type(v)=='userdata') then
-                local _, stype = v:type()
-                print( string.rep('\t',i),k..'='..openssl.hex(tostring(v)))
-                print( string.rep('\t',i),string.format('TYPE:%s',stype))
-            else
-                print( string.rep('\t',i),k..'='..tostring(v))
-            end
-        end
-    end
-end
-
 function dump(t,i)
     for k,v in pairs(t) do
-        if(type(v)=='table') then
+        if type(v) == 'table' then
             print( string.rep('\t',i),k..'={')
             dump(v,i+1)
-            print( string.rep('\t',i),k..'=}')
+            print( string.rep('\t',i),'}')
+        elseif type(v) == 'userdata' then
+            local s = tostring(v)
+            if s:match('^openssl.asn1_') then
+                if type(k)=='userdata' and tostring(k):match('^openssl.asn1_object') then
+                    print( string.rep('\t',i),k:sn()..'='..v:data() )
+                elseif s:match('^openssl.asn1_integer') then
+                    print( string.rep('\t',i),tostring(k)..'='..tostring(v),v:bn())
+                else
+                    print( string.rep('\t',i),tostring(k)..'='..tostring(v),v:data())
+                end
+            elseif s:match('^openssl.x509_name') then
+                print( string.rep('\t',i),k..'='..v:oneline())
+                print( string.rep('\t',i),k..'={')
+                dump(v:info(true), i+1)
+                print( string.rep('\t',i),k..'=}')
+            elseif s:match('^openssl.x509_extension') then
+                print( string.rep('\t',i),k..'={')
+                dump(v:info(true), i+1)
+                print(string.rep('\t',i),'}')
+            elseif s:match('^openssl.x509_algor') then
+                print(string.rep('\t',i), k..'='..v:tostring())
+            else
+                print( string.rep('\t',i),k..'='..v)
+            end
         else
             print( string.rep('\t',i),k..'='..tostring(v))
-            if k == "extensions" then
-                n = #v
-                for q=1, n do
-                    x = v:get(q)
-                    print (x)
-                    dump_x509ext(x)
-                    --openssl.x509.extension q =
-                    --v.object()
-                end
-            end
         end
     end
 end
 
 function test_x509()
     local x = openssl.x509.read(certasstring)
-    t = x:parse()
+    local t = x:parse()
     dump(t,0)
-
 end
 
 test_x509()
