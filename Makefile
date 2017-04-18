@@ -25,18 +25,20 @@ ifneq (, $(findstring linux, $(SYS)))
 LDFLAGS		    = -fPIC -lrt -ldl
 OPENSSL_LIBS	?= $(shell pkg-config openssl --libs) 
 OPENSSL_CFLAGS	?= $(shell pkg-config openssl --cflags)
-CFLAGS		    = -fPIC $(OPENSSL_CFLAGS) $(LUA_CFLAGS) 
+CFLAGS		 = -fPIC $(OPENSSL_CFLAGS) $(LUA_CFLAGS) 
+LIB_OPTION	 = -Wl,--no-undefined
 endif
 ifneq (, $(findstring apple, $(SYS)))
 # Do darwin things
-LDFLAGS		    = -fPIC -lrt -ldl
+LDFLAGS		 = -fPIC -lrt -ldl
 OPENSSL_LIBS	?= $(shell pkg-config openssl --libs) 
 OPENSSL_CFLAGS	?= $(shell pkg-config openssl --cflags)
-CFLAGS		    = -fPIC $(OPENSSL_CFLAGS) $(LUA_CFLAGS)
+CFLAGS		 = -fPIC $(OPENSSL_CFLAGS) $(LUA_CFLAGS)
+#LIB_OPTION	 = -bundle -undefined dynamic_lookup #for MacOS X
 endif
 ifneq (, $(findstring mingw, $(SYS)))
 # Do mingw things
-V			= $(shell lua -e "v=string.gsub('$(LUAV)','%.','');print(v)")
+V		= $(shell lua -e "v=string.gsub('$(LUAV)','%.','');print(v)")
 LDFLAGS		= -mwindows -lcrypt32 -lssl -lcrypto -lws2_32 $(PREFIX)/bin/lua$(V).dll 
 LUA_CFLAGS	= -DLUA_LIB -DLUA_BUILD_AS_DLL -I$(PREFIX)/include/
 CFLAGS		= $(OPENSSL_CFLAGS) $(LUA_CFLAGS)
@@ -45,7 +47,7 @@ ifneq (, $(findstring cygwin, $(SYS)))
 # Do cygwin things
 OPENSSL_LIBS	?= $(shell pkg-config openssl --libs) 
 OPENSSL_CFLAGS  ?= $(shell pkg-config openssl --cflags)
-CFLAGS		= -fPIC $(OPENSSL_CFLAGS) $(LUA_CFLAGS)
+CFLAGS		 = -fPIC $(OPENSSL_CFLAGS) $(LUA_CFLAGS)
 endif
 #custome config
 ifeq (.config, $(wildcard .config))
@@ -53,8 +55,6 @@ include .config
 endif
 
 LIBNAME= $T.so.$V
-
-#LIB_OPTION= -bundle -undefined dynamic_lookup #for MacOS X
 
 # Compilation directives
 WARN_MOST	= -Wall -W -Waggregate-return -Wcast-align -Wmissing-prototypes -Wnested-externs -Wshadow -Wwrite-strings -pedantic
