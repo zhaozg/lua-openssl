@@ -43,19 +43,15 @@
 * 0.9.3a         0x0090301f
 * 0.9.4          0x0090400f
 * 1.2.3z         0x102031af
-*
-* For continuity reasons (because 0.9.5 is already out, and is coded
-* 0x00905100), between 0.9.5 and 0.9.6 the coding of the patch level
-* part is slightly different, by setting the highest bit.  This means
-* that 0.9.5a looks like this: 0x0090581f.  At 0.9.6, we can start
-* with 0x0090600S...
-*
-* (Prior to 0.9.3-dev a different scheme was used: 0.9.2b is 0x0922.)
-* (Prior to 0.9.5a beta1, a different scheme was used: MMNNFFRBB for
-*  major minor fix final patch/beta)
 */
-#define LOPENSSL_VERSION_NUM  0x00500001
-#define LOPENSSL_VERSION  "0.5.1"
+
+/*History
+  2017-04-18  update to 0.7.1 
+*/
+
+/*                              MNNFFPPS  */
+#define LOPENSSL_VERSION_NUM  0x00701000
+#define LOPENSSL_VERSION  "0.7.1"
 
 #if OPENSSL_VERSION_NUMBER >= 0x10000000L
 #include <openssl/lhash.h>
