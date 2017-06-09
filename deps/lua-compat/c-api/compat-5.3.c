@@ -90,12 +90,14 @@ COMPAT53_API int lua_compare (lua_State *L, int idx1, int idx2, int op) {
 }
 
 
+#ifndef LUA_OK
 COMPAT53_API void lua_copy (lua_State *L, int from, int to) {
   int abs_to = lua_absindex(L, to);
   luaL_checkstack(L, 1, "not enough stack slots");
   lua_pushvalue(L, from);
   lua_replace(L, abs_to);
 }
+#endif
 
 
 COMPAT53_API void lua_len (lua_State *L, int i) {
@@ -132,6 +134,7 @@ COMPAT53_API void lua_rawsetp (lua_State *L, int i, const void *p) {
 }
 
 
+#ifndef LUA_OK
 COMPAT53_API lua_Integer lua_tointegerx (lua_State *L, int i, int *isnum) {
   lua_Integer n = lua_tointeger(L, i);
   if (isnum != NULL) {
@@ -148,6 +151,7 @@ COMPAT53_API lua_Number lua_tonumberx (lua_State *L, int i, int *isnum) {
   }
   return n;
 }
+#endif
 
 
 COMPAT53_API void luaL_checkversion (lua_State *L) {
@@ -195,6 +199,7 @@ COMPAT53_API int luaL_len (lua_State *L, int i) {
 }
 
 
+#ifndef LUA_OK
 COMPAT53_API void luaL_setfuncs (lua_State *L, const luaL_Reg *l, int nup) {
   luaL_checkstack(L, nup+1, "too many upvalues");
   for (; l->name != NULL; l++) {  /* fill the table with given functions */
@@ -231,6 +236,7 @@ COMPAT53_API void *luaL_testudata (lua_State *L, int i, const char *tname) {
   }
   return p;
 }
+#endif
 
 
 COMPAT53_API const char *luaL_tolstring (lua_State *L, int idx, size_t *len) {

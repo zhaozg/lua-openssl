@@ -63,7 +63,6 @@ extern "C" {
 #  define COMPAT53_IS_LUAJIT
 #endif
 
-#define LUA_OK 0
 #define LUA_OPADD 0
 #define LUA_OPSUB 1
 #define LUA_OPMUL 2
@@ -95,8 +94,10 @@ COMPAT53_API void lua_arith (lua_State *L, int op);
 #define lua_compare COMPAT53_CONCAT(COMPAT53_PREFIX, _compare)
 COMPAT53_API int lua_compare (lua_State *L, int idx1, int idx2, int op);
 
+#ifndef LUA_OK
 #define lua_copy COMPAT53_CONCAT(COMPAT53_PREFIX, _copy)
 COMPAT53_API void lua_copy (lua_State *L, int from, int to);
+#endif
 
 #define lua_getuservalue(L, i) \
   (lua_getfenv(L, i), lua_type(L, -1))
@@ -106,10 +107,14 @@ COMPAT53_API void lua_copy (lua_State *L, int from, int to);
 #define lua_len COMPAT53_CONCAT(COMPAT53_PREFIX, _len)
 COMPAT53_API void lua_len (lua_State *L, int i);
 
+#if !defined(luaL_newlibtable)
 #define luaL_newlibtable(L, l) \
   (lua_createtable(L, 0, sizeof(l)/sizeof(*(l))-1))
+#endif
+#if !defined(luaL_newlib)
 #define luaL_newlib(L, l) \
   (luaL_newlibtable(L, l), luaL_register(L, NULL, l))
+#endif
 
 #define lua_pushglobaltable(L) \
   lua_pushvalue(L, LUA_GLOBALSINDEX)
@@ -122,11 +127,13 @@ COMPAT53_API void lua_rawsetp(lua_State *L, int i, const void *p);
 
 #define lua_rawlen(L, i) lua_objlen(L, i)
 
+#ifndef LUA_OK
 #define lua_tointegerx COMPAT53_CONCAT(COMPAT53_PREFIX, _tointegerx)
 COMPAT53_API lua_Integer lua_tointegerx (lua_State *L, int i, int *isnum);
 
 #define lua_tonumberx COMPAT53_CONCAT(COMPAT53_PREFIX, _tonumberx)
 COMPAT53_API lua_Number lua_tonumberx (lua_State *L, int i, int *isnum);
+#endif
 
 #define luaL_checkversion COMPAT53_CONCAT(COMPAT53_PREFIX, L_checkversion)
 COMPAT53_API void luaL_checkversion (lua_State *L);
@@ -140,14 +147,18 @@ COMPAT53_API int luaL_getsubtable (lua_State* L, int i, const char *name);
 #define luaL_len COMPAT53_CONCAT(COMPAT53_PREFIX, L_len)
 COMPAT53_API int luaL_len (lua_State *L, int i);
 
+#ifndef LUA_OK
 #define luaL_setfuncs COMPAT53_CONCAT(COMPAT53_PREFIX, L_setfuncs)
 COMPAT53_API void luaL_setfuncs (lua_State *L, const luaL_Reg *l, int nup);
+#endif
 
+#ifndef LUA_OK
 #define luaL_setmetatable COMPAT53_CONCAT(COMPAT53_PREFIX, L_setmetatable)
 COMPAT53_API void luaL_setmetatable (lua_State *L, const char *tname);
 
 #define luaL_testudata COMPAT53_CONCAT(COMPAT53_PREFIX, L_testudata)
 COMPAT53_API void *luaL_testudata (lua_State *L, int i, const char *tname);
+#endif
 
 #define luaL_tolstring COMPAT53_CONCAT(COMPAT53_PREFIX, L_tolstring)
 COMPAT53_API const char *luaL_tolstring (lua_State *L, int idx, size_t *len);
@@ -359,6 +370,9 @@ COMPAT53_API void luaL_requiref (lua_State *L, const char *modname,
 #  include "compat-5.3.c"
 #endif
 
+#ifndef LUA_OK
+#define LUA_OK 0
+#endif
 
 #endif /* COMPAT53_H_ */
 

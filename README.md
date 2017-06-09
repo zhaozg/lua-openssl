@@ -120,7 +120,7 @@ bn library:
 
 ## Version
 
-This lua-openssl toolkit works with Lua 5.1 or 5.2, and OpenSSL (0.9.8 or above 1.0.0). 
+This lua-openssl toolkit works with Lua 5.1/5.2 or LuaJIT 2.0/2.1, and OpenSSL (0.9.8 or above 1.0.0). 
 It is recommended to use the most up-to-date OpenSSL version because of the recent security fixes.
 
 If you want to get the lua-openssl and OpenSSL versions from a Lua script, here is how:
