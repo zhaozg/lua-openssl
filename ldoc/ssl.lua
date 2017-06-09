@@ -222,46 +222,46 @@ do  --define ssl object
 --  SSL operation.
 -- @type ssl
 
---- get value according to what, arg can be list, arg must be in below list
+--- get value according to arg
 -- @tparam string arg
---  certificate:  return SSL certificates
---  fd: return file or network connect fd
---  rfd:
---  wfd:
---  client_CA_list
---  read_ahead: -> boolean
---  shared_ciphers: string
---  cipher_list -> string
---  verify_mode: number
---  verify_depth
---  state_string
---  state_string_long
---  rstate_string
---  rstate_string_long
---  iversion
---  version
---  default_timeout,
---  certificates
---  verify_result
---  state
---  state_string
+--  <br/>certificate:  return SSL certificates
+--  <br/>fd: return file or network connect fd
+--  <br/>rfd:
+--  <br/>wfd:
+--  <br/>client_CA_list
+--  <br/>read_ahead: -> boolean
+--  <br/>shared_ciphers: string
+--  <br/>cipher_list -> string
+--  <br/>verify_mode: number
+--  <br/>verify_depth
+--  <br/>state_string
+--  <br/>state_string_long
+--  <br/>rstate_string
+--  <br/>rstate_string_long
+--  <br/>iversion
+--  <br/>version
+--  <br/>default_timeout,
+--  <br/>certificates
+--  <br/>verify_result
+--  <br/>state
+--  <br/>state_string
 -- @return according to arg
 function get() end
 
---- set value according to what, arg can be list, arg must be in below list
+--- set value according to arg
 -- @tparam string arg
---  certificate:  return SSL certificates
---  fd: return file or network connect fd
---  rfd:
---  wfd:
---  client_CA:
---  read_ahead
---  cipher_list
---  verify_depth
---  purpose:
---  trust:
---  verify_result
---  state
+--  <br/>certificate:  return SSL certificates
+--  <br/>fd: return file or network connect fd
+--  <br/>rfd:
+--  <br/>wfd:
+--  <br/>client_CA:
+--  <br/>read_ahead:
+--  <br/>cipher_list:
+--  <br/>verify_depth:
+--  <br/>purpose:
+--  <br/>trust:
+--  <br/>verify_result:
+--  <br/>hostname:
 -- @param value val type accroding to arg
 -- @return value
 function set() end
