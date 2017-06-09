@@ -106,10 +106,14 @@ COMPAT53_API void lua_copy (lua_State *L, int from, int to);
 #define lua_len COMPAT53_CONCAT(COMPAT53_PREFIX, _len)
 COMPAT53_API void lua_len (lua_State *L, int i);
 
+#if !defined(luaL_newlibtable)
 #define luaL_newlibtable(L, l) \
   (lua_createtable(L, 0, sizeof(l)/sizeof(*(l))-1))
+#endif
+#if !defined(luaL_newlib)
 #define luaL_newlib(L, l) \
   (luaL_newlibtable(L, l), luaL_register(L, NULL, l))
+#endif
 
 #define lua_pushglobaltable(L) \
   lua_pushvalue(L, LUA_GLOBALSINDEX)
