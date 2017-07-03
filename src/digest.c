@@ -32,7 +32,7 @@ static LUA_FUNCTION(openssl_digest_new)
 {
   const EVP_MD* md = get_digest(L, 1, NULL);
   int ret;
-  ENGINE* e = (!lua_isnoneornil(L, 2)) ? CHECK_OBJECT(2, ENGINE, "openssl.engine") : NULL;
+  ENGINE* e = lua_isnoneornil(L, 2) ? NULL : CHECK_OBJECT(2, ENGINE, "openssl.engine");
   EVP_MD_CTX* ctx = EVP_MD_CTX_create();
   EVP_MD_CTX_init(ctx);
   lua_pushlightuserdata(L, e);
@@ -52,11 +52,12 @@ static LUA_FUNCTION(openssl_digest_new)
 
 static LUA_FUNCTION(openssl_digest)
 {
-  const EVP_MD *md = NULL;
+  const EVP_MD *md;
+  ENGINE *eng;
   size_t inl;
+  const char* in;
   unsigned char buf[EVP_MAX_MD_SIZE];
   unsigned int  blen = sizeof(buf);
-  const char* in = NULL;
   int raw, status;
 
   if (lua_istable(L, 1))
@@ -73,7 +74,9 @@ static LUA_FUNCTION(openssl_digest)
   md = get_digest(L, 1, NULL);
   in = luaL_checklstring(L, 2, &inl);
   raw = (lua_isnoneornil(L, 3)) ? 0 : lua_toboolean(L, 3);
-  status = EVP_Digest(in, inl, buf, &blen, md, NULL);
+  eng = (lua_isnoneornil(L, 4) ? 0 : CHECK_OBJECT(4, ENGINE, "openssl.engine"));
+
+  status = EVP_Digest(in, inl, buf, &blen, md, eng);
   if (status)
   {
     if (raw)
@@ -128,7 +131,7 @@ static LUA_FUNCTION(openssl_digest_info)
 static LUA_FUNCTION(openssl_evp_digest_init)
 {
   EVP_MD* md = CHECK_OBJECT(1, EVP_MD, "openssl.evp_digest");
-  ENGINE*     e = lua_gettop(L) > 1 ? CHECK_OBJECT(2, ENGINE, "openssl.engine") : NULL;
+  ENGINE*     e = lua_isnoneornil(L, 2) ? NULL : CHECK_OBJECT(2, ENGINE, "openssl.engine");
 
   EVP_MD_CTX* ctx = EVP_MD_CTX_create();
   if (ctx)

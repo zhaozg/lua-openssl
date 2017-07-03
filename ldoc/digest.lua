@@ -1,4 +1,4 @@
---- 
+---
 -- Provide digest function in lua.
 --
 -- @module digest
@@ -34,11 +34,11 @@ function new() end
 --- quick method to generate digest result
 --
 -- @tparam string|integer|asn1_object alg name, nid or object identity
--- @tparam string msg to compute digest 
+-- @tparam string msg to compute digest
 -- @tparam[opt] boolean raw binary result return if set true, or hex encoded string default
 -- @treturn string digest result value
 function digest() end
- 
+
 --- create digest object for sign
 --
 -- @tparam string|integer|asn1_object alg name, nid or object identity
@@ -64,7 +64,7 @@ do  -- define evp_digest
 
 --- create new evp_digest_ctx
 --
--- @tparam[opt] engine, nothing will use default engine
+-- @tparam[opt] engine, eng
 -- @treturn evp_digest_ctx ctx
 -- @see evp_digest_ctx
 function new() end
@@ -100,7 +100,7 @@ do  -- define evp_digest_ctx
 --- openssl.evp_digest_ctx object
 -- @type evp_digest_ctx
 --
- 
+
 --- get infomation of evp_digest_ctx object
 --
 -- @treturn table info keys include size,block_size,digest
@@ -116,7 +116,7 @@ function update() end
 --
 -- @tparam[opt] string last last part of data
 -- @tparam[opt] boolean raw binary or hex encoded result, default true for binary result
--- @treturn string val hash result 
+-- @treturn string val hash result
 function final() end
 
 
