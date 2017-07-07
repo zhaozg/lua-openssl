@@ -6,6 +6,7 @@
 \*=========================================================================*/
 #include "openssl.h"
 #include "private.h"
+#include <openssl/engine.h>
 
 #define MYNAME    "ec"
 #define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
@@ -484,6 +485,18 @@ static int openssl_ecdh_compute_key(lua_State*L)
   return 1;
 }
 
+static int openssl_ecdsa_set_method(lua_State *L)
+{
+  EC_KEY *ec = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
+  ENGINE *e = CHECK_OBJECT(2, ENGINE, "openssl.engine");
+  const ECDSA_METHOD *m = ENGINE_get_ECDSA(e);
+  if (m) {
+    int r = ECDSA_set_method(ec, m);
+    return openssl_pushresult(L, r);
+  }
+  return 0;
+}
+
 #ifdef EC_EXT
 EC_EXT_DEFINE
 #endif
@@ -494,6 +507,7 @@ static luaL_Reg ec_key_funs[] =
   {"sign",        openssl_ecdsa_sign},
   {"verify",      openssl_ecdsa_verify},
   {"compute_key", openssl_ecdh_compute_key},
+  {"set_method",  openssl_ecdsa_set_method},
 
 #ifdef EC_EXT
   EC_EXT

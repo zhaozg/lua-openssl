@@ -7,6 +7,7 @@
 #include "openssl.h"
 #include "private.h"
 #include <openssl/rsa.h>
+#include <openssl/engine.h>
 
 #define MYNAME    "rsa"
 #define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
@@ -176,6 +177,19 @@ static LUA_FUNCTION(openssl_rsa_read)
   return 1;
 }
 
+static int openssl_rsa_set_method(lua_State *L) 
+{
+  RSA* rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");
+  ENGINE *e = CHECK_OBJECT(2, ENGINE, "openssl.engine");
+  const RSA_METHOD *m = ENGINE_get_RSA(e);
+  if (m) 
+  {
+    int r = RSA_set_method(rsa, m);
+    return openssl_pushresult(L, r);
+  }
+  return 0;
+}
+
 static luaL_Reg rsa_funs[] =
 {
   {"parse",       openssl_rsa_parse},
@@ -185,6 +199,7 @@ static luaL_Reg rsa_funs[] =
   {"sign",        openssl_rsa_sign},
   {"verify",      openssl_rsa_verify},
   {"size",        openssl_rsa_size},
+  {"set_method",  openssl_rsa_set_method},
 
   {"__gc",        openssl_rsa_free},
   {"__tostring",  auxiliar_tostring},

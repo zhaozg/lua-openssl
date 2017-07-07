@@ -7,6 +7,7 @@
 #include "openssl.h"
 #include "private.h"
 #include <openssl/dsa.h>
+#include <openssl/engine.h>
 
 #define MYNAME    "dsa"
 #define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
@@ -50,9 +51,23 @@ static LUA_FUNCTION(openssl_dsa_parse)
   return 1;
 }
 
+static int openssl_dsa_set_method(lua_State *L)
+{
+  DSA* dsa = CHECK_OBJECT(1, DSA, "openssl.dsa");
+  ENGINE *e = CHECK_OBJECT(2, ENGINE, "openssl.engine");
+  const DSA_METHOD *m = ENGINE_get_DSA(e);
+  if (m)
+  {
+    int r = DSA_set_method(dsa, m);
+    return openssl_pushresult(L, r);
+  }
+  return 0;
+}
+
 static luaL_Reg dsa_funs[] =
 {
   {"parse",       openssl_dsa_parse},
+  {"set_method",  openssl_dsa_set_method},
 
   {"__gc",        openssl_dsa_free},
   {"__tostring",  auxiliar_tostring},
