@@ -2,7 +2,7 @@ T=openssl
 
 PREFIX		?=/usr/local
 LIB_OPTION	?= -shared 
-CC			 = gcc
+CC		?= gcc
 
 #Lua auto detect
 LUA_VERSION ?= $(shell pkg-config luajit --print-provides)
@@ -23,11 +23,11 @@ SYS := $(shell gcc -dumpmachine)
 
 ifneq (, $(findstring linux, $(SYS)))
 # Do linux things
-LDFLAGS			 = -fpic -lrt -ldl -lm
+LDFLAGS		 = -fpic -lrt -ldl -lm
 OPENSSL_LIBS	?= $(shell pkg-config openssl --libs) 
 OPENSSL_CFLAGS	?= $(shell pkg-config openssl --cflags)
-CFLAGS			 = -fpic $(OPENSSL_CFLAGS) $(LUA_CFLAGS)
-LIB_OPTION		+= -Wl,--no-undefined
+CFLAGS		 = -fpic $(OPENSSL_CFLAGS) $(LUA_CFLAGS)
+LIB_OPTION	+= -Wl,--no-undefined
 endif
 ifneq (, $(findstring apple, $(SYS)))
 # Do darwin things
