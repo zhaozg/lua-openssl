@@ -377,10 +377,11 @@ static LUA_FUNCTION(openssl_pkey_new)
 
     if (strcasecmp(alg, "rsa") == 0)
     {
-      int bits = luaL_optint(L, 2, 1024);
+      int bits = luaL_optint(L, 2, 2048);
       int e = luaL_optint(L, 3, 65537);
-      RSA* rsa = RSA_new();
-
+      ENGINE *eng = lua_isnoneornil(L, 4) ? NULL : CHECK_OBJECT(4, ENGINE, "openssl.engine");
+      
+      RSA *rsa = eng ? RSA_new_method(eng) : RSA_new();
       BIGNUM *E = BN_new();
       BN_set_word(E, e);
       if (RSA_generate_key_ex(rsa, bits, E, NULL))
@@ -397,8 +398,9 @@ static LUA_FUNCTION(openssl_pkey_new)
       int bits = luaL_optint(L, 2, 1024);
       size_t seed_len = 0;
       const char* seed = luaL_optlstring(L, 3, NULL, &seed_len);
+      ENGINE *eng = lua_isnoneornil(L, 4) ? NULL : CHECK_OBJECT(4, ENGINE, "openssl.engine");
 
-      DSA *dsa = DSA_new();
+      DSA *dsa = eng ? DSA_new_method(eng) : DSA_new();
       if (DSA_generate_parameters_ex(dsa, bits, (byte*)seed, seed_len, NULL, NULL, NULL)
           && DSA_generate_key(dsa))
       {
@@ -410,10 +412,11 @@ static LUA_FUNCTION(openssl_pkey_new)
     }
     else if (strcasecmp(alg, "dh") == 0)
     {
-      int bits = luaL_optint(L, 2, 512);
+      int bits = luaL_optint(L, 2, 1024);
       int generator = luaL_optint(L, 3, 2);
+      ENGINE *eng = lua_isnoneornil(L, 4) ? NULL : CHECK_OBJECT(4, ENGINE, "openssl.engine");
 
-      DH* dh = DH_new();
+      DH* dh = eng ? DH_new_method(eng) : DH_new();
       if (DH_generate_parameters_ex(dh, bits, generator, NULL))
       {
         if (DH_generate_key(dh))

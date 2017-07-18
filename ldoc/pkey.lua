@@ -14,9 +14,12 @@ do --define module function
 function new() end
 
 --- generate a new keypair
--- @tparam[opt='rsa'] string alg, accept 'rsa','dsa','dh'
--- @tparam[opt=1024|512] integer bits, rsa with 1024,dh with 512
--- @tparam[opt] integer when alg is rsa give e value default is 0x10001
+-- @tparam[opt='rsa'] string alg, accept `rsa`,`dsa`,`dh`
+-- @tparam[opt=2048|512] integer bits, `rsa` with 2048, `dh` or `dsa` with 1024
+-- @tparam[opt] integer e, when alg is `rsa` give e value default is 0x10001,
+--  when alg is `dh` give generator value default is 2,
+--  when alg is `dsa` give string type seed value default is none.
+-- @tparam[opt] engine eng
 -- @treturn evp_pkey object with mapping to EVP_PKEY in openssl
 function new() end
 
