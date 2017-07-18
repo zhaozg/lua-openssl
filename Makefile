@@ -2,6 +2,7 @@ T=openssl
 
 PREFIX		?=/usr/local
 LIB_OPTION	?= -shared 
+CC			 = gcc
 
 #Lua auto detect
 LUA_VERSION ?= $(shell pkg-config luajit --print-provides)
@@ -22,11 +23,11 @@ SYS := $(shell gcc -dumpmachine)
 
 ifneq (, $(findstring linux, $(SYS)))
 # Do linux things
-LDFLAGS		    = -fPIC -lrt -ldl
+LDFLAGS			 = -fpic -lrt -ldl -lm
 OPENSSL_LIBS	?= $(shell pkg-config openssl --libs) 
 OPENSSL_CFLAGS	?= $(shell pkg-config openssl --cflags)
-CFLAGS		 = -fPIC $(OPENSSL_CFLAGS) $(LUA_CFLAGS) 
-LIB_OPTION	 = -Wl,--no-undefined
+CFLAGS			 = -fpic $(OPENSSL_CFLAGS) $(LUA_CFLAGS)
+LIB_OPTION		+= -Wl,--no-undefined
 endif
 ifneq (, $(findstring apple, $(SYS)))
 # Do darwin things
@@ -35,6 +36,8 @@ OPENSSL_LIBS	?= $(shell pkg-config openssl --libs)
 OPENSSL_CFLAGS	?= $(shell pkg-config openssl --cflags)
 CFLAGS		 = -fPIC $(OPENSSL_CFLAGS) $(LUA_CFLAGS)
 #LIB_OPTION	 = -bundle -undefined dynamic_lookup #for MacOS X
+MACOSX_DEPLOYMENT_TARGET="10.3"
+CC := MACOSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET} $(CC)
 endif
 ifneq (, $(findstring mingw, $(SYS)))
 # Do mingw things
@@ -49,7 +52,7 @@ OPENSSL_LIBS	?= $(shell pkg-config openssl --libs)
 OPENSSL_CFLAGS  ?= $(shell pkg-config openssl --cflags)
 CFLAGS		 = -fPIC $(OPENSSL_CFLAGS) $(LUA_CFLAGS)
 endif
-#custome config
+#custom config
 ifeq (.config, $(wildcard .config))
 include .config
 endif
@@ -57,11 +60,10 @@ endif
 LIBNAME= $T.so.$V
 
 # Compilation directives
-WARN_MOST	= -Wall -W -Waggregate-return -Wcast-align -Wmissing-prototypes -Wnested-externs -Wshadow -Wwrite-strings -pedantic
-WARN		= -Wall -Wno-unused-value
-WARN_MIN	= 
-CFLAGS		+= $(WARN_MIN) -DPTHREADS 
-CC= gcc -g -Wall $(CFLAGS) -Ideps
+WARN_MIN	= -Wall -Wno-unused-value
+WARN		= -Wall
+WARN_MOST	= $(WARN) -W -Waggregate-return -Wcast-align -Wmissing-prototypes -Wnested-externs -Wshadow -Wwrite-strings -pedantic
+CFLAGS		+= -g $(WARN_MIN) -DPTHREADS -Ideps
 
 
 OBJS=src/asn1.o src/auxiliar.o src/bio.o src/cipher.o src/cms.o src/compat.o src/crl.o src/csr.o src/dh.o src/digest.o src/dsa.o \
@@ -69,13 +71,13 @@ src/ec.o src/engine.o src/hmac.o src/lbn.o src/lhash.o src/misc.o src/ocsp.o src
 src/pkey.o src/rsa.o src/ssl.o src/th-lock.o src/util.o src/x509.o src/xattrs.o src/xexts.o src/xname.o src/xstore.o src/xalgor.o src/callback.o 
 
 .c.o:
-	$(CC) -c -o $@ $?
+	$(CC) $(CFLAGS) -c -o $@ $?
 
 all: $T.so
-	echo $(SYS)
+	@echo "Target system: "$(SYS)
 
 $T.so: $(OBJS)
-	MACOSX_DEPLOYMENT_TARGET="10.3"; export MACOSX_DEPLOYMENT_TARGET; $(CC) $(CFLAGS) $(LIB_OPTION) -o $T.so $(OBJS) $(OPENSSL_LIBS) $(LUA_LIBS) $(LDFLAGS)
+	$(CC) $(LDFLAGS) $(LIB_OPTION) -o $T.so $(OBJS) $(OPENSSL_LIBS) $(LUA_LIBS)
 
 install: all
 	mkdir -p $(LUA_LIBDIR)
