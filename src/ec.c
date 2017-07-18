@@ -489,11 +489,19 @@ static int openssl_ecdsa_set_method(lua_State *L)
 {
   EC_KEY *ec = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
   ENGINE *e = CHECK_OBJECT(2, ENGINE, "openssl.engine");
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
   const ECDSA_METHOD *m = ENGINE_get_ECDSA(e);
   if (m) {
     int r = ECDSA_set_method(ec, m);
     return openssl_pushresult(L, r);
   }
+#else
+  const EC_KEY_METHOD *m = ENGINE_get_EC(e);
+  if (m) {
+    int r = EC_KEY_set_method(ec, m);
+    return openssl_pushresult(L, r);
+  }
+#endif
   return 0;
 }
 

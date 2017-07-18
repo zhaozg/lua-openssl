@@ -315,7 +315,9 @@ LUALIB_API int luaopen_openssl(lua_State*L)
     LOAD_ENGINE_CUSTOM
 #endif
 #ifdef OPENSSL_SYS_WINDOWS
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
     RAND_screen();
+#endif
 #endif
     init = 1;
   }
