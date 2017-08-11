@@ -90,22 +90,22 @@ COMPAT53_API int lua_compare (lua_State *L, int idx1, int idx2, int op) {
 }
 
 
-#ifndef LUA_OK
 COMPAT53_API void lua_copy (lua_State *L, int from, int to) {
   int abs_to = lua_absindex(L, to);
   luaL_checkstack(L, 1, "not enough stack slots");
   lua_pushvalue(L, from);
   lua_replace(L, abs_to);
 }
-#endif
 
 
 COMPAT53_API void lua_len (lua_State *L, int i) {
   switch (lua_type(L, i)) {
-    case LUA_TSTRING: /* fall through */
+    case LUA_TSTRING:
+      lua_pushnumber(L, (lua_Integer)lua_objlen(L, i));
+      break;
     case LUA_TTABLE:
       if (!luaL_callmeta(L, i, "__len"))
-        lua_pushnumber(L, (int)lua_objlen(L, i));
+        lua_pushnumber(L, (lua_Integer)lua_objlen(L, i));
       break;
     case LUA_TUSERDATA:
       if (luaL_callmeta(L, i, "__len"))
@@ -134,12 +134,11 @@ COMPAT53_API void lua_rawsetp (lua_State *L, int i, const void *p) {
 }
 
 
-#ifndef LUA_OK
 COMPAT53_API lua_Integer lua_tointegerx (lua_State *L, int i, int *isnum) {
   lua_Integer n = lua_tointeger(L, i);
   if (isnum != NULL) {
     *isnum = (n != 0 || lua_isnumber(L, i));
-}
+  }
   return n;
 }
 
@@ -151,7 +150,6 @@ COMPAT53_API lua_Number lua_tonumberx (lua_State *L, int i, int *isnum) {
   }
   return n;
 }
-#endif
 
 
 COMPAT53_API void luaL_checkversion (lua_State *L) {
@@ -187,19 +185,19 @@ COMPAT53_API int luaL_getsubtable (lua_State *L, int i, const char *name) {
 }
 
 
-COMPAT53_API int luaL_len (lua_State *L, int i) {
-  int res = 0, isnum = 0;
+COMPAT53_API lua_Integer luaL_len (lua_State *L, int i) {
+  lua_Integer res = 0;
+  int isnum = 0;
   luaL_checkstack(L, 1, "not enough stack slots");
   lua_len(L, i);
-  res = (int)lua_tointegerx(L, -1, &isnum);
+  res = lua_tointegerx(L, -1, &isnum);
   lua_pop(L, 1);
   if (!isnum)
-    luaL_error(L, "object length is not a number");
+    luaL_error(L, "object length is not an integer");
   return res;
 }
 
 
-#ifndef LUA_OK
 COMPAT53_API void luaL_setfuncs (lua_State *L, const luaL_Reg *l, int nup) {
   luaL_checkstack(L, nup+1, "too many upvalues");
   for (; l->name != NULL; l++) {  /* fill the table with given functions */
@@ -236,12 +234,12 @@ COMPAT53_API void *luaL_testudata (lua_State *L, int i, const char *tname) {
   }
   return p;
 }
-#endif
 
 
 COMPAT53_API const char *luaL_tolstring (lua_State *L, int idx, size_t *len) {
   if (!luaL_callmeta(L, idx, "__tostring")) {
-    int t = lua_type(L, idx);
+    int t = lua_type(L, idx), tt = 0;
+    char const* name = NULL;
     switch (t) {
       case LUA_TNIL:
         lua_pushliteral(L, "nil");
@@ -257,16 +255,21 @@ COMPAT53_API const char *luaL_tolstring (lua_State *L, int idx, size_t *len) {
           lua_pushliteral(L, "false");
         break;
       default:
-        lua_pushfstring(L, "%s: %p", lua_typename(L, t),
-                                     lua_topointer(L, idx));
+        tt = luaL_getmetafield(L, idx, "__name");
+        name = (tt == LUA_TSTRING) ? lua_tostring(L, -1) : lua_typename(L, t);
+        lua_pushfstring(L, "%s: %p", name, lua_topointer(L, idx));
+        if (tt != LUA_TNIL)
+          lua_replace(L, -2);
         break;
     }
+  } else {
+    if (!lua_isstring(L, -1))
+      luaL_error(L, "'__tostring' must return a string");
   }
   return lua_tolstring(L, -1, len);
 }
 
 
-#if !defined(COMPAT53_IS_LUAJIT)
 static int compat53_countlevels (lua_State *L) {
   lua_Debug ar;
   int li = 1, le = 1;
@@ -421,7 +424,6 @@ COMPAT53_API int luaL_execresult (lua_State *L, int stat) {
     return 3;
   }
 }
-#endif /* not COMPAT53_IS_LUAJIT */
 
 
 COMPAT53_API void luaL_buffinit (lua_State *L, luaL_Buffer_53 *B) {
