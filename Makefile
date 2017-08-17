@@ -31,7 +31,7 @@ LIB_OPTION	+= -Wl,--no-undefined
 endif
 ifneq (, $(findstring apple, $(SYS)))
 # Do darwin things
-LDFLAGS		 = -fPIC -lrt -ldl
+LDFLAGS		 = -fPIC -ldl
 OPENSSL_LIBS	?= $(shell pkg-config openssl --libs) 
 OPENSSL_CFLAGS	?= $(shell pkg-config openssl --cflags)
 CFLAGS		 = -fPIC $(OPENSSL_CFLAGS) $(LUA_CFLAGS)
