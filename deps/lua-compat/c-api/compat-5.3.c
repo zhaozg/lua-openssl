@@ -236,40 +236,6 @@ COMPAT53_API void *luaL_testudata (lua_State *L, int i, const char *tname) {
 }
 
 
-COMPAT53_API const char *luaL_tolstring (lua_State *L, int idx, size_t *len) {
-  if (!luaL_callmeta(L, idx, "__tostring")) {
-    int t = lua_type(L, idx), tt = 0;
-    char const* name = NULL;
-    switch (t) {
-      case LUA_TNIL:
-        lua_pushliteral(L, "nil");
-        break;
-      case LUA_TSTRING:
-      case LUA_TNUMBER:
-        lua_pushvalue(L, idx);
-        break;
-      case LUA_TBOOLEAN:
-        if (lua_toboolean(L, idx))
-          lua_pushliteral(L, "true");
-        else
-          lua_pushliteral(L, "false");
-        break;
-      default:
-        tt = luaL_getmetafield(L, idx, "__name");
-        name = (tt == LUA_TSTRING) ? lua_tostring(L, -1) : lua_typename(L, t);
-        lua_pushfstring(L, "%s: %p", name, lua_topointer(L, idx));
-        if (tt != LUA_TNIL)
-          lua_replace(L, -2);
-        break;
-    }
-  } else {
-    if (!lua_isstring(L, -1))
-      luaL_error(L, "'__tostring' must return a string");
-  }
-  return lua_tolstring(L, -1, len);
-}
-
-
 static int compat53_countlevels (lua_State *L) {
   lua_Debug ar;
   int li = 1, le = 1;
@@ -546,7 +512,7 @@ COMPAT53_API void lua_seti (lua_State *L, int index, lua_Integer i) {
 
 
 #if !defined(lua_str2number)
-#  define lua_str2number(s, p)  strtod(s, p)
+#  define lua_str2number(s, p)  strtod((s), (p))
 #endif
 
 COMPAT53_API size_t lua_stringtonumber (lua_State *L, const char *s) {
@@ -561,6 +527,40 @@ COMPAT53_API size_t lua_stringtonumber (lua_State *L, const char *s) {
     }
   }
   return 0;
+}
+
+
+COMPAT53_API const char *luaL_tolstring (lua_State *L, int idx, size_t *len) {
+  if (!luaL_callmeta(L, idx, "__tostring")) {
+    int t = lua_type(L, idx), tt = 0;
+    char const* name = NULL;
+    switch (t) {
+      case LUA_TNIL:
+        lua_pushliteral(L, "nil");
+        break;
+      case LUA_TSTRING:
+      case LUA_TNUMBER:
+        lua_pushvalue(L, idx);
+        break;
+      case LUA_TBOOLEAN:
+        if (lua_toboolean(L, idx))
+          lua_pushliteral(L, "true");
+        else
+          lua_pushliteral(L, "false");
+        break;
+      default:
+        tt = luaL_getmetafield(L, idx, "__name");
+        name = (tt == LUA_TSTRING) ? lua_tostring(L, -1) : lua_typename(L, t);
+        lua_pushfstring(L, "%s: %p", name, lua_topointer(L, idx));
+        if (tt != LUA_TNIL)
+          lua_replace(L, -2);
+        break;
+    }
+  } else {
+    if (!lua_isstring(L, -1))
+      luaL_error(L, "'__tostring' must return a string");
+  }
+  return lua_tolstring(L, -1, len);
 }
 
 

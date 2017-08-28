@@ -4,12 +4,12 @@
 #include <stddef.h>
 #include <limits.h>
 #include <string.h>
-#if defined( __cplusplus ) && !defined( COMPAT53_LUA_CPP )
+#if defined(__cplusplus) && !defined(COMPAT53_LUA_CPP)
 extern "C" {
 #endif
 #include <lua.h>
 #include <lauxlib.h>
-#if defined( __cplusplus ) && !defined( COMPAT53_LUA_CPP )
+#if defined(__cplusplus) && !defined(COMPAT53_LUA_CPP)
 }
 #endif
 
@@ -112,24 +112,30 @@ COMPAT53_API int lua_compare (lua_State *L, int idx1, int idx2, int op);
 COMPAT53_API void lua_copy (lua_State *L, int from, int to);
 
 #define lua_getuservalue(L, i) \
-  (lua_getfenv(L, i), lua_type(L, -1))
+  (lua_getfenv((L), (i)), lua_type((L), -1))
 #define lua_setuservalue(L, i) \
-  (luaL_checktype(L, -1, LUA_TTABLE), lua_setfenv(L, i))
+  (luaL_checktype((L), -1, LUA_TTABLE), lua_setfenv((L), (i)))
 
 #define lua_len COMPAT53_CONCAT(COMPAT53_PREFIX, _len)
 COMPAT53_API void lua_len (lua_State *L, int i);
 
+#define lua_pushstring(L, s) \
+  (lua_pushstring((L), (s)), lua_tostring((L), -1))
+
+#define lua_pushlstring(L, s, len) \
+  ((((len) == 0) ? lua_pushlstring((L), "", 0) : lua_pushlstring((L), (s), (len))), lua_tostring((L), -1))
+
 #ifndef luaL_newlibtable
 #  define luaL_newlibtable(L, l) \
-  (lua_createtable(L, 0, sizeof(l)/sizeof(*(l))-1))
+  (lua_createtable((L), 0, sizeof((l))/sizeof(*(l))-1))
 #endif
 #ifndef luaL_newlib
 #  define luaL_newlib(L, l) \
-  (luaL_newlibtable(L, l), luaL_register(L, NULL, l))
+  (luaL_newlibtable((L), (l)), luaL_register((L), NULL, (l)))
 #endif
 
 #define lua_pushglobaltable(L) \
-  lua_pushvalue(L, LUA_GLOBALSINDEX)
+  lua_pushvalue((L), LUA_GLOBALSINDEX)
 
 #define lua_rawgetp COMPAT53_CONCAT(COMPAT53_PREFIX, _rawgetp)
 COMPAT53_API int lua_rawgetp (lua_State *L, int i, const void *p);
@@ -137,7 +143,7 @@ COMPAT53_API int lua_rawgetp (lua_State *L, int i, const void *p);
 #define lua_rawsetp COMPAT53_CONCAT(COMPAT53_PREFIX, _rawsetp)
 COMPAT53_API void lua_rawsetp(lua_State *L, int i, const void *p);
 
-#define lua_rawlen(L, i) lua_objlen(L, i)
+#define lua_rawlen(L, i) lua_objlen((L), (i))
 
 #define lua_tointegerx COMPAT53_CONCAT(COMPAT53_PREFIX, _tointegerx)
 COMPAT53_API lua_Integer lua_tointegerx (lua_State *L, int i, int *isnum);
@@ -166,9 +172,6 @@ COMPAT53_API void luaL_setmetatable (lua_State *L, const char *tname);
 #define luaL_testudata COMPAT53_CONCAT(COMPAT53_PREFIX, L_testudata)
 COMPAT53_API void *luaL_testudata (lua_State *L, int i, const char *tname);
 
-#define luaL_tolstring COMPAT53_CONCAT(COMPAT53_PREFIX, L_tolstring)
-COMPAT53_API const char *luaL_tolstring (lua_State *L, int idx, size_t *len);
-
 #define luaL_traceback COMPAT53_CONCAT(COMPAT53_PREFIX, L_traceback)
 COMPAT53_API void luaL_traceback (lua_State *L, lua_State *L1, const char *msg, int level);
 
@@ -179,9 +182,9 @@ COMPAT53_API int luaL_fileresult (lua_State *L, int stat, const char *fname);
 COMPAT53_API int luaL_execresult (lua_State *L, int stat);
 
 #define lua_callk(L, na, nr, ctx, cont) \
-  ((void)(ctx), (void)(cont), lua_call(L, na, nr))
+  ((void)(ctx), (void)(cont), lua_call((L), (na), (nr)))
 #define lua_pcallk(L, na, nr, err, ctx, cont) \
-  ((void)(ctx), (void)(cont), lua_pcall(L, na, nr, err))
+  ((void)(ctx), (void)(cont), lua_pcall((L), (na), (nr), (err)))
 
 #define luaL_buffinit COMPAT53_CONCAT(COMPAT53_PREFIX, _buffinit_53)
 COMPAT53_API void luaL_buffinit (lua_State *L, luaL_Buffer_53 *B);
@@ -200,15 +203,15 @@ COMPAT53_API void luaL_pushresult (luaL_Buffer_53 *B);
 
 #undef luaL_buffinitsize
 #define luaL_buffinitsize(L, B, s) \
-  (luaL_buffinit(L, B), luaL_prepbuffsize(B, s))
+  (luaL_buffinit((L), (B)), luaL_prepbuffsize((B), (s)))
 
 #undef luaL_prepbuffer
 #define luaL_prepbuffer(B) \
-  luaL_prepbuffsize(B, LUAL_BUFFERSIZE)
+  luaL_prepbuffsize((B), LUAL_BUFFERSIZE)
 
 #undef luaL_addchar
 #define luaL_addchar(B, c) \
-  ((void)((B)->nelems < (B)->capacity || luaL_prepbuffsize(B, 1)), \
+  ((void)((B)->nelems < (B)->capacity || luaL_prepbuffsize((B), 1)), \
    ((B)->ptr[(B)->nelems++] = (c)))
 
 #undef luaL_addsize
@@ -217,23 +220,23 @@ COMPAT53_API void luaL_pushresult (luaL_Buffer_53 *B);
 
 #undef luaL_addstring
 #define luaL_addstring(B, s) \
-  luaL_addlstring(B, s, strlen(s))
+  luaL_addlstring((B), (s), strlen((s)))
 
 #undef luaL_pushresultsize
 #define luaL_pushresultsize(B, s) \
-  (luaL_addsize(B, s), luaL_pushresult(B))
+  (luaL_addsize((B), (s)), luaL_pushresult((B)))
 
 #if defined(LUA_COMPAT_APIINTCASTS)
 #define lua_pushunsigned(L, n) \
-  lua_pushinteger(L, (lua_Integer)(n))
+  lua_pushinteger((L), (lua_Integer)(n))
 #define lua_tounsignedx(L, i, is) \
-  ((lua_Unsigned)lua_tointegerx(L, i, is))
+  ((lua_Unsigned)lua_tointegerx((L), (i), (is)))
 #define lua_tounsigned(L, i) \
-  lua_tounsignedx(L, i, NULL)
+  lua_tounsignedx((L), (i), NULL)
 #define luaL_checkunsigned(L, a) \
-  ((lua_Unsigned)luaL_checkinteger(L, a))
+  ((lua_Unsigned)luaL_checkinteger((L), (a)))
 #define luaL_optunsigned(L, a, d) \
-  ((lua_Unsigned)luaL_optinteger(L, a, (lua_Integer)(d)))
+  ((lua_Unsigned)luaL_optinteger((L), (a), (lua_Integer)(d)))
 #endif
 
 #endif /* Lua 5.1 only */
@@ -248,13 +251,13 @@ typedef int lua_KContext;
 typedef int (*lua_KFunction)(lua_State *L, int status, lua_KContext ctx);
 
 #define lua_dump(L, w, d, s) \
-  ((void)(s), lua_dump(L, w, d))
+  ((void)(s), lua_dump((L), (w), (d)))
 
 #define lua_getfield(L, i, k) \
-  (lua_getfield(L, i, k), lua_type(L, -1))
+  (lua_getfield((L), (i), (k)), lua_type((L), -1))
 
 #define lua_gettable(L, i) \
-  (lua_gettable(L, i), lua_type(L, -1))
+  (lua_gettable((L), (i)), lua_type((L), -1))
 
 #define lua_geti COMPAT53_CONCAT(COMPAT53_PREFIX, _geti)
 COMPAT53_API int lua_geti (lua_State *L, int index, lua_Integer i);
@@ -266,10 +269,10 @@ COMPAT53_API int lua_isinteger (lua_State *L, int index);
   ((*(p) = (lua_Integer)(n)), 1)
 
 #define lua_rawget(L, i) \
-  (lua_rawget(L, i), lua_type(L, -1))
+  (lua_rawget((L), (i)), lua_type((L), -1))
 
 #define lua_rawgeti(L, i, n) \
-  (lua_rawgeti(L, i, n), lua_type(L, -1))
+  (lua_rawgeti((L), (i), (n)), lua_type((L), -1))
 
 #define lua_rotate COMPAT53_CONCAT(COMPAT53_PREFIX, _rotate)
 COMPAT53_API void lua_rotate (lua_State *L, int idx, int n);
@@ -280,11 +283,14 @@ COMPAT53_API void lua_seti (lua_State *L, int index, lua_Integer i);
 #define lua_stringtonumber COMPAT53_CONCAT(COMPAT53_PREFIX, _stringtonumber)
 COMPAT53_API size_t lua_stringtonumber (lua_State *L, const char *s);
 
+#define luaL_tolstring COMPAT53_CONCAT(COMPAT53_PREFIX, L_tolstring)
+COMPAT53_API const char *luaL_tolstring (lua_State *L, int idx, size_t *len);
+
 #define luaL_getmetafield(L, o, e) \
-  (luaL_getmetafield(L, o, e) ? lua_type(L, -1) : LUA_TNIL)
+  (luaL_getmetafield((L), (o), (e)) ? lua_type((L), -1) : LUA_TNIL)
 
 #define luaL_newmetatable(L, tn) \
-  (luaL_newmetatable(L, tn) ? (lua_pushstring(L, tn), lua_setfield(L, -2, "__name"), 1) : 0)
+  (luaL_newmetatable((L), (tn)) ? (lua_pushstring((L), (tn)), lua_setfield((L), -2, "__name"), 1) : 0)
 
 #define luaL_requiref COMPAT53_CONCAT(COMPAT53_PREFIX, L_requiref_53)
 COMPAT53_API void luaL_requiref (lua_State *L, const char *modname,
@@ -305,13 +311,16 @@ COMPAT53_API void luaL_requiref (lua_State *L, const char *modname,
  */
 
 #define lua_getglobal(L, n) \
-  (lua_getglobal(L, n), lua_type(L, -1))
+  (lua_getglobal((L), (n)), lua_type((L), -1))
 
 #define lua_getuservalue(L, i) \
-  (lua_getuservalue(L, i), lua_type(L, -1))
+  (lua_getuservalue((L), (i)), lua_type((L), -1))
+
+#define lua_pushlstring(L, s, len) \
+  (((len) == 0) ? lua_pushlstring((L), "", 0) : lua_pushlstring((L), (s), (len)))
 
 #define lua_rawgetp(L, i, p) \
-  (lua_rawgetp(L, i, p), lua_type(L, -1))
+  (lua_rawgetp((L), (i), (p)), lua_type((L), -1))
 
 #define LUA_KFUNCTION(_name) \
   static int (_name)(lua_State *L, int status, lua_KContext ctx); \
@@ -323,30 +332,30 @@ COMPAT53_API void luaL_requiref (lua_State *L, const char *modname,
   static int (_name)(lua_State *L, int status, lua_KContext ctx)
 
 #define lua_pcallk(L, na, nr, err, ctx, cont) \
-  lua_pcallk(L, na, nr, err, ctx, cont ## _52)
+  lua_pcallk((L), (na), (nr), (err), (ctx), cont ## _52)
 
 #define lua_callk(L, na, nr, ctx, cont) \
-  lua_callk(L, na, nr, ctx, cont ## _52)
+  lua_callk((L), (na), (nr), (ctx), cont ## _52)
 
 #define lua_yieldk(L, nr, ctx, cont) \
-  lua_yieldk(L, nr, ctx, cont ## _52)
+  lua_yieldk((L), (nr), (ctx), cont ## _52)
 
 #ifdef lua_call
 #  undef lua_call
 #  define lua_call(L, na, nr) \
-  (lua_callk)(L, na, nr, 0, NULL)
+  (lua_callk)((L), (na), (nr), 0, NULL)
 #endif
 
 #ifdef lua_pcall
 #  undef lua_pcall
 #  define lua_pcall(L, na, nr, err) \
-  (lua_pcallk)(L, na, nr, err, 0, NULL)
+  (lua_pcallk)((L), (na), (nr), (err), 0, NULL)
 #endif
 
 #ifdef lua_yield
 #  undef lua_yield
 #  define lua_yield(L, nr) \
-  (lua_yieldk)(L, nr, 0, NULL)
+  (lua_yieldk)((L), (nr), 0, NULL)
 #endif
 
 #endif /* Lua 5.2 only */
