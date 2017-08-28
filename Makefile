@@ -6,7 +6,8 @@ CC		?= gcc
 
 #Lua auto detect
 LUA_VERSION ?= $(shell pkg-config luajit --print-provides)
-ifeq ($(LUA_VERSION),)                         ############ Not use luajit
+ifeq ($(LUA_VERSION),)
+############ Not use luajit
 LUAV		?= $(shell lua -e "_,_,v=string.find(_VERSION,'Lua (.+)');print(v)")
 LUA_CFLAGS	?= -I$(PREFIX)/include/lua$(LUAV)
 LUA_LIBS	?= -L$(PREFIX)/lib 
@@ -19,7 +20,7 @@ LUA_LIBDIR	?= $(PREFIX)/lib/lua/$(LUAV)
 endif
 
 #OS auto detect
-SYS := $(shell gcc -dumpmachine)
+SYS 		:= $(shell gcc -dumpmachine)
 
 ifneq (, $(findstring linux, $(SYS)))
 # Do linux things
@@ -52,6 +53,7 @@ OPENSSL_LIBS	?= $(shell pkg-config openssl --libs)
 OPENSSL_CFLAGS  ?= $(shell pkg-config openssl --cflags)
 CFLAGS		 = -fPIC $(OPENSSL_CFLAGS) $(LUA_CFLAGS)
 endif
+
 #custom config
 ifeq (.config, $(wildcard .config))
 include .config
@@ -60,9 +62,9 @@ endif
 LIBNAME= $T.so.$V
 
 # Compilation directives
-WARN_MIN	= -Wall -Wno-unused-value
-WARN		= -Wall
-WARN_MOST	= $(WARN) -W -Waggregate-return -Wcast-align -Wmissing-prototypes -Wnested-externs -Wshadow -Wwrite-strings -pedantic
+WARN_MIN	 = -Wall -Wno-unused-value
+WARN		 = -Wall
+WARN_MOST	 = $(WARN) -W -Waggregate-return -Wcast-align -Wmissing-prototypes -Wnested-externs -Wshadow -Wwrite-strings -pedantic
 CFLAGS		+= -g $(WARN_MIN) -DPTHREADS -Ideps
 
 
