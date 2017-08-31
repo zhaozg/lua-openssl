@@ -23,7 +23,7 @@ LUA_LIBS	?= -L$(PREFIX)/lib
 LUA_LIBDIR	?= $(PREFIX)/lib/lua/$(LUAV)
 else
 ############ use luajit
-LUAV		?= $(shell lua -e "_,_,v=string.find(_VERSION,'Lua (.+)');print(v)")
+LUAV		?= $(shell luajit -e "_,_,v=string.find(_VERSION,'Lua (.+)');print(v)")
 LUA_CFLAGS	?= $(shell pkg-config luajit --cflags)
 LUA_LIBS	?= $(shell pkg-config luajit --libs)
 LUA_LIBDIR	?= $(PREFIX)/lib/lua/$(LUAV)
@@ -33,43 +33,34 @@ LUA_CFLAGS	?= $(shell pkg-config luajit --cflags)
 LUA_LIBS	?= $(shell pkg-config luajit --libs)
 endif
 
+#OpenSSL auto detect
+OPENSSL_CFLAGS	?= $(shell pkg-config openssl --cflags)
+OPENSSL_LIBS	?= $(shell pkg-config openssl --static --libs) 
+
 ifneq (, $(findstring linux, $(SYS)))
 # Do linux things
-LDFLAGS		 = -shared -fpic -lrt -ldl -lm
-OPENSSL_LIBS	?= $(shell pkg-config openssl --libs) 
-OPENSSL_CFLAGS	?= $(shell pkg-config openssl --cflags)
-CFLAGS		 = -fpic $(OPENSSL_CFLAGS) $(LUA_CFLAGS)
-LIB_OPTION	+= -Wl,--no-undefined
+CFLAGS		 = -fpic 
+LDFLAGS		 = -Wl,--no-undefined -fpic -lrt -ldl -lm
 endif
 ifneq (, $(findstring apple, $(SYS)))
 # Do darwin things
-LDFLAGS		 = -shared -fPIC -ldl
-OPENSSL_LIBS	?= $(shell pkg-config openssl --libs) 
-OPENSSL_CFLAGS	?= $(shell pkg-config openssl --cflags)
-CFLAGS		 = -fPIC $(OPENSSL_CFLAGS) $(LUA_CFLAGS)
-#LIB_OPTION	 = -bundle -undefined dynamic_lookup #for MacOS X
+CFLAGS		 = -fPIC
+LDFLAGS		 = -fPIC -bundle -undefined dynamic_lookup -ldl
 MACOSX_DEPLOYMENT_TARGET="10.3"
 CC := MACOSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET} $(CC)
 endif
 ifneq (, $(findstring mingw, $(SYS)))
 # Do mingw things
-V		= $(shell lua -e "v=string.gsub('$(LUAV)','%.','');print(v)")
-LDFLAGS		= -shared -mwindows -lcrypt32 -lssl -lcrypto -lws2_32 $(PREFIX)/bin/lua$(V).dll 
-LUA_CFLAGS	= -DLUA_LIB -DLUA_BUILD_AS_DLL -I$(PREFIX)/include/
-CFLAGS		= $(OPENSSL_CFLAGS) $(LUA_CFLAGS)
+CFLAGS		= -DLUA_LIB -DLUA_BUILD_AS_DLL -DWIN32_LEAN_AND_MEAN
 endif
 ifneq (, $(findstring cygwin, $(SYS)))
 # Do cygwin things
-OPENSSL_LIBS	?= $(shell pkg-config openssl --libs) 
-OPENSSL_CFLAGS  ?= $(shell pkg-config openssl --cflags)
-CFLAGS		 = -fPIC $(OPENSSL_CFLAGS) $(LUA_CFLAGS)
+CFLAGS		 = -fPIC 
 endif
 ifneq (, $(findstring iOS, $(SYS)))
 # Do iOS things
-LDFLAGS		 = -shared -fPIC -ldl
-OPENSSL_LIBS    ?= $(shell pkg-config openssl --libs)
-OPENSSL_CFLAGS  ?= $(shell pkg-config openssl --cflags)
-CFLAGS           = -fPIC $(OPENSSL_CFLAGS) $(LUA_CFLAGS) $(TARGET_FLAGS)
+CFLAGS           = -fPIC 
+LDFLAGS		 = -fPIC -ldl
 endif
 
 #custom config
@@ -79,6 +70,8 @@ endif
 
 LIBNAME= $T.so.$V
 
+CFLAGS		+= $(OPENSSL_CFLAGS) $(LUA_CFLAGS) $(TARGET_FLAGS)
+LDFLAGS		+= -shared $(OPENSSL_LIBS) $(LUA_LIBS)
 # Compilation directives
 WARN_MIN	 = -Wall -Wno-unused-value
 WARN		 = -Wall
@@ -97,7 +90,7 @@ all: $T.so
 	@echo "Target system: "$(SYS)
 
 $T.so: lib$T.a
-	$(CC) $(LDFLAGS) $(LIB_OPTION) -o $@ src/openssl.o -L. -lopenssl $(OPENSSL_LIBS) $(LUA_LIBS)
+	$(CC) -o $@ src/openssl.o -L. -l$T $(LDFLAGS)
 
 lib$T.a: $(OBJS)
 	$(AR) rcs $@ $?
@@ -111,7 +104,6 @@ info:
 	@echo "CC:" $(CC)
 	@echo "AR:" $(AR)
 	@echo "PREFIX:" $(PREFIX)
-	@echo "TARGET_FLAGS:" $(TARGET_FLAGS)
 
 clean:
-	rm -f $T.so lib$T.a $(OBJS) 
+	rm -f $T.so lib$T.a $(OBJS)
