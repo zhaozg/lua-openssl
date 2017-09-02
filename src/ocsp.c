@@ -36,7 +36,7 @@ static int openssl_ocsp_request_new(lua_State*L)
     ASN1_BIT_STRING *ikey = X509_get0_pubkey_bitstr(issuer);
 
     OCSP_CERTID *id = NULL;
-    OCSP_ONEREQ *one;
+    OCSP_ONEREQ *one = NULL;
     char buf[1024];
     int nonce = lua_gettop(L) > 2 ? auxiliar_checkboolean(L, 3) : 0;
     req = OCSP_REQUEST_new();
@@ -65,9 +65,17 @@ static int openssl_ocsp_request_new(lua_State*L)
           {
             id = OCSP_cert_id_new(EVP_sha1(), iname, ikey, sno);
             one = OCSP_request_add0_id(req, id);
-          };
+          }
           ASN1_INTEGER_free(sno);
           BIO_free(bio);
+        }
+        if (!one)
+        {
+          OCSP_CERTID_free(id);
+          OCSP_REQUEST_free(req);
+          req = NULL;
+          lua_pop(L, 1);
+          break;
         }
         lua_pop(L, 1);
       }
@@ -77,6 +85,12 @@ static int openssl_ocsp_request_new(lua_State*L)
       X509 *cert = CHECK_OBJECT(2, X509, "openssl.x509");
       id = OCSP_cert_to_id(NULL, cert, issuer);
       one = OCSP_request_add0_id(req, id);
+      if (!one)
+      {
+        OCSP_CERTID_free(id);
+        OCSP_REQUEST_free(req);
+        req = NULL;
+      }
     }
     else
     {
@@ -87,7 +101,13 @@ static int openssl_ocsp_request_new(lua_State*L)
       {
         id = OCSP_cert_id_new(EVP_sha1(), iname, ikey, sno);
         one = OCSP_request_add0_id(req, id);
-      };
+        if (!one)
+        {
+          OCSP_CERTID_free(id);
+          OCSP_REQUEST_free(req);
+          req = NULL;
+        }
+      }
       ASN1_INTEGER_free(sno);
       BIO_free(bio);
     }
@@ -108,15 +128,12 @@ static int openssl_ocsp_request_new(lua_State*L)
 static int openssl_ocsp_request_export(lua_State*L)
 {
   OCSP_REQUEST *req = CHECK_OBJECT(1, OCSP_REQUEST, "openssl.ocsp_request");
-  int pem = 1;
+  int pem = lua_gettop(L) > 1 ? auxiliar_checkboolean(L, 2) : 0;
   int ret = 0;
   BIO* bio;
   BUF_MEM *buf;
-  if (lua_gettop(L) > 1)
-    pem = auxiliar_checkboolean(L, 2);
 
   bio = BIO_new(BIO_s_mem());
-  /*
   if (pem)
   {
     ret = PEM_write_bio_OCSP_REQUEST(bio, req);
@@ -125,8 +142,6 @@ static int openssl_ocsp_request_export(lua_State*L)
   {
     ret = i2d_OCSP_REQUEST_bio(bio, req);
   }
-  */
-  ret = i2d_OCSP_REQUEST_bio(bio, req);
   if (ret)
   {
     BIO_get_mem_ptr(bio, &buf);
@@ -428,15 +443,12 @@ static int openssl_ocsp_response(lua_State *L)
 static int openssl_ocsp_response_export(lua_State*L)
 {
   OCSP_RESPONSE *res = CHECK_OBJECT(1, OCSP_RESPONSE, "openssl.ocsp_response");
-  int pem = 1;
+  int pem = lua_gettop(L) > 1 ? auxiliar_checkboolean(L, 2) : 0;
   int ret = 0;
   BIO* bio;
   BUF_MEM *buf;
-  if (lua_gettop(L) > 1)
-    pem = auxiliar_checkboolean(L, 2);
 
   bio = BIO_new(BIO_s_mem());
-  /*
   if (pem)
   {
     ret = PEM_write_bio_OCSP_RESPONSE(bio, res);
@@ -445,8 +457,6 @@ static int openssl_ocsp_response_export(lua_State*L)
   {
     ret = i2d_OCSP_RESPONSE_bio(bio, res);
   }
-  */
-  ret = i2d_OCSP_RESPONSE_bio(bio, res);
   if (ret)
   {
     BIO_get_mem_ptr(bio, &buf);

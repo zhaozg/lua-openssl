@@ -584,14 +584,11 @@ void BIO_info_callback(BIO *bio, int cmd, const char *argp,
   BIO *b;
   char buf[256];
   char *p;
-  long r = 1;
   size_t p_maxlen;
   (void) argl;
   (void) argp;
-  if (BIO_CB_RETURN & cmd)
-    r = ret;
 
-  BIO_snprintf(buf, sizeof buf, "BIO[%08lX]:", (unsigned long)bio);
+  BIO_snprintf(buf, sizeof buf, "BIO[%p]:", bio);
   p = &(buf[14]);
   p_maxlen = sizeof buf - 14;
   switch (cmd)

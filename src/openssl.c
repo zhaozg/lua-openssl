@@ -189,12 +189,11 @@ static int openssl_random_write(lua_State *L)
 {
   const char *file = luaL_optstring(L, 1, NULL);
   char buffer[MAX_PATH];
-  int n;
 
   if (file == NULL && (file = RAND_file_name(buffer, sizeof buffer)) == NULL)
     return openssl_pushresult(L, 0);
 
-  n = RAND_write_file(file);
+  RAND_write_file(file);
   return openssl_pushresult(L, 1);
 }
 
