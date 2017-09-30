@@ -129,9 +129,13 @@ static int openssl_ssl_ctx_use(lua_State*L)
   int ret;
   SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
   EVP_PKEY* pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
-  X509* cert = CHECK_OBJECT(3, X509, "openssl.x509");
 
-  ret = SSL_CTX_use_certificate(ctx, cert);
+  if(lua_isstring(L, 3)) {
+    ret = SSL_CTX_use_certificate_chain_file(ctx, luaL_checkstring(L, 3));
+  } else {
+    X509* cert = CHECK_OBJECT(3, X509, "openssl.x509");
+    ret = SSL_CTX_use_certificate(ctx, cert);
+  }
   if (ret == 1)
   {
     ret = SSL_CTX_use_PrivateKey(ctx, pkey);
