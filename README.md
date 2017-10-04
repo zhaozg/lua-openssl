@@ -16,7 +16,7 @@ I needed a full OpenSSL binding for Lua, after googled, I couldn't find a versio
 I found the PHP openssl binding is a good implementation, and it inspired me.
 So I decided to write this OpenSSL toolkit for Lua.
 
-The goal is to fully support the listed items.Below you can find the development progress of lua-openssl. 
+The goal is to fully support the listed items. Below you can find the development progress of lua-openssl: 
 
 * Symmetrical encrypt/decrypt. (Finished)
 * Message digest. (Finished)
@@ -25,8 +25,8 @@ The goal is to fully support the listed items.Below you can find the development
 * PKCS7/CMS. (Developing)
 * SSL/TLS. (Finished)
 
-Most of the lua-openssl functions require a key or certificate as argument; to make things easy to use OpenSSL,
-This rule allow you to specify certificates or keys in the following ways:
+Most of the lua-openssl functions require a key or certificate as argument; to make things easy to use OpenSSL.
+This rule allows you to specify certificates or keys in the following ways:
 
 1. As an openssl.x509 object returned from openssl.x509.read
 2. As an openssl.evp_pkey object return from openssl.pkey.read or openssl.pkey.new
@@ -132,7 +132,7 @@ lua_openssl_version, lua_version, openssl_version = openssl.version()
 
 ## Bugs
 
-Lua-Openssl is heavily updated, if you find bug, please report to [here](https://github.com/zhaozg/lua-openssl/issues/)
+Lua-Openssl is heavily updated, if you find a bug, please report to [here](https://github.com/zhaozg/lua-openssl/issues/)
 
 #A.   Howto
 
@@ -170,12 +170,12 @@ _code_ can pass to openssl.error() to get more error information.
 
   All SSL object IO operation methods return nil or false when fail or error.
 When nil returned, it followed by 'ssl' or 'syscall', means SSL layer or 
-system layer error. When false returned, it followed by number 0, 'want_read',
-'want_write','want_x509_lookup','want_connect','want_accept'. Numnber 0 means
-SSL connection closed, others means you should do some SSL operation.
+system layer error. When false returned, it is followed by number 0, 'want_read',
+'want_write','want_x509_lookup','want_connect','want_accept'. Number 0 means
+SSL connection closed, other numbers means you should do some SSL operation.
 
-  Please remeber that when lua-openssl function or methods failed without 
-error code, you can get last error by openssl.error(), and repeat call 
+  Please remember that when lua-openssl function or methods fail without an 
+error code, you can get the last error by openssl.error(), and repeat call 
 openssl.error() will walk through error stacks of current threads. 
 openssl.error(true) will also clear error stacks after get last error code,
 this is very useful to free memory when lua-openssl repeat calls or run long times.
