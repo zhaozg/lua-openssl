@@ -206,7 +206,20 @@ bb = mdc:final()
 assert(openssl.hex(aa,true)==bb)
 ```
 
-### Example 3:  Iterate a openssl.stack_of_x509(sk_x509) object
+### Example 3: Quick HMAC hash
+
+```lua
+local hmac = require "openssl".hmac
+
+alg = 'sha256'
+key = '0123456789'
+msg = 'example message'
+
+hmac.hmac(alg, msg, key, true) -- binary/"raw" output
+hmac.hmac(alg, msg, key, false) -- hex output
+```
+
+### Example 4:  Iterate a openssl.stack_of_x509(sk_x509) object
 
 ```lua
 n = #sk
@@ -215,7 +228,7 @@ for i=1, n do
 end
 ```
 
-### Example 4: read and parse certificate
+### Example 5: read and parse certificate
 
 ```lua
 local openssl = require('openssl')
@@ -243,7 +256,7 @@ end
 test_x509()
 ```
 
-###Example 5: bio network handle(TCP)
+###Example 6: bio network handle(TCP)
 
  * server
  

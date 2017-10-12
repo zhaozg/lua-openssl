@@ -11,8 +11,8 @@ do  -- define module function
 --- compute hmac one step, in module openssl
 --
 -- @tparam evp_digest|string|nid digest digest alg identity
+-- @tparam string message
 -- @tparam string key
--- @tparam[opt] engine engine, nothing with default engine
 -- @treturn string result binary string
 --
 function openssl.hmac() end
@@ -20,19 +20,19 @@ function openssl.hmac() end
 --- compute hmac one step, in module openssl.hamc
 --
 -- @tparam evp_digest|string|nid digest digest alg identity
+-- @tparam string message
 -- @tparam string key
--- @tparam boolean raw, return binary or hex encoded string, true false binary or hex
--- @tparam[opt] engine engine, nothing with default engine
--- @treturn string result binary or hex string
+-- @treturn string result binary string
+--
 function hmac() end
 
 --- alias for hmac
 --
 -- @tparam evp_digest|string|nid digest digest alg identity
+-- @tparam string message
 -- @tparam string key
--- @tparam boolean raw, return binary or hex encoded string, true false binary or hex
--- @tparam[opt] engine engine, nothing with default engine
--- @treturn string result binary or hex string
+-- @treturn string result binary string
+--
 function digest() end
 
 --- get hamc_ctx object
