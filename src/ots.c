@@ -309,18 +309,31 @@ static LUA_FUNCTION(openssl_ts_resp_export)
   return 0;
 }
 
-static int openssl_push_ts_accuracy(lua_State*L, const TS_ACCURACY* accuracy)
+static int openssl_push_ts_accuracy(lua_State*L, const TS_ACCURACY* accuracy, int asobj)
 {
   if (accuracy)
   {
-    lua_newtable(L);
+    if (asobj) {
+      unsigned char *pbuf = NULL;
+      int len = i2d_TS_ACCURACY(accuracy, &pbuf);
+      if (len > 0) {
+        lua_pushlstring(L, pbuf, len);
+        OPENSSL_free(pbuf);
+      }
+      else
+        lua_pushnil(L);
+    }
+    else
+    {
+      lua_newtable(L);
 
-    PUSH_ASN1_INTEGER(L, TS_ACCURACY_get_micros(accuracy));
-    lua_setfield(L, -2, "micros");
-    PUSH_ASN1_INTEGER(L, TS_ACCURACY_get_millis(accuracy));
-    lua_setfield(L, -2, "millis");
-    PUSH_ASN1_INTEGER(L, TS_ACCURACY_get_seconds(accuracy));
-    lua_setfield(L, -2, "seconds");
+      PUSH_ASN1_INTEGER(L, TS_ACCURACY_get_micros(accuracy));
+      lua_setfield(L, -2, "micros");
+      PUSH_ASN1_INTEGER(L, TS_ACCURACY_get_millis(accuracy));
+      lua_setfield(L, -2, "millis");
+      PUSH_ASN1_INTEGER(L, TS_ACCURACY_get_seconds(accuracy));
+      lua_setfield(L, -2, "seconds");
+    }
   }
   else
     lua_pushnil(L);
@@ -367,7 +380,7 @@ static int openssl_push_ts_tst_info(lua_State*L, TS_TST_INFO* info)
   openssl_push_asn1(L, TS_TST_INFO_get_time(info), V_ASN1_GENERALIZEDTIME);
   lua_setfield(L, -2, "time");
 
-  openssl_push_ts_accuracy(L, TS_TST_INFO_get_accuracy(info));
+  openssl_push_ts_accuracy(L, TS_TST_INFO_get_accuracy(info), 1);
   lua_setfield(L, -2, "accuracy");
 
   AUXILIAR_SET(L, -1, "ordering", TS_TST_INFO_get_ordering(info), boolean);
