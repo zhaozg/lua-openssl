@@ -3,6 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <errno.h>
+#include <stdio.h>
 #include "compat-5.3.h"
 
 /* don't compile it again if it already is included via compat53.h */
@@ -13,6 +14,75 @@
 
 /* definitions for Lua 5.1 only */
 #if defined(LUA_VERSION_NUM) && LUA_VERSION_NUM == 501
+
+#ifndef COMPAT53_FOPEN_NO_LOCK
+#  if defined(_MSC_VER)
+#    define COMPAT53_FOPEN_NO_LOCK 1
+#  else /* otherwise */
+#    define COMPAT53_FOPEN_NO_LOCK 0
+#  endif /* VC++ only so far */
+#endif /* No-lock fopen_s usage if possible */
+
+#if defined(_MSC_VER) && COMPAT53_FOPEN_NO_LOCK
+#  include <share.h>
+#endif /* VC++ _fsopen for share-allowed file read */
+
+#ifndef COMPAT53_HAVE_STRERROR_R
+#  if defined(__GLIBC__) || defined(_POSIX_VERSION) || defined(__APPLE__) || \
+      (!defined (__MINGW32__) && defined(__GNUC__) && (__GNUC__ < 6))
+#    define COMPAT53_HAVE_STRERROR_R 1
+#  else /* none of the defines matched: define to 0 */
+#    define COMPAT53_HAVE_STRERROR_R 0
+#  endif /* have strerror_r of some form */
+#endif /* strerror_r */
+
+#ifndef COMPAT53_HAVE_STRERROR_S
+#  if defined(_MSC_VER) || (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L) || \
+      (defined(__STDC_LIB_EXT1__) && __STDC_LIB_EXT1__)
+#    define COMPAT53_HAVE_STRERROR_S 1
+#  else /* not VC++ or C11 */
+#    define COMPAT53_HAVE_STRERROR_S 0
+#  endif /* strerror_s from VC++ or C11 */
+#endif /* strerror_s */
+
+#ifndef COMPAT53_LUA_FILE_BUFFER_SIZE
+#  define COMPAT53_LUA_FILE_BUFFER_SIZE 4096
+#endif /* Lua File Buffer Size */
+
+
+static char* compat53_strerror (int en, char* buff, size_t sz) {
+#if COMPAT53_HAVE_STRERROR_R
+  /* use strerror_r here, because it's available on these specific platforms */
+  if (sz > 0) {
+    buff[0] = '\0';
+    /* we don't care whether the GNU version or the XSI version is used: */
+    if (strerror_r(en, buff, sz)) {
+      /* Yes, we really DO want to ignore the return value!
+       * GCC makes that extra hard, not even a (void) cast will do. */
+    }
+    if (buff[0] == '\0') {
+      /* Buffer is unchanged, so we probably have called GNU strerror_r which
+       * returned a static constant string. Chances are that strerror will
+       * return the same static constant string and therefore be thread-safe. */
+      return strerror(en);
+    }
+  }
+  return buff; /* sz is 0 *or* strerror_r wrote into the buffer */
+#elif COMPAT53_HAVE_STRERROR_S
+  /* for MSVC and other C11 implementations, use strerror_s since it's
+   * provided by default by the libraries */
+  strerror_s(buff, sz, en);
+  return buff;
+#else
+  /* fallback, but strerror is not guaranteed to be threadsafe due to modifying
+   * errno itself and some impls not locking a static buffer for it ... but most
+   * known systems have threadsafe errno: this might only change if the locale
+   * is changed out from under someone while this function is being called */
+  (void)buff;
+  (void)sz;
+  return strerror(en);
+#endif
+}
 
 
 COMPAT53_API int lua_absindex (lua_State *L, int i) {
@@ -101,16 +171,16 @@ COMPAT53_API void lua_copy (lua_State *L, int from, int to) {
 COMPAT53_API void lua_len (lua_State *L, int i) {
   switch (lua_type(L, i)) {
     case LUA_TSTRING:
-      lua_pushnumber(L, (lua_Integer)lua_objlen(L, i));
+      lua_pushnumber(L, (lua_Number)lua_objlen(L, i));
       break;
     case LUA_TTABLE:
       if (!luaL_callmeta(L, i, "__len"))
-        lua_pushnumber(L, (lua_Integer)lua_objlen(L, i));
+        lua_pushnumber(L, (lua_Number)lua_objlen(L, i));
       break;
     case LUA_TUSERDATA:
       if (luaL_callmeta(L, i, "__len"))
         break;
-      /* maybe fall through */
+      /* FALLTHROUGH */
     default:
       luaL_error(L, "attempt to get length of a %s value",
                  lua_typename(L, lua_type(L, i)));
@@ -131,15 +201,6 @@ COMPAT53_API void lua_rawsetp (lua_State *L, int i, const void *p) {
   lua_pushlightuserdata(L, (void*)p);
   lua_insert(L, -2);
   lua_rawset(L, abs_i);
-}
-
-
-COMPAT53_API lua_Integer lua_tointegerx (lua_State *L, int i, int *isnum) {
-  lua_Integer n = lua_tointeger(L, i);
-  if (isnum != NULL) {
-    *isnum = (n != 0 || lua_isnumber(L, i));
-  }
-  return n;
 }
 
 
@@ -336,20 +397,214 @@ COMPAT53_API void luaL_traceback (lua_State *L, lua_State *L1,
 
 
 COMPAT53_API int luaL_fileresult (lua_State *L, int stat, const char *fname) {
+  const char *serr = NULL;
   int en = errno;  /* calls to Lua API may change this value */
+  char buf[512] = { 0 };
   if (stat) {
     lua_pushboolean(L, 1);
     return 1;
   }
   else {
     lua_pushnil(L);
+    serr = compat53_strerror(en, buf, sizeof(buf));
     if (fname)
-      lua_pushfstring(L, "%s: %s", fname, strerror(en));
+      lua_pushfstring(L, "%s: %s", fname, serr);
     else
-      lua_pushstring(L, strerror(en));
+      lua_pushstring(L, serr);
     lua_pushnumber(L, (lua_Number)en);
     return 3;
   }
+}
+
+
+static int compat53_checkmode (lua_State *L, const char *mode, const char *modename, int err) {
+  if (mode && strchr(mode, modename[0]) == NULL) {
+    lua_pushfstring(L, "attempt to load a %s chunk (mode is '%s')", modename, mode);
+    return err;
+  }
+  return LUA_OK;
+}
+
+
+typedef struct {
+  lua_Reader reader;
+  void *ud;
+  int has_peeked_data;
+  const char *peeked_data;
+  size_t peeked_data_size;
+} compat53_reader_data;
+
+
+static const char *compat53_reader (lua_State *L, void *ud, size_t *size) {
+  compat53_reader_data *data = (compat53_reader_data *)ud;
+  if (data->has_peeked_data) {
+    data->has_peeked_data = 0;
+    *size = data->peeked_data_size;
+    return data->peeked_data;
+  } else
+    return data->reader(L, data->ud, size);
+}
+
+
+COMPAT53_API int lua_load (lua_State *L, lua_Reader reader, void *data, const char *source, const char *mode) {
+  int status = LUA_OK;
+  compat53_reader_data compat53_data = { reader, data, 1, 0, 0 };
+  compat53_data.peeked_data = reader(L, data, &(compat53_data.peeked_data_size));
+  if (compat53_data.peeked_data && compat53_data.peeked_data_size &&
+      compat53_data.peeked_data[0] == LUA_SIGNATURE[0]) /* binary file? */
+      status = compat53_checkmode(L, mode, "binary", LUA_ERRSYNTAX);
+  else
+      status = compat53_checkmode(L, mode, "text", LUA_ERRSYNTAX);
+  if (status != LUA_OK)
+    return status;
+  /* we need to call the original 5.1 version of lua_load! */
+#undef lua_load
+  return lua_load(L, compat53_reader, &compat53_data, source);
+#define lua_load COMPAT53_CONCAT(COMPAT53_PREFIX, _load_53)
+}
+
+
+typedef struct {
+  int n;  /* number of pre-read characters */
+  FILE *f;  /* file being read */
+  char buff[COMPAT53_LUA_FILE_BUFFER_SIZE];  /* area for reading file */
+} compat53_LoadF;
+
+
+static const char *compat53_getF (lua_State *L, void *ud, size_t *size) {
+  compat53_LoadF *lf = (compat53_LoadF *)ud;
+  (void)L;  /* not used */
+  if (lf->n > 0) {  /* are there pre-read characters to be read? */
+    *size = lf->n;  /* return them (chars already in buffer) */
+    lf->n = 0;  /* no more pre-read characters */
+  }
+  else {  /* read a block from file */
+    /* 'fread' can return > 0 *and* set the EOF flag. If next call to
+       'compat53_getF' called 'fread', it might still wait for user input.
+       The next check avoids this problem. */
+    if (feof(lf->f)) return NULL;
+    *size = fread(lf->buff, 1, sizeof(lf->buff), lf->f);  /* read block */
+  }
+  return lf->buff;
+}
+
+
+static int compat53_errfile (lua_State *L, const char *what, int fnameindex) {
+  char buf[512] = {0};
+  const char *serr = compat53_strerror(errno, buf, sizeof(buf));
+  const char *filename = lua_tostring(L, fnameindex) + 1;
+  lua_pushfstring(L, "cannot %s %s: %s", what, filename, serr);
+  lua_remove(L, fnameindex);
+  return LUA_ERRFILE;
+}
+
+
+static int compat53_skipBOM (compat53_LoadF *lf) {
+  const char *p = "\xEF\xBB\xBF";  /* UTF-8 BOM mark */
+  int c;
+  lf->n = 0;
+  do {
+    c = getc(lf->f);
+    if (c == EOF || c != *(const unsigned char *)p++) return c;
+    lf->buff[lf->n++] = (char)c;  /* to be read by the parser */
+  } while (*p != '\0');
+  lf->n = 0;  /* prefix matched; discard it */
+  return getc(lf->f);  /* return next character */
+}
+
+
+/*
+** reads the first character of file 'f' and skips an optional BOM mark
+** in its beginning plus its first line if it starts with '#'. Returns
+** true if it skipped the first line.  In any case, '*cp' has the
+** first "valid" character of the file (after the optional BOM and
+** a first-line comment).
+*/
+static int compat53_skipcomment (compat53_LoadF *lf, int *cp) {
+  int c = *cp = compat53_skipBOM(lf);
+  if (c == '#') {  /* first line is a comment (Unix exec. file)? */
+    do {  /* skip first line */
+      c = getc(lf->f);
+    } while (c != EOF && c != '\n');
+    *cp = getc(lf->f);  /* skip end-of-line, if present */
+    return 1;  /* there was a comment */
+  }
+  else return 0;  /* no comment */
+}
+
+
+COMPAT53_API int luaL_loadfilex (lua_State *L, const char *filename, const char *mode) {
+  compat53_LoadF lf;
+  int status, readstatus;
+  int c;
+  int fnameindex = lua_gettop(L) + 1;  /* index of filename on the stack */
+  if (filename == NULL) {
+    lua_pushliteral(L, "=stdin");
+    lf.f = stdin;
+  }
+  else {
+    lua_pushfstring(L, "@%s", filename);
+#if defined(_MSC_VER)
+    /* This code is here to stop a deprecation error that stops builds
+     * if a certain macro is defined. While normally not caring would
+     * be best, some header-only libraries and builds can't afford to
+     * dictate this to the user. A quick check shows that fopen_s this
+     * goes back to VS 2005, and _fsopen goes back to VS 2003 .NET,
+     * possibly even before that so we don't need to do any version
+     * number checks, since this has been there since forever.  */
+
+    /* TO USER: if you want the behavior of typical fopen_s/fopen,
+     * which does lock the file on VC++, define the macro used below to 0 */
+#if COMPAT53_FOPEN_NO_LOCK
+    lf.f = _fsopen(filename, "r", _SH_DENYNO); /* do not lock the file in any way */
+    if (lf.f == NULL)
+      return compat53_errfile(L, "open", fnameindex);
+#else /* use default locking version */
+    if (fopen_s(&lf.f, filename, "r") != 0)
+      return compat53_errfile(L, "open", fnameindex);
+#endif /* Locking vs. No-locking fopen variants */
+#else
+    lf.f = fopen(filename, "r"); /* default stdlib doesn't forcefully lock files here */
+    if (lf.f == NULL) return compat53_errfile(L, "open", fnameindex);
+#endif
+  }
+  if (compat53_skipcomment(&lf, &c))  /* read initial portion */
+    lf.buff[lf.n++] = '\n';  /* add line to correct line numbers */
+  if (c == LUA_SIGNATURE[0] && filename) {  /* binary file? */
+#if defined(_MSC_VER)
+    if (freopen_s(&lf.f, filename, "rb", lf.f) != 0)
+      return compat53_errfile(L, "reopen", fnameindex);
+#else
+    lf.f = freopen(filename, "rb", lf.f);  /* reopen in binary mode */
+    if (lf.f == NULL) return compat53_errfile(L, "reopen", fnameindex);
+#endif
+    compat53_skipcomment(&lf, &c);  /* re-read initial portion */
+  }
+  if (c != EOF)
+    lf.buff[lf.n++] = (char)c;  /* 'c' is the first character of the stream */
+  status = lua_load(L, &compat53_getF, &lf, lua_tostring(L, -1), mode);
+  readstatus = ferror(lf.f);
+  if (filename) fclose(lf.f);  /* close file (even in case of errors) */
+  if (readstatus) {
+    lua_settop(L, fnameindex);  /* ignore results from 'lua_load' */
+    return compat53_errfile(L, "read", fnameindex);
+  }
+  lua_remove(L, fnameindex);
+  return status;
+}
+
+
+COMPAT53_API int luaL_loadbufferx (lua_State *L, const char *buff, size_t sz, const char *name, const char *mode) {
+  int status = LUA_OK;
+  if (sz > 0 && buff[0] == LUA_SIGNATURE[0]) {
+    status = compat53_checkmode(L, mode, "binary", LUA_ERRSYNTAX);
+  }
+  else {
+    status = compat53_checkmode(L, mode, "text", LUA_ERRSYNTAX);
+  }
+  if (status != LUA_OK)
+    return status;
+  return luaL_loadbuffer(L, buff, sz, name);
 }
 
 
@@ -472,6 +727,22 @@ COMPAT53_API int lua_isinteger (lua_State *L, int index) {
     if (i == n)
       return 1;
   }
+  return 0;
+}
+
+
+COMPAT53_API lua_Integer lua_tointegerx (lua_State *L, int i, int *isnum) {
+  int ok = 0;
+  lua_Number n = lua_tonumberx(L, i, &ok);
+  if (ok) {
+    if (n == (lua_Integer)n) {
+      if (isnum)
+        *isnum = 1;
+      return (lua_Integer)n;
+    }
+  }
+  if (isnum)
+    *isnum = 0;
   return 0;
 }
 
