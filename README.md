@@ -101,21 +101,21 @@ below.
 
 bn library:
 ```
- __add(x,y)		compare(x,y)		pow(x,y) 
- __div(x,y)		div(x,y)			powmod(x,y,m) 
- __eq(x,y)		divmod(x,y)			random(bits) 
- __lt(x,y)		gcd(x,y)			rmod(x,y) 
- __mod(x,y)		invmod(x)			sqr(x) 
- __mul(x,y)		isneg(x)			sqrmod(x) 
- __pow(x,y)		isodd(x)			sqrtmod(x) 
- __sub(x,y)		isone(x)			sub(x,y) 
- __tostring(x)	isprime(x,[checks])	submod(x,y,m) 
- __unm(x)		iszero(x)			text(t) 
- abs(x)			mod(x,y)			tohex(x) 
- add(x,y)		mul(x,y)			tonumber(x) 
- addmod(x,y,m)	mulmod(x,y,m)		tostring(x) 
- aprime(bits)	neg(x)				totext(x) 
- bits(x)		number(x)			version 
+ __add(x,y)        compare(x,y)          pow(x,y) 
+ __div(x,y)        div(x,y)              powmod(x,y,m) 
+ __eq(x,y)         divmod(x,y)           random(bits) 
+ __lt(x,y)         gcd(x,y)              rmod(x,y) 
+ __mod(x,y)        invmod(x)             sqr(x) 
+ __mul(x,y)        isneg(x)              sqrmod(x) 
+ __pow(x,y)        isodd(x)              sqrtmod(x) 
+ __sub(x,y)        isone(x)              sub(x,y) 
+ __tostring(x)     isprime(x,[checks])   submod(x,y,m) 
+ __unm(x)          iszero(x)             text(t) 
+ abs(x)            mod(x,y)              tohex(x) 
+ add(x,y)          mul(x,y)              tonumber(x) 
+ addmod(x,y,m)     mulmod(x,y,m)         tostring(x) 
+ aprime(bits)      neg(x)                totext(x) 
+ bits(x)           number(x)             version 
 ```
 
 ## Version
@@ -134,7 +134,7 @@ lua_openssl_version, lua_version, openssl_version = openssl.version()
 
 Lua-Openssl is heavily updated, if you find a bug, please report to [here](https://github.com/zhaozg/lua-openssl/issues/)
 
-#A.   Howto
+# A. Howto
 
 ### Howto 1: Build on Linux/Unix System.
 
@@ -180,7 +180,7 @@ openssl.error() will walk through error stacks of current threads.
 openssl.error(true) will also clear error stacks after get last error code,
 this is very useful to free memory when lua-openssl repeat calls or run long times.
 
-#B.  Example usage
+# B. Example usage
 
 ### Example 1: short encrypt/decrypt
 
@@ -256,10 +256,10 @@ end
 test_x509()
 ```
 
-###Example 6: bio network handle(TCP)
+### Example 5: bio network handle(TCP)
 
  * server
- 
+
 ```lua
 local openssl = require'openssl'
 local bio = openssl.bio
@@ -283,6 +283,7 @@ end
 ```
 
  * client
+
 ```lua
 local openssl = require'openssl'
 local bio = openssl.bio
