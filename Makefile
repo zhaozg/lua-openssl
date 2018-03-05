@@ -76,7 +76,7 @@ LDFLAGS		+= -shared $(OPENSSL_LIBS) $(LUA_LIBS)
 WARN_MIN	 = -Wall -Wno-unused-value
 WARN		 = -Wall
 WARN_MOST	 = $(WARN) -W -Waggregate-return -Wcast-align -Wmissing-prototypes -Wnested-externs -Wshadow -Wwrite-strings -pedantic
-CFLAGS		+= -g $(WARN_MIN) -DPTHREADS -Ideps
+CFLAGS		+= -g $(WARN_MIN) -DPTHREADS -Ideps -Ideps/lua-compat/c-api
 
 
 OBJS=src/asn1.o src/auxiliar.o src/bio.o src/cipher.o src/cms.o src/compat.o src/crl.o src/csr.o src/dh.o src/digest.o src/dsa.o \

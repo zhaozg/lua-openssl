@@ -1,6 +1,7 @@
 #ifndef OPENSSL_PRIVATE_H
 #define OPENSSL_PRIVATE_H
-#include "lua-compat/c-api/compat-5.3.h"
+
+#include "compat-5.3.h"
 
 #define luaL_checktable(L, n) luaL_checktype(L, n, LUA_TTABLE)
 
