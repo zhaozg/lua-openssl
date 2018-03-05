@@ -3,7 +3,7 @@ lua-openssl toolkit - A free, MIT-licensed OpenSSL binding for Lua.
 [![Build Status](https://travis-ci.org/zhaozg/lua-openssl.svg)](https://travis-ci.org/zhaozg/lua-openssl)
 [![Build status](https://ci.appveyor.com/api/projects/status/f8xchhlj035yqq88/branch/master?svg=true)](https://ci.appveyor.com/project/zhaozg/lua-openssl/branch/master)
 
-#Index
+# Index
 
 1. [Introduction](#introduction)
 2. [Documentation](#documentation)
