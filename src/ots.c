@@ -317,7 +317,7 @@ static int openssl_push_ts_accuracy(lua_State*L, const TS_ACCURACY* accuracy, in
       unsigned char *pbuf = NULL;
       int len = i2d_TS_ACCURACY(accuracy, &pbuf);
       if (len > 0) {
-        lua_pushlstring(L, pbuf, len);
+        lua_pushlstring(L, (const char*)pbuf, len);
         OPENSSL_free(pbuf);
       }
       else

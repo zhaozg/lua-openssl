@@ -1,7 +1,16 @@
 #ifndef OPENSSL_PRIVATE_H
 #define OPENSSL_PRIVATE_H
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+#include <lua.h>
+#include <lauxlib.h>
+#include <lualib.h>
+
+#if LUA_VERSION_NUM < 503
 #include "compat-5.3.h"
+#endif
 
 #define luaL_checktable(L, n) luaL_checktype(L, n, LUA_TTABLE)
 
@@ -224,6 +233,10 @@ X509_ATTRIBUTE* openssl_new_xattribute(lua_State*L, X509_ATTRIBUTE** a, int idx,
 
 #ifdef HAVE_USER_CUSTOME
 #include HAVE_USER_CUSTOME
+#endif
+
+#if defined(__cplusplus)
+}
 #endif
 
 #endif /* OPENSSL_PRIVATE_H */
