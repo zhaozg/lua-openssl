@@ -1,5 +1,5 @@
 package = "openssl"
-version = "scm-1"
+version = "scm-2"
 
 source = {
   url = "https://github.com/zhaozg/lua-openssl/archive/master.zip",
@@ -41,7 +41,7 @@ build = {
         "src/x509.c","src/xattrs.c","src/xexts.c","src/xname.c",
         "src/xalgor.c","src/xstore.c",
       },
-      incdirs = {"${OPENSSL_INCDIR}", "$(OPENSSL_DIR)/include", "deps"},
+      incdirs = {"${OPENSSL_INCDIR}", "$(OPENSSL_DIR)/include", "deps", "deps/lua-compat/c-api"},
       libdirs = {"$(OPENSSL_LIBDIR}", "$(OPENSSL_DIR)/lib"},
       defines = {"PTHREADS"},
       libraries = {"ssl", "crypto"},
