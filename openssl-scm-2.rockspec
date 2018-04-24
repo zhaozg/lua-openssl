@@ -41,7 +41,7 @@ build = {
         "src/x509.c","src/xattrs.c","src/xexts.c","src/xname.c",
         "src/xalgor.c","src/xstore.c",
       },
-      incdirs = {"${OPENSSL_INCDIR}", "$(OPENSSL_DIR)/include", "deps", "deps/lua-compat/c-api"},
+      incdirs = {"${OPENSSL_INCDIR}", "$(OPENSSL_DIR)/include", "deps", "deps/lua-compat"},
       libdirs = {"$(OPENSSL_LIBDIR}", "$(OPENSSL_DIR)/lib"},
       defines = {"PTHREADS"},
       libraries = {"ssl", "crypto"},

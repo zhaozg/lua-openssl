@@ -10,7 +10,7 @@ src\pkey.obj src\rsa.obj src\ssl.obj src\th-lock.obj src\util.obj src\x509.obj s
 lib: src\$T.dll
 
 .c.obj:
-	$(CC) /nologo /c /I"deps/lua-compat/c-api" /DLUA_BUILD_AS_DLL /DLUA_LIB /Fo$@ $(CFLAGS) $<
+	$(CC) /nologo /c /I"deps/lua-compat" /DLUA_BUILD_AS_DLL /DLUA_LIB /Fo$@ $(CFLAGS) $<
 
 src\$T.dll: $(OBJS)
 	link /DLL /out:src\$T.dll $(OBJS) "$(LUA_LIB)" "$(OPENSSL_LIB)" ws2_32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib 

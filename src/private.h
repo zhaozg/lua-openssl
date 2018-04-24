@@ -9,7 +9,7 @@ extern "C" {
 #include <lualib.h>
 
 #if LUA_VERSION_NUM < 503
-#include "compat-5.3.h"
+#include "c-api/compat-5.3.h"
 #endif
 
 #define luaL_checktable(L, n) luaL_checktype(L, n, LUA_TTABLE)
