@@ -1,5 +1,5 @@
 package = "openssl"
-version = "scm-2"
+version = "scm-3"
 
 source = {
   url = "https://github.com/zhaozg/lua-openssl/archive/master.zip",
