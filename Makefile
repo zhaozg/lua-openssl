@@ -45,7 +45,7 @@ endif
 ifneq (, $(findstring apple, $(SYS)))
 # Do darwin things
 CFLAGS		 = -fPIC
-LDFLAGS		 = -fPIC -bundle -undefined dynamic_lookup -ldl
+LDFLAGS		 = -fPIC -undefined dynamic_lookup -ldl
 MACOSX_DEPLOYMENT_TARGET="10.3"
 CC := MACOSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET} $(CC)
 endif
@@ -107,3 +107,5 @@ info:
 
 clean:
 	rm -f $T.so lib$T.a $(OBJS)
+
+# vim: ts=8 sw=8 noet
