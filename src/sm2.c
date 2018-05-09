@@ -53,10 +53,10 @@ static LUA_FUNCTION(openssl_sm2_do_sign)
 static LUA_FUNCTION(openssl_sm2_do_verify)
 {
   const EC_KEY *key = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
-  size_t sig_len = 0;
-  const uint8_t* signature = (const uint8_t*)luaL_checklstring(L, 2, &sig_len);
   size_t msg_len = 0;
-  const uint8_t* msg = (const uint8_t*)luaL_checklstring(L, 3, &msg_len);
+  const uint8_t* msg = (const uint8_t*)luaL_checklstring(L, 2, &msg_len);
+  size_t sig_len = 0;
+  const uint8_t* signature = (const uint8_t*)luaL_checklstring(L, 3, &sig_len);
   const char *user_id = luaL_optstring(L, 4, SM2_DEFAULT_USERID);
   const EVP_MD *md = get_digest(L, 5, "sm3");
   int ret = 0;
@@ -92,12 +92,12 @@ static LUA_FUNCTION(openssl_sm2_sign)
   const uint8_t *dgst = (const uint8_t*)luaL_checklstring(L, 2, &dgstlen);
   const EVP_MD* md = get_digest(L, 3, "sm3");
   uint8_t sig[SM2_SIG_MAX_LEN] = {0};
-  unsigned siglen = sizeof(sig);
+  unsigned int siglen = sizeof(sig);
 
   int ret = SM2_sign(EVP_MD_type(md), dgst, dgstlen, (uint8_t*)sig, &siglen, eckey);
   if (ret==1)
   {
-    lua_pushlstring(L, (const char*)dgst, dgstlen);
+    lua_pushlstring(L, (const char*)sig, siglen);
   }
   else
     ret = openssl_pushresult(L, ret);
@@ -164,6 +164,7 @@ static LUA_FUNCTION(openssl_sm2_encrypt)
   {
     ret = openssl_pushresult(L, ret);
   }
+  OPENSSL_free(ciphertext);
   return ret;
 }
 
@@ -185,6 +186,7 @@ static LUA_FUNCTION(openssl_sm2_decrypt)
   {
     ret = openssl_pushresult(L, ret);
   }
+  OPENSSL_free(plaintext);
   return ret;
 }
 

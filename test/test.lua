@@ -28,6 +28,7 @@ dofile('8.ssl_options.lua')
 dofile('8.ssl.lua')
 dofile('rsa.lua')
 dofile('ec.lua')
+dofile('sm2.lua')
 
 --LuaUnit.verbosity = 0
 LuaUnit.run()
