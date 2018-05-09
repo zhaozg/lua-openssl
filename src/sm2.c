@@ -1,0 +1,222 @@
+#include "openssl.h"
+#include "private.h"
+
+#if (OPENSSL_VERSION_NUMBER >= 0x10101007L) && !defined(OPENSSL_NO_SM2)
+
+#  include <openssl/sm2.h>
+
+#define MYNAME    "sm2"
+#define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2018 / "\
+    "based on OpenSSL " SHLIB_VERSION_NUMBER
+
+static LUA_FUNCTION(openssl_sm2_compute_userid_digest)
+{
+  const EC_KEY *key = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
+  const char *user_id = luaL_optstring(L, 2, SM2_DEFAULT_USERID);
+  const EVP_MD *md = get_digest(L, 3, "sm3");
+  uint8_t dgst[EVP_MAX_MD_SIZE];
+
+  int ret = SM2_compute_userid_digest(dgst, md, user_id, key);
+  if (ret==1)
+  {
+    lua_pushlstring(L, (const char*)dgst, EVP_MD_size(md));
+    return 1;
+  }
+  return openssl_pushresult(L, ret);
+}
+
+static LUA_FUNCTION(openssl_sm2_do_sign)
+{
+  const EC_KEY *key = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
+  size_t msg_len = 0;
+  const uint8_t* msg = (const uint8_t*)luaL_checklstring(L, 2, &msg_len);
+  const char *user_id = luaL_optstring(L, 3, SM2_DEFAULT_USERID);
+  const EVP_MD *md = get_digest(L, 4, "sm3");
+  int ret = 0;
+
+  ECDSA_SIG *sig = SM2_do_sign(key, md, user_id, msg, (int)msg_len);
+  if(sig!=NULL)
+  {
+    uint8_t* p = NULL;
+    int len = i2d_ECDSA_SIG(sig, &p);
+    if (len>0)
+    {
+      lua_pushlstring(L, (const char*)p, len);
+      OPENSSL_free(p);
+      ret = 1;
+    }
+    ECDSA_SIG_free(sig);
+  }
+  return ret;
+}
+
+static LUA_FUNCTION(openssl_sm2_do_verify)
+{
+  const EC_KEY *key = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
+  size_t sig_len = 0;
+  const uint8_t* signature = (const uint8_t*)luaL_checklstring(L, 2, &sig_len);
+  size_t msg_len = 0;
+  const uint8_t* msg = (const uint8_t*)luaL_checklstring(L, 3, &msg_len);
+  const char *user_id = luaL_optstring(L, 4, SM2_DEFAULT_USERID);
+  const EVP_MD *md = get_digest(L, 5, "sm3");
+  int ret = 0;
+
+  ECDSA_SIG *sig = d2i_ECDSA_SIG(NULL, &signature, sig_len);
+  if(sig!=NULL)
+  {
+    ret = SM2_do_verify(key, md, sig, user_id, msg, msg_len);
+    if (ret==-1)
+    {
+      ret = openssl_pushresult(L, ret);
+    }
+    else
+    {
+      lua_pushboolean(L, ret);
+      ret = 1;
+    }
+  }
+  else
+  {
+    lua_pushnil(L);
+    lua_pushstring(L, "Invalid signature data");
+    ret = 2;
+  }
+  return ret;
+}
+
+#define SM2_SIG_MAX_LEN 72
+static LUA_FUNCTION(openssl_sm2_sign)
+{
+  EC_KEY *eckey = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
+  size_t dgstlen = 0;
+  const uint8_t *dgst = (const uint8_t*)luaL_checklstring(L, 2, &dgstlen);
+  const EVP_MD* md = get_digest(L, 3, "sm3");
+  uint8_t sig[SM2_SIG_MAX_LEN] = {0};
+  unsigned siglen = sizeof(sig);
+
+  int ret = SM2_sign(EVP_MD_type(md), dgst, dgstlen, (uint8_t*)sig, &siglen, eckey);
+  if (ret==1)
+  {
+    lua_pushlstring(L, (const char*)dgst, dgstlen);
+  }
+  else
+    ret = openssl_pushresult(L, ret);
+  return ret;
+}
+
+static LUA_FUNCTION(openssl_sm2_verify)
+{
+  EC_KEY *eckey = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
+  size_t dgstlen = 0;
+  const uint8_t *dgst = (const uint8_t*)luaL_checklstring(L, 2, &dgstlen);
+  size_t siglen = 0;
+  const uint8_t *sig = (const uint8_t*)luaL_checklstring(L, 3, &siglen);
+  const EVP_MD* md = get_digest(L, 4, "sm3");
+
+  int ret = SM2_verify(EVP_MD_type(md), dgst, (int)dgstlen, sig, (int)siglen, eckey);
+  if(ret==-1)
+    ret = openssl_pushresult(L, ret);
+  else
+  {
+    lua_pushboolean(L, ret);
+    ret = 1;
+  }
+  return ret;
+}
+
+static LUA_FUNCTION(openssl_sm2_ciphertext_size)
+{
+  EC_KEY *eckey = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
+  int msg_len = luaL_checkinteger(L, 2);
+  const EVP_MD* md = get_digest(L, 3, "sm3");
+
+  size_t size = SM2_ciphertext_size(eckey, md, msg_len);
+  lua_pushinteger(L, size);
+  return 1;
+}
+
+static LUA_FUNCTION(openssl_sm2_plaintext_size)
+{
+  EC_KEY *eckey = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
+  int msg_len = luaL_checkinteger(L, 2);
+  const EVP_MD* md = get_digest(L, 3, "sm3");
+
+  size_t size = SM2_plaintext_size(eckey, md, msg_len);
+  lua_pushinteger(L, size);
+  return 1;
+}
+
+static LUA_FUNCTION(openssl_sm2_encrypt)
+{
+  EC_KEY *eckey = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
+  size_t msglen = 0;
+  const uint8_t *msg = (const uint8_t*)luaL_checklstring(L, 2, &msglen);
+  const EVP_MD* md = get_digest(L, 3, "sm3");
+  size_t clen = SM2_ciphertext_size(eckey, md, msglen);
+  uint8_t* ciphertext = OPENSSL_malloc(clen);
+
+  int ret = SM2_encrypt(eckey, md, msg, msglen, ciphertext, &clen);
+  if(ret==1)
+  {
+    lua_pushlstring(L, (const char*)ciphertext, clen);
+  }
+  else
+  {
+    ret = openssl_pushresult(L, ret);
+  }
+  return ret;
+}
+
+static LUA_FUNCTION(openssl_sm2_decrypt)
+{
+  EC_KEY *eckey = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
+  size_t msglen = 0;
+  const uint8_t *msg = (const uint8_t*)luaL_checklstring(L, 2, &msglen);
+  const EVP_MD* md = get_digest(L, 3, "sm3");
+  size_t plen = SM2_plaintext_size(eckey, md, msglen);
+  uint8_t* plaintext = OPENSSL_malloc(plen);
+
+  int ret = SM2_decrypt(eckey, md, msg, msglen, plaintext, &plen);
+  if(ret==1)
+  {
+    lua_pushlstring(L, (const char*)plaintext, plen);
+  }
+  else
+  {
+    ret = openssl_pushresult(L, ret);
+  }
+  return ret;
+}
+
+static luaL_Reg R[] =
+{
+  {"compute_userid_digest", openssl_sm2_compute_userid_digest},
+  {"do_sign",               openssl_sm2_do_sign},
+  {"do_verify",             openssl_sm2_do_verify},
+  {"sign",                  openssl_sm2_sign},
+  {"verify",                openssl_sm2_verify},
+
+  {"ciphersize",            openssl_sm2_ciphertext_size},
+  {"plainsize",             openssl_sm2_plaintext_size},
+  {"encrypt",               openssl_sm2_encrypt},
+  {"decrypt",               openssl_sm2_decrypt},
+
+
+  { NULL, NULL }
+};
+
+int luaopen_sm2(lua_State *L)
+{
+  lua_newtable(L);
+  luaL_setfuncs(L, R, 0);
+  lua_pushliteral(L, "version");    /** version */
+  lua_pushliteral(L, MYVERSION);
+  lua_settable(L, -3);
+  lua_pushliteral(L, "default_userid");
+  lua_pushliteral(L, SM2_DEFAULT_USERID);
+  lua_settable(L, -3);
+
+  return 1;
+}
+
+#endif

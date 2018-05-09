@@ -386,6 +386,11 @@ LUALIB_API int luaopen_openssl(lua_State*L)
   luaopen_dh(L);
   lua_setfield(L, -2, "dh");
 
+#if (OPENSSL_VERSION_NUMBER >= 0x10101007L) && !defined(OPENSSL_NO_SM2)
+  luaopen_sm2(L);
+  lua_setfield(L, -2, "sm2");
+#endif
+  
 #ifdef ENABLE_OPENSSL_GLOBAL
   lua_pushvalue(L, -1);
   lua_setglobal(L, "openssl");
