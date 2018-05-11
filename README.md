@@ -129,6 +129,9 @@ If you want to get the lua-openssl and OpenSSL versions from a Lua script, here 
 openssl = require "openssl"
 lua_openssl_version, lua_version, openssl_version = openssl.version()
 ```
+## Style
+
+Source code of lua-openssl tidy with [astyle](http://astyle.sourceforge.net/) `--style=allman --indent=spaces=2` 
 
 ## Bugs
 
