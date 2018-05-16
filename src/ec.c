@@ -58,6 +58,7 @@ static int openssl_eckey_group(lua_State *L)
   {
     const EC_POINT* p = EC_GROUP_get0_generator(g);
     p = EC_POINT_dup(p, g);
+    g = EC_GROUP_dup(g);
     PUSH_OBJECT(g, "openssl.ec_group");
     PUSH_OBJECT(p, "openssl.ec_point");
     return 2;
