@@ -164,7 +164,7 @@ static point_conversion_form_t openssl_point_conversion_form(lua_State *L, int i
     form = POINT_CONVERSION_HYBRID;
   else
     luaL_argerror(L, i, "not accept value point_conversion_form");
-  return f;
+  return form;
 }
 
 static int openssl_ec_group_point_conversion_form(lua_State*L)
