@@ -638,12 +638,40 @@ static int openssl_ecdsa_set_method(lua_State *L)
   return 0;
 }
 
+static int openssl_ec_key_export(lua_State *L)
+{
+  EC_KEY *ec = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
+  unsigned char* der = NULL;
+  int len = i2d_ECPrivateKey(ec, &der);
+  if(len>0)
+    lua_pushlstring(L, (const char*)der, len);
+  else 
+    lua_pushnil(L);
+  if(der)
+    OPENSSL_free(der);
+  return 1;
+}
+
+static int openssl_ec_key_read(lua_State *L)
+{
+  size_t len = 0;
+  const unsigned char* der = (const unsigned char*)luaL_checklstring(L, 1, &len);
+
+  EC_KEY* ec = d2i_ECPrivateKey(NULL, &der, len);
+  if(ec) 
+    PUSH_OBJECT(ec, "openssl.ec_key");
+  else 
+    lua_pushnil(L);
+  return 1;
+}
+
 #ifdef EC_EXT
 EC_EXT_DEFINE
 #endif
 
 static luaL_Reg ec_key_funs[] =
 {
+  {"export",      openssl_ec_key_export},
   {"parse",       openssl_ec_key_parse},
   {"sign",        openssl_ecdsa_sign},
   {"verify",      openssl_ecdsa_verify},
@@ -704,6 +732,7 @@ static LUA_FUNCTION(openssl_ec_list_curve_name)
 
 static luaL_Reg R[] =
 {
+  {"read",     openssl_ec_key_read},
   {"list",     openssl_ec_list_curve_name},
   {"group",    openssl_eckey_group},
 
