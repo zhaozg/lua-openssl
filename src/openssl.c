@@ -390,7 +390,10 @@ LUALIB_API int luaopen_openssl(lua_State*L)
   luaopen_sm2(L);
   lua_setfield(L, -2, "sm2");
 #endif
-  
+
+  luaopen_srp(L);
+  lua_setfield(L, -2, "srp");
+
 #ifdef ENABLE_OPENSSL_GLOBAL
   lua_pushvalue(L, -1);
   lua_setglobal(L, "openssl");

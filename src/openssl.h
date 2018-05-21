@@ -138,6 +138,7 @@ int openssl_register_engine(lua_State* L);
 #if (OPENSSL_VERSION_NUMBER >= 0x10101007L) && !defined(OPENSSL_NO_SM2)
 LUA_FUNCTION(luaopen_sm2);
 #endif
+LUA_FUNCTION(luaopen_srp);
 
 #endif
 
