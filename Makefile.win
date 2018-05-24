@@ -2,7 +2,8 @@ T= openssl
 
 include config.win
 
-OBJS=src\asn1.obj src\auxiliar.obj src\bio.obj src\cipher.obj src\cms.obj     \
+OBJS= \
+deps\auxiliar\auxiliar src\asn1.obj src\bio.obj src\cipher.obj src\cms.obj    \
 src\compat.obj src\crl.obj src\csr.obj src\dh.obj src\digest.obj src\dsa.obj  \
 src\ec.obj src\engine.obj src\hmac.obj src\lbn.obj src\lhash.obj src\misc.obj \
 src\ocsp.obj src\openssl.obj src\ots.obj src\pkcs12.obj src\pkcs7.obj         \
@@ -14,7 +15,7 @@ src\callback.obj src\sm2.obj src\srp.obj
 lib: src\$T.dll
 
 .c.obj:
-	$(CC) /nologo /c /I"deps/lua-compat" /DLUA_BUILD_AS_DLL /DLUA_LIB /Fo$@ $(CFLAGS) $<
+	$(CC) /nologo /c /I"deps/lua-compat" /I"deps/auxiliar" /DLUA_BUILD_AS_DLL /DLUA_LIB /Fo$@ $(CFLAGS) $<
 
 src\$T.dll: $(OBJS)
 	link /DLL /out:src\$T.dll $(OBJS) "$(LUA_LIB)" "$(OPENSSL_LIB)" \

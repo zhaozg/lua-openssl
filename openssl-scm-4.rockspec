@@ -31,7 +31,7 @@ build = {
   modules = {
     openssl = {
       sources = {
-        "src/asn1.c","src/auxiliar.c","src/bio.c","src/callback.c",
+        "deps/auxiliar/auxiliar.c","src/asn1.c","src/bio.c","src/callback.c",
         "src/cipher.c","src/cms.c","src/compat.c","src/crl.c",
         "src/csr.c","src/dh.c","src/digest.c","src/dsa.c",
         "src/ec.c","src/engine.c","src/hmac.c","src/lbn.c",
@@ -41,7 +41,7 @@ build = {
         "src/x509.c","src/xattrs.c","src/xexts.c","src/xname.c",
         "src/xalgor.c","src/xstore.c", "src/sm2.c","src/srp.c"
       },
-      incdirs = {"${OPENSSL_INCDIR}", "$(OPENSSL_DIR)/include", "deps", "deps/lua-compat"},
+      incdirs = {"${OPENSSL_INCDIR}", "$(OPENSSL_DIR)/include", "deps/auxiliar", "deps/lua-compat"},
       libdirs = {"$(OPENSSL_LIBDIR}", "$(OPENSSL_DIR)/lib"},
       defines = {"PTHREADS"},
       libraries = {"ssl", "crypto"},

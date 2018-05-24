@@ -46,7 +46,7 @@ ifneq (, $(findstring apple, $(SYS)))
 # Do darwin things
 CFLAGS		 = -fPIC
 LDFLAGS		 = -fPIC -undefined dynamic_lookup -ldl
-MACOSX_DEPLOYMENT_TARGET="10.3"
+#MACOSX_DEPLOYMENT_TARGET="10.3"
 CC := MACOSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET} $(CC)
 endif
 ifneq (, $(findstring mingw, $(SYS)))
@@ -76,10 +76,10 @@ LDFLAGS		+= -shared $(OPENSSL_LIBS) $(LUA_LIBS)
 WARN_MIN	 = -Wall -Wno-unused-value
 WARN		 = -Wall
 WARN_MOST	 = $(WARN) -W -Waggregate-return -Wcast-align -Wmissing-prototypes -Wnested-externs -Wshadow -Wwrite-strings -pedantic
-CFLAGS		+= -g $(WARN_MIN) -DPTHREADS -Ideps -Ideps/lua-compat
+CFLAGS		+= -g $(WARN_MIN) -DPTHREADS -Ideps -Ideps/lua-compat -Ideps/auxiliar
 
 
-OBJS=src/asn1.o src/auxiliar.o src/bio.o src/cipher.o src/cms.o src/compat.o src/crl.o src/csr.o src/dh.o src/digest.o src/dsa.o \
+OBJS=src/asn1.o deps/auxiliar/auxiliar.o src/bio.o src/cipher.o src/cms.o src/compat.o src/crl.o src/csr.o src/dh.o src/digest.o src/dsa.o \
 src/ec.o src/engine.o src/hmac.o src/lbn.o src/lhash.o src/misc.o src/ocsp.o src/openssl.o src/ots.o src/pkcs12.o src/pkcs7.o    \
 src/pkey.o src/rsa.o src/ssl.o src/th-lock.o src/util.o src/x509.o src/xattrs.o src/xexts.o src/xname.o src/xstore.o \
 src/xalgor.o src/callback.o src/sm2.o src/srp.o

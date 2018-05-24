@@ -1393,7 +1393,6 @@ static LuaL_Enum pkcs7_const[] =
 
 int luaopen_pkcs7(lua_State *L)
 {
-  int i;
   auxiliar_newclass(L, "openssl.pkcs7", pkcs7_funcs);
 
   lua_newtable(L);
@@ -1403,11 +1402,6 @@ int luaopen_pkcs7(lua_State *L)
   lua_pushliteral(L, MYVERSION);
   lua_settable(L, -3);
 
-  for (i = 0; i < sizeof(pkcs7_const) / sizeof(LuaL_Enum) - 1; i++)
-  {
-    LuaL_Enum e = pkcs7_const[i];
-    lua_pushinteger(L, e.val);
-    lua_setfield(L, -2, e.name);
-  }
+  auxiliar_register(L, -1, pkcs7_const);
   return 1;
 }
