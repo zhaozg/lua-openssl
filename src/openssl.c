@@ -251,6 +251,26 @@ static LUA_FUNCTION(openssl_random_bytes)
   free(buffer);
   return 1;
 }
+
+static int openssl_fips_mode(lua_State *L)
+{
+  int ret =0, on = 0;
+  if(lua_isnone(L, 1))
+  {
+    on = FIPS_mode();
+    lua_pushboolean(L, on);
+    return 1;
+  }
+
+  on = auxiliar_checkboolean(L, 1);
+  ret = FIPS_mode_set(on);
+  if(ret)
+    lua_pushboolean(L, ret);
+  else 
+    ret = openssl_pushresult(L, ret);
+  return ret;
+}
+
 #ifndef OPENSSL_NO_CRYPTO_MDEBUG
 static int openssl_mem_leaks(lua_State*L)
 {
@@ -265,6 +285,7 @@ static int openssl_mem_leaks(lua_State*L)
   return 1;
 }
 #endif
+
 static const luaL_Reg eay_functions[] =
 {
   {"version",     openssl_version},
@@ -282,6 +303,7 @@ static const luaL_Reg eay_functions[] =
 
   {"error",       openssl_error_string},
   {"engine",      openssl_engine},
+  {"FIPS_mode",   openssl_fips_mode},
 
   {NULL, NULL}
 };
