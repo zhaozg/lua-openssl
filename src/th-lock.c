@@ -334,7 +334,7 @@ void CRYPTO_thread_setup(void)
   CRYPTO_set_locking_callback((void (*)())pthreads_locking_callback);
 }
 
-void thread_cleanup(void)
+void CRYPTO_thread_cleanup(void)
 {
   int i;
 

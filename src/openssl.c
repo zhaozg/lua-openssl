@@ -291,10 +291,42 @@ void CRYPTO_thread_setup(void);
 void CRYPTO_thread_cleanup(void);
 #endif
 
+static int luaclose_openssl(lua_State *L)
+{ 
+  FIPS_mode_set(0);
+#if defined(OPENSSL_THREADS)
+  CRYPTO_thread_cleanup();
+#endif
+  CRYPTO_set_locking_callback(NULL);
+  CRYPTO_set_id_callback(NULL);
+
+  ENGINE_cleanup();
+  CONF_modules_unload(1);
+
+  ERR_free_strings();
+  EVP_cleanup();
+
+  CRYPTO_cleanup_all_ex_data();
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+  CRYPTO_mem_leaks_fp(stderr);
+#else
+  if(CRYPTO_mem_leaks_fp(stderr)!=1)
+  {
+    fprintf(stderr,
+      "Please report a bug on https://github.com/zhaozg/lua-openssl."
+      "And if can, please provide a reproduce method and minimal code.\n"
+      "\n\tThank You.");
+  }
+#endif
+
+  return 0;
+}
+
 LUALIB_API int luaopen_openssl(lua_State*L)
 {
-  static int init = 0;
-  if (init == 0)
+  static void* init = NULL;
+  if (init == NULL)
   {
 #if defined(OPENSSL_THREADS)
     CRYPTO_thread_setup();
@@ -318,10 +350,19 @@ LUALIB_API int luaopen_openssl(lua_State*L)
     RAND_screen();
 #endif
 #endif
-    init = 1;
   }
 
   lua_newtable(L);
+  if(init==NULL)
+  {
+    init = lua_newuserdata(L, sizeof(int));
+    lua_newtable(L);
+    lua_pushcfunction(L, luaclose_openssl);
+    lua_setfield(L, -2, "__gc");
+    lua_setmetatable(L, -2);
+    lua_setfield(L, -2, "__guard");
+  }
+
   luaL_setfuncs(L, eay_functions, 0);
 
   openssl_register_lhash(L);
