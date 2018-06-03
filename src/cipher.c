@@ -33,7 +33,7 @@ static LUA_FUNCTION(openssl_cipher_get)
   }
   else
   {
-    luaL_argcheck(L, auxiliar_isclass(L, "openssl.evp_cipher", 1), 1, "only accept openssl.evp_cipher object");
+    luaL_argcheck(L, auxiliar_getclassudata(L, "openssl.evp_cipher", 1), 1, "only accept openssl.evp_cipher object");
     lua_pushvalue(L, 1);
   }
   return 1;

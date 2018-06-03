@@ -4,7 +4,7 @@
 #include <openssl/ssl.h>
 #include "auxiliar.h"
 
-static LuaL_Enum ssl_options[] =
+static LuaL_Enumeration ssl_options[] =
 {
 #if defined(SSL_OP_ALL)
   {"all", SSL_OP_ALL},

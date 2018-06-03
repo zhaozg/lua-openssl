@@ -215,7 +215,7 @@ EC_GROUP* openssl_get_ec_group(lua_State* L, int ec_name_idx, int param_enc_idx,
   }
   else if (lua_isuserdata(L, ec_name_idx))
   {
-    if (auxiliar_isclass(L, "openssl.evp_pkey", ec_name_idx))
+    if (auxiliar_getclassudata(L, "openssl.evp_pkey", ec_name_idx))
     {
       EVP_PKEY* pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
       EC_KEY* ec_key = EVP_PKEY_get1_EC_KEY(pkey);
@@ -225,7 +225,7 @@ EC_GROUP* openssl_get_ec_group(lua_State* L, int ec_name_idx, int param_enc_idx,
         EC_KEY_free(ec_key);
       }
     }
-    else if (auxiliar_isclass(L, "openssl.ec_key", ec_name_idx))
+    else if (auxiliar_getclassudata(L, "openssl.ec_key", ec_name_idx))
     {
       EC_KEY* ec_key = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
       g = (EC_GROUP*)EC_KEY_get0_group(ec_key);

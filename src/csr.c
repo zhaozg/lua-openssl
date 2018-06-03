@@ -216,15 +216,15 @@ static LUA_FUNCTION(openssl_csr_new)
   for (i = 1; ret == 1 && i <= n; i++)
   {
     luaL_argcheck(L,
-                  auxiliar_isclass(L, "openssl.x509_name", i) ||
-                  auxiliar_isclass(L, "openssl.evp_pkey", i),
+                  auxiliar_getclassudata(L, "openssl.x509_name", i) ||
+                  auxiliar_getclassudata(L, "openssl.evp_pkey", i),
                   i, "must be x509_name or evp_pkey");
-    if (auxiliar_isclass(L, "openssl.x509_name", i))
+    if (auxiliar_getclassudata(L, "openssl.x509_name", i))
     {
       X509_NAME * subject = CHECK_OBJECT(i, X509_NAME, "openssl.x509_name");
       ret = X509_REQ_set_subject_name(csr, subject);
     }
-    if (auxiliar_isclass(L, "openssl.evp_pkey", i))
+    if (auxiliar_getclassudata(L, "openssl.evp_pkey", i))
     {
       EVP_PKEY *pkey;
       const EVP_MD *md;
@@ -262,7 +262,7 @@ static LUA_FUNCTION(openssl_csr_sign)
 {
   X509_REQ * csr = CHECK_OBJECT(1, X509_REQ, "openssl.x509_req");
   EVP_PKEY *pubkey = X509_REQ_get_pubkey(csr);
-  if (auxiliar_isclass(L, "openssl.evp_pkey", 2))
+  if (auxiliar_getclassudata(L, "openssl.evp_pkey", 2))
   {
     EVP_PKEY *pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
     const EVP_MD* md = get_digest(L, 3, "sha256");
@@ -490,7 +490,7 @@ static LUA_FUNCTION(openssl_csr_extensions)
 static LUA_FUNCTION(openssl_csr_attribute)
 {
   X509_REQ *csr = CHECK_OBJECT(1, X509_REQ, "openssl.x509_req");
-  if (auxiliar_isclass(L, "openssl.x509_attribute", 2))
+  if (auxiliar_getclassudata(L, "openssl.x509_attribute", 2))
   {
     X509_ATTRIBUTE *attr = CHECK_OBJECT(2, X509_ATTRIBUTE, "openssl.x509_attribute");
     int ret = X509_REQ_add1_attr(csr, attr);

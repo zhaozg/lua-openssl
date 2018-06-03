@@ -125,12 +125,12 @@ static int openssl_xstore_add(lua_State* L)
       for (j = 1; j <= k; j++)
       {
         lua_rawgeti(L, i, j);
-        if (auxiliar_isclass(L, "openssl.x509", i))
+        if (auxiliar_getclassudata(L, "openssl.x509", i))
         {
           X509* x = CHECK_OBJECT(i, X509, "openssl.x509");
           ret = X509_STORE_add_cert(ctx, x);
         }
-        else if (auxiliar_isclass(L, "openssl.x509_crl", i))
+        else if (auxiliar_getclassudata(L, "openssl.x509_crl", i))
         {
           X509_CRL* c = CHECK_OBJECT(i, X509_CRL, "openssl.x509_crl");
           ret = X509_STORE_add_crl(ctx, c);
@@ -141,12 +141,12 @@ static int openssl_xstore_add(lua_State* L)
         }
       }
     }
-    else if (auxiliar_isclass(L, "openssl.x509", i))
+    else if (auxiliar_getclassudata(L, "openssl.x509", i))
     {
       X509* x = CHECK_OBJECT(i, X509, "openssl.x509");
       ret = X509_STORE_add_cert(ctx, x);
     }
-    else if (auxiliar_isclass(L, "openssl.x509_crl", i))
+    else if (auxiliar_getclassudata(L, "openssl.x509_crl", i))
     {
       X509_CRL* c = CHECK_OBJECT(i, X509_CRL, "openssl.x509_crl");
       ret = X509_STORE_add_crl(ctx, c);
@@ -198,7 +198,7 @@ static int openssl_xstore_new(lua_State*L)
   {
     X509* x;
     lua_rawgeti(L, 1, i + 1);
-    luaL_argcheck(L, auxiliar_isclass(L, "openssl.x509", -1), 1, "only contains x509 object");
+    luaL_argcheck(L, auxiliar_getclassudata(L, "openssl.x509", -1), 1, "only contains x509 object");
     x = CHECK_OBJECT(-1, X509, "openssl.x509");
     lua_pop(L, 1);
     X509_STORE_add_cert(ctx, x);

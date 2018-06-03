@@ -107,10 +107,10 @@ static LUA_FUNCTION(openssl_pkcs7_add)
   luaL_argcheck(L, lua_isuserdata(L, 2), 2, "must supply certificate or crl object");
   for (i = 2; i <= n; i++)
   {
-    luaL_argcheck(L, auxiliar_isclass(L, "openssl.x509", i) || auxiliar_isclass(L, "openssl.x509_crl", i),
+    luaL_argcheck(L, auxiliar_getclassudata(L, "openssl.x509", i) || auxiliar_getclassudata(L, "openssl.x509_crl", i),
                   i, "must supply certificate or crl object");
 
-    if (auxiliar_isclass(L, "openssl.x509", i))
+    if (auxiliar_getclassudata(L, "openssl.x509", i))
     {
       X509* x = CHECK_OBJECT(i, X509, "openssl.x509");
       ret = PKCS7_add_certificate(p7, x);
@@ -1369,7 +1369,7 @@ static const luaL_Reg R[] =
   {NULL,  NULL}
 };
 
-static LuaL_Enum pkcs7_const[] =
+static LuaL_Enumeration pkcs7_const[] =
 {
   {"TEXT",         PKCS7_TEXT},
   {"NOCERTS",      PKCS7_NOCERTS},
@@ -1402,6 +1402,6 @@ int luaopen_pkcs7(lua_State *L)
   lua_pushliteral(L, MYVERSION);
   lua_settable(L, -3);
 
-  auxiliar_register(L, -1, pkcs7_const);
+  auxiliar_enumerate(L, -1, pkcs7_const);
   return 1;
 }

@@ -48,7 +48,7 @@ static int openssl_ocsp_request_new(lua_State*L)
       for (i = 1; i <= len; i++)
       {
         lua_rawgeti(L, 2, i);
-        if (auxiliar_isclass(L, "openssl.x509", -1))
+        if (auxiliar_getclassudata(L, "openssl.x509", -1))
         {
           X509 *cert = CHECK_OBJECT(2, X509, "openssl.x509");
           id = OCSP_cert_to_id(NULL, cert, issuer);
@@ -80,7 +80,7 @@ static int openssl_ocsp_request_new(lua_State*L)
         lua_pop(L, 1);
       }
     }
-    else if (auxiliar_isclass(L, "openssl.x509", 2))
+    else if (auxiliar_getclassudata(L, "openssl.x509", 2))
     {
       X509 *cert = CHECK_OBJECT(2, X509, "openssl.x509");
       id = OCSP_cert_to_id(NULL, cert, issuer);

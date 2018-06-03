@@ -11,6 +11,7 @@
 #include <lualib.h>
 #include <lauxlib.h>
 #include "auxiliar.h"
+#include "subsidiar.h"
 
 #include <assert.h>
 #include <string.h>

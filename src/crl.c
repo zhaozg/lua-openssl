@@ -342,13 +342,13 @@ static LUA_FUNCTION(openssl_crl_issuer)
   {
     return openssl_push_xname_asobject(L, X509_CRL_get_issuer(crl));
   }
-  else if (auxiliar_isclass(L, "openssl.x509_name", 2))
+  else if (auxiliar_getclassudata(L, "openssl.x509_name", 2))
   {
     X509_NAME* xn = CHECK_OBJECT(2, X509_NAME, "openssl.x509_name");
     int ret = X509_CRL_set_issuer_name(crl, xn);
     return openssl_pushresult(L, ret);
   }
-  else if (auxiliar_isclass(L, "openssl.x509", 2))
+  else if (auxiliar_getclassudata(L, "openssl.x509", 2))
   {
     X509* x = CHECK_OBJECT(2, X509, "openssl.x509");
     int ret = X509_CRL_set_issuer_name(crl, X509_get_issuer_name(x));
@@ -463,11 +463,11 @@ static LUA_FUNCTION(openssl_crl_verify)
   EVP_PKEY *pub = NULL;
   int ret;
   luaL_argcheck(L,
-                auxiliar_isclass(L, "openssl.x509", 2) ||
-                auxiliar_isclass(L, "openssl.evp_pkey", 2),
+                auxiliar_getclassudata(L, "openssl.x509", 2) ||
+                auxiliar_getclassudata(L, "openssl.evp_pkey", 2),
                 2,
                 "must be x509 or evp_pkey object");
-  if (auxiliar_isclass(L, "openssl.evp_pkey", 2))
+  if (auxiliar_getclassudata(L, "openssl.evp_pkey", 2))
   {
     pub = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
     ret = X509_CRL_verify(crl, pub);
@@ -491,14 +491,14 @@ LUA_FUNCTION(openssl_crl_sign)
   const EVP_MD *md = get_digest(L, 4, "sha256");
   int ret = 1;
 
-  luaL_argcheck(L, auxiliar_isclass(L, "openssl.x509", 3) || auxiliar_isclass(L, "openssl.x509_name", 3),
+  luaL_argcheck(L, auxiliar_getclassudata(L, "openssl.x509", 3) || auxiliar_getclassudata(L, "openssl.x509_name", 3),
                 3, "must be openssl.x509 or openssl.x509_name object");
-  if (auxiliar_isclass(L, "openssl.x509_name", 3))
+  if (auxiliar_getclassudata(L, "openssl.x509_name", 3))
   {
     X509_NAME* xn = CHECK_OBJECT(3, X509_NAME, "openssl.x509_name");
     ret = X509_CRL_set_issuer_name(crl, xn);
   }
-  else if (auxiliar_isclass(L, "openssl.x509", 3))
+  else if (auxiliar_getclassudata(L, "openssl.x509", 3))
   {
     X509* ca = CHECK_OBJECT(3, X509, "openssl.x509");
     ret = X509_CRL_set_issuer_name(crl, X509_get_issuer_name(ca));

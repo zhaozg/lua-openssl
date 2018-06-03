@@ -150,7 +150,7 @@ int X509_get_signature_nid(const X509 *x);
   const char* bn = luaL_checklstring(L,-1,&l);              \
   if(_type->_name==NULL)  _type->_name = BN_new();          \
   BN_bin2bn((const unsigned char *)bn,l,_type->_name);      \
-  }else if(auxiliar_isclass(L,"openssl.bn",-1)) {           \
+  }else if(auxiliar_getclassudata(L,"openssl.bn",-1)) {           \
   const BIGNUM* bn = CHECK_OBJECT(-1,BIGNUM,"openssl.bn");  \
   if(_type->_name==NULL)  _type->_name = BN_new();          \
   BN_copy(_type->_name, bn);                                \

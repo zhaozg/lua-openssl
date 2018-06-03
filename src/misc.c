@@ -25,7 +25,7 @@ BIO* load_bio_object(lua_State* L, int idx)
     /* read only */
     bio = (BIO*)BIO_new_mem_buf((void*)ctx, l);
   }
-  else if (auxiliar_isclass(L, "openssl.bio", idx))
+  else if (auxiliar_getclassudata(L, "openssl.bio", idx))
   {
     bio = CHECK_OBJECT(idx, BIO, "openssl.bio");
     BIO_up_ref(bio);
@@ -58,9 +58,9 @@ const EVP_MD* get_digest(lua_State* L, int idx, const char* def_alg)
     md = EVP_get_digestbynid(lua_tointeger(L, idx));
     break;
   case LUA_TUSERDATA:
-    if (auxiliar_isclass(L, "openssl.asn1_object", idx))
+    if (auxiliar_getclassudata(L, "openssl.asn1_object", idx))
       md = EVP_get_digestbyobj(CHECK_OBJECT(idx, ASN1_OBJECT, "openssl.asn1_object"));
-    else if (auxiliar_isclass(L, "openssl.evp_digest", idx))
+    else if (auxiliar_getclassudata(L, "openssl.evp_digest", idx))
       md = CHECK_OBJECT(idx, EVP_MD, "openssl.evp_digest");
     break;
   case LUA_TNONE:
@@ -91,9 +91,9 @@ const EVP_CIPHER* get_cipher(lua_State*L, int idx, const char* def_alg)
     cipher = EVP_get_cipherbynid(lua_tointeger(L, idx));
     break;
   case LUA_TUSERDATA:
-    if (auxiliar_isclass(L, "openssl.asn1_object", idx))
+    if (auxiliar_getclassudata(L, "openssl.asn1_object", idx))
       cipher = EVP_get_cipherbyobj(CHECK_OBJECT(idx, ASN1_OBJECT, "openssl.asn1_object"));
-    else if (auxiliar_isclass(L, "openssl.evp_cipher", idx))
+    else if (auxiliar_getclassudata(L, "openssl.evp_cipher", idx))
       cipher = CHECK_OBJECT(idx, EVP_CIPHER, "openssl.evp_cipher");
     break;
   case LUA_TNONE:

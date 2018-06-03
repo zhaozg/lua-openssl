@@ -206,7 +206,7 @@ static X509_EXTENSION* openssl_new_xextension(lua_State*L, int idx, int v3)
   }
   lua_getfield(L, idx, "value");
 
-  luaL_argcheck(L, lua_isstring(L, -1) || auxiliar_isgroup(L, "openssl.asn1group", -1),
+  luaL_argcheck(L, lua_isstring(L, -1) || auxiliar_getgroupudata(L, "openssl.asn1group", -1) != NULL,
                 1, "field value must be string or openssl.asn1group object");
   if (lua_isstring(L, -1))
   {
@@ -369,7 +369,7 @@ static int openssl_xext_support(lua_State*L)
     };
     return 1;
   }
-  else if (auxiliar_isclass(L, "openssl.x509_extension", 1))
+  else if (auxiliar_getclassudata(L, "openssl.x509_extension", 1))
   {
     X509_EXTENSION* ext = CHECK_OBJECT(1, X509_EXTENSION, "openssl.x509_extension");
     int ret = X509_supported_extension(ext);

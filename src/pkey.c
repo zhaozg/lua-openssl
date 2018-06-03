@@ -357,7 +357,7 @@ err:
     size_t l = 0; const char* bn = luaL_checklstring(L, -1, &l);                      \
     if (_name == NULL)  _name = BN_new();                                             \
     BN_bin2bn((const unsigned char *)bn, l, _name);                                   \
-  } else if (auxiliar_isclass(L, "openssl.bn", -1)) {                                 \
+  } else if (auxiliar_getclassudata(L, "openssl.bn", -1)) {                                 \
     const BIGNUM* bn = CHECK_OBJECT(-1, BIGNUM, "openssl.bn");                        \
     if (_name == NULL)  _name = BN_new();                                             \
     BN_copy(_name, bn);                                                               \
@@ -695,7 +695,7 @@ static LUA_FUNCTION(openssl_pkey_new)
       EC_GROUP_free(group);
     }
   }
-  else if (auxiliar_isclass(L, "openssl.rsa", 1))
+  else if (auxiliar_getclassudata(L, "openssl.rsa", 1))
   {
     RSA* rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");
     pkey = EVP_PKEY_new();
@@ -1222,7 +1222,7 @@ static LUA_FUNCTION(openssl_seal)
       luaL_argerror(L, 1, "empty array");
     }
   }
-  else if (auxiliar_isclass(L, "openssl.evp_pkey", 1))
+  else if (auxiliar_getclassudata(L, "openssl.evp_pkey", 1))
   {
     nkeys = 1;
   }
@@ -1339,7 +1339,7 @@ static LUA_FUNCTION(openssl_seal_init)
       luaL_argerror(L, 1, "empty array");
     }
   }
-  else if (auxiliar_isclass(L, "openssl.evp_pkey", 1))
+  else if (auxiliar_getclassudata(L, "openssl.evp_pkey", 1))
   {
     nkeys = 1;
   }

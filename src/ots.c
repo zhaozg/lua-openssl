@@ -74,7 +74,7 @@ static int openssl_ts_req_policy_id(lua_State*L)
   {
     ASN1_OBJECT* obj = NULL;
     int ret;
-    if (auxiliar_isclass(L, "openssl.asn1_object", 2)) {
+    if (auxiliar_getclassudata(L, "openssl.asn1_object", 2)) {
       obj = CHECK_OBJECT(2, ASN1_OBJECT, "openssl.asn1_object");
     }
     else {
@@ -534,15 +534,15 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_new)
 
   for (i = 1; i <= n; i++)
   {
-    if (auxiliar_isclass(L, "openssl.x509", i))
+    if (auxiliar_getclassudata(L, "openssl.x509", i))
     {
       signer = CHECK_OBJECT(i, X509, "openssl.x509");
     }
-    else if (auxiliar_isclass(L, "openssl.evp_pkey", i))
+    else if (auxiliar_getclassudata(L, "openssl.evp_pkey", i))
     {
       pkey = CHECK_OBJECT(i, EVP_PKEY, "openssl.evp_pkey");
     }
-    else if (auxiliar_isclass(L, "openssl.asn1_object", i))
+    else if (auxiliar_getclassudata(L, "openssl.asn1_object", i))
     {
       obj = CHECK_OBJECT(i, ASN1_OBJECT, "openssl.asn1_object");
     }
@@ -637,7 +637,7 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_policies)
       for (j = 1; j <= k && ret == 1; j++)
       {
         lua_rawgeti(L, i, j);
-        if (auxiliar_isclass(L, "openssl.asn1_object", -1))
+        if (auxiliar_getclassudata(L, "openssl.asn1_object", -1))
         {
           obj = CHECK_OBJECT(-1, ASN1_OBJECT, "openssl.asn1_object");
         }
@@ -662,7 +662,7 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_policies)
     }
     else
     {
-      if (auxiliar_isclass(L, "openssl.asn1_object", i))
+      if (auxiliar_getclassudata(L, "openssl.asn1_object", i))
       {
         obj = CHECK_OBJECT(i, ASN1_OBJECT, "openssl.asn1_object");
       }
@@ -1090,12 +1090,12 @@ static LUA_FUNCTION(openssl_ts_verify_ctx_verify)
 {
   TS_VERIFY_CTX *ctx = CHECK_OBJECT(1, TS_VERIFY_CTX, "openssl.ts_verify_ctx");
   int ret = 0;
-  if (auxiliar_isclass(L, "openssl.ts_resp", 2))
+  if (auxiliar_getclassudata(L, "openssl.ts_resp", 2))
   {
     TS_RESP *response = CHECK_OBJECT(2, TS_RESP, "openssl.ts_resp");
     ret = TS_RESP_verify_response(ctx, response);
   }
-  else if (auxiliar_isclass(L, "openssl.pkcs7", 2))
+  else if (auxiliar_getclassudata(L, "openssl.pkcs7", 2))
   {
     PKCS7 *token = CHECK_OBJECT(2, PKCS7, "openssl.pkcs7");
     ret = TS_RESP_verify_token(ctx, token);

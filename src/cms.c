@@ -14,7 +14,7 @@
 #define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
   "based on OpenSSL " SHLIB_VERSION_NUMBER
 
-static LuaL_Enum cms_flags[] =
+static LuaL_Enumeration cms_flags[] =
 {
   {"text",    0x1},
   {"nocerts",   0x2},
@@ -587,7 +587,6 @@ static const luaL_Reg R[] =
 int luaopen_cms(lua_State *L)
 {
 #if OPENSSL_VERSION_NUMBER > 0x00909000L && !defined (LIBRESSL_VERSION_NUMBER)
-  int i;
   ERR_load_CMS_strings();
 
   auxiliar_newclass(L, "openssl.cms",  cms_ctx_funs);
@@ -598,12 +597,7 @@ int luaopen_cms(lua_State *L)
   lua_pushliteral(L, MYVERSION);
   lua_settable(L, -3);
 
-  for (i = 0; i < sizeof(cms_flags) / sizeof(LuaL_Enum) - 1; i++)
-  {
-    LuaL_Enum e = cms_flags[i];
-    lua_pushinteger(L, e.val);
-    lua_setfield(L, -2, e.name);
-  }
+  auxiliar_enumerate(L, -1, cms_flags);
 #else
   lua_pushnil(L);
 #endif

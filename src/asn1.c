@@ -15,7 +15,7 @@
 #define timezone _timezone
 #endif
 
-static LuaL_Enum asn1_const[] =
+static LuaL_Enumeration asn1_const[] =
 {
   /* 0 */
   {"UNIVERSAL",         V_ASN1_UNIVERSAL},
@@ -99,7 +99,7 @@ static int openssl_asn1type_new(lua_State*L)
     const char* octet = luaL_checklstring(L, 1, &size);
     ret = ASN1_TYPE_set_octetstring(at, (unsigned char*)octet, size);
   }
-  else if (auxiliar_isgroup(L, "openssl.asn1group", 1))
+  else if (auxiliar_getgroupudata(L, "openssl.asn1group", 1) != NULL)
   {
     ASN1_STRING* s = CHECK_GROUP(1, ASN1_STRING, "openssl.asn1group");
     ret = ASN1_TYPE_set1(at, ASN1_STRING_type(s), s);
@@ -1103,7 +1103,7 @@ static int openssl_asn1_tostring(lua_State*L)
 
   if (range == NULL)
   {
-    for (i = 0; i < sizeof(asn1_const) / sizeof(LuaL_Enum) - 1; i++)
+    for (i = 0; i < sizeof(asn1_const) / sizeof(LuaL_Enumeration) - 1; i++)
     {
       if (asn1_const[i].val == val)
       {
@@ -1163,7 +1163,6 @@ static luaL_Reg R[] =
 
 int luaopen_asn1(lua_State *L)
 {
-  int i;
   tzset();
   auxiliar_newclass(L, "openssl.asn1_object", asn1obj_funcs);
   auxiliar_newclass(L, "openssl.asn1_type", asn1type_funcs);
@@ -1183,12 +1182,7 @@ int luaopen_asn1(lua_State *L)
   lua_pushliteral(L, MYVERSION);
   lua_settable(L, -3);
 
-  for (i = 0; i < sizeof(asn1_const) / sizeof(LuaL_Enum) - 1; i++)
-  {
-    LuaL_Enum e = asn1_const[i];
-    lua_pushinteger(L, e.val);
-    lua_setfield(L, -2, e.name);
-  }
+  auxiliar_enumerate(L, -1, asn1_const);
 
   return 1;
 }

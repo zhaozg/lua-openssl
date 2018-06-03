@@ -371,7 +371,7 @@ static int verify_cb(int ok, X509_STORE_CTX *ctx)
 static LUA_FUNCTION(openssl_x509_check)
 {
   X509 * cert = CHECK_OBJECT(1, X509, "openssl.x509");
-  if (auxiliar_isclass(L, "openssl.evp_pkey", 2))
+  if (auxiliar_getclassudata(L, "openssl.evp_pkey", 2))
   {
     EVP_PKEY * key = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
     lua_pushboolean(L, X509_check_private_key(cert, key));
@@ -692,7 +692,7 @@ static int openssl_x509_serial(lua_State *L)
   else
   {
     int ret;
-    if (auxiliar_isclass(L, "openssl.asn1_string", 2))
+    if (auxiliar_getclassudata(L, "openssl.asn1_string", 2))
     {
       serial = CHECK_OBJECT(2, ASN1_STRING, "openssl.asn1_string");
     }
@@ -775,7 +775,7 @@ static int openssl_x509_new(lua_State* L)
 
   ret = X509_set_version(x, 2);
   if (ret == 1 && (
-        auxiliar_isclass(L, "openssl.bn", i) ||
+        auxiliar_getclassudata(L, "openssl.bn", i) ||
         lua_isstring(L, i) || lua_isnumber(L, i)
       ))
   {
@@ -789,7 +789,7 @@ static int openssl_x509_new(lua_State* L)
 
   for (; i <= n; i++)
   {
-    if (ret == 1 && auxiliar_isclass(L, "openssl.x509_req", i))
+    if (ret == 1 && auxiliar_getclassudata(L, "openssl.x509_req", i))
     {
       X509_REQ* csr = CHECK_OBJECT(i, X509_REQ, "openssl.x509_req");
       X509_NAME* xn = X509_REQ_get_subject_name(csr);
@@ -815,7 +815,7 @@ static int openssl_x509_new(lua_State* L)
       i++;
     };
 
-    if (ret == 1 && auxiliar_isclass(L, "openssl.x509_name", i))
+    if (ret == 1 && auxiliar_getclassudata(L, "openssl.x509_name", i))
     {
       X509_NAME *xn = CHECK_OBJECT(i, X509_NAME, "openssl.x509_name");
       ret = X509_set_subject_name(x, xn);
@@ -850,13 +850,13 @@ static int openssl_x509_sign(lua_State*L)
     }
     return openssl_pushresult(L, len);
   }
-  else if (auxiliar_isclass(L, "openssl.evp_pkey", 2))
+  else if (auxiliar_getclassudata(L, "openssl.evp_pkey", 2))
   {
     EVP_PKEY* pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
     const EVP_MD *md;
     int ret = 1;
     int i = 3;
-    if (auxiliar_isclass(L, "openssl.x509_name", 3))
+    if (auxiliar_getclassudata(L, "openssl.x509_name", 3))
     {
       X509_NAME* xn = CHECK_OBJECT(3, X509_NAME, "openssl.x509_name");
       ret = X509_set_issuer_name(x, xn);

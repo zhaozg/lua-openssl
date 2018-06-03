@@ -282,7 +282,7 @@ static int openssl_ssl_ctx_options(lua_State*L)
         int j;
         for (j = 0; ssl_options[j].name; j++)
         {
-          LuaL_Enum e = ssl_options[j];
+          LuaL_Enumeration e = ssl_options[j];
           if (strcasecmp(s, e.name) == 0)
           {
             options |= e.val;
@@ -305,7 +305,7 @@ static int openssl_ssl_ctx_options(lua_State*L)
   ret = 0;
   for (i = 0; ssl_options[i].name; i++)
   {
-    LuaL_Enum e = ssl_options[i];
+    LuaL_Enumeration e = ssl_options[i];
     if (options & e.val)
     {
       lua_pushstring(L, e.name);
@@ -376,12 +376,12 @@ static int openssl_ssl_ctx_new_ssl(lua_State*L)
   SSL *ssl = SSL_new(ctx);
   int ret = 1;
 
-  if (auxiliar_isclass(L, "openssl.bio", 2))
+  if (auxiliar_getclassudata(L, "openssl.bio", 2))
   {
     BIO *bi = CHECK_OBJECT(2, BIO, "openssl.bio");
     BIO *bo = bi;
     BIO_up_ref(bi);
-    if (auxiliar_isclass(L, "openssl.bio", 3))
+    if (auxiliar_getclassudata(L, "openssl.bio", 3))
     {
       bo = CHECK_OBJECT(3, BIO, "openssl.bio");
       BIO_up_ref(bo);
@@ -837,7 +837,7 @@ static int tlsext_servername_callback(SSL *ssl, int *ad, void *arg)
   if (lua_istable(L, -1))
   {
     lua_getfield(L, -1, name);
-    if (auxiliar_isclass(L, "openssl.ssl_ctx", -1))
+    if (auxiliar_getclassudata(L, "openssl.ssl_ctx", -1))
     {
       newctx = CHECK_OBJECT(-1, SSL_CTX, "openssl.ssl_ctx");
       SSL_set_SSL_CTX(ssl, newctx);
@@ -1876,12 +1876,7 @@ int luaopen_ssl(lua_State *L)
   lua_pushliteral(L, MYVERSION);
   lua_settable(L, -3);
 
-  for (i = 0; i < sizeof(ssl_options) / sizeof(LuaL_Enum) - 1; i++)
-  {
-    LuaL_Enum e = ssl_options[i];
-    lua_pushinteger(L, e.val);
-    lua_setfield(L, -2, e.name);
-  }
+  auxiliar_enumerate(L, -1, ssl_options);
   for (i = 0; sVerifyMode_Options[i]; i++)
   {
     lua_pushinteger(L, iVerifyMode_Options[i]);
