@@ -39,7 +39,8 @@ build = {
         "src/ots.c","src/pkcs7.c","src/pkcs12.c","src/pkey.c",
         "src/rsa.c","src/ssl.c","src/th-lock.c","src/util.c",
         "src/x509.c","src/xattrs.c","src/xexts.c","src/xname.c",
-        "src/xalgor.c","src/xstore.c", "src/sm2.c","src/srp.c"
+        "src/xalgor.c","src/xstore.c", "src/sm2.c","src/srp.c",
+        "deps/auxiliar/subsidiar.c"
       },
       incdirs = {"${OPENSSL_INCDIR}", "$(OPENSSL_DIR)/include", "deps/auxiliar", "deps/lua-compat"},
       libdirs = {"$(OPENSSL_LIBDIR}", "$(OPENSSL_DIR)/lib"},
