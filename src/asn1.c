@@ -79,6 +79,7 @@ static LuaL_Enumeration asn1_const[] =
 static int openssl_asn1type_new(lua_State*L)
 {
   ASN1_TYPE* at = ASN1_TYPE_new();
+  ASN1_STRING *s = NULL;
   int ret = 1;
   if (lua_isboolean(L, 1))
   {
@@ -99,9 +100,8 @@ static int openssl_asn1type_new(lua_State*L)
     const char* octet = luaL_checklstring(L, 1, &size);
     ret = ASN1_TYPE_set_octetstring(at, (unsigned char*)octet, size);
   }
-  else if (auxiliar_getgroupudata(L, "openssl.asn1group", 1) != NULL)
+  else if ((s = GET_GROUP(1, ASN1_STRING, "openssl.asn1group")) != NULL)
   {
-    ASN1_STRING* s = CHECK_GROUP(1, ASN1_STRING, "openssl.asn1group");
     ret = ASN1_TYPE_set1(at, ASN1_STRING_type(s), s);
   }
   else

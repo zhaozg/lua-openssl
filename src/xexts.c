@@ -205,13 +205,11 @@ static X509_EXTENSION* openssl_new_xextension(lua_State*L, int idx, int v3)
     luaL_argerror(L, idx, lua_tostring(L, -1));
   }
   lua_getfield(L, idx, "value");
-
-  luaL_argcheck(L, lua_isstring(L, -1) || auxiliar_getgroupudata(L, "openssl.asn1group", -1) != NULL,
-                1, "field value must be string or openssl.asn1group object");
   if (lua_isstring(L, -1))
   {
     size_t size;
     const char* data = lua_tolstring(L, -1, &size);
+    lua_pop(L, 1);
     if (v3)
     {
       const X509V3_EXT_METHOD *method = X509V3_EXT_get_nid(nid);
@@ -291,11 +289,16 @@ static X509_EXTENSION* openssl_new_xextension(lua_State*L, int idx, int v3)
   }
   else
   {
-    value = CHECK_GROUP(-1, ASN1_STRING, "openssl.asn1group");
-    y = X509_EXTENSION_create_by_NID(NULL, nid, critical, value);
-    lua_pop(L, 1);
-    return y;
+    value = GET_GROUP(-1, ASN1_STRING, "openssl.asn1group");
+    if(value)
+    {
+      y = X509_EXTENSION_create_by_NID(NULL, nid, critical, value);
+      lua_pop(L, 1);
+      return y;
+    }
   }
+  luaL_argerror(L, 1, "field value must be string or openssl.asn1group object");
+  return NULL;
 }
 
 static int openssl_xext_new(lua_State* L)

@@ -125,6 +125,25 @@ void openssl_add_method(const OBJ_NAME *name, void *arg);
 #define CHECK_OBJECT(n,type,name) *(type**)auxiliar_checkclass(L,name,n)
 #define CHECK_GROUP(n,type,name)  *(type**)auxiliar_checkgroup(L,name,n)
 
+static inline void* openssl_getclass(lua_State *L, const char* name, int idx)
+{
+  void **p = (void**)auxiliar_getclassudata(L, name, idx);
+  if(p)
+    return *p;
+  return NULL;
+}
+
+static inline void* openssl_getgroup(lua_State *L, const char* name, int idx)
+{
+  void **p = (void**)auxiliar_getgroupudata(L, name, idx);
+  if(p)
+    return *p;
+  return NULL;
+}
+
+#define GET_OBJECT(n,type,name) ((type*)openssl_getclass(L,name,n))
+#define GET_GROUP(n,type,name)  ((type*)openssl_getgroup(L,name,n))
+
 #define PUSH_OBJECT(o, tname)                                   \
   MULTI_LINE_MACRO_BEGIN                                        \
   if(o) {                                                       \

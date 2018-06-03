@@ -164,6 +164,7 @@ X509_ATTRIBUTE* openssl_new_xattribute(lua_State*L, X509_ATTRIBUTE** a, int idx,
   size_t len = 0;
   int nid;
   const char* data = NULL;
+  ASN1_STRING *s = NULL;
 
   lua_getfield(L, idx, "object");
   nid = openssl_get_nid(L, -1);
@@ -196,18 +197,17 @@ X509_ATTRIBUTE* openssl_new_xattribute(lua_State*L, X509_ATTRIBUTE** a, int idx,
   {
     data = lua_tolstring(L, -1, &len);
   }
-  else if (auxiliar_getgroupudata(L, "openssl.asn1group", -1) != NULL)
+  else if ((s = GET_GROUP(-1, ASN1_STRING, "openssl.asn1group")) != NULL)
   {
-    ASN1_STRING* value = CHECK_GROUP(-1, ASN1_STRING, "openssl.asn1group");
-    if (ASN1_STRING_type(value) != arttype)
+    if (ASN1_STRING_type(s) != arttype)
     {
       if (eprefix)
         luaL_error(L, "%s field value not match type", eprefix);
       else
-        luaL_argcheck(L, ASN1_STRING_type(value) == arttype, idx, "field value not match type");
+        luaL_argcheck(L, ASN1_STRING_type(s) == arttype, idx, "field value not match type");
     }
-    data = (const char *)ASN1_STRING_data(value);
-    len  = ASN1_STRING_length(value);
+    data = (const char *)ASN1_STRING_data(s);
+    len  = ASN1_STRING_length(s);
   }
   else
   {
