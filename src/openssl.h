@@ -83,7 +83,6 @@ __pragma(warning(pop))
 #define timezone _timezone  /* timezone is called _timezone in LibC */
 #endif
 
-
 #ifdef WIN32
 #define snprintf _snprintf
 #ifndef strcasecmp
@@ -91,8 +90,13 @@ __pragma(warning(pop))
 #endif
 #endif
 
-#define LUA_FUNCTION(X) int X(lua_State *L)
+#ifdef _MSC_VER
+# ifndef inline
+#  define inline __inline
+# endif
+#endif
 
+#define LUA_FUNCTION(X) int X(lua_State *L)
 
 int openssl_s2i_revoke_reason(const char*s);
 
