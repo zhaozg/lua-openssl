@@ -13,14 +13,6 @@
 #define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
   "based on OpenSSL " SHLIB_VERSION_NUMBER
 
-#define lua_boxpointer(L,u) \
-  (*(void **)(lua_newuserdata(L, sizeof(void *))) = (u))
-
-#define PUSH_BN(x)                  \
-lua_boxpointer(L,x);                \
-luaL_getmetatable(L,"openssl.bn");  \
-lua_setmetatable(L,-2)
-
 static LUA_FUNCTION(openssl_rsa_free)
 {
   RSA* rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");

@@ -22,9 +22,6 @@
 
 #include "private.h"
 
-#define lua_boxpointer(L,u) \
-  (*(void **)(lua_newuserdata(L, sizeof(void *))) = (u))
-
 #define MYNAME    "bn"
 #define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2010 / "\
       "based on OpenSSL " SHLIB_VERSION_NUMBER
@@ -39,9 +36,7 @@ static BIGNUM *Bnew(lua_State *L)
 {
   BIGNUM *x = BN_new();
   if (x == NULL) error(L, "BN_new failed");
-  lua_boxpointer(L, x);
-  luaL_getmetatable(L, MYTYPE);
-  lua_setmetatable(L, -2);
+  PUSH_BN(x);
   return x;
 }
 

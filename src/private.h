@@ -41,6 +41,11 @@ extern "C" {
 
 #include "openssl.h"
 
+#define PUSH_BN(x)                                      \
+  *(void **)(lua_newuserdata(L, sizeof(void *))) = (x); \
+  luaL_getmetatable(L,"openssl.bn");                    \
+  lua_setmetatable(L,-2)
+
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
 int BIO_up_ref(BIO *b);
 int X509_up_ref(X509 *x);
