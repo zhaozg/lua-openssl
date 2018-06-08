@@ -78,7 +78,10 @@ static int openssl_hmac_reset(lua_State *L)
 static int openssl_hmac_free(lua_State *L)
 {
   HMAC_CTX *c = CHECK_OBJECT(1, HMAC_CTX, "openssl.hmac_ctx");
+  if(!c)
+    return 0;
   HMAC_CTX_free(c);
+  FREE_OBJECT(1);
   return 0;
 }
 

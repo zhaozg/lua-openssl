@@ -156,6 +156,8 @@ static inline void* openssl_getgroup(lua_State *L, const char* name, int idx)
   } else lua_pushnil(L);                                        \
   MULTI_LINE_MACRO_END
 
+#define FREE_OBJECT(i)  (*(void**)lua_touserdata(L, i) = NULL)
+
 int openssl_register_lhash(lua_State* L);
 int openssl_register_engine(lua_State* L);
 

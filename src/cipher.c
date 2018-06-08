@@ -546,10 +546,13 @@ static LUA_FUNCTION(openssl_cipher_ctx_info)
 static LUA_FUNCTION(openssl_cipher_ctx_free)
 {
   EVP_CIPHER_CTX *ctx = CHECK_OBJECT(1, EVP_CIPHER_CTX, "openssl.evp_cipher_ctx");
+  if(!ctx)
+    return 0;
   lua_pushnil(L);
   lua_rawsetp(L, LUA_REGISTRYINDEX, ctx);
   EVP_CIPHER_CTX_cleanup(ctx);
   EVP_CIPHER_CTX_free(ctx);
+  FREE_OBJECT(1);
   return 0;
 }
 
