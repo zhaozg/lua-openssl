@@ -1,21 +1,22 @@
 package = "openssl"
-version = "scm-4"
+version = "scm-5"
 
 source = {
-  url = "https://github.com/zhaozg/lua-openssl/archive/master.zip",
-  dir = "lua-openssl-master",
+  url = "gitrec://github.com/zhaozg/lua-openssl",
+  tag = "0.7.2"
 }
 
 description = {
   summary    = "Openssl binding for Lua",
   homepage   = "https://github.com/zhaozg/lua-openssl",
-  license    = "MIT/X11",
+  license    = "MIT",
   maintainer = "George Zhao",
   detailed   = [[
   ]],
 }
 
 dependencies = {
+  "luarocks-fetch-gitrec",
   "lua >= 5.1, < 5.4"
 }
 

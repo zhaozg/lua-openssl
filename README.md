@@ -7,8 +7,8 @@ lua-openssl toolkit - A free, MIT-licensed OpenSSL binding for Lua.
 
 1. [Introduction](#introduction)
 2. [Documentation](#documentation)
-2. [Howto](#a---howto)
-3. [Examples](#b--example-usage) 
+2. [Howto](#howto)
+3. [Examples](#example-usage) 
 
 # Introduction
 
@@ -137,10 +137,12 @@ Source code of lua-openssl tidy with [astyle](http://astyle.sourceforge.net/) `-
 
 Lua-Openssl is heavily updated, if you find a bug, please report to [here](https://github.com/zhaozg/lua-openssl/issues/)
 
-# A. Howto
+# Howto
 
 ### Howto 1: Build on Linux/Unix System.
 
+    git clone --recurse https://github.com/zhaozg/lua-openssl.git lua-openssl
+    cd lua-openssl
 	make
 	make install
 	make clean
@@ -150,6 +152,8 @@ Lua-Openssl is heavily updated, if you find a bug, please report to [here](https
 Before building, please change the setting in the config.win file.
 Works with Lua5.1 (should support Lua5.2 by updating the config.win file).
 
+    git clone --recurse https://github.com/zhaozg/lua-openssl.git lua-openssl
+    cd lua-openssl
 	nmake -f makefile.win
 	nmake -f makefile.win install
 	nmake -f makefile.win clean
@@ -157,6 +161,8 @@ Works with Lua5.1 (should support Lua5.2 by updating the config.win file).
 
 ### Howto 3: Build on Windows with mingw.
 
+    git clone --recurse https://github.com/zhaozg/lua-openssl.git lua-openssl
+    cd lua-openssl
 	make
 	make install
 	make clean
@@ -183,7 +189,7 @@ openssl.error() will walk through error stacks of current threads.
 openssl.error(true) will also clear error stacks after get last error code,
 this is very useful to free memory when lua-openssl repeat calls or run long times.
 
-# B. Example usage
+# Example usage
 
 ### Example 1: short encrypt/decrypt
 
