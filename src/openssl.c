@@ -6,6 +6,7 @@
 * Author:  george zhao <zhaozg(at)gmail.com>
 \*=========================================================================*/
 #include "openssl.h"
+#include <openssl/crypto.h>
 #include <openssl/ssl.h>
 #include <openssl/asn1.h>
 #include <openssl/engine.h>
@@ -329,20 +330,6 @@ static int luaclose_openssl(lua_State *L)
   EVP_cleanup();
 
   CRYPTO_cleanup_all_ex_data();
-
-#ifndef OPENSSL_NO_STDIO
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-  CRYPTO_mem_leaks_fp(stderr);
-#else
-  if(CRYPTO_mem_leaks_fp(stderr)!=1)
-  {
-    fprintf(stderr,
-      "Please report a bug on https://github.com/zhaozg/lua-openssl."
-      "And if can, please provide a reproduce method and minimal code.\n"
-      "\n\tThank You.");
-  }
-#endif
-#endif
 
   return 0;
 }

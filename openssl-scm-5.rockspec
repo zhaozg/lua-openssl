@@ -1,9 +1,9 @@
-package = "openssl"
-version = "scm-5"
+package = "openssl-fix"
+version = "scm-9"
 
 source = {
-  url = "gitrec://github.com/zhaozg/lua-openssl",
-  tag = "0.7.2"
+  url = "gitrec://github.com/fovecifer/lua-openssl",
+  tag = "0.7.5"
 }
 
 description = {
@@ -18,12 +18,6 @@ description = {
 dependencies = {
   "luarocks-fetch-gitrec",
   "lua >= 5.1, < 5.4"
-}
-
-external_dependencies = {
-  OPENSSL = {
-    header = "openssl/evp.h"
-  }
 }
 
 build = {
@@ -43,8 +37,8 @@ build = {
         "src/xalgor.c","src/xstore.c", "src/sm2.c","src/srp.c",
         "deps/auxiliar/subsidiar.c"
       },
-      incdirs = {"${OPENSSL_INCDIR}", "$(OPENSSL_DIR)/include", "deps/auxiliar", "deps/lua-compat"},
-      libdirs = {"$(OPENSSL_LIBDIR}", "$(OPENSSL_DIR)/lib"},
+      incdirs = {"/usr/local/openresty/openssl/include", "deps/auxiliar", "deps/lua-compat"},
+      libdirs = {"/usr/local/openresty/openssl/lib"},
       defines = {"PTHREADS"},
       libraries = {"ssl", "crypto"},
     }
