@@ -331,16 +331,6 @@ static int luaclose_openssl(lua_State *L)
 
   CRYPTO_cleanup_all_ex_data();
 
-#ifndef OPENSSL_NO_STDIO
-  if(CRYPTO_mem_leaks_fp(stderr)!=1)
-  {
-    fprintf(stderr,
-      "Please report a bug on https://github.com/zhaozg/lua-openssl."
-      "And if can, please provide a reproduce method and minimal code.\n"
-      "\n\tThank You.");
-  }
-#endif
-
   return 0;
 }
 

@@ -1,9 +1,9 @@
 package = "openssl-fix"
-version = "scm-7"
+version = "scm-9"
 
 source = {
   url = "gitrec://github.com/fovecifer/lua-openssl",
-  tag = "0.7.3"
+  tag = "0.7.5"
 }
 
 description = {
