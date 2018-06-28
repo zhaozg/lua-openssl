@@ -6,6 +6,7 @@
 * Author:  george zhao <zhaozg(at)gmail.com>
 \*=========================================================================*/
 #include "openssl.h"
+#include <openssl/crypto.h>
 #include <openssl/ssl.h>
 #include <openssl/asn1.h>
 #include <openssl/engine.h>
