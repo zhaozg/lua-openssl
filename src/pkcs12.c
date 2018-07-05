@@ -11,6 +11,25 @@
 #define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
   "based on OpenSSL " SHLIB_VERSION_NUMBER
 
+/***
+Provide pkcs12 function in lua.
+
+@module pkcs12
+@usage
+  pkcs12 = require('openssl').pkcs12
+*/
+
+/***
+create and export pkcs12 data
+
+@function export
+@tparam x509 cert
+@tparam evp_pkey pkey
+@tparam string password
+@tparam[opt] string friendlyname
+@tparam[opt] table|stak_of_x509 extracerts
+@treturn string data
+*/
 static LUA_FUNCTION(openssl_pkcs12_export)
 {
   X509 * cert = CHECK_OBJECT(1, X509, "openssl.x509");
@@ -65,6 +84,14 @@ static LUA_FUNCTION(openssl_pkcs12_export)
   return ret;
 }
 
+/***
+parse pkcs12 data as lua table
+
+@function read
+@tparam string|bio input pkcs12 content
+@tparam string password for pkcs12
+@treturn table result contain 'cert', 'pkey', 'extracerts' keys
+*/
 static LUA_FUNCTION(openssl_pkcs12_read)
 {
   PKCS12 * p12 = NULL;
@@ -114,7 +141,7 @@ static LUA_FUNCTION(openssl_pkcs12_read)
 static luaL_Reg R[] =
 {
   {"read",    openssl_pkcs12_read },
-  {"export",    openssl_pkcs12_export  },
+  {"export",  openssl_pkcs12_export },
 
   {NULL,    NULL}
 };
@@ -124,7 +151,7 @@ int luaopen_pkcs12(lua_State *L)
   lua_newtable(L);
   luaL_setfuncs(L, R, 0);
 
-  lua_pushliteral(L, "version");    /** version */
+  lua_pushliteral(L, "version");
   lua_pushliteral(L, MYVERSION);
   lua_settable(L, -3);
 
