@@ -1,10 +1,10 @@
-/*=========================================================================*\
-* cipher.c
-* cipher module for lua-openssl binding
-*
-* Author:  george zhao <zhaozg(at)gmail.com>
-\*=========================================================================*/
+/***
+cipher module for lua-openssl binding
 
+@module cipher
+@usage
+  cipher = require('openssl').cipher
+*/
 #include "openssl.h"
 #include "private.h"
 
@@ -12,6 +12,13 @@
 #define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
   "based on OpenSSL " SHLIB_VERSION_NUMBER
 
+/***
+list all support cipher algs
+
+@function list
+@tparam[opt] boolean alias include alias names for cipher alg, default true
+@treturn[table] all cipher methods
+*/
 static LUA_FUNCTION(openssl_cipher_list)
 {
   int alias = lua_isnoneornil(L, 1) ? 1 : lua_toboolean(L, 1);
@@ -20,6 +27,15 @@ static LUA_FUNCTION(openssl_cipher_list)
   return 1;
 }
 
+/***
+get evp_cipher object
+
+@function get
+@tparam string|integer|asn1_object alg name, nid or object identity
+@treturn evp_cipher cipher object mapping EVP_MD in openssl
+
+@see evp_cipher
+*/
 static LUA_FUNCTION(openssl_cipher_get)
 {
   if (!lua_isuserdata(L, 1))
@@ -39,6 +55,18 @@ static LUA_FUNCTION(openssl_cipher_get)
   return 1;
 }
 
+/***
+quick encrypt
+
+@function encrypt
+@tparam string|integer|asn1_object alg name, nid or object identity
+@tparam string input data to encrypt
+@tparam string key secret key
+@tparam[opt] string iv
+@tparam[opt] boolean pad true for padding default
+@tparam[opt] engine engine custom crypto engine
+@treturn string result encrypt data
+*/
 static LUA_FUNCTION(openssl_evp_encrypt)
 {
   const EVP_CIPHER* cipher = NULL;
@@ -116,6 +144,18 @@ static LUA_FUNCTION(openssl_evp_encrypt)
   return 0;
 }
 
+/***
+quick decrypt
+
+@function decrypt
+@tparam string|integer|asn1_object alg name, nid or object identity
+@tparam string input data to decrypt
+@tparam string key secret key
+@tparam[opt] string iv
+@tparam[opt] boolean pad true for padding default
+@tparam[opt] engine engine custom crypto engine
+@treturn string result decrypt data
+*/
 static LUA_FUNCTION(openssl_evp_decrypt)
 {
   const EVP_CIPHER* cipher;
@@ -193,6 +233,19 @@ static LUA_FUNCTION(openssl_evp_decrypt)
   return 0;
 }
 
+/***
+quick encrypt or decrypt
+
+@function cipher
+@tparam string|integer|asn1_object alg name, nid or object identity
+@tparam boolean encrypt true for encrypt,false for decrypt
+@tparam string input data to encrypt or decrypt
+@tparam string key secret key
+@tparam[opt] string iv
+@tparam[opt] boolean pad true for padding default
+@tparam[opt] engine engine custom crypto engine
+@treturn string result
+*/
 static LUA_FUNCTION(openssl_evp_cipher)
 {
   const EVP_CIPHER* cipher = NULL;
@@ -285,6 +338,21 @@ typedef enum
   DO_DECRYPT = 1
 } CIPHER_MODE;
 
+/***
+get evp_cipher_ctx object for encrypt or decrypt
+
+@function new
+@tparam string|integer|asn1_object alg name, nid or object identity
+@tparam boolean encrypt true for encrypt,false for decrypt
+@tparam string key secret key
+@tparam[opt] string iv
+@tparam[opt] boolean pad true for padding default
+@tparam[opt] engine engine custom crypto engine
+@treturn evp_cipher_ctx cipher object mapping EVP_CIPHER_CTX in openssl
+
+@see evp_cipher_ctx
+*/
+
 static LUA_FUNCTION(openssl_cipher_new)
 {
   const EVP_CIPHER* cipher = get_cipher(L, 1, NULL);
@@ -328,6 +396,20 @@ static LUA_FUNCTION(openssl_cipher_new)
   return 1;
 }
 
+/***
+get evp_cipher_ctx object for encrypt
+
+@function encrypt_new
+@tparam string|integer|asn1_object alg name, nid or object identity
+@tparam string key secret key
+@tparam[opt] string iv
+@tparam[opt] boolean pad true for padding default
+@tparam[opt] engine engine custom crypto engine
+@treturn evp_cipher_ctx cipher object mapping EVP_CIPHER_CTX in openssl
+
+@see evp_cipher_ctx
+*/
+
 static LUA_FUNCTION(openssl_cipher_encrypt_new)
 {
   const EVP_CIPHER* cipher  = get_cipher(L, 1, NULL);
@@ -369,6 +451,20 @@ static LUA_FUNCTION(openssl_cipher_encrypt_new)
 
   return 1;
 }
+
+/***
+get evp_cipher_ctx object for decrypt
+
+@function decrypt_new
+@tparam string|integer|asn1_object alg name, nid or object identity
+@tparam string key secret key
+@tparam[opt] string iv
+@tparam[opt] boolean pad true for padding default
+@tparam[opt] engine engine custom crypto engine
+@treturn evp_cipher_ctx cipher object mapping EVP_CIPHER_CTX in openssl
+
+@see evp_cipher_ctx
+*/
 
 static LUA_FUNCTION(openssl_cipher_decrypt_new)
 {
@@ -424,7 +520,16 @@ static LUA_FUNCTION(openssl_cipher_decrypt_new)
   return 0;
 }
 
-/* evp_cipher method */
+/***
+openssl.evp_cipher object
+@type evp_cipher
+*/
+/***
+get infomation of evp_cipher object
+
+@function info
+@treturn table info keys include name,block_size,key_length,iv_length,flags,mode
+*/
 static LUA_FUNCTION(openssl_cipher_info)
 {
   EVP_CIPHER *cipher = CHECK_OBJECT(1, EVP_CIPHER, "openssl.evp_cipher");
@@ -438,7 +543,16 @@ static LUA_FUNCTION(openssl_cipher_info)
   return 1;
 }
 
+/***
+derive key
 
+@function BytesToKey
+@tparam string data derive data
+@tparam string[opt] string salt salt will get strong security
+@tparam ev_digest|string md digest method used to diver key, default with 'sha1'
+@treturn string key
+@treturn string iv
+*/
 static LUA_FUNCTION(openssl_evp_BytesToKey)
 {
   EVP_CIPHER* c = CHECK_OBJECT(1, EVP_CIPHER, "openssl.evp_cipher");
@@ -464,8 +578,95 @@ static LUA_FUNCTION(openssl_evp_BytesToKey)
   return openssl_pushresult(L, ret);
 }
 
+/***
+get evp_cipher_ctx to encrypt or decrypt
+
+@function new
+@tparam boolean encrypt true for encrypt,false for decrypt
+@tparam string key secret key
+@tparam[opt] string iv
+@tparam[opt] boolean pad true for padding default
+@tparam[opt] engine engine custom crypto engine
+@treturn evp_cipher_ctx evp_cipher_ctx object
+
+@see evp_cipher_ctx
+*/
+
+/***
+get evp_cipher_ctx to encrypt
+
+@function encrypt_new
+@tparam string key secret key
+@tparam[opt] string iv
+@tparam[opt] boolean pad true for padding default
+@tparam[opt] engine engine custom crypto engine
+@treturn evp_cipher_ctx evp_cipher_ctx object
+
+@see evp_cipher_ctx
+*/
+
+/***
+get evp_cipher_ctx to decrypt
+
+@function decrypt_new
+@tparam string key secret key
+@tparam[opt] string iv
+@tparam[opt] boolean pad true for padding default
+@tparam[opt] engine engine custom crypto engine
+@treturn evp_cipher_ctx evp_cipher_ctx object
+
+@see evp_cipher_ctx
+*/
+
+/***
+do encrypt or decrypt
+
+@function cipher
+@tparam boolean encrypt true for encrypt,false for decrypt
+@tparam string input data to encrypt or decrypt
+@tparam string key secret key
+@tparam[opt] string iv
+@tparam[opt] boolean pad true for padding default
+@tparam[opt] engine engine custom crypto engine
+@treturn string result
+*/
+
+/***
+do encrypt
+
+@function encrypt
+@tparam string input data to encrypt
+@tparam string key secret key
+@tparam[opt] string iv
+@tparam[opt] boolean pad true for padding default
+@tparam[opt] engine engine custom crypto engine
+@treturn string result
+*/
+
+/***
+do decrypt
+
+@function decrypt
+@tparam string input data to decrypt
+@tparam string key secret key
+@tparam[opt] string iv
+@tparam[opt] boolean pad true for padding default
+@tparam[opt] engine engine custom crypto engine
+@treturn string result
+*/
 
 /* evp_cipher_ctx method */
+/***
+openssl.evp_cipher_ctx object
+@type evp_cipher_ctx
+*/
+/***
+feed data to do cipher
+
+@function update
+@tparam string msg data
+@treturn string result parture result
+*/
 static LUA_FUNCTION(openssl_evp_cipher_update)
 {
   EVP_CIPHER_CTX* c = CHECK_OBJECT(1, EVP_CIPHER_CTX, "openssl.evp_cipher_ctx");
@@ -498,6 +699,12 @@ static LUA_FUNCTION(openssl_evp_cipher_update)
   return (ret == 1 ? ret : openssl_pushresult(L, ret));
 }
 
+/***
+get result of cipher
+
+@function final
+@treturn string result last result
+*/
 static LUA_FUNCTION(openssl_evp_cipher_final)
 {
   EVP_CIPHER_CTX* c = CHECK_OBJECT(1, EVP_CIPHER_CTX, "openssl.evp_cipher_ctx");
@@ -527,6 +734,12 @@ static LUA_FUNCTION(openssl_evp_cipher_final)
   return openssl_pushresult(L, ret);
 }
 
+/***
+get infomation of evp_cipher_ctx object
+
+@function info
+@treturn table info keys include block_size,key_length,iv_length,flags,mode,nid,type, evp_cipher
+*/
 static LUA_FUNCTION(openssl_cipher_ctx_info)
 {
   EVP_CIPHER_CTX *ctx = CHECK_OBJECT(1, EVP_CIPHER_CTX, "openssl.evp_cipher_ctx");
