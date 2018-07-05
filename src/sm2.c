@@ -9,6 +9,23 @@
 #define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2018 / "\
     "based on OpenSSL " SHLIB_VERSION_NUMBER
 
+/***
+SM2 function in lua, OpenSSL support SM2/SM3/SM4 from version version 1.1.1
+
+@module sm2
+@usage
+  sm2 = require('openssl').sm2
+*/
+
+/***
+compute SM2 digest with userid
+
+@function compute_userid_digest
+@tparam ec_key SM2 key or SM2 public key
+@tparam[opt='1234567812345678'] string userId default is `1234567812345678`
+@tparam[opt='sm3'] evp_md|string|nid digest digest alg identity
+@treturn string result binary string
+*/
 static LUA_FUNCTION(openssl_sm2_compute_userid_digest)
 {
   const EC_KEY *key = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
@@ -25,6 +42,16 @@ static LUA_FUNCTION(openssl_sm2_compute_userid_digest)
   return openssl_pushresult(L, ret);
 }
 
+/***
+do SM2 sign, input message will be do digest
+
+@function do_sign
+@tparam ec_key sm2key
+@tparam string msg data to be sign
+@tparam[opt='1234567812345678'] string userId default is `1234567812345678`
+@tparam[opt='sm3'] evp_md|string|nid digest digest alg identity, default use sm3
+@treturn string result binary signature string
+*/
 static LUA_FUNCTION(openssl_sm2_do_sign)
 {
   const EC_KEY *key = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
@@ -50,6 +77,18 @@ static LUA_FUNCTION(openssl_sm2_do_sign)
   return ret;
 }
 
+/***
+do SM2 verify, input message will be do digest
+
+@function	do_verify
+@tparam ec_key sm2key
+@tparam string msg data to be signed
+@tparam string signature
+@tparam[opt='1234567812345678'] string userId default is `1234567812345678`
+@tparam[opt='sm3'] evp_md|string|nid digest digest alg identity, default use sm3
+@treturn boolean true for verified, false for invalid signature
+@return nil for error, and followed by error message
+*/
 static LUA_FUNCTION(openssl_sm2_do_verify)
 {
   const EC_KEY *key = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
@@ -85,6 +124,15 @@ static LUA_FUNCTION(openssl_sm2_do_verify)
 }
 
 #define SM2_SIG_MAX_LEN 72
+/***
+do SM2 sign, input is SM3 digest result
+
+@function sign
+@tparam ec_key sm2key
+@tparam string digest result of SM3 digest to be signed
+@tparam[opt='sm3'] evp_md|string|nid digest digest alg identity, default is sm3
+@treturn string signature
+*/
 static LUA_FUNCTION(openssl_sm2_sign)
 {
   EC_KEY *eckey = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
@@ -94,7 +142,7 @@ static LUA_FUNCTION(openssl_sm2_sign)
   uint8_t sig[SM2_SIG_MAX_LEN] = {0};
   unsigned int siglen = sizeof(sig);
 
-  int ret = SM2_sign(EVP_MD_type(md), dgst, dgstlen, (uint8_t*)sig, &siglen, eckey);
+  int ret = SM2_sign(EVP_MD_type(md), dgst, dgstlen, sig, &siglen, eckey);
   if (ret==1)
   {
     lua_pushlstring(L, (const char*)sig, siglen);
@@ -104,6 +152,17 @@ static LUA_FUNCTION(openssl_sm2_sign)
   return ret;
 }
 
+/***
+do SM2 verify, input msg is sm3 digest result
+
+@function verify
+@tparam ec_key sm2key
+@tparam string digest result of SM3 digest to be signed
+@tparam string signature
+@tparam[opt='sm3'] evp_md|string|nid digest digest alg identity, default is sm3
+@treturn boolean true for verified, false for invalid signature
+@return nil for error, and followed by error message
+*/
 static LUA_FUNCTION(openssl_sm2_verify)
 {
   EC_KEY *eckey = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
@@ -112,8 +171,9 @@ static LUA_FUNCTION(openssl_sm2_verify)
   size_t siglen = 0;
   const uint8_t *sig = (const uint8_t*)luaL_checklstring(L, 3, &siglen);
   const EVP_MD* md = get_digest(L, 4, "sm3");
+  int type = EVP_MD_type(md);
 
-  int ret = SM2_verify(EVP_MD_type(md), dgst, (int)dgstlen, sig, (int)siglen, eckey);
+  int ret = SM2_verify(type, dgst, (int)dgstlen, sig, (int)siglen, eckey);
   if(ret==-1)
     ret = openssl_pushresult(L, ret);
   else
@@ -124,6 +184,16 @@ static LUA_FUNCTION(openssl_sm2_verify)
   return ret;
 }
 
+/***
+get SM2 encrypt result size
+
+@function ciphersize
+@tparam ec_key sm2key
+@tparam number size of data to be encrypted
+@tparam[opt='sm3'] evp_md|string|nid digest digest alg identity, default is sm3
+@treturn number size of cipher data
+@return nil for error, and followed by error message
+*/
 static LUA_FUNCTION(openssl_sm2_ciphertext_size)
 {
   EC_KEY *eckey = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
@@ -135,6 +205,16 @@ static LUA_FUNCTION(openssl_sm2_ciphertext_size)
   return 1;
 }
 
+/***
+get SM2 decrypt result size
+
+@function plainsize
+@tparam ec_key sm2key
+@tparam number size of data to be decrypted
+@tparam[opt='sm3'] evp_md|string|nid digest digest alg identity, default is sm3
+@treturn number size of plain data
+@return nil for error, and followed by error message
+*/
 static LUA_FUNCTION(openssl_sm2_plaintext_size)
 {
   EC_KEY *eckey = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
@@ -146,6 +226,16 @@ static LUA_FUNCTION(openssl_sm2_plaintext_size)
   return 1;
 }
 
+/***
+do SM2 encrypt
+
+@function encrypt
+@tparam ec_key sm2key
+@tparam string data_to_encrypt
+@tparam[opt='sm3'] evp_md|string|nid digest digest alg identity, default is sm3
+@treturn string cipher data
+@return nil for error, and followed by error message
+*/
 static LUA_FUNCTION(openssl_sm2_encrypt)
 {
   EC_KEY *eckey = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
@@ -167,7 +257,16 @@ static LUA_FUNCTION(openssl_sm2_encrypt)
   OPENSSL_free(ciphertext);
   return ret;
 }
+/***
+do SM2 decrypt
 
+@function decrypt
+@tparam ec_key sm2key
+@tparam string data_to_decrypt
+@tparam[opt='sm3'] evp_md|string|nid digest digest alg identity, default is sm3
+@treturn string plain data
+@return nil for error, and followed by error message
+*/
 static LUA_FUNCTION(openssl_sm2_decrypt)
 {
   EC_KEY *eckey = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
@@ -203,7 +302,6 @@ static luaL_Reg R[] =
   {"encrypt",               openssl_sm2_encrypt},
   {"decrypt",               openssl_sm2_decrypt},
 
-
   { NULL, NULL }
 };
 
@@ -211,7 +309,7 @@ int luaopen_sm2(lua_State *L)
 {
   lua_newtable(L);
   luaL_setfuncs(L, R, 0);
-  lua_pushliteral(L, "version");    /** version */
+  lua_pushliteral(L, "version");
   lua_pushliteral(L, MYVERSION);
   lua_settable(L, -3);
   lua_pushliteral(L, "default_userid");
