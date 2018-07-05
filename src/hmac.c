@@ -1,10 +1,11 @@
-/*=========================================================================*\
-* hamc.c
-* hamc module for lua-openssl binding
-*
-* Author:  george zhao <zhaozg(at)gmail.com>
-\*=========================================================================*/
+/***
+hamc module for lua-openssl binding
 
+@module hmac
+@author  george zhao <zhaozg(at)gmail.com>
+@usage
+  hamc = require('openssl').hmac
+*/
 #include "openssl.h"
 #include "private.h"
 
@@ -12,6 +13,17 @@
 #define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
   "based on OpenSSL " SHLIB_VERSION_NUMBER
 
+/***
+get hamc_ctx object
+
+@function new
+@tparam string|integer|asn1_object alg name, nid or object identity
+@tparam string key secret key
+@tparam[opt] engine engine, nothing with default engine
+@treturn hamc_ctx hmac object mapping HMAC_CTX in openssl
+
+@see hmac_ctx
+*/
 static int openssl_hmac_new(lua_State *L)
 {
   const EVP_MD *type = get_digest(L, 1, NULL);
@@ -26,55 +38,6 @@ static int openssl_hmac_new(lua_State *L)
   return 1;
 }
 
-static int openssl_hmac_update(lua_State *L)
-{
-  HMAC_CTX *c = CHECK_OBJECT(1, HMAC_CTX, "openssl.hmac_ctx");
-  size_t l;
-  const char *s = luaL_checklstring(L, 2, &l);
-
-  HMAC_Update(c, (unsigned char *)s, l);
-  return 0;
-}
-
-static int openssl_hmac_final(lua_State *L)
-{
-  HMAC_CTX *c = CHECK_OBJECT(1, HMAC_CTX, "openssl.hmac_ctx");
-  unsigned char digest[EVP_MAX_MD_SIZE];
-  unsigned int len = 0;
-  int raw = 0;
-
-  if (lua_isstring(L, 2))
-  {
-    size_t l;
-    const char *s = luaL_checklstring(L, 2, &l);
-    HMAC_Update(c, (unsigned char *)s, l);
-    raw = (lua_isnoneornil(L, 3)) ? 0 : lua_toboolean(L, 3);
-  }
-  else
-    raw = (lua_isnoneornil(L, 2)) ? 0 : lua_toboolean(L, 2);
-
-  HMAC_Final(c, digest, &len);
-
-  if (raw)
-  {
-    lua_pushlstring(L, (char *)digest, len);
-  }
-  else
-  {
-    char hex[2 * EVP_MAX_MD_SIZE + 1];
-    to_hex((const char*) digest, len, hex);
-    lua_pushstring(L, hex);
-  }
-  return 1;
-}
-
-static int openssl_hmac_reset(lua_State *L)
-{
-  HMAC_CTX *c = CHECK_OBJECT(1, HMAC_CTX, "openssl.hmac_ctx");
-  int ret = HMAC_Init_ex(c, NULL, 0, NULL, NULL);
-  return openssl_pushresult(L, ret);
-}
-
 static int openssl_hmac_free(lua_State *L)
 {
   HMAC_CTX *c = CHECK_OBJECT(1, HMAC_CTX, "openssl.hmac_ctx");
@@ -85,6 +48,24 @@ static int openssl_hmac_free(lua_State *L)
   return 0;
 }
 
+/***
+compute hmac one step, in module openssl.hamc
+
+@function hmac
+@tparam evp_digest|string|nid digest digest alg identity
+@tparam string message
+@tparam string key
+@treturn string result binary string
+*/
+/***
+alias for hmac
+
+@function digest
+@tparam evp_digest|string|nid digest digest alg identity
+@tparam string message
+@tparam string key
+@treturn string result binary string
+*/
 static int openssl_hmac(lua_State *L)
 {
   if (lua_istable(L, 1))
@@ -128,6 +109,79 @@ static int openssl_hmac(lua_State *L)
     }
   }
   return 1;
+}
+
+/***
+openssl.hmac_ctx object
+@type hmac_ctx
+*/
+
+/***
+feed data to do digest
+
+@function update
+@tparam string msg data
+*/
+static int openssl_hmac_update(lua_State *L)
+{
+  HMAC_CTX *c = CHECK_OBJECT(1, HMAC_CTX, "openssl.hmac_ctx");
+  size_t l;
+  const char *s = luaL_checklstring(L, 2, &l);
+
+  HMAC_Update(c, (unsigned char *)s, l);
+  return 0;
+}
+
+/***
+get result of hmac
+
+@function final
+@tparam[opt] string last last part of data
+@tparam[opt] boolean raw binary or hex encoded result, default true for binary result
+@treturn string val hash result
+*/
+static int openssl_hmac_final(lua_State *L)
+{
+  HMAC_CTX *c = CHECK_OBJECT(1, HMAC_CTX, "openssl.hmac_ctx");
+  unsigned char digest[EVP_MAX_MD_SIZE];
+  unsigned int len = 0;
+  int raw = 0;
+
+  if (lua_isstring(L, 2))
+  {
+    size_t l;
+    const char *s = luaL_checklstring(L, 2, &l);
+    HMAC_Update(c, (unsigned char *)s, l);
+    raw = (lua_isnoneornil(L, 3)) ? 0 : lua_toboolean(L, 3);
+  }
+  else
+    raw = (lua_isnoneornil(L, 2)) ? 0 : lua_toboolean(L, 2);
+
+  HMAC_Final(c, digest, &len);
+
+  if (raw)
+  {
+    lua_pushlstring(L, (char *)digest, len);
+  }
+  else
+  {
+    char hex[2 * EVP_MAX_MD_SIZE + 1];
+    to_hex((const char*) digest, len, hex);
+    lua_pushstring(L, hex);
+  }
+  return 1;
+}
+
+/***
+reset hmac_ctx to reuse
+
+@function reset
+*/
+static int openssl_hmac_reset(lua_State *L)
+{
+  HMAC_CTX *c = CHECK_OBJECT(1, HMAC_CTX, "openssl.hmac_ctx");
+  int ret = HMAC_Init_ex(c, NULL, 0, NULL, NULL);
+  return openssl_pushresult(L, ret);
 }
 
 static luaL_Reg hmac_ctx_funs[] =
