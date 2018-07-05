@@ -1,10 +1,10 @@
-/*=========================================================================*\
-* digest.c
-* digest module for lua-openssl binding
-*
-* Author:  george zhao <zhaozg(at)gmail.com>
-\*=========================================================================*/
+/***
+digest module for lua-openssl binding
 
+@module digest
+@usage
+  digest = require('openssl').digest
+*/
 #include "openssl.h"
 #include "private.h"
 
@@ -12,6 +12,13 @@
 #define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
   "based on OpenSSL " SHLIB_VERSION_NUMBER
 
+/***
+list all support digest algs
+
+@function list
+@tparam[opt] boolean alias include alias names for digest alg, default true
+@treturn[table] all methods
+*/
 static LUA_FUNCTION(openssl_digest_list)
 {
   int aliases = lua_isnoneornil(L, 1) ? 1 : lua_toboolean(L, 1);
@@ -20,6 +27,15 @@ static LUA_FUNCTION(openssl_digest_list)
   return 1;
 };
 
+/***
+get evp_digest object
+
+@function get
+@tparam string|integer|asn1_object alg name, nid or object identity
+@treturn evp_digest digest object mapping EVP_MD in openssl
+
+@see evp_digest
+*/
 static LUA_FUNCTION(openssl_digest_get)
 {
   const EVP_MD* md = get_digest(L, 1, NULL);
@@ -28,6 +44,15 @@ static LUA_FUNCTION(openssl_digest_get)
   return 1;
 }
 
+/***
+get evp_digest_ctx object
+
+@function new
+@tparam string|integer|asn1_object alg name, nid or object identity
+@treturn evp_digest_ctx digest object mapping EVP_MD_CTX in openssl
+
+@see evp_digest_ctx
+*/
 static LUA_FUNCTION(openssl_digest_new)
 {
   const EVP_MD* md = get_digest(L, 1, NULL);
@@ -50,6 +75,15 @@ static LUA_FUNCTION(openssl_digest_new)
   return 1;
 }
 
+/***
+quick method to generate digest result
+
+@function digest
+@tparam string|integer|asn1_object alg name, nid or object identity
+@tparam string msg to compute digest
+@tparam[opt] boolean raw binary result return if set true, or hex encoded string default
+@treturn string digest result value
+*/
 static LUA_FUNCTION(openssl_digest)
 {
   const EVP_MD *md;
@@ -93,7 +127,80 @@ static LUA_FUNCTION(openssl_digest)
   return 1;
 };
 
-/*** evp_digest method ***/
+/***
+create digest object for sign
+
+@function signInit
+@tparam string|integer|asn1_object alg name, nid or object identity
+@tparam[opt=nil] engine object
+@treturn evp_digest_ctx
+*/
+static LUA_FUNCTION(openssl_signInit)
+{
+  const EVP_MD *md = get_digest(L, 1, NULL);
+  EVP_PKEY* pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
+  ENGINE*     e = lua_gettop(L) > 2 ? CHECK_OBJECT(3, ENGINE, "openssl.engine") : NULL;
+  EVP_PKEY_CTX *pctx;
+  EVP_MD_CTX *ctx = EVP_MD_CTX_create();
+  if (ctx)
+  {
+    int ret = EVP_DigestSignInit(ctx, &pctx, md, e, pkey);
+    if (ret)
+    {
+      PUSH_OBJECT(ctx, "openssl.evp_digest_ctx");
+    }
+    else
+      return openssl_pushresult(L, ret);
+  }
+  else
+    lua_pushnil(L);
+  return 1;
+}
+
+/***
+create digest object for verify
+
+@function verifyInit
+@tparam string|integer|asn1_object alg name, nid or object identity
+@tparam[opt=nil] engine object
+@treturn evp_digest_ctx
+*/
+static LUA_FUNCTION(openssl_verifyInit)
+{
+  const EVP_MD *md = get_digest(L, 1, NULL);
+  EVP_PKEY* pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
+  ENGINE*     e = lua_gettop(L) > 2 ? CHECK_OBJECT(3, ENGINE, "openssl.engine") : NULL;
+  EVP_PKEY_CTX *pctx = 0;
+  EVP_MD_CTX *ctx = EVP_MD_CTX_create();
+
+  if (ctx)
+  {
+    int ret = EVP_DigestVerifyInit(ctx, &pctx, md, e, pkey);
+    if (ret)
+    {
+      PUSH_OBJECT(ctx, "openssl.evp_digest_ctx");
+    }
+    else
+      return openssl_pushresult(L, ret);
+  }
+  else
+    lua_pushnil(L);
+  return 1;
+}
+
+/***
+openssl.evp_digest object
+@type evp_digest
+*/
+
+/***
+compute msg digest result
+
+@function digest
+@tparam string msg data to digest
+@tparam[opt] engine, eng
+@treturn string result a binary hash value for msg
+*/
 static LUA_FUNCTION(openssl_digest_digest)
 {
   size_t inl;
@@ -114,6 +221,12 @@ static LUA_FUNCTION(openssl_digest_digest)
   return 1;
 }
 
+/***
+get infomation of evp_digest object
+
+@function info
+@treturn table info keys include nid,name size,block_size,pkey_type,flags
+*/
 static LUA_FUNCTION(openssl_digest_info)
 {
   EVP_MD *md = CHECK_OBJECT(1, EVP_MD, "openssl.evp_digest");
@@ -128,6 +241,14 @@ static LUA_FUNCTION(openssl_digest_info)
   return 1;
 }
 
+/***
+create new evp_digest_ctx
+
+@function new
+@tparam[opt] engine, eng
+@treturn evp_digest_ctx ctx
+@see evp_digest_ctx
+*/
 static LUA_FUNCTION(openssl_evp_digest_init)
 {
   EVP_MD* md = CHECK_OBJECT(1, EVP_MD, "openssl.evp_digest");
@@ -154,8 +275,33 @@ static LUA_FUNCTION(openssl_evp_digest_init)
   return 1;
 }
 
-/** openssl.evp_digest_ctx method */
+/***
+create digest object for sign
 
+@function signInit
+@tparam[opt=nil] engine object
+@treturn evp_digest_ctx
+*/
+
+/***
+create digest object for verify
+
+@function verifyInit
+@tparam[opt=nil] engine object
+@treturn evp_digest_ctx
+*/
+
+/***
+openssl.evp_digest_ctx object
+@type evp_digest_ctx
+*/
+
+/***
+get infomation of evp_digest_ctx object
+
+@function info
+@treturn table info keys include size,block_size,digest
+*/
 static LUA_FUNCTION(openssl_digest_ctx_info)
 {
   EVP_MD_CTX *ctx = CHECK_OBJECT(1, EVP_MD_CTX, "openssl.evp_digest_ctx");
@@ -168,7 +314,13 @@ static LUA_FUNCTION(openssl_digest_ctx_info)
   return 1;
 }
 
+/***
+feed data to do digest
 
+@function update
+@tparam string msg data
+@treturn boolean result true for success
+*/
 static LUA_FUNCTION(openssl_evp_digest_update)
 {
   size_t inl;
@@ -181,6 +333,14 @@ static LUA_FUNCTION(openssl_evp_digest_update)
   return 1;
 }
 
+/***
+get result of digest
+
+@function final
+@tparam[opt] string last last part of data
+@tparam[opt] boolean raw binary or hex encoded result, default true for binary result
+@treturn string val hash result
+*/
 static LUA_FUNCTION(openssl_evp_digest_final)
 {
   EVP_MD_CTX* c = CHECK_OBJECT(1, EVP_MD_CTX, "openssl.evp_digest_ctx");
@@ -240,6 +400,11 @@ static LUA_FUNCTION(openssl_digest_ctx_free)
   return 0;
 }
 
+/***
+reset evp_diget_ctx to reuse
+
+@function reset
+*/
 static LUA_FUNCTION(openssl_digest_ctx_reset)
 {
   EVP_MD_CTX *ctx = CHECK_OBJECT(1, EVP_MD_CTX, "openssl.evp_digest_ctx");
@@ -259,6 +424,11 @@ static LUA_FUNCTION(openssl_digest_ctx_reset)
   return openssl_pushresult(L, ret);
 }
 
+/***
+clone evp_diget_ctx
+
+@function clone
+*/
 static LUA_FUNCTION(openssl_digest_ctx_clone)
 {
   EVP_MD_CTX *ctx = CHECK_OBJECT(1, EVP_MD_CTX, "openssl.evp_digest_ctx");
@@ -282,6 +452,19 @@ static LUA_FUNCTION(openssl_digest_ctx_clone)
   return 1;
 }
 
+/***
+retrieve md data
+
+@function data
+@treturn string md_data
+*/
+
+/***
+restore md data
+
+@function data
+@tparam string md_data
+*/
 static LUA_FUNCTION(openssl_digest_ctx_data)
 {
   EVP_MD_CTX *ctx = CHECK_OBJECT(1, EVP_MD_CTX, "openssl.evp_digest_ctx");
@@ -323,51 +506,13 @@ static LUA_FUNCTION(openssl_digest_ctx_data)
   return 0;
 }
 
-static LUA_FUNCTION(openssl_signInit)
-{
-  const EVP_MD *md = get_digest(L, 1, NULL);
-  EVP_PKEY* pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
-  ENGINE*     e = lua_gettop(L) > 2 ? CHECK_OBJECT(3, ENGINE, "openssl.engine") : NULL;
-  EVP_PKEY_CTX *pctx;
-  EVP_MD_CTX *ctx = EVP_MD_CTX_create();
-  if (ctx)
-  {
-    int ret = EVP_DigestSignInit(ctx, &pctx, md, e, pkey);
-    if (ret)
-    {
-      PUSH_OBJECT(ctx, "openssl.evp_digest_ctx");
-    }
-    else
-      return openssl_pushresult(L, ret);
-  }
-  else
-    lua_pushnil(L);
-  return 1;
-}
+/***
+feed data for sign to get signature
 
-static LUA_FUNCTION(openssl_verifyInit)
-{
-  const EVP_MD *md = get_digest(L, 1, NULL);
-  EVP_PKEY* pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
-  ENGINE*     e = lua_gettop(L) > 2 ? CHECK_OBJECT(3, ENGINE, "openssl.engine") : NULL;
-  EVP_PKEY_CTX *pctx = 0;
-  EVP_MD_CTX *ctx = EVP_MD_CTX_create();
-
-  if (ctx)
-  {
-    int ret = EVP_DigestVerifyInit(ctx, &pctx, md, e, pkey);
-    if (ret)
-    {
-      PUSH_OBJECT(ctx, "openssl.evp_digest_ctx");
-    }
-    else
-      return openssl_pushresult(L, ret);
-  }
-  else
-    lua_pushnil(L);
-  return 1;
-}
-
+@function verifyUpdate
+@tparam string data to be signed
+@treturn boolean result
+*/
 static LUA_FUNCTION(openssl_signUpdate)
 {
   size_t l;
@@ -378,6 +523,13 @@ static LUA_FUNCTION(openssl_signUpdate)
   return openssl_pushresult(L, ret);
 }
 
+/***
+feed data for verify with signature
+
+@function verifyUpdate
+@tparam string data to be verified
+@treturn boolean result
+*/
 static LUA_FUNCTION(openssl_verifyUpdate)
 {
   size_t l;
@@ -388,6 +540,13 @@ static LUA_FUNCTION(openssl_verifyUpdate)
   return openssl_pushresult(L, ret);
 }
 
+/***
+get result of sign
+
+@function signFinal
+@tparam evp_pkey private key to do sign
+@treturn string singed result
+*/
 static LUA_FUNCTION(openssl_signFinal)
 {
   EVP_MD_CTX *ctx = CHECK_OBJECT(1, EVP_MD_CTX, "openssl.evp_digest_ctx");
@@ -410,6 +569,13 @@ static LUA_FUNCTION(openssl_signFinal)
   return openssl_pushresult(L, ret);
 }
 
+/***
+get verify result
+
+@function verifyFinal
+@tparam string signature
+@treturn boolean result, true for verify pass
+*/
 static LUA_FUNCTION(openssl_verifyFinal)
 {
   EVP_MD_CTX *ctx = CHECK_OBJECT(1, EVP_MD_CTX, "openssl.evp_digest_ctx");
@@ -453,7 +619,7 @@ static luaL_Reg digest_ctx_funs[] =
 
   {"signUpdate",  openssl_signUpdate},
   {"signFinal",   openssl_signFinal},
-  {"verifyUpdate", openssl_verifyUpdate},
+  {"verifyUpdate",openssl_verifyUpdate},
   {"verifyFinal", openssl_verifyFinal},
 
   {"__tostring",  auxiliar_tostring},
@@ -463,13 +629,13 @@ static luaL_Reg digest_ctx_funs[] =
 
 static const luaL_Reg R[] =
 {
-  { "__call",     openssl_digest},
-  { "list",       openssl_digest_list},
-  { "get",        openssl_digest_get},
-  { "new",        openssl_digest_new},
-  { "digest",     openssl_digest},
+  {"__call",     openssl_digest},
+  {"list",       openssl_digest_list},
+  {"get",        openssl_digest_get},
+  {"new",        openssl_digest_new},
+  {"digest",     openssl_digest},
 
-  {"signInit", openssl_signInit},
+  {"signInit",   openssl_signInit},
   {"verifyInit", openssl_verifyInit},
 
   {NULL,  NULL}
