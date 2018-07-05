@@ -329,9 +329,9 @@ static int luaclose_openssl(lua_State *L)
   EVP_cleanup();
 
   CRYPTO_cleanup_all_ex_data();
-
-#ifndef OPENSSL_NO_STDIO
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#ifndef OPENSSL_NO_CRYPTO_MDEBUG
+#if !(defined(OPENSSL_NO_STDIO) || defined(OPENSSL_NO_FP_API))
+#if OPENSSL_VERSION_NUMBER < 0x10101000L
   CRYPTO_mem_leaks_fp(stderr);
 #else
   if(CRYPTO_mem_leaks_fp(stderr)!=1)
@@ -342,8 +342,8 @@ static int luaclose_openssl(lua_State *L)
       "\n\tThank You.");
   }
 #endif
-#endif
-
+#endif /* OPENSSL_NO_STDIO or OPENSSL_NO_FP_API */
+#endif /* OPENSSL_NO_CRYPTO_MDEBUG */
   return 0;
 }
 
