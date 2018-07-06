@@ -1,10 +1,10 @@
-/*=========================================================================*\
-* pkcs7.c
-* PKCS7 module for lua-openssl binding
-*
-* Author:  george zhao <zhaozg(at)gmail.com>
-\*=========================================================================*/
+/***
+PKCS7 module for lua-openssl binding
 
+@module pkcs7
+@usage
+  pkcs7 = require('openssl').pkcs7
+*/
 #include "openssl.h"
 #include "private.h"
 
@@ -12,6 +12,16 @@
 #define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
   "based on OpenSSL " SHLIB_VERSION_NUMBER
 
+/***
+read string or bio object, which include pkcs7 content
+
+@function read
+@tparam bio|string input
+@tparam[opt='auto'] format allow 'auto','der','pem','smime'
+ auto will only try 'der' or 'pem'
+@treturn pkcs7 object or nil
+@treturn string content exist only smime format
+*/
 static LUA_FUNCTION(openssl_pkcs7_read)
 {
   BIO* bio = load_bio_object(L, 1);
@@ -57,7 +67,14 @@ static LUA_FUNCTION(openssl_pkcs7_read)
 }
 
 #if OPENSSL_VERSION_NUMBER > 0x10000000L
+/***
+create new empty pkcs7 object, which support flexble sign methods.
 
+@function new
+@tparam[opt=NID_pkcs7_signed] int oid given pkcs7 type
+@tparam[opt=NID_pkcs7_data] int content given pkcs7 content type
+@treturn pkcs7 object
+*/
 static LUA_FUNCTION(openssl_pkcs7_new)
 {
   int type = luaL_optint(L, 1, NID_pkcs7_signed);
@@ -79,23 +96,6 @@ static LUA_FUNCTION(openssl_pkcs7_new)
       PKCS7_free(p7);
   }
   return 0;
-}
-
-static LUA_FUNCTION(openssl_pkcs7_sign_add_signer)
-{
-  PKCS7 *p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
-  X509 *signcert = CHECK_OBJECT(2, X509, "openssl.x509");
-  EVP_PKEY *pkey = CHECK_OBJECT(3, EVP_PKEY, "openssl.evp_pkey");
-  const EVP_MD* md = get_digest(L, 4, NULL);
-  long flags = luaL_optint(L, 5, 0);
-  PKCS7_SIGNER_INFO *signer = 0;
-
-  luaL_argcheck(L, X509_check_private_key(signcert, pkey), 3,
-                "sigcert and private key not match");
-
-  signer = PKCS7_sign_add_signer(p7, signcert, pkey, md, flags);
-  (void) signer;
-  return openssl_pushresult(L, signcert != NULL ? 1 : 0);
 }
 
 static LUA_FUNCTION(openssl_pkcs7_add)
@@ -554,7 +554,544 @@ static int openssl_pkcs7_final(lua_State *L)
   return ret;
 }
 
+int PKCS7_signatureVerify_digest(PKCS7 *p7, PKCS7_SIGNER_INFO *si, X509 *x509,
+                                 const unsigned char* data, size_t len, int hash)
+{
+  ASN1_OCTET_STRING *os;
+  const EVP_MD* md;
+  EVP_MD_CTX *mdc, *mdc_tmp;
+  int ret = 0, i;
+  int md_type;
+  STACK_OF(X509_ATTRIBUTE) *sk;
+  EVP_PKEY *pkey = NULL;
 
+  mdc = EVP_MD_CTX_new();
+  mdc_tmp = EVP_MD_CTX_new();
+  EVP_MD_CTX_init(mdc);
+  EVP_MD_CTX_init(mdc_tmp);
+  if (!PKCS7_type_is_signed(p7) && !PKCS7_type_is_signedAndEnveloped(p7))
+  {
+    PKCS7err(PKCS7_F_PKCS7_SIGNATUREVERIFY, PKCS7_R_WRONG_PKCS7_TYPE);
+    goto err;
+  }
+
+  md_type = OBJ_obj2nid(si->digest_alg->algorithm);
+  md = EVP_get_digestbynid(md_type);
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+  if (!md || !data || (hash && len != (size_t) md->ctx_size) )
+    goto err;
+
+  if (!EVP_DigestInit_ex(mdc, md, NULL))
+    goto err;
+  if (hash)
+    memcpy(mdc->md_data, data, len);
+  else
+    EVP_DigestUpdate(mdc, data, len);
+#else
+  if (!md || !data || (hash && len != (size_t)EVP_MD_meth_get_app_datasize(md)) )
+    goto err;
+
+  if (!EVP_DigestInit_ex(mdc, md, NULL))
+    goto err;
+  if (hash)
+    memcpy(EVP_MD_CTX_md_data(mdc), data, len);
+  else
+    EVP_DigestUpdate(mdc, data, len);
+#endif
+
+  pkey = X509_get_pubkey(x509);
+  if (!pkey)
+  {
+    ret = -1;
+    goto err;
+  }
+  /*
+  * mdc is the digest ctx that we want, unless there are attributes, in
+  * which case the digest is the signed attributes
+  */
+  if (!EVP_MD_CTX_copy_ex(mdc_tmp, mdc))
+    goto err;
+  sk = si->auth_attr;
+  if ((sk != NULL) && (sk_X509_ATTRIBUTE_num(sk) != 0))
+  {
+    unsigned char md_dat[EVP_MAX_MD_SIZE], *abuf = NULL;
+    unsigned int md_len;
+    int alen;
+    ASN1_OCTET_STRING *message_digest;
+
+    if (!EVP_DigestFinal_ex(mdc_tmp, md_dat, &md_len))
+      goto err;
+    message_digest = PKCS7_digest_from_attributes(sk);
+    if (!message_digest)
+    {
+      PKCS7err(PKCS7_F_PKCS7_SIGNATUREVERIFY,
+               PKCS7_R_UNABLE_TO_FIND_MESSAGE_DIGEST);
+      goto err;
+    }
+    if ((message_digest->length != (int) md_len) ||
+        (memcmp(message_digest->data, md_dat, md_len)))
+    {
+      PKCS7err(PKCS7_F_PKCS7_SIGNATUREVERIFY, PKCS7_R_DIGEST_FAILURE);
+      ret = -1;
+      goto err;
+    }
+    if (!EVP_DigestVerifyInit(mdc_tmp, NULL, EVP_get_digestbynid(md_type), NULL, pkey))
+      goto err;
+
+    alen = ASN1_item_i2d((ASN1_VALUE *) sk, &abuf,
+                         ASN1_ITEM_rptr(PKCS7_ATTR_VERIFY));
+    if (alen <= 0)
+    {
+      PKCS7err(PKCS7_F_PKCS7_SIGNATUREVERIFY, ERR_R_ASN1_LIB);
+      ret = -1;
+      goto err;
+    }
+    if (!EVP_VerifyUpdate(mdc_tmp, abuf, alen))
+      goto err;
+
+    OPENSSL_free(abuf);
+  }
+
+  os = si->enc_digest;
+  i = EVP_VerifyFinal(mdc_tmp, os->data, os->length, pkey);
+  if (i <= 0)
+  {
+    PKCS7err(PKCS7_F_PKCS7_SIGNATUREVERIFY, PKCS7_R_SIGNATURE_FAILURE);
+    ret = -1;
+    goto err;
+  }
+  else
+    ret = 1;
+err:
+  EVP_PKEY_free(pkey);
+  EVP_MD_CTX_free(mdc);
+  EVP_MD_CTX_free(mdc_tmp);
+
+  return (ret);
+}
+
+#endif
+
+/***
+sign message with signcert and signpkey to create pkcs7 object
+
+@function sign
+@tparam string|bio msg
+@tparam x509 signcert
+@tparam evp_pkey signkey
+@tparam[opt] stack_of_x509 cacerts
+@tparam[opt=0] number flags
+@treturn pkcs7 object
+*/
+static LUA_FUNCTION(openssl_pkcs7_sign)
+{
+  BIO *in  = load_bio_object(L, 1);
+  X509 *cert = CHECK_OBJECT(2, X509, "openssl.x509");
+  EVP_PKEY *privkey = CHECK_OBJECT(3, EVP_PKEY, "openssl.evp_pkey");
+  STACK_OF(X509) *others = lua_isnoneornil(L, 4) ? 0 : openssl_sk_x509_fromtable(L, 4);
+  long flags =  luaL_optint(L, 5, 0);
+  PKCS7 *p7 = NULL;
+
+  if (!X509_check_private_key(cert, privkey))
+    luaL_error(L, "sigcert and private key not match");
+  p7 = PKCS7_sign(cert, privkey, others, in, flags);
+  BIO_free(in);
+  if (others)
+    sk_X509_pop_free(others, X509_free);
+  if (p7)
+  {
+    PUSH_OBJECT(p7, "openssl.pkcs7");
+    return 1;
+  }
+  else
+  {
+    luaL_error(L, "error creating PKCS7 structure!");
+  }
+
+  return 0;
+}
+
+/***
+verify pkcs7 object, and return msg content, follow by singers
+
+@function verify
+@tparam pkcs7 in
+@tparam[opt] stack_of_x509 signercerts
+@tparam[opt] x509_store cacerts
+@tparam[opt] string|bio msg
+@tparam[opt=0] number flags
+@treturn[1] string content
+@treturn[1] boolean result
+*/
+static LUA_FUNCTION(openssl_pkcs7_verify)
+{
+  int ret = 0;
+  PKCS7 *p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
+  STACK_OF(X509) *signers = lua_isnoneornil(L, 2) ? NULL : openssl_sk_x509_fromtable(L, 2);
+  X509_STORE *store = lua_isnoneornil(L, 3) ? NULL : CHECK_OBJECT(3, X509_STORE, "openssl.x509_store");
+  BIO* in = lua_isnoneornil(L, 4) ? NULL : load_bio_object(L, 4);
+  long flags = luaL_optint(L, 5, PKCS7_DETACHED);
+  BIO* out = NULL;
+
+  if (!store)
+    flags |= PKCS7_NOVERIFY;
+  if ((flags&PKCS7_DETACHED) != 0)
+    out = BIO_new(BIO_s_mem());
+
+  if (PKCS7_verify(p7, signers, store, in, out, flags) == 1)
+  {
+    if (out && (flags & PKCS7_DETACHED) == 0)
+    {
+      BUF_MEM *bio_buf;
+
+      BIO_get_mem_ptr(out, &bio_buf);
+      lua_pushlstring(L, bio_buf->data, bio_buf->length);
+    }
+    else
+    {
+      lua_pushboolean(L, 1);
+    }
+    ret += 1;
+  }
+  else
+  {
+    ret = openssl_pushresult(L, 0);
+  }
+  if (signers)
+    sk_X509_pop_free(signers, X509_free);
+  if (out)
+    BIO_free(out);
+  if (in)
+    BIO_free(in);
+  return ret;
+}
+
+/***
+encrypt message with recipcerts certificates return encrypted pkcs7 object
+
+@function encrypt
+@tparam string|bio msg
+@tparam stack_of_x509 recipcerts
+@tparam[opt='rc4'] string|evp_cipher cipher
+@tparam[opt] number flags
+*/
+static LUA_FUNCTION(openssl_pkcs7_encrypt)
+{
+  PKCS7 * p7 = NULL;
+  BIO *in = load_bio_object(L, 1);
+  STACK_OF(X509) *recipcerts = openssl_sk_x509_fromtable(L, 2);
+  const EVP_CIPHER *cipher = get_cipher(L, 3, "des3");
+  long flags = luaL_optint(L, 4, 0);
+
+  if (cipher == NULL)
+  {
+    luaL_error(L, "Failed to get cipher");
+  }
+
+  p7 = PKCS7_encrypt(recipcerts, in, cipher, flags);
+  BIO_free(in);
+  sk_X509_pop_free(recipcerts, X509_free);
+  if (p7 == NULL)
+  {
+    lua_pushnil(L);
+  }
+  else
+  {
+    PUSH_OBJECT(p7, "openssl.pkcs7");
+  }
+
+  return 1;
+}
+
+/***
+decrypt encrypted pkcs7 message
+
+@function decrypt
+@tparam pkcs7 input
+@tparam x509 recipcert
+@tparam evp_pkey recipkey
+@treturn string decrypt message
+*/
+static LUA_FUNCTION(openssl_pkcs7_decrypt)
+{
+  PKCS7 *p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
+  X509 *cert = CHECK_OBJECT(2, X509, "openssl.x509");
+  EVP_PKEY *key = CHECK_OBJECT(3, EVP_PKEY, "openssl.evp_pkey");
+  long flags = luaL_optint(L, 4, 0);
+  BIO *out = BIO_new(BIO_s_mem());
+
+  if (PKCS7_decrypt(p7, key, cert, out, flags))
+  {
+    BUF_MEM* mem;
+    BIO_get_mem_ptr(out, &mem);
+    lua_pushlstring(L, mem->data, mem->length);
+  }
+  else
+    lua_pushnil(L);
+  BIO_free(out);
+  return 1;
+}
+
+/***
+openssl.pkcs7 object
+
+@type pkcs7
+*/
+static LUA_FUNCTION(openssl_pkcs7_gc)
+{
+  PKCS7* p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
+  PKCS7_free(p7);
+  return 0;
+}
+
+/***
+export pkcs7 as string
+
+@function export
+@tparam[opt='pem'] string support export as 'pem' or 'der' format, default is 'pem'
+@treturn string
+*/
+static LUA_FUNCTION(openssl_pkcs7_export)
+{
+  PKCS7 * p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
+  BIO* bio_out = NULL;
+  int fmt = lua_type(L, 2);
+  luaL_argcheck(L, fmt == LUA_TSTRING || fmt == LUA_TNONE, 2,
+    "only accept 'pem','der' or none");
+  fmt = luaL_checkoption(L, 2, "pem", format);
+  luaL_argcheck(L, fmt == FORMAT_PEM || fmt == FORMAT_DER, 2,
+    "only accept pem or der, default is pem");
+
+  bio_out  = BIO_new(BIO_s_mem());
+  if (fmt == FORMAT_PEM)
+  {
+
+    if (PEM_write_bio_PKCS7(bio_out, p7))
+    {
+      BUF_MEM *bio_buf;
+      BIO_get_mem_ptr(bio_out, &bio_buf);
+      lua_pushlstring(L, bio_buf->data, bio_buf->length);
+    }
+    else
+      lua_pushnil(L);
+  }
+  else
+  {
+    if (i2d_PKCS7_bio(bio_out, p7))
+    {
+      BUF_MEM *bio_buf;
+      BIO_get_mem_ptr(bio_out, &bio_buf);
+      lua_pushlstring(L, bio_buf->data, bio_buf->length);
+    }
+    else
+      lua_pushnil(L);
+  }
+
+  BIO_free(bio_out);
+  return 1;
+}
+
+static int openssl_push_pkcs7_signer_info(lua_State *L, PKCS7_SIGNER_INFO *info)
+{
+  lua_newtable(L);
+  AUXILIAR_SET(L, -1, "version", ASN1_INTEGER_get(info->version), integer);
+
+  if (info->issuer_and_serial != NULL)
+  {
+    X509_NAME *i = X509_NAME_dup(info->issuer_and_serial->issuer);
+    ASN1_INTEGER *s = ASN1_INTEGER_dup(info->issuer_and_serial->serial);
+    if (info->issuer_and_serial->issuer)
+      AUXILIAR_SETOBJECT(L, i, "openssl.x509_name", -1, "issuer");
+
+    if (info->issuer_and_serial->serial)
+      AUXILIAR_SETOBJECT(L, s, "openssl.asn1_integer", -1, "serial");
+  }
+
+  if (info->digest_alg)
+  {
+    X509_ALGOR *dup = X509_ALGOR_dup(info->digest_alg);
+    AUXILIAR_SETOBJECT(L, dup, "openssl.x509_algor", -1, "digest_alg");
+  }
+  if (info->digest_enc_alg)
+  {
+    X509_ALGOR *dup = X509_ALGOR_dup(info->digest_alg);
+    AUXILIAR_SETOBJECT(L, dup, "openssl.x509_algor", -1, "digest_enc_alg");
+  }
+  if (info->enc_digest)
+  {
+    ASN1_STRING *dup = ASN1_STRING_dup(info->enc_digest);
+    AUXILIAR_SETOBJECT(L, dup, "openssl.asn1_string", -1, "enc_digest");
+  }
+
+  if (info->pkey)
+  {
+    EVP_PKEY_up_ref(info->pkey);
+    AUXILIAR_SETOBJECT(L, info->pkey, "openssl.evp_pkey", -1, "pkey");
+  }
+  return 1;
+}
+
+static LUA_FUNCTION(openssl_pkcs7_type)
+{
+  PKCS7 * p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
+  int i = OBJ_obj2nid(p7->type);
+
+  lua_pushstring(L, OBJ_nid2sn(i));
+  lua_pushstring(L, OBJ_nid2ln(i));
+  return 2;
+}
+
+/***
+export pkcs7 as a string
+
+function parse
+@treturn table  a table has pkcs7 infomation, include type,and other things relate to types
+*/
+static LUA_FUNCTION(openssl_pkcs7_parse)
+{
+  PKCS7 * p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
+  STACK_OF(X509) *certs = NULL;
+  STACK_OF(X509_CRL) *crls = NULL;
+  int i = OBJ_obj2nid(p7->type);
+
+  lua_newtable(L);
+  AUXILIAR_SET(L, -1, "type", OBJ_nid2ln(i), string);
+  switch (i)
+  {
+  case NID_pkcs7_signed:
+  {
+    PKCS7_SIGNED *sign = p7->d.sign;
+    certs = sign->cert ? sign->cert : NULL;
+    crls = sign->crl ? sign->crl : NULL;
+
+    AUXILIAR_SET(L, -1, "version", ASN1_INTEGER_get(sign->version), integer);
+    AUXILIAR_SET(L, -1, "detached", PKCS7_is_detached(p7), boolean);
+    lua_pushstring(L, "md_algs");
+    openssl_sk_x509_algor_totable(L, sign->md_algs);
+    lua_rawset(L, -3);
+
+    if (sign->signer_info)
+    {
+      int j, n;
+      n = sk_PKCS7_SIGNER_INFO_num(sign->signer_info);
+      lua_pushstring(L, "signer_info");
+      lua_newtable(L);
+      for (j = 0; j < n; j++)
+      {
+        PKCS7_SIGNER_INFO *info = sk_PKCS7_SIGNER_INFO_value(sign->signer_info, j);
+        lua_pushinteger(L, j + 1);
+        openssl_push_pkcs7_signer_info(L, info);
+        lua_rawset(L, -3);
+      }
+      lua_rawset(L, -3);
+    }
+
+    if (!PKCS7_is_detached(p7))
+    {
+      PKCS7* c = sign->contents;
+      c = PKCS7_dup(c);
+      AUXILIAR_SETOBJECT(L, c, "openssl.pkcs7", -1, "contents");
+    }
+  }
+  break;
+  case NID_pkcs7_signedAndEnveloped:
+    certs = p7->d.signed_and_enveloped->cert;
+    crls = p7->d.signed_and_enveloped->crl;
+    break;
+  case NID_pkcs7_enveloped:
+  {
+    /*
+    BIO * mem = BIO_new(BIO_s_mem());
+    BIO * v_p7bio = PKCS7_dataDecode(p7,pkey,NULL,NULL);
+    BUF_MEM *bptr = NULL;
+    unsigned char src[4096];
+    int len;
+
+    while((len = BIO_read(v_p7bio,src,4096))>0){
+     BIO_write(mem, src, len);
+    }
+    BIO_free(v_p7bio);
+    BIO_get_mem_ptr(mem, &bptr);
+    if((int)*puiDataLen < bptr->length)
+    {
+     *puiDataLen = bptr->length;
+     ret = SAR_MemoryErr;
+    }else{
+     *puiDataLen =  bptr->length;
+     memcpy(pucData,bptr->data, bptr->length);
+    }
+    */
+  }
+  break;
+  case NID_pkcs7_digest:
+  {
+    PKCS7_DIGEST* d = p7->d.digest;
+    PUSH_ASN1_OCTET_STRING(L, d->digest);
+    lua_setfield(L, -2, "digest");
+  }
+  break;
+  case NID_pkcs7_data:
+  {
+    PUSH_ASN1_OCTET_STRING(L, p7->d.data);
+    lua_setfield(L, -2, "data");
+  }
+  break;
+  default:
+    break;
+  }
+
+  /* NID_pkcs7_signed or NID_pkcs7_signedAndEnveloped */
+  if (certs != NULL)
+  {
+    lua_pushstring(L, "certs");
+    openssl_sk_x509_totable(L, certs);
+    lua_rawset(L, -3);
+  }
+  if (crls != NULL)
+  {
+    lua_pushstring(L, "crls");
+    openssl_sk_x509_crl_totable(L, crls);
+    lua_rawset(L, -3);
+  }
+  return 1;
+}
+
+/***
+pkcs7 sign add signer
+
+@function add_signer
+@tparam x509 cert used to sign data
+@tparam evp_pkey pkey used to sign data
+@tparam evp_md|int digest method when sign data
+@tparam[opt=0] int flags switch process when add signer
+@treturn boolean result true for success
+*/
+static LUA_FUNCTION(openssl_pkcs7_sign_add_signer)
+{
+  PKCS7 *p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
+  X509 *signcert = CHECK_OBJECT(2, X509, "openssl.x509");
+  EVP_PKEY *pkey = CHECK_OBJECT(3, EVP_PKEY, "openssl.evp_pkey");
+  const EVP_MD* md = get_digest(L, 4, NULL);
+  long flags = luaL_optint(L, 5, 0);
+  PKCS7_SIGNER_INFO *signer = 0;
+
+  luaL_argcheck(L, X509_check_private_key(signcert, pkey), 3,
+                "sigcert and private key not match");
+
+  signer = PKCS7_sign_add_signer(p7, signcert, pkey, md, flags);
+  (void) signer;
+  return openssl_pushresult(L, signcert != NULL ? 1 : 0);
+}
+
+#if OPENSSL_VERSION_NUMBER > 0x10000000L
+/***
+pkcs7 sign hash data
+@function sign_digest
+@tparam string data to sign data, maybe already hashed
+@tparam[opt=0] int flags when sign data
+@tparam[opt=false] boolean hashed when true will skip hash process
+@treturn boolean result true for success
+*/
 static LUA_FUNCTION(openssl_pkcs7_sign_digest)
 {
   PKCS7 *p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
@@ -778,122 +1315,16 @@ err:
   return openssl_pushresult(L, ret);
 }
 
-int PKCS7_signatureVerify_digest(PKCS7 *p7, PKCS7_SIGNER_INFO *si, X509 *x509,
-                                 const unsigned char* data, size_t len, int hash)
-{
-  ASN1_OCTET_STRING *os;
-  const EVP_MD* md;
-  EVP_MD_CTX *mdc, *mdc_tmp;
-  int ret = 0, i;
-  int md_type;
-  STACK_OF(X509_ATTRIBUTE) *sk;
-  EVP_PKEY *pkey = NULL;
+/***
+pkcs7 verify signature or digest
 
-  mdc = EVP_MD_CTX_new();
-  mdc_tmp = EVP_MD_CTX_new();
-  EVP_MD_CTX_init(mdc);
-  EVP_MD_CTX_init(mdc_tmp);
-  if (!PKCS7_type_is_signed(p7) && !PKCS7_type_is_signedAndEnveloped(p7))
-  {
-    PKCS7err(PKCS7_F_PKCS7_SIGNATUREVERIFY, PKCS7_R_WRONG_PKCS7_TYPE);
-    goto err;
-  }
-
-  md_type = OBJ_obj2nid(si->digest_alg->algorithm);
-  md = EVP_get_digestbynid(md_type);
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-  if (!md || !data || (hash && len != (size_t) md->ctx_size) )
-    goto err;
-
-  if (!EVP_DigestInit_ex(mdc, md, NULL))
-    goto err;
-  if (hash)
-    memcpy(mdc->md_data, data, len);
-  else
-    EVP_DigestUpdate(mdc, data, len);
-#else
-  if (!md || !data || (hash && len != (size_t)EVP_MD_meth_get_app_datasize(md)) )
-    goto err;
-
-  if (!EVP_DigestInit_ex(mdc, md, NULL))
-    goto err;
-  if (hash)
-    memcpy(EVP_MD_CTX_md_data(mdc), data, len);
-  else
-    EVP_DigestUpdate(mdc, data, len);
-#endif
-
-  pkey = X509_get_pubkey(x509);
-  if (!pkey)
-  {
-    ret = -1;
-    goto err;
-  }
-  /*
-  * mdc is the digest ctx that we want, unless there are attributes, in
-  * which case the digest is the signed attributes
-  */
-  if (!EVP_MD_CTX_copy_ex(mdc_tmp, mdc))
-    goto err;
-  sk = si->auth_attr;
-  if ((sk != NULL) && (sk_X509_ATTRIBUTE_num(sk) != 0))
-  {
-    unsigned char md_dat[EVP_MAX_MD_SIZE], *abuf = NULL;
-    unsigned int md_len;
-    int alen;
-    ASN1_OCTET_STRING *message_digest;
-
-    if (!EVP_DigestFinal_ex(mdc_tmp, md_dat, &md_len))
-      goto err;
-    message_digest = PKCS7_digest_from_attributes(sk);
-    if (!message_digest)
-    {
-      PKCS7err(PKCS7_F_PKCS7_SIGNATUREVERIFY,
-               PKCS7_R_UNABLE_TO_FIND_MESSAGE_DIGEST);
-      goto err;
-    }
-    if ((message_digest->length != (int) md_len) ||
-        (memcmp(message_digest->data, md_dat, md_len)))
-    {
-      PKCS7err(PKCS7_F_PKCS7_SIGNATUREVERIFY, PKCS7_R_DIGEST_FAILURE);
-      ret = -1;
-      goto err;
-    }
-    if (!EVP_DigestVerifyInit(mdc_tmp, NULL, EVP_get_digestbynid(md_type), NULL, pkey))
-      goto err;
-
-    alen = ASN1_item_i2d((ASN1_VALUE *) sk, &abuf,
-                         ASN1_ITEM_rptr(PKCS7_ATTR_VERIFY));
-    if (alen <= 0)
-    {
-      PKCS7err(PKCS7_F_PKCS7_SIGNATUREVERIFY, ERR_R_ASN1_LIB);
-      ret = -1;
-      goto err;
-    }
-    if (!EVP_VerifyUpdate(mdc_tmp, abuf, alen))
-      goto err;
-
-    OPENSSL_free(abuf);
-  }
-
-  os = si->enc_digest;
-  i = EVP_VerifyFinal(mdc_tmp, os->data, os->length, pkey);
-  if (i <= 0)
-  {
-    PKCS7err(PKCS7_F_PKCS7_SIGNATUREVERIFY, PKCS7_R_SIGNATURE_FAILURE);
-    ret = -1;
-    goto err;
-  }
-  else
-    ret = 1;
-err:
-  EVP_PKEY_free(pkey);
-  EVP_MD_CTX_free(mdc);
-  EVP_MD_CTX_free(mdc_tmp);
-
-  return (ret);
-}
-
+@function verify_digest
+@tparam[opt] table certs contains certificate used to sign data
+@tparam[opt] x509_store store to verify certs
+@tparam string data to be signed
+@tparam[opt=false] boolean hashed true for data already hashed
+@treturn boolean result true for success
+*/
 static LUA_FUNCTION(openssl_pkcs7_verify_digest)
 {
   PKCS7 *p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
@@ -1007,332 +1438,26 @@ err:
   return openssl_pushresult(L, ret);
 }
 #endif
+/***
+verify pkcs7 object, and return msg content, follow by singers
 
-static LUA_FUNCTION(openssl_pkcs7_sign)
-{
-  BIO *in  = load_bio_object(L, 1);
-  X509 *cert = CHECK_OBJECT(2, X509, "openssl.x509");
-  EVP_PKEY *privkey = CHECK_OBJECT(3, EVP_PKEY, "openssl.evp_pkey");
-  STACK_OF(X509) *others = lua_isnoneornil(L, 4) ? 0 : openssl_sk_x509_fromtable(L, 4);
-  long flags =  luaL_optint(L, 5, 0);
-  PKCS7 *p7 = NULL;
+@function verify
+@tparam[opt] stack_of_x509 signercerts
+@tparam[opt] x509_store cacerts
+@tparam[opt] string|bio msg
+@tparam[opt=0] number flags
+@treturn string content
+@treturn stack_of_x509 signers
+*/
 
-  if (!X509_check_private_key(cert, privkey))
-    luaL_error(L, "sigcert and private key not match");
-  p7 = PKCS7_sign(cert, privkey, others, in, flags);
-  BIO_free(in);
-  if (others)
-    sk_X509_pop_free(others, X509_free);
-  if (p7)
-  {
-    PUSH_OBJECT(p7, "openssl.pkcs7");
-    return 1;
-  }
-  else
-  {
-    luaL_error(L, "error creating PKCS7 structure!");
-  }
+/***
+decrypt encrypted pkcs7 message
 
-  return 0;
-}
-
-static LUA_FUNCTION(openssl_pkcs7_verify)
-{
-  int ret = 0;
-  PKCS7 *p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
-  STACK_OF(X509) *signers = lua_isnoneornil(L, 2) ? NULL : openssl_sk_x509_fromtable(L, 2);
-  X509_STORE *store = lua_isnoneornil(L, 3) ? NULL : CHECK_OBJECT(3, X509_STORE, "openssl.x509_store");
-  BIO* in = lua_isnoneornil(L, 4) ? NULL : load_bio_object(L, 4);
-  long flags = luaL_optint(L, 5, PKCS7_DETACHED);
-  BIO* out = NULL;
-
-  if (!store)
-    flags |= PKCS7_NOVERIFY;
-  if ((flags&PKCS7_DETACHED) != 0)
-    out = BIO_new(BIO_s_mem());
-
-  if (PKCS7_verify(p7, signers, store, in, out, flags) == 1)
-  {
-    if (out && (flags & PKCS7_DETACHED) == 0)
-    {
-      BUF_MEM *bio_buf;
-
-      BIO_get_mem_ptr(out, &bio_buf);
-      lua_pushlstring(L, bio_buf->data, bio_buf->length);
-    }
-    else
-    {
-      lua_pushboolean(L, 1);
-    }
-    ret += 1;
-  }
-  else
-  {
-    ret = openssl_pushresult(L, 0);
-  }
-  if (signers)
-    sk_X509_pop_free(signers, X509_free);
-  if (out)
-    BIO_free(out);
-  if (in)
-    BIO_free(in);
-  return ret;
-}
-
-static LUA_FUNCTION(openssl_pkcs7_encrypt)
-{
-  PKCS7 * p7 = NULL;
-  BIO *in = load_bio_object(L, 1);
-  STACK_OF(X509) *recipcerts = openssl_sk_x509_fromtable(L, 2);
-  const EVP_CIPHER *cipher = get_cipher(L, 3, "des3");
-  long flags = luaL_optint(L, 4, 0);
-
-  if (cipher == NULL)
-  {
-    luaL_error(L, "Failed to get cipher");
-  }
-
-  p7 = PKCS7_encrypt(recipcerts, in, cipher, flags);
-  BIO_free(in);
-  sk_X509_pop_free(recipcerts, X509_free);
-  if (p7 == NULL)
-  {
-    lua_pushnil(L);
-  }
-  else
-  {
-    PUSH_OBJECT(p7, "openssl.pkcs7");
-  }
-
-  return 1;
-}
-
-static LUA_FUNCTION(openssl_pkcs7_decrypt)
-{
-  PKCS7 *p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
-  X509 *cert = CHECK_OBJECT(2, X509, "openssl.x509");
-  EVP_PKEY *key = CHECK_OBJECT(3, EVP_PKEY, "openssl.evp_pkey");
-  long flags = luaL_optint(L, 4, 0);
-  BIO *out = BIO_new(BIO_s_mem());
-
-  if (PKCS7_decrypt(p7, key, cert, out, flags))
-  {
-    BUF_MEM* mem;
-    BIO_get_mem_ptr(out, &mem);
-    lua_pushlstring(L, mem->data, mem->length);
-  }
-  else
-    lua_pushnil(L);
-  BIO_free(out);
-  return 1;
-}
-
-/*** pkcs7 object method ***/
-static LUA_FUNCTION(openssl_pkcs7_gc)
-{
-  PKCS7* p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
-  PKCS7_free(p7);
-  return 0;
-}
-
-static LUA_FUNCTION(openssl_pkcs7_export)
-{
-  PKCS7 * p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
-  BIO* bio_out = NULL;
-  int fmt = lua_type(L, 2);
-  luaL_argcheck(L, fmt == LUA_TSTRING || fmt == LUA_TNONE, 2,
-    "only accept 'pem','der' or none");
-  fmt = luaL_checkoption(L, 2, "pem", format);
-  luaL_argcheck(L, fmt == FORMAT_PEM || fmt == FORMAT_DER, 2,
-    "only accept pem or der, default is pem");
-
-  bio_out  = BIO_new(BIO_s_mem());
-  if (fmt == FORMAT_PEM)
-  {
-
-    if (PEM_write_bio_PKCS7(bio_out, p7))
-    {
-      BUF_MEM *bio_buf;
-      BIO_get_mem_ptr(bio_out, &bio_buf);
-      lua_pushlstring(L, bio_buf->data, bio_buf->length);
-    }
-    else
-      lua_pushnil(L);
-  }
-  else
-  {
-    if (i2d_PKCS7_bio(bio_out, p7))
-    {
-      BUF_MEM *bio_buf;
-      BIO_get_mem_ptr(bio_out, &bio_buf);
-      lua_pushlstring(L, bio_buf->data, bio_buf->length);
-    }
-    else
-      lua_pushnil(L);
-  }
-
-  BIO_free(bio_out);
-  return 1;
-}
-
-static int openssl_push_pkcs7_signer_info(lua_State *L, PKCS7_SIGNER_INFO *info)
-{
-  lua_newtable(L);
-  AUXILIAR_SET(L, -1, "version", ASN1_INTEGER_get(info->version), integer);
-
-  if (info->issuer_and_serial != NULL)
-  {
-    X509_NAME *i = X509_NAME_dup(info->issuer_and_serial->issuer);
-    ASN1_INTEGER *s = ASN1_INTEGER_dup(info->issuer_and_serial->serial);
-    if (info->issuer_and_serial->issuer)
-      AUXILIAR_SETOBJECT(L, i, "openssl.x509_name", -1, "issuer");
-
-    if (info->issuer_and_serial->serial)
-      AUXILIAR_SETOBJECT(L, s, "openssl.asn1_integer", -1, "serial");
-  }
-
-  if (info->digest_alg)
-  {
-    X509_ALGOR *dup = X509_ALGOR_dup(info->digest_alg);
-    AUXILIAR_SETOBJECT(L, dup, "openssl.x509_algor", -1, "digest_alg");
-  }
-  if (info->digest_enc_alg)
-  {
-    X509_ALGOR *dup = X509_ALGOR_dup(info->digest_alg);
-    AUXILIAR_SETOBJECT(L, dup, "openssl.x509_algor", -1, "digest_enc_alg");
-  }
-  if (info->enc_digest)
-  {
-    ASN1_STRING *dup = ASN1_STRING_dup(info->enc_digest);
-    AUXILIAR_SETOBJECT(L, dup, "openssl.asn1_string", -1, "enc_digest");
-  }
-
-  if (info->pkey)
-  {
-    EVP_PKEY_up_ref(info->pkey);
-    AUXILIAR_SETOBJECT(L, info->pkey, "openssl.evp_pkey", -1, "pkey");
-  }
-  return 1;
-}
-
-static LUA_FUNCTION(openssl_pkcs7_type)
-{
-  PKCS7 * p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
-  int i = OBJ_obj2nid(p7->type);
-
-  lua_pushstring(L, OBJ_nid2sn(i));
-  lua_pushstring(L, OBJ_nid2ln(i));
-  return 2;
-}
-
-static LUA_FUNCTION(openssl_pkcs7_parse)
-{
-  PKCS7 * p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
-  STACK_OF(X509) *certs = NULL;
-  STACK_OF(X509_CRL) *crls = NULL;
-  int i = OBJ_obj2nid(p7->type);
-
-  lua_newtable(L);
-  AUXILIAR_SET(L, -1, "type", OBJ_nid2ln(i), string);
-  switch (i)
-  {
-  case NID_pkcs7_signed:
-  {
-    PKCS7_SIGNED *sign = p7->d.sign;
-    certs = sign->cert ? sign->cert : NULL;
-    crls = sign->crl ? sign->crl : NULL;
-
-    AUXILIAR_SET(L, -1, "version", ASN1_INTEGER_get(sign->version), integer);
-    AUXILIAR_SET(L, -1, "detached", PKCS7_is_detached(p7), boolean);
-    lua_pushstring(L, "md_algs");
-    openssl_sk_x509_algor_totable(L, sign->md_algs);
-    lua_rawset(L, -3);
-
-    if (sign->signer_info)
-    {
-      int j, n;
-      n = sk_PKCS7_SIGNER_INFO_num(sign->signer_info);
-      lua_pushstring(L, "signer_info");
-      lua_newtable(L);
-      for (j = 0; j < n; j++)
-      {
-        PKCS7_SIGNER_INFO *info = sk_PKCS7_SIGNER_INFO_value(sign->signer_info, j);
-        lua_pushinteger(L, j + 1);
-        openssl_push_pkcs7_signer_info(L, info);
-        lua_rawset(L, -3);
-      }
-      lua_rawset(L, -3);
-    }
-
-    if (!PKCS7_is_detached(p7))
-    {
-      PKCS7* c = sign->contents;
-      c = PKCS7_dup(c);
-      AUXILIAR_SETOBJECT(L, c, "openssl.pkcs7", -1, "contents");
-    }
-  }
-  break;
-  case NID_pkcs7_signedAndEnveloped:
-    certs = p7->d.signed_and_enveloped->cert;
-    crls = p7->d.signed_and_enveloped->crl;
-    break;
-  case NID_pkcs7_enveloped:
-  {
-    /*
-    BIO * mem = BIO_new(BIO_s_mem());
-    BIO * v_p7bio = PKCS7_dataDecode(p7,pkey,NULL,NULL);
-    BUF_MEM *bptr = NULL;
-    unsigned char src[4096];
-    int len;
-
-    while((len = BIO_read(v_p7bio,src,4096))>0){
-     BIO_write(mem, src, len);
-    }
-    BIO_free(v_p7bio);
-    BIO_get_mem_ptr(mem, &bptr);
-    if((int)*puiDataLen < bptr->length)
-    {
-     *puiDataLen = bptr->length;
-     ret = SAR_MemoryErr;
-    }else{
-     *puiDataLen =  bptr->length;
-     memcpy(pucData,bptr->data, bptr->length);
-    }
-    */
-  }
-  break;
-  case NID_pkcs7_digest:
-  {
-    PKCS7_DIGEST* d = p7->d.digest;
-    PUSH_ASN1_OCTET_STRING(L, d->digest);
-    lua_setfield(L, -2, "digest");
-  }
-  break;
-  case NID_pkcs7_data:
-  {
-    PUSH_ASN1_OCTET_STRING(L, p7->d.data);
-    lua_setfield(L, -2, "data");
-  }
-  break;
-  default:
-    break;
-  }
-
-  /* NID_pkcs7_signed or NID_pkcs7_signedAndEnveloped */
-  if (certs != NULL)
-  {
-    lua_pushstring(L, "certs");
-    openssl_sk_x509_totable(L, certs);
-    lua_rawset(L, -3);
-  }
-  if (crls != NULL)
-  {
-    lua_pushstring(L, "crls");
-    openssl_sk_x509_crl_totable(L, crls);
-    lua_rawset(L, -3);
-  }
-  return 1;
-}
+@function decrypt
+@tparam x509 recipcert
+@tparam evp_pkey recipkey
+@treturn string decrypt message
+*/
 
 static luaL_Reg pkcs7_funcs[] =
 {
