@@ -1,10 +1,11 @@
-/*=========================================================================*\
-* xexts.c
-* * x509 extension routines for lua-openssl binding
-*
-* Author:  george zhao <zhaozg(at)gmail.com>
-\*=========================================================================*/
+/***
+Provide x509_extension as lua object.
+Sometime when you make CSR,TS or X509, you maybe need to use this.
 
+@module x509.extension
+@usage
+  extension = require('openssl').x509.extension
+*/
 #include <ctype.h>
 #include "openssl.h"
 #include "private.h"
@@ -14,176 +15,21 @@
 
 #define MYNAME "x509.extension"
 
-static int openssl_xext_totable(lua_State* L, X509_EXTENSION *x)
-{
-  ASN1_OBJECT *obj = X509_EXTENSION_get_object(x);
-  int nid = OBJ_obj2nid(obj);
-  lua_newtable(L);
-  openssl_push_asn1object(L, obj);
-  lua_setfield(L, -2, "object");
+/***
+x509_extension contrust param table.
 
-  PUSH_ASN1_OCTET_STRING(L, X509_EXTENSION_get_data(x));
-  lua_setfield(L, -2, "value");
+@table x509_extension_param_table
+@tfield boolean critical true set critical
+@tfield asn1_string value of x509_extension
+@tfield string|asn1_object object, object of extension
 
-  AUXILIAR_SET(L, -1, "critical", X509_EXTENSION_get_critical(x), boolean);
-
-  switch (nid)
-  {
-  case NID_subject_alt_name:
-  {
-    int i;
-    int n_general_names;
-
-    STACK_OF(GENERAL_NAME) *values = X509V3_EXT_d2i(x);
-
-    if (values == NULL)
-      break;
-
-    /* Push ret[oid] */
-    openssl_push_asn1object(L, obj);
-    lua_newtable(L);
-    n_general_names = sk_GENERAL_NAME_num(values);
-    for (i = 0; i < n_general_names; i++)
-    {
-      GENERAL_NAME *general_name = sk_GENERAL_NAME_value(values, i);
-      openssl_push_general_name(L, general_name);
-      lua_rawseti(L, -2, i + 1);
-    }
-    lua_settable(L, -3);
-  }
-  default:
-    break;
-  }
-  return 1;
-};
-
-static int openssl_xext_info(lua_State* L)
-{
-  X509_EXTENSION *x = CHECK_OBJECT(1, X509_EXTENSION, "openssl.x509_extension");
-  return openssl_xext_totable(L, x);
-};
-
-static int openssl_xext_dup(lua_State* L)
-{
-  X509_EXTENSION *x = CHECK_OBJECT(1, X509_EXTENSION, "openssl.x509_extension");
-  X509_EXTENSION *d = X509_EXTENSION_dup(x);
-  PUSH_OBJECT(d, "openssl.x509_extension");
-  return 1;
-};
-
-static int openssl_xext_export(lua_State* L)
-{
-  X509_EXTENSION *x = CHECK_OBJECT(1, X509_EXTENSION, "openssl.x509_extension");
-  unsigned char* p = NULL;
-  int len = i2d_X509_EXTENSION(x, &p);
-  if (len > 0)
-  {
-    lua_pushlstring(L, (const char *) p, len);
-    OPENSSL_free(p);
-  }
-  else
-    lua_pushnil(L);
-  return 1;
-};
-
-static int openssl_xext_free(lua_State* L)
-{
-  X509_EXTENSION *x = CHECK_OBJECT(1, X509_EXTENSION, "openssl.x509_extension");
-  X509_EXTENSION_free(x);
-  return 0;
-};
-
-static int openssl_xext_object(lua_State* L)
-{
-  X509_EXTENSION *x = CHECK_OBJECT(1, X509_EXTENSION, "openssl.x509_extension");
-  ASN1_OBJECT* obj;
-  if (lua_isnone(L, 2))
-  {
-    obj = X509_EXTENSION_get_object(x);
-    openssl_push_asn1object(L, obj);
-    return 1;
-  }
-  else
-  {
-    int nid = openssl_get_nid(L, 2);
-    int ret;
-    obj = OBJ_nid2obj(nid);
-    ret = X509_EXTENSION_set_object(x, obj);
-    return openssl_pushresult(L, ret);
-  }
-};
-
-static int openssl_xext_critical(lua_State* L)
-{
-  X509_EXTENSION *x = CHECK_OBJECT(1, X509_EXTENSION, "openssl.x509_extension");
-  if (lua_isnone(L, 2))
-  {
-    lua_pushboolean(L, X509_EXTENSION_get_critical(x));
-    return 1;
-  }
-  else
-  {
-    int ret = X509_EXTENSION_set_critical(x, lua_toboolean(L, 2));
-    return openssl_pushresult(L, ret);
-  }
-};
-
-static int openssl_xext_data(lua_State* L)
-{
-  int ret = 0;
-  X509_EXTENSION *x = CHECK_OBJECT(1, X509_EXTENSION, "openssl.x509_extension");
-  if (lua_isnone(L, 2))
-  {
-    ASN1_STRING *s = X509_EXTENSION_get_data(x);
-    PUSH_ASN1_STRING(L, s);
-    return 1;
-  }
-  else if (lua_isstring(L, 2))
-  {
-    size_t size;
-    const char* data = lua_tolstring(L, 2, &size);
-    int type = lua_isnone(L, 3) ? V_ASN1_OCTET_STRING : luaL_checkint(L, 3);
-    ASN1_STRING* s = ASN1_STRING_type_new(type);
-    if (ASN1_STRING_set(s, data, size) == 1)
-    {
-      ret = X509_EXTENSION_set_data(x, s);
-    }
-    ASN1_STRING_free(s);
-    return openssl_pushresult(L, ret);
-  }
-  else
-  {
-    ASN1_STRING* s = CHECK_GROUP(2, ASN1_STRING, "openssl.asn1group");
-    if (ASN1_STRING_type(s) == V_ASN1_OCTET_STRING)
-    {
-      ret = X509_EXTENSION_set_data(x, s);
-      return openssl_pushresult(L, ret);
-    }
-    else
-    {
-      luaL_argerror(L, 2, "asn1_string type must be octet");
-    }
-  }
-  return 0;
-};
-
-static luaL_Reg x509_extension_funs[] =
-{
-  {"info",          openssl_xext_info},
-  {"dup",           openssl_xext_dup},
-  {"export",        openssl_xext_export},
-
-  /* set and get */
-  {"object",        openssl_xext_object},
-  {"critical",      openssl_xext_critical},
-  {"data",          openssl_xext_data},
-
-  {"__gc",          openssl_xext_free},
-  {"__tostring",    auxiliar_tostring},
-
-  { NULL, NULL }
-};
-
+@usage
+xattr = x509.attrextension.new_extension {
+  object = asn1_object,
+  critical = false,
+  value = string or asn1_string value
+}
+*/
 static X509_EXTENSION* openssl_new_xextension(lua_State*L, int idx, int v3)
 {
   int nid;
@@ -301,6 +147,13 @@ static X509_EXTENSION* openssl_new_xextension(lua_State*L, int idx, int v3)
   return NULL;
 }
 
+/***
+Create x509_extension object
+@function new_extension
+@tparam table extension with object, value and critical
+@treturn x509_extension mapping to X509_EXTENSION in openssl
+@see x509_extension_param_table
+*/
 static int openssl_xext_new(lua_State* L)
 {
   X509_EXTENSION *x = NULL;
@@ -319,6 +172,12 @@ static int openssl_xext_new(lua_State* L)
   return 1;
 };
 
+/***
+read der encoded x509_extension
+@function read_extension
+@tparam string data der encoded
+@treturn x509_extension mappling to X509_EXTENSION in openssl
+*/
 static int openssl_xext_read(lua_State* L)
 {
   size_t size;
@@ -333,6 +192,21 @@ static int openssl_xext_read(lua_State* L)
   return 1;
 };
 
+/***
+get all x509 certificate supported extensions
+@function support
+@treturn table contain all support extension info as table node {lname=..., sname=..., nid=...}
+
+check x509_extension object support or not
+@function support
+@tparam x509_extension extension
+@treturn boolean true for supported, false or not
+
+check nid or name support or not
+@function support
+@tparam number|string nid_or_name for extension
+@treturn boolean true for supported, false or not
+*/
 static int openssl_xext_support(lua_State*L)
 {
   static const int supported_nids[] =
@@ -403,6 +277,251 @@ static luaL_Reg R[] =
   {"read_extension",          openssl_xext_read},
 
   {NULL,          NULL},
+};
+
+/***
+openssl.x509_extension object
+@type x509_extension
+*/
+
+/***
+x509_extension infomation table
+@TODO double check
+@table x509_extension_info_table
+@tfield asn1_object|object object of x509_extension
+@tfield boolean|critical true for critical value
+@tfield string|value as octet string
+*/
+static int openssl_xext_totable(lua_State* L, X509_EXTENSION *x)
+{
+  ASN1_OBJECT *obj = X509_EXTENSION_get_object(x);
+  int nid = OBJ_obj2nid(obj);
+  lua_newtable(L);
+  openssl_push_asn1object(L, obj);
+  lua_setfield(L, -2, "object");
+
+  PUSH_ASN1_OCTET_STRING(L, X509_EXTENSION_get_data(x));
+  lua_setfield(L, -2, "value");
+
+  AUXILIAR_SET(L, -1, "critical", X509_EXTENSION_get_critical(x), boolean);
+
+  switch (nid)
+  {
+  case NID_subject_alt_name:
+  {
+    int i;
+    int n_general_names;
+
+    STACK_OF(GENERAL_NAME) *values = X509V3_EXT_d2i(x);
+
+    if (values == NULL)
+      break;
+
+    /* Push ret[oid] */
+    openssl_push_asn1object(L, obj);
+    lua_newtable(L);
+    n_general_names = sk_GENERAL_NAME_num(values);
+    for (i = 0; i < n_general_names; i++)
+    {
+      GENERAL_NAME *general_name = sk_GENERAL_NAME_value(values, i);
+      openssl_push_general_name(L, general_name);
+      lua_rawseti(L, -2, i + 1);
+    }
+    lua_settable(L, -3);
+  }
+  default:
+    break;
+  }
+  return 1;
+};
+
+/***
+get infomation table of x509_extension.
+
+@function info
+@tparam[opt] boolean|utf8 true for utf8 default
+@treturn[1] table info,  x509_extension infomation as table
+@see x509_extension_info_table
+*/
+static int openssl_xext_info(lua_State* L)
+{
+  X509_EXTENSION *x = CHECK_OBJECT(1, X509_EXTENSION, "openssl.x509_extension");
+  return openssl_xext_totable(L, x);
+};
+
+/***
+clone then x509_extension
+
+@function dup
+@treturn x509_extension clone of x509_extension
+*/
+static int openssl_xext_dup(lua_State* L)
+{
+  X509_EXTENSION *x = CHECK_OBJECT(1, X509_EXTENSION, "openssl.x509_extension");
+  X509_EXTENSION *d = X509_EXTENSION_dup(x);
+  PUSH_OBJECT(d, "openssl.x509_extension");
+  return 1;
+};
+
+/***
+export x509_extenion to der encoded string
+@function export
+@treturn string
+*/
+static int openssl_xext_export(lua_State* L)
+{
+  X509_EXTENSION *x = CHECK_OBJECT(1, X509_EXTENSION, "openssl.x509_extension");
+  unsigned char* p = NULL;
+  int len = i2d_X509_EXTENSION(x, &p);
+  if (len > 0)
+  {
+    lua_pushlstring(L, (const char *) p, len);
+    OPENSSL_free(p);
+  }
+  else
+    lua_pushnil(L);
+  return 1;
+};
+
+static int openssl_xext_free(lua_State* L)
+{
+  X509_EXTENSION *x = CHECK_OBJECT(1, X509_EXTENSION, "openssl.x509_extension");
+  X509_EXTENSION_free(x);
+  return 0;
+};
+
+/***
+get asn1_object of x509_extension.
+@function object
+@treturn asn1_object object of x509_extension
+*/
+
+/***
+set asn1_object for x509_extension.
+
+@function object
+@tparam asn1_object obj
+@treturn boolean true for success
+@return nil when occure error, and followed by error message
+*/
+static int openssl_xext_object(lua_State* L)
+{
+  X509_EXTENSION *x = CHECK_OBJECT(1, X509_EXTENSION, "openssl.x509_extension");
+  ASN1_OBJECT* obj;
+  if (lua_isnone(L, 2))
+  {
+    obj = X509_EXTENSION_get_object(x);
+    openssl_push_asn1object(L, obj);
+    return 1;
+  }
+  else
+  {
+    int nid = openssl_get_nid(L, 2);
+    int ret;
+    obj = OBJ_nid2obj(nid);
+    ret = X509_EXTENSION_set_object(x, obj);
+    return openssl_pushresult(L, ret);
+  }
+};
+
+/***
+get critical of x509_extension.
+
+@function critical
+@treturn boolean true if extension set critical or false
+*/
+/***
+set critical of x509_extension.
+
+@function critical
+@tparam boolean critical set to self
+@treturn boolean set critical success return true
+@return nil fail return nil, and followed by error message
+*/
+static int openssl_xext_critical(lua_State* L)
+{
+  X509_EXTENSION *x = CHECK_OBJECT(1, X509_EXTENSION, "openssl.x509_extension");
+  if (lua_isnone(L, 2))
+  {
+    lua_pushboolean(L, X509_EXTENSION_get_critical(x));
+    return 1;
+  }
+  else
+  {
+    int ret = X509_EXTENSION_set_critical(x, lua_toboolean(L, 2));
+    return openssl_pushresult(L, ret);
+  }
+};
+
+/***
+get data of x509_extension
+
+@function data
+@treturn asn1_string
+*/
+
+/***
+set type of x509_extension
+
+@function data
+@tparam asn1_string data set to self
+@treturn boolean result true for success
+@return nil for error, and followed by error message
+*/
+static int openssl_xext_data(lua_State* L)
+{
+  int ret = 0;
+  X509_EXTENSION *x = CHECK_OBJECT(1, X509_EXTENSION, "openssl.x509_extension");
+  if (lua_isnone(L, 2))
+  {
+    ASN1_STRING *s = X509_EXTENSION_get_data(x);
+    PUSH_ASN1_STRING(L, s);
+    return 1;
+  }
+  else if (lua_isstring(L, 2))
+  {
+    size_t size;
+    const char* data = lua_tolstring(L, 2, &size);
+    int type = lua_isnone(L, 3) ? V_ASN1_OCTET_STRING : luaL_checkint(L, 3);
+    ASN1_STRING* s = ASN1_STRING_type_new(type);
+    if (ASN1_STRING_set(s, data, size) == 1)
+    {
+      ret = X509_EXTENSION_set_data(x, s);
+    }
+    ASN1_STRING_free(s);
+    return openssl_pushresult(L, ret);
+  }
+  else
+  {
+    ASN1_STRING* s = CHECK_GROUP(2, ASN1_STRING, "openssl.asn1group");
+    if (ASN1_STRING_type(s) == V_ASN1_OCTET_STRING)
+    {
+      ret = X509_EXTENSION_set_data(x, s);
+      return openssl_pushresult(L, ret);
+    }
+    else
+    {
+      luaL_argerror(L, 2, "asn1_string type must be octet");
+    }
+  }
+  return 0;
+};
+
+static luaL_Reg x509_extension_funs[] =
+{
+  {"info",          openssl_xext_info},
+  {"dup",           openssl_xext_dup},
+  {"export",        openssl_xext_export},
+
+  /* set and get */
+  {"object",        openssl_xext_object},
+  {"critical",      openssl_xext_critical},
+  {"data",          openssl_xext_data},
+
+  {"__gc",          openssl_xext_free},
+  {"__tostring",    auxiliar_tostring},
+
+  { NULL, NULL }
 };
 
 IMP_LUA_SK(X509_EXTENSION, x509_extension)
