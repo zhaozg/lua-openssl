@@ -1,10 +1,11 @@
-/*=========================================================================*\
-* bio.c
-* bio object for lua-openssl binding
-*
-* Author:  george zhao <zhaozg(at)gmail.com>
-\*=========================================================================*/
+/***
+bio object for lua-openssl binding,  mapping to BIO in openssl
+openssl.bio is a help object, it is useful, but rarely use.
 
+@module bio
+@usage
+  bio = require'openssl'.bio
+*/
 #include "openssl.h"
 #include "private.h"
 #include <openssl/ssl.h>
@@ -53,7 +54,6 @@ luaL_error(L, "error opening the file(%s) for mode (%s)", f, m);
 PUSH_OBJECT(bio,"openssl.bio");
 return 1;
 }
-
 */
 
 static const char* close_flags[] =
@@ -63,6 +63,13 @@ static const char* close_flags[] =
   NULL
 };
 
+/***
+make string as bio object
+
+@function mem
+@tparam[opt=nil] string data, it will be memory buffer data
+@treturn bio it can be input or output object
+*/
 static LUA_FUNCTION(openssl_bio_new_mem)
 {
   size_t l = 0;
@@ -83,6 +90,14 @@ static LUA_FUNCTION(openssl_bio_new_mem)
   return 1;
 }
 
+/***
+make tcp bio from socket fd
+
+@function socket
+@tparam number fd
+@tparam[opt='noclose'] flag support 'close' or 'noclose' when close or gc
+@treturn bio
+*/
 static LUA_FUNCTION(openssl_bio_new_socket)
 {
   int s = luaL_checkint(L, 1);
@@ -93,6 +108,14 @@ static LUA_FUNCTION(openssl_bio_new_socket)
   return 1;
 }
 
+/***
+make dgram bio from socket fd
+
+@function dgram
+@tparam number fd
+@tparam[opt='noclose'] flag support 'close' or 'noclose' when close or gc
+@treturn bio
+*/
 static LUA_FUNCTION(openssl_bio_new_dgram)
 {
   int s = luaL_checkint(L, 1);
@@ -102,6 +125,13 @@ static LUA_FUNCTION(openssl_bio_new_dgram)
   return 1;
 }
 
+/***
+make socket or file bio with fd
+@function fd
+@tparam number fd
+@tparam[opt='noclose'] flag support 'close' or 'noclose' when close or gc
+@treturn bio
+*/
 static LUA_FUNCTION(openssl_bio_new_fd)
 {
   int fd = luaL_checkint(L, 1);
@@ -112,6 +142,13 @@ static LUA_FUNCTION(openssl_bio_new_fd)
   return 1;
 }
 
+/***
+make file object with file name or path
+@function file
+@tparam string file
+@tparam[opt='r'] string mode
+@treturn bio
+*/
 static LUA_FUNCTION(openssl_bio_new_file)
 {
   const char* f = luaL_checkstring(L, 1);
@@ -123,6 +160,12 @@ static LUA_FUNCTION(openssl_bio_new_file)
   return 1;
 }
 
+/***
+make tcp listen socket 
+@function accept
+@tparam string host_port address like 'host:port'
+@treturn bio 
+*/
 static LUA_FUNCTION(openssl_bio_new_accept)
 {
   const char* port = lua_tostring(L, 1);
@@ -132,6 +175,13 @@ static LUA_FUNCTION(openssl_bio_new_accept)
   return 1;
 }
 
+/***
+make tcp client socket
+@function connect
+@tparam string host_addr addrees like 'host:port'
+@tparam[opt=true] boolean connect default connect immediately
+@treturn bio
+*/
 static int openssl_bio_new_connect(lua_State *L)
 {
   const char *host = luaL_checkstring(L, 1);
@@ -183,6 +233,36 @@ static int openssl_bio_new_connect(lua_State *L)
   return 0;
 }
 
+/***
+Create base64 or buffer bio, which can append to an io BIO object
+@function filter
+@tparam string mode support 'base64' or 'buffer'
+@treturn bio
+*/
+/***
+Create digest bio, which can append to an io BIO object
+@function filter
+@tparam string mode must be 'digest'
+@tparam evp_md|string md_alg
+@treturn bio
+*/
+/***
+Create ssl bio
+@function filter
+@tparam string mode must be 'ssl'
+@tparam ssl s
+@tparam[opt='noclose'] flag support 'close' or 'noclose' when close or gc
+@treturn bio
+*/
+/***
+create cipher filter bio object
+@function filter
+@tparam string mode must be 'cipher'
+@tparam string key
+@tparam string iv
+@tparam[opt=true] boolean encrypt
+@treturn bio
+*/
 static LUA_FUNCTION(openssl_bio_new_filter)
 {
   /* 0         1        2      3      4    5 */
@@ -249,6 +329,17 @@ static LUA_FUNCTION(openssl_bio_new_filter)
 }
 
 /* bio object method */
+/***
+openssl.bio object
+@type bio
+*/
+
+/***
+read data from bio object
+@function read
+@tparam number len
+@treturn string string length may be less than param len
+*/
 static LUA_FUNCTION(openssl_bio_read)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
@@ -280,6 +371,12 @@ static LUA_FUNCTION(openssl_bio_read)
   return ret;
 }
 
+/***
+get line from bio object
+@function gets
+@tparam[opt=256] number max line len
+@treturn string string length may be less than param len
+*/
 static LUA_FUNCTION(openssl_bio_gets)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
@@ -310,7 +407,12 @@ static LUA_FUNCTION(openssl_bio_gets)
   return ret;
 }
 
-
+/***
+write data to bio object
+@function write
+@tparam string data
+@treturn number length success write
+*/
 static LUA_FUNCTION(openssl_bio_write)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
@@ -339,6 +441,12 @@ static LUA_FUNCTION(openssl_bio_write)
   return ret;
 }
 
+/***
+put line to bio object
+@function puts
+@tparam string data
+@treturn number length success write
+*/
 static LUA_FUNCTION(openssl_bio_puts)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
@@ -365,6 +473,11 @@ static LUA_FUNCTION(openssl_bio_puts)
   return ret;
 }
 
+/***
+flush buffer of bio object
+@function flush
+@treturn boolean true for success, others for fail
+*/
 static LUA_FUNCTION(openssl_bio_flush)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
@@ -396,6 +509,11 @@ static LUA_FUNCTION(openssl_bio_free)
   return 0;
 }
 
+/***
+get type of bio
+@function type
+@treturn string
+*/
 static LUA_FUNCTION(openssl_bio_type)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
@@ -403,6 +521,12 @@ static LUA_FUNCTION(openssl_bio_type)
   return 1;
 }
 
+/***
+set nonblock for bio object
+@function nbio
+@tparam boolean nonblock
+@treturn boolean result, true for success, others for fail
+*/
 static LUA_FUNCTION(openssl_bio_nbio)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
@@ -413,7 +537,7 @@ static LUA_FUNCTION(openssl_bio_nbio)
 
 static LUA_FUNCTION(openssl_bio_retry)
 {
-  BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
+   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
   int retry = BIO_should_retry(bio);
   if (retry)
   {
@@ -428,8 +552,10 @@ static LUA_FUNCTION(openssl_bio_retry)
   return 1;
 }
 
-
-
+/***
+reset bio
+@function reset
+*/
 static LUA_FUNCTION(openssl_bio_reset)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
@@ -438,6 +564,12 @@ static LUA_FUNCTION(openssl_bio_reset)
 }
 
 /* filter bio object */
+/***
+push bio append to chain of bio, if want to free a chain use free_all()
+@function push
+@tparam bio append
+@treturn bio
+*/
 static LUA_FUNCTION(openssl_bio_push)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
@@ -450,6 +582,11 @@ static LUA_FUNCTION(openssl_bio_push)
   return 1;
 }
 
+/***
+remove bio from chain
+@function pop
+@tparam bio toremove
+*/
 static LUA_FUNCTION(openssl_bio_pop)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
@@ -467,6 +604,11 @@ static LUA_FUNCTION(openssl_bio_pop)
 }
 
 /* mem */
+/***
+get mem data, only support mem bio object
+@function get_mem
+@treturn string
+*/
 static LUA_FUNCTION(openssl_bio_get_mem)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
@@ -482,7 +624,13 @@ static LUA_FUNCTION(openssl_bio_get_mem)
 }
 
 /* network socket */
-
+/***
+setup ready and accept client connect
+@function accept
+@tparam[opt=false] boolean setup true for setup accept bio, false or none will accept client connect
+@treturn[1] boolean result only when setup is true
+@treturn[2] bio accpeted bio object
+*/
 static LUA_FUNCTION(openssl_bio_accept)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
@@ -510,6 +658,10 @@ static LUA_FUNCTION(openssl_bio_accept)
   return 0;
 }
 
+/***
+shutdown SSL or TCP connection
+@function shutdown
+*/
 static LUA_FUNCTION(openssl_bio_shutdown)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
@@ -527,7 +679,11 @@ static LUA_FUNCTION(openssl_bio_shutdown)
   return 0;
 }
 
-
+/***
+get ssl object assosited with bio object
+@function get_ssl
+@treturn ssl
+*/
 static LUA_FUNCTION(openssl_bio_get_ssl)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
@@ -543,6 +699,11 @@ static LUA_FUNCTION(openssl_bio_get_ssl)
   return 0;
 }
 
+/***
+do TCP or SSL connect
+@function connect
+@treturn booolean result true for success and others for fail
+*/
 static LUA_FUNCTION(openssl_bio_connect)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
@@ -550,6 +711,11 @@ static LUA_FUNCTION(openssl_bio_connect)
   return openssl_pushresult(L, ret);
 }
 
+/***
+do handshake of TCP or SSL connection
+@function handshake
+@treturn boolean result true for success, and others for fail
+*/
 static LUA_FUNCTION(openssl_bio_handshake)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
@@ -557,6 +723,17 @@ static LUA_FUNCTION(openssl_bio_handshake)
   return openssl_pushresult(L, ret);
 }
 
+/***
+get fd of bio object
+@function fd
+@treturn number
+*/
+/***
+set fd of bio object
+@function fd
+@tparam number fd
+@treturn number fd
+*/
 static LUA_FUNCTION(openssl_bio_fd)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
@@ -654,6 +831,12 @@ void BIO_info_callback(BIO *bio, int cmd, const char *argp,
 #endif
 }
 
+/***
+set callback function of bio information
+@function set_callback
+@tparam function callback
+@treturn boolean result true for success, and others for fail
+*/
 static LUA_FUNCTION(openssl_bio_set_callback)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
@@ -665,6 +848,11 @@ static LUA_FUNCTION(openssl_bio_set_callback)
   return openssl_pushresult(L, ret);
 }
 
+/***
+return pending length of bytes to read and write
+@function pending
+@treturn number pending of read, followed by pending of write
+*/
 static LUA_FUNCTION(openssl_bio_pending)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
@@ -675,6 +863,16 @@ static LUA_FUNCTION(openssl_bio_pending)
   lua_pushinteger(L, wpending);
   return 2;
 }
+
+/***
+free a chain
+@function free_all
+*/
+
+/***
+close bio
+@function close
+*/
 
 static luaL_Reg bio_funs[] =
 {
