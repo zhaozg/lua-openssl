@@ -1,10 +1,11 @@
-/*=========================================================================*\
-* xalgor.c
-* * x509_algor routines for lua-openssl binding
-*
-* Author:  george zhao <zhaozg(at)gmail.com>
-\*=========================================================================*/
+/***
+x509.algor module for lua-openssl binding, Provide X509_ALGOR as lua object.
+Sometime when you make CSR,TS or X509, you maybe need to use this.
 
+@module x509.algor
+@usage
+  algor = require('openssl').x509.algor
+*/
 #include "openssl.h"
 #include "private.h"
 #include "sk.h"
@@ -12,6 +13,31 @@ IMP_LUA_SK(X509_ALGOR, x509_algor)
 
 #define MYNAME "x509.algor"
 
+/***
+Create x509_algor object
+
+@function new
+@treturn x509_algor mapping to X509_ALGOR in openssl
+*/
+
+static int openssl_xalgor_new(lua_State*L)
+{
+  X509_ALGOR* alg = X509_ALGOR_new();
+  PUSH_OBJECT(alg, "openssl.x509_algor");
+  return 1;
+};
+
+static luaL_Reg R[] =
+{
+  {"new",           openssl_xalgor_new},
+
+  {NULL,          NULL},
+};
+
+/***
+openssl.x509_algor object
+@type x509_algor
+*/
 static int openssl_xalgor_gc(lua_State* L)
 {
   X509_ALGOR* alg = CHECK_OBJECT(1, X509_ALGOR, "openssl.x509_algor");
@@ -19,6 +45,12 @@ static int openssl_xalgor_gc(lua_State* L)
   return 0;
 }
 
+/***
+clone the x509_algor
+
+@function dup
+@treturn x509_algor clone of x509_algor
+*/
 static int openssl_xalgor_dup(lua_State* L)
 {
   X509_ALGOR* alg = CHECK_OBJECT(1, X509_ALGOR, "openssl.x509_algor");
@@ -28,6 +60,11 @@ static int openssl_xalgor_dup(lua_State* L)
 }
 
 #if OPENSSL_VERSION_NUMBER >= 0x10002000L
+/***
+compare with other x509_algor object
+@function cmp
+@treturn boolean return true if two x509_algor equals
+*/
 static int openssl_xalgor_cmp(lua_State* L)
 {
   X509_ALGOR* alg = CHECK_OBJECT(1, X509_ALGOR, "openssl.x509_algor");
@@ -38,6 +75,11 @@ static int openssl_xalgor_cmp(lua_State* L)
 #endif
 
 #if OPENSSL_VERSION_NUMBER >= 0x10001000L
+/***
+set message digest object to x509_algor
+@function md
+@tparam number|string|evp_md
+*/
 static int openssl_xalgor_md(lua_State* L)
 {
   X509_ALGOR* alg = CHECK_OBJECT(1, X509_ALGOR, "openssl.x509_algor");
@@ -47,6 +89,12 @@ static int openssl_xalgor_md(lua_State* L)
 }
 #endif
 
+/***
+get x509_algor properties
+@function get
+@tparam asn1_object ident algorithm, nil for fail
+@tparam asn1_string attached paramater value
+*/
 static int openssl_xalgor_get(lua_State* L)
 {
   int type;
@@ -72,6 +120,19 @@ static int openssl_xalgor_get(lua_State* L)
   return 2;
 }
 
+/***
+set x509_algor properties
+@function set
+@tparam asn1_object obj ident algorithm in openssl
+@tparam[opt] asn1_string val attached paramater value
+@treturn boolean result true for success, others for fail
+*/
+/***
+set digest algorithm, alias of set()
+only when OPENSSL_VERSION_NUMBER >= 0x10001000
+@function set
+@tparam string|evp_digest digest algorithm
+*/
 static int openssl_xalgor_set(lua_State* L)
 {
   int ret = 0;
@@ -85,6 +146,11 @@ static int openssl_xalgor_set(lua_State* L)
   return openssl_pushresult(L, ret);
 }
 
+/***
+convert x509_algor to txt string of asn1_object
+@function tostring
+@tparam string txt of asn1_object
+*/
 static int openssl_xalgor_tostring(lua_State* L)
 {
   int type;
@@ -106,6 +172,15 @@ static int openssl_xalgor_tostring(lua_State* L)
   return 0;
 }
 
+/***
+check with other x509_algor whether equals, alias with == operator
+only when OPENSSL_VERSION_NUMBER >= 0x10002000L
+
+@function equals
+@tparam x509_algor other to compare
+*/
+
+
 static luaL_Reg xalgor_funcs[] =
 {
   {"dup",               openssl_xalgor_dup},
@@ -121,20 +196,6 @@ static luaL_Reg xalgor_funcs[] =
 #endif
   {"__tostring",        auxiliar_tostring},
   {"__gc",              openssl_xalgor_gc},
-
-  {NULL,          NULL},
-};
-
-static int openssl_xalgor_new(lua_State*L)
-{
-  X509_ALGOR* alg = X509_ALGOR_new();
-  PUSH_OBJECT(alg, "openssl.x509_algor");
-  return 1;
-};
-
-static luaL_Reg R[] =
-{
-  {"new",           openssl_xalgor_new},
 
   {NULL,          NULL},
 };
