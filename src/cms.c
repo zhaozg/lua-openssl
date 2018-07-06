@@ -1,10 +1,18 @@
-/*=========================================================================*\
-* hamc.c
-* hamc module for lua-openssl binding
-*
-* Author:  george zhao <zhaozg(at)gmail.com>
-\*=========================================================================*/
+/***
+hamc module for lua-openssl binding
 
+cms are based on apps/cms.c from the OpenSSL dist, so for more information, see the documentation for OpenSSL.
+cms api need flags, not support "detached", "nodetached", "text", "nointern", "noverify", "nochain", "nocerts",
+"noattr", "binary", "nosigs"
+
+Decrypts the S/MIME message in the BIO object and output the results to BIO object. 
+recipcert is a CERT for one of the recipients. recipkey specifies the private key matching recipcert.
+Headers is an array of headers to prepend to the message, they will not be included in the encoded section.
+
+@module cms
+@usage
+  cms = require('openssl').cms
+*/
 #include "openssl.h"
 #include "private.h"
 #if OPENSSL_VERSION_NUMBER > 0x00909000L && !defined (LIBRESSL_VERSION_NUMBER)
@@ -39,6 +47,16 @@ static LuaL_Enumeration cms_flags[] =
   {NULL,        -1}
 };
 
+/***
+read cms object from input bio or string
+
+@function read
+@tparam bio|string input 
+@tparam[opt='auto'] string format, support 'auto','smime','der','pem'
+  auto will only try 'der' or 'pem'
+@tparam[opt=nil] bio content, only used when format is 'smime'
+@treturn cms
+*/
 static int openssl_cms_read(lua_State *L)
 {
   BIO* in = load_bio_object(L, 1);
@@ -72,7 +90,17 @@ static int openssl_cms_read(lua_State *L)
   return openssl_pushresult(L, 0);
 }
 
+/***
+write cms object to bio object
 
+@function write
+@tparam cms cms
+@tparam bio out
+@tparam bio in
+@tparam[opt=0] number flags
+@tparam[opt='smime'] string format
+@treturn boolean
+*/
 static int openssl_cms_write(lua_State *L)
 {
   CMS_ContentInfo *cms = CHECK_OBJECT(1, CMS_ContentInfo, "openssl.cms");
@@ -95,7 +123,30 @@ static int openssl_cms_write(lua_State *L)
     luaL_argerror(L, 5, "only accept smime, pem or der");
   return openssl_pushresult(L, ret);
 }
+/***
+create empty cms object
+@function create
+@treturn cms
+*/
 
+/***
+create cms object from string or bio object
+@function create
+@tparam bio input
+@tparam[opt=0] number flags
+@treturn cms
+function create() end
+*/
+
+/***
+create digest cms object
+@function create
+@tparam bio input
+@tparam evp_digest|string md_alg
+@tparam[opt=0] number flags
+@treturn cms
+function create() end
+*/
 static int openssl_cms_create(lua_State*L)
 {
   CMS_ContentInfo *cms = NULL;
@@ -124,7 +175,14 @@ static int openssl_cms_create(lua_State*L)
   return 1;
 }
 
-
+/***
+create compress cms object
+@function compress
+@tparam bio input
+@tparam string alg, zlib or rle
+@tparam[opt=0] number flags
+@treturn cms
+*/
 static int openssl_cms_compress(lua_State *L)
 {
   BIO* in = load_bio_object(L, 1);
@@ -150,6 +208,15 @@ static int openssl_cms_compress(lua_State *L)
   return openssl_pushresult(L, 0);
 }
 
+/***
+uncompress cms object
+@function uncompress
+@tparam cms cms
+@tparam bio input
+@tparam bio out
+@tparam[opt=0] number flags
+@treturn boolean
+*/
 static int openssl_cms_uncompress(lua_State *L)
 {
   CMS_ContentInfo *cms = CHECK_OBJECT(1, CMS_ContentInfo, "openssl.cms");
@@ -161,6 +228,17 @@ static int openssl_cms_uncompress(lua_State *L)
   return openssl_pushresult(L, ret);
 }
 
+/***
+make signed cms object
+
+@function sign
+@tparam x509 signer cert
+@tparam evp_pkey pkey
+@tparam stack_of_x509 certs include in the CMS
+@tparam bio input_data
+@tparam[opt=0] number flags 
+@treturn cms object
+*/
 static int openssl_cms_sign(lua_State *L)
 {
   X509* signcert = CHECK_OBJECT(1, X509, "openssl.x509");
@@ -179,6 +257,41 @@ static int openssl_cms_sign(lua_State *L)
   return openssl_pushresult(L, 0);
 }
 
+/***
+verfiy signed cms object
+@function verify
+@tparam cms signed
+@tparam string verify_mode, must be 'verify'
+@tparam stack_of_x509 others 
+@tparam x509_store castore
+@tparam bio message
+@tparam bio out
+@tparam[opt=0] number flags
+@treturn boolean result
+*/
+
+/***
+verify digest cms object
+@function verify
+@tparam cms digested
+@tparam string verify_mode, must be 'digest'
+@tparam bio input message
+@tparam bio out content
+@tparam[opt=0] number flags
+@treturn boolean result
+*/
+
+/***
+verify receipt cms object
+@function verify
+@tparam cms cms
+@tparam string verify_mode must be 'receipt'
+@tparam cms source
+@tparam stack_of_x509 certs
+@tparam x509_store store
+@tparam[opt=0] number flags
+@treturn boolean result
+*/
 static int openssl_cms_verify(lua_State *L)
 {
   CMS_ContentInfo *cms = CHECK_OBJECT(1, CMS_ContentInfo, "openssl.cms");
@@ -222,7 +335,15 @@ static int openssl_cms_verify(lua_State *L)
   return 0;
 }
 
-
+/***
+create enryptdata cms
+@function EncryptedData_encrypt
+@tparam bio input 
+@tparam cipher|string cipher_alg
+@tparam strig key 
+@tparam[opt=0] number flags
+@treturn cms object
+*/
 static int openssl_cms_EncryptedData_encrypt(lua_State*L)
 {
   BIO* in = load_bio_object(L, 1);
@@ -240,6 +361,15 @@ static int openssl_cms_EncryptedData_encrypt(lua_State*L)
   return openssl_pushresult(L, 0);
 }
 
+/***
+decrypt encryptdata cms
+@function EncryptedData_decrypt
+@tparam cms encrypted
+@tparam string key
+@tparam bio out
+@tparam[opt=0] number flags
+@treturn boolean result
+*/
 static int openssl_cms_EncryptedData_decrypt(lua_State*L)
 {
   CMS_ContentInfo *cms = CHECK_OBJECT(1, CMS_ContentInfo, "openssl.cms");
@@ -284,6 +414,16 @@ static char *memdup(const char *src, size_t buffer_length)
   return buffer;
 }
 
+/***
+encrypt with recipt certs
+@function encrypt
+@tparam stack_of_x509 recipt certs
+@tparam bio input
+@tparam string|evp_cipher cipher_alg
+@tparam[opt=0] number flags
+@tparam[opt=nil] table options, may have key,keyid, password field which must be string type 
+@treturn cms
+*/
 static int openssl_cms_encrypt(lua_State *L)
 {
   STACK_OF(X509)* encerts = openssl_sk_x509_fromtable(L, 1);
@@ -358,6 +498,18 @@ static int openssl_cms_encrypt(lua_State *L)
   return openssl_pushresult(L, ret);
 }
 
+/***
+decrypt cms message
+@function decrypt
+@tparam cms message
+@tparam evp_pkey pkey
+@tparam x509 recipt
+@tparam bio dcount output object
+@tparam bio out output object
+@tparam[opt=0] number flags
+@tparam[opt=nil] table options may have key, keyid, password field, which must be string type
+@treturn boolean
+*/
 static int openssl_cms_decrypt(lua_State *L)
 {
   CMS_ContentInfo *cms = CHECK_OBJECT(1, CMS_ContentInfo, "openssl.cms");
