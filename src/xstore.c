@@ -1,15 +1,67 @@
-/*=========================================================================*\
-* xstore.c
-* * x509_store routines for lua-openssl binding
-*
-* Author:  george zhao <zhaozg(at)gmail.com>
-\*=========================================================================*/
-
+/***
+Provide x509_store as lua object, create and manage x509 store object
+@module x509.store
+@usage
+  store = require'openssl'.x509.store
+*/
 #include "openssl.h"
 #include "private.h"
 
 #define MYNAME "x509.store"
 
+/***
+create or generate a new x509_store object.
+@function new()
+@tparam table certs array of x509 objects, all x509 object will add to store, certs can be empty but not nil
+@tparam[opt] table crls array of x509_crl objects, all crl object will add to store
+@treturn x509_store object
+@see x509_store
+*/
+static int openssl_xstore_new(lua_State*L)
+{
+  X509_STORE* ctx = X509_STORE_new();
+  int i, n;
+  luaL_checktable(L, 1);
+  n = lua_rawlen(L, 1);
+  for (i = 0; i < n; i++)
+  {
+    X509* x;
+    lua_rawgeti(L, 1, i + 1);
+    luaL_argcheck(L, auxiliar_getclassudata(L, "openssl.x509", -1), 1, "only contains x509 object");
+    x = CHECK_OBJECT(-1, X509, "openssl.x509");
+    lua_pop(L, 1);
+    X509_STORE_add_cert(ctx, x);
+  }
+  if (!lua_isnoneornil(L, 2))
+  {
+    luaL_checktable(L, 2);
+
+    n = lua_rawlen(L, 2);
+    for (i = 0; i < n; i++)
+    {
+      X509_CRL* c;
+      lua_rawgeti(L, 2, i + 1);
+      c = CHECK_OBJECT(-1, X509_CRL, "openssl.x509_crl");
+      lua_pop(L, 1);
+      X509_STORE_add_crl(ctx, c);
+    }
+  };
+
+  PUSH_OBJECT(ctx, "openssl.x509_store");
+  return 1;
+};
+
+static luaL_Reg R[] =
+{
+  {"new",           openssl_xstore_new},
+
+  {NULL,          NULL},
+};
+
+/***
+openssl.x509_store object
+@type x509_store
+*/
 void openssl_xstore_free(X509_STORE* ctx)
 {
   /* hack openssl bugs */
@@ -30,6 +82,14 @@ static int openssl_xstore_gc(lua_State* L)
   return 0;
 }
 
+/***
+add lookup path for store
+@function add_lookup
+@tparam string path file or dir path to add
+@tparam[opt='file'] mode only 'file' or 'dir'
+@tparam[opt='default'] format only 'pem', 'der' or 'default'
+@treturn boolean result
+*/
 static int openssl_xstore_add_lookup(lua_State* L)
 {
   X509_STORE* ctx = CHECK_OBJECT(1, X509_STORE, "openssl.x509_store");
@@ -61,7 +121,12 @@ static int openssl_xstore_add_lookup(lua_State* L)
   return openssl_pushresult(L, ret);
 }
 
-
+/***
+set verify depth of certificate chains
+@function depth
+@tparam number depth
+@treturn boolean result
+*/
 static int openssl_xstore_depth(lua_State* L)
 {
   X509_STORE* ctx = CHECK_OBJECT(1, X509_STORE, "openssl.x509_store");
@@ -70,6 +135,12 @@ static int openssl_xstore_depth(lua_State* L)
   return openssl_pushresult(L, ret);
 }
 
+/***
+set verify flags of certificate chains
+@function flags
+@tparam number flags
+@treturn boolean result
+*/
 static int openssl_xstore_flags(lua_State* L)
 {
   X509_STORE* ctx = CHECK_OBJECT(1, X509_STORE, "openssl.x509_store");
@@ -78,6 +149,12 @@ static int openssl_xstore_flags(lua_State* L)
   return openssl_pushresult(L, ret);
 }
 
+/***
+set prupose of x509 store
+@function purpose
+@tparam integer purpose
+@treturn boolean result
+*/
 static int openssl_xstore_purpose(lua_State* L)
 {
   X509_STORE* ctx = CHECK_OBJECT(1, X509_STORE, "openssl.x509_store");
@@ -86,6 +163,12 @@ static int openssl_xstore_purpose(lua_State* L)
   return openssl_pushresult(L, ret);
 }
 
+/***
+set as trust x509 store
+@function trust
+@tparam boolean trust
+@treturn boolean result
+*/
 static int openssl_xstore_trust(lua_State* L)
 {
   X509_STORE* ctx = CHECK_OBJECT(1, X509_STORE, "openssl.x509_store");
@@ -94,6 +177,14 @@ static int openssl_xstore_trust(lua_State* L)
   return openssl_pushresult(L, ret);
 }
 
+/***
+--- load certificate from file or dir,not given any paramater will load from defaults path
+-- @tparam[opt] string filepath
+-- @tparam[opt] string dirpath
+-- @treturn boolean result
+function load() end
+
+*/
 static int openssl_xstore_load(lua_State* L)
 {
   X509_STORE* ctx = CHECK_OBJECT(1, X509_STORE, "openssl.x509_store");
@@ -110,6 +201,12 @@ static int openssl_xstore_load(lua_State* L)
   return openssl_pushresult(L, ret);
 }
 
+/***
+add x509 certificate or crl to store
+@paramater ... support x509 object,x509_crl object or array contains x509,x509_crl object
+@function add
+@treturn boolean result
+*/
 static int openssl_xstore_add(lua_State* L)
 {
   X509_STORE* ctx = CHECK_OBJECT(1, X509_STORE, "openssl.x509_store");
@@ -184,47 +281,6 @@ static luaL_Reg xname_funcs[] =
 
   {"__tostring",        auxiliar_tostring},
   {"__gc",              openssl_xstore_gc},
-
-  {NULL,          NULL},
-};
-
-static int openssl_xstore_new(lua_State*L)
-{
-  X509_STORE* ctx = X509_STORE_new();
-  int i, n;
-  luaL_checktable(L, 1);
-  n = lua_rawlen(L, 1);
-  for (i = 0; i < n; i++)
-  {
-    X509* x;
-    lua_rawgeti(L, 1, i + 1);
-    luaL_argcheck(L, auxiliar_getclassudata(L, "openssl.x509", -1), 1, "only contains x509 object");
-    x = CHECK_OBJECT(-1, X509, "openssl.x509");
-    lua_pop(L, 1);
-    X509_STORE_add_cert(ctx, x);
-  }
-  if (!lua_isnoneornil(L, 2))
-  {
-    luaL_checktable(L, 2);
-
-    n = lua_rawlen(L, 2);
-    for (i = 0; i < n; i++)
-    {
-      X509_CRL* c;
-      lua_rawgeti(L, 2, i + 1);
-      c = CHECK_OBJECT(-1, X509_CRL, "openssl.x509_crl");
-      lua_pop(L, 1);
-      X509_STORE_add_crl(ctx, c);
-    }
-  };
-
-  PUSH_OBJECT(ctx, "openssl.x509_store");
-  return 1;
-};
-
-static luaL_Reg R[] =
-{
-  {"new",           openssl_xstore_new},
 
   {NULL,          NULL},
 };
