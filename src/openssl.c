@@ -1,10 +1,11 @@
-/*=========================================================================*\
-* openssl.c
-* lua-openssl binding
-*
-* This product includes PHP software, freely available from <http://www.php.net/software/>
-* Author:  george zhao <zhaozg(at)gmail.com>
-\*=========================================================================*/
+/***
+lua-openssl binding, provide openssl base function in lua.
+
+@module openssl
+@usage
+  openssl = require('openssl')
+*/
+
 #include "openssl.h"
 #include <openssl/ssl.h>
 #include <openssl/asn1.h>
@@ -12,6 +13,12 @@
 #include <openssl/opensslconf.h>
 #include "private.h"
 
+/***
+get lua-openssl version
+@function version
+@tparam[opt] boolean format result will be number when set true, or string
+@treturn lua-openssl version, lua version, openssl version
+*/
 static int openssl_version(lua_State*L)
 {
   int num = lua_isnoneornil(L, 1) ? 0 : auxiliar_checkboolean(L, 1);
@@ -30,6 +37,13 @@ static int openssl_version(lua_State*L)
   return 3;
 }
 
+/***
+hex encode or decode string
+@function hex
+@tparam string str
+@tparam[opt=true] boolean encode true to encoed, false to decode
+@treturn string
+*/
 static LUA_FUNCTION(openssl_hex)
 {
   size_t l = 0;
@@ -58,6 +72,14 @@ static LUA_FUNCTION(openssl_hex)
   return 1;
 }
 
+/***
+base64 encode or decode
+@function base64
+@tparam string|bio input
+@tparam[opt=true] boolean encode true to encoed, false to decode
+@tparam[opt=true] boolean NO_NL true with newline, false without newline
+@treturn string
+*/
 static LUA_FUNCTION(openssl_base64)
 {
   BIO *inp = load_bio_object(L, 1);
@@ -107,6 +129,12 @@ static void list_callback(const OBJ_NAME *obj, void *arg)
   lua_rawseti(L, -2, idx + 1);
 }
 
+/***
+get method names
+@function list
+@tparam string type support 'cipher','digests','pkeys','comps'
+@treturn table as array
+*/
 static LUA_FUNCTION(openssl_list)
 {
   static int options[] =
@@ -123,6 +151,22 @@ static LUA_FUNCTION(openssl_list)
   return 1;
 }
 
+/***
+get last or given error infomation
+
+Most lua-openssl function or methods return nil or false when error or
+failed, followed by string type error _reason_ and number type error _code_,
+_code_ can pass to openssl.error() to get more error information.
+
+@function error
+@tparam[opt] number error, default use ERR_get_error() return value
+@tparam[opt=false] boolean clear the current thread's error queue.
+@treturn number errcode
+@treturn string reason
+@treturn string library name
+@treturn string function name
+@treturn boolean is this is fatal error
+*/
 static LUA_FUNCTION(openssl_error_string)
 {
   unsigned long val;
@@ -158,6 +202,12 @@ static LUA_FUNCTION(openssl_error_string)
   return ret;
 }
 
+/***
+load rand seed from file
+@function rand_load
+@tparam[opt=nil] string file path to laod seed, default opensl management
+@treturn boolean result
+*/
 static int openssl_random_load(lua_State*L)
 {
   const char *file = luaL_optstring(L, 1, NULL);
@@ -185,6 +235,12 @@ static int openssl_random_load(lua_State*L)
   return 1;
 }
 
+/***
+save rand seed to file
+@function rand_write
+@tparam[opt=nil] string file path to save seed, default openssl management
+@treturn bool result
+*/
 static int openssl_random_write(lua_State *L)
 {
   const char *file = luaL_optstring(L, 1, NULL);
@@ -197,12 +253,21 @@ static int openssl_random_write(lua_State *L)
   return openssl_pushresult(L, 1);
 }
 
+/***
+get random generator state
+@function rand_status
+@tparam boolean result true for sucess
+*/
 static int openssl_random_status(lua_State *L)
 {
   lua_pushboolean(L, RAND_status());
   return 1;
 }
 
+/***
+cleanup random genrator
+@function rand_cleanup
+*/
 static int openssl_random_cleanup(lua_State *L)
 {
   (void) L;
@@ -210,6 +275,13 @@ static int openssl_random_cleanup(lua_State *L)
   return 0;
 }
 
+/***
+get random bytes
+@function random
+@tparam number length
+@tparam[opt=false] boolean strong true to generate strong randome bytes
+@treturn string
+*/
 static LUA_FUNCTION(openssl_random_bytes)
 {
   long length = luaL_checkint(L, 1);
@@ -252,6 +324,18 @@ static LUA_FUNCTION(openssl_random_bytes)
   return 1;
 }
 
+/***
+set FIPS mode
+@function FIPS_mode
+@tparam boolean fips true enable FIPS mode, false disable it.
+@treturn boolean success
+*/
+
+/***
+get FIPS mode
+@function FIPS_mode
+@treturn boolean return true when FIPS mode enabled, false when FIPS mode disabled.
+*/
 static int openssl_fips_mode(lua_State *L)
 {
   int ret =0, on = 0;
@@ -266,7 +350,7 @@ static int openssl_fips_mode(lua_State *L)
   ret = FIPS_mode_set(on);
   if(ret)
     lua_pushboolean(L, ret);
-  else 
+  else
     ret = openssl_pushresult(L, ret);
   return ret;
 }
@@ -286,6 +370,12 @@ static int openssl_mem_leaks(lua_State*L)
 }
 #endif
 
+/***
+get openssl engine object
+@function engine
+@tparam string engine_id
+@treturn engine
+*/
 static const luaL_Reg eay_functions[] =
 {
   {"version",     openssl_version},
@@ -314,7 +404,7 @@ void CRYPTO_thread_cleanup(void);
 #endif
 
 static int luaclose_openssl(lua_State *L)
-{ 
+{
   FIPS_mode_set(0);
 #if defined(OPENSSL_THREADS)
   CRYPTO_thread_cleanup();
