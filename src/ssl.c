@@ -1,9 +1,10 @@
-/*=========================================================================*\
-* ssl.c
-* SSL modules for lua-openssl binding
-*
-* Author:  george zhao <zhaozg(at)gmail.com>
-\*=========================================================================*/
+/***
+ssl modules for lua-openssl binding, provide ssl function in lua.
+
+@module ssl
+@usage
+  ssl = require('openssl').ssl
+*/
 #include "openssl.h"
 #include "private.h"
 #include <stdint.h>
@@ -15,6 +16,13 @@
 
 #include <openssl/ssl.h>
 
+/***
+create ssl_ctx object, which mapping to SSL_CTX in openssl.
+@function ctx_new
+@tparam string protocol support 'SSLv3', 'SSLv23', 'SSLv2', 'TSLv1', 'TSLv1_1','TSLv1_2','DTLSv1', and can be follow by '_server' or '_client'
+@tparam[opt] string support_ciphers, if not given, default of openssl will be used
+@treturn ssl_ctx
+*/
 static int openssl_ssl_ctx_new(lua_State*L)
 {
   const char* meth = luaL_optstring(L, 1, "TLSv1");
@@ -102,6 +110,14 @@ static int openssl_ssl_ctx_new(lua_State*L)
   return 1;
 }
 
+/***
+get alert_string for ssl state
+@function alert_string
+@tparam number alert
+@tparam[opt=false] boolean long
+@treturn string alert type
+@treturn string desc string, if long set true will return long info
+*/
 static int openssl_ssl_alert_string(lua_State*L)
 {
   int v = luaL_checkint(L, 1);
@@ -123,7 +139,54 @@ static int openssl_ssl_alert_string(lua_State*L)
   return 2;
 }
 
+static int openssl_ssl_session_new(lua_State*L)
+{
+  SSL_SESSION *ss = SSL_SESSION_new();
+  PUSH_OBJECT(ss, "openssl.ssl_session");
+  return 1;
+}
+
+static int openssl_ssl_session_read(lua_State*L)
+{
+  BIO *in = load_bio_object(L, 1);
+  SSL_SESSION* ss = PEM_read_bio_SSL_SESSION(in, NULL, NULL, NULL);
+  if (!ss)
+  {
+    (void)BIO_reset(in);
+    ss = d2i_SSL_SESSION_bio(in, NULL);
+  }
+  BIO_free(in);
+  if (ss)
+  {
+    PUSH_OBJECT(ss, "openssl.ssl_session");
+    return 1;
+  }
+  return openssl_pushresult(L, 0);
+}
+
+static luaL_Reg R[] =
+{
+  {"ctx_new",       openssl_ssl_ctx_new },
+  {"alert_string",  openssl_ssl_alert_string },
+
+  {"session_new",   openssl_ssl_session_new},
+  {"session_read",  openssl_ssl_session_read},
+  {NULL,    NULL}
+};
+
 /****************************SSL CTX********************************/
+/***
+openssl.ssl_ctx object
+@type ssl_ctx
+*/
+
+/***
+tell ssl_ctx use private key and certificate, and check private key
+@function use
+@tparam evp_pkey pkey
+@tparam x509 cert
+@treturn boolean result return true for ok, or nil followed by errmsg and errval
+*/
 static int openssl_ssl_ctx_use(lua_State*L)
 {
   int ret;
@@ -147,6 +210,13 @@ static int openssl_ssl_ctx_use(lua_State*L)
   return openssl_pushresult(L, ret);
 }
 
+/***
+add client ca cert and option extra chain cert
+@function add
+@tparam x509 clientca
+@tparam[opt] table extra_chain_cert_array
+@treturn boolean result
+*/
 static int openssl_ssl_ctx_add(lua_State*L)
 {
   SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
@@ -188,6 +258,17 @@ static int openssl_ssl_ctx_gc(lua_State*L)
   return 0;
 }
 
+/***
+get timeout
+@function timeout
+@return number
+*/
+/***
+set timeout
+@function timeout
+@tparam number timeout
+@treturn number previous timeout
+*/
 static int openssl_ssl_ctx_timeout(lua_State*L)
 {
   SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
@@ -227,6 +308,23 @@ static const char* sMode_options[] =
   NULL
 };
 
+/***
+clean given mode
+mode support 'enable_partial_write','accept_moving_write_buffer','auto_retry','no_auto_chain','release_buffers'
+@function mode
+@tparam boolean clear must be true
+@tparam string mode
+@param[opt] ...
+@treturn string
+@treturn ...
+@usage
+ modes = { ssl_ctx:mode('enable_partial_write','accept_moving_write_buffer','auto_retry') },
+
+  for  i, v in ipairs(modes)
+    print(v)
+ end
+ --output 'enable_partial_write','accept_moving_write_buffer','auto_retry'
+*/
 static int openssl_ssl_ctx_mode(lua_State*L)
 {
   SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
@@ -260,7 +358,30 @@ static int openssl_ssl_ctx_mode(lua_State*L)
   return ret;
 };
 
+/***
+get options
+@function options
+@treturn table string list of current options
+*/
 
+/***
+set options
+@function options
+@tparam string option, support "microsoft_sess_id_bug", "netscape_challenge_bug", "netscape_reuse_cipher_change_bug",
+"sslref2_reuse_cert_type_bug", "microsoft_big_sslv3_buffer", "msie_sslv3_rsa_padding","ssleay_080_client_dh_bug",
+"tls_d5_bug","tls_block_padding_bug","dont_insert_empty_fragments","all", please to see ssl_options.h
+@treturn table string list of current options after set new option
+*/
+
+/***
+clear options
+@function options
+@tparam boolean clear set true to clear options
+@tparam string option, support "microsoft_sess_id_bug", "netscape_challenge_bug", "netscape_reuse_cipher_change_bug",
+"sslref2_reuse_cert_type_bug", "microsoft_big_sslv3_buffer", "msie_sslv3_rsa_padding","ssleay_080_client_dh_bug",
+"tls_d5_bug","tls_block_padding_bug","dont_insert_empty_fragments","all",  please to see ssl_options.h
+@treturn table string list of current options after clear some option
+*/
 static int openssl_ssl_ctx_options(lua_State*L)
 {
   SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
@@ -292,7 +413,6 @@ static int openssl_ssl_ctx_options(lua_State*L)
       }
     }
 
-
     if (clear != 0)
       options = SSL_CTX_clear_options(ctx, options);
     else
@@ -316,6 +436,25 @@ static int openssl_ssl_ctx_options(lua_State*L)
   return 1;
 }
 
+/***
+get quit_shutdown is set or not
+Normally when a SSL connection is finished, the parties must send out
+"close notify" alert messages using ***SSL:shutdown"*** for a clean shutdown.
+@function quiet_shutdown
+@treturn boolean result
+*/
+/***
+set quiet_shutdown
+@function quiet_shutdown
+@tparam boolean quiet
+When setting the "quiet shutdown" flag to 1, ***SSL:shutdown*** will set the internal flags
+to SSL_SENT_SHUTDOWN|SSL_RECEIVED_SHUTDOWN. ***SSL:shutdown*** then behaves like
+***SSL:set_shutdown*** called with SSL_SENT_SHUTDOWN|SSL_RECEIVED_SHUTDOWN.
+The session is thus considered to be shutdown, but no "close notify" alert
+is sent to the peer. This behaviour violates the TLS standard.
+The default is normal shutdown behaviour as described by the TLS standard.
+@treturn boolean result
+*/
 static int openssl_ssl_ctx_quiet_shutdown(lua_State*L)
 {
   SSL_CTX* s = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
@@ -333,6 +472,16 @@ static int openssl_ssl_ctx_quiet_shutdown(lua_State*L)
   }
 };
 
+/***
+set verify locations with cafile and capath
+ssl_ctx:verify_locations specifies the locations for *ctx*, at
+which CA certificates for verification purposes are located. The certificates
+available via *CAfile* and *CApath* are trusted.
+@function verify_locations
+@tparam string cafile
+@tparam string capath
+@treturn boolean result
+*/
 static int openssl_ssl_ctx_load_verify_locations(lua_State*L)
 {
   SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
@@ -342,6 +491,17 @@ static int openssl_ssl_ctx_load_verify_locations(lua_State*L)
   return openssl_pushresult(L, ret);
 }
 
+/***
+get certificate verification store of ssl_ctx
+@function cert_store
+@treturn x509_store store
+*/
+/***
+set or replaces then certificate verification store of ssl_ctx
+@function cert_store
+@tparam x509_store store
+@treturn x509_store store
+*/
 static int openssl_ssl_ctx_cert_store(lua_State*L)
 {
 #if OPENSSL_VERSION_NUMBER >  0x10002000L
@@ -368,6 +528,32 @@ static int openssl_ssl_ctx_cert_store(lua_State*L)
 #endif
 }
 
+#ifndef OPENSSL_NO_ENGINE
+static int openssl_ssl_ctx_set_engine(lua_State*L)
+{
+  SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
+  ENGINE* eng = CHECK_OBJECT(2, ENGINE,  "openssl.engine");
+  int ret = SSL_CTX_set_client_cert_engine(ctx, eng);
+  return openssl_pushresult(L, ret);
+}
+#endif
+
+/****************************************************************************/
+/***
+create ssl object
+@function ssl
+@tparam bio bio
+@tparam[opt=false] boolean server, true will make ssl server
+@treturn ssl
+*/
+/***
+create ssl object
+@function ssl
+@tparam bio input
+@tparam bio ouput
+@tparam[opt=false] boolean server, true will make ssl server
+@treturn ssl
+*/
 static int openssl_ssl_ctx_new_ssl(lua_State*L)
 {
   SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
@@ -422,6 +608,14 @@ static int openssl_ssl_ctx_new_ssl(lua_State*L)
   return 1;
 }
 
+/***
+create bio object
+@function bio
+@tparam string host_addr format like 'host:port'
+@tparam[opt=false] boolean server, true listen at host_addr,false connect to host_addr
+@tparam[opt=true] boolean autoretry ssl operation autoretry mode
+@treturn bio bio object
+*/
 static int openssl_ssl_ctx_new_bio(lua_State*L)
 {
   SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
@@ -467,17 +661,17 @@ static int openssl_ssl_ctx_new_bio(lua_State*L)
   }
 }
 
-static int openssl_ssl_getpeerverification(lua_State *L)
-{
-  long err;
-  SSL* ssl = CHECK_OBJECT(1, SSL, "openssl.ssl");
-
-  err = SSL_get_verify_result(ssl);
-  lua_pushboolean(L, err == X509_V_OK);
-  openssl_getvalue(L, ssl, "verify_cert");
-  return 2;
-}
-
+/***
+get verify depth when cert chain veirition
+@function verify_depth
+@treturn number depth
+*/
+/***
+set verify depth when cert chain veirition
+@function verify_depth
+@tparam number depth
+@treturn number depth
+*/
 static int openssl_ssl_ctx_verify_depth(lua_State*L)
 {
   SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
@@ -510,6 +704,31 @@ static const char* sVerifyMode_Options[] =
   NULL
 };
 
+/***
+get verify_mode, return number mode and all string modes list
+@function verify_mode
+@treturn number mode_code
+@return ...
+  none: not verify client cert
+  peer: verify client cert
+  fail: if client not have cert, will failure
+  once: verify client only once.
+@usage
+  mode = {ctx:verify_mode()}
+  print('integer mode',mode[1])
+  for i=2, #mode then
+    print('string mode:'..mode[i])
+  end
+*/
+/***
+set ssl verify mode and callback
+@function verify_mode
+@tparam number mode, mode set to ctx, must be ssl.none or ssl.peer, and ssl.peer support combine with ssl.fail or ssl.once
+@tparam[opt=nil] function ssl verify callback in lua function, not give will use default openssl callback, when mode is 'none', will be ignore this
+verify_cb must be boolean function(verifyarg) prototype, return true to continue or false to end ssl handshake
+verifyarg has field 'error', 'error_string','error_depth','current_cert', and 'preverify_ok'
+@treturn boolean result
+*/
 static int openssl_ssl_ctx_verify_mode(lua_State*L)
 {
   SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
@@ -575,16 +794,17 @@ static int openssl_ssl_ctx_verify_mode(lua_State*L)
   }
 }
 
-#ifndef OPENSSL_NO_ENGINE
-static int openssl_ssl_ctx_set_engine(lua_State*L)
-{
-  SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
-  ENGINE* eng = CHECK_OBJECT(2, ENGINE,  "openssl.engine");
-  int ret = SSL_CTX_set_client_cert_engine(ctx, eng);
-  return openssl_pushresult(L, ret);
-}
-#endif
-
+/***
+set certificate verify callback function
+@function set_cert_verify
+@tparam[opt] function cert_verify_cb with boolean function(verifyargs) prototype, if nil or none will use openssl default callback
+verifyargs has field 'error', 'error_string','error_depth','current_cert'
+*/
+/***
+set certificate verify options
+@function set_cert_verify
+@tparam table verify_cb_flag support field always_continue with boolean value and verify_depth with number value.
+*/
 static int openssl_ssl_ctx_set_cert_verify(lua_State*L)
 {
   SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
@@ -727,6 +947,25 @@ static EC_KEY *tmp_ecdh_callback(SSL *ssl, int is_export, int keylength)
 }
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
+/***
+set temp callback
+@function set_tmp
+@tparam string keytype, 'dh','ecdh',or 'rsa'
+@tparam function tmp_cb
+@param[opt] vararg
+*/
+/***
+set tmp key content pem format
+@function set_tmp
+@tparam string keytype, 'dh','ecdh',or 'rsa'
+@tparam string key_pem
+*/
+/***
+set ecdh with given curvename as tmp key
+@function set_tmp
+@tparam string keytype, must be 'ecdh'
+@tparam string curvename
+*/
 static int openssl_ssl_ctx_set_tmp(lua_State *L)
 {
   SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
@@ -856,6 +1095,11 @@ static int tlsext_servername_callback(SSL *ssl, int *ad, void *arg)
   return SSL_TLSEXT_ERR_ALERT_FATAL;
 }
 
+/***
+set servername callback
+@function set_servefrname_callback
+@todo
+*/
 static int openssl_ssl_ctx_set_servername_callback(lua_State*L)
 {
   SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
@@ -867,6 +1111,10 @@ static int openssl_ssl_ctx_set_servername_callback(lua_State*L)
   return 0;
 }
 
+/***
+flush sessions
+@function flush
+*/
 static int openssl_ssl_ctx_flush_sessions(lua_State*L)
 {
   SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
@@ -875,6 +1123,10 @@ static int openssl_ssl_ctx_flush_sessions(lua_State*L)
   return 0;
 }
 
+/***
+set ssl session
+@function sessions
+*/
 static int openssl_ssl_ctx_sessions(lua_State*L)
 {
   SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
@@ -903,6 +1155,18 @@ static int openssl_ssl_ctx_sessions(lua_State*L)
   }
 }
 
+/***
+get current session cache mode
+@function session_cache_mode
+@treturn table modes as array, mode is 'no_auto_clear','server','client','both','off'
+*/
+
+/***
+set session cache mode,and return old mode
+@function session_cache_mode
+@tparam string mode support 'no_auto_clear','server','client','both','off',
+'no_auto_clear' can be combine with others, so accept one or two param.
+*/
 static int openssl_session_cache_mode(lua_State *L)
 {
   static const char* smode[] =
@@ -1039,30 +1303,26 @@ SL_SESSION *(*SSL_CTX_sess_get_get_cb(SSL_CTX *ctx))(struct ssl_st *ssl, unsigne
   SSL_SESSION *session;
 */
 
-
-static int openssl_ssl_session_new(lua_State*L)
+/***
+get peer certificate verify result
+@function getpeerverification
+@treturn boolean true for success
+@treturn table all certificate in chains verify result
+ preverify_ok as boolean verify result
+ error as number error code
+ error_string as string error message
+ error_depth as number verify depth
+ current_cert as x509 certificate to verified
+*/
+static int openssl_ssl_getpeerverification(lua_State *L)
 {
-  SSL_SESSION *ss = SSL_SESSION_new();
-  PUSH_OBJECT(ss, "openssl.ssl_session");
-  return 1;
-}
+  long err;
+  SSL* ssl = CHECK_OBJECT(1, SSL, "openssl.ssl");
 
-static int openssl_ssl_session_read(lua_State*L)
-{
-  BIO *in = load_bio_object(L, 1);
-  SSL_SESSION* ss = PEM_read_bio_SSL_SESSION(in, NULL, NULL, NULL);
-  if (!ss)
-  {
-    (void)BIO_reset(in);
-    ss = d2i_SSL_SESSION_bio(in, NULL);
-  }
-  BIO_free(in);
-  if (ss)
-  {
-    PUSH_OBJECT(ss, "openssl.ssl_session");
-    return 1;
-  }
-  return openssl_pushresult(L, 0);
+  err = SSL_get_verify_result(ssl);
+  lua_pushboolean(L, err == X509_V_OK);
+  openssl_getvalue(L, ssl, "verify_cert");
+  return 2;
 }
 
 static int openssl_ssl_session_time(lua_State*L)
@@ -1189,8 +1449,23 @@ static luaL_Reg ssl_session_funcs[] =
 
 
 /***************************SSL**********************************/
+/***
+openssl.ssl object
+All SSL object IO operation methods(connect, accept, handshake, read,
+peek or write) return nil or false when fail or error.
+When nil returned, it followed by 'ssl' or 'syscall', means SSL layer or
+system layer error. When false returned, it followed by number 0,
+'want_read','want_write','want_x509_lookup','want_connect','want_accept'.
+Numnber 0 means SSL connection closed, others means you should do some
+SSL operation.
+@type ssl
+*/
 
-/* need more think */
+/***
+reset ssl object to allow another connection
+@function clear
+@treturn boolean result true for success
+*/
 static int openssl_ssl_clear(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
@@ -1198,6 +1473,13 @@ static int openssl_ssl_clear(lua_State*L)
   return 1;
 }
 
+/***
+tell ssl use private key and certificate, and check private key
+@function use
+@tparam evp_pkey pkey
+@tparam[opt] x509 cert
+@treturn boolean result return true for ok, or nil followed by errmsg and errval
+*/
 static int openssl_ssl_use(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
@@ -1217,6 +1499,12 @@ static int openssl_ssl_use(lua_State*L)
   return openssl_pushresult(L, ret);
 }
 
+/***
+get peer certificate and certificate chains
+@function peer
+@treturn[1] x509 certificate
+@treturn[1] sk_of_x509 chains of peer
+*/
 static int openssl_ssl_peer(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
@@ -1240,6 +1528,12 @@ static int openssl_ssl_gc(lua_State*L)
   return 0;
 }
 
+/***
+get want to do
+@function want
+@treturn[1] string 'nothing', 'reading', 'writing', 'x509_lookup'
+@treturn[1] number state want
+*/
 static int openssl_ssl_want(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
@@ -1259,6 +1553,11 @@ static int openssl_ssl_want(lua_State*L)
   return 2;
 }
 #if !defined(OPENSSL_NO_COMP) && !defined(LIBRESSL_VERSION_NUMBER)
+/***
+get current compression name
+@function current_compression
+@treturn string
+*/
 static int openssl_ssl_current_compression(lua_State *L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
@@ -1271,6 +1570,11 @@ static int openssl_ssl_current_compression(lua_State *L)
 }
 #endif
 
+/***
+get current cipher info
+@function current_cipher
+@treturn table include name,version,id,bits,algbits and description
+*/
 static int openssl_ssl_current_cipher(lua_State *L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
@@ -1299,6 +1603,11 @@ static int openssl_ssl_current_cipher(lua_State *L)
   return 0;
 }
 
+/***
+get number of bytes available inside SSL fro immediate read
+@function pending
+@treturn number
+*/
 static int openssl_ssl_pending(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
@@ -1353,6 +1662,11 @@ static int openssl_ssl_pushresult(lua_State* L, SSL*ssl, int ret_code)
   }
 }
 
+/***
+get socket fd of ssl
+@function getfd
+@treturn number fd
+*/
 static int openssl_ssl_getfd(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
@@ -1360,6 +1674,33 @@ static int openssl_ssl_getfd(lua_State*L)
   return 1;
 }
 
+/***
+get value according to arg
+@function get
+@tparam string arg
+ <br/>certificate:  return SSL certificates
+ <br/>fd: return file or network connect fd
+ <br/>rfd:
+ <br/>wfd:
+ <br/>client_CA_list
+ <br/>read_ahead: -> boolean
+ <br/>shared_ciphers: string
+ <br/>cipher_list -> string
+ <br/>verify_mode: number
+ <br/>verify_depth
+ <br/>state_string
+ <br/>state_string_long
+ <br/>rstate_string
+ <br/>rstate_string_long
+ <br/>iversion
+ <br/>version
+ <br/>default_timeout,
+ <br/>certificates
+ <br/>verify_result
+ <br/>state
+ <br/>state_string
+@return according to arg
+*/
 static int openssl_ssl_get(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
@@ -1464,6 +1805,25 @@ static int openssl_ssl_get(lua_State*L)
   return top - 1;
 }
 
+/***
+set value according to arg
+@function set
+@tparam string arg
+ <br/>certificate:  return SSL certificates
+ <br/>fd: return file or network connect fd
+ <br/>rfd:
+ <br/>wfd:
+ <br/>client_CA:
+ <br/>read_ahead:
+ <br/>cipher_list:
+ <br/>verify_depth:
+ <br/>purpose:
+ <br/>trust:
+ <br/>verify_result:
+ <br/>hostname:
+@param value val type accroding to arg
+@return value
+*/
 static int openssl_ssl_set(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
@@ -1536,6 +1896,12 @@ static int openssl_ssl_set(lua_State*L)
   return 0;
 }
 
+/***
+do ssl server accept
+@function accept
+@treturn boolean true for success
+@treturn string fail reason
+*/
 static int openssl_ssl_accept(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
@@ -1543,6 +1909,12 @@ static int openssl_ssl_accept(lua_State*L)
   return openssl_ssl_pushresult(L, s, ret);
 }
 
+/***
+do ssl client connect
+@function connect
+@treturn boolean true for success
+@treturn string fail reasion
+*/
 static int openssl_ssl_connect(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
@@ -1550,6 +1922,13 @@ static int openssl_ssl_connect(lua_State*L)
   return openssl_ssl_pushresult(L, s, ret);
 }
 
+/***
+do ssl read
+@function read
+@tparam[opt=4096] number length to read
+@treturn string data, nil or false for fail
+@treturn string fail reason
+*/
 static int openssl_ssl_read(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
@@ -1572,6 +1951,13 @@ static int openssl_ssl_read(lua_State*L)
   return ret;
 }
 
+/***
+do ssl peak, data can be read again
+@function peek
+@tparam[opt=4096] number length to read
+@treturn string data, nil or false for fail
+@treturn string fail reason
+*/
 static int openssl_ssl_peek(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
@@ -1595,6 +1981,13 @@ static int openssl_ssl_peek(lua_State*L)
   return ret;
 }
 
+/***
+do ssl write
+@function write
+@tparam string data
+@treturn number count of bytes write successfully
+@treturn string fail reason
+*/
 static int openssl_ssl_write(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
@@ -1612,6 +2005,12 @@ static int openssl_ssl_write(lua_State*L)
   }
 }
 
+/***
+do ssl handshake, support both server and client side
+@function handshake
+@treturn boolean true for success
+@treturn string fail reasion
+*/
 static int openssl_ssl_do_handshake(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
@@ -1619,6 +2018,12 @@ static int openssl_ssl_do_handshake(lua_State*L)
   return openssl_ssl_pushresult(L, s, ret);
 }
 
+/***
+do ssl renegotiate
+@function renegotiate
+@treturn boolean true for success
+@treturn string fail reasion
+*/
 static int openssl_ssl_renegotiate(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
@@ -1634,6 +2039,19 @@ static int openssl_ssl_renegotiate_abbreviated(lua_State*L)
   return openssl_ssl_pushresult(L, s, ret);
 }
 #endif
+
+/***
+get ssl renegotiate_pending
+@function renegotiate_pending
+@treturn boolean true for success
+@treturn string fail reasion
+*/
+/***
+do ssl renegotiate_pending
+@function renegotiate_pending
+@treturn boolean true for success
+@treturn string fail reasion
+*/
 static int openssl_ssl_renegotiate_pending(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
@@ -1641,6 +2059,23 @@ static int openssl_ssl_renegotiate_pending(lua_State*L)
   return openssl_ssl_pushresult(L, s, ret);
 }
 
+/***
+shutdown ssl connection with quite or noquite mode
+@function shutdown
+@tparam boolean mode
+@treturn boolean if mode is true, return true or false for quite
+@treturn string if mode is false, return 'read' or 'write' for shutdown direction
+*/
+/***
+shutdown SSL connection
+@function shutdown
+*/
+/***
+shutdown ssl connect with special mode, disable read or write,
+enable or disable quite shutdown
+@function shutdown
+@tparam string mode support 'read','write', 'quite', 'noquite'
+*/
 static int openssl_ssl_shutdown(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
@@ -1688,6 +2123,10 @@ static int openssl_ssl_shutdown(lua_State*L)
   return 0;
 };
 
+/***
+make ssl to client mode
+@function set_connect_state
+*/
 static int openssl_ssl_set_connect_state(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
@@ -1695,6 +2134,10 @@ static int openssl_ssl_set_connect_state(lua_State*L)
   return 0;
 }
 
+/***
+make ssl to server mode
+@function set_accept_state
+*/
 static int openssl_ssl_set_accept_state(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
@@ -1702,6 +2145,11 @@ static int openssl_ssl_set_accept_state(lua_State*L)
   return 0;
 }
 
+/***
+duplicate ssl object
+@treturn ssl
+@function dup
+*/
 static int openssl_ssl_dup(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
@@ -1710,6 +2158,10 @@ static int openssl_ssl_dup(lua_State*L)
   return 1;
 }
 
+/***
+get ssl session resused
+@function session_reused
+*/
 static int openssl_ssl_session_reused(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
@@ -1736,6 +2188,17 @@ static int openssl_ssl_set_debug(lua_State*L)
 #endif
 
 #if OPENSSL_VERSION_NUMBER >= 0x0090819fL
+/***
+get ssl_ctx associate with current ssl
+@function ctx
+@treturn ssl_ctx
+*/
+/***
+set ssl_ctx associate to current ssl
+@function ctx
+@tparam ssl_ctx ctx
+@treturn ssl_ctx orgine ssl_ctx object
+*/
 static int openssl_ssl_ctx(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
@@ -1755,7 +2218,18 @@ static int openssl_ssl_ctx(lua_State*L)
 }
 #endif
 
-
+/***
+get ssl session
+@treturn ssl_session session object
+@function session
+*/
+/***
+set ssl session
+@function session
+@tparam string|ssl_session sesion
+ reuse session would speed up ssl handshake
+@treturn boolean result
+*/
 static int openssl_ssl_session(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
@@ -1846,16 +2320,6 @@ static luaL_Reg ssl_funcs[] =
   {"__tostring",    auxiliar_tostring},
 
   {NULL,      NULL},
-};
-
-static luaL_Reg R[] =
-{
-  {"ctx_new",       openssl_ssl_ctx_new },
-  {"alert_string",  openssl_ssl_alert_string },
-
-  {"session_new",   openssl_ssl_session_new},
-  {"session_read",  openssl_ssl_session_read},
-  {NULL,    NULL}
 };
 
 int luaopen_ssl(lua_State *L)
