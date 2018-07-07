@@ -1,10 +1,9 @@
-/*=========================================================================*\
-* pkey.c
-* pkey module for lua-openssl binding
-*
-* Author:  george zhao <zhaozg(at)gmail.com>
-\*=========================================================================*/
-
+/***
+pkey module for lua-openssl binding
+@module pkey
+@usage
+  pkey = require'openssl'.pkey
+*/
 #include "openssl.h"
 #include "private.h"
 #include <openssl/rsa.h>
@@ -15,14 +14,6 @@
 #define MYNAME    "pkey"
 #define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
   "based on OpenSSL " SHLIB_VERSION_NUMBER
-
-static int openssl_pkey_bits(lua_State *L)
-{
-  EVP_PKEY *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
-  lua_Integer ret = EVP_PKEY_bits(pkey);
-  lua_pushinteger(L, ret);
-  return  1;
-};
 
 int openssl_pkey_is_private(EVP_PKEY* pkey)
 {
@@ -79,6 +70,16 @@ int openssl_pkey_is_private(EVP_PKEY* pkey)
   return ret;
 }
 
+/***
+read public/private key from data
+@function read
+@tparam string|openssl.bio input string data or bio object
+@tparam[opt=false] boolean priv prikey set true when input is private key
+@tparam[opt='auto'] string format or encoding of input, support 'auto','pem','der'
+@tparam[opt] string passhprase when input is private key, or key types 'ec','rsa','dsa','dh'
+@treturn evp_pkey public key
+@see evp_pkey
+*/
 static int openssl_pkey_read(lua_State*L)
 {
   EVP_PKEY * key = NULL;
@@ -366,6 +367,40 @@ err:
   lua_pop(L, 1);                                                                      \
 }
 
+/***
+generate a new ec keypair
+@function new
+@tparam string alg, alg must be 'ec'
+@tparam string|number curvename this can be integer as curvename NID
+@tparam[opt] integer flags when alg is ec need this.
+@treturn evp_pkey object with mapping to EVP_PKEY in openssl
+*/
+/***
+generate a new keypair
+@function new
+@tparam[opt='rsa'] string alg, accept `rsa`,`dsa`,`dh`
+@tparam[opt=2048|512] integer bits, `rsa` with 2048, `dh` or `dsa` with 1024
+@tparam[opt] integer e, when alg is `rsa` give e value default is 0x10001,
+ when alg is `dh` give generator value default is 2,
+ when alg is `dsa` give string type seed value default is none.
+@tparam[opt] engine eng
+@treturn evp_pkey object with mapping to EVP_PKEY in openssl
+*/
+/***
+create a new keypair by factors of keypair or get public key only
+@function new
+@tparam table factors to create private/public key, key alg only accept accept 'rsa','dsa','dh','ec' and must exist</br>
+ when arg is rsa, table may with key n,e,d,p,q,dmp1,dmq1,iqmp, both are binary string or openssl.bn<br>
+ when arg is dsa, table may with key p,q,g,priv_key,pub_key, both are binary string or openssl.bn<br>
+ when arg is dh, table may with key p,g,priv_key,pub_key, both are binary string or openssl.bn<br>
+ when arg is ec, table may with D,X,Y,Z,both are binary string or openssl.bn<br>
+@treturn evp_pkey object with mapping to EVP_PKEY in openssl
+@usage
+ --create rsa public key
+   pubkey = new({alg='rsa',n=...,e=...}
+ --create new rsa
+   rsa = new({alg='rsa',n=...,q=...,e=...,...}
+*/
 static LUA_FUNCTION(openssl_pkey_new)
 {
   EVP_PKEY *pkey = NULL;
@@ -380,7 +415,7 @@ static LUA_FUNCTION(openssl_pkey_new)
       int bits = luaL_optint(L, 2, 2048);
       int e = luaL_optint(L, 3, 65537);
       ENGINE *eng = lua_isnoneornil(L, 4) ? NULL : CHECK_OBJECT(4, ENGINE, "openssl.engine");
-      
+
       RSA *rsa = eng ? RSA_new_method(eng) : RSA_new();
       BIGNUM *E = BN_new();
       BN_set_word(E, e);
@@ -452,7 +487,6 @@ static LUA_FUNCTION(openssl_pkey_new)
       }
       else
         EC_GROUP_free(group);
-
     }
 #endif
     else
@@ -710,9 +744,98 @@ static LUA_FUNCTION(openssl_pkey_new)
   else
     EVP_PKEY_free(pkey);
   return 0;
-
 }
 
+/***
+get public key from private key object
+@function get_public
+@tparam evp_pkey priv_key
+@treturn evp_pkey pub_key
+@see evp_pkey
+*/
+/***
+sign message with private key
+@function sign
+@tparam evp_pkey key key used to sign message
+@tparam string data data be signed
+@tparam[opt='SHA1'] string|env_digest md_alg default use sha-1
+@treturn string signed message
+*/
+/***
+verify signed message with public key
+@function verify
+@tparam evp_pkey key key used to verify message
+@tparam string data data be signed
+@tparam string signature signed result
+@tparam[opt='SHA1'] string|env_digest md_alg default use sha-1
+@tparam boolean true for pass verify
+*/
+/***
+encrypt message with public key
+encrypt length of message must not longer than key size, if shorter will do padding,currently supports 6 padding modes.
+They are: pkcs1, sslv23, no, oaep, x931, pss.
+function encrypt
+@tparam evp_pkey key key used to encrypted message
+@tparam string data data to be encrypted
+@tparam string[opt='pkcs1'] string padding padding mode
+@treturn string encrypted message
+*/
+/***
+decrypt message with private key
+pair with encrypt
+@function decrypt
+@tparam evp_pkey key key used to decrypted message
+@tparam string data data to be decrypted
+@tparam string[opt='pkcs1'] string padding padding mode
+@treturn[1] string result
+@treturn[2] nil
+*/
+/***
+seal  and encrypt  message with one public key
+data be encrypt with secret key, secret key be encrypt with public key
+encrypts data using pubkeys in table, so that only owners of the respective private keys and ekeys can decrypt and read the data.
+@function seal
+@tparam table pubkeys public keys to encrypt secret key
+@tparam string data data to be encrypted
+@tparam[opt='RC4'] cipher|string alg
+@treturn string data encrypted
+@treturn table ekey secret key encrypted by public key
+@treturn stringiv
+*/
+/***
+seal and encrypt message with one public key
+data be encrypt with secret key, secret key be encrypt with public key
+@function seal
+@tparam evp_pkey pubkey public keys to encrypt secret key
+@tparam string data data to be encrypted
+@tparam[opt='RC4'] cipher|string alg
+@treturn string data encrypted
+@treturn string skey secret key encrypted by public key
+@treturn string iv
+*/
+/***
+open and ecrypted seal data with private key
+@function open
+@tparam evp_pkey pkey private key used to open encrypted secret key
+@tparam string ekey encrypted secret key
+@tparam string string iv
+@tparam[opt='RC4'] evp_cipher|string md_alg
+@treturn string data decrypted message or nil on failure
+*/
+
+/***
+openssl.evp_pkey object
+@type evp_pkey
+*/
+/***
+export evp_pkey as pem/der string
+@function export
+@tparam[opt='pem'] string support export as 'pem' or 'der' format, default is 'pem'
+@tparam[opt=false] boolean raw true for export low layer key just rsa,dsa,ec
+@tparam[opt] string passphrase if given, export key will encrypt with des-cbc-ede,
+only need when export private key
+@treturn string
+*/
 static LUA_FUNCTION(openssl_pkey_export)
 {
   EVP_PKEY * key;
@@ -877,6 +1000,11 @@ static LUA_FUNCTION(openssl_pkey_free)
   return 0;
 }
 
+/***
+get key details as table
+@function parse
+@treturn table infos with key bits,pkey,type, pkey may be rsa,dh,dsa, show as table with factor hex encoded bignum
+*/
 static LUA_FUNCTION(openssl_pkey_parse)
 {
   EVP_PKEY *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
@@ -939,8 +1067,16 @@ static LUA_FUNCTION(openssl_pkey_parse)
     luaL_argerror(L, 1, "not assign any keypair");
   return 0;
 };
-/* }}} */
 
+/***
+encrypt message with public key
+encrypt length of message must not longer than key size, if shorter will do padding,currently supports 6 padding modes.
+They are: pkcs1, sslv23, no, oaep, x931, pss.
+@function encrypt
+@tparam string data data to be encrypted
+@tparam string[opt='pkcs1'] string padding padding mode
+@treturn string encrypted message
+*/
 static LUA_FUNCTION(openssl_pkey_encrypt)
 {
   size_t dlen = 0;
@@ -984,6 +1120,15 @@ static LUA_FUNCTION(openssl_pkey_encrypt)
   return ret;
 }
 
+/***
+decrypt message with private key
+pair with encrypt
+@function decrypt
+@tparam string data data to be decrypted
+@tparam string[opt='pkcs1'] string padding padding mode
+@treturn[1] string result
+@treturn[2] nil
+*/
 static LUA_FUNCTION(openssl_pkey_decrypt)
 {
   size_t dlen = 0;
@@ -1026,6 +1171,11 @@ static LUA_FUNCTION(openssl_pkey_decrypt)
   return ret;
 }
 
+/***
+return key is private or public
+@function is_private
+@treturn boolean ture is private or public key
+*/
 LUA_FUNCTION(openssl_pkey_is_private1)
 {
   EVP_PKEY *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
@@ -1039,6 +1189,11 @@ LUA_FUNCTION(openssl_pkey_is_private1)
   return 1;
 }
 
+/***
+return public key
+@function get_public
+@treturn evp_pkey pub
+*/
 static LUA_FUNCTION(openssl_pkey_get_public)
 {
   EVP_PKEY *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
@@ -1054,6 +1209,7 @@ static LUA_FUNCTION(openssl_pkey_get_public)
   return ret;
 }
 
+/* private useage, and for sm2 */
 static LUA_FUNCTION(openssl_ec_userId)
 {
   EVP_PKEY* pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
@@ -1090,6 +1246,14 @@ static LUA_FUNCTION(openssl_ec_userId)
   }
 }
 
+/***
+compute dh key, check whether then supplied key is a private key
+by checking then prime factors whether set
+@function compute_key
+@tparam string remote_public_key
+@treturn string
+@todo: more check
+*/
 static LUA_FUNCTION(openssl_dh_compute_key)
 {
   BIGNUM *pub;
@@ -1129,6 +1293,13 @@ static LUA_FUNCTION(openssl_dh_compute_key)
   return ret;
 }
 
+/***
+sign message with private key
+@function sign
+@tparam string data data be signed
+@tparam[opt='SHA1'] string|env_digest md_alg default use sha-1
+@treturn string signed message
+*/
 static LUA_FUNCTION(openssl_sign)
 {
   size_t data_len;
@@ -1174,6 +1345,14 @@ static LUA_FUNCTION(openssl_sign)
   return ret;
 }
 
+/***
+verify signed message with public key
+@function verify
+@tparam string data data be signed
+@tparam string signature signed result
+@tparam[opt='SHA1'] string|env_digest md_alg default use sha-1
+@treturn boolean true for pass verify
+*/
 static LUA_FUNCTION(openssl_verify)
 {
   size_t data_len, signature_len;
@@ -1207,6 +1386,16 @@ static LUA_FUNCTION(openssl_verify)
   return ret;
 }
 
+/***
+seal and encrypt message with one public key
+data be encrypt with secret key, secret key be encrypt with public key
+@function seal
+@tparam string data data to be encrypted
+@tparam[opt='RC4'] cipher|string alg
+@treturn string data encrypted
+@treturn string skey secret key encrypted by public key
+@treturn string iv
+*/
 static LUA_FUNCTION(openssl_seal)
 {
   size_t data_len;
@@ -1325,6 +1514,62 @@ static LUA_FUNCTION(openssl_seal)
   return 0;
 }
 
+/***
+open and ecrypted seal data with private key
+@function open
+@tparam string ekey encrypted secret key
+@tparam string string iv
+@tparam[opt='RC4'] evp_cipher|string md_alg
+@treturn string data decrypted message or nil on failure
+*/
+static LUA_FUNCTION(openssl_open)
+{
+  EVP_PKEY *pkey =  CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
+  size_t data_len, ekey_len, iv_len;
+  const char *data = luaL_checklstring(L, 2, &data_len);
+  const char *ekey = luaL_checklstring(L, 3, &ekey_len);
+  const char *iv = luaL_checklstring(L, 4, &iv_len);
+
+  int ret = 0;
+  int len1, len2 = 0;
+  unsigned char *buf;
+
+  const EVP_CIPHER *cipher = NULL;
+
+  cipher = get_cipher(L, 5, "rc4");
+
+  if (cipher)
+  {
+    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+    len1 = data_len + 1;
+    buf = malloc(len1);
+
+    EVP_CIPHER_CTX_init(ctx);
+    if (EVP_OpenInit(ctx, cipher, (unsigned char *)ekey, ekey_len, (const unsigned char *)iv, pkey)
+        && EVP_OpenUpdate(ctx, buf, &len1, (unsigned char *)data, data_len))
+    {
+      len2 = data_len - len1;
+      if (!EVP_OpenFinal(ctx, buf + len1, &len2) || (len1 + len2 == 0))
+      {
+        luaL_error(L, "EVP_OpenFinal() failed.");
+        ret = 0;
+      }
+    }
+    else
+    {
+      luaL_error(L, "EVP_OpenInit() failed.");
+      ret = 0;
+    }
+    EVP_CIPHER_CTX_free(ctx);
+    lua_pushlstring(L, (const char*)buf, len1 + len2);
+    free(buf);
+    ret = 1;
+  }
+  else
+    luaL_argerror(L, 5, "Not support cipher alg");
+
+  return ret;
+}
 
 static LUA_FUNCTION(openssl_seal_init)
 {
@@ -1361,7 +1606,6 @@ static LUA_FUNCTION(openssl_seal_init)
     pkeys = malloc(nkeys * sizeof(*pkeys));
     eksl = malloc(nkeys * sizeof(*eksl));
     eks = malloc(nkeys * sizeof(*eks));
-
 
     memset(eks, 0, sizeof(*eks) * nkeys);
 
@@ -1464,56 +1708,6 @@ static LUA_FUNCTION(openssl_seal_final)
   return 1;
 }
 
-static LUA_FUNCTION(openssl_open)
-{
-  EVP_PKEY *pkey =  CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
-  size_t data_len, ekey_len, iv_len;
-  const char *data = luaL_checklstring(L, 2, &data_len);
-  const char *ekey = luaL_checklstring(L, 3, &ekey_len);
-  const char *iv = luaL_checklstring(L, 4, &iv_len);
-
-  int ret = 0;
-  int len1, len2 = 0;
-  unsigned char *buf;
-
-  const EVP_CIPHER *cipher = NULL;
-
-  cipher = get_cipher(L, 5, "rc4");
-
-  if (cipher)
-  {
-    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
-    len1 = data_len + 1;
-    buf = malloc(len1);
-
-    EVP_CIPHER_CTX_init(ctx);
-    if (EVP_OpenInit(ctx, cipher, (unsigned char *)ekey, ekey_len, (const unsigned char *)iv, pkey)
-        && EVP_OpenUpdate(ctx, buf, &len1, (unsigned char *)data, data_len))
-    {
-      len2 = data_len - len1;
-      if (!EVP_OpenFinal(ctx, buf + len1, &len2) || (len1 + len2 == 0))
-      {
-        luaL_error(L, "EVP_OpenFinal() failed.");
-        ret = 0;
-      }
-    }
-    else
-    {
-      luaL_error(L, "EVP_OpenInit() failed.");
-      ret = 0;
-    }
-    EVP_CIPHER_CTX_free(ctx);
-    lua_pushlstring(L, (const char*)buf, len1 + len2);
-    free(buf);
-    ret = 1;
-  }
-  else
-    luaL_argerror(L, 5, "Not support cipher alg");
-
-  return ret;
-}
-
-
 static LUA_FUNCTION(openssl_open_init)
 {
   EVP_PKEY *pkey =  CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
@@ -1578,6 +1772,14 @@ static LUA_FUNCTION(openssl_open_final)
   free(buf);
   return ret == 1 ? ret : openssl_pushresult(L, ret);
 }
+
+static int openssl_pkey_bits(lua_State *L)
+{
+  EVP_PKEY *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
+  lua_Integer ret = EVP_PKEY_bits(pkey);
+  lua_pushinteger(L, ret);
+  return  1;
+};
 
 static luaL_Reg pkey_funcs[] =
 {
