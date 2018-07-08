@@ -1,9 +1,7 @@
-/*=========================================================================*\
-* ec.c
-* EC routines for lua-openssl binding
-*
-* Author:  george zhao <zhaozg(at)gmail.com>
-\*=========================================================================*/
+/***
+ec module for lua-openssl binding
+@module ec
+*/
 #include "openssl.h"
 #include "private.h"
 #include <openssl/engine.h>

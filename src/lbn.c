@@ -1,9 +1,10 @@
-/*
-* lbn.c
-* big-number library for Lua 5.1 based on OpenSSL bn
-* Luiz Henrique de Figueiredo <lhf@tecgraf.puc-rio.br>
-* 11 Nov 2010 22:56:45
-* This code is hereby placed in the public domain.
+/***
+big-number library for Lua 5.1 based on OpenSSL bn
+
+@module bn
+@author Luiz Henrique de Figueiredo <lhf@tecgraf.puc-rio.br>
+@license This code is hereby placed in the public domain.
+@warning verson 11 Nov 2010 22:56:45
 */
 
 #include <stdlib.h>
