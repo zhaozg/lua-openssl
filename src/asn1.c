@@ -510,6 +510,26 @@ static int openssl_asn1object_new(lua_State* L)
   return 1;
 }
 
+/***
+convert der encoded asn1type string to object
+@function asn1type_di2
+@tparam string der
+@treturn asn1type object for success, and nil for fail
+*/
+static int openssl_asn1type_d2i(lua_State*L)
+{
+  size_t size;
+  const unsigned char* data = (const unsigned char*)luaL_checklstring(L, 1, &size);
+  ASN1_TYPE* at = d2i_ASN1_TYPE(NULL, &data, size);
+  if (at)
+  {
+    PUSH_OBJECT(at, "openssl.asn1_type");
+  }
+  else
+    lua_pushnil(L);
+  return 1;
+}
+
 static luaL_Reg R[] =
 {
   {"new_object", openssl_asn1object_new},
@@ -526,9 +546,7 @@ static luaL_Reg R[] =
   {"put_object", openssl_put_object},
 
   {"tostring", openssl_asn1_tostring},
-
   {"txt2nid",   openssl_txt2nid},
-
 
   {NULL, NULL}
 };
@@ -705,20 +723,6 @@ int openssl_push_asn1type(lua_State* L, const ASN1_TYPE* type)
   }
   lua_pushinteger(L, type->type);
   lua_setfield(L, -2, "type");
-  return 1;
-}
-
-static int openssl_asn1type_d2i(lua_State*L)
-{
-  size_t size;
-  const unsigned char* data = (const unsigned char*)luaL_checklstring(L, 1, &size);
-  ASN1_TYPE* at = d2i_ASN1_TYPE(NULL, &data, size);
-  if (at)
-  {
-    PUSH_OBJECT(at, "openssl.asn1_type");
-  }
-  else
-    lua_pushnil(L);
   return 1;
 }
 
