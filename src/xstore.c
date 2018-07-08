@@ -11,7 +11,7 @@ Provide x509_store as lua object, create and manage x509 store object
 
 /***
 create or generate a new x509_store object.
-@function new()
+@function new
 @tparam table certs array of x509 objects, all x509 object will add to store, certs can be empty but not nil
 @tparam[opt] table crls array of x509_crl objects, all crl object will add to store
 @treturn x509_store object
@@ -178,12 +178,11 @@ static int openssl_xstore_trust(lua_State* L)
 }
 
 /***
---- load certificate from file or dir,not given any paramater will load from defaults path
--- @tparam[opt] string filepath
--- @tparam[opt] string dirpath
--- @treturn boolean result
-function load() end
-
+load certificate from file or dir,not given any paramater will load from defaults path
+@function load
+@tparam[opt] string filepath
+@tparam[opt] string dirpath
+@treturn boolean result
 */
 static int openssl_xstore_load(lua_State* L)
 {
@@ -203,7 +202,7 @@ static int openssl_xstore_load(lua_State* L)
 
 /***
 add x509 certificate or crl to store
-@paramater ... support x509 object,x509_crl object or array contains x509,x509_crl object
+@param ... support x509 object,x509_crl object or array contains x509,x509_crl object
 @function add
 @treturn boolean result
 */

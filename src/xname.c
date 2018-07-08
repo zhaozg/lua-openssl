@@ -365,7 +365,7 @@ static int openssl_xname_get_entry(lua_State*L)
 /***
 add name entry
 
-@function add_entry() end
+@function add_entry
 @tparam string|integer|asn1_object identid for asn1_object
 @tparam string data to add
 @tparam[opt] boolean utf8 true for use utf8 default

@@ -917,18 +917,18 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_policies)
 
 /***
 get accuracy
+@function accuracy
 @treturn integer seconds
 @treturn integer millis
 @treturn integer micros
-@function accuracy() end
 */
 /***
 set accuracy
+@function accuracy
 @tparam integer seconds
 @tparam integer millis
 @tparam integer micros
 @treturn boolean result
-@function accuracy() end
 */
 static LUA_FUNCTION(openssl_ts_resp_ctx_accuracy)
 {

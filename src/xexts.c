@@ -196,12 +196,14 @@ static int openssl_xext_read(lua_State* L)
 get all x509 certificate supported extensions
 @function support
 @treturn table contain all support extension info as table node {lname=..., sname=..., nid=...}
-
+*/
+/***
 check x509_extension object support or not
 @function support
 @tparam x509_extension extension
 @treturn boolean true for supported, false or not
-
+*/
+/***
 check nid or name support or not
 @function support
 @tparam number|string nid_or_name for extension
@@ -286,7 +288,7 @@ openssl.x509_extension object
 
 /***
 x509_extension infomation table
-@TODO double check
+@todo double check
 @table x509_extension_info_table
 @tfield asn1_object|object object of x509_extension
 @tfield boolean|critical true for critical value

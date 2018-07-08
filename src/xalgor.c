@@ -62,7 +62,7 @@ static int openssl_xalgor_dup(lua_State* L)
 #if OPENSSL_VERSION_NUMBER >= 0x10002000L
 /***
 compare with other x509_algor object
-@function cmp
+@function equals
 @treturn boolean return true if two x509_algor equals
 */
 static int openssl_xalgor_cmp(lua_State* L)
@@ -78,7 +78,7 @@ static int openssl_xalgor_cmp(lua_State* L)
 /***
 set message digest object to x509_algor
 @function md
-@tparam number|string|evp_md
+@tparam number|string|evp_md md
 */
 static int openssl_xalgor_md(lua_State* L)
 {

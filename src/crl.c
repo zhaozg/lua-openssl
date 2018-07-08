@@ -298,7 +298,7 @@ static LUA_FUNCTION(openssl_crl_read)
 
 /***
 list all support reason info
-@function reason() end
+@function reason
 @treturn table contain support reason node like {lname=...,sname=...,bitnum=...}
 */
 static int openssl_crl_reason(lua_State *L)
@@ -520,7 +520,8 @@ static LUA_FUNCTION(openssl_crl_nextUpdate)
 get updateTime time
 @function updateTime
 @treturn string lastUpdate
-
+*/
+/***
 set updateTime time
 @function updateTime
 @tparam[opt=os.time()] lastUpdate, default use current time
