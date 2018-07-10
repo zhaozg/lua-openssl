@@ -7,5 +7,3 @@ dir='doc'
 readme='README.md'
 style='!pale'
 kind_names={topic='Manual',script='Programs'}
-examples = {
-}
