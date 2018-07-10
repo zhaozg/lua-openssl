@@ -47,7 +47,7 @@ digest() equals with digest.digest(), same cipher() equals with cipher.cipher().
 
 ## documentation
 
-Document please see [here](http://zhaozg.github.io/lua-openssl/)
+Document please see [here](http://zhaozg.github.io/lua-openssl/index.html)
 
 ## compat with others
 
