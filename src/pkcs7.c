@@ -944,7 +944,7 @@ static LUA_FUNCTION(openssl_pkcs7_type)
 /***
 export pkcs7 as a string
 
-function parse
+@function parse
 @treturn table  a table has pkcs7 infomation, include type,and other things relate to types
 */
 static LUA_FUNCTION(openssl_pkcs7_parse)

@@ -211,14 +211,16 @@ static int openssl_xname_print(lua_State*L)
   return 1;
 };
 
-static int openssl_push_xname_entry(lua_State* L, X509_NAME_ENTRY* ne)
+static int openssl_push_xname_entry(lua_State* L, X509_NAME_ENTRY* ne, int obj)
 {
   ASN1_OBJECT* object = X509_NAME_ENTRY_get_object(ne);
-  ASN1_STRING *s;
+  ASN1_STRING* value = X509_NAME_ENTRY_get_data(ne);
   lua_newtable(L);
-  openssl_push_asn1object(L, object);
-  s = X509_NAME_ENTRY_get_data(ne);
-  PUSH_ASN1_STRING(L, s);
+  if(obj)
+    openssl_push_asn1object(L, object);
+  else
+    lua_pushstring(L, OBJ_nid2sn(OBJ_obj2nid(object)));
+  PUSH_ASN1_STRING(L, value);
   lua_settable(L, -3);
   return 1;
 }
@@ -227,20 +229,20 @@ static int openssl_push_xname_entry(lua_State* L, X509_NAME_ENTRY* ne)
 return x509_name as table
 
 @function info
-@tparam boolean utf8 true for utf8 encoded string, default
+@tparam[opt=false] boolean asobject table key will use asn1_object or short name of asn1_object
 @treturn table names
 @see new
 */
 static int openssl_xname_info(lua_State*L)
 {
   X509_NAME* name = CHECK_OBJECT(1, X509_NAME, "openssl.x509_name");
-  int i;
-  int n_entries = X509_NAME_entry_count(name);
+  int obj = lua_isnoneornil(L, 2) ? 0 : lua_toboolean(L, 2);
+  int i, n;
   lua_newtable(L);
-  for (i = 0; i < n_entries; i++)
+  for (i = 0, n = X509_NAME_entry_count(name); i < n; i++)
   {
     X509_NAME_ENTRY* entry = X509_NAME_get_entry(name, i);
-    openssl_push_xname_entry(L, entry);
+    openssl_push_xname_entry(L, entry, obj);
     lua_rawseti(L, -2, i + 1);
   }
   return 1;
@@ -250,7 +252,7 @@ static int openssl_xname_info(lua_State*L)
 compare two x509_name
 
 @function cmp
-@tparam x509_name another to compare with 
+@tparam x509_name another to compare with
 @treturn boolean result true for equal or false
 @usage
   name1 = name.new({...})
@@ -347,17 +349,18 @@ static int openssl_xname_get_text(lua_State*L)
 get x509 name entry by index
 @function get_entry
 @tparam integer index start from 0, and less than xn:entry_count()
-@tparam[opt=true] boolean utf8
+@tparam[opt=false] boolean asobject table key will use asn1_object or short name of asn1_object
 @treturn x509 name entry table
 */
 static int openssl_xname_get_entry(lua_State*L)
 {
   X509_NAME* xn = CHECK_OBJECT(1, X509_NAME, "openssl.x509_name");
   int lastpos = luaL_checkint(L, 2);
+  int obj = lua_isnoneornil(L, 3) ? 0 : lua_toboolean(L, 3);
   X509_NAME_ENTRY *e = X509_NAME_get_entry(xn, lastpos);
   if (e)
   {
-    return openssl_push_xname_entry(L, e);
+    return openssl_push_xname_entry(L, e, obj);
   }
   return 0;
 };

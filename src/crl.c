@@ -895,10 +895,10 @@ static LUA_FUNCTION(openssl_crl_export)
 
 /***
 get count of revoked entry
+@function count
 @treturn number count
 @usage
   assert(#crl==crl:count())
-function count
 */
 static LUA_FUNCTION(openssl_crl_count)
 {
@@ -911,9 +911,9 @@ static LUA_FUNCTION(openssl_crl_count)
 
 /***
 get revoekd entry
+@function get
 @tparam number index
 @treturn table revoekd 
-@function get
 */
 static LUA_FUNCTION(openssl_crl_get)
 {

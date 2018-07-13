@@ -835,10 +835,8 @@ static STACK_OF(X509) * load_all_certs_from_file(BIO *in)
 
 /***
 get subject name of x509
-function subject
-@tparam[opt=false] boolean asobject, true for return as x509_name object, or as table
-@treturn[1] x509_name subject name
-@treturn[1] table subject name as table
+@function subject
+@treturn x509_name subject name
 */
 /***
 set subject name of x509

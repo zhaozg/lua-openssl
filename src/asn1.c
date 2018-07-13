@@ -763,7 +763,7 @@ static int openssl_asn1object_nid(lua_State* L)
 /***
 get name of asn1_object.
 
-function name
+@function name
 @treturn string short name and followed by long name of asn1_object
 */
 static int openssl_asn1object_name(lua_State* L)

@@ -135,7 +135,6 @@ create cms object from string or bio object
 @tparam bio input
 @tparam[opt=0] number flags
 @treturn cms
-function create() end
 */
 
 /***
@@ -145,7 +144,6 @@ create digest cms object
 @tparam evp_digest|string md_alg
 @tparam[opt=0] number flags
 @treturn cms
-function create() end
 */
 static int openssl_cms_create(lua_State*L)
 {
