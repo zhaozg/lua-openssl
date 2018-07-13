@@ -217,10 +217,15 @@ static int openssl_push_xname_entry(lua_State* L, X509_NAME_ENTRY* ne, int obj)
   ASN1_STRING* value = X509_NAME_ENTRY_get_data(ne);
   lua_newtable(L);
   if(obj)
+  {
     openssl_push_asn1object(L, object);
+    PUSH_ASN1_STRING(L, value);
+  }
   else
+  {
     lua_pushstring(L, OBJ_nid2sn(OBJ_obj2nid(object)));
-  PUSH_ASN1_STRING(L, value);
+    lua_pushlstring(L, (const char*)ASN1_STRING_data(value), ASN1_STRING_length(value));
+  }
   lua_settable(L, -3);
   return 1;
 }
