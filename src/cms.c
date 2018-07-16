@@ -667,7 +667,6 @@ openssl.cms object
 @type cms
 @warning some api undocumented, dangers!!!
 */
-const ASN1_OBJECT *CMS_get0_type(CMS_ContentInfo *cms);
 
 /***
 get type of cms object
