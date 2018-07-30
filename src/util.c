@@ -1,6 +1,6 @@
 #include "private.h"
 
-int openssl_newvalue(lua_State*L, void*p)
+int openssl_newvalue(lua_State*L,const void*p)
 {
   lua_rawgetp(L, LUA_REGISTRYINDEX, p);
   if (lua_isnil(L, -1))
@@ -14,14 +14,14 @@ int openssl_newvalue(lua_State*L, void*p)
   return 0;
 }
 
-int openssl_freevalue(lua_State*L, void*p)
+int openssl_freevalue(lua_State*L, const void*p)
 {
   lua_pushnil(L);
   lua_rawsetp(L, LUA_REGISTRYINDEX, p);
   return 0;
 }
 
-int openssl_valueset(lua_State*L, void*p, const char*field)
+int openssl_valueset(lua_State*L, const void*p, const char*field)
 {
   lua_rawgetp(L, LUA_REGISTRYINDEX, p);
   lua_pushvalue(L, -2);
@@ -31,7 +31,7 @@ int openssl_valueset(lua_State*L, void*p, const char*field)
   return 0;
 }
 
-int openssl_valueget(lua_State*L, void*p, const char*field)
+int openssl_valueget(lua_State*L, const void*p, const char*field)
 {
   lua_rawgetp(L, LUA_REGISTRYINDEX, p);
   if (!lua_isnil(L, -1))
@@ -42,7 +42,7 @@ int openssl_valueget(lua_State*L, void*p, const char*field)
   return lua_type(L, -1);
 }
 
-int openssl_valueseti(lua_State*L, void*p, int i)
+int openssl_valueseti(lua_State*L, const void*p, int i)
 {
   lua_rawgetp(L, LUA_REGISTRYINDEX, p);
   lua_pushvalue(L, -2);
@@ -52,7 +52,7 @@ int openssl_valueseti(lua_State*L, void*p, int i)
   return 0;
 }
 
-int openssl_valuegeti(lua_State*L, void*p, int i)
+int openssl_valuegeti(lua_State*L, const void*p, int i)
 {
   lua_rawgetp(L, LUA_REGISTRYINDEX, p);
   if (!lua_isnil(L, -1))
@@ -63,7 +63,7 @@ int openssl_valuegeti(lua_State*L, void*p, int i)
   return lua_type(L, -1);
 }
 
-size_t openssl_valuelen(lua_State*L, void*p)
+size_t openssl_valuelen(lua_State*L, const void*p)
 {
   size_t s = 0;
   lua_rawgetp(L, LUA_REGISTRYINDEX, p);
@@ -75,7 +75,7 @@ size_t openssl_valuelen(lua_State*L, void*p)
   return s;
 }
 
-int openssl_refrence(lua_State*L, void*p, int op)
+int openssl_refrence(lua_State*L, const void*p, int op)
 {
   int ref;
   lua_rawgetp(L, LUA_REGISTRYINDEX, p);

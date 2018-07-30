@@ -215,14 +215,14 @@ int openssl_register_xalgor(lua_State*L);
 
 int openssl_pushresult(lua_State*L, int result);
 
-int openssl_newvalue(lua_State*L, void*p);
-int openssl_freevalue(lua_State*L, void*p);
-int openssl_valueset(lua_State*L, void*p, const char*field);
-int openssl_valueget(lua_State*L, void*p, const char*field);
-int openssl_valueseti(lua_State*L, void*p, int i);
-int openssl_valuegeti(lua_State*L, void*p, int i);
-size_t openssl_valuelen(lua_State*L, void*p);
-int openssl_refrence(lua_State*L, void*p, int op);
+int openssl_newvalue(lua_State*L, const void*p);
+int openssl_freevalue(lua_State*L, const void*p);
+int openssl_valueset(lua_State*L, const void*p, const char*field);
+int openssl_valueget(lua_State*L, const void*p, const char*field);
+int openssl_valueseti(lua_State*L, const void*p, int i);
+int openssl_valuegeti(lua_State*L, const void*p, int i);
+size_t openssl_valuelen(lua_State*L, const void*p);
+int openssl_refrence(lua_State*L, const void*p, int op);
 
 int openssl_verify_cb(int preverify_ok, X509_STORE_CTX *xctx);
 int openssl_cert_verify_cb(X509_STORE_CTX *xctx, void* u);
