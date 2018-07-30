@@ -39,7 +39,40 @@ int openssl_valueget(lua_State*L, void*p, const char*field)
     lua_getfield(L, -1, field);
     lua_remove(L, -2);
   }
+  return lua_type(L, -1);
+}
+
+int openssl_valueseti(lua_State*L, void*p, int i)
+{
+  lua_rawgetp(L, LUA_REGISTRYINDEX, p);
+  lua_pushvalue(L, -2);
+  lua_remove(L, -3);
+  lua_rawseti(L, -2, i);
+  lua_pop(L, 1);
   return 0;
+}
+
+int openssl_valuegeti(lua_State*L, void*p, int i)
+{
+  lua_rawgetp(L, LUA_REGISTRYINDEX, p);
+  if (!lua_isnil(L, -1))
+  {
+    lua_rawgeti(L, -1, i);
+    lua_remove(L, -2);
+  }
+  return lua_type(L, -1);
+}
+
+size_t openssl_valuelen(lua_State*L, void*p)
+{
+  size_t s = 0;
+  lua_rawgetp(L, LUA_REGISTRYINDEX, p);
+  if (!lua_isnil(L, -1))
+  {
+    s = lua_rawlen(L, -1);
+    lua_remove(L, -2);
+  }
+  return s;
 }
 
 int openssl_refrence(lua_State*L, void*p, int op)
