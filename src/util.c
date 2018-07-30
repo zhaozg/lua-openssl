@@ -70,8 +70,8 @@ size_t openssl_valuelen(lua_State*L, const void*p)
   if (!lua_isnil(L, -1))
   {
     s = lua_rawlen(L, -1);
-    lua_remove(L, -2);
   }
+  lua_pop(L, 1);
   return s;
 }
 
