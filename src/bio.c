@@ -217,7 +217,7 @@ static int openssl_bio_new_connect(lua_State *L)
       openssl_newvalue(L, bio);
 
       lua_pushboolean(L, 1);
-      openssl_setvalue(L, bio, "free_all");
+      openssl_valueset(L, bio, "free_all");
       return 1;
     }
     else
@@ -316,7 +316,7 @@ static LUA_FUNCTION(openssl_bio_new_filter)
       openssl_newvalue(L, bio);
 
       lua_pushboolean(L, 1);
-      openssl_setvalue(L, bio, "free_all");
+      openssl_valueset(L, bio, "free_all");
     }
     return 1;
   }
@@ -495,7 +495,7 @@ static LUA_FUNCTION(openssl_bio_free)
     all = lua_toboolean(L, 2);
   else
   {
-    openssl_getvalue(L, bio, "free_all");
+    openssl_valueget(L, bio, "free_all");
     all = lua_toboolean(L, -1);
     lua_pop(L, 1);
   }
@@ -646,7 +646,7 @@ static LUA_FUNCTION(openssl_bio_accept)
       openssl_newvalue(L, nb);
 
       lua_pushboolean(L, 1);
-      openssl_setvalue(L, nb, "free_all");
+      openssl_valueset(L, nb, "free_all");
       return 1;
     }
     else

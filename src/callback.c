@@ -18,12 +18,12 @@ static int verify_cb(int preverify_ok, X509_STORE_CTX *xctx, lua_State*L, SSL* s
   if (L)
   {
     /* get verify_cert state */
-    openssl_getvalue(L, ssl, "verify_cert");
+    openssl_valueget(L, ssl, "verify_cert");
     if (lua_isnil(L, -1))
     {
       lua_newtable(L);
-      openssl_setvalue(L, ssl, "verify_cert");
-      openssl_getvalue(L, ssl, "verify_cert");
+      openssl_valueset(L, ssl, "verify_cert");
+      openssl_valueget(L, ssl, "verify_cert");
     }
 
     /* create current verify state table */
@@ -46,7 +46,7 @@ static int verify_cb(int preverify_ok, X509_STORE_CTX *xctx, lua_State*L, SSL* s
       lua_setfield(L, -2, "current_cert");
     }
 
-    openssl_getvalue(L, ctx, preverify_ok == -1 ? "cert_verify_cb" : "verify_cb");
+    openssl_valueget(L, ctx, preverify_ok == -1 ? "cert_verify_cb" : "verify_cb");
     if (lua_isfunction(L, -1))
     {
       /* this is set by  SSL_CTX_set_verify */
@@ -62,7 +62,7 @@ static int verify_cb(int preverify_ok, X509_STORE_CTX *xctx, lua_State*L, SSL* s
     else
     {
       int always_continue, verify_depth;
-      openssl_getvalue(L, ctx, "verify_cb_flags");
+      openssl_valueget(L, ctx, "verify_cb_flags");
       /*
       int verify_depth;
       int always_continue;

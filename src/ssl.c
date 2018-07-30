@@ -646,7 +646,7 @@ static int openssl_ssl_ctx_new_bio(lua_State*L)
       openssl_newvalue(L, bio);
 
       lua_pushboolean(L, 1);
-      openssl_setvalue(L, bio, "free_all");
+      openssl_valueset(L, bio, "free_all");
 
       return 1;
     }
@@ -748,13 +748,13 @@ static int openssl_ssl_ctx_verify_mode(lua_State*L)
     if (lua_isfunction(L, 3))
     {
       lua_pushvalue(L, 3);
-      openssl_setvalue(L, ctx, "verify_cb");
+      openssl_valueset(L, ctx, "verify_cb");
       SSL_CTX_set_verify(ctx, mode, openssl_verify_cb);
     }
     else
     {
       lua_pushnil(L);
-      openssl_setvalue(L, ctx, "verify_cb");
+      openssl_valueset(L, ctx, "verify_cb");
       SSL_CTX_set_verify(ctx, mode, openssl_verify_cb);
     }
     return 0;
@@ -815,13 +815,13 @@ static int openssl_ssl_ctx_set_cert_verify(lua_State*L)
   if (lua_istable(L, 2))
   {
     lua_pushvalue(L, 2);
-    openssl_setvalue(L, ctx, "verify_cb_flags");
+    openssl_valueset(L, ctx, "verify_cb_flags");
     SSL_CTX_set_cert_verify_callback(ctx, openssl_cert_verify_cb, L);
   }
   else if (lua_isfunction(L, 2))
   {
     lua_pushvalue(L, 2);
-    openssl_setvalue(L, ctx, "cert_verify_cb");
+    openssl_valueset(L, ctx, "cert_verify_cb");
     SSL_CTX_set_cert_verify_callback(ctx, openssl_cert_verify_cb, L);
   }
   else
@@ -837,7 +837,7 @@ static DH *tmp_dh_callback(SSL *ssl, int is_export, int keylength)
   lua_State *L = SSL_CTX_get_app_data(ctx);
   int ret = 0;
   /* get callback function */
-  openssl_getvalue(L, ctx, "tmp_dh_callback");
+  openssl_valueget(L, ctx, "tmp_dh_callback");
 
   /* Invoke the callback */
   lua_pushboolean(L, is_export);
@@ -876,7 +876,7 @@ static RSA *tmp_rsa_callback(SSL *ssl, int is_export, int keylength)
   lua_State *L = SSL_CTX_get_app_data(ctx);
   int ret = 0;
   /* get callback function */
-  openssl_getvalue(L, ctx, "tmp_rsa_callback");
+  openssl_valueget(L, ctx, "tmp_rsa_callback");
 
   /* Invoke the callback */
   lua_pushboolean(L, is_export);
@@ -915,7 +915,7 @@ static EC_KEY *tmp_ecdh_callback(SSL *ssl, int is_export, int keylength)
   lua_State *L = SSL_CTX_get_app_data(ctx);
   int ret = 0;
   /* get callback function */
-  openssl_getvalue(L, ctx, "tmp_ecdh_callback");
+  openssl_valueget(L, ctx, "tmp_ecdh_callback");
 
   /* Invoke the callback */
   lua_pushboolean(L, is_export);
@@ -987,20 +987,20 @@ static int openssl_ssl_ctx_set_tmp(lua_State *L)
     switch (nwhich)
     {
     case 0:
-      openssl_setvalue(L, ctx, "tmp_dh_callback");
+      openssl_valueset(L, ctx, "tmp_dh_callback");
       SSL_CTX_set_tmp_dh_callback(ctx, tmp_dh_callback);
       break;
     case 1:
-      openssl_setvalue(L, ctx, "tmp_rsa_callback");
+      openssl_valueset(L, ctx, "tmp_rsa_callback");
       SSL_CTX_set_tmp_rsa_callback(ctx, tmp_rsa_callback);
       break;
     case 2:
     {
       luaL_argcheck(L, lua_isstring(L, 4), 4, "must supply curve name");
-      openssl_setvalue(L, ctx, "tmp_ecdh_callback");
+      openssl_valueset(L, ctx, "tmp_ecdh_callback");
       SSL_CTX_set_tmp_ecdh_callback(ctx, tmp_ecdh_callback);
       lua_pushvalue(L, 4);
-      openssl_setvalue(L, ctx, "curve");
+      openssl_valueset(L, ctx, "curve");
     }
     break;
     }
@@ -1072,7 +1072,7 @@ static int tlsext_servername_callback(SSL *ssl, int *ad, void *arg)
     return SSL_TLSEXT_ERR_NOACK;
 
   /* Search for the name in the map */
-  openssl_getvalue(L, ctx, "tlsext_servername");
+  openssl_valueget(L, ctx, "tlsext_servername");
   if (lua_istable(L, -1))
   {
     lua_getfield(L, -1, name);
@@ -1106,7 +1106,7 @@ static int openssl_ssl_ctx_set_servername_callback(lua_State*L)
   luaL_argcheck(L, lua_istable(L, 2) || lua_isfunction(L, 2), 2, "must be table or function");
 
   lua_pushvalue(L, 2);
-  openssl_setvalue(L, ctx, "tlsext_servername");
+  openssl_valueset(L, ctx, "tlsext_servername");
   SSL_CTX_set_tlsext_servername_callback(ctx, tlsext_servername_callback);
   return 0;
 }
@@ -1321,7 +1321,7 @@ static int openssl_ssl_getpeerverification(lua_State *L)
 
   err = SSL_get_verify_result(ssl);
   lua_pushboolean(L, err == X509_V_OK);
-  openssl_getvalue(L, ssl, "verify_cert");
+  openssl_valueget(L, ssl, "verify_cert");
   return 2;
 }
 

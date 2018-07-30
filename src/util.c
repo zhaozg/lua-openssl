@@ -21,7 +21,7 @@ int openssl_freevalue(lua_State*L, void*p)
   return 0;
 }
 
-int openssl_setvalue(lua_State*L, void*p, const char*field)
+int openssl_valueset(lua_State*L, void*p, const char*field)
 {
   lua_rawgetp(L, LUA_REGISTRYINDEX, p);
   lua_pushvalue(L, -2);
@@ -31,7 +31,7 @@ int openssl_setvalue(lua_State*L, void*p, const char*field)
   return 0;
 }
 
-int openssl_getvalue(lua_State*L, void*p, const char*field)
+int openssl_valueget(lua_State*L, void*p, const char*field)
 {
   lua_rawgetp(L, LUA_REGISTRYINDEX, p);
   if (!lua_isnil(L, -1))

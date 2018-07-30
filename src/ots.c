@@ -1122,7 +1122,7 @@ static ASN1_INTEGER* openssl_serial_cb(TS_RESP_CTX*ctx, void*data)
   TS_CB_ARG *arg;
   lua_State* L = data;
 
-  openssl_getvalue(L, ctx, serial_cb_key);
+  openssl_valueget(L, ctx, serial_cb_key);
   if (!lua_isuserdata(L, -1)) {
     TS_RESP_CTX_set_status_info(ctx, TS_STATUS_REJECTION,
       "Error during serial number generation.");
@@ -1132,7 +1132,7 @@ static ASN1_INTEGER* openssl_serial_cb(TS_RESP_CTX*ctx, void*data)
     return NULL;
   }
   arg = lua_touserdata(L, -1);
-  lua_pop(L, 1); /* remove openssl_getvalue returned value */
+  lua_pop(L, 1); /* remove openssl_valueget returned value */
 
   lua_rawgeti(L, LUA_REGISTRYINDEX, arg->callback);
   lua_rawgeti(L, LUA_REGISTRYINDEX, arg->cb_arg);
@@ -1191,7 +1191,7 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_set_serial_cb)
     lua_pushnil(L);
   arg->cb_arg = luaL_ref(L, LUA_REGISTRYINDEX);
 
-  openssl_setvalue(L, ctx, serial_cb_key);
+  openssl_valueset(L, ctx, serial_cb_key);
   TS_RESP_CTX_set_serial_cb(ctx, openssl_serial_cb, L);
   return 0;
 };
@@ -1202,15 +1202,15 @@ static int openssl_time_cb(TS_RESP_CTX *ctx, void *data, long *sec, long *usec)
   TS_CB_ARG *arg;
   lua_State* L = data;
 
-  openssl_getvalue(L, ctx, time_cb_key);
+  openssl_valueget(L, ctx, time_cb_key);
   if (!lua_isuserdata(L, -1)) {
     TS_RESP_CTX_set_status_info(ctx, TS_STATUS_REJECTION,
       "could not get current time");
-    lua_pop(L, 1);  /* remove openssl_getvalue returned value */
+    lua_pop(L, 1);  /* remove openssl_valueget returned value */
     return 0;
   }
   arg = lua_touserdata(L, -1);
-  lua_pop(L, 1);  /* remove openssl_getvalue returned value */
+  lua_pop(L, 1);  /* remove openssl_valueget returned value */
 
   lua_rawgeti(L, LUA_REGISTRYINDEX, arg->callback);
   lua_rawgeti(L, LUA_REGISTRYINDEX, arg->cb_arg);
@@ -1264,7 +1264,7 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_set_time_cb)
     lua_pushnil(L);
   arg->cb_arg = luaL_ref(L, LUA_REGISTRYINDEX);
 
-  openssl_setvalue(L, ctx, time_cb_key);
+  openssl_valueset(L, ctx, time_cb_key);
   TS_RESP_CTX_set_time_cb(ctx, openssl_time_cb, L);
   return 0;
 }
@@ -1272,14 +1272,14 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_set_time_cb)
 static LUA_FUNCTION(openssl_ts_resp_ctx_gc)
 {
   TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
-  openssl_getvalue(L, ctx, time_cb_key);
+  openssl_valueget(L, ctx, time_cb_key);
   if (lua_isuserdata(L, -1)) {
     TS_CB_ARG *arg = lua_touserdata(L, -1);
     luaL_unref(L, LUA_REGISTRYINDEX, arg->callback);
     luaL_unref(L, LUA_REGISTRYINDEX, arg->cb_arg);
   }
   lua_pop(L, 1);
-  openssl_getvalue(L, ctx, serial_cb_key);
+  openssl_valueget(L, ctx, serial_cb_key);
   if (lua_isuserdata(L, -1)) {
     TS_CB_ARG *arg = lua_touserdata(L, -1);
     luaL_unref(L, LUA_REGISTRYINDEX, arg->callback);
