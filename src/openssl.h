@@ -47,12 +47,13 @@
 */
 
 /*History
-  2017-04-18  update to 0.7.1 
+  2017-04-18  update to 0.7.1
+  2017-08-04  update to 0.7.3
 */
 
 /*                              MNNFFPPS  */
-#define LOPENSSL_VERSION_NUM  0x00701000
-#define LOPENSSL_VERSION  "0.7.1"
+#define LOPENSSL_VERSION_NUM  0x00703000
+#define LOPENSSL_VERSION  "0.7.3"
 
 #if OPENSSL_VERSION_NUMBER >= 0x10000000L
 #include <openssl/lhash.h>
