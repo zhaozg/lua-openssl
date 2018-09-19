@@ -9,7 +9,7 @@ src\ec.obj src\engine.obj src\hmac.obj src\lbn.obj src\lhash.obj src\misc.obj  \
 src\ocsp.obj src\openssl.obj src\ots.obj src\pkcs12.obj src\pkcs7.obj          \
 src\pkey.obj src\rsa.obj src\ssl.obj src\th-lock.obj src\util.obj src\x509.obj \
 src\xattrs.obj src\xexts.obj src\xname.obj src\xstore.obj src\xalgor.obj       \
-src\callback.obj src\sm2.obj src\srp.obj deps\auxiliar\subsidiar.obj
+src\callback.obj src\srp.obj deps\auxiliar\subsidiar.obj
 
 
 lib: src\$T.dll

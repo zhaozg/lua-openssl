@@ -13,11 +13,8 @@ LUAJIT_BASE="LuaJIT-$LUAJIT_VERSION"
 
 source .travis/platform.sh
 
-LUA_HOME_DIR=$TRAVIS_BUILD_DIR/install/lua
-
-LR_HOME_DIR=$TRAVIS_BUILD_DIR/install/luarocks
-
-mkdir $HOME/.lua
+LUA_HOME_DIR=$HOME/.usr
+LR_HOME_DIR=$HOME/.usr
 
 LUAJIT="no"
 
@@ -54,10 +51,7 @@ if [ "$LUAJIT" == "yes" ]; then
   fi
 
   make && make install PREFIX="$LUA_HOME_DIR"
-
-  ln -s $LUA_HOME_DIR/bin/luajit $HOME/.lua/luajit
-  ln -s $LUA_HOME_DIR/bin/luajit $HOME/.lua/lua;
-
+  ln -s $HOME/.usr/bin/luajit $HOME/.usr/bin/lua
 else
 
   if [ "$LUA" == "lua5.1" ]; then
@@ -75,10 +69,6 @@ else
   perl -i -pe 's/-DLUA_COMPAT_(ALL|5_2)//' src/Makefile
   make $PLATFORM
   make INSTALL_TOP="$LUA_HOME_DIR" install;
-
-  ln -s $LUA_HOME_DIR/bin/lua $HOME/.lua/lua
-  ln -s $LUA_HOME_DIR/bin/luac $HOME/.lua/luac;
-
 fi
 
 cd $TRAVIS_BUILD_DIR
@@ -102,8 +92,6 @@ else
 fi
 
 make build && make install
-
-ln -s $LR_HOME_DIR/bin/luarocks $HOME/.lua/luarocks
 
 cd $TRAVIS_BUILD_DIR
 

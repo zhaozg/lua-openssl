@@ -1,3 +1,3 @@
-export PATH=${PATH}:$HOME/.lua:$HOME/.local/bin:${TRAVIS_BUILD_DIR}/install/luarocks/bin
+export PATH=$HOME/.usr/bin:${PATH}
 bash .travis/setup_lua.sh
-eval `$HOME/.lua/luarocks path`
+eval `$HOME/.usr/luarocks path`
