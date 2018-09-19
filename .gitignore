@@ -26,16 +26,17 @@
 msvc/
 
 #ldoc
-doc/
+doc
 
 #lake deps
 *.d
 
 #misc
 *.orgi
-/doc
-/src/custom.h
+
+#devel temp
 oscca/
 tmp/
 /src/custom.c
 /src/custom.h
+.nvimrc
