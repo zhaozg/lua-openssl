@@ -21,6 +21,7 @@ openssl-*)
 	;;
 libressl-*)
 	SSLURL=https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/$SSL.tar.gz
+	LIBRESSL=$SSL
 	;;
 *)
   echo $SSL where to download?
@@ -34,14 +35,14 @@ if [ ! -d "$HOME/opt/$SSL" ]; then
 	cd "$SSL" || exit 1
 	export OPENSSL_DIR=$HOME/.usr
 	if [ "$PLATFORM" == "linux" ]; then
-		./config shared \
-			--prefix="$OPENSSL_DIR" \
-			--openssldir="$OPENSSL_DIR" || exit 1
+		./config shared --prefix="$OPENSSL_DIR" || exit 1
 	fi
 	if [ "$PLATFORM" == "macosx" ]; then
-		./Configure darwin64-x86_64-cc shared \
-			--prefix="$OPENSSL_DIR" \
-			--openssldir="$OPENSSL_DIR" || exit 1
+		if [ -z "$LIBRESSL" ]; then
+			./Configure darwin64-x86_64-cc shared --prefix="$OPENSSL_DIR" || exit 1
+		else
+			./config --prefix="$OPENSSL_DIR" || exit 1
+		fi
 	fi
 	make && make install_sw || { rm -rf "$OPENSSL_DIR"; exit 1; }
 	cd ..
