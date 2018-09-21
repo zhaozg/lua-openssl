@@ -1,7 +1,7 @@
 #include "openssl.h"
 #include "private.h"
 
-#if !defined(LIBRESSL_VERSION_NUMBER)
+#if defined(LIBRESSL_VERSION_NUMBER)==0 && OPENSSL_VERSION_NUMBER > 0x10002000
 #include <openssl/srp.h>
 #include <openssl/bn.h>
 

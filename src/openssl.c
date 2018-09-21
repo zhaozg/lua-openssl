@@ -547,7 +547,7 @@ LUALIB_API int luaopen_openssl(lua_State*L)
   luaopen_dh(L);
   lua_setfield(L, -2, "dh");
 
-#if defined(LIBRESSL_VERSION_NUMBER)==0
+#if defined(LIBRESSL_VERSION_NUMBER)==0 && OPENSSL_VERSION_NUMBER > 0x10002000
   luaopen_srp(L);
   lua_setfield(L, -2, "srp");
 #endif
