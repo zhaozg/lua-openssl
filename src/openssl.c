@@ -338,6 +338,9 @@ get FIPS mode
 */
 static int openssl_fips_mode(lua_State *L)
 {
+#if defined(LIBRESSL_VERSION_NUMBER)
+  return 0;
+#else
   int ret =0, on = 0;
   if(lua_isnone(L, 1))
   {
@@ -353,6 +356,7 @@ static int openssl_fips_mode(lua_State *L)
   else
     ret = openssl_pushresult(L, ret);
   return ret;
+#endif
 }
 
 #ifndef OPENSSL_NO_CRYPTO_MDEBUG
@@ -405,7 +409,9 @@ void CRYPTO_thread_cleanup(void);
 
 static int luaclose_openssl(lua_State *L)
 {
+#if !defined(LIBRESSL_VERSION_NUMBER)
   FIPS_mode_set(0);
+#endif
 #if defined(OPENSSL_THREADS)
   CRYPTO_thread_cleanup();
 #endif
@@ -421,7 +427,7 @@ static int luaclose_openssl(lua_State *L)
   CRYPTO_cleanup_all_ex_data();
 #ifndef OPENSSL_NO_CRYPTO_MDEBUG
 #if !(defined(OPENSSL_NO_STDIO) || defined(OPENSSL_NO_FP_API))
-#if OPENSSL_VERSION_NUMBER < 0x10101000L
+#if defined(LIBRESSL_VERSION_NUMBER) || OPENSSL_VERSION_NUMBER < 0x10101000L
   CRYPTO_mem_leaks_fp(stderr);
 #else
   if(CRYPTO_mem_leaks_fp(stderr)!=1)
@@ -541,8 +547,10 @@ LUALIB_API int luaopen_openssl(lua_State*L)
   luaopen_dh(L);
   lua_setfield(L, -2, "dh");
 
+#if defined(LIBRESSL_VERSION_NUMBER)==0
   luaopen_srp(L);
   lua_setfield(L, -2, "srp");
+#endif
 
 #ifdef ENABLE_OPENSSL_GLOBAL
   lua_pushvalue(L, -1);

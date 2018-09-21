@@ -132,7 +132,8 @@ static X509 *X509_REQ_to_X509_ex(X509_REQ *r, int days, EVP_PKEY *pkey, const EV
   EVP_PKEY *pubkey = NULL;
   int res;
 
-  if ((ret = X509_new()) == NULL) {
+  if ((ret = X509_new()) == NULL)
+  {
     X509err(X509_F_X509_REQ_TO_X509, ERR_R_MALLOC_FAILURE);
     return NULL;
   }
@@ -140,7 +141,8 @@ static X509 *X509_REQ_to_X509_ex(X509_REQ *r, int days, EVP_PKEY *pkey, const EV
   /* duplicate the request */
   xi = ret->cert_info;
 
-  if (sk_X509_ATTRIBUTE_num(r->req_info->attributes) != 0) {
+  if (sk_X509_ATTRIBUTE_num(r->req_info->attributes) != 0)
+  {
     if ((xi->version = M_ASN1_INTEGER_new()) == NULL)
       goto err;
     if (!ASN1_INTEGER_set(xi->version, 2))
@@ -158,7 +160,7 @@ static X509 *X509_REQ_to_X509_ex(X509_REQ *r, int days, EVP_PKEY *pkey, const EV
   if (X509_gmtime_adj(xi->validity->notBefore, 0) == NULL)
     goto err;
   if (X509_gmtime_adj(xi->validity->notAfter, (long)60 * 60 * 24 * days) ==
-    NULL)
+      NULL)
     goto err;
 
   pubkey = X509_REQ_get_pubkey(r);
@@ -169,8 +171,9 @@ static X509 *X509_REQ_to_X509_ex(X509_REQ *r, int days, EVP_PKEY *pkey, const EV
     goto err;
   if (!res || !X509_sign(ret, pkey, md))
     goto err;
-  if (0) {
-  err:
+  if (0)
+  {
+err:
     X509_free(ret);
     ret = NULL;
   }
@@ -476,7 +479,7 @@ static LUA_FUNCTION(openssl_csr_parse)
       lua_setfield(L, -2, "algorithm");
     }
 
-    AUXILIAR_SETOBJECT(L, pubkey , "openssl.evp_pkey", -1, "pubkey");
+    AUXILIAR_SETOBJECT(L, pubkey, "openssl.evp_pkey", -1, "pubkey");
     lua_setfield(L, -2, "pubkey");
 
     lua_setfield(L, -2, "req_info");

@@ -1,6 +1,5 @@
 local openssl = require'openssl'
 local asn1 = openssl.asn1
-
 local first = true
 
 TestObject = {}
@@ -27,15 +26,19 @@ TestObject = {}
         o3 = asn1.new_object(self.nid)
         o4 = asn1.new_object(self.oid)
         o5 = asn1.new_object(self.oid,true)
-
-        o6 = asn1.new_object(self.ln,true)
-        assertEquals(openssl.error(),218513530)
-
+        assert(o1)
         assert(o1==o2)
         assert(o1==o3)
         assert(o1==o4)
         assert(o1==o5)
+
+        assertEquals(openssl.error(),nil)
+
+        o6 = asn1.new_object(self.ln,true)
         assertNil(o6)
+        assertNotNil(openssl.error())
+        assertNil(openssl.error())
+
         o6 = o1:dup()
         assert(o1==o6)
 
@@ -64,9 +67,10 @@ TestObject = {}
             ln  ='CCSTC GMSM2 EC1'
         }
 
+        assertNil(openssl.error())
         o7 = asn1.new_object(options.sn)
         if not o7 then
-            assertEquals(openssl.error(),218513530)
+            assertNotNil(openssl.error())
             o7 =  asn1.new_object(options)
             assertStrContains(tostring(o7), 'openssl.asn1_object')
             assertEquals(o7:txt(), options.ln)
@@ -81,13 +85,16 @@ TestObject = {}
             first = false
 
             assertIsNil(asn1.new_object(self.ne_sn))
+            assertNotNil(openssl.error())
             assertIsNil(asn1.new_object(self.ne_ln))
+            assertNotNil(openssl.error())
             assert(asn1.new_object(self.ne_oid))
 
             o1 = assert(asn1.new_object({oid=self.ne_oid,sn=self.ne_sn,ln=self.ne_ln}))
             o2 = assert(asn1.new_object(self.ne_oid))
             assertEquals(o1,o2)
 
+            assertNil(openssl.error())
         else
             assert(asn1.txt2nid(self.ne_oid))
 

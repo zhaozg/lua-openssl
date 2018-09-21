@@ -161,10 +161,10 @@ static LUA_FUNCTION(openssl_bio_new_file)
 }
 
 /***
-make tcp listen socket 
+make tcp listen socket
 @function accept
 @tparam string host_port address like 'host:port'
-@treturn bio 
+@treturn bio
 */
 static LUA_FUNCTION(openssl_bio_new_accept)
 {
@@ -537,7 +537,7 @@ static LUA_FUNCTION(openssl_bio_nbio)
 
 static LUA_FUNCTION(openssl_bio_retry)
 {
-   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
+  BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
   int retry = BIO_should_retry(bio);
   if (retry)
   {
@@ -765,60 +765,60 @@ void BIO_info_callback(BIO *bio, int cmd, const char *argp,
   (void) argl;
   (void) argp;
 
-  BIO_snprintf(buf, sizeof buf, "BIO[%p]:", bio);
+  snprintf(buf, sizeof buf, "BIO[%p]:", bio);
   p = &(buf[14]);
   p_maxlen = sizeof buf - 14;
   switch (cmd)
   {
   case BIO_CB_FREE:
-    BIO_snprintf(p, p_maxlen, "Free - %s\n", BIO_method_name(bio));
+    snprintf(p, p_maxlen, "Free - %s\n", BIO_method_name(bio));
     break;
   case BIO_CB_READ:
     if (BIO_method_type(bio) & BIO_TYPE_DESCRIPTOR)
-      BIO_snprintf(p, p_maxlen, "read(%lu,%lu) - %s fd=%lu\n",
-                   BIO_number_read(bio), (unsigned long)argi,
-                   BIO_method_name(bio), BIO_number_read(bio));
+      snprintf(p, p_maxlen, "read(%lu,%lu) - %s fd=%lu\n",
+               BIO_number_read(bio), (unsigned long)argi,
+               BIO_method_name(bio), BIO_number_read(bio));
     else
-      BIO_snprintf(p, p_maxlen, "read(%lu,%lu) - %s\n",
-                   BIO_number_read(bio), (unsigned long)argi,
-                   BIO_method_name(bio));
+      snprintf(p, p_maxlen, "read(%lu,%lu) - %s\n",
+               BIO_number_read(bio), (unsigned long)argi,
+               BIO_method_name(bio));
     break;
   case BIO_CB_WRITE:
     if (BIO_method_type(bio) & BIO_TYPE_DESCRIPTOR)
-      BIO_snprintf(p, p_maxlen, "write(%lu,%lu) - %s fd=%lu\n",
-                   BIO_number_written(bio), (unsigned long)argi,
-                   BIO_method_name(bio), BIO_number_written(bio));
+      snprintf(p, p_maxlen, "write(%lu,%lu) - %s fd=%lu\n",
+               BIO_number_written(bio), (unsigned long)argi,
+               BIO_method_name(bio), BIO_number_written(bio));
     else
-      BIO_snprintf(p, p_maxlen, "write(%lu,%lu) - %s\n",
-                   BIO_number_written(bio), (unsigned long)argi,
-                   BIO_method_name(bio));
+      snprintf(p, p_maxlen, "write(%lu,%lu) - %s\n",
+               BIO_number_written(bio), (unsigned long)argi,
+               BIO_method_name(bio));
     break;
   case BIO_CB_PUTS:
-    BIO_snprintf(p, p_maxlen, "puts() - %s\n", BIO_method_name(bio));
+    snprintf(p, p_maxlen, "puts() - %s\n", BIO_method_name(bio));
     break;
   case BIO_CB_GETS:
-    BIO_snprintf(p, p_maxlen, "gets(%lu) - %s\n", (unsigned long)argi, BIO_method_name(bio));
+    snprintf(p, p_maxlen, "gets(%lu) - %s\n", (unsigned long)argi, BIO_method_name(bio));
     break;
   case BIO_CB_CTRL:
-    BIO_snprintf(p, p_maxlen, "ctrl(%lu) - %s\n", (unsigned long)argi, BIO_method_name(bio));
+    snprintf(p, p_maxlen, "ctrl(%lu) - %s\n", (unsigned long)argi, BIO_method_name(bio));
     break;
   case BIO_CB_RETURN|BIO_CB_READ:
-    BIO_snprintf(p, p_maxlen, "read return %ld\n", ret);
+    snprintf(p, p_maxlen, "read return %ld\n", ret);
     break;
   case BIO_CB_RETURN|BIO_CB_WRITE:
-    BIO_snprintf(p, p_maxlen, "write return %ld\n", ret);
+    snprintf(p, p_maxlen, "write return %ld\n", ret);
     break;
   case BIO_CB_RETURN|BIO_CB_GETS:
-    BIO_snprintf(p, p_maxlen, "gets return %ld\n", ret);
+    snprintf(p, p_maxlen, "gets return %ld\n", ret);
     break;
   case BIO_CB_RETURN|BIO_CB_PUTS:
-    BIO_snprintf(p, p_maxlen, "puts return %ld\n", ret);
+    snprintf(p, p_maxlen, "puts return %ld\n", ret);
     break;
   case BIO_CB_RETURN|BIO_CB_CTRL:
-    BIO_snprintf(p, p_maxlen, "ctrl return %ld\n", ret);
+    snprintf(p, p_maxlen, "ctrl return %ld\n", ret);
     break;
   default:
-    BIO_snprintf(p, p_maxlen, "bio callback - unknown type (%d)\n", cmd);
+    snprintf(p, p_maxlen, "bio callback - unknown type (%d)\n", cmd);
     break;
   }
 
@@ -941,4 +941,3 @@ int luaopen_bio(lua_State *L)
 
   return 1;
 }
-

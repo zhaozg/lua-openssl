@@ -1,6 +1,10 @@
 local openssl = require'openssl'
 local bio, x509,cms,csr = openssl.bio,openssl.x509,openssl.cms,openssl.x509.req
 local helper = require'helper'
+if not cms then
+  print('Skip cms test')
+  return
+end
 
 TestCMS = {}
 

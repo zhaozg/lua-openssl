@@ -313,7 +313,7 @@ static int openssl_ec_point_oct2point(lua_State *L)
   size_t size = 0;
   const unsigned char* oct = (const unsigned char*)luaL_checklstring(L, 2, &size);
   EC_POINT* point  = EC_POINT_new(group);
-  
+
   int ret = EC_POINT_oct2point(group, point, oct, size, NULL);
   if(ret==1)
     PUSH_OBJECT(point, "openssl.ec_point");
@@ -334,7 +334,7 @@ static int openssl_ec_point_point2oct(lua_State *L)
     size = EC_POINT_point2oct(group, point, form, oct, size, NULL);
     if(size>0)
       lua_pushlstring(L, (const char*)oct, size);
-    else 
+    else
       lua_pushnil(L);
     OPENSSL_free(oct);
     return 1;
@@ -363,7 +363,7 @@ static int openssl_ec_point_point2bn(lua_State *L)
   BIGNUM *bn = EC_POINT_point2bn(group, point, form, NULL, NULL);
   if(bn)
     PUSH_OBJECT(bn, "openssl.bn");
-  else 
+  else
     lua_pushnil(L);
   return 1;
 }
@@ -372,7 +372,7 @@ static int openssl_ec_point_hex2point(lua_State *L)
 {
   const EC_GROUP* group = CHECK_OBJECT(1, EC_GROUP, "openssl.ec_group");
   const char* hex = luaL_checkstring(L, 2);
-  
+
   EC_POINT* pnt = EC_POINT_hex2point(group, hex, NULL, NULL);
   if(pnt)
     PUSH_OBJECT(pnt, "openssl.ec_point");
@@ -390,7 +390,7 @@ static int openssl_ec_point_point2hex(lua_State *L)
   const char* hex = EC_POINT_point2hex(group, point, form, NULL);
   if(hex)
     lua_pushstring(L, hex);
-  else 
+  else
     lua_pushnil(L);
   return 1;
 }
@@ -611,15 +611,17 @@ static int openssl_ecdsa_set_method(lua_State *L)
 {
   EC_KEY *ec = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
   ENGINE *e = CHECK_OBJECT(2, ENGINE, "openssl.engine");
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if defined(LIBRESSL_VERSION_NUMBER) || OPENSSL_VERSION_NUMBER < 0x10100000L
   const ECDSA_METHOD *m = ENGINE_get_ECDSA(e);
-  if (m) {
+  if (m)
+  {
     int r = ECDSA_set_method(ec, m);
     return openssl_pushresult(L, r);
   }
 #else
   const EC_KEY_METHOD *m = ENGINE_get_EC(e);
-  if (m) {
+  if (m)
+  {
     int r = EC_KEY_set_method(ec, m);
     return openssl_pushresult(L, r);
   }
@@ -634,7 +636,7 @@ static int openssl_ec_key_export(lua_State *L)
   int len = i2d_ECPrivateKey(ec, &der);
   if(len>0)
     lua_pushlstring(L, (const char*)der, len);
-  else 
+  else
     lua_pushnil(L);
   if(der)
     OPENSSL_free(der);
@@ -647,9 +649,9 @@ static int openssl_ec_key_read(lua_State *L)
   const unsigned char* der = (const unsigned char*)luaL_checklstring(L, 1, &len);
 
   EC_KEY* ec = d2i_ECPrivateKey(NULL, &der, len);
-  if(ec) 
+  if(ec)
     PUSH_OBJECT(ec, "openssl.ec_key");
-  else 
+  else
     lua_pushnil(L);
   return 1;
 }
@@ -744,4 +746,3 @@ int luaopen_ec(lua_State *L)
 }
 
 #endif
-

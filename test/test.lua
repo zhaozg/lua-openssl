@@ -3,7 +3,6 @@ EXPORT_ASSERT_TO_GLOBALS = true
 require'luaunit'
 
 openssl.rand_load()
-v = {openssl.version(true)}
 print('VERSION:', openssl.version())
 
 dofile('0.engine.lua')

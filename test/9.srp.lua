@@ -1,6 +1,10 @@
 
 local openssl = require'openssl'
 local srp = openssl.srp
+if srp==nil then
+  print('Skip test srp')
+  return
+end
 
 local GN = assert(srp.get_default_gN('1024'));
 

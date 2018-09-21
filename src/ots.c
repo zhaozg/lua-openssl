@@ -305,10 +305,12 @@ static int openssl_ts_req_policy_id(lua_State*L)
   {
     ASN1_OBJECT* obj = NULL;
     int ret;
-    if (auxiliar_getclassudata(L, "openssl.asn1_object", 2)) {
+    if (auxiliar_getclassudata(L, "openssl.asn1_object", 2))
+    {
       obj = CHECK_OBJECT(2, ASN1_OBJECT, "openssl.asn1_object");
     }
-    else {
+    else
+    {
       int nid = openssl_get_nid(L, 2);
       luaL_argcheck(L, nid != NID_undef, 2, "must be asn1_object object identified");
       obj = OBJ_nid2obj(nid);
@@ -355,7 +357,7 @@ get msg_imprint
 /***
 set msg_imprint
 @function msg_imprint
-@tparam string data digest value of message 
+@tparam string data digest value of message
 @tparam[opt='sha'] string|evp_md md_alg
 @treturn boolean result
 */
@@ -435,7 +437,7 @@ static LUA_FUNCTION(openssl_ts_req_export)
 }
 
 /***
-get info as table 
+get info as table
 @function info
 @treturn table
 */
@@ -568,10 +570,12 @@ static int openssl_push_ts_accuracy(lua_State*L, const TS_ACCURACY* accuracy, in
 {
   if (accuracy)
   {
-    if (asobj) {
+    if (asobj)
+    {
       unsigned char *pbuf = NULL;
       int len = i2d_TS_ACCURACY(accuracy, &pbuf);
-      if (len > 0) {
+      if (len > 0)
+      {
         lua_pushlstring(L, (const char*)pbuf, len);
         OPENSSL_free(pbuf);
       }
@@ -686,13 +690,15 @@ static LUA_FUNCTION(openssl_ts_resp_info)
 
   {
     TS_STATUS_INFO *si = TS_RESP_get_status_info(res);
+    const ASN1_BIT_STRING *failure_info = TS_STATUS_INFO_get0_failure_info(si);
+
     lua_newtable(L);
     PUSH_ASN1_INTEGER(L, TS_STATUS_INFO_get0_status(si));
     lua_setfield(L, -2, "status");
 
-    if (TS_STATUS_INFO_get0_failure_info(si))
+    if (failure_info)
     {
-      openssl_push_asn1(L, TS_STATUS_INFO_get0_failure_info(si), V_ASN1_BIT_STRING);
+      openssl_push_asn1(L, failure_info, V_ASN1_BIT_STRING);
       lua_setfield(L, -2, "failure_info");
     }
 
@@ -819,7 +825,7 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_singer)
 }
 
 /***
-set additional certs 
+set additional certs
 @function certs
 @tparam table certs array of certificates
 @treturn boolean success
@@ -1123,9 +1129,10 @@ static ASN1_INTEGER* openssl_serial_cb(TS_RESP_CTX*ctx, void*data)
   lua_State* L = data;
 
   openssl_valueget(L, ctx, serial_cb_key);
-  if (!lua_isuserdata(L, -1)) {
+  if (!lua_isuserdata(L, -1))
+  {
     TS_RESP_CTX_set_status_info(ctx, TS_STATUS_REJECTION,
-      "Error during serial number generation.");
+                                "Error during serial number generation.");
     TS_RESP_CTX_add_failure_info(ctx, TS_INFO_ADD_INFO_NOT_AVAILABLE);
 
     lua_pop(L, 1);
@@ -1147,9 +1154,10 @@ static ASN1_INTEGER* openssl_serial_cb(TS_RESP_CTX*ctx, void*data)
       ai = BN_to_ASN1_INTEGER(bn, NULL);
       BN_free(bn);
     }
-    if (ai == NULL) {
+    if (ai == NULL)
+    {
       TS_RESP_CTX_set_status_info(ctx, TS_STATUS_REJECTION,
-        "Error during serial number generation.");
+                                  "Error during serial number generation.");
       TS_RESP_CTX_add_failure_info(ctx, TS_INFO_ADD_INFO_NOT_AVAILABLE);
       luaL_error(L, "Error during serial number generation.");
     }
@@ -1203,9 +1211,10 @@ static int openssl_time_cb(TS_RESP_CTX *ctx, void *data, long *sec, long *usec)
   lua_State* L = data;
 
   openssl_valueget(L, ctx, time_cb_key);
-  if (!lua_isuserdata(L, -1)) {
+  if (!lua_isuserdata(L, -1))
+  {
     TS_RESP_CTX_set_status_info(ctx, TS_STATUS_REJECTION,
-      "could not get current time");
+                                "could not get current time");
     lua_pop(L, 1);  /* remove openssl_valueget returned value */
     return 0;
   }
@@ -1217,7 +1226,8 @@ static int openssl_time_cb(TS_RESP_CTX *ctx, void *data, long *sec, long *usec)
   err = lua_pcall(L, 1, 2, 0);
   if (err == 0)
   {
-    if (lua_isnumber(L, -2)) {
+    if (lua_isnumber(L, -2))
+    {
       *sec = (long)luaL_checkinteger(L, -2);
       *usec = (long)luaL_optinteger(L, -1, 0);
       lua_pop(L, 2);  /* remove callback returned value */
@@ -1226,10 +1236,11 @@ static int openssl_time_cb(TS_RESP_CTX *ctx, void *data, long *sec, long *usec)
     lua_pop(L, 2);    /* remove callback returned value */
 
     TS_RESP_CTX_set_status_info(ctx, TS_STATUS_REJECTION,
-      "could not get current time");
+                                "could not get current time");
     return 0;
   }
-  else {
+  else
+  {
     lua_error(L);
   }
   return 0;
@@ -1265,7 +1276,12 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_set_time_cb)
   arg->cb_arg = luaL_ref(L, LUA_REGISTRYINDEX);
 
   openssl_valueset(L, ctx, time_cb_key);
+#if defined(LIBRESSL_VERSION_NUMBER)
+  ctx->time_cb = openssl_time_cb;
+  ctx->time_cb_data = L;
+#else
   TS_RESP_CTX_set_time_cb(ctx, openssl_time_cb, L);
+#endif
   return 0;
 }
 
@@ -1273,14 +1289,16 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_gc)
 {
   TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
   openssl_valueget(L, ctx, time_cb_key);
-  if (lua_isuserdata(L, -1)) {
+  if (lua_isuserdata(L, -1))
+  {
     TS_CB_ARG *arg = lua_touserdata(L, -1);
     luaL_unref(L, LUA_REGISTRYINDEX, arg->callback);
     luaL_unref(L, LUA_REGISTRYINDEX, arg->cb_arg);
   }
   lua_pop(L, 1);
   openssl_valueget(L, ctx, serial_cb_key);
-  if (lua_isuserdata(L, -1)) {
+  if (lua_isuserdata(L, -1))
+  {
     TS_CB_ARG *arg = lua_touserdata(L, -1);
     luaL_unref(L, LUA_REGISTRYINDEX, arg->callback);
     luaL_unref(L, LUA_REGISTRYINDEX, arg->cb_arg);

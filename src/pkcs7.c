@@ -346,7 +346,7 @@ static int openssl_pkcs7_dataFinal(PKCS7 *p7, BIO *bio)
     os = p7->d.signed_and_enveloped->enc_data->enc_data;
     if (!os)
     {
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
       os = M_ASN1_OCTET_STRING_new();
 #else
       os = ASN1_OCTET_STRING_new();
@@ -364,7 +364,7 @@ static int openssl_pkcs7_dataFinal(PKCS7 *p7, BIO *bio)
     os = p7->d.enveloped->enc_data->enc_data;
     if (!os)
     {
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
       os = M_ASN1_OCTET_STRING_new();
 #else
       os = ASN1_OCTET_STRING_new();
@@ -383,7 +383,7 @@ static int openssl_pkcs7_dataFinal(PKCS7 *p7, BIO *bio)
     /* If detached data then the content is excluded */
     if (PKCS7_type_is_data(p7->d.sign->contents) && p7->detached)
     {
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
       M_ASN1_OCTET_STRING_free(os);
 #else
       ASN1_OCTET_STRING_free(os);
@@ -398,7 +398,7 @@ static int openssl_pkcs7_dataFinal(PKCS7 *p7, BIO *bio)
     /* If detached data then the content is excluded */
     if (PKCS7_type_is_data(p7->d.digest->contents) && p7->detached)
     {
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
       M_ASN1_OCTET_STRING_free(os);
 #else
       ASN1_OCTET_STRING_free(os);
@@ -474,7 +474,7 @@ static int openssl_pkcs7_dataFinal(PKCS7 *p7, BIO *bio)
       goto err;
     if (!EVP_DigestFinal_ex(mdc, md_data, &md_len))
       goto err;
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
     M_ASN1_OCTET_STRING_set(p7->d.digest->digest, md_data, md_len);
 #else
     ASN1_OCTET_STRING_set(p7->d.digest->digest, md_data, md_len);
@@ -577,7 +577,7 @@ int PKCS7_signatureVerify_digest(PKCS7 *p7, PKCS7_SIGNER_INFO *si, X509 *x509,
 
   md_type = OBJ_obj2nid(si->digest_alg->algorithm);
   md = EVP_get_digestbynid(md_type);
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
   if (!md || !data || (hash && len != (size_t) md->ctx_size) )
     goto err;
 
@@ -857,10 +857,10 @@ static LUA_FUNCTION(openssl_pkcs7_export)
   BIO* bio_out = NULL;
   int fmt = lua_type(L, 2);
   luaL_argcheck(L, fmt == LUA_TSTRING || fmt == LUA_TNONE, 2,
-    "only accept 'pem','der' or none");
+                "only accept 'pem','der' or none");
   fmt = luaL_checkoption(L, 2, "pem", format);
   luaL_argcheck(L, fmt == FORMAT_PEM || fmt == FORMAT_DER, 2,
-    "only accept pem or der, default is pem");
+                "only accept pem or der, default is pem");
 
   bio_out  = BIO_new(BIO_s_mem());
   if (fmt == FORMAT_PEM)
@@ -1137,7 +1137,7 @@ static LUA_FUNCTION(openssl_pkcs7_sign_digest)
     os = p7->d.signed_and_enveloped->enc_data->enc_data;
     if (!os)
     {
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
       os = M_ASN1_OCTET_STRING_new();
 #else
       os = ASN1_OCTET_STRING_new();
@@ -1155,7 +1155,7 @@ static LUA_FUNCTION(openssl_pkcs7_sign_digest)
     os = p7->d.enveloped->enc_data->enc_data;
     if (!os)
     {
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
       os = M_ASN1_OCTET_STRING_new();
 #else
       os = ASN1_OCTET_STRING_new();
@@ -1174,7 +1174,7 @@ static LUA_FUNCTION(openssl_pkcs7_sign_digest)
     /* If detached data then the content is excluded */
     if (PKCS7_type_is_data(p7->d.sign->contents) && p7->detached)
     {
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
       M_ASN1_OCTET_STRING_free(os);
 #else
       ASN1_OCTET_STRING_free(os);
@@ -1189,7 +1189,7 @@ static LUA_FUNCTION(openssl_pkcs7_sign_digest)
     /* If detached data then the content is excluded */
     if (PKCS7_type_is_data(p7->d.digest->contents) && p7->detached)
     {
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
       M_ASN1_OCTET_STRING_free(os);
 #else
       ASN1_OCTET_STRING_free(os);
@@ -1217,7 +1217,7 @@ static LUA_FUNCTION(openssl_pkcs7_sign_digest)
 
       if (hash)
       {
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
         if (l == (size_t) mdc->digest->ctx_size)
         {
           memcpy(mdc->md_data, data, l);
@@ -1272,7 +1272,7 @@ static LUA_FUNCTION(openssl_pkcs7_sign_digest)
     unsigned int md_len;
     md = EVP_get_digestbynid(OBJ_obj2nid(p7->d.digest->md->algorithm));
     EVP_DigestInit_ex(mdc, md, NULL);
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
     if (l == (size_t) mdc->digest->ctx_size)
     {
       memcpy(mdc->md_data, data, l);

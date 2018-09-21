@@ -14,7 +14,7 @@ enum
 {
   TYPE_RSA,
   TYPE_DSA,
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
   TYPE_ECDH,
   TYPE_ECDSA,
 #else
@@ -24,7 +24,7 @@ enum
   TYPE_RAND,
   TYPE_CIPHERS,
   TYPE_DIGESTS,
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
   TYPE_STORE,
 #else
   TYPE_PKEY_METHODS,
@@ -150,7 +150,7 @@ static int openssl_engine_register(lua_State*L)
       else
         ENGINE_register_DSA(eng);
       break;
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
     case TYPE_ECDH:
       if (unregister)
         ENGINE_unregister_ECDH(eng);
@@ -183,7 +183,7 @@ static int openssl_engine_register(lua_State*L)
       else
         ENGINE_register_RAND(eng);
       break;
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
     case TYPE_STORE:
       if (unregister)
         ENGINE_unregister_STORE(eng);
@@ -392,7 +392,7 @@ static int openssl_engine_set_default(lua_State*L)
     case TYPE_DSA:
       ret = ENGINE_set_default_DSA(eng);
       break;
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
     case TYPE_ECDH:
       ret = ENGINE_set_default_ECDH(eng);
       break;
@@ -430,13 +430,15 @@ static int openssl_engine_set_default(lua_State*L)
   return openssl_pushresult(L, ret);
 };
 
-static int openssl_engine_set_rand_engine(lua_State *L) {
+static int openssl_engine_set_rand_engine(lua_State *L)
+{
   ENGINE* eng = CHECK_OBJECT(1, ENGINE, "openssl.engine");
   int ret = RAND_set_rand_engine(eng);
   return openssl_pushresult(L, ret);
 }
 
-static int openssl_engine_load_private_key(lua_State *L) {
+static int openssl_engine_load_private_key(lua_State *L)
+{
   ENGINE* eng = CHECK_OBJECT(1, ENGINE, "openssl.engine");
   const char* key_id = luaL_checkstring(L, 2);
   EVP_PKEY *pkey = ENGINE_load_private_key(eng, key_id, NULL, NULL);
@@ -491,19 +493,22 @@ static int openssl_engine_load_ssl_client_cert(lua_State *L)
   return openssl_pushresult(L, 0);
 }
 
-struct _engine_exdata {
+struct _engine_exdata
+{
   int l;
   unsigned char p[1];
 };
 
-static int openssl_engine_ex_data(lua_State *L) {
+static int openssl_engine_ex_data(lua_State *L)
+{
   ENGINE* eng = CHECK_OBJECT(1, ENGINE, "openssl.engine");
   int idx;
   int ret;
   if (lua_isnoneornil(L, 2))
   {
     idx = ENGINE_get_ex_new_index(0, NULL, NULL, NULL, NULL);
-    if (idx == -1) {
+    if (idx == -1)
+    {
       lua_pushnil(L);
       return 1;
     }
@@ -514,21 +519,25 @@ static int openssl_engine_ex_data(lua_State *L) {
   if (lua_isnoneornil(L, 3))
   {
     void *p = ENGINE_get_ex_data(eng, idx);
-    if (p) {
+    if (p)
+    {
       struct _engine_exdata *ex = p;
       lua_pushlstring(L, (const char*)ex->p, ex->l);
-    }else
+    }
+    else
       lua_pushnil(L);
     return 1;
   }
-  else {
+  else
+  {
     size_t l;
     const char *s = luaL_checklstring(L, 3, &l);
     struct _engine_exdata *ex = OPENSSL_malloc(sizeof(struct _engine_exdata)+l);
     ex->l = l;
     memcpy(ex->p, s, l);
     ret = ENGINE_set_ex_data(eng, idx, ex);
-    if (ret != 1) {
+    if (ret != 1)
+    {
       OPENSSL_free(ex);
       lua_pushnil(L);
     }

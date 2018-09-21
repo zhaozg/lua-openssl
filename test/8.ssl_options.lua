@@ -1,13 +1,15 @@
 -- Testcase
-local ssl = require "openssl".ssl
+local openssl = require'openssl'
+local ssl = openssl.ssl
+local helper = require'helper'
 
 local proto = 'TLSv1'
-
 local SET = function(t)
   local s = {}
   for _, k in ipairs(t) do s[k] = true end
   return s
 end
+local libressl = helper.libressl
 
 TestSSLOptions = {}
       function TestSSLOptions:setUp()
@@ -18,16 +20,18 @@ TestSSLOptions = {}
             local t, e = self.ctx:options()
             assert(type(t) == "table", e or type(t))
             t = SET(t)
+            assertIsTable(t)
+            assertEquals(0, #t)
 
             t = self.ctx:options(ssl.no_sslv3, "no_ticket")
             t = SET(t)
             assertIsTable(t)
-            assert(t.no_sslv3)
+            assert(libressl or t.no_sslv3)
             assert(t.no_ticket)
 
             assert(not pcall(self.ctx.options, ctx, true, nil))
             assertIsTable(t)
-            assert(t.no_sslv3)
+            assert(libressl or t.no_sslv3)
             assert(t.no_ticket)
       end
 

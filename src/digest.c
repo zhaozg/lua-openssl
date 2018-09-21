@@ -468,7 +468,7 @@ restore md data
 static LUA_FUNCTION(openssl_digest_ctx_data)
 {
   EVP_MD_CTX *ctx = CHECK_OBJECT(1, EVP_MD_CTX, "openssl.evp_digest_ctx");
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
   if (lua_isnone(L, 2))
   {
     lua_pushlstring(L, ctx->md_data, ctx->digest->ctx_size);

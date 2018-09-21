@@ -2,10 +2,11 @@ local openssl = require'openssl'
 local pkey = openssl.pkey
 local sm2  = openssl.sm2
 local unpack = unpack or table.unpack
+local helper = require'helper'
 
 _,_,opensslv = openssl.version(true)
 print(opensslv)
-if opensslv >= 0x10101007 then
+if opensslv >= 0x10101007 and (not helper.libressl) then
   print('Support SM2')
   testSM2 = {}
 

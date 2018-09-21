@@ -46,7 +46,7 @@ extern "C" {
   luaL_getmetatable(L,"openssl.bn");                    \
   lua_setmetatable(L,-2)
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
 int BIO_up_ref(BIO *b);
 int X509_up_ref(X509 *x);
 int X509_STORE_up_ref(X509_STORE *s);
@@ -124,8 +124,10 @@ STACK_OF(X509) *TS_VERIFY_CTS_set_certs(TS_VERIFY_CTX *ctx,
 unsigned char *TS_VERIFY_CTX_set_imprint(TS_VERIFY_CTX *ctx,
     unsigned char *hexstr, long len);
 
-#if OPENSSL_VERSION_NUMBER < 0x10002000L
+#if OPENSSL_VERSION_NUMBER < 0x10002000L || defined(LIBRESSL_VERSION_NUMBER)
 int i2d_re_X509_tbs(X509 *x, unsigned char **pp);
+#endif
+#if OPENSSL_VERSION_NUMBER < 0x10002000L
 void X509_get0_signature(ASN1_BIT_STRING **psig, X509_ALGOR **palg,
                          const X509 *x);
 int X509_get_signature_nid(const X509 *x);
@@ -194,10 +196,10 @@ int openssl_push_asn1object(lua_State* L, const ASN1_OBJECT* obj);
 int openssl_push_asn1(lua_State* L, const ASN1_STRING* string, int type);
 int openssl_push_general_name(lua_State*L, const GENERAL_NAME* name);
 
-#define PUSH_ASN1_TIME(L, tm)             openssl_push_asn1(L, (ASN1_STRING*)tm, V_ASN1_UTCTIME)
-#define PUSH_ASN1_INTEGER(L, i)           openssl_push_asn1(L, (ASN1_STRING*)i,  V_ASN1_INTEGER)
-#define PUSH_ASN1_OCTET_STRING(L, s)      openssl_push_asn1(L, (ASN1_STRING*)s,  V_ASN1_OCTET_STRING)
-#define PUSH_ASN1_STRING(L, s)            openssl_push_asn1(L, (ASN1_STRING*)s, V_ASN1_UNDEF)
+#define PUSH_ASN1_TIME(L, tm)             openssl_push_asn1(L, (ASN1_STRING*)(tm), V_ASN1_UTCTIME)
+#define PUSH_ASN1_INTEGER(L, i)           openssl_push_asn1(L, (ASN1_STRING*)(i),  V_ASN1_INTEGER)
+#define PUSH_ASN1_OCTET_STRING(L, s)      openssl_push_asn1(L, (ASN1_STRING*)(s),  V_ASN1_OCTET_STRING)
+#define PUSH_ASN1_STRING(L, s)            openssl_push_asn1(L, (ASN1_STRING*)(s),  V_ASN1_UNDEF)
 
 int openssl_push_xname_asobject(lua_State*L, X509_NAME* xname);
 int openssl_push_bit_string_bitname(lua_State* L, const BIT_STRING_BITNAME* name);

@@ -5,7 +5,7 @@
 #include "openssl.h"
 #include "private.h"
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
 int BIO_up_ref(BIO *b)
 {
   CRYPTO_add(&b->references, 1, CRYPTO_LOCK_BIO);
@@ -464,13 +464,14 @@ const ASN1_BIT_STRING *TS_STATUS_INFO_get0_failure_info(const TS_STATUS_INFO *a)
   return a->failure_info;
 }
 
-#if OPENSSL_VERSION_NUMBER < 0x10002000L
+#if OPENSSL_VERSION_NUMBER < 0x10002000L || defined(LIBRESSL_VERSION_NUMBER)
 int i2d_re_X509_tbs(X509 *x, unsigned char **pp)
 {
   x->cert_info->enc.modified = 1;
   return i2d_X509_CINF(x->cert_info, pp);
 }
 
+#if !defined(LIBRESSL_VERSION_NUMBER)
 void X509_get0_signature(ASN1_BIT_STRING **psig, X509_ALGOR **palg,
                          const X509 *x)
 {
@@ -479,6 +480,7 @@ void X509_get0_signature(ASN1_BIT_STRING **psig, X509_ALGOR **palg,
   if (palg)
     *palg = x->sig_alg;
 }
+#endif
 
 int X509_get_signature_nid(const X509 *x)
 {

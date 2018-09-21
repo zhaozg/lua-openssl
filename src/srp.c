@@ -1,6 +1,7 @@
 #include "openssl.h"
 #include "private.h"
 
+#if !defined(LIBRESSL_VERSION_NUMBER)
 #include <openssl/srp.h>
 #include <openssl/bn.h>
 
@@ -198,4 +199,4 @@ int luaopen_srp(lua_State *L)
   lua_settable(L, -3);
   return 1;
 }
-
+#endif

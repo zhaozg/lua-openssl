@@ -98,8 +98,8 @@ get x509_algor properties
 static int openssl_xalgor_get(lua_State* L)
 {
   int type;
-  void* val;
-  ASN1_OBJECT *obj;
+  const void* val;
+  const ASN1_OBJECT *obj;
 
   X509_ALGOR* alg = CHECK_OBJECT(1, X509_ALGOR, "openssl.x509_algor");
 
@@ -142,7 +142,7 @@ static int openssl_xalgor_set(lua_State* L)
                      NULL : auxiliar_checkgroup(L, "openssl.asn1_string", 3);
   obj = OBJ_dup(obj);
   val = ASN1_STRING_dup(val);
-  ret = X509_ALGOR_set0(alg, obj , val->type, val);
+  ret = X509_ALGOR_set0(alg, obj, val->type, val);
   return openssl_pushresult(L, ret);
 }
 
@@ -154,8 +154,8 @@ convert x509_algor to txt string of asn1_object
 static int openssl_xalgor_tostring(lua_State* L)
 {
   int type;
-  void* val;
-  ASN1_OBJECT *obj;
+  const void* val;
+  const ASN1_OBJECT *obj;
 
   X509_ALGOR* alg = CHECK_OBJECT(1, X509_ALGOR, "openssl.x509_algor");
 

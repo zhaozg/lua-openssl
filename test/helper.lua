@@ -39,5 +39,8 @@ function M.new_ca(subject)
   return pkey, cacert
 end
 
+M.luaopensslv, M.luav, M.opensslv = openssl.version()
+M.libressl = M.opensslv:find('^LibreSSL')
+
 return M
 
