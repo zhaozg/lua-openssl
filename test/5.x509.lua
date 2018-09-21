@@ -2,6 +2,8 @@ local openssl = require'openssl'
 
 local csr,x509 = openssl.x509.req, openssl.x509
 
+local helper = require('helper')
+
 TestX509 = {}
     function TestX509:setUp()
         self.alg='sha1'
@@ -13,33 +15,24 @@ TestX509 = {}
     end
 
 function TestX509:testNew()
-        --cacert, self sign
-        local pkey = assert(openssl.pkey.new())
-        local req = assert(csr.new(self.cadn,pkey))
-        local t = req:parse()
-        assertEquals(type(t),'table')
-
-        local cacert = openssl.x509.new(
-                1,      --serialNumber
-                req     --copy name and extensions
-        )
-
-        cacert:validat(os.time(), os.time() + 3600*24*365)
-        assert(cacert:sign(pkey, cacert))  --self sign
+        local pkey, cacert = helper.new_ca(self.cadn)
         assertEquals(cacert:subject(), cacert:issuer())
+        assert(cacert:parse().ca, 'invalid ca certificate')
 
         local c = cacert:pubkey():encrypt('abcd')
         d = pkey:decrypt(c)
         assert(d=='abcd')
         assert(cacert:check(pkey),'self sign check failed')
-        assert(cacert:check(openssl.x509.store.new({cacert}) ))
+        local castore = openssl.x509.store.new({cacert})
+        assert(cacert:check(castore))
 
         --sign cert by cacert
 
         local dkey = openssl.pkey.new()
         req = assert(csr.new(self.dn,dkey))
         local cert = openssl.x509.new(2,req)
-        cert:validat(os.time(), os.time() + 3600*24*365)
+        cert:notbefore(os.time())
+        cert:validat(os.time(), os.time() + 3600*24*360)
         assert(cert:sign(pkey,cacert))
 
         local c = cert:pubkey():encrypt('abcd')
@@ -47,7 +40,7 @@ function TestX509:testNew()
         assert(d=='abcd')
         assert(cert:check(dkey),'self private match failed')
 
-        assert(cert:check(openssl.x509.store.new({cacert})))
+        assert(cert:check(castore))
 end
 
 function TestX509:testIO()
@@ -74,8 +67,6 @@ sggwDQYJKoZIhvcNAQEEBQADQQCU5SSgapJSdRXJoX+CpCvFy+JVh9HpSjCpSNKO
         assertEquals(x:version(), 0)
         assert(x:notbefore())
         assert(x:notafter())
-
-        print(os.date('%c', x:notafter():get()))
 
         assertIsNil(x:extensions())
 

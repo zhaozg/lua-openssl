@@ -78,40 +78,40 @@ static int openssl_xattr_totable(lua_State*L, X509_ATTRIBUTE *attr)
   openssl_push_asn1object(L, attr->object);
   lua_setfield(L, -2, "object");
 
-  AUXILIAR_SET(L, -1, "single", attr->single, boolean);
+  lua_newtable(L);
   if (attr->single)
   {
     openssl_push_asn1type(L, attr->value.single);
-    lua_setfield(L, -2, "value");
+    lua_rawseti(L, -2, 1);
   }
   else
   {
     int i;
-    lua_newtable(L);
     for (i = 0; i < sk_ASN1_TYPE_num(attr->value.set); i++)
     {
       ASN1_TYPE* t = sk_ASN1_TYPE_value(attr->value.set, i);
       openssl_push_asn1type(L, t);
       lua_rawseti(L, -2, i + 1);
     }
-    lua_setfield(L, -2, "value");
   }
+  lua_setfield(L, -2, "value");
   return 1;
 #else
-  int i;
+  int i, c;
 
   lua_newtable(L);
   openssl_push_asn1object(L, X509_ATTRIBUTE_get0_object(attr));
   lua_setfield(L, -2, "object");
 
+  c = X509_ATTRIBUTE_count(attr);
   lua_newtable(L);
-  for (i = 0; i < X509_ATTRIBUTE_count(attr); i++)
+  for (i = 0; i < c; i++)
   {
     ASN1_TYPE* t = X509_ATTRIBUTE_get0_type(attr, i);
     openssl_push_asn1type(L, t);
     lua_rawseti(L, -2, i + 1);
   }
-  lua_setfield(L, -2, "set");
+  lua_setfield(L, -2, "value");
   return 1;
 #endif
 }

@@ -16,7 +16,7 @@ create and manage x509 certificate
 #define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
   "based on OpenSSL " SHLIB_VERSION_NUMBER
 
-static int openssl_push_purpose(lua_State*L , X509_PURPOSE* purpose)
+static int openssl_push_purpose(lua_State*L, X509_PURPOSE* purpose)
 {
   lua_newtable(L);
 
@@ -686,7 +686,7 @@ static int verify_cb(int ok, X509_STORE_CTX *ctx)
 check x509 with ca certchian and option purpose
 purpose can be one of: ssl_client, ssl_server, ns_ssl_server, smime_sign, smime_encrypt, crl_sign, any, ocsp_helper, timestamp_sign
 @function check
-@tparam x509_store cacerts 
+@tparam x509_store cacerts
 @tparam x509_store untrusted certs  containing a bunch of certs that are not trusted but may be useful in validating the certificate.
 @tparam[opt] string purpose to check supported
 @treturn boolean result true for check pass
@@ -1208,7 +1208,10 @@ static int openssl_x509_extensions(lua_State* L)
     for (i = 0; i < n; i++)
     {
       X509_EXTENSION* ext = sk_X509_EXTENSION_value(others, i);
-      sk_X509_EXTENSION_push(exts, ext);
+      if (exts!=NULL)
+        sk_X509_EXTENSION_push(exts, ext);
+      else
+        X509_add_ext(self, ext, -1);
     }
     sk_X509_EXTENSION_free(others);
 #endif

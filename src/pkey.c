@@ -776,10 +776,10 @@ static LUA_FUNCTION(openssl_pkey_export)
 
   fmt = lua_type(L, 2);
   luaL_argcheck(L, fmt == LUA_TSTRING || fmt == LUA_TNONE, 2,
-    "only accept 'pem','der' or none");
+                "only accept 'pem','der' or none");
   fmt = luaL_checkoption(L, 2, "pem", format);
   luaL_argcheck(L, fmt == FORMAT_PEM || fmt == FORMAT_DER, 2,
-    "only accept pem or der, default is pem");
+                "only accept pem or der, default is pem");
 
   if (!lua_isnoneornil(L, 3))
     exraw = lua_toboolean(L, 3);
@@ -846,54 +846,31 @@ static LUA_FUNCTION(openssl_pkey_export)
     else
     {
       /* output raw key, rsa, ec, dh, dsa */
-      if (ispriv)
+      switch (EVP_PKEY_type(EVP_PKEY_id(key)))
       {
-        switch (EVP_PKEY_type(EVP_PKEY_id(key)))
-        {
-        case EVP_PKEY_RSA:
-          ret = ispriv ? i2d_RSAPrivateKey_bio(bio_out, EVP_PKEY_get0_RSA(key))
-                : i2d_RSAPublicKey_bio(bio_out, EVP_PKEY_get0_RSA(key));
-          break;
-        case EVP_PKEY_DSA:
-        {
-          ret = ispriv ? i2d_DSAPrivateKey_bio(bio_out, EVP_PKEY_get0_DSA(key))
-                : i2d_DSA_PUBKEY_bio(bio_out, EVP_PKEY_get0_DSA(key));
-        }
+      case EVP_PKEY_RSA:
+        ret = ispriv ? i2d_RSAPrivateKey_bio(bio_out, EVP_PKEY_get0_RSA(key))
+              : i2d_RSAPublicKey_bio(bio_out, EVP_PKEY_get0_RSA(key));
         break;
-        case EVP_PKEY_DH:
-          ret = i2d_DHparams_bio(bio_out, EVP_PKEY_get0_DH(key));
-          break;
-#ifndef OPENSSL_NO_EC
-        case EVP_PKEY_EC:
-          ret = ispriv ? i2d_ECPrivateKey_bio(bio_out, EVP_PKEY_get0_EC_KEY(key))
-                : i2d_EC_PUBKEY_bio(bio_out, EVP_PKEY_get0_EC_KEY(key));
-
-          break;
-#endif
-        default:
-          ret = 0;
-          break;
-        }
-      }
-      else
+      case EVP_PKEY_DSA:
       {
-        int l = i2d_PublicKey(key, NULL);
-        if (l > 0)
-        {
-          unsigned char* p = malloc(l);
-          unsigned char* pp = p;
-          l = i2d_PublicKey(key, &pp);
-          if (l > 0)
-          {
-            BIO_write(bio_out, p, l);
-            ret = 1;
-          }
-          else
-            ret = 0;
-          free(p);
-        }
-        else
-          ret = 0;
+        ret = ispriv ? i2d_DSAPrivateKey_bio(bio_out, EVP_PKEY_get0_DSA(key))
+              : i2d_DSA_PUBKEY_bio(bio_out, EVP_PKEY_get0_DSA(key));
+      }
+      break;
+      case EVP_PKEY_DH:
+        ret = i2d_DHparams_bio(bio_out, EVP_PKEY_get0_DH(key));
+        break;
+#ifndef OPENSSL_NO_EC
+      case EVP_PKEY_EC:
+        ret = ispriv ? i2d_ECPrivateKey_bio(bio_out, EVP_PKEY_get0_EC_KEY(key))
+              : i2d_EC_PUBKEY_bio(bio_out, EVP_PKEY_get0_EC_KEY(key));
+
+        break;
+#endif
+      default:
+        ret = 0;
+        break;
       }
     }
   }

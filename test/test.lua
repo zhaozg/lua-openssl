@@ -4,7 +4,7 @@ require'luaunit'
 
 openssl.rand_load()
 v = {openssl.version(true)}
-print(openssl.version())
+print('VERSION:', openssl.version())
 
 dofile('0.engine.lua')
 dofile('0.misc.lua')

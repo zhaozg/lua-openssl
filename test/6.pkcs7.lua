@@ -1,5 +1,6 @@
 local openssl = require'openssl'
 local x509,pkcs7,csr = openssl.x509,openssl.pkcs7,openssl.x509.req
+local helper = require'helper'
 
 TestCompat = {}
     function TestCompat:setUp()
@@ -11,18 +12,7 @@ TestCompat = {}
     end
 
     function TestCompat:testNew()
-        local cakey = assert(openssl.pkey.new())
-        local req = assert(csr.new(self.cadn,cakey))
-        local t = req:parse()
-        assertEquals(type(t),'table')
-
-        local cacert = openssl.x509.new(
-                1,      --serialNumber
-                req     --copy name and extensions
-        )
-        cacert:validat(os.time(), os.time() + 3600*24*361)
-        assert(cacert:sign(cakey, cacert))  --self sign
-
+        local cakey, cacert = helper.new_ca(self.cadn)
         local dkey = openssl.pkey.new()
         req = assert(csr.new(self.dn,dkey))
 

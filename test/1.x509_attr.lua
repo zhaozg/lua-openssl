@@ -36,10 +36,9 @@ TestX509attr = {}
         local n1 = attr.new_attribute(self.ca)
         assertStrContains(tostring(n1),'openssl.x509_attribute')
         local info = n1:info()
-
         assertIsTable(info)
         assertEquals(info.object:ln(), "X509v3 Basic Constraints")
-        assertEquals(info.single,false)
+        assertEquals(#info.value, 1)
         assertEquals(info.value[1].type, asn1.OCTET_STRING)
         assertEquals(info.value[1].value, "CA:FALSE")
         local n2 = n1:dup()

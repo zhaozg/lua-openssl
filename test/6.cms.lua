@@ -1,5 +1,6 @@
 local openssl = require'openssl'
 local bio, x509,cms,csr = openssl.bio,openssl.x509,openssl.cms,openssl.x509.req
+local helper = require'helper'
 
 TestCMS = {}
 
@@ -19,17 +20,7 @@ TestCMS = {}
         self.alicedn = openssl.x509.name.new({{commonName='Alice'},{C='CN'}})
         self.bobdn = openssl.x509.name.new({{commonName='Bob'},{C='CN'}})
 
-        local cakey = assert(openssl.pkey.new())
-        local req = assert(csr.new(self.cadn,cakey))
-        local t = req:parse()
-        assertEquals(type(t),'table')
-
-        local cacert = openssl.x509.new(
-                1,      --serialNumber
-                req     --copy name and extensions
-        )
-        cacert:validat(os.time(), os.time() + 3600*24*361)
-        assert(cacert:sign(cakey, cacert))  --self sign
+        local cakey, cacert = helper.new_ca(self.cadn)
         self.cakey, self.cacert = cakey, cacert
         self.castore = openssl.x509.store.new({cacert})
 

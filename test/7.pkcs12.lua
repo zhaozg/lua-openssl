@@ -1,5 +1,6 @@
 local openssl = require'openssl'
 local csr, x509, pkcs12 = openssl.x509.req,openssl.x509, openssl.pkcs12
+local helper = require'helper'
 
 TestCompat = {}
     function TestCompat:setUp()
@@ -12,17 +13,9 @@ TestCompat = {}
 
 
 function TestCompat:testNew()
-        local pkey = assert(openssl.pkey.new())
-        local req = assert(csr.new(self.cadn,pkey))
-        local t = req:parse()
-        assertEquals(type(t),'table')
-
-        local cacert = openssl.x509.new(
-                1,      --serialNumber
-                req     --copy name and extensions
-        )
+        local pkey, cacert = helper.new_ca(self.cadn)
         local dkey = openssl.pkey.new()
-        req = assert(csr.new(self.dn,dkey))
+        local req = assert(csr.new(self.dn,dkey))
 
         local extensions =
         {{
