@@ -865,7 +865,6 @@ static LUA_FUNCTION(openssl_pkey_export)
       case EVP_PKEY_EC:
         ret = ispriv ? i2d_ECPrivateKey_bio(bio_out, EVP_PKEY_get0_EC_KEY(key))
               : i2d_EC_PUBKEY_bio(bio_out, EVP_PKEY_get0_EC_KEY(key));
-
         break;
 #endif
       default:
@@ -1088,7 +1087,7 @@ LUA_FUNCTION(openssl_pkey_is_private1)
     luaL_error(L, "openssl.evp_pkey is not support");
   return 1;
 }
-
+/* private usage, and for sm2 */
 /***
 return public key
 @function get_public

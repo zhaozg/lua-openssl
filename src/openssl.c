@@ -427,9 +427,9 @@ static int luaclose_openssl(lua_State *L)
   if(CRYPTO_mem_leaks_fp(stderr)!=1)
   {
     fprintf(stderr,
-      "Please report a bug on https://github.com/zhaozg/lua-openssl."
-      "And if can, please provide a reproduce method and minimal code.\n"
-      "\n\tThank You.");
+            "Please report a bug on https://github.com/zhaozg/lua-openssl."
+            "And if can, please provide a reproduce method and minimal code.\n"
+            "\n\tThank You.");
   }
 #endif
 #endif /* OPENSSL_NO_STDIO or OPENSSL_NO_FP_API */
@@ -541,11 +541,6 @@ LUALIB_API int luaopen_openssl(lua_State*L)
   luaopen_dh(L);
   lua_setfield(L, -2, "dh");
 
-#if (OPENSSL_VERSION_NUMBER >= 0x10101007L) && !defined(OPENSSL_NO_SM2)
-  luaopen_sm2(L);
-  lua_setfield(L, -2, "sm2");
-#endif
-
   luaopen_srp(L);
   lua_setfield(L, -2, "srp");
 
@@ -556,4 +551,3 @@ LUALIB_API int luaopen_openssl(lua_State*L)
 
   return 1;
 }
-

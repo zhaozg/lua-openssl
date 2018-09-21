@@ -67,40 +67,6 @@ if opensslv >= 0x10101007 then
         secret2 = ec2:compute_key(pub1)
         assert(secret1==secret2)
       end
-
-  function testSM2:testSign()
-    local nec =  {'ec','SM2'}
-    local key = pkey.new(unpack(nec))
-    local key = key:parse().ec
-    local msg = "abcd"
-
-    local sig = assert(sm2.do_sign(key, msg))
-    assert(type(sig)=='string')
-    assert(sm2.do_verify(key, msg, sig))
-
-    local digest = sm2.compute_userid_digest(key, msg)
-    assert(#digest==32)
-    local sig = assert(sm2.sign(key,digest))
-    assert(type(sig)=='string')
-    assert(sm2.verify(key, digest, sig))
-  end
-
-  function testSM2:testEncrypt()
-    local nec =  {'ec','SM2'}
-    local key = pkey.new(unpack(nec))
-    local key = key:parse().ec
-    local msg = "abcd"
-
-    local clen = sm2.ciphersize(key, #msg)
-    assert(clen>#msg)
-    local plen = sm2.plainsize(key, clen)
-    assert(#msg==plen)
-
-    local cip = assert(sm2.encrypt(key, msg))
-    assert(type(cip)=='string')
-    local txt = assert(sm2.decrypt(key, cip))
-    assert(txt==msg)
-  end
 else
   print('Skip SM2')
 end
