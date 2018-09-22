@@ -7,6 +7,9 @@ digest module for lua-openssl binding
 */
 #include "openssl.h"
 #include "private.h"
+#if defined(LIBRESSL_VERSION_NUMBER)
+#include <openssl/engine.h>
+#endif
 
 #define MYNAME    "digest"
 #define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
@@ -59,19 +62,23 @@ static LUA_FUNCTION(openssl_digest_new)
   int ret;
   ENGINE* e = lua_isnoneornil(L, 2) ? NULL : CHECK_OBJECT(2, ENGINE, "openssl.engine");
   EVP_MD_CTX* ctx = EVP_MD_CTX_create();
-  EVP_MD_CTX_init(ctx);
-  lua_pushlightuserdata(L, e);
-  lua_rawsetp(L, LUA_REGISTRYINDEX, ctx);
-  ret = EVP_DigestInit_ex(ctx, md, e);
-  if (ret == 1)
+  if (ctx!=NULL)
   {
-    PUSH_OBJECT(ctx, "openssl.evp_digest_ctx");
-  }
-  else
-  {
-    EVP_MD_CTX_destroy(ctx);
-    return openssl_pushresult(L, ret);
-  }
+    EVP_MD_CTX_init(ctx);
+    lua_pushlightuserdata(L, e);
+    lua_rawsetp(L, LUA_REGISTRYINDEX, ctx);
+    ret = EVP_DigestInit_ex(ctx, md, e);
+    if (ret == 1)
+    {
+      PUSH_OBJECT(ctx, "openssl.evp_digest_ctx");
+    }
+    else
+    {
+      EVP_MD_CTX_destroy(ctx);
+      return openssl_pushresult(L, ret);
+    }
+  }else
+    lua_pushnil(L);
   return 1;
 }
 
@@ -140,11 +147,12 @@ static LUA_FUNCTION(openssl_signInit)
   const EVP_MD *md = get_digest(L, 1, NULL);
   EVP_PKEY* pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
   ENGINE*     e = lua_gettop(L) > 2 ? CHECK_OBJECT(3, ENGINE, "openssl.engine") : NULL;
-  EVP_PKEY_CTX *pctx;
   EVP_MD_CTX *ctx = EVP_MD_CTX_create();
   if (ctx)
   {
-    int ret = EVP_DigestSignInit(ctx, &pctx, md, e, pkey);
+    int ret;
+    EVP_MD_CTX_init(ctx);
+    ret = EVP_DigestSignInit(ctx, NULL, md, e, pkey);
     if (ret)
     {
       PUSH_OBJECT(ctx, "openssl.evp_digest_ctx");
@@ -175,7 +183,9 @@ static LUA_FUNCTION(openssl_verifyInit)
 
   if (ctx)
   {
-    int ret = EVP_DigestVerifyInit(ctx, &pctx, md, e, pkey);
+    int ret;
+    EVP_MD_CTX_init(ctx);
+    ret = EVP_DigestVerifyInit(ctx, &pctx, md, e, pkey);
     if (ret)
     {
       PUSH_OBJECT(ctx, "openssl.evp_digest_ctx");

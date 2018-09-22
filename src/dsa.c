@@ -29,13 +29,8 @@ static LUA_FUNCTION(openssl_dsa_parse)
   lua_pushinteger(L, DSA_size(dsa));
   lua_setfield(L, -2, "size");
 
-#if defined(LIBRESSL_VERSION_NUMBER)
-  lua_pushinteger(L, 8*DSA_size(dsa));
-  lua_setfield(L, -2, "bits");
-#else
   lua_pushinteger(L, DSA_bits(dsa));
   lua_setfield(L, -2, "bits");
-#endif
 
   DSA_get0_pqg(dsa, &p, &q, &g);
   DSA_get0_key(dsa, &pub, &pri);
