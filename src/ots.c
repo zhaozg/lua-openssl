@@ -111,8 +111,7 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_new)
     }
     else if (lua_isnumber(L, i) || lua_isstring(L, i))
     {
-      int nid = NID_undef;
-      nid = openssl_get_nid(L, i);
+      int nid = openssl_get_nid(L, i);
       luaL_argcheck(L, nid != NID_undef, i, "invalid asn1_object or object id");
       obj = OBJ_nid2obj(nid);
     }
@@ -374,7 +373,6 @@ static int openssl_ts_req_msg_imprint(lua_State*L)
       PUSH_ASN1_OCTET_STRING(L, s);
       a = X509_ALGOR_dup(a);
       PUSH_OBJECT(a, "openssl.x509_algor");
-      ASN1_OCTET_STRING_free(s);
       return 2;
     }
     return 1;
@@ -553,6 +551,7 @@ export ts_resp to string
 */
 static LUA_FUNCTION(openssl_ts_resp_export)
 {
+  int ret = 0;
   TS_RESP *res = CHECK_OBJECT(1, TS_RESP, "openssl.ts_resp");
   BIO *bio = BIO_new(BIO_s_mem());
   if (i2d_TS_RESP_bio(bio, res))
@@ -560,10 +559,10 @@ static LUA_FUNCTION(openssl_ts_resp_export)
     BUF_MEM *bptr = NULL;
     BIO_get_mem_ptr(bio, &bptr);
     lua_pushlstring(L, bptr->data, bptr->length);
-    BIO_free(bio);
-    return 1;
+    ret = 1;
   }
-  return 0;
+  BIO_free(bio);
+  return ret;
 }
 
 static int openssl_push_ts_accuracy(lua_State*L, const TS_ACCURACY* accuracy, int asobj)
@@ -1438,7 +1437,7 @@ static LUA_FUNCTION(openssl_ts_verify_ctx_gc)
 {
   TS_VERIFY_CTX *ctx = CHECK_OBJECT(1, TS_VERIFY_CTX, "openssl.ts_verify_ctx");
   /* hack openssl bugs */
-#if OPENSSL_VERSION_NUMBER < 0x10002000L
+#if OPENSSL_VERSION_NUMBER < 0x10002000L || defined(LIBRESSL_VERSION_NUMBER)
   if (ctx->store->references > 1)
     CRYPTO_add(&ctx->store->references, -1, CRYPTO_LOCK_X509_STORE);
   ctx->store = NULL;

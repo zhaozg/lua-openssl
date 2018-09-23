@@ -15,6 +15,9 @@ os:
   - linux
   - osx
 
+matrix:
+  allow_failures:
+    - env: LUA=lua5.2 SSL=libressl-2.8.0
 
 branches:
   only:
