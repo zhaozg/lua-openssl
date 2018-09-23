@@ -449,12 +449,12 @@ void X509_CRL_get0_signature(const X509_CRL *crl, const ASN1_BIT_STRING **psig,
   if (palg != NULL)
     *palg = crl->sig_alg;
 }
+
 const ASN1_INTEGER *TS_STATUS_INFO_get0_status(const TS_STATUS_INFO *a)
 {
   return a->status;
 }
-const STACK_OF(ASN1_UTF8STRING) *
-TS_STATUS_INFO_get0_text(const TS_STATUS_INFO *a)
+const STACK_OF(ASN1_UTF8STRING) *TS_STATUS_INFO_get0_text(const TS_STATUS_INFO *a)
 {
   return a->text;
 }

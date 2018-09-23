@@ -147,8 +147,6 @@ vgPnEUG6Mk9bkxMZKRgsiKn6QGKDYGbOvnS1xmkMfRARBsJAq369VOTjMB/Qhs5q
 }
 
         for k,v in pairs(keys) do
-                print(string.format('Test %s export format',k))
-
                 local pri = pkey.read(v[1], true, 'pem')
                 local pub = assert(pri:get_public())
 
@@ -283,9 +281,7 @@ vgPnEUG6Mk9bkxMZKRgsiKn6QGKDYGbOvnS1xmkMfRARBsJAq369VOTjMB/Qhs5q
                 assertEquals(hex:upper(),v[4])
 
                 if (k~='EC' and k~='DSA') then
-                        print(openssl.hex(export))
                         local k1 = assert(pkey.read(export, false,'der', k))
-                        print(k1)
                         local p1 = k1:export('der', true)
                         assertEquals(p1, export)
                         assertEquals(k1:export(), pub:export())
