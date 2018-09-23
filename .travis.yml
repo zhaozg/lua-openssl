@@ -7,7 +7,8 @@ env:
   matrix:
     - LUA=lua5.1
     - LUA=lua5.1 SSL=openssl-1.0.2p
-    - LUA=lua5.2 SSL=libressl-2.8.0
+    allow_failures:
+      - LUA=lua5.2 SSL=libressl-2.8.0
     - LUA=lua5.3 SSL=openssl-1.1.1
     - LUA=luajit SSL=openssl-1.1.0i
     - LUA=luajit2.1
