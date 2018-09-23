@@ -7,30 +7,35 @@ LD		:= $(CROSS)$(LD)
 
 #OS auto detect
 ifneq (,$(TARGET_SYS))
-SYS		:= $(TARGET_SYS)
+  SYS		:= $(TARGET_SYS)
 else
-SYS		:= $(shell gcc -dumpmachine)
+  SYS		:= $(shell gcc -dumpmachine)
 endif
 
 #Lua auto detect
-ifneq (iOS,$SYS)
-LUA_VERSION ?= $(shell pkg-config luajit --print-provides)
+LUA_VERSION	?= $(shell pkg-config luajit --print-provides)
 ifeq ($(LUA_VERSION),)
-############ use lua
-LUAV		?= $(shell lua -e "_,_,v=string.find(_VERSION,'Lua (.+)');print(v)")
-LUA_CFLAGS	?= -I$(PREFIX)/include/lua$(LUAV)
-LUA_LIBS	?= -L$(PREFIX)/lib
-LUA_LIBDIR	?= $(PREFIX)/lib/lua/$(LUAV)
+  # Not found luajit package, try lua
+  LUA_VERSION	?= $(shell pkg-config lua --print-provides)
+  ifeq ($(LUA_VERSION),)
+    # Not found lua package, try from prefix
+    LUA_VERSION ?= $(shell lua -e "_,_,v=string.find(_VERSION,'Lua (.+)');print(v)")
+    LUA_CFLAGS	?= -I$(PREFIX)/include/lua$(LUA_VERSION)
+    LUA_LIBS	?= -L$(PREFIX)/lib -llua
+    LUA_LIBDIR	?= $(PREFIX)/lib/lua/$(LUA_VERSION)
+  else
+    # Found lua package
+    LUA_VERSION	?= $(shell lua -e "_,_,v=string.find(_VERSION,'Lua (.+)');print(v)")
+    LUA_CFLAGS	?= $(shell pkg-config lua --cflags)
+    LUA_LIBS	?= $(shell pkg-config lua --libs)
+    LUA_LIBDIR	?= $(PREFIX)/lib/lua/$(LUA_VERSION)
+  endif
 else
-############ use luajit
-LUAV		?= $(shell luajit -e "_,_,v=string.find(_VERSION,'Lua (.+)');print(v)")
-LUA_CFLAGS	?= $(shell pkg-config luajit --cflags)
-LUA_LIBS	?= $(shell pkg-config luajit --libs)
-LUA_LIBDIR	?= $(PREFIX)/lib/lua/$(LUAV)
-endif
-else
-LUA_CFLAGS	?= $(shell pkg-config luajit --cflags)
-LUA_LIBS	?= $(shell pkg-config luajit --libs)
+  # Found luajit package
+  LUA_VERSION	?= $(shell luajit -e "_,_,v=string.find(_VERSION,'Lua (.+)');print(v)")
+  LUA_CFLAGS	?= $(shell pkg-config luajit --cflags)
+  LUA_LIBS	?= $(shell pkg-config luajit --libs)
+  LUA_LIBDIR	?= $(PREFIX)/lib/lua/$(LUA_VERSION)
 endif
 
 #OpenSSL auto detect
@@ -38,34 +43,38 @@ OPENSSL_CFLAGS	?= $(shell pkg-config openssl --cflags)
 OPENSSL_LIBS	?= $(shell pkg-config openssl --static --libs)
 
 ifneq (, $(findstring linux, $(SYS)))
-# Do linux things
-CFLAGS		 = -fpic
-LDFLAGS		 = -Wl,--no-undefined -fpic -lrt -ldl -lm
+  # Do linux things
+  CFLAGS	 = -fpic
+  LDFLAGS	 = -Wl,--no-undefined -fpic -lrt -ldl -lm
 endif
+
 ifneq (, $(findstring apple, $(SYS)))
-# Do darwin things
-CFLAGS		 = -fPIC
-LDFLAGS		 = -fPIC -undefined dynamic_lookup -ldl
-#MACOSX_DEPLOYMENT_TARGET="10.3"
-CC := MACOSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET} $(CC)
+  # Do darwin things
+  CFLAGS	 = -fPIC
+  LDFLAGS	 = -fPIC -undefined dynamic_lookup -ldl
+  #MACOSX_DEPLOYMENT_TARGET="10.3"
+  CC		:= MACOSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET} $(CC)
 endif
+
 ifneq (, $(findstring mingw, $(SYS)))
-# Do mingw things
-CFLAGS		= -DLUA_LIB -DLUA_BUILD_AS_DLL -DWIN32_LEAN_AND_MEAN
+  # Do mingw things
+  CFLAGS	 = -DLUA_LIB -DLUA_BUILD_AS_DLL -DWIN32_LEAN_AND_MEAN
 endif
+
 ifneq (, $(findstring cygwin, $(SYS)))
-# Do cygwin things
-CFLAGS		 = -fPIC
+  # Do cygwin things
+  CFLAGS	 = -fPIC
 endif
+
 ifneq (, $(findstring iOS, $(SYS)))
-# Do iOS things
-CFLAGS           = -fPIC
-LDFLAGS		 = -fPIC -ldl
+  # Do iOS things
+  CFLAGS	 = -fPIC
+  LDFLAGS	 = -fPIC -ldl
 endif
 
 #custom config
 ifeq (.config, $(wildcard .config))
-include .config
+  include .config
 endif
 
 LIBNAME= $T.so.$V
