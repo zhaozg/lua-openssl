@@ -531,10 +531,10 @@ static LUA_FUNCTION(openssl_x509_parse)
     snprintf(buf, sizeof(buf), "%08lx", X509_subject_name_hash(cert));
     AUXILIAR_SET(L, -1, "hash", buf, string);
   }
-  /*
-    PUSH_ASN1_INTEGER(L, X509_get0_serialNumber(cert));
-    lua_setfield(L, -2, "serialNumber");
-  */
+
+  PUSH_ASN1_INTEGER(L, X509_get0_serialNumber(cert));
+  lua_setfield(L, -2, "serialNumber");
+
   PUSH_ASN1_TIME(L, X509_get_notBefore(cert));
   lua_setfield(L, -2, "notBefore");
   PUSH_ASN1_TIME(L, X509_get_notAfter(cert));
