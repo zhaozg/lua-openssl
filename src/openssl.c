@@ -310,7 +310,7 @@ static LUA_FUNCTION(openssl_random_bytes)
   }
   else
   {
-    ret = RAND_pseudo_bytes((byte*)buffer, length);
+    ret = RAND_bytes((byte*)buffer, length);
     if (ret == 1)
     {
       lua_pushlstring(L, buffer, length);

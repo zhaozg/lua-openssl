@@ -94,7 +94,7 @@ LUA_FUNCTION(openssl_lhash_get_string)
   return 1;
 }
 
-static void dump_value_doall_arg(CONF_VALUE *a, lua_State *L)
+static void dump_value_doall_arg(CONF_VALUE const *a, lua_State *L)
 {
   if (a->name)
   {

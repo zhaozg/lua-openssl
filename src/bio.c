@@ -776,21 +776,21 @@ void BIO_info_callback(BIO *bio, int cmd, const char *argp,
   case BIO_CB_READ:
     if (BIO_method_type(bio) & BIO_TYPE_DESCRIPTOR)
       snprintf(p, p_maxlen, "read(%lu,%lu) - %s fd=%lu\n",
-               BIO_number_read(bio), (unsigned long)argi,
-               BIO_method_name(bio), BIO_number_read(bio));
+               (unsigned long)BIO_number_read(bio), (unsigned long)argi,
+               BIO_method_name(bio), (unsigned long)BIO_number_read(bio));
     else
       snprintf(p, p_maxlen, "read(%lu,%lu) - %s\n",
-               BIO_number_read(bio), (unsigned long)argi,
+               (unsigned long)BIO_number_read(bio), (unsigned long)argi,
                BIO_method_name(bio));
     break;
   case BIO_CB_WRITE:
     if (BIO_method_type(bio) & BIO_TYPE_DESCRIPTOR)
       snprintf(p, p_maxlen, "write(%lu,%lu) - %s fd=%lu\n",
-               BIO_number_written(bio), (unsigned long)argi,
-               BIO_method_name(bio), BIO_number_written(bio));
+               (unsigned long)BIO_number_written(bio), (unsigned long)argi,
+               BIO_method_name(bio), (unsigned long)BIO_number_written(bio));
     else
       snprintf(p, p_maxlen, "write(%lu,%lu) - %s\n",
-               BIO_number_written(bio), (unsigned long)argi,
+               (unsigned long)BIO_number_written(bio), (unsigned long)argi,
                BIO_method_name(bio));
     break;
   case BIO_CB_PUTS:
