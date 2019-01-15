@@ -541,8 +541,8 @@ static LUA_FUNCTION(openssl_x509_parse)
   lua_setfield(L, -2, "notAfter");
 
   {
-    const X509_ALGOR *palg = NULL;
-    const ASN1_BIT_STRING *psig = NULL;
+    CONSTIFY_X509_get0 X509_ALGOR *palg = NULL;
+    CONSTIFY_X509_get0 ASN1_BIT_STRING *psig = NULL;
 
     X509_get0_signature(&psig, &palg, cert);
     if (palg != NULL)
@@ -1281,8 +1281,8 @@ static int openssl_x509_sign(lua_State*L)
     size_t sig_len;
     const char* sig = luaL_checklstring(L, 2, &sig_len);
     int nid = openssl_get_nid(L, 3);
-    const ASN1_BIT_STRING *psig = NULL;
-    const X509_ALGOR *palg = NULL;
+    CONSTIFY_X509_get0 ASN1_BIT_STRING *psig = NULL;
+    CONSTIFY_X509_get0 X509_ALGOR *palg = NULL;
     int ret;
 
     X509_get0_signature(&psig, &palg, x);
@@ -1305,8 +1305,8 @@ static int openssl_x509_verify(lua_State*L)
     int len = i2d_re_X509_tbs(x, &out);
     if (len > 0)
     {
-      const ASN1_BIT_STRING *psig = NULL;
-      const X509_ALGOR *palg = NULL;
+      CONSTIFY_X509_get0 ASN1_BIT_STRING *psig = NULL;
+      CONSTIFY_X509_get0 X509_ALGOR *palg = NULL;
 
       lua_pushlstring(L, (const char *)out, len);
       OPENSSL_free(out);

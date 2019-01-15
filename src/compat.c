@@ -472,7 +472,7 @@ int i2d_re_X509_tbs(X509 *x, unsigned char **pp)
 }
 
 #if !defined(LIBRESSL_VERSION_NUMBER)
-void X509_get0_signature(ASN1_BIT_STRING **psig, X509_ALGOR **palg,
+void X509_get0_signature(const ASN1_BIT_STRING **psig, const X509_ALGOR **palg,
                          const X509 *x)
 {
   if (psig)

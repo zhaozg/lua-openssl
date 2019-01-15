@@ -98,10 +98,10 @@ get x509_algor properties
 static int openssl_xalgor_get(lua_State* L)
 {
   int type;
-  const void* val;
-  const ASN1_OBJECT *obj;
+  CONSTIFY_X509_get0 void* val;
+  CONSTIFY_X509_get0 ASN1_OBJECT *obj;
 
-  X509_ALGOR* alg = CHECK_OBJECT(1, X509_ALGOR, "openssl.x509_algor");
+  CONSTIFY_X509_get0 X509_ALGOR* alg = CHECK_OBJECT(1, X509_ALGOR, "openssl.x509_algor");
 
   X509_ALGOR_get0(&obj, &type, &val, alg);
   if (obj != NULL)
@@ -154,10 +154,10 @@ convert x509_algor to txt string of asn1_object
 static int openssl_xalgor_tostring(lua_State* L)
 {
   int type;
-  const void* val;
-  const ASN1_OBJECT *obj;
+  CONSTIFY_X509_get0 void* val;
+  CONSTIFY_X509_get0 ASN1_OBJECT *obj;
 
-  X509_ALGOR* alg = CHECK_OBJECT(1, X509_ALGOR, "openssl.x509_algor");
+  CONSTIFY_X509_get0 X509_ALGOR* alg = CHECK_OBJECT(1, X509_ALGOR, "openssl.x509_algor");
 
   X509_ALGOR_get0(&obj, &type, &val, alg);
   if (obj != NULL)

@@ -41,6 +41,12 @@ extern "C" {
 
 #include "openssl.h"
 
+#if OPENSSL_VERSION_NUMBER > 0x10100000L
+#define CONSTIFY_X509_get0 const
+#else
+#define CONSTIFY_X509_get0
+#endif
+
 #define PUSH_BN(x)                                      \
   *(void **)(lua_newuserdata(L, sizeof(void *))) = (x); \
   luaL_getmetatable(L,"openssl.bn");                    \
@@ -122,14 +128,15 @@ X509_STORE *TS_VERIFY_CTX_set_store(TS_VERIFY_CTX *ctx, X509_STORE *s);
 STACK_OF(X509) *TS_VERIFY_CTS_set_certs(TS_VERIFY_CTX *ctx,
                                         STACK_OF(X509) *certs);
 unsigned char *TS_VERIFY_CTX_set_imprint(TS_VERIFY_CTX *ctx,
-                                         unsigned char *hexstr,
-                                         long len);
+    unsigned char *hexstr,
+    long len);
 
 #if OPENSSL_VERSION_NUMBER < 0x10002000L || defined(LIBRESSL_VERSION_NUMBER)
 int i2d_re_X509_tbs(X509 *x, unsigned char **pp);
 #endif
 #if OPENSSL_VERSION_NUMBER < 0x10002000L
-void X509_get0_signature(ASN1_BIT_STRING **psig, X509_ALGOR **palg,
+void X509_get0_signature(CONSTIFY_X509_get0 ASN1_BIT_STRING **psig,
+                         CONSTIFY_X509_get0 X509_ALGOR **palg,
                          const X509 *x);
 int X509_get_signature_nid(const X509 *x);
 #endif
