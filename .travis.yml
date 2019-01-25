@@ -31,10 +31,10 @@ before_install:
   - git submodule update --recursive
 
 install:
-  - 'if [[ "$TRAVIS_OS_NAME" == "osx" && -z "$SSL" ]]; then sudo $HOME/.usr/bin/luarocks make openssl-scm-5.rockspec OPENSSL_DIR=/usr/local/opt/openssl; fi'
-  - 'if [[ "$TRAVIS_OS_NAME" == "osx" && -n "$SSL" ]]; then sudo $HOME/.usr/bin/luarocks make openssl-scm-5.rockspec OPENSSL_DIR=$HOME/.usr; fi'
-  - 'if [[ "$TRAVIS_OS_NAME" == "linux" && -z "$SSL" ]]; then sudo -H $HOME/.usr/bin/luarocks make openssl-scm-5.rockspec OPENSSL_DIR=/usr; fi'
-  - 'if [[ "$TRAVIS_OS_NAME" == "linux" && -n "$SSL" ]]; then sudo -H $HOME/.usr/bin/luarocks make openssl-scm-5.rockspec OPENSSL_DIR=$HOME/.usr; fi'
+  - 'if [[ "$TRAVIS_OS_NAME" == "osx" && -z "$SSL" ]]; then sudo $HOME/.usr/bin/luarocks make openssl-scm-6.rockspec OPENSSL_DIR=/usr/local/opt/openssl; fi'
+  - 'if [[ "$TRAVIS_OS_NAME" == "osx" && -n "$SSL" ]]; then sudo $HOME/.usr/bin/luarocks make openssl-scm-6.rockspec OPENSSL_DIR=$HOME/.usr; fi'
+  - 'if [[ "$TRAVIS_OS_NAME" == "linux" && -z "$SSL" ]]; then sudo -H $HOME/.usr/bin/luarocks make openssl-scm-6.rockspec OPENSSL_DIR=/usr; fi'
+  - 'if [[ "$TRAVIS_OS_NAME" == "linux" && -n "$SSL" ]]; then sudo -H $HOME/.usr/bin/luarocks make openssl-scm-6.rockspec OPENSSL_DIR=$HOME/.usr; fi'
 
 script:
   - cd test
