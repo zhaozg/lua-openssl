@@ -33,7 +33,9 @@ dofile('ec.lua')
 dofile('sm2.lua')
 
 --LuaUnit.verbosity = 0
-LuaUnit.run()
+local runner = LuaUnit.new()
+runner:setOutputType("tap")
+runner:runSuite()
 print(openssl.error(true))
 collectgarbage()
 
