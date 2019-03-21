@@ -530,4 +530,19 @@ unsigned char *TS_VERIFY_CTX_set_imprint(TS_VERIFY_CTX *ctx,
   return ctx->imprint;
 }
 
+const unsigned char *ASN1_STRING_get0_data(const ASN1_STRING *x)
+{
+  return x->data;
+}
+
+const ASN1_TIME *X509_CRL_get0_lastUpdate(const X509_CRL *crl)
+{
+  return crl->crl->lastUpdate;
+}
+
+const ASN1_TIME *X509_CRL_get0_nextUpdate(const X509_CRL *crl)
+{
+  return crl->crl->nextUpdate;
+}
+
 #endif /* < 1.1.0 */

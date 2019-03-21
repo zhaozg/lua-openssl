@@ -141,7 +141,10 @@ void X509_get0_signature(CONSTIFY_X509_get0 ASN1_BIT_STRING **psig,
 int X509_get_signature_nid(const X509 *x);
 #endif
 
-#endif
+const unsigned char *ASN1_STRING_get0_data(const ASN1_STRING *x);
+const ASN1_TIME *X509_CRL_get0_lastUpdate(const X509_CRL *crl);
+const ASN1_TIME *X509_CRL_get0_nextUpdate(const X509_CRL *crl);
+#endif /* < 1.1.0 */
 
 #define AUXILIAR_SETOBJECT(L, cval, ltype, idx, lvar) \
   do {                                                \
