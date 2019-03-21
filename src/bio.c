@@ -755,6 +755,7 @@ static LUA_FUNCTION(openssl_bio_fd)
   return 1;
 }
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
 void BIO_info_callback(BIO *bio, int cmd, const char *argp,
                        int argi, long argl, long ret)
 {
@@ -847,6 +848,7 @@ static LUA_FUNCTION(openssl_bio_set_callback)
   ret = BIO_set_info_callback(bio, BIO_info_callback);
   return openssl_pushresult(L, ret);
 }
+#endif
 
 /***
 return pending length of bytes to read and write
@@ -888,7 +890,9 @@ static luaL_Reg bio_funs[] =
   {"reset", openssl_bio_reset },
   {"retry", openssl_bio_retry },
   {"pending", openssl_bio_pending },
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
   {"set_callback", openssl_bio_set_callback },
+#endif
 
   /* for filter bio */
   {"push",  openssl_bio_push  },
