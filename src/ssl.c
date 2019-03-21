@@ -50,28 +50,28 @@ static int openssl_ssl_ctx_new(lua_State*L)
   else if (strcmp(meth, "SSLv23_client") == 0)
     method = SSLv23_client_method();  /* SSLv3 but can rollback to v2 */
 
-#ifndef NO_OPENSSL_DEP_METHODS
+#ifndef OPENSSL_NO_TLS1
   else if (strcmp(meth, "TLSv1_1") == 0)
     method = TLSv1_1_method();    /* TLSv1.0 */
   else if (strcmp(meth, "TLSv1_1_server") == 0)
     method = TLSv1_1_server_method(); /* TLSv1.0 */
   else if (strcmp(meth, "TLSv1_1_client") == 0)
     method = TLSv1_1_client_method(); /* TLSv1.0 */
-
   else if (strcmp(meth, "TLSv1_2") == 0)
     method = TLSv1_2_method();    /* TLSv1.0 */
   else if (strcmp(meth, "TLSv1_2_server") == 0)
     method = TLSv1_2_server_method(); /* TLSv1.0 */
   else if (strcmp(meth, "TLSv1_2_client") == 0)
     method = TLSv1_2_client_method(); /* TLSv1.0 */
-
   else if (strcmp(meth, "TLSv1") == 0)
     method = TLSv1_method();    /* TLSv1.0 */
   else if (strcmp(meth, "TLSv1_server") == 0)
     method = TLSv1_server_method(); /* TLSv1.0 */
   else if (strcmp(meth, "TLSv1_client") == 0)
     method = TLSv1_client_method(); /* TLSv1.0 */
+#endif
 
+#ifndef OPENSSL_NO_DTLS
   else if (strcmp(meth, "DTLSv1") == 0)
     method = DTLSv1_method();   /* DTLSv1.0 */
   else if (strcmp(meth, "DTLSv1_server") == 0)
@@ -79,6 +79,7 @@ static int openssl_ssl_ctx_new(lua_State*L)
   else if (strcmp(meth, "DTLSv1_client") == 0)
     method = DTLSv1_client_method();  /* DTLSv1.0 */
 #endif
+
 #ifndef OPENSSL_NO_SSL2
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
   else if (strcmp(meth, "SSLv2") == 0)
@@ -89,19 +90,20 @@ static int openssl_ssl_ctx_new(lua_State*L)
     method = SSLv2_client_method();
 #endif
 #endif
+
 #ifdef LOAD_SSL_CUSTOM
   LOAD_SSL_CUSTOM
 #endif
   else
     luaL_error(L, "#1:%s not supported\n"
-               "Maybe [SSLv3] SSLv23 TLSv1 TLSv1_1 TLSv1_2 DTLSv1 [SSLv2], option followed by _client or _server\n"
+               "accpet SSLv3 SSLv23 TLSv1 TLSv1_1 TLSv1_2 DTLSv1 SSLv2, optional followed by _client or _server\n"
                "default is TLSv1",
                meth);
   ciphers = luaL_optstring(L, 2, SSL_DEFAULT_CIPHER_LIST);
   ctx = SSL_CTX_new(method);
   if (!ctx)
     luaL_error(L, "#1:%s not supported\n"
-               "Maybe [SSLv3] SSLv23 TLSv1 TLSv1_1 TLSv1_2 DTLSv1 [SSLv2], option followed by _client or _server\n"
+               "accpet SSLv3 SSLv23 TLSv1 TLSv1_1 TLSv1_2 DTLSv1 SSLv2, optional followed by _client or _server\n"
                "default is TLSv1",
                meth);
   openssl_newvalue(L, ctx);
@@ -195,9 +197,12 @@ static int openssl_ssl_ctx_use(lua_State*L)
   SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
   EVP_PKEY* pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
 
-  if(lua_isstring(L, 3)) {
+  if(lua_isstring(L, 3))
+  {
     ret = SSL_CTX_use_certificate_chain_file(ctx, luaL_checkstring(L, 3));
-  } else {
+  }
+  else
+  {
     X509* cert = CHECK_OBJECT(3, X509, "openssl.x509");
     ret = SSL_CTX_use_certificate(ctx, cert);
   }
