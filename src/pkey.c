@@ -1129,7 +1129,7 @@ static LUA_FUNCTION(openssl_ec_userId)
     ASN1_OCTET_STRING *s = ASN1_OCTET_STRING_new();
     ret = ENGINE_ctrl(engine, 0x474554, 0x4944, ec, (void(*)(void))s);
     if (ret == 1)
-      lua_pushlstring(L, (const char*) ASN1_STRING_data(s), ASN1_STRING_length(s));
+      lua_pushlstring(L, (const char*) ASN1_STRING_get0_data(s), ASN1_STRING_length(s));
     else
       ret = openssl_pushresult(L, ret);
     return ret;

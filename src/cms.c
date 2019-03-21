@@ -766,7 +766,7 @@ static int openssl_cms_content(lua_State *L)
   if (content && *content)
   {
     ASN1_OCTET_STRING* s = *content;
-    lua_pushlstring(L, (const char*)ASN1_STRING_data(s), ASN1_STRING_length(s));
+    lua_pushlstring(L, (const char*)ASN1_STRING_get0_data(s), ASN1_STRING_length(s));
   }
   else
     lua_pushnil(L);

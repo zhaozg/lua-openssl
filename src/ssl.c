@@ -50,6 +50,7 @@ static int openssl_ssl_ctx_new(lua_State*L)
   else if (strcmp(meth, "SSLv23_client") == 0)
     method = SSLv23_client_method();  /* SSLv3 but can rollback to v2 */
 
+#ifndef NO_OPENSSL_DEP_METHODS
   else if (strcmp(meth, "TLSv1_1") == 0)
     method = TLSv1_1_method();    /* TLSv1.0 */
   else if (strcmp(meth, "TLSv1_1_server") == 0)
@@ -77,6 +78,7 @@ static int openssl_ssl_ctx_new(lua_State*L)
     method = DTLSv1_server_method();  /* DTLSv1.0 */
   else if (strcmp(meth, "DTLSv1_client") == 0)
     method = DTLSv1_client_method();  /* DTLSv1.0 */
+#endif
 #ifndef OPENSSL_NO_SSL2
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
   else if (strcmp(meth, "SSLv2") == 0)
@@ -2178,6 +2180,7 @@ static int openssl_ssl_cache_hit(lua_State*L)
   lua_pushboolean(L, ret == 0);
   return 1;
 }
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 static int openssl_ssl_set_debug(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
@@ -2185,6 +2188,7 @@ static int openssl_ssl_set_debug(lua_State*L)
   SSL_set_debug(s, debug);
   return 0;
 }
+#endif
 #endif
 
 #if OPENSSL_VERSION_NUMBER >= 0x0090819fL
@@ -2308,7 +2312,9 @@ static luaL_Reg ssl_funcs[] =
 
   {"session_reused", openssl_ssl_session_reused},
 #if OPENSSL_VERSION_NUMBER > 0x10000000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
   {"set_debug",   openssl_ssl_set_debug},
+#endif
   {"cache_hit",   openssl_ssl_cache_hit},
   {"renegotiate_abbreviated", openssl_ssl_renegotiate_abbreviated},
 #endif

@@ -311,28 +311,9 @@ unsigned long irix_thread_id(void)
 /* Linux and a few others */
 #ifdef PTHREADS
 #ifndef OPENSSL_SYS_WIN32
-
-static void pthreads_locking_callback(int mode, int type, const char *file, int line);
-static unsigned long pthreads_thread_id(void );
-
 static pthread_mutex_t *lock_cs;
 static long *lock_count;
 
-void CRYPTO_thread_setup(void)
-{
-  int i;
-
-  lock_cs = OPENSSL_malloc(CRYPTO_num_locks() * sizeof(pthread_mutex_t));
-  lock_count = OPENSSL_malloc(CRYPTO_num_locks() * sizeof(long));
-  for (i = 0; i < CRYPTO_num_locks(); i++)
-  {
-    lock_count[i] = 0;
-    pthread_mutex_init(&(lock_cs[i]), NULL);
-  }
-
-  CRYPTO_set_id_callback((unsigned long (*)())pthreads_thread_id);
-  CRYPTO_set_locking_callback((void (*)())pthreads_locking_callback);
-}
 
 void CRYPTO_thread_cleanup(void)
 {
@@ -372,12 +353,28 @@ static void pthreads_locking_callback(int mode, int type, const char *file, int 
   }
 }
 
-unsigned long pthreads_thread_id(void)
+static unsigned long pthreads_thread_id(void)
 {
   unsigned long ret;
 
   ret = (unsigned long)pthread_self();
   return (ret);
+}
+
+void CRYPTO_thread_setup(void)
+{
+  int i;
+
+  lock_cs = OPENSSL_malloc(CRYPTO_num_locks() * sizeof(pthread_mutex_t));
+  lock_count = OPENSSL_malloc(CRYPTO_num_locks() * sizeof(long));
+  for (i = 0; i < CRYPTO_num_locks(); i++)
+  {
+    lock_count[i] = 0;
+    pthread_mutex_init(&(lock_cs[i]), NULL);
+  }
+
+  CRYPTO_set_id_callback(pthreads_thread_id);
+  CRYPTO_set_locking_callback(pthreads_locking_callback);
 }
 #endif
 #endif /* PTHREADS */

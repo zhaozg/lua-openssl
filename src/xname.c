@@ -224,7 +224,7 @@ static int openssl_push_xname_entry(lua_State* L, X509_NAME_ENTRY* ne, int obj)
   else
   {
     lua_pushstring(L, OBJ_nid2sn(OBJ_obj2nid(object)));
-    lua_pushlstring(L, (const char*)ASN1_STRING_data(value), ASN1_STRING_length(value));
+    lua_pushlstring(L, (const char*)ASN1_STRING_get0_data(value), ASN1_STRING_length(value));
   }
   lua_settable(L, -3);
   return 1;
@@ -345,7 +345,7 @@ static int openssl_xname_get_text(lua_State*L)
 
   e = X509_NAME_get_entry(xn, lastpos);
   s = X509_NAME_ENTRY_get_data(e);
-  lua_pushlstring(L, (const char *)ASN1_STRING_data(s), ASN1_STRING_length(s));
+  lua_pushlstring(L, (const char *)ASN1_STRING_get0_data(s), ASN1_STRING_length(s));
   lua_pushinteger(L, lastpos);
   return 2;
 };

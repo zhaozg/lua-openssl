@@ -1203,7 +1203,7 @@ static int openssl_asn1group_data(lua_State* L)
 {
   ASN1_STRING* s = CHECK_GROUP(1, ASN1_STRING, "openssl.asn1group");
   if (lua_isnone(L, 2))
-    lua_pushlstring(L, (const char*)ASN1_STRING_data(s), ASN1_STRING_length(s));
+    lua_pushlstring(L, (const char*)ASN1_STRING_get0_data(s), ASN1_STRING_length(s));
   else
   {
     size_t l;
@@ -1275,7 +1275,7 @@ static int openssl_asn1group_tostring(lua_State* L)
     case V_ASN1_INTEGER:
     case V_ASN1_BIT_STRING:
     {
-      BIGNUM *bn = BN_bin2bn((const unsigned char*)ASN1_STRING_data(s), ASN1_STRING_length(s), NULL);
+      BIGNUM *bn = BN_bin2bn((const unsigned char*)ASN1_STRING_get0_data(s), ASN1_STRING_length(s), NULL);
       char* str = BN_bn2hex(bn);
       lua_pushstring(L, str);
       BN_free(bn);
@@ -1283,7 +1283,7 @@ static int openssl_asn1group_tostring(lua_State* L)
       return 1;
     }
     default:
-      lua_pushlstring(L, (const char*) ASN1_STRING_data(s), ASN1_STRING_length(s));
+      lua_pushlstring(L, (const char*)ASN1_STRING_get0_data(s), ASN1_STRING_length(s));
       return 1;
     }
   }
