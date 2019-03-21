@@ -41,7 +41,7 @@ if uv then
         if pid then
             uv.read_start(stdout1, onread)
             uv.read_start(stderr1, onread)
-            set_timeout(1000,function()
+            set_timeout(2000,function()
                 local child, pid
                 child, pid = uv.spawn(arg[-1], {
                   args = {"8.ssl_c.lua",'127.0.0.1',8082},
@@ -84,7 +84,7 @@ if uv then
         uv.read_start(stdout1, onread)
         uv.read_start(stderr1, onread)
 
-        set_timeout(1000,function()
+        set_timeout(2000,function()
             local child, pid
             print('launch',arg[-1])
             child, pid = uv.spawn(arg[-1], {
@@ -126,7 +126,7 @@ if uv then
         uv.read_start(stdout1, onread)
         uv.read_start(stderr1, onread)
 
-        set_timeout(1000,function()
+        set_timeout(2000,function()
             local child, pid
             child, pid = uv.spawn(arg[-1], {
               args = {"8.ssl_c.lua",'127.0.0.1',8084},
@@ -168,7 +168,7 @@ if uv then
         uv.read_start(stdout1, onread)
         uv.read_start(stderr1, onread)
 
-        set_timeout(1000,function()
+        set_timeout(2000,function()
             local child, pid child, pid = uv.spawn(arg[-1], {
               args = {"8.bio_c.lua",'127.0.0.1',8085},
               stdio = {nil, stdout2, stderr2}
