@@ -20,8 +20,8 @@ ifeq ($(LUA_VERSION),)
   ifeq ($(LUA_VERSION),)
     # Not found lua package, try from prefix
     LUA_VERSION := $(shell lua -e "_,_,v=string.find(_VERSION,'Lua (.+)');print(v)")
-    LUA_CFLAGS	?= -I$(PREFIX)/include/lua$(LUA_VERSION)
-    LUA_LIBS	?= -L$(PREFIX)/lib -llua
+    LUA_CFLAGS	?= -I$(PREFIX)/include
+    LUA_LIBS	?= -L$(PREFIX)/lib
     LUA_LIBDIR	?= $(PREFIX)/lib/lua/$(LUA_VERSION)
   else
     # Found lua package
@@ -44,8 +44,8 @@ OPENSSL_LIBS	?= $(shell pkg-config openssl --static --libs)
 
 ifneq (, $(findstring linux, $(SYS)))
   # Do linux things
-  CFLAGS	 = -fpic
-  LDFLAGS	 = -Wl,--no-undefined -fpic -lrt -ldl -lm
+  CFLAGS	 = -fPIC
+  LDFLAGS	 = -fPIC -lrt -ldl -lm
 endif
 
 ifneq (, $(findstring apple, $(SYS)))
@@ -84,13 +84,16 @@ LDFLAGS		+= -shared $(OPENSSL_LIBS) $(LUA_LIBS)
 # Compilation directives
 WARN_MIN	 = -Wall -Wno-unused-value -Wno-unused-function
 WARN		 = -Wall
-WARN_MOST	 = $(WARN) -W -Waggregate-return -Wcast-align -Wmissing-prototypes -Wnested-externs -Wshadow -Wwrite-strings -pedantic
+WARN_MOST	 = $(WARN) -W -Waggregate-return -Wcast-align -Wmissing-prototypes \
+		   -Wnested-externs -Wshadow -Wwrite-strings -pedantic
 CFLAGS		+= $(WARN_MIN) -DPTHREADS -Ideps -Ideps/lua-compat -Ideps/auxiliar
 
-OBJS=src/asn1.o deps/auxiliar/auxiliar.o src/bio.o src/cipher.o src/cms.o src/compat.o src/crl.o src/csr.o src/dh.o src/digest.o src/dsa.o \
-src/ec.o src/engine.o src/hmac.o src/lbn.o src/lhash.o src/misc.o src/ocsp.o src/openssl.o src/ots.o src/pkcs12.o src/pkcs7.o    \
-src/pkey.o src/rsa.o src/ssl.o src/th-lock.o src/util.o src/x509.o src/xattrs.o src/xexts.o src/xname.o src/xstore.o \
-src/xalgor.o src/callback.o src/srp.o deps/auxiliar/subsidiar.o
+OBJS=src/asn1.o deps/auxiliar/auxiliar.o src/bio.o src/cipher.o src/cms.o src/compat.o \
+     src/crl.o src/csr.o src/dh.o src/digest.o src/dsa.o src/ec.o src/engine.o         \
+     src/hmac.o src/lbn.o src/lhash.o src/misc.o src/ocsp.o src/openssl.o src/ots.o    \
+     src/pkcs12.o src/pkcs7.o src/pkey.o src/rsa.o src/ssl.o src/th-lock.o src/util.o  \
+     src/x509.o src/xattrs.o src/xexts.o src/xname.o src/xstore.o src/xalgor.o         \
+     src/callback.o src/srp.o deps/auxiliar/subsidiar.o
 
 .c.o:
 	$(CC) $(CFLAGS) -c -o $@ $?

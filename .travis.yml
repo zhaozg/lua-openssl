@@ -6,10 +6,10 @@ env:
     - LUAROCKS=3.0.3
   matrix:
     - LUA=lua5.1
-    - LUA=lua5.1 SSL=openssl-1.0.2p
-    - LUA=lua5.2 SSL=libressl-2.8.0
-    - LUA=lua5.3 SSL=openssl-1.1.1
-    - LUA=luajit SSL=openssl-1.1.0i
+    - LUA=lua5.1 SSL=openssl-1.0.2r
+    - LUA=lua5.2 SSL=libressl-2.8.3
+    - LUA=lua5.3 SSL=openssl-1.1.1b
+    - LUA=luajit SSL=openssl-1.1.0j
     - LUA=luajit2.1
 os:
   - linux
@@ -17,7 +17,7 @@ os:
 
 matrix:
   allow_failures:
-    - env: LUA=lua5.2 SSL=libressl-2.8.0
+    - env: LUA=lua5.2 SSL=libressl-2.8.3
 
 branches:
   only:
@@ -31,10 +31,7 @@ before_install:
   - git submodule update --recursive
 
 install:
-  - 'if [[ "$TRAVIS_OS_NAME" == "osx" && -z "$SSL" ]]; then sudo $HOME/.usr/bin/luarocks make openssl-scm-6.rockspec OPENSSL_DIR=/usr/local/opt/openssl; fi'
-  - 'if [[ "$TRAVIS_OS_NAME" == "osx" && -n "$SSL" ]]; then sudo $HOME/.usr/bin/luarocks make openssl-scm-6.rockspec OPENSSL_DIR=$HOME/.usr; fi'
-  - 'if [[ "$TRAVIS_OS_NAME" == "linux" && -z "$SSL" ]]; then sudo -H $HOME/.usr/bin/luarocks make openssl-scm-6.rockspec OPENSSL_DIR=/usr; fi'
-  - 'if [[ "$TRAVIS_OS_NAME" == "linux" && -n "$SSL" ]]; then sudo -H $HOME/.usr/bin/luarocks make openssl-scm-6.rockspec OPENSSL_DIR=$HOME/.usr; fi'
+  - bash .travis/install.sh
 
 script:
   - cd test
