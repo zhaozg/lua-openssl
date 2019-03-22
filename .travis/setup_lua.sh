@@ -20,16 +20,16 @@ LUAJIT="no"
 
 if [ "$PLATFORM" == "macosx" ]; then
   if [ "$LUA" == "luajit" ]; then
-    LUAJIT="yes";
+    LUAJIT="yes"
   fi
   if [ "$LUA" == "luajit2.0" ]; then
-    LUAJIT="yes";
+    LUAJIT="yes"
   fi
   if [ "$LUA" == "luajit2.1" ]; then
-    LUAJIT="yes";
-  fi;
+    LUAJIT="yes"
+  fi
 elif [ "$(expr substr $LUA 1 6)" == "luajit" ]; then
-  LUAJIT="yes";
+  LUAJIT="yes"
 fi
 
 mkdir -p "$LUA_HOME_DIR"
@@ -37,15 +37,15 @@ mkdir -p "$LUA_HOME_DIR"
 if [ "$LUAJIT" == "yes" ]; then
 
   if [ "$LUA" == "luajit" ]; then
-    curl --location https://github.com/LuaJIT/LuaJIT/archive/v$LUAJIT_VERSION.tar.gz | tar xz;
+    curl --location https://github.com/LuaJIT/LuaJIT/archive/v$LUAJIT_VERSION.tar.gz | tar xz
   else
-    git clone https://github.com/LuaJIT/LuaJIT.git $LUAJIT_BASE;
+    git clone https://github.com/LuaJIT/LuaJIT.git $LUAJIT_BASE
   fi
 
   cd $LUAJIT_BASE
 
   if [ "$LUA" == "luajit2.1" ]; then
-    git checkout v2.1;
+    git checkout v2.1
     # force the INSTALL_TNAME to be luajit
     perl -i -pe 's/INSTALL_TNAME=.+/INSTALL_TNAME= luajit/' Makefile
   fi
@@ -56,19 +56,19 @@ else
 
   if [ "$LUA" == "lua5.1" ]; then
     curl http://www.lua.org/ftp/lua-5.1.5.tar.gz | tar xz
-    cd lua-5.1.5;
+    cd lua-5.1.5
   elif [ "$LUA" == "lua5.2" ]; then
     curl http://www.lua.org/ftp/lua-5.2.4.tar.gz | tar xz
-    cd lua-5.2.4;
+    cd lua-5.2.4
   elif [ "$LUA" == "lua5.3" ]; then
-    curl http://www.lua.org/ftp/lua-5.3.4.tar.gz | tar xz
-    cd lua-5.3.4;
+    curl http://www.lua.org/ftp/lua-5.3.5.tar.gz | tar xz
+    cd lua-5.3.5
   fi
 
   # Build Lua without backwards compatibility for testing
   perl -i -pe 's/-DLUA_COMPAT_(ALL|5_2)//' src/Makefile
   make $PLATFORM
-  make INSTALL_TOP="$LUA_HOME_DIR" install;
+  make INSTALL_TOP="$LUA_HOME_DIR" install
 fi
 
 cd $TRAVIS_BUILD_DIR
@@ -82,11 +82,11 @@ curl --location http://luarocks.org/releases/$LUAROCKS_BASE.tar.gz | tar xz
 cd $LUAROCKS_BASE
 
 if [ "$LUA" == "luajit" ]; then
-  ./configure --lua-suffix=jit --with-lua-include="$LUA_HOME_DIR/include/luajit-2.0" --prefix="$LR_HOME_DIR";
+  ./configure --lua-suffix=jit --with-lua-include="$LUA_HOME_DIR/include/luajit-2.0" --prefix="$LR_HOME_DIR"
 elif [ "$LUA" == "luajit2.0" ]; then
-  ./configure --lua-suffix=jit --with-lua-include="$LUA_HOME_DIR/include/luajit-2.0" --prefix="$LR_HOME_DIR";
+  ./configure --lua-suffix=jit --with-lua-include="$LUA_HOME_DIR/include/luajit-2.0" --prefix="$LR_HOME_DIR"
 elif [ "$LUA" == "luajit2.1" ]; then
-  ./configure --lua-suffix=jit --with-lua-include="$LUA_HOME_DIR/include/luajit-2.1" --prefix="$LR_HOME_DIR";
+  ./configure --lua-suffix=jit --with-lua-include="$LUA_HOME_DIR/include/luajit-2.1" --prefix="$LR_HOME_DIR"
 else
   ./configure --with-lua="$LUA_HOME_DIR" --prefix="$LR_HOME_DIR"
 fi
@@ -100,11 +100,11 @@ luarocks --version
 rm -rf $LUAROCKS_BASE
 
 if [ "$LUAJIT" == "yes" ]; then
-  rm -rf $LUAJIT_BASE;
+  rm -rf $LUAJIT_BASE
 elif [ "$LUA" == "lua5.1" ]; then
-  rm -rf lua-5.1.5;
+  rm -rf lua-5.1.5
 elif [ "$LUA" == "lua5.2" ]; then
-  rm -rf lua-5.2.4;
+  rm -rf lua-5.2.4
 elif [ "$LUA" == "lua5.3" ]; then
-  rm -rf lua-5.3.4;
+  rm -rf lua-5.3.5
 fi

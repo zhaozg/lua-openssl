@@ -23,6 +23,7 @@
 #include <openssl/pem.h>
 #include <openssl/err.h>
 #include <openssl/conf.h>
+#include <openssl/comp.h>
 #include <openssl/rand.h>
 #include <openssl/pkcs12.h>
 #include <openssl/opensslv.h>
