@@ -1,9 +1,9 @@
 package = "openssl"
-version = "scm-6"
+version = "scm-7"
 
 source = {
   url = "gitrec://github.com/zhaozg/lua-openssl",
-  tag = "0.7.4"
+  tag = "0.7.5"
 }
 
 description = {

@@ -53,8 +53,8 @@
 */
 
 /*                              MNNFFPPS  */
-#define LOPENSSL_VERSION_NUM  0x00705000
-#define LOPENSSL_VERSION  "0.7.5-dev"
+#define LOPENSSL_VERSION_NUM  0x0070500f
+#define LOPENSSL_VERSION  "0.7.5"
 
 #if OPENSSL_VERSION_NUMBER >= 0x10000000L
 #include <openssl/lhash.h>
