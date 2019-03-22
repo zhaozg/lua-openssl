@@ -417,7 +417,7 @@ static int luaclose_openssl(lua_State *L)
   CONF_modules_free();
   CONF_modules_unload(1);
 
-#if OPENSSL_VERSION_NUMBER >= 0x10002000L
+#if OPENSSL_VERSION_NUMBER >= 0x10002000L && !defined(LIBRESSL_VERSION_NUMBER)
   SSL_COMP_free_compression_methods();
 #endif
   COMP_zlib_cleanup();
