@@ -36,7 +36,7 @@ install:
 script:
   - cd test
   - curl https://raw.githubusercontent.com/bluebird75/luaunit/master/luaunit.lua > luaunit.lua
-  - lua -e "package.cpath='../?.so'" test.lua
+  - LD_LIBRARY_PATH=$HOME/.usr/lib lua -e "package.cpath='../?.so'" test.lua
 
 notifications:
   email:

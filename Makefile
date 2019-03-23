@@ -1,6 +1,7 @@
 T=openssl
 
 PREFIX		?=/usr/local
+PKG_CONFIG	?=pkg-config
 CC		:= $(CROSS)$(CC)
 AR		:= $(CROSS)$(AR)
 LD		:= $(CROSS)$(LD)
@@ -13,10 +14,10 @@ else
 endif
 
 #Lua auto detect
-LUA_VERSION	:= $(shell pkg-config luajit --print-provides)
+LUA_VERSION	:= $(shell $(PKG_CONFIG) luajit --print-provides)
 ifeq ($(LUA_VERSION),)
   # Not found luajit package, try lua
-  LUA_VERSION	:= $(shell pkg-config lua --print-provides)
+  LUA_VERSION	:= $(shell $(PKG_CONFIG) lua --print-provides)
   ifeq ($(LUA_VERSION),)
     # Not found lua package, try from prefix
     LUA_VERSION := $(shell lua -e "_,_,v=string.find(_VERSION,'Lua (.+)');print(v)")
@@ -26,21 +27,21 @@ ifeq ($(LUA_VERSION),)
   else
     # Found lua package
     LUA_VERSION	:= $(shell lua -e "_,_,v=string.find(_VERSION,'Lua (.+)');print(v)")
-    LUA_CFLAGS	?= $(shell pkg-config lua --cflags)
-    LUA_LIBS	?= $(shell pkg-config lua --libs)
+    LUA_CFLAGS	?= $(shell $(PKG_CONFIG) lua --cflags)
+    #LUA_LIBS	?= $(shell $(PKG_CONFIG) lua --libs)
     LUA_LIBDIR	?= $(PREFIX)/lib/lua/$(LUA_VERSION)
   endif
 else
   # Found luajit package
   LUA_VERSION	:= $(shell luajit -e "_,_,v=string.find(_VERSION,'Lua (.+)');print(v)")
-  LUA_CFLAGS	?= $(shell pkg-config luajit --cflags)
-  LUA_LIBS	?= $(shell pkg-config luajit --libs)
+  LUA_CFLAGS	?= $(shell $(PKG_CONFIG) luajit --cflags)
+  #LUA_LIBS	?= $(shell $(PKG_CONFIG) luajit --libs)
   LUA_LIBDIR	?= $(PREFIX)/lib/lua/$(LUA_VERSION)
 endif
 
 #OpenSSL auto detect
-OPENSSL_CFLAGS	?= $(shell pkg-config openssl --cflags)
-OPENSSL_LIBS	?= $(shell pkg-config openssl --static --libs)
+OPENSSL_CFLAGS	?= $(shell $(PKG_CONFIG) openssl --cflags)
+OPENSSL_LIBS	?= $(shell $(PKG_CONFIG) openssl --static --libs)
 
 ifneq (, $(findstring linux, $(SYS)))
   # Do linux things
