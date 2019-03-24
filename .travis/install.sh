@@ -15,7 +15,7 @@ make install PREFIX=$HOME/.usr PKG_CONFIG="PKG_CONFIG_PATH=$PKG_CONFIG_PATH pkg-
 if [ "$TAG" == "$NOW" ]; then
   CNT=$(luarocks search openssl $TAG | wc -l)
   if [ "$CNT" == "4" ]; then
-    .travis/publish_rockspec.sh $TAG
+    bash .travis/publish_rockspec.sh $TAG
   fi
   if [[ "$TRAVIS_OS_NAME" == "osx" && -z "$SSL" ]]; then
     $HOME/.usr/bin/luarocks install openssl OPENSSL_DIR=/usr/local/opt/openssl
