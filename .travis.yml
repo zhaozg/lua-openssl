@@ -1,6 +1,7 @@
 language: c
 
-sudo: required
+sudo: false
+
 env:
   global:
     - LUAROCKS=3.0.3
@@ -37,6 +38,27 @@ script:
   - cd test
   - curl https://raw.githubusercontent.com/bluebird75/luaunit/master/luaunit.lua > luaunit.lua
   - LD_LIBRARY_PATH=$HOME/.usr/lib lua -e "package.cpath='../?.so'" test.lua
+
+jobs:
+  include:
+    - stage: deploy
+      if: tag IS present
+      env: LUA=lua5.1
+      script: skip
+      before_deploy:
+        - .travis/make_rockspec.sh $TRAVIS_TAG
+      deploy:
+        provider: releases
+        api_key: $GITHUB_TOKEN
+        file: openssl-$TRAVIS_TAG.tar.gz
+        overwrite: true
+        skip_cleanup: true
+        on:
+          tags: true
+      after_deploy:
+        - luarocks install lua-cjson # required for luarocks upload
+        - luarocks upload openssl-$TRAVIS_TAG.rockspec --api-key=${LUAROCKS_TOKEN} --force
+        - $HOME/.usr/bin/luarocks install openssl
 
 notifications:
   email:
