@@ -1,9 +1,8 @@
 package = "openssl"
-version = "scm-7"
+version = "scm-0"
 
 source = {
-  url = "gitrec://github.com/zhaozg/lua-openssl",
-  tag = "0.7.5"
+  url = "https://github.com/zhaozg/lua-openssl/archive/master.zip"
 }
 
 description = {
@@ -12,6 +11,9 @@ description = {
   license    = "MIT",
   maintainer = "George Zhao",
   detailed   = [[
+Full openssl bindings for luajit and lua 5.1/5.2/5.3.
+
+This library makes openssl available to lua scripts.
   ]],
 }
 
