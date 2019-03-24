@@ -19,69 +19,94 @@ ssl modules for lua-openssl binding, provide ssl function in lua.
 /***
 create ssl_ctx object, which mapping to SSL_CTX in openssl.
 @function ctx_new
-@tparam string protocol support 'SSLv3', 'SSLv23', 'SSLv2', 'TSLv1', 'TSLv1_1','TSLv1_2','DTLSv1', and can be follow by '_server' or '_client'
+@tparam string protocol support 'SSLv3', 'SSLv23', 'SSLv2', 'TSLv1', 'TSLv1_1','TSLv1_2','TLS', 'DTLSv1','DTLSv1_2', and can be follow by '_server' or '_client', in general you should use 'TLS' to negotiate highest available SSL/TLS version
 @tparam[opt] string support_ciphers, if not given, default of openssl will be used
 @treturn ssl_ctx
 */
 static int openssl_ssl_ctx_new(lua_State*L)
 {
-  const char* meth = luaL_optstring(L, 1, "TLSv1");
+  const char* meth = luaL_optstring(L, 1, "SSLv23");
 #if OPENSSL_VERSION_NUMBER >= 0x01000000L
   const
 #endif
   SSL_METHOD* method = NULL;
   const char* ciphers;
   SSL_CTX* ctx;
+
   if (0);
+#if OPENSSL_VERSION_NUMBER > 0x10100000L
+  else if (strcmp(meth, "TLS") == 0)
+    method = TLS_method();
+  else if (strcmp(meth, "TLS_server") == 0)
+    method = TLS_server_method();
+  else if (strcmp(meth, "TLS_client") == 0)
+    method = TLS_client_method();
 
-#ifndef OPENSSL_NO_SSL3
-  else if (strcmp(meth, "SSLv3") == 0)
-    method = SSLv3_method();    /* SSLv3 */
-  else if (strcmp(meth, "SSLv3_server") == 0)
-    method = SSLv3_server_method(); /* SSLv3 */
-  else if (strcmp(meth, "SSLv3_client") == 0)
-    method = SSLv3_client_method(); /* SSLv3 */
-#endif
-
+  else if (strcmp(meth, "DTLS") == 0)
+    method = DTLS_method();
+  else if (strcmp(meth, "DTLS_server") == 0)
+    method = DTLS_server_method();
+  else if (strcmp(meth, "DTLS_client") == 0)
+    method = DTLS_client_method();
+#else
   else if (strcmp(meth, "SSLv23") == 0)
-    method = SSLv23_method();   /* SSLv3 but can rollback to v2 */
+    method = SSLv23_method();
   else if (strcmp(meth, "SSLv23_server") == 0)
-    method = SSLv23_server_method();  /* SSLv3 but can rollback to v2 */
+    method = SSLv23_server_method();
   else if (strcmp(meth, "SSLv23_client") == 0)
-    method = SSLv23_client_method();  /* SSLv3 but can rollback to v2 */
+    method = SSLv23_client_method();
 
-#ifndef OPENSSL_NO_TLS1
-  else if (strcmp(meth, "TLSv1_1") == 0)
-    method = TLSv1_1_method();    /* TLSv1.0 */
-  else if (strcmp(meth, "TLSv1_1_server") == 0)
-    method = TLSv1_1_server_method(); /* TLSv1.0 */
-  else if (strcmp(meth, "TLSv1_1_client") == 0)
-    method = TLSv1_1_client_method(); /* TLSv1.0 */
-  else if (strcmp(meth, "TLSv1_2") == 0)
-    method = TLSv1_2_method();    /* TLSv1.0 */
-  else if (strcmp(meth, "TLSv1_2_server") == 0)
-    method = TLSv1_2_server_method(); /* TLSv1.0 */
-  else if (strcmp(meth, "TLSv1_2_client") == 0)
-    method = TLSv1_2_client_method(); /* TLSv1.0 */
-  else if (strcmp(meth, "TLSv1") == 0)
-    method = TLSv1_method();    /* TLSv1.0 */
-  else if (strcmp(meth, "TLSv1_server") == 0)
-    method = TLSv1_server_method(); /* TLSv1.0 */
-  else if (strcmp(meth, "TLSv1_client") == 0)
-    method = TLSv1_client_method(); /* TLSv1.0 */
+#ifndef OPENSSL_NO_DTLS1_2_METHOD
+  else if (strcmp(meth, "DTLSv1_2") == 0)
+    method = DTLSv1_method();
+  else if (strcmp(meth, "DTLSv1_2_server") == 0)
+    method = DTLSv1_server_method();
+  else if (strcmp(meth, "DTLSv1_2_client") == 0)
+    method = DTLSv1_client_method();
 #endif
 
-#ifndef OPENSSL_NO_DTLS
+#ifndef OPENSSL_NO_DTLS1_METHOD
   else if (strcmp(meth, "DTLSv1") == 0)
-    method = DTLSv1_method();   /* DTLSv1.0 */
+    method = DTLSv1_method();
   else if (strcmp(meth, "DTLSv1_server") == 0)
-    method = DTLSv1_server_method();  /* DTLSv1.0 */
+    method = DTLSv1_server_method();
   else if (strcmp(meth, "DTLSv1_client") == 0)
-    method = DTLSv1_client_method();  /* DTLSv1.0 */
+    method = DTLSv1_client_method();
 #endif
 
-#ifndef OPENSSL_NO_SSL2
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#ifndef OPENSSL_NO_TLS1_2_METHOD_
+  else if (strcmp(meth, "TLSv1_2") == 0)
+    method = TLSv1_2_method();
+  else if (strcmp(meth, "TLSv1_2_server") == 0)
+    method = TLSv1_2_server_method();
+  else if (strcmp(meth, "TLSv1_2_client") == 0)
+    method = TLSv1_2_client_method();
+#endif
+#ifndef OPENSSL_NO_TLS1_1_METHOD_
+  else if (strcmp(meth, "TLSv1_1") == 0)
+    method = TLSv1_1_method();
+  else if (strcmp(meth, "TLSv1_1_server") == 0)
+    method = TLSv1_1_server_method();
+  else if (strcmp(meth, "TLSv1_1_client") == 0)
+    method = TLSv1_1_client_method();
+#endif
+#ifndef OPENSSL_NO_TLS1_METHOD_
+  else if (strcmp(meth, "TLSv1") == 0)
+    method = TLSv1_method();
+  else if (strcmp(meth, "TLSv1_server") == 0)
+    method = TLSv1_server_method();
+  else if (strcmp(meth, "TLSv1_client") == 0)
+    method = TLSv1_client_method();
+#endif
+#ifndef OPENSSL_NO_SSL3_METHOD
+  else if (strcmp(meth, "SSLv3") == 0)
+    method = SSLv3_method();
+  else if (strcmp(meth, "SSLv3_server") == 0)
+    method = SSLv3_server_method();
+  else if (strcmp(meth, "SSLv3_client") == 0)
+    method = SSLv3_client_method();
+#endif
+#ifndef OPENSSL_NO_SSL2_METHOD
   else if (strcmp(meth, "SSLv2") == 0)
     method = SSLv2_method();    /* SSLv2 */
   else if (strcmp(meth, "SSLv2_server") == 0)
@@ -96,15 +121,17 @@ static int openssl_ssl_ctx_new(lua_State*L)
 #endif
   else
     luaL_error(L, "#1:%s not supported\n"
-               "accpet SSLv3 SSLv23 TLSv1 TLSv1_1 TLSv1_2 DTLSv1 SSLv2, optional followed by _client or _server\n"
-               "default is TLSv1",
+               "accpet TLS, DTLS to negotiate highest available SSL/TLS or DTLS version above openssl v1.1.0\n",
+               "SSLv23,TLSv1_2,TLSv1_1,TLSv1,DTLSv1_2,DTLSv1,SSLv2, optional followed by _client or _server\n"
+               "default is TLS or SSLv23",
                meth);
   ciphers = luaL_optstring(L, 2, SSL_DEFAULT_CIPHER_LIST);
   ctx = SSL_CTX_new(method);
   if (!ctx)
     luaL_error(L, "#1:%s not supported\n"
-               "accpet SSLv3 SSLv23 TLSv1 TLSv1_1 TLSv1_2 DTLSv1 SSLv2, optional followed by _client or _server\n"
-               "default is TLSv1",
+               "accpet TLS, DTLS to negotiate highest available SSL/TLS or DTLS version above openssl v1.1.0\n",
+               "SSLv23,TLSv1_2,TLSv1_1,TLSv1,DTLSv1_2,DTLSv1,SSLv2, optional followed by _client or _server\n"
+               "default is TLS or SSLv23",
                meth);
   openssl_newvalue(L, ctx);
   SSL_CTX_set_cipher_list(ctx, ciphers);
