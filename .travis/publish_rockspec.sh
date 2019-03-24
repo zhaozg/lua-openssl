@@ -5,7 +5,7 @@ if [ -z "${OPENSSL_TAG}" ]; then
   OPENSSL_TAG=$(git describe --tags)
 fi
 
-.travis/make_rockspec.sh ${OPENSSL_TAG}
+bash .travis/make_rockspec.sh ${OPENSSL_TAG}
 github-release upload --user zhaozg --repo lua-openssl --tag ${OPENSSL_TAG} \
   --file openssl-${OPENSSL_TAG}.tar.gz --name openssl-${OPENSSL_TAG}.tar.gz
 if [ -n "${LUAROCKS_TOKEN}" ]; then

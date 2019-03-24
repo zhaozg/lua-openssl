@@ -18,11 +18,10 @@ os:
 
 matrix:
   allow_failures:
-    - env: LUA=lua5.2 SSL=libressl-2.8.3
-
-branches:
-  only:
-    - master
+    #    - env: LUA=lua5.2 SSL=libressl-2.8.3
+    #branches:
+    #  only:
+    #    - master
 
 before_install:
   - source .travis/setenv_lua.sh
@@ -37,27 +36,25 @@ install:
 script:
   - cd test
   - LD_LIBRARY_PATH=$HOME/.usr/lib lua -e "package.cpath='../?.so'" test.lua
+  - cd ..
 
-jobs:
-  include:
-    - stage: deploy
-      if: tag IS present
-      env: LUA=lua5.1
-      script: skip
-      before_deploy:
-        - .travis/make_rockspec.sh $TRAVIS_TAG
-      deploy:
-        provider: releases
-        api_key: $GITHUB_TOKEN
-        file: openssl-$TRAVIS_TAG.tar.gz
-        overwrite: true
-        skip_cleanup: true
-        on:
-          tags: true
-      after_deploy:
-        - luarocks install lua-cjson # required for luarocks upload
-        - luarocks upload openssl-$TRAVIS_TAG.rockspec --api-key=${LUAROCKS_TOKEN} --force
-        - $HOME/.usr/bin/luarocks install openssl
+before_deploy:
+  - bash .travis/make_rockspec.sh $TRAVIS_TAG
+
+deploy:
+  provider: releases
+  api_key: $GITHUB_TOKEN
+  file: openssl-$TRAVIS_TAG.tar.gz
+  skip_cleanup: true
+  on:
+    tags: true
+    branch: master
+    condition: "$LUA == lua5.1 && $TRAVIS_OS_NAME == linux && -z $SSL"
+
+after_deploy:
+  - $HOME/.usr/bin/luarocks install lua-cjson # required for luarocks upload
+  - $HOME/.usr/bin/luarocks upload openssl-$TRAVIS_TAG.rockspec --api-key=${LUAROCKS_TOKEN} --force
+  - $HOME/.usr/bin/luarocks install openssl
 
 notifications:
   email:

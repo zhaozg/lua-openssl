@@ -106,9 +106,5 @@ elif [ "$LUA" == "lua5.1" ]; then
 elif [ "$LUA" == "lua5.2" ]; then
   rm -rf lua-5.2.4
 elif [ "$LUA" == "lua5.3" ]; then
-<<<<<<< HEAD
-  rm -rf lua-5.3.4
-=======
   rm -rf lua-5.3.5
->>>>>>> 928266c... travis auto deploy openssl rockspec
 fi

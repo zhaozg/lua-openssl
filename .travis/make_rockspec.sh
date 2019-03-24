@@ -16,6 +16,6 @@ sed -e "${script}" -i openssl-${version}.rockspec
 # .tar.gz
 rm -rf openssl-${version}
 mkdir -p openssl-${version}/deps
-cp -r LICENSE README.md *.win lib test Makefile STATE.md samples src deps openssl-${version}/
+cp -r LICENSE README.md *.win lib test Makefile samples src deps openssl-${version}/
 COPYFILE_DISABLE=true tar -czf openssl-${version}.tar.gz openssl-${version}
 rm -rf openssl-${version}

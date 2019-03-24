@@ -18,7 +18,6 @@ This library makes openssl available to lua scripts.
 }
 
 dependencies = {
-  "luarocks-fetch-gitrec",
   "lua >= 5.1, < 5.4"
 }
 
