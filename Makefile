@@ -22,20 +22,20 @@ ifeq ($(LUA_VERSION),)
     # Not found lua package, try from prefix
     LUA_VERSION := $(shell lua -e "_,_,v=string.find(_VERSION,'Lua (.+)');print(v)")
     LUA_CFLAGS	?= -I$(PREFIX)/include
-    LUA_LIBS	?= -L$(PREFIX)/lib
+    LUA_LIBS	?= -L$(PREFIX)/lib #-llua
     LUA_LIBDIR	?= $(PREFIX)/lib/lua/$(LUA_VERSION)
   else
     # Found lua package
     LUA_VERSION	:= $(shell lua -e "_,_,v=string.find(_VERSION,'Lua (.+)');print(v)")
     LUA_CFLAGS	?= $(shell $(PKG_CONFIG) lua --cflags)
-    #LUA_LIBS	?= $(shell $(PKG_CONFIG) lua --libs)
+    LUA_LIBS	?= $(shell $(PKG_CONFIG) lua --libs)
     LUA_LIBDIR	?= $(PREFIX)/lib/lua/$(LUA_VERSION)
   endif
 else
   # Found luajit package
   LUA_VERSION	:= $(shell luajit -e "_,_,v=string.find(_VERSION,'Lua (.+)');print(v)")
   LUA_CFLAGS	?= $(shell $(PKG_CONFIG) luajit --cflags)
-  #LUA_LIBS	?= $(shell $(PKG_CONFIG) luajit --libs)
+  LUA_LIBS	?= $(shell $(PKG_CONFIG) luajit --libs)
   LUA_LIBDIR	?= $(PREFIX)/lib/lua/$(LUA_VERSION)
 endif
 
@@ -46,11 +46,14 @@ OPENSSL_LIBS	?= $(shell $(PKG_CONFIG) openssl --static --libs)
 ifneq (, $(findstring linux, $(SYS)))
   # Do linux things
   CFLAGS	 = -fPIC
-  LDFLAGS	 = -fPIC -lrt -ldl -lm
+  LDFLAGS	 = -fPIC
 endif
 
 ifneq (, $(findstring apple, $(SYS)))
   # Do darwin things
+  LUA_LIBT	 = $(subst -pagezero_size 10000 -image_base 100000000, , $(LUA_LIBS))
+  LUA_LIBS	 = $(LUA_LIBT)
+  LUA_LIBT	 =
   CFLAGS	 = -fPIC
   LDFLAGS	 = -fPIC -undefined dynamic_lookup -ldl
   #MACOSX_DEPLOYMENT_TARGET="10.3"
@@ -80,8 +83,8 @@ endif
 
 LIBNAME= $T.so.$V
 
-CFLAGS		+= $(OPENSSL_CFLAGS) $(LUA_CFLAGS) $(TARGET_FLAGS)
-LDFLAGS		+= -shared $(OPENSSL_LIBS) $(LUA_LIBS)
+CFLAGS		+= -g $(OPENSSL_CFLAGS) $(LUA_CFLAGS) $(TARGET_FLAGS)
+LDFLAGS		+= -g $(OPENSSL_LIBS) $(LUA_LIBS)
 # Compilation directives
 WARN_MIN	 = -Wall -Wno-unused-value -Wno-unused-function
 WARN		 = -Wall
@@ -103,7 +106,7 @@ all: $T.so
 	@echo "Target system: "$(SYS)
 
 $T.so: lib$T.a
-	$(CC) -o $@ src/openssl.o -L. -l$T $(LDFLAGS)
+	$(CC) -shared -o $@ src/openssl.o -L. -l$T $(LDFLAGS)
 
 lib$T.a: $(OBJS)
 	$(AR) rcs $@ $?
