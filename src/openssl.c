@@ -265,17 +265,6 @@ static int openssl_random_status(lua_State *L)
 }
 
 /***
-cleanup random genrator
-@function rand_cleanup
-*/
-static int openssl_random_cleanup(lua_State *L)
-{
-  (void) L;
-  RAND_cleanup();
-  return 0;
-}
-
-/***
 get random bytes
 @function random
 @tparam number length
@@ -365,7 +354,6 @@ static int openssl_mem_leaks(lua_State*L)
   BIO *bio = BIO_new(BIO_s_mem());
   BUF_MEM* mem;
 
-  /* OBJ_cleanup */
   CRYPTO_mem_leaks(bio);
   BIO_get_mem_ptr(bio, &mem);
   lua_pushlstring(L, mem->data, mem->length);
@@ -392,7 +380,6 @@ static const luaL_Reg eay_functions[] =
   {"rand_status", openssl_random_status},
   {"rand_load",   openssl_random_load},
   {"rand_write",  openssl_random_write},
-  {"rand_cleanup", openssl_random_cleanup},
   {"random",      openssl_random_bytes},
 
   {"error",       openssl_error_string},
@@ -413,17 +400,16 @@ static int luaclose_openssl(lua_State *L)
   FIPS_mode_set(0);
 #endif
 
+  OBJ_cleanup();
+  EVP_cleanup();
   ENGINE_cleanup();
-  CONF_modules_free();
-  CONF_modules_unload(1);
+  RAND_cleanup();
 
 #if OPENSSL_VERSION_NUMBER >= 0x10002000L && !defined(LIBRESSL_VERSION_NUMBER)
   SSL_COMP_free_compression_methods();
 #endif
   COMP_zlib_cleanup();
 
-  ERR_free_strings();
-  EVP_cleanup();
 
 #if OPENSSL_VERSION_NUMBER < 0x10000000L
   ERR_remove_state(0);
@@ -437,6 +423,10 @@ static int luaclose_openssl(lua_State *L)
   CRYPTO_set_id_callback(NULL);
 
   CRYPTO_cleanup_all_ex_data();
+  ERR_free_strings();
+
+  CONF_modules_free();
+  CONF_modules_unload(1);
 #ifndef OPENSSL_NO_CRYPTO_MDEBUG
 #if !(defined(OPENSSL_NO_STDIO) || defined(OPENSSL_NO_FP_API))
 #if defined(LIBRESSL_VERSION_NUMBER) || OPENSSL_VERSION_NUMBER < 0x10101000L
