@@ -1,4 +1,5 @@
 local uv = require 'luv'
+local helper = require'helper'
 local ssl = require 'luv.ssl'
 -----------------------------------------------
 local count = 0
@@ -29,7 +30,7 @@ local address = {
 }
 
 local ctx = ssl.new_ctx {
-  protocol = "TLSv1_2_client",
+  protocol = helper.sslProtocol(false)
   verify = ssl.none,
   --   options = {"all", "no_sslv2"}
 

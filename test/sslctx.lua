@@ -1,4 +1,5 @@
 local openssl = require'openssl'
+local helper = require'helper'
 local ssl,pkey,x509 = openssl.ssl,openssl.pkey,openssl.x509
 
 local M = {}
@@ -27,7 +28,7 @@ local params = {
 --]]
     print(params.protocol)
     local protocol = params.protocol and string.upper(string.sub(params.protocol,1,3))
-        ..string.sub(params.protocol,4,-1) or 'TLSv1_2'
+        ..string.sub(params.protocol,4,-1) or helper.sslProtocol()
     local ctx = ssl.ctx_new(protocol,params.ciphers)
     local xkey = nil
     if (type(params.password)=='nil') then

@@ -1,3 +1,4 @@
+local helper = require'helper'
 local ok, uv  = pcall(require,'luv')
 if not ok then uv = nil end
 

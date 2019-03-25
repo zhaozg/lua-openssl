@@ -1,4 +1,5 @@
 local uv = require 'luv'
+local helper = require'helper'
 local ssl = require 'luv.ssl'
 
 -----------------------------------------------
@@ -28,7 +29,7 @@ local address = {
 }
 
 local ctx = ssl.new_ctx {
-  protocol = "TLSv1_2_server",
+  protocol = helper.sslProtocol(true),
   key = "../luasec/certs/serverAkey.pem",
   certificate = "../luasec/certs/serverA.pem",
   cafile = "../luasec/certs/rootA.pem",

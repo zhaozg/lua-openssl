@@ -42,5 +42,22 @@ end
 M.luaopensslv, M.luav, M.opensslv = openssl.version()
 M.libressl = M.opensslv:find('^LibreSSL')
 
+function M.sslProtocol(srv, protocol)
+  local _,_,opensslv = openssl.version(true)
+  if opensslv > 0x10100000 then
+    protocol = protocol or 'TLS'
+  else
+    protocol = protocol or 'SSLv23'
+  end
+  if srv==true then
+    return protocol.."_server"
+  elseif srv==false then
+    return protocol.."_client"
+  elseif srv==nil then
+    return protocol
+  end
+  assert(nil)
+end
+
 return M
 

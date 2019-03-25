@@ -3,7 +3,8 @@ local openssl = require'openssl'
 local ssl = openssl.ssl
 local helper = require'helper'
 
-local proto = 'TLSv1_2'
+local proto = helper.sslProtocol()
+
 local SET = function(t)
   local s = {}
   for _, k in ipairs(t) do s[k] = true end
