@@ -32,24 +32,22 @@ xattr = x509.attrextension.new_extension {
 */
 static X509_EXTENSION* openssl_new_xextension(lua_State*L, int idx, int v3)
 {
-  int nid;
   int critical = 0;
   ASN1_OCTET_STRING* value = NULL;
   X509_EXTENSION* y = NULL;
+  ASN1_OBJECT *obj = NULL;
+  int nid = NID_undef;
 
   lua_getfield(L, idx, "object");
-  nid = openssl_get_nid(L, -1);
+  obj = openssl_get_asn1object(L, -1, 0);
+  nid = OBJ_obj2nid(obj);
+  ASN1_OBJECT_free(obj);
   lua_pop(L, 1);
 
   lua_getfield(L, idx, "critical");
   critical = lua_isnil(L, -1) ? 0 : lua_toboolean(L, -1);
   lua_pop(L, 1);
 
-  if (nid == NID_undef)
-  {
-    lua_pushfstring(L, "%s is not valid object id", lua_tostring(L, -1));
-    luaL_argerror(L, idx, lua_tostring(L, -1));
-  }
   lua_getfield(L, idx, "value");
   if (lua_isstring(L, -1))
   {
@@ -258,13 +256,17 @@ static int openssl_xext_support(lua_State*L)
   else
   {
     int i;
-    int ex_nid = openssl_get_nid(L, 1);
-    if (ex_nid == NID_undef)
+    int nid = NID_undef;
+    ASN1_OBJECT *obj = openssl_get_asn1object(L, 1, 1);
+    if (obj == NULL)
       return 0;
+    else
+      nid = OBJ_obj2nid(obj);
+    ASN1_OBJECT_free(obj);
 
     for (i = 0; i < sizeof(supported_nids) / sizeof(int); i++)
     {
-      if (supported_nids[i] == ex_nid)
+      if (supported_nids[i] == nid)
         break;
     }
     lua_pushboolean(L, i < sizeof(supported_nids) / sizeof(int));
@@ -418,10 +420,9 @@ static int openssl_xext_object(lua_State* L)
   }
   else
   {
-    int nid = openssl_get_nid(L, 2);
-    int ret;
-    obj = OBJ_nid2obj(nid);
-    ret = X509_EXTENSION_set_object(x, obj);
+    ASN1_OBJECT *obj = openssl_get_asn1object(L, 2, 0);
+    int ret = X509_EXTENSION_set_object(x, obj);
+    ASN1_OBJECT_free(obj);
     return openssl_pushresult(L, ret);
   }
 };

@@ -215,7 +215,7 @@ int openssl_push_general_name(lua_State*L, const GENERAL_NAME* name);
 int openssl_push_xname_asobject(lua_State*L, X509_NAME* xname);
 int openssl_push_bit_string_bitname(lua_State* L, const BIT_STRING_BITNAME* name);
 
-int openssl_get_nid(lua_State*L, int idx);
+ASN1_OBJECT* openssl_get_asn1object(lua_State*L, int idx, int retnil);
 EC_GROUP* openssl_get_ec_group(lua_State* L, int ec_name_idx, int param_enc_idx,
                                int conv_form_idx);
 int openssl_get_padding(lua_State *L, int idx, const char *defval);

@@ -105,15 +105,10 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_new)
     {
       pkey = CHECK_OBJECT(i, EVP_PKEY, "openssl.evp_pkey");
     }
-    else if (auxiliar_getclassudata(L, "openssl.asn1_object", i))
+    else if (auxiliar_getclassudata(L, "openssl.asn1_object", i)
+             || lua_isnumber(L, i) || lua_isstring(L, i))
     {
-      obj = CHECK_OBJECT(i, ASN1_OBJECT, "openssl.asn1_object");
-    }
-    else if (lua_isnumber(L, i) || lua_isstring(L, i))
-    {
-      int nid = openssl_get_nid(L, i);
-      luaL_argcheck(L, nid != NID_undef, i, "invalid asn1_object or object id");
-      obj = OBJ_nid2obj(nid);
+      obj = openssl_get_asn1object(L, i, 0);
     }
     else
       luaL_argerror(L, i, "not accept parameter");
@@ -145,6 +140,8 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_new)
     ctx = NULL;
     lua_pushnil(L);
   }
+  if(obj)
+    ASN1_OBJECT_free(obj);
   return 1;
 }
 
@@ -302,20 +299,9 @@ static int openssl_ts_req_policy_id(lua_State*L)
   }
   else
   {
-    ASN1_OBJECT* obj = NULL;
-    int ret;
-    if (auxiliar_getclassudata(L, "openssl.asn1_object", 2))
-    {
-      obj = CHECK_OBJECT(2, ASN1_OBJECT, "openssl.asn1_object");
-    }
-    else
-    {
-      int nid = openssl_get_nid(L, 2);
-      luaL_argcheck(L, nid != NID_undef, 2, "must be asn1_object object identified");
-      obj = OBJ_nid2obj(nid);
-    }
-
-    ret = TS_REQ_set_policy_id(req, obj);
+    ASN1_OBJECT* obj = openssl_get_asn1object(L, 2, 0);
+    int ret= TS_REQ_set_policy_id(req, obj);
+    ASN1_OBJECT_free(obj);
     return openssl_pushresult(L, ret);
   }
 }
@@ -831,10 +817,12 @@ set additional certs
 */
 static LUA_FUNCTION(openssl_ts_resp_ctx_certs)
 {
+  int ret;
   TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
   STACK_OF(X509) *certs = openssl_sk_x509_fromtable(L, 2);
-  TS_RESP_CTX_set_certs(ctx, certs);
-  return 0;
+  ret = TS_RESP_CTX_set_certs(ctx, certs);
+  sk_X509_pop_free(certs, X509_free);
+  return openssl_pushresult(L, ret);
 }
 
 /***
@@ -846,8 +834,9 @@ set default policy
 static LUA_FUNCTION(openssl_ts_resp_ctx_default_policy)
 {
   TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
-  int nid = openssl_get_nid(L, 2);
-  int ret = TS_RESP_CTX_set_def_policy(ctx, OBJ_nid2obj(nid));
+  ASN1_OBJECT *obj = openssl_get_asn1object(L, 2, 0);
+  int ret = TS_RESP_CTX_set_def_policy(ctx, obj);
+  ASN1_OBJECT_free(obj);
   return openssl_pushresult(L, ret);
 }
 
@@ -862,7 +851,6 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_policies)
   TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
   ASN1_OBJECT *obj = NULL;
   int ret = 1;
-  int nid;
   int i;
   int n = lua_gettop(L);
   luaL_argcheck(L, n > 1, 2, "need one or more asn1_object");
@@ -875,46 +863,18 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_policies)
       for (j = 1; j <= k && ret == 1; j++)
       {
         lua_rawgeti(L, i, j);
-        if (auxiliar_getclassudata(L, "openssl.asn1_object", -1))
-        {
-          obj = CHECK_OBJECT(-1, ASN1_OBJECT, "openssl.asn1_object");
-        }
-        else
-        {
-          nid = openssl_get_nid(L, -1);
-          obj = nid!=NID_undef ? OBJ_nid2obj(nid) : NULL;
-        }
-
+        obj = openssl_get_asn1object(L, -1, 0);
         lua_pop(L, 1);
 
-        if (obj)
-        {
-          ret = TS_RESP_CTX_add_policy(ctx, obj);
-        }
-        else
-        {
-          lua_pushfstring(L, "index %d is invalid asn1_object or object id", j);
-          luaL_argerror(L, i, lua_tostring(L, -1));
-        }
+        ret = TS_RESP_CTX_add_policy(ctx, obj);
+        ASN1_OBJECT_free(obj);
       }
     }
     else
     {
-      if (auxiliar_getclassudata(L, "openssl.asn1_object", i))
-      {
-        obj = CHECK_OBJECT(i, ASN1_OBJECT, "openssl.asn1_object");
-      }
-      else
-      {
-        nid = openssl_get_nid(L, i);
-        obj = nid != NID_undef ? OBJ_nid2obj(nid) : NULL;
-      }
-      if (obj)
-      {
-        ret = TS_RESP_CTX_add_policy(ctx, obj);
-      }
-      else
-        luaL_argerror(L, i, "invalid asn1_object or id");
+      obj = openssl_get_asn1object(L, i, 0);
+      ret = TS_RESP_CTX_add_policy(ctx, obj);
+      ASN1_OBJECT_free(obj);
     }
   }
   return openssl_pushresult(L, ret);
@@ -1025,7 +985,8 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_flags)
   TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
   int flags = luaL_checkint(L, 2);
   TS_RESP_CTX_add_flags(ctx, flags);
-  return 0;
+  lua_pushinteger(L, ctx->flags);
+  return 1;
 }
 
 /***

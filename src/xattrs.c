@@ -250,12 +250,9 @@ static int openssl_xattr_object(lua_State*L)
   }
   else
   {
-    int nid = openssl_get_nid(L, 2);
-    ASN1_OBJECT* obj;
-    int ret;
-    luaL_argcheck(L, nid != NID_undef, 2, "invalid asn1_object identity");
-    obj = OBJ_nid2obj(nid);
-    ret = X509_ATTRIBUTE_set1_object(attr, obj);
+    ASN1_OBJECT *obj = openssl_get_asn1object(L, 2, 0);
+    int ret = X509_ATTRIBUTE_set1_object(attr, obj);
+    ASN1_OBJECT_free(obj);
     return openssl_pushresult(L, ret);
   }
 }
@@ -279,20 +276,20 @@ X509_ATTRIBUTE* openssl_new_xattribute(lua_State*L, X509_ATTRIBUTE** a, int idx,
 {
   int arttype;
   size_t len = 0;
-  int nid;
   const char* data = NULL;
   ASN1_STRING *s = NULL;
+  ASN1_OBJECT *obj = NULL;
 
   lua_getfield(L, idx, "object");
-  nid = openssl_get_nid(L, -1);
-  if (nid == NID_undef)
+  obj  = openssl_get_asn1object(L, -1, 1);
+  if (obj == NULL)
   {
     if (eprefix)
     {
       luaL_error(L, "%s field object is invalid value", eprefix);
     }
     else
-      luaL_argcheck(L, nid != NID_undef, idx, "field object is invalid value");
+      luaL_argerror(L, idx, "field object is invalid value");
   }
   lua_pop(L, 1);
 
@@ -305,7 +302,7 @@ X509_ATTRIBUTE* openssl_new_xattribute(lua_State*L, X509_ATTRIBUTE** a, int idx,
       luaL_error(L, "%s field type is not invalid value", eprefix);
     }
     else
-      luaL_argcheck(L, nid != NID_undef, idx, "field type is not invalid value");
+      luaL_argerror(L, idx, "field type is not invalid value");
   }
   lua_pop(L, 1);
 
@@ -337,7 +334,9 @@ X509_ATTRIBUTE* openssl_new_xattribute(lua_State*L, X509_ATTRIBUTE** a, int idx,
   }
   lua_pop(L, 1);
   if (data)
-    return X509_ATTRIBUTE_create_by_NID(a, nid, arttype, data, len);
+    return X509_ATTRIBUTE_create_by_OBJ(a, obj, arttype, data, len);
+  ASN1_OBJECT_free(obj);
+
   return 0;
 }
 

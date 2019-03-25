@@ -36,18 +36,11 @@ static int openssl_new_xname(lua_State*L, X509_NAME* xname, int idx, int utf8)
     while (lua_next(L, -2) != 0)
     {
       size_t size;
-      const char *value;
-      int ret;
-      int nid = openssl_get_nid(L, -2);
-      value = luaL_checklstring(L, -1, &size);
+      ASN1_OBJECT *obj = openssl_get_asn1object(L, -2, 0);
+      const char *value = luaL_checklstring(L, -1, &size);
 
-      if (nid == NID_undef)
-      {
-        lua_pushfstring(L, "node at %d which key (%s) is not a valid object identity",
-                        i + 1, lua_tostring(L, -2));
-        luaL_argerror(L, idx, lua_tostring(L, -1));
-      }
-      ret = X509_NAME_add_entry_by_NID(xname, nid, utf8 ? MBSTRING_UTF8 : MBSTRING_ASC, (unsigned char*)value, (int)size, -1, 0);
+      int ret = X509_NAME_add_entry_by_OBJ(xname, obj, utf8 ? MBSTRING_UTF8 : MBSTRING_ASC, (unsigned char*)value, (int)size, -1, 0);
+      ASN1_OBJECT_free(obj);
       if (ret != 1)
       {
         lua_pushfstring(L, "node at %d which  %s=%s can't add to X509 name",
@@ -332,14 +325,13 @@ get text by given asn1_object or nid
 static int openssl_xname_get_text(lua_State*L)
 {
   X509_NAME* xn = CHECK_OBJECT(1, X509_NAME, "openssl.x509_name");
-  int nid = openssl_get_nid(L, 2);
+  ASN1_OBJECT *obj = openssl_get_asn1object(L, 2, 0);
   int lastpos = luaL_optint(L, 3, -1);
   X509_NAME_ENTRY *e;
   ASN1_STRING *s;
-  if (nid == NID_undef)
-    return 0;
 
-  lastpos = X509_NAME_get_index_by_NID(xn, nid, lastpos);
+  lastpos = X509_NAME_get_index_by_OBJ(xn, obj, lastpos);
+  ASN1_OBJECT_free(obj);
   if (lastpos == -1)
     return 0;
 
@@ -382,17 +374,13 @@ add name entry
 static int openssl_xname_add_entry(lua_State*L)
 {
   X509_NAME* xn = CHECK_OBJECT(1, X509_NAME, "openssl.x509_name");
-  int nid = openssl_get_nid(L, 2);
+  ASN1_OBJECT *obj = openssl_get_asn1object(L, 2, 0);
   size_t size;
   const char*value = luaL_checklstring(L, 3, &size);
   int utf8 = lua_isnoneornil(L, 4) ? 1 : lua_toboolean(L, 4);
-  int ret;
-  if (nid == NID_undef)
-  {
-    lua_pushfstring(L, "(%s) is not a valid object identity",  lua_tostring(L, 2));
-    luaL_argerror(L, 2, lua_tostring(L, -1));
-  }
-  ret = X509_NAME_add_entry_by_NID(xn, nid, utf8 ? MBSTRING_UTF8 : MBSTRING_ASC, (unsigned char*)value, (int)size, -1, 0);
+
+  int ret = X509_NAME_add_entry_by_OBJ(xn, obj, utf8 ? MBSTRING_UTF8 : MBSTRING_ASC, (unsigned char*)value, (int)size, -1, 0);
+  ASN1_OBJECT_free(obj);
   if (ret != 1)
   {
     luaL_error(L,  "%s=%s can't add to X509 name",  lua_tostring(L, 2), value);

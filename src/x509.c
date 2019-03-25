@@ -1280,7 +1280,7 @@ static int openssl_x509_sign(lua_State*L)
   {
     size_t sig_len;
     const char* sig = luaL_checklstring(L, 2, &sig_len);
-    int nid = openssl_get_nid(L, 3);
+    ASN1_OBJECT *obj = openssl_get_asn1object(L, 3, 0);
     CONSTIFY_X509_get0 ASN1_BIT_STRING *psig = NULL;
     CONSTIFY_X509_get0 X509_ALGOR *palg = NULL;
     int ret;
@@ -1289,9 +1289,10 @@ static int openssl_x509_sign(lua_State*L)
     ret = ASN1_BIT_STRING_set((ASN1_BIT_STRING*)psig, (unsigned char*)sig, (int)sig_len);
     if (ret == 1)
     {
-      ASN1_OBJECT *obj = OBJ_nid2obj(nid);
       ret = X509_ALGOR_set0((X509_ALGOR*)palg, obj, V_ASN1_UNDEF, NULL);
     }
+    else
+      ASN1_OBJECT_free(obj);
     return openssl_pushresult(L, ret);
   }
 }
