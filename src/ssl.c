@@ -23,9 +23,26 @@ create ssl_ctx object, which mapping to SSL_CTX in openssl.
 @tparam[opt] string support_ciphers, if not given, default of openssl will be used
 @treturn ssl_ctx
 */
+#if OPENSSL_VERSION_NUMBER > 0x10100000L && !defined(LIBRESSL_VERSION_NUMBER)
+#define  TLS_PROTOCOL_TIPS  \
+  "only support TLS, DTLS to negotiate highest available SSL/TLS or DTLS " \
+  "version above openssl v1.1.0\n" \
+  "optional followed by _client or _server\n" \
+  "default is TLS\n"
+#else
+#define  TLS_PROTOCOL_TIPS  \
+  "SSLv23, TLSv1_2, TLSv1_1, TLSv1, DTLSv1_2 or DTLSv1, optional followed by _client or _server\n" \
+  "optional followed by _client or _server\n" \
+  "default is SSLv23 to negotiate highest available SSL/TLS\n"
+#endif
+
 static int openssl_ssl_ctx_new(lua_State*L)
 {
+#if OPENSSL_VERSION_NUMBER > 0x10100000L && !defined(LIBRESSL_VERSION_NUMBER)
+  const char* meth = luaL_optstring(L, 1, "TLS");
+#else
   const char* meth = luaL_optstring(L, 1, "SSLv23");
+#endif
 #if OPENSSL_VERSION_NUMBER >= 0x01000000L
   const
 #endif
@@ -112,21 +129,16 @@ static int openssl_ssl_ctx_new(lua_State*L)
   LOAD_SSL_CUSTOM
 #endif
   else
-    luaL_error(L, "#1:%s not supported\n"
-               "accpet TLS, DTLS to negotiate highest available SSL/TLS or DTLS version above openssl v1.1.0\n",
-               "SSLv23,TLSv1_2,TLSv1_1,TLSv1,DTLSv1_2,DTLSv1,SSLv2, optional followed by _client or _server\n"
-               "default is TLS or SSLv23",
-               meth);
-  ciphers = luaL_optstring(L, 2, SSL_DEFAULT_CIPHER_LIST);
+    luaL_argerror(L, 1, TLS_PROTOCOL_TIPS);
+
   ctx = SSL_CTX_new(method);
   if (!ctx)
-    luaL_error(L, "#1:%s not supported\n"
-               "accpet TLS, DTLS to negotiate highest available SSL/TLS or DTLS version above openssl v1.1.0\n",
-               "SSLv23,TLSv1_2,TLSv1_1,TLSv1,DTLSv1_2,DTLSv1,SSLv2, optional followed by _client or _server\n"
-               "default is TLS or SSLv23",
-               meth);
+    luaL_argerror(L, 1, TLS_PROTOCOL_TIPS);
+
+  ciphers = luaL_optstring(L, 2, SSL_DEFAULT_CIPHER_LIST);
+  if(!SSL_CTX_set_cipher_list(ctx, ciphers))
+    luaL_argerror(L, 2, "Error to set cipher list");
   openssl_newvalue(L, ctx);
-  SSL_CTX_set_cipher_list(ctx, ciphers);
   PUSH_OBJECT(ctx, "openssl.ssl_ctx");
   SSL_CTX_set_app_data(ctx, L);
 

@@ -978,15 +978,13 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_add_failure_info)
 /***
 get flags
 @function flags
-@treturn integer flags
 */
 static LUA_FUNCTION(openssl_ts_resp_ctx_flags)
 {
   TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
   int flags = luaL_checkint(L, 2);
   TS_RESP_CTX_add_flags(ctx, flags);
-  lua_pushinteger(L, ctx->flags);
-  return 1;
+  return 0;
 }
 
 /***
