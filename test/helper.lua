@@ -44,10 +44,10 @@ M.libressl = M.opensslv:find('^LibreSSL')
 
 function M.sslProtocol(srv, protocol)
   local _,_,opensslv = openssl.version(true)
-  if opensslv > 0x10100000 then
-    protocol = protocol or 'TLS'
-  else
+  if M.libressl or opensslv < 0x10100000 then
     protocol = protocol or 'SSLv23'
+  else
+    protocol = protocol or 'TLS'
   end
   if srv==true then
     return protocol.."_server"
