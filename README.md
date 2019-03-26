@@ -7,34 +7,42 @@ lua-openssl toolkit - A free, MIT-licensed OpenSSL binding for Lua.
 
 1. [Introduction](#introduction)
 2. [Documentation](#documentation)
-2. [Howto](#howto)
-3. [Examples](#example-usage) 
+3. [Howto](#howto)
+4. [Examples](#example-usage)
 
-# Introduction
+## Introduction
 
-I needed a full OpenSSL binding for Lua, after googled, I couldn't find a version to fit my needs.
-I found the PHP openssl binding is a good implementation, and it inspired me.
-So I decided to write this OpenSSL toolkit for Lua.
+I needed a full OpenSSL binding for Lua, after googled, I couldn't find a version
+to fit my needs. I found the PHP openssl binding is a good implementation, and it
+inspired me. So I decided to write this OpenSSL toolkit for Lua.
 
-The goal is to fully support the listed items. Below you can find the development progress of lua-openssl: 
+The goal is to fully support openssl, include:
 
-* Symmetrical encrypt/decrypt. (Finished)
-* Message digest. (Finished)
-* Asymmetrical encrypt/decrypt/sign/verify/seal/open. (Finished)
-* X509 certificate. (Finished)
-* PKCS7/CMS. (Finished)
-* SSL/TLS. (Finished)
+- ASN1 Process.
+- Symmetrical encrypt/decrypt.
+- Message digest.
+- Asymmetrical encrypt/decrypt/sign/verify/seal/open.
+- X509 certificate.
+- PKCS7/CMS.
+- SSL/TLS.
 
-Most of the lua-openssl functions require a key or certificate as argument; to make things easy to use OpenSSL.
+Support backend include [OpenSSL](https://www.openssl.org/) and
+[LibreSSL](https://www.libressl.org/).
+
+Most of the lua-openssl functions require a key or certificate as argument, to
+make things easy to use OpenSSL.
+
 This rule allows you to specify certificates or keys in the following ways:
 
-1. As an openssl.x509 object returned from openssl.x509.read
-2. As an openssl.evp_pkey object return from openssl.pkey.read or openssl.pkey.new
+1. As an openssl.x509 object returned from `openssl.x509.read`
+2. As an openssl.evp_pkey object return from `openssl.pkey.read` or `openssl.pkey.new`
 
-Similarly, you can also specify a public key as a key object returned from x509:get_public().
+Similarly, you can also specify a public key as a key object returned from
+`x509:get_public()`.
 
-## lua-openssl modules
-digest,cipher, x509, cms and so on, be write as modules.
+### lua-openssl modules
+
+digest, cipher, x509, pkcs7, cms and so on, be write as modules.
 
 ```lua
    local digest = require'openssl'.digest
@@ -47,18 +55,12 @@ digest() equals with digest.digest(), same cipher() equals with cipher.cipher().
 
 ## documentation
 
-Document please see [here](http://zhaozg.github.io/lua-openssl/index.html)
+Document please see [here](http://zhaozg.github.io/lua-openssl/index.html),
+that are generate by [LDoc](https://github.com/stevedonovan/LDoc).
 
-## compat with others
+_Notice_: Document quality is low and stale, feel free to make a PR to improve it.
 
-**crypto** is a compat module with [LuaCrypto](https://github.com/mkottman/luacrypto),
-document should to [reference](http://mkottman.github.io/luacrypto/manual.html#reference)
-
-**ssl** is a compat module with [luasec](https://github.com/brunoos/luasec),
-document should to [refrence](https://github.com/brunoos/luasec/wiki/LuaSec-0.5).
-NYI list: conn:settimeout,...
-
-## lua-openssl Objects
+### lua-openssl Objects
 
 The following are some important lua-openssl object types:
 
@@ -79,73 +81,86 @@ The following are some important lua-openssl object types:
 ```
 
 They are shortened as bio, x509, sk_x509, csr, pkey, digest, cipher,
-	engine, cipher_ctx, and digest_ctx.
+engine, cipher_ctx, and digest_ctx.
 
+### openssl.bn
 
-## openssl.bn
-* ***openssl.bn*** come from [http://www.tecgraf.puc-rio.br/~lhf/ftp/lua/](http://www.tecgraf.puc-rio.br/~lhf/ftp/lua/),thanks.
+- **_openssl.bn_** come from [lbn](http://www.tecgraf.puc-rio.br/~lhf/ftp/lua/#lbn), and thanks.
 
 openssl.bn is a big-number library for Lua 5.1. It handles only integers and is
 suitable for number-theoretical and cryptographic applications. It is based
 on the bn subsystem of OpenSSL cryptographic library:
-	http://www.openssl.org/docs/crypto/bn.html
+http://www.openssl.org/docs/crypto/bn.html
 If you're running Unix, you probably already have OpenSSL installed.
 
 To try the library, just edit Makefile to reflect your installation of Lua and
 then run make. This will build the library and run a simple test. For detailed
 installation instructions, see
-	http://www.tecgraf.puc-rio.br/~lhf/ftp/lua/install.html
+http://www.tecgraf.puc-rio.br/~lhf/ftp/lua/install.html
 
 There is no manual but the library is simple and intuitive; see the summary
 below.
 
 bn library:
+
 ```
- __add(x,y)        compare(x,y)          pow(x,y) 
- __div(x,y)        div(x,y)              powmod(x,y,m) 
- __eq(x,y)         divmod(x,y)           random(bits) 
- __lt(x,y)         gcd(x,y)              rmod(x,y) 
- __mod(x,y)        invmod(x)             sqr(x) 
- __mul(x,y)        isneg(x)              sqrmod(x) 
- __pow(x,y)        isodd(x)              sqrtmod(x) 
- __sub(x,y)        isone(x)              sub(x,y) 
- __tostring(x)     isprime(x,[checks])   submod(x,y,m) 
- __unm(x)          iszero(x)             text(t) 
- abs(x)            mod(x,y)              tohex(x) 
- add(x,y)          mul(x,y)              tonumber(x) 
- addmod(x,y,m)     mulmod(x,y,m)         tostring(x) 
- aprime(bits)      neg(x)                totext(x) 
- bits(x)           number(x)             version 
+ __add(x,y)        compare(x,y)          pow(x,y)
+ __div(x,y)        div(x,y)              powmod(x,y,m)
+ __eq(x,y)         divmod(x,y)           random(bits)
+ __lt(x,y)         gcd(x,y)              rmod(x,y)
+ __mod(x,y)        invmod(x)             sqr(x)
+ __mul(x,y)        isneg(x)              sqrmod(x)
+ __pow(x,y)        isodd(x)              sqrtmod(x)
+ __sub(x,y)        isone(x)              sub(x,y)
+ __tostring(x)     isprime(x,[checks])   submod(x,y,m)
+ __unm(x)          iszero(x)             text(t)
+ abs(x)            mod(x,y)              tohex(x)
+ add(x,y)          mul(x,y)              tonumber(x)
+ addmod(x,y,m)     mulmod(x,y,m)         tostring(x)
+ aprime(bits)      neg(x)                totext(x)
+ bits(x)           number(x)             version
 ```
 
-## Version
+### Version
 
-This lua-openssl toolkit works with Lua 5.1/5.2 or LuaJIT 2.0/2.1, and OpenSSL (0.9.8 or above 1.0.0). 
-It is recommended to use the most up-to-date OpenSSL version because of the recent security fixes.
+This lua-openssl toolkit works with Lua 5.1/5.2/5.3 or LuaJIT 2.0/2.1, and
+OpenSSL(0.9.8 or above 1.0.0) or LibreSSL(v2.8.x).
 
-If you want to get the lua-openssl and OpenSSL versions from a Lua script, here is how:
+It is recommended to use the most up-to-date OpenSSL version because of the
+recent security fixes.
+
+You can get version of lua-openssl, lua and OpenSSL from a Lua script.
 
 ```lua
 openssl = require "openssl"
+-- get version string format
 lua_openssl_version, lua_version, openssl_version = openssl.version()
+-- get version number format
+lua_openssl_version, lua_version, openssl_version = openssl.version(true)
 ```
-## Style
 
-Source code of lua-openssl tidy with [astyle](http://astyle.sourceforge.net/) `--style=allman --indent=spaces=2` 
+### Style
 
-## Bugs
+Source code of lua-openssl tidy with [astyle](http://astyle.sourceforge.net/)
+`--style=allman --indent=spaces=2`
 
-Lua-Openssl is heavily updated, if you find a bug, please report to [here](https://github.com/zhaozg/lua-openssl/issues/)
+### Bugs
 
-# Howto
+Lua-Openssl is heavily updated, if you find a bug, please report to
+[here](https://github.com/zhaozg/lua-openssl/issues/)
+
+I try to use [luaunit](https://github.com/bluebird75/luaunit) to write unit
+[test](tree/master/test), and welcome PR to improve it.
+
+## Howto
 
 ### Howto 1: Build on Linux/Unix System.
 
     git clone --recurse https://github.com/zhaozg/lua-openssl.git lua-openssl
     cd lua-openssl
-	make
-	make install
-	make clean
+    make
+    make install
+    make clean
 
 ### Howto 2: Build on Windows with MSVC.
 
@@ -154,42 +169,41 @@ Works with Lua5.1 (should support Lua5.2 by updating the config.win file).
 
     git clone --recurse https://github.com/zhaozg/lua-openssl.git lua-openssl
     cd lua-openssl
-	nmake -f makefile.win
-	nmake -f makefile.win install
-	nmake -f makefile.win clean
-
+    nmake -f makefile.win
+    nmake -f makefile.win install
+    nmake -f makefile.win clean
 
 ### Howto 3: Build on Windows with mingw.
 
     git clone --recurse https://github.com/zhaozg/lua-openssl.git lua-openssl
     cd lua-openssl
-	make
-	make install
-	make clean
+    make
+    make install
+    make clean
 
 ### Howto 4: Install using luarocks.
-	
-	luarocks install openssl --server=https://rocks.moonscript.org/dev
+
+    luarocks install openssl --server=https://rocks.moonscript.org/dev
 
 ### Howto 5: Handle fail or error
 
-  Most lua-openssl function or methods return nil or false when error or 
-failed, followed by string type error _reason_ and number type error _code_, 
+Most lua-openssl function or methods return nil or false when error or
+failed, followed by string type error _reason_ and number type error _code_,
 _code_ can pass to openssl.error() to get more error information.
 
-  All SSL object IO operation methods return nil or false when fail or error.
-When nil returned, it followed by 'ssl' or 'syscall', means SSL layer or 
+All SSL object IO operation methods return nil or false when fail or error.
+When nil returned, it followed by 'ssl' or 'syscall', means SSL layer or
 system layer error. When false returned, it is followed by number 0, 'want_read',
 'want_write','want_x509_lookup','want_connect','want_accept'. Number 0 means
 SSL connection closed, other numbers means you should do some SSL operation.
 
-  Please remember that when lua-openssl function or methods fail without an 
-error code, you can get the last error by openssl.error(), and repeat call 
-openssl.error() will walk through error stacks of current threads. 
+Please remember that when lua-openssl function or methods fail without an
+error code, you can get the last error by openssl.error(), and repeat call
+openssl.error() will walk through error stacks of current threads.
 openssl.error(true) will also clear error stacks after get last error code,
 this is very useful to free memory when lua-openssl repeat calls or run long times.
 
-# Example usage
+## Example usage
 
 ### Example 1: short encrypt/decrypt
 
@@ -228,7 +242,7 @@ hmac.hmac(alg, msg, key, true) -- binary/"raw" output
 hmac.hmac(alg, msg, key, false) -- hex output
 ```
 
-### Example 4:  Iterate a openssl.stack_of_x509(sk_x509) object
+### Example 4: Iterate a openssl.stack_of_x509(sk_x509) object
 
 ```lua
 n = #sk
@@ -267,7 +281,7 @@ test_x509()
 
 ### Example 5: bio network handle(TCP)
 
- * server
+- server
 
 ```lua
 local openssl = require'openssl'
@@ -291,7 +305,7 @@ while 1 do
 end
 ```
 
- * client
+- client
 
 ```lua
 local openssl = require'openssl'
@@ -316,9 +330,9 @@ local cli = assert(bio.connect(host..':'..port,true))
 
 For more examples, please see test lua script file.
 
+---
 
---------------------------------------------------------------------
-***lua-openssl License***
+**_lua-openssl License_**
 
 Copyright (c) 2011 - 2014 zhaozg, zhaozg(at)gmail.com
 
@@ -340,7 +354,4 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
---------------------------------------------------------------------
-
-This product includes PHP software, freely available from <http://www.php.net/software/>
-
+---
