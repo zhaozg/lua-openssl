@@ -158,11 +158,11 @@ vgPnEUG6Mk9bkxMZKRgsiKn6QGKDYGbOvnS1xmkMfRARBsJAq369VOTjMB/Qhs5q
                 assertStrContains(pem1,'-----BEGIN PRIVATE KEY-----')
                 assertStrContains(pem1,'-----END PRIVATE KEY-----')
 
-                local pem1  = pri:export('pem')
+                pem1  = pri:export('pem')
                 assertStrContains(pem1,'-----BEGIN PRIVATE KEY-----')
                 assertStrContains(pem1,'-----END PRIVATE KEY-----')
 
-                local pem1  = pri:export('pem', false)
+                pem1  = pri:export('pem', false)
                 assertStrContains(pem1,'-----BEGIN PRIVATE KEY-----')
                 assertStrContains(pem1,'-----END PRIVATE KEY-----')
 
@@ -184,7 +184,7 @@ vgPnEUG6Mk9bkxMZKRgsiKn6QGKDYGbOvnS1xmkMfRARBsJAq369VOTjMB/Qhs5q
                 assertNotStrContains(pem2,'Proc-Type: 4,ENCRYPTED')
                 assertNotStrContains(pem2,'DEK-Info: DES-EDE3-CBC,')
 
-                local k2 = pkey.read(pem2, true, 'pem')
+                k2 = pkey.read(pem2, true, 'pem')
                 assertEquals(pri:export(),k2:export())
 
                 -- format='pem' raw=true,  passphrase='secret'
@@ -194,7 +194,7 @@ vgPnEUG6Mk9bkxMZKRgsiKn6QGKDYGbOvnS1xmkMfRARBsJAq369VOTjMB/Qhs5q
                 assertStrContains(pem4,'DEK-Info: DES-EDE3-CBC,')
                 assertStrContains(pem4,'-----END '..k..' PRIVATE KEY-----')
 
-                local k2 = pkey.read(pem4,true,'pem','secret')
+                k2 = pkey.read(pem4,true,'pem','secret')
                 assertEquals(pri:export(),k2:export())
 
                 --3 format='der', raw=false, passphrase=nil
@@ -202,77 +202,77 @@ vgPnEUG6Mk9bkxMZKRgsiKn6QGKDYGbOvnS1xmkMfRARBsJAq369VOTjMB/Qhs5q
                 local hex = openssl.hex(export)
                 assertEquals(hex:upper(),v[2])
 
-                local k2 = pkey.read(export,true,'der')
+                k2 = pkey.read(export,true,'der')
                 assertEquals(pri:export(),k2:export())
 
-                local export = pri:export('der',false)
-                local hex = openssl.hex(export)
+                export = pri:export('der',false)
+                hex = openssl.hex(export)
                 assertEquals(hex:upper(),v[2])
 
-                local k2 = pkey.read(export,true,'der')
+                k2 = pkey.read(export,true,'der')
                 assertEquals(pri:export(),k2:export())
 
-                local export = pri:export('der', nil)
-                local hex = openssl.hex(export)
+                export = pri:export('der', nil)
+                hex = openssl.hex(export)
                 assertEquals(hex:upper(),v[2])
 
-                local k2 = pkey.read(export,true,'der')
+                k2 = pkey.read(export,true,'der')
                 assertEquals(pri:export(),k2:export())
 
                 -- pem=false, raw=false, passphrase='secret'
-                local export = pri:export('der',false,'secret')
-                local k2 = pkey.read(export,true,'der','secret')
+                export = pri:export('der',false,'secret')
+                k2 = pkey.read(export,true,'der','secret')
                 assertEquals(pri:export(),k2:export())
 
-                local export = pri:export('der', nil, 'secret')
-                local k2 = pkey.read(export,true,'der','secret')
+                export = pri:export('der', nil, 'secret')
+                k2 = pkey.read(export,true,'der','secret')
                 assertEquals(pri:export(),k2:export())
 
                 --4 pem=false, raw=true, passphrase=nil
-                local export = pri:export('der', true)
-                local hex = openssl.hex(export)
+                export = pri:export('der', true)
+                hex = openssl.hex(export)
                 assertEquals(hex:upper(),v[2])
 
-                local k2 = pkey.read(export,true,'der', k)
+                k2 = pkey.read(export,true,'der', k)
                 assertEquals(pri:export(),k2:export())
 
                 -------------------------------
                 -- public
                 --1 format='pem', raw=false, passphrase=nil
-                local pem1  = pub:export()
+                pem1  = pub:export()
                 assertEquals(pem1,  pub:export('pem'))
                 assertStrContains(pem1,'-----BEGIN PUBLIC KEY-----')
                 assertStrContains(pem1,'-----END PUBLIC KEY-----')
 
-                local k2 = pkey.read(pem1,false)
+                k2 = pkey.read(pem1,false)
                 assertEquals(pub:export(),k2:export())
 
                 --2 format='pem', raw=true, passphrase=nil
-                local pem2  = pub:export('pem', true)
+                pem2  = pub:export('pem', true)
                 if k~="EC" and k~='DSA' then
                         assertStrContains(pem2,'-----BEGIN '..k..' PUBLIC KEY-----')
                         assertStrContains(pem2,'-----END '..k..' PUBLIC KEY-----')
                 end
-                local k2 = pkey.read(pem2, false, 'pem', k)
+                k2 = pkey.read(pem2, false, 'pem', k)
                 assertEquals(pub:export(),k2:export())
 
                 --3 format='der', raw=false, passphrase=nil
-                local export = pub:export('der')
-                local hex = openssl.hex(export)
+                export = pub:export('der')
+                hex = openssl.hex(export)
                 assertEquals(hex:upper(),v[3])
 
-                local export = pub:export('der', false)
-                local k2 = pkey.read(export,false,'der')
+                export = pub:export('der', false)
+                k2 = pkey.read(export,false,'der')
                 assertEquals(hex:upper(),v[3])
                 assertEquals(pub:export(),k2:export())
 
-                local k2 = pkey.read(export, nil,'der')
+                k2 = pkey.read(export, nil,'der')
                 assertEquals(pub:export(),k2:export())
 
                 --4 format='der', raw=true, passphrase=nil
-                
-                local export = pub:export('der', true)
-                local hex = openssl.hex(export)
+
+                export = pub:export('der', true)
+                hex = openssl.hex(export)
                 if (hex:upper()~=v[4]) then
                   print('XXXXXXXXX', k)
                   print('PUB:', hex)

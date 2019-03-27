@@ -49,7 +49,7 @@ TestX509attr = {}
         assertEquals(t.type,asn1.OCTET_STRING)
         assertEquals(t.value,'CA:FALSE')
 
-        local  n2 = attr.new_attribute(self.cas)
+        n2 = attr.new_attribute(self.cas)
         assertEquals(n1:info(),n2:info())
 
         assertEquals(n1:object():ln(),'X509v3 Basic Constraints')

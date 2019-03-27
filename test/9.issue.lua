@@ -1,8 +1,7 @@
 local openssl = require'openssl'
-local hmac = require'openssl'.hmac
 
 TestIssuer = {}
-    function dump(t,i)
+    local function dump(t,i)
         for k,v in pairs(t) do
             if type(v) == 'table' then
                 print( string.rep('\t',i),k..'={')
@@ -70,6 +69,7 @@ veFd3yM=
         local c = openssl.cipher.decrypt_new('bf-cbc', "secret_key", "iv")
         local out = c:update("msg")
         local final = c:final()
+        assert(out or final)
         c:close()
         c = nil
         collectgarbage("collect")

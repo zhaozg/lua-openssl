@@ -1,7 +1,8 @@
 local openssl = require'openssl'
-local csr,bio,ssl = openssl.csr,openssl.bio, openssl.ssl
+local ssl = openssl.ssl
 local sslctx = require'sslctx'
-_,_,opensslv = openssl.version(true)
+local _,_,opensslv = openssl.version(true)
+local host, port, loop
 
 host = arg[1] or "127.0.0.1"; --only ip
 port = arg[2] or "8383";
@@ -53,7 +54,7 @@ ctx:set_cert_verify(function(arg)
       return true --return false will fail ssh handshake
 end)
 
-function ssl_mode()
+local function ssl_mode()
     local srv = assert(ctx:bio(host..':'..port,true))
     local i = 0
     if srv then
@@ -63,7 +64,7 @@ function ssl_mode()
           local cli = assert(srv:accept(),'Error in ssl connection') --bio tcp
           assert(cli:handshake(),'handshake fail')
           repeat
-              d = cli:read()
+              local d = cli:read()
               if d then
                 cli:write(d)
               end

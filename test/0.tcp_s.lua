@@ -1,5 +1,6 @@
 local openssl = require 'openssl'
 local bio = openssl.bio
+local host, port, loop
 
 host = arg[1] or "127.0.0.1"; --only ip
 port = arg[2] or "8383";
@@ -12,10 +13,9 @@ if srv then
   assert(srv:accept(true))  -- make real listen
   while i<loop do
       local cli = assert(srv:accept())
-      local s
-      repeat 
-          s = cli:read()
-          if s then 
+      repeat
+        local s = cli:read()
+          if s then
             cli:write(s)
             cli:flush()
           end

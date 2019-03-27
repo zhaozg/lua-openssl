@@ -1,5 +1,5 @@
 local openssl = require'openssl'
-local csr, x509, pkcs12 = openssl.x509.req,openssl.x509, openssl.pkcs12
+local csr = openssl.x509.req
 local helper = require'helper'
 
 TestCompat = {}
@@ -30,8 +30,6 @@ function TestCompat:testNew()
         local cert = openssl.x509.new(2,req,extensions)
         cert:validat(os.time(), os.time() + 3600*24*365)
         assert(cert:sign(pkey,cacert))
-
-        local certs =  {cert}
 
         local ss = assert(openssl.pkcs12.export(cert,dkey,'secret','USER'))
         local tt = assert(openssl.pkcs12.read(ss,'secret'))

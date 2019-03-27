@@ -1,7 +1,8 @@
 local openssl = require'openssl'
-local csr,bio,ssl = openssl.csr,openssl.bio, openssl.ssl
+local bio,ssl = openssl.bio, openssl.ssl
 local sslctx = require'sslctx'
-_,_,opensslv = openssl.version(true)
+local _,_,opensslv = openssl.version(true)
+local host, port, loop
 
 host = arg[1] or "127.0.0.1"; --only ip
 port = arg[2] or "8383";
@@ -29,7 +30,7 @@ if opensslv > 0x10002000 then
     end
 end
 
-function mk_connection(host,port,i)
+local function mk_connection(host,port,i)
 
       local ctx = assert(sslctx.new(params))
       if (certstore) then
@@ -58,7 +59,7 @@ function mk_connection(host,port,i)
 
   local cli = assert(bio.connect(host..':'..port,true))
   if(cli) then
-    S = ctx:ssl(cli,false)
+    local S = ctx:ssl(cli,false)
     if(i%2==2) then
         assert(S:handshake())
     else

@@ -22,9 +22,8 @@ TestDigestCompat = {}
         assertEquals(#c,20)
     end
     function TestDigestCompat:testObject()
-        local a,b,c,aa,bb,cc
-        local obj,obj1
-        obj = digest.new(self.alg)
+        local a,b,c,aa,bb
+        local obj = digest.new(self.alg)
         assert(obj:update(self.msg))
         a = obj:final()
         obj:reset()
@@ -48,7 +47,7 @@ TestDigestCompat = {}
 
 TestDigestMY = {}
     function TestDigestMY:testList()
-        local t1,t2,t3
+        local t1,t2,t3,t
         t1 = digest.list(true)
         t2 = digest.list()
         assert(#t1==#t2)
@@ -58,7 +57,7 @@ TestDigestMY = {}
         t = md:info()
         assert(t.size==20)
 
-        ctx1 = md:new()
+        local ctx1 = md:new()
         t1 = ctx1:info()
         local ctx = digest.new('sha1')
         t2 = ctx:info()

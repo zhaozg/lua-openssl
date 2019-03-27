@@ -51,7 +51,7 @@ TestX509Name = {}
 
         local s2 = asn1.new_string('ÖÐÎÄÃû×Ö',asn1.BMPSTRING)
         local utf_cn = s2:toutf8()
-        s3 = asn1.new_string(utf_cn,asn1.UTF8STRING)
+        local s3 = asn1.new_string(utf_cn,asn1.UTF8STRING)
 
         assert(n1:add_entry('OU',utf_cn,true))
         local S, i = n1:get_text('OU')

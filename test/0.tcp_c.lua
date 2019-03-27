@@ -1,12 +1,13 @@
 local openssl = require 'openssl'
 local bio = openssl.bio
+local host,port,loop
 
 host = arg[1] or "127.0.0.1"; --only ip
 port = arg[2] or "8383";
 loop = arg[3] and tonumber(arg[3]) or 100
 print(string.format('CONNECT to %s:%s',host,port))
 
-function mk_connection(host,port)
+local function mk_connection(host,port)
   local cli = assert(bio.connect(host..':'..port,true))
   if(cli) then
     s = 'aaa'

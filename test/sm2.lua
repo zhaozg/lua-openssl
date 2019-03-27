@@ -1,11 +1,9 @@
 local openssl = require'openssl'
 local pkey = openssl.pkey
-local sm2  = openssl.sm2
 local unpack = unpack or table.unpack
 local helper = require'helper'
 
-_,_,opensslv = openssl.version(true)
-print(opensslv)
+local _,_,opensslv = openssl.version(true)
 if opensslv >= 0x10101007 and (not helper.libressl) then
   print('Support SM2')
   testSM2 = {}
@@ -21,7 +19,7 @@ if opensslv >= 0x10101007 and (not helper.libressl) then
 
         local k1 = pkey.get_public(ec)
         assert(not k1:is_private())
-        local t = k1:parse()
+        t = k1:parse()
         assert(t.bits==256)
         assert(t.type=='ec')
         assert(t.size==72)
@@ -50,11 +48,11 @@ if opensslv >= 0x10101007 and (not helper.libressl) then
         local ec2priv = pkey.new(ec2p)
         assert(ec2priv:is_private())
 
-        local nec =  {'ec','SM2'}
+        nec =  {'ec','SM2'}
         local key1 = pkey.new(unpack(nec))
         local key2 = pkey.new(unpack(nec))
         local ec1 = key1:parse().ec
-        local ec2 = key2:parse().ec
+        ec2 = key2:parse().ec
         local secret1 = ec1:compute_key(ec2)
         local secret2 = ec2:compute_key(ec1)
         assert(secret1==secret2)

@@ -28,36 +28,36 @@ TestLhtml = {}
         assertEquals(raw,msg)
 
         --with newline
-        local ano = openssl.base64(msg,true,false)
+        ano = openssl.base64(msg,true,false)
         assert(#ano>#msg)
         assert(string.find(ano,'\n'))
         assertEquals(openssl.base64(msg,true,false),ano)
-        local raw = openssl.base64(ano,false,false)
+        raw = openssl.base64(ano,false,false)
         assertEquals(raw,msg)
 
-        local msg = msg..msg..msg
-        local ano = openssl.base64(msg)
+        msg = msg..msg..msg
+        ano = openssl.base64(msg)
         --default without newline
         assert(#ano>#msg)
         assert(not string.find(ano,'\n'))
         assertEquals(openssl.base64(msg,true),ano)
-        local raw = openssl.base64(ano,false)
+        raw = openssl.base64(ano,false)
         assertEquals(raw,msg)
 
         --without newline
-        local ano = openssl.base64(msg,true,true)
+        ano = openssl.base64(msg,true,true)
         assert(#ano>#msg)
         assert(not string.find(ano,'\n'))
         assertEquals(openssl.base64(msg,true,true),ano)
-        local raw = openssl.base64(ano,false,true)
+        raw = openssl.base64(ano,false,true)
         assertEquals(raw,msg)
 
         --with newline
-        local ano = openssl.base64(msg,true,false)
+        ano = openssl.base64(msg,true,false)
         assert(#ano>#msg)
         assert(string.find(ano,'\n'))
         assertEquals(openssl.base64(msg,true,false),ano)
-        local raw = openssl.base64(ano,false,false)
+        raw = openssl.base64(ano,false,false)
         assertEquals(raw,msg)
     end
 
@@ -72,10 +72,10 @@ TestLhtml = {}
             local t = conf:parse(false)
             assertIsTable(t)
             --print_r(t)
-            local t = conf:parse()
+            t = conf:parse()
             assertIsTable(t)
 
-            local t = conf:parse(true)
+            t = conf:parse(true)
             assertIsTable(t)
 
             assert(conf:get_string('ca','default_ca'))

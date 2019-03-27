@@ -30,7 +30,7 @@ TestCipherCompat = {}
     end
 
     function TestCipherCompat:testObject()
-        local a,b,c,aa,bb,cc
+        local a,b,aa,bb
         local obj,obj1
 
         obj = cipher.new(self.alg,true,self.key)
@@ -80,7 +80,7 @@ TestCipherMY = {}
 
         local C = cipher.get('des')
 
-        local a,b,c,aa,bb,cc
+        local a,b,aa,bb
         local obj,obj1
 
         obj = C:new(true,self.key)
@@ -117,10 +117,8 @@ TestCipherMY = {}
     function TestCipherMY:testAesCTR()
 
         local C = cipher.get('aes-128-ctr')
-        local key = '0123456789abcefg'
-        local iv = string.rep('\0',16)
 
-        local a,b,c,aa,bb,cc
+        local a,b,aa,bb
         local obj,obj1
 
         obj = C:new(true,self.key)

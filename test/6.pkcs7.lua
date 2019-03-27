@@ -1,5 +1,5 @@
 local openssl = require'openssl'
-local x509,pkcs7,csr = openssl.x509,openssl.pkcs7,openssl.x509.req
+local pkcs7,csr = openssl.pkcs7,openssl.x509.req
 local helper = require'helper'
 
 TestCompat = {}
@@ -14,7 +14,7 @@ TestCompat = {}
     function TestCompat:testNew()
         local cakey, cacert = helper.new_ca(self.cadn)
         local dkey = openssl.pkey.new()
-        req = assert(csr.new(self.dn,dkey))
+        local req = assert(csr.new(self.dn,dkey))
 
         local e = openssl.x509.extension.new_extension(
         {
@@ -22,6 +22,7 @@ TestCompat = {}
             value = 'smimesign'
         },false
         )
+        assert(e)
         local extensions =
         {{
             object='nsCertType',
@@ -37,18 +38,20 @@ TestCompat = {}
         cert:validat(os.time(), os.time() + 3600*24*365)
         assert(cert:sign(cakey,cacert))
 
-        msg = 'abcd'
+        local msg = 'abcd'
 
-        skcert = {cert}
-        p7 = assert(pkcs7.encrypt(msg,skcert))
+        local skcert = {cert}
+        local p7 = assert(pkcs7.encrypt(msg,skcert))
         local ret,signer = assert(pkcs7.decrypt(p7,cert,dkey))
         assertEquals(msg,ret)
+        assert(signer)
         -------------------------------------
         p7 = assert(pkcs7.sign(msg,cert,dkey))
         assert(p7:export())
         local store = openssl.x509.store.new({cacert})
-        local ret,signer = assert(p7:verify(skcert,store))
-
+        ret,signer = assert(p7:verify(skcert,store))
+        assert(ret)
+        assert(signer)
     end
 
     function TestCompat:testStep()
@@ -73,6 +76,7 @@ TestCompat = {}
             value = 'smimesign'
         },false
         )
+        assert(e)
         local extensions =
         {{
             object='nsCertType',
@@ -88,7 +92,7 @@ TestCompat = {}
         cert:validat(os.time(), os.time() + 3600*24*365)
         assert(cert:sign(cakey,cacert))
 
-        msg = 'abcd'
+        local msg = 'abcd'
 
         local md = openssl.digest.get('sha1')
         local mdc = md:new()
@@ -102,6 +106,10 @@ TestCompat = {}
         assert(pp7)
 
         local ret,signer = assert(p7:verify(nil,nil,msg..msg,pkcs7.DETACHED))
-        local ret,signer = assert(p7:verify_digest(nil,nil,hash,pkcs7.DETACHED,true))
+        assert(ret)
+        assert(signer)
+        ret,signer = assert(p7:verify_digest(nil,nil,hash,pkcs7.DETACHED,true))
+        assert(ret)
+        assert(signer)
     end
 

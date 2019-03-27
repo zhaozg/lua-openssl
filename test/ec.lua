@@ -35,7 +35,7 @@ jcWtqOmp3Xyzxw30SJhuUb3l0VdvmZAfnCxqgGpH/ZB2Q6crg1WX78jG
 
         local k1 = pkey.get_public(ec)
         assert(not k1:is_private())
-        local t = k1:parse()
+        t = k1:parse()
         assert(t.bits==256)
         assert(t.type=='ec')
         assert(t.size==72)

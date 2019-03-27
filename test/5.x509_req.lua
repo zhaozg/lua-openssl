@@ -59,7 +59,7 @@ TestCSR = {}
                 local req1,req2
                 req1 = assert(csr.new())
                 req2 = assert(csr.new(pkey))
-                t = req1:parse()
+                local t = req1:parse()
                 assertIsTable(t)
                 t = req2:parse()
                 assertIsTable(t)
@@ -124,7 +124,7 @@ TestCSR = {}
 
                 local pem = req2:export('pem')
                 assertIsString(pem)
-                req2 = assert(csr.read(pem,'pem'))
+                local req2 = assert(csr.read(pem,'pem'))
                 assertIsNil(csr.read(pem,'der'))
                 req2 = assert(csr.read(pem,'auto'))
 
@@ -138,7 +138,7 @@ TestCSR = {}
                 assert(req1:public(pubkey))
 
                 assertEquals(req1:attr_count(),3+1)
-                attr = req1:attribute(0)
+                local attr = req1:attribute(0)
                 assertStrContains(tostring(attr),'openssl.x509_attribute')
                 attr = req1:attribute(0,nil)
                 assertStrContains(tostring(attr),'openssl.x509_attribute')
@@ -166,6 +166,7 @@ TestCSR = {}
 
                 local cert = req2:to_x509(pkey, 3650) -- self sign
                 t = cert:parse()
+                assert(type(t)=='table')
                 assertStrContains(tostring(req1:to_x509(pkey, 3650)),'openssl.x509')
                 assertStrContains(tostring(req2:to_x509(pkey, 3650)),'openssl.x509')
 
@@ -188,7 +189,7 @@ wSpxg0VN6+i6u9C9n4xwCe1VyteOC2In0LbxMAGL3rVFm9yDFRU3LDy3EWG6DIg/
 ]==]
 
         local x = assert(csr.read(csr_data))
-        t = x:parse()
+        local t = x:parse()
         assertIsTable(t)
         assertIsUserdata(t.subject)
         assertIsNumber(t.version)

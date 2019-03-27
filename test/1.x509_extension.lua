@@ -44,7 +44,7 @@ TestX509ext = {}
         n1:critical(true)
         assertEquals(n1:critical(),true)
 
-        local  n2 = ext.new_extension(self.cas)
+        n2 = ext.new_extension(self.cas)
         assertEquals(n1:object():ln(),'X509v3 Basic Constraints')
         n1:object('extendedKeyUsage')
         assertEquals(n1:object():sn(),'extendedKeyUsage')

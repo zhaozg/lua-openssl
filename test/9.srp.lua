@@ -8,8 +8,6 @@ end
 
 local GN = assert(srp.get_default_gN('1024'));
 
-local self = {}
-
 TestSRP = {}
     function TestSRP:setUp()
         self.user = 'zhaozg'

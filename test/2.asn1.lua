@@ -5,8 +5,8 @@ local asn1,hex,base64 = openssl.asn1,openssl.hex,openssl.base64
 local pem = "MHcCAQEEINUs3GRVhC8h1y84gcW89XB9cyjUifwO3ZEH/Redb7w8oAoGCCqBHM9VAYItoUQDQgAE"
 .."9YFSq5ZO6I+YXsIpYFzCYTcgtotrg6UW5xX8+e8arpoU5SsojLjRG1PA028kbi139zZlH2Gh/JPNiMEzRClIVg=="
 
-s = base64(pem,false)
-d = {}
+local s = base64(pem,false)
+local d = {}
 local first = true
 function asn1parse(s,off,last, indent)
     off = off or 1

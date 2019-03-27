@@ -51,7 +51,7 @@ local params = {
         ctx:verify_locations(params.cafile,params.capath)
     end
 
-    unpack = unpack or table.unpack
+    local unpack = unpack or table.unpack
     if(params.verify) then
         ctx:verify_mode(params.verify)
     end

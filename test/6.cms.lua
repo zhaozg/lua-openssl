@@ -1,5 +1,5 @@
 local openssl = require'openssl'
-local bio, x509,cms,csr = openssl.bio,openssl.x509,openssl.cms,openssl.x509.req
+local cms,csr = openssl.cms,openssl.x509.req
 local helper = require'helper'
 if not cms then
   print('Skip cms test')
@@ -29,7 +29,7 @@ TestCMS = {}
         self.castore = openssl.x509.store.new({cacert})
 
         local pkey = openssl.pkey.new()
-        req = assert(csr.new(self.alicedn, pkey))
+        local req = assert(csr.new(self.alicedn, pkey))
         local cert = openssl.x509.new(2,req)
         cert:validat(os.time(), os.time() + 3600*24*365)
         assert(cert:sign(cakey,cacert))

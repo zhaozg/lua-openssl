@@ -30,7 +30,7 @@ TestSSLOptions = {}
             assert(libressl or t.no_sslv3)
             assert(t.no_ticket)
 
-            assert(not pcall(self.ctx.options, ctx, true, nil))
+            assert(not pcall(self.ctx.options, self.ctx, true, nil))
             assertIsTable(t)
             assert(libressl or t.no_sslv3)
             assert(t.no_ticket)
