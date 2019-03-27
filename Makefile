@@ -50,7 +50,7 @@ OPENSSL_LIBS	?= $(shell $(PKG_CONFIG) openssl --static --libs)
 ifneq (, $(findstring linux, $(SYS)))
   # Do linux things
   CFLAGS	 = -fPIC
-  LDFLAGS	 = -fPIC -Wl,--no-undefined
+  LDFLAGS	 = -fPIC # -Wl,--no-undefined
 endif
 
 ifneq (, $(findstring apple, $(SYS)))
