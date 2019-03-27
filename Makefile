@@ -5,6 +5,7 @@ PKG_CONFIG	?=pkg-config
 CC		:= $(CROSS)$(CC)
 AR		:= $(CROSS)$(AR)
 LD		:= $(CROSS)$(LD)
+LUA		:=
 
 #OS auto detect
 ifneq (,$(TARGET_SYS))
@@ -24,12 +25,14 @@ ifeq ($(LUA_VERSION),)
     LUA_CFLAGS	?= -I$(PREFIX)/include
     LUA_LIBS	?= -L$(PREFIX)/lib #-llua
     LUA_LIBDIR	?= $(PREFIX)/lib/lua/$(LUA_VERSION)
+    LUA		:= lua
   else
     # Found lua package
     LUA_VERSION	:= $(shell lua -e "_,_,v=string.find(_VERSION,'Lua (.+)');print(v)")
     LUA_CFLAGS	?= $(shell $(PKG_CONFIG) lua --cflags)
     LUA_LIBS	?= $(shell $(PKG_CONFIG) lua --libs)
     LUA_LIBDIR	?= $(PREFIX)/lib/lua/$(LUA_VERSION)
+    LUA		:= lua
   endif
 else
   # Found luajit package
@@ -37,6 +40,7 @@ else
   LUA_CFLAGS	?= $(shell $(PKG_CONFIG) luajit --cflags)
   LUA_LIBS	?= $(shell $(PKG_CONFIG) luajit --libs)
   LUA_LIBDIR	?= $(PREFIX)/lib/lua/$(LUA_VERSION)
+  LUA		:= luajit
 endif
 
 #OpenSSL auto detect
@@ -46,7 +50,7 @@ OPENSSL_LIBS	?= $(shell $(PKG_CONFIG) openssl --static --libs)
 ifneq (, $(findstring linux, $(SYS)))
   # Do linux things
   CFLAGS	 = -fPIC
-  LDFLAGS	 = -fPIC
+  LDFLAGS	 = -fPIC -Wl,--no-undefined
 endif
 
 ifneq (, $(findstring apple, $(SYS)))
@@ -83,8 +87,8 @@ endif
 
 LIBNAME= $T.so.$V
 
-CFLAGS		+= -g $(OPENSSL_CFLAGS) $(LUA_CFLAGS) $(TARGET_FLAGS)
-LDFLAGS		+= -g $(OPENSSL_LIBS) $(LUA_LIBS)
+CFLAGS		+= $(OPENSSL_CFLAGS) $(LUA_CFLAGS) $(TARGET_FLAGS)
+LDFLAGS		+= $(OPENSSL_LIBS) $(LUA_LIBS)
 # Compilation directives
 WARN_MIN	 = -Wall -Wno-unused-value -Wno-unused-function
 WARN		 = -Wall
@@ -98,6 +102,8 @@ OBJS=src/asn1.o deps/auxiliar/auxiliar.o src/bio.o src/cipher.o src/cms.o src/co
      src/pkcs12.o src/pkcs7.o src/pkey.o src/rsa.o src/ssl.o src/th-lock.o src/util.o  \
      src/x509.o src/xattrs.o src/xexts.o src/xname.o src/xstore.o src/xalgor.o         \
      src/callback.o src/srp.o deps/auxiliar/subsidiar.o
+
+.PHONY: all install test info
 
 .c.o:
 	$(CC) $(CFLAGS) -c -o $@ $?
@@ -120,6 +126,9 @@ info:
 	@echo "CC:" $(CC)
 	@echo "AR:" $(AR)
 	@echo "PREFIX:" $(PREFIX)
+
+test:
+	cd test && LUA_CPATH=../?.so $(LUA) test.lua && cd ..
 
 clean:
 	rm -f $T.so lib$T.a $(OBJS)
