@@ -12,6 +12,11 @@ lua-openssl binding, provide openssl base function in lua.
 #include <openssl/engine.h>
 #include <openssl/opensslconf.h>
 #include "private.h"
+#if defined(__APPLE__)
+#include <stdatomic.h>
+#else
+#include "stdatomic.h"
+#endif
 
 /***
 get lua-openssl version
@@ -393,9 +398,16 @@ static const luaL_Reg eay_functions[] =
 void CRYPTO_thread_setup(void);
 void CRYPTO_thread_cleanup(void);
 #endif
-
+#if defined(__APPLE__) || defined(__WIN32__)
+static atomic_uint init = 0;
+#else
+static atomic_uint init = { 0 };
+#endif
 static int luaclose_openssl(lua_State *L)
 {
+  if(atomic_fetch_sub(&init, 1)>0)
+    return 0;
+
 #if !defined(LIBRESSL_VERSION_NUMBER)
   FIPS_mode_set(0);
 #endif
@@ -447,8 +459,7 @@ static int luaclose_openssl(lua_State *L)
 
 LUALIB_API int luaopen_openssl(lua_State*L)
 {
-  static void* init = NULL;
-  if (init == NULL)
+  if (atomic_fetch_add(&init, 1) == 1)
   {
 #if defined(OPENSSL_THREADS)
     CRYPTO_thread_setup();
@@ -475,15 +486,11 @@ LUALIB_API int luaopen_openssl(lua_State*L)
   }
 
   lua_newtable(L);
-  if(init==NULL)
-  {
-    init = lua_newuserdata(L, sizeof(int));
-    lua_newtable(L);
-    lua_pushcfunction(L, luaclose_openssl);
-    lua_setfield(L, -2, "__gc");
-    lua_setmetatable(L, -2);
-    lua_setfield(L, -2, "__guard");
-  }
+
+  lua_newtable(L);
+  lua_pushcfunction(L, luaclose_openssl);
+  lua_setfield(L, -2, "__gc");
+  lua_setmetatable(L, -2);
 
   luaL_setfuncs(L, eay_functions, 0);
 
