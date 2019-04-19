@@ -2368,9 +2368,6 @@ int luaopen_ssl(lua_State *L)
 {
   int i;
 
-  SSL_load_error_strings();
-  SSLeay_add_ssl_algorithms();
-
   auxiliar_newclass(L, "openssl.ssl_ctx",       ssl_ctx_funcs);
   auxiliar_newclass(L, "openssl.ssl_session",   ssl_session_funcs);
   auxiliar_newclass(L, "openssl.ssl",           ssl_funcs);
