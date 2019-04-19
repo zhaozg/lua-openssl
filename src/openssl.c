@@ -405,7 +405,7 @@ static atomic_uint init = { 0 };
 #endif
 static int luaclose_openssl(lua_State *L)
 {
-  if(atomic_fetch_sub(&init, 1)>0)
+  if(atomic_fetch_sub(&init, 1) > 1)
     return 0;
 
 #if !defined(LIBRESSL_VERSION_NUMBER)
@@ -459,7 +459,7 @@ static int luaclose_openssl(lua_State *L)
 
 LUALIB_API int luaopen_openssl(lua_State*L)
 {
-  if (atomic_fetch_add(&init, 1) == 1)
+  if (atomic_fetch_add(&init, 1) == 0)
   {
 #if defined(OPENSSL_THREADS)
     CRYPTO_thread_setup();
