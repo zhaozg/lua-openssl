@@ -398,11 +398,14 @@ static const luaL_Reg eay_functions[] =
 void CRYPTO_thread_setup(void);
 void CRYPTO_thread_cleanup(void);
 #endif
-#if defined(__APPLE__) || defined(__WIN32__)
-static atomic_uint init = 0;
+
+static atomic_uint init =
+#ifdef _MSC_VER
+{ 0 };
 #else
-static atomic_uint init = { 0 };
+  ATOMIC_VAR_INIT(0);
 #endif
+
 static int luaclose_openssl(lua_State *L)
 {
   if(atomic_fetch_sub(&init, 1) > 1)
