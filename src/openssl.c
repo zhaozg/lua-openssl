@@ -208,9 +208,25 @@ static LUA_FUNCTION(openssl_error_string)
 }
 
 /***
+mixes the num bytes at buf into the PRNG state.
+@function rand_add
+@tparam string seed data to seed random generator
+@tparam number entropy the lower bound of an estimate of how much randomness is contained in buf, measured in bytes.
+*/
+static int openssl_random_add(lua_State*L)
+{
+  size_t num = 0;
+  const void *buf = luaL_checklstring(L, 1, &num);
+  double entropy = luaL_optinteger(L, 2, num);
+
+  RAND_add(buf, num, entropy);
+  return 0;
+}
+
+/***
 load rand seed from file
 @function rand_load
-@tparam[opt=nil] string file path to laod seed, default opensl management
+@tparam[opt=nil] string file path to laod seed, default openssl management
 @treturn boolean result
 */
 static int openssl_random_load(lua_State*L)
@@ -383,6 +399,7 @@ static const luaL_Reg eay_functions[] =
   {"mem_leaks",   openssl_mem_leaks},
 #endif
   {"rand_status", openssl_random_status},
+  {"rand_add",    openssl_random_add},
   {"rand_load",   openssl_random_load},
   {"rand_write",  openssl_random_write},
   {"random",      openssl_random_bytes},
