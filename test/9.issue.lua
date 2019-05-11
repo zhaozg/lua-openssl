@@ -2,6 +2,7 @@ local openssl = require'openssl'
 
 TestIssuer = {}
     local function dump(t,i)
+        i = i or 0
         for k,v in pairs(t) do
             if type(v) == 'table' then
                 print( string.rep('\t',i),k..'={')
@@ -73,4 +74,30 @@ veFd3yM=
         c:close()
         c = nil
         collectgarbage("collect")
+    end
+
+    function TestIssuer:test166()
+        local pkey = openssl.pkey
+        local ec_key = pkey.new(unpack({"EC", "secp521r1" }))
+        local public_key = pkey.get_public(ec_key)
+
+        local key_details = public_key:parse().ec:parse()
+        local x, y = key_details.group:affine_coordinates(key_details.pub_key)
+
+        local ec_jwk =  {
+            kty = "EC",
+            crv = "P-521",
+            x = openssl.base64(x:totext(x)),
+            y = openssl.base64(y:totext(y))
+        }
+
+        local factor = {
+            alg = "EC",
+            ec_name = 716,
+            x = assert(openssl.base64(ec_jwk.x,false)),
+            y = assert(openssl.base64(ec_jwk.y,false)),
+        }
+
+        local pub = assert(pkey.new(factor))
+        assert(pub:export()==public_key:export())
     end
