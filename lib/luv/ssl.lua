@@ -1,8 +1,7 @@
 local uv = require 'luv'
 local openssl = require 'openssl'
-local ssl, bio, x509, pkey, csr = openssl.ssl, openssl.bio, openssl.x509, openssl.pkey, openssl.csr
+local ssl, bio, x509, pkey = openssl.ssl, openssl.bio, openssl.x509, openssl.pkey
 
-local bit = require 'bit'
 local print = print
 -- support
 local M = {}
@@ -44,7 +43,6 @@ function M.new_ctx (params)
     ctx:verify_locations(params.cafile, params.capath)
   end
 
-  local unpack = unpack or table.unpack
   if params.verify then
     ctx:verify_mode(params.verify)
   end

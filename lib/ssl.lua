@@ -1,6 +1,7 @@
 local openssl = require'openssl'
 local socket = require'socket'
 local ssl,pkey,x509 = openssl.ssl,openssl.pkey,openssl.x509
+local unpack = unpack or table.unpack
 
 local M = {}
 
@@ -14,12 +15,12 @@ local function load(path)
 end
 
 
-function M.newcontext(params)  
+function M.newcontext(params)
     local protocol = params.protocol and string.upper(string.sub(params.protocol,1,3))
         ..string.sub(params.protocol,4,-1) or 'TLSv1_2'
     local ctx = ssl.ctx_new(protocol,params.ciphers)
     local xkey = nil
-  
+
     if params.key then
        if (type(params.password)=='nil') then
            xkey = assert(pkey.read(load(params.key),true,'pem'))
@@ -31,7 +32,7 @@ function M.newcontext(params)
        end
 
        assert(xkey)
-       
+
        local xcert = nil
        if (params.certificate) then
            xcert = assert(x509.read(load(params.certificate)))
@@ -43,19 +44,18 @@ function M.newcontext(params)
         ctx:verify_locations(params.cafile,params.capath)
     end
 
-    unpack = unpack or table.unpack   
     if(params.verify) then
         if type(params.verify) ~= "table" then
             params.verify = {params.verify}
         end
-        
+
         local luasec_flags = {
             ["none"] = "none",
             ["peer"] = "peer",
             ["client_once"] = "once",
             ["fail_if_no_peer_cert"] = "fail"
         }
-       
+
         local verify = 0
         for i,v in ipairs(params.verify) do
             verify = verify + (ssl[luasec_flags[v] or v] or v)
@@ -66,11 +66,11 @@ function M.newcontext(params)
         if type(params.options) ~= "table" then
             params.options = {params.options}
         end
-        ctx:options(unpack(params.options))
+        ctx:options(npack(params.options))
     end
     if params.verifyext then
         for k,v in pairs(params.verifyext) do
-            params.verifyext[k] = string.gsub(v,'lsec_','')        
+            params.verifyext[k] = string.gsub(v,'lsec_','')
         end
         ctx:set_cert_verify(params.verifyext)
     end
@@ -81,7 +81,7 @@ function M.newcontext(params)
         ctx:set_tmp('ecdh',params.curve)
     end
     local t = {}
-    t.ctx = ctx 
+    t.ctx = ctx
     t.mode = params.mode
     t.params = params
     return t
@@ -92,9 +92,9 @@ local S = {}
 S.__index = {
     dohandshake = function(self)
         local ret,msg
-        
+
         socket.select({self.ssl}, {self.ssl}, self.timeout)
-    
+
         ret,msg = self.ssl:handshake()
         while not ret do
             if (msg=='want_read' or msg=='want_write') then
@@ -102,7 +102,7 @@ S.__index = {
             else
                 return ret,msg
             end
-        end           
+        end
 
         if ret then
             self._bbf = assert(openssl.bio.filter('buffer'))
@@ -127,8 +127,8 @@ S.__index = {
                 tt[i][1] = string.format('error=%d string=%s depth=%s',err.error,err.error_string,err.error_depth)
             end
             return r,tt
-        end        
-        return r        
+        end
+        return r
     end,
     getfd = function(self)
         local fd = self.ssl:getfd()
@@ -139,7 +139,7 @@ S.__index = {
         local chains = {}
         --[[
         print(self.peerchain,#self.peerchain)
-        for i=1,#self.peerchain do 
+        for i=1,#self.peerchain do
             table.insert(chains,self.peerchain:get(i-1))
         end
         --]]
@@ -228,7 +228,7 @@ S.__index = {
             self.ssl:ctx():set_servername_callback(t)
         end
     end,
-    
+
     settimeout = function(self,n,b)
         self.timeout = n
     end,
@@ -255,7 +255,7 @@ S.__index = {
             if cc.description then
                 info.cipher, info.protocol, info.key,
                 info.authentication, info.encryption, info.mac =
-                    string.match(cc.description, 
+                    string.match(cc.description,
                       "^(%S+)%s+(%S+)%s+Kx=(%S+)%s+Au=(%S+)%s+Enc=(%S+)%s+Mac=(%S+)")
                 info.export = (string.match(cc.description, "%sexport%s*$") ~= nil)
             end
@@ -263,7 +263,7 @@ S.__index = {
             if field then
                 return info[field]
             end
-            return info    
+            return info
         end
     end
 }
@@ -277,7 +277,7 @@ function M.wrap(sock, cfg)
    else
       ctx = cfg
    end
-   
+
    local s, msg = ctx.ctx:ssl(sock:getfd())
    if s then
       if(ctx.mode=='server') then
@@ -292,7 +292,7 @@ function M.wrap(sock, cfg)
       setmetatable(t,S)
       return t
    end
-   return nil, msg 
+   return nil, msg
 end
 
 function M.loadcertificate(pem)
