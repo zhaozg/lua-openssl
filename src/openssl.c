@@ -394,7 +394,7 @@ static const luaL_Reg eay_functions[] =
   {NULL, NULL}
 };
 
-#if defined(OPENSSL_THREADS)
+#if defined(OPENSSL_THREADS) && OPENSSL_VERSION_NUMBER < 0x10101000L
 void CRYPTO_thread_setup(void);
 void CRYPTO_thread_cleanup(void);
 #endif
@@ -428,7 +428,7 @@ static int luaclose_openssl(lua_State *L)
 #elif OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
   ERR_remove_thread_state(NULL);
 #endif
-#if defined(OPENSSL_THREADS)
+#if defined(OPENSSL_THREADS) && OPENSSL_VERSION_NUMBER < 0x10101000L
   CRYPTO_thread_cleanup();
 #endif
   CRYPTO_set_locking_callback(NULL);
@@ -461,7 +461,7 @@ LUALIB_API int luaopen_openssl(lua_State*L)
 {
   if (atomic_fetch_add(&init, 1) == 0)
   {
-#if defined(OPENSSL_THREADS)
+#if defined(OPENSSL_THREADS) && OPENSSL_VERSION_NUMBER < 0x10101000L
     CRYPTO_thread_setup();
 #endif
 
