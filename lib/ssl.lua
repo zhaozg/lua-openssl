@@ -66,7 +66,7 @@ function M.newcontext(params)
         if type(params.options) ~= "table" then
             params.options = {params.options}
         end
-        ctx:options(npack(params.options))
+        ctx:options(unpack(params.options))
     end
     if params.verifyext then
         for k,v in pairs(params.verifyext) do
