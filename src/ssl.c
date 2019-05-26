@@ -1122,12 +1122,6 @@ static int tlsext_servername_callback(SSL *ssl, int *ad, void *arg)
       return SSL_TLSEXT_ERR_OK;
     }
   }
-  else if (lua_isfunction(L, -1))
-  {
-  }
-  else
-  {
-  }
 
   lua_pop(L, 1);
   return SSL_TLSEXT_ERR_ALERT_FATAL;
