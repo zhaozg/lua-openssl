@@ -200,7 +200,7 @@ EC_GROUP* openssl_get_ec_group(lua_State* L, int ec_name_idx, int param_enc_idx,
   else if (lua_isstring(L, ec_name_idx))
   {
     const char* name = luaL_checkstring(L, ec_name_idx);
-    nid = OBJ_sn2nid(name);
+    nid = OBJ_txt2nid(name);
   }
   else if (lua_isuserdata(L, ec_name_idx))
   {
