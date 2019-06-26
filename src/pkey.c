@@ -15,6 +15,10 @@ pkey module for lua-openssl binding
 #define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
   "based on OpenSSL " SHLIB_VERSION_NUMBER
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
+#define EVP_CIPHER_CTX_reset EVP_CIPHER_CTX_init
+#endif
+
 int openssl_pkey_is_private(EVP_PKEY* pkey)
 {
   int ret = 1;
@@ -1363,7 +1367,7 @@ static LUA_FUNCTION(openssl_seal)
       eksl[0] = EVP_PKEY_size(pkeys[0]);
       eks[0] = malloc(eksl[0]);
     }
-    EVP_CIPHER_CTX_init(ctx);
+    EVP_CIPHER_CTX_reset(ctx);
 
     /* allocate one byte extra to make room for \0 */
     len1 = data_len + EVP_CIPHER_block_size(cipher) + 1;
@@ -1443,7 +1447,7 @@ static LUA_FUNCTION(openssl_open)
     len1 = data_len + 1;
     buf = malloc(len1);
 
-    EVP_CIPHER_CTX_init(ctx);
+    EVP_CIPHER_CTX_reset(ctx);
     if (EVP_OpenInit(ctx, cipher, (unsigned char *)ekey, ekey_len, (const unsigned char *)iv, pkey)
         && EVP_OpenUpdate(ctx, buf, &len1, (unsigned char *)data, data_len))
     {
@@ -1622,7 +1626,7 @@ static LUA_FUNCTION(openssl_open_init)
   {
     EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
 
-    EVP_CIPHER_CTX_init(ctx);
+    EVP_CIPHER_CTX_reset(ctx);
     if (EVP_OpenInit(ctx, cipher, (unsigned char *)ekey, ekey_len, (const unsigned char *)iv, pkey))
     {
       PUSH_OBJECT(ctx, "openssl.evp_cipher_ctx");
