@@ -1115,6 +1115,7 @@ static LUA_FUNCTION(openssl_pkey_get_public)
 /* private useage, and for sm2 */
 static LUA_FUNCTION(openssl_ec_userId)
 {
+#ifndef OPENSSL_NO_ENGINE
   EVP_PKEY* pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
   ENGINE* engine = CHECK_OBJECT(2, ENGINE, "openssl.engine");
   EC_KEY *ec = NULL;
@@ -1146,6 +1147,9 @@ static LUA_FUNCTION(openssl_ec_userId)
     ASN1_OCTET_STRING_set(s, (const unsigned char*) data, l);
     ret = ENGINE_ctrl(engine, 0x534554, 0x4944, ec, (void(*)(void))s);
     return openssl_pushresult(L, ret);
+#else
+  return 0;
+#endif
   }
 }
 
