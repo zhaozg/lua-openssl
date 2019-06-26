@@ -16,6 +16,14 @@ create and manage x509 certificate
 #define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
   "based on OpenSSL " SHLIB_VERSION_NUMBER
 
+#if OPENSSL_VERSION_NUMBER < 0x1010000fL || \
+	(defined(LIBRESSL_VERSION_NUMBER) && (LIBRESSL_VERSION_NUMBER < 0x20700000L))
+#define X509_get0_notBefore X509_get_notBefore
+#define X509_get0_notAfter X509_get_notAfter
+#define X509_set1_notBefore X509_set_notBefore
+#define X509_set1_notAfter X509_set_notAfter
+#endif
+
 static int openssl_push_purpose(lua_State*L, X509_PURPOSE* purpose)
 {
   lua_newtable(L);
@@ -535,9 +543,9 @@ static LUA_FUNCTION(openssl_x509_parse)
   PUSH_ASN1_INTEGER(L, X509_get0_serialNumber(cert));
   lua_setfield(L, -2, "serialNumber");
 
-  PUSH_ASN1_TIME(L, X509_get_notBefore(cert));
+  PUSH_ASN1_TIME(L, X509_get0_notBefore(cert));
   lua_setfield(L, -2, "notBefore");
-  PUSH_ASN1_TIME(L, X509_get_notAfter(cert));
+  PUSH_ASN1_TIME(L, X509_get0_notAfter(cert));
   lua_setfield(L, -2, "notAfter");
 
   {
@@ -935,7 +943,7 @@ static int openssl_x509_notbefore(lua_State *L)
   X509* cert = CHECK_OBJECT(1, X509, "openssl.x509");
   if (lua_isnone(L, 2))
   {
-    return PUSH_ASN1_TIME(L, X509_get_notBefore(cert));
+    return PUSH_ASN1_TIME(L, X509_get0_notBefore(cert));
   }
   else
   {
@@ -959,7 +967,7 @@ static int openssl_x509_notbefore(lua_State *L)
     }
     if (at)
     {
-      ret = X509_set_notBefore(cert, at);
+      ret = X509_set1_notBefore(cert, at);
       ASN1_TIME_free(at);
     }
     else
@@ -983,7 +991,7 @@ static int openssl_x509_notafter(lua_State *L)
   X509* cert = CHECK_OBJECT(1, X509, "openssl.x509");
   if (lua_isnone(L, 2))
   {
-    return PUSH_ASN1_TIME(L, X509_get_notAfter(cert));
+    return PUSH_ASN1_TIME(L, X509_get0_notAfter(cert));
   }
   else
   {
@@ -1007,7 +1015,7 @@ static int openssl_x509_notafter(lua_State *L)
     }
     if (at)
     {
-      ret = X509_set_notAfter(cert, at);
+      ret = X509_set1_notAfter(cert, at);
       ASN1_TIME_free(at);
     }
     else
@@ -1039,19 +1047,19 @@ static int openssl_x509_valid_at(lua_State* L)
     time_t now = 0;;
     time(&now);
 
-    lua_pushboolean(L, (X509_cmp_time(X509_get_notAfter(cert), &now)     >= 0
-                        && X509_cmp_time(X509_get_notBefore(cert), &now) <= 0));
-    PUSH_ASN1_TIME(L, X509_get_notBefore(cert));
-    PUSH_ASN1_TIME(L, X509_get_notAfter(cert));
+    lua_pushboolean(L, (X509_cmp_time(X509_get0_notAfter(cert), &now)     >= 0
+                        && X509_cmp_time(X509_get0_notBefore(cert), &now) <= 0));
+    PUSH_ASN1_TIME(L, X509_get0_notBefore(cert));
+    PUSH_ASN1_TIME(L, X509_get0_notAfter(cert));
     return 3;
   }
   else if (lua_gettop(L) == 2)
   {
     time_t time = luaL_checkinteger(L, 2);
-    lua_pushboolean(L, (X509_cmp_time(X509_get_notAfter(cert), &time)     >= 0
-                        && X509_cmp_time(X509_get_notBefore(cert), &time) <= 0));
-    PUSH_ASN1_TIME(L, X509_get_notBefore(cert));
-    PUSH_ASN1_TIME(L, X509_get_notAfter(cert));
+    lua_pushboolean(L, (X509_cmp_time(X509_get0_notAfter(cert), &time)     >= 0
+                        && X509_cmp_time(X509_get0_notBefore(cert), &time) <= 0));
+    PUSH_ASN1_TIME(L, X509_get0_notBefore(cert));
+    PUSH_ASN1_TIME(L, X509_get0_notAfter(cert));
     return 3;
   }
   else if (lua_gettop(L) == 3)
@@ -1066,9 +1074,9 @@ static int openssl_x509_valid_at(lua_State* L)
     aa = ASN1_TIME_new();
     ASN1_TIME_set(ab, before);
     ASN1_TIME_set(aa, after);
-    ret = X509_set_notBefore(cert, ab);
+    ret = X509_set1_notBefore(cert, ab);
     if (ret == 1)
-      ret = X509_set_notAfter(cert, aa);
+      ret = X509_set1_notAfter(cert, aa);
 
     ASN1_TIME_free(ab);
     ASN1_TIME_free(aa);
