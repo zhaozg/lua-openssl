@@ -29,7 +29,7 @@ OpenSSL not give full document about CMS api, so some function will be dangers.
 */
 #include "openssl.h"
 #include "private.h"
-#if OPENSSL_VERSION_NUMBER > 0x00909000L && !defined (LIBRESSL_VERSION_NUMBER)
+#ifndef OPENSSL_NO_CMS
 #include <openssl/cms.h>
 
 #define MYNAME    "cms"
@@ -861,7 +861,7 @@ static luaL_Reg cms_ctx_funs[] =
 
 int luaopen_cms(lua_State *L)
 {
-#if OPENSSL_VERSION_NUMBER > 0x00909000L && !defined (LIBRESSL_VERSION_NUMBER)
+#ifndef OPENSSL_NO_CMS
   ERR_load_CMS_strings();
 
   auxiliar_newclass(L, "openssl.cms",  cms_ctx_funs);
