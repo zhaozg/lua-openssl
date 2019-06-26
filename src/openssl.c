@@ -428,6 +428,7 @@ static int luaclose_openssl(lua_State *L)
   if(atomic_fetch_sub(&init, 1) > 1)
     return 0;
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
 #if !defined(LIBRESSL_VERSION_NUMBER)
   FIPS_mode_set(0);
 #endif
@@ -474,6 +475,7 @@ static int luaclose_openssl(lua_State *L)
 #endif
 #endif /* OPENSSL_NO_STDIO or OPENSSL_NO_FP_API */
 #endif /* OPENSSL_NO_CRYPTO_MDEBUG */
+#endif /* OPENSSL_VERSION_NUMBER < 0x10100000L or defined(LIBRESSL_VERSION_NUMBER) */
   return 0;
 }
 
@@ -481,6 +483,7 @@ LUALIB_API int luaopen_openssl(lua_State*L)
 {
   if (atomic_fetch_add(&init, 1) == 0)
   {
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
 #if defined(OPENSSL_THREADS)
     CRYPTO_thread_setup();
 #endif
@@ -493,9 +496,12 @@ LUALIB_API int luaopen_openssl(lua_State*L)
     ERR_load_EVP_strings();
     ERR_load_crypto_strings();
     ERR_load_SSL_strings();
+#endif
 
+#ifndef OPENSSL_NO_ENGINE
     ENGINE_load_dynamic();
     ENGINE_load_openssl();
+#endif
 #ifdef LOAD_ENGINE_CUSTOM
     LOAD_ENGINE_CUSTOM
 #endif
