@@ -59,7 +59,7 @@ static int openssl_xalgor_dup(lua_State* L)
   return 1;
 }
 
-#if OPENSSL_VERSION_NUMBER >= 0x10002000L
+#if !(defined(LIBRESSL_VERSION_NUMBER) && (LIBRESSL_VERSION_NUMBER < 0x20020000L))
 /***
 compare with other x509_algor object
 @function equals
