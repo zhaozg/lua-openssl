@@ -8,6 +8,7 @@ openssl.bio is a help object, it is useful, but rarely use.
 */
 #include "openssl.h"
 #include "private.h"
+#include <openssl/bn.h>
 #include <openssl/ssl.h>
 
 #define MYNAME    "bio"

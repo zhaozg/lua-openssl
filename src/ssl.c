@@ -2206,7 +2206,7 @@ static int openssl_ssl_session_reused(lua_State*L)
 static int openssl_ssl_cache_hit(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
-  int ret = SSL_cache_hit(s);
+  int ret = SSL_session_reused(s);
   lua_pushboolean(L, ret == 0);
   return 1;
 }

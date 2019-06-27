@@ -612,6 +612,7 @@ static int openssl_ecdh_compute_key(lua_State*L)
 
 static int openssl_ecdsa_set_method(lua_State *L)
 {
+#ifndef OPENSSL_NO_ENGINE
   EC_KEY *ec = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
   ENGINE *e = CHECK_OBJECT(2, ENGINE, "openssl.engine");
 #if defined(LIBRESSL_VERSION_NUMBER) || OPENSSL_VERSION_NUMBER < 0x10100000L
@@ -628,6 +629,7 @@ static int openssl_ecdsa_set_method(lua_State *L)
     int r = EC_KEY_set_method(ec, m);
     return openssl_pushresult(L, r);
   }
+#endif
 #endif
   return 0;
 }

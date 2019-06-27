@@ -171,6 +171,7 @@ static LUA_FUNCTION(openssl_rsa_read)
 
 static int openssl_rsa_set_method(lua_State *L) 
 {
+#ifndef OPENSSL_NO_ENGINE
   RSA* rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");
   ENGINE *e = CHECK_OBJECT(2, ENGINE, "openssl.engine");
   const RSA_METHOD *m = ENGINE_get_RSA(e);
@@ -179,6 +180,7 @@ static int openssl_rsa_set_method(lua_State *L)
     int r = RSA_set_method(rsa, m);
     return openssl_pushresult(L, r);
   }
+#endif
   return 0;
 }
 

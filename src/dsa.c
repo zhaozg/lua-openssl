@@ -45,6 +45,7 @@ static LUA_FUNCTION(openssl_dsa_parse)
 
 static int openssl_dsa_set_method(lua_State *L)
 {
+#ifndef OPENSSL_NO_ENGINE
   DSA* dsa = CHECK_OBJECT(1, DSA, "openssl.dsa");
   ENGINE *e = CHECK_OBJECT(2, ENGINE, "openssl.engine");
   const DSA_METHOD *m = ENGINE_get_DSA(e);
@@ -53,6 +54,7 @@ static int openssl_dsa_set_method(lua_State *L)
     int r = DSA_set_method(dsa, m);
     return openssl_pushresult(L, r);
   }
+#endif
   return 0;
 }
 
