@@ -867,9 +867,9 @@ static int openssl_ssl_ctx_set_cert_verify(lua_State*L)
   return 0;
 }
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 static DH *tmp_dh_callback(SSL *ssl, int is_export, int keylength)
 {
-  BIO *bio;
   DH *dh_tmp = NULL;
   SSL_CTX *ctx = SSL_get_SSL_CTX(ssl);
   lua_State *L = SSL_CTX_get_app_data(ctx);
@@ -883,6 +883,7 @@ static DH *tmp_dh_callback(SSL *ssl, int is_export, int keylength)
   ret = lua_pcall(L, 2, 1, 0);
   if (ret == 0)
   {
+    BIO *bio;
     /* Load parameters from returned value */
     if (lua_type(L, -1) != LUA_TSTRING)
     {
@@ -908,7 +909,6 @@ static DH *tmp_dh_callback(SSL *ssl, int is_export, int keylength)
 
 static RSA *tmp_rsa_callback(SSL *ssl, int is_export, int keylength)
 {
-  BIO *bio;
   RSA *rsa_tmp = NULL;
   SSL_CTX *ctx = SSL_get_SSL_CTX(ssl);
   lua_State *L = SSL_CTX_get_app_data(ctx);
@@ -922,6 +922,7 @@ static RSA *tmp_rsa_callback(SSL *ssl, int is_export, int keylength)
   ret = lua_pcall(L, 2, 1, 0);
   if (ret == 0)
   {
+    BIO *bio;
     /* Load parameters from returned value */
     if (lua_type(L, -1) != LUA_TSTRING)
     {
@@ -947,7 +948,6 @@ static RSA *tmp_rsa_callback(SSL *ssl, int is_export, int keylength)
 
 static EC_KEY *tmp_ecdh_callback(SSL *ssl, int is_export, int keylength)
 {
-  BIO *bio;
   EC_KEY *ec_tmp = NULL;
   SSL_CTX *ctx = SSL_get_SSL_CTX(ssl);
   lua_State *L = SSL_CTX_get_app_data(ctx);
@@ -961,6 +961,7 @@ static EC_KEY *tmp_ecdh_callback(SSL *ssl, int is_export, int keylength)
   ret = lua_pcall(L, 2, 1, 0);
   if (ret == 0)
   {
+    BIO *bio;
     /* Load parameters from returned value */
     if (lua_type(L, -1) != LUA_TSTRING)
     {
@@ -984,7 +985,6 @@ static EC_KEY *tmp_ecdh_callback(SSL *ssl, int is_export, int keylength)
   return ec_tmp;
 }
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
 /***
 set temp callback
 @function set_tmp
