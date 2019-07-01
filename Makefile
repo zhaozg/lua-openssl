@@ -127,7 +127,7 @@ info:
 	@echo "AR:" $(AR)
 	@echo "PREFIX:" $(PREFIX)
 
-test:
+test:	all
 	cd test && LUA_CPATH=../?.so $(LUA) test.lua && cd ..
 
 clean:
