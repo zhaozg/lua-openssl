@@ -42,10 +42,11 @@ extern "C" {
 #include "openssl.h"
 
 #if OPENSSL_VERSION_NUMBER > 0x10100000L
-#define CONSTIFY_X509_get0 const
+#define CONSTIFY_OPENSSL const
 #else
-#define CONSTIFY_X509_get0
+#define CONSTIFY_OPENSSL
 #endif
+#define CONSTIFY_X509_get0 CONSTIFY_OPENSSL
 
 #define PUSH_BN(x)                                      \
   *(void **)(lua_newuserdata(L, sizeof(void *))) = (x); \
