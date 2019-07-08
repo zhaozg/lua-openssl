@@ -23,7 +23,9 @@
 #include <openssl/pem.h>
 #include <openssl/err.h>
 #include <openssl/conf.h>
+#if !defined(OPENSSL_NO_COMP)
 #include <openssl/comp.h>
+#endif
 #include <openssl/rand.h>
 #include <openssl/pkcs12.h>
 #include <openssl/opensslv.h>
