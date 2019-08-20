@@ -2,6 +2,8 @@ language: c
 
 sudo: false
 
+dist: bionic
+
 env:
   global:
     - LUAROCKS=3.0.3
