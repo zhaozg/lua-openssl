@@ -54,11 +54,12 @@
   2017-08-04  update to 0.7.3
   2019-03-24  update to 0.7.5-1
   2019-05-19  update to 0.7.5-2
+  2019-08-20  update to 0.7.6
 */
 
 /*                              MNNFFPPS  */
-#define LOPENSSL_VERSION_NUM  0x0070502f
-#define LOPENSSL_VERSION  "0.7.5-2"
+#define LOPENSSL_VERSION_NUM  0x0070600f
+#define LOPENSSL_VERSION  "0.7.6"
 
 #if OPENSSL_VERSION_NUMBER >= 0x10000000L
 #include <openssl/lhash.h>
