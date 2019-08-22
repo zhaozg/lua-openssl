@@ -1,7 +1,8 @@
-cmake_minimum_required(VERSION 3.6)
+cmake_minimum_required(VERSION 2.8.9)
 project(lua-openssl C)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules")
+option(BUILD_SHARED_LUA_OPENSSL "Shared or Static libluv" ON)
 
 include(GNUInstallDirs)
 
@@ -13,7 +14,13 @@ set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
 add_definitions(-DPTHREADS)
 
-add_library(lua-openssl SHARED
+if(BUILD_SHARED_LUA_OPENSSL)
+    set(LUA_OPENSSL_LIBTYPE SHARED)
+else()
+    set(LUA_OPENSSL_LIBTYPE STATIC)
+endif()
+
+add_library(lua-openssl ${LUA_OPENSSL_LIBTYPE}
     deps/auxiliar/auxiliar.c
     deps/auxiliar/subsidiar.c
     src/asn1.c
@@ -56,7 +63,7 @@ add_library(lua-openssl SHARED
 )
 
 target_include_directories(lua-openssl PUBLIC
-    ${OPENSSL_INCLUDE_DIRS}
+    ${OPENSSL_INCLUDE_DIR}
     ${LUAJIT_INCLUDE_DIRS}
     deps
     deps/lua-compat
@@ -72,7 +79,7 @@ target_link_libraries(lua-openssl PUBLIC
 set_target_properties(lua-openssl PROPERTIES
     PREFIX ""
     OUTPUT_NAME "openssl"
-    VERSION 0.7.5.2 SOVERSION 1
+    VERSION 0.7.6.0 SOVERSION 1
 )
 
 install(TARGETS lua-openssl

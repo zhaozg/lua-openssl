@@ -185,7 +185,17 @@ Works with Lua5.1 (should support Lua5.2 by updating the config.win file).
 
 ### Howto 4: Install using luarocks.
 
-    luarocks install openssl --server=https://rocks.moonscript.org/dev
+    luarocks install openssl
+
+### Howto 5: Build with CMake
+
+   Build shared lua-openssl.
+
+   `cmake -Bbuild -H. -DOPENSSL_ROOT_DIR=... && cd build && make`
+
+   Build static lua-openssl
+
+   `cmake -Bbuild -H. -DOPENSSL_ROOT_DIR=... -DBUILD_SHARED_LUA_OPENSSL=OFF && cd build && make`
 
 ### Howto 5: Handle fail or error
 
