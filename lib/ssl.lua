@@ -160,7 +160,11 @@ S.__index = {
             j = j or -1
             m = string.sub(msg,i,j)
         end
-        return self.bio:write(m) and self.bio:flush()
+        local n = self.bio:write(m)
+        if self.bio:flush() then
+            return n
+        end
+        return nil, "bio flush error", j
     end,
     receive = function(self,fmt,prev)
         if type(fmt) == 'number' then
@@ -170,14 +174,11 @@ S.__index = {
             local len = fmt
 
             while buffsize < len do
-                local r, m = socket.select({self.ssl}, nil, self.timeout)
-                if #r == 0 then
-                    return nil, 'timeout', buff
-                end
-
                 s = self.bio:read(len - buffsize)
                 if s == nil then
                     return nil, 'closed', table.concat(buff)
+                elseif s=='' then
+                    return nil, 'timeout', table.concat(buff)
                 elseif type(s) == "string" and s ~= '' then
                     table.insert(buff, s)
                     buffsize = buffsize + string.len(s)
@@ -200,14 +201,11 @@ S.__index = {
             local _, _, p1, p2 = string.find(buff, '(.-)\r\n(.*)')
 
             while not p1 do
-                local r, m = socket.select({self.ssl}, nil, self.timeout)
-                if #r == 0 then
-                    return nil, 'timeout', buff
-                end
-
                 s = self.bio:gets(1024)
                 if s == nil then
                     return nil, 'closed', buff
+                elseif s=='' then
+                    return nil, 'timeout', buff
                 elseif type(s) == "string" and s ~= '' then
                     buff = buff .. s
                 end
