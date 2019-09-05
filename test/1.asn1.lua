@@ -97,8 +97,6 @@ TestObject = {}
             assertNil(openssl.error())
         else
             assert(asn1.txt2nid(self.ne_oid))
-
-
             assert(asn1.new_object(self.ne_sn))
             assert(asn1.new_object(self.ne_ln))
             assert(asn1.new_object(self.ne_oid))
@@ -158,4 +156,18 @@ TestTime = {}
         assert(at:set(self.time))
         local t1 = at:get(self.time)
         assertEquals(self.time,t1)
+    end
+
+TestNumber = {}
+    function TestNumber:testBasic()
+        local i = 0
+        local n = asn1.new_integer(i):i2d()
+        assert(n)
+        local m = asn1.new_integer()
+        m:d2i(n)
+        assert(m:i2d()==n)
+        n = asn1.new_integer():i2d()
+        assert(n)
+        n = asn1.new_integer(nil):i2d()
+        assert(n)
     end

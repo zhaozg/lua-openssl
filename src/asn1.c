@@ -323,8 +323,11 @@ static int openssl_asn1int_new(lua_State* L)
   else if (!lua_isnone(L, 1))
   {
     BIGNUM *bn = BN_get(L, 1);
-    ai = BN_to_ASN1_INTEGER(bn, ai);
-    BN_free(bn);
+    if(bn!=NULL)
+    {
+      ai = BN_to_ASN1_INTEGER(bn, ai);
+      BN_free(bn);
+    }
   }
   PUSH_OBJECT(ai, "openssl.asn1_integer");
   return 1;
