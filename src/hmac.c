@@ -85,7 +85,7 @@ static int openssl_hmac(lua_State *L)
     const char *dat = luaL_checklstring(L, 2, &len);
     size_t l;
     const char *k = luaL_checklstring(L, 3, &l);
-    int raw = (lua_isnoneornil(L, 4)) ? 0 : lua_toboolean(L, 4);
+    int raw = (lua_isnone(L, 4)) ? 0 : lua_toboolean(L, 4);
     ENGINE* e = lua_isnoneornil(L, 5) ? NULL : CHECK_OBJECT(5, ENGINE, "openssl.engine");
 
     unsigned char digest[EVP_MAX_MD_SIZE];
@@ -152,10 +152,10 @@ static int openssl_hmac_final(lua_State *L)
     size_t l;
     const char *s = luaL_checklstring(L, 2, &l);
     HMAC_Update(c, (unsigned char *)s, l);
-    raw = (lua_isnoneornil(L, 3)) ? 0 : lua_toboolean(L, 3);
+    raw = (lua_isnone(L, 3)) ? 0 : lua_toboolean(L, 3);
   }
   else
-    raw = (lua_isnoneornil(L, 2)) ? 0 : lua_toboolean(L, 2);
+    raw = (lua_isnone(L, 2)) ? 0 : lua_toboolean(L, 2);
 
   HMAC_Final(c, digest, &len);
 

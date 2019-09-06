@@ -1341,7 +1341,7 @@ static int openssl_ts_verify_ctx_flags(lua_State*L)
 {
   TS_VERIFY_CTX *ctx = CHECK_OBJECT(1, TS_VERIFY_CTX, "openssl.ts_verify_ctx");
   int flags = luaL_checkint(L, 2);
-  int add = lua_isnoneornil(L, 3) ? 0 : lua_toboolean(L, 3);
+  int add = lua_isnone(L, 3) ? 0 : lua_toboolean(L, 3);
   if (add)
     flags = TS_VERIFY_CTX_add_flags(ctx, flags);
   else

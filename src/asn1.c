@@ -190,12 +190,12 @@ static int openssl_put_object(lua_State*L)
   luaL_Buffer B;
 
   luaL_argcheck(L,
-                lua_isnoneornil(L, 3) || lua_type(L, 3) == LUA_TNUMBER || lua_isstring(L, 3), 3,
+                lua_isnone(L, 3) || lua_type(L, 3) == LUA_TNUMBER || lua_isstring(L, 3), 3,
                 "if exist only accept string or number");
-  luaL_argcheck(L, lua_isnoneornil(L, 4) || lua_isboolean(L, 4), 4,
+  luaL_argcheck(L, lua_isnone(L, 4) || lua_isboolean(L, 4), 4,
                 "if exist must be boolean type");
 
-  if (lua_isnoneornil(L, 3))
+  if (lua_isnone(L, 3))
   {
     /* constructed == 2 for indefinite length constructed */
     constructed = 2;
@@ -214,7 +214,7 @@ static int openssl_put_object(lua_State*L)
       length = (int)l;
     }
 
-    constructed = lua_isnoneornil(L, 4) ? 0 : lua_toboolean(L, 4);
+    constructed = lua_isnone(L, 4) ? 0 : lua_toboolean(L, 4);
   }
   luaL_buffinit(L, &B);
   p1 = (unsigned char *)luaL_prepbuffer(&B);

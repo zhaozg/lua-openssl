@@ -24,7 +24,7 @@ list all support digest algs
 */
 static LUA_FUNCTION(openssl_digest_list)
 {
-  int aliases = lua_isnoneornil(L, 1) ? 1 : lua_toboolean(L, 1);
+  int aliases = lua_isnone(L, 1) ? 1 : lua_toboolean(L, 1);
   lua_newtable(L);
   OBJ_NAME_do_all_sorted(OBJ_NAME_TYPE_MD_METH, aliases ? openssl_add_method_or_alias : openssl_add_method, L);
   return 1;
@@ -77,7 +77,8 @@ static LUA_FUNCTION(openssl_digest_new)
       EVP_MD_CTX_destroy(ctx);
       return openssl_pushresult(L, ret);
     }
-  }else
+  }
+  else
     lua_pushnil(L);
   return 1;
 }
@@ -114,7 +115,7 @@ static LUA_FUNCTION(openssl_digest)
 
   md = get_digest(L, 1, NULL);
   in = luaL_checklstring(L, 2, &inl);
-  raw = (lua_isnoneornil(L, 3)) ? 0 : lua_toboolean(L, 3);
+  raw = (lua_isnone(L, 3)) ? 0 : lua_toboolean(L, 3);
   eng = (lua_isnoneornil(L, 4) ? 0 : CHECK_OBJECT(4, ENGINE, "openssl.engine"));
 
   status = EVP_Digest(in, inl, buf, &blen, md, eng);
@@ -216,7 +217,7 @@ static LUA_FUNCTION(openssl_digest_digest)
   size_t inl;
   EVP_MD *md = CHECK_OBJECT(1, EVP_MD, "openssl.evp_digest");
   const char* in = luaL_checklstring(L, 2, &inl);
-  ENGINE*     e = (!lua_isnoneornil(L, 3)) ? CHECK_OBJECT(3, ENGINE, "openssl.engine") : NULL;
+  ENGINE*     e = lua_isnoneornil(L, 3) ? NULL : CHECK_OBJECT(3, ENGINE, "openssl.engine");
 
   char buf[EVP_MAX_MD_SIZE];
   unsigned int  blen = EVP_MAX_MD_SIZE;
@@ -369,10 +370,10 @@ static LUA_FUNCTION(openssl_evp_digest_final)
       EVP_MD_CTX_destroy(d);
       return openssl_pushresult(L, ret);
     }
-    raw = (lua_isnoneornil(L, 3)) ? 0 : lua_toboolean(L, 3);
+    raw = (lua_isnone(L, 3)) ? 0 : lua_toboolean(L, 3);
   }
   else
-    raw = (lua_isnoneornil(L, 2)) ? 0 : lua_toboolean(L, 2);
+    raw = (lua_isnone(L, 2)) ? 0 : lua_toboolean(L, 2);
 
   EVP_MD_CTX_init(d);
   ret = EVP_MD_CTX_copy_ex(d, c);

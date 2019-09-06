@@ -198,7 +198,7 @@ static int openssl_bio_new_connect(lua_State *L)
     }
     else
     {
-      doconn = lua_isnoneornil(L, 3) ? doconn : auxiliar_checkboolean(L, 3);
+      doconn = lua_isnone(L, 3) ? doconn : auxiliar_checkboolean(L, 3);
     }
   }
   else
@@ -635,7 +635,7 @@ setup ready and accept client connect
 static LUA_FUNCTION(openssl_bio_accept)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
-  int first = lua_isnoneornil(L, 2) ? 0 : lua_toboolean(L, 2);
+  int first = lua_isnone(L, 2) ? 0 : lua_toboolean(L, 2);
   int ret = BIO_do_accept(bio);
   if (ret == 1)
   {
@@ -742,7 +742,7 @@ static LUA_FUNCTION(openssl_bio_fd)
   if (typ & BIO_TYPE_FD)
   {
     int fd = -1;
-    if (!lua_isnoneornil(L, 2))
+    if (!lua_isnone(L, 2))
     {
       fd = lua_tointeger(L, 2);
       BIO_set_fd(bio, fd, BIO_NOCLOSE);

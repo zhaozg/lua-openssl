@@ -1103,7 +1103,7 @@ static LUA_FUNCTION(openssl_pkcs7_sign_digest)
   size_t l;
   const char* data = luaL_checklstring(L, 2, &l);
   long flags = luaL_optint(L, 3, 0);
-  int hash = lua_isnoneornil(L, 4) ? 0 : lua_toboolean(L, 4);
+  int hash = lua_isnone(L, 4) ? 0 : lua_toboolean(L, 4);
 
   int ret = 0;
   int i, j;
@@ -1338,7 +1338,7 @@ static LUA_FUNCTION(openssl_pkcs7_verify_digest)
   size_t len = 0;
   const char* data = luaL_optlstring(L, 4, NULL, &len);
   long flags = luaL_optint(L, 5, 0);
-  int hash = lua_isnoneornil(L, 6) ? 0 : lua_toboolean(L, 6);
+  int hash = lua_isnone(L, 6) ? 0 : lua_toboolean(L, 6);
 
   STACK_OF(X509) *signers;
   X509 *signer;

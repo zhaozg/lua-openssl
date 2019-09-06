@@ -266,7 +266,7 @@ vgPnEUG6Mk9bkxMZKRgsiKn6QGKDYGbOvnS1xmkMfRARBsJAq369VOTjMB/Qhs5q
                 assertEquals(hex:upper(),v[3])
                 assertEquals(pub:export(),k2:export())
 
-                k2 = pkey.read(export, nil,'der')
+                k2 = pkey.read(export, false, 'der')
                 assertEquals(pub:export(),k2:export())
 
                 --4 format='der', raw=true, passphrase=nil

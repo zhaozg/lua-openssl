@@ -88,7 +88,7 @@ static int openssl_pkey_read(lua_State*L)
 {
   EVP_PKEY * key = NULL;
   BIO* in = load_bio_object(L, 1);
-  int priv = lua_isnoneornil(L, 2) ? 0 : auxiliar_checkboolean(L, 2);
+  int priv = lua_isnone(L, 2) ? 0 : auxiliar_checkboolean(L, 2);
   int fmt = luaL_checkoption(L, 3, "auto", format);
   const char* passphrase = luaL_optstring(L, 4, NULL);
   int type = -1;
@@ -785,7 +785,7 @@ static LUA_FUNCTION(openssl_pkey_export)
   luaL_argcheck(L, fmt == FORMAT_PEM || fmt == FORMAT_DER, 2,
                 "only accept pem or der, default is pem");
 
-  if (!lua_isnoneornil(L, 3))
+  if (!lua_isnone(L, 3))
     exraw = lua_toboolean(L, 3);
   passphrase = luaL_optlstring(L, 4, NULL, &passphrase_len);
 

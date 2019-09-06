@@ -216,7 +216,7 @@ static LUA_FUNCTION(openssl_csr_export)
 {
   X509_REQ * csr = CHECK_OBJECT(1, X509_REQ, "openssl.x509_req");
   int fmt = luaL_checkoption(L, 2, "pem", format);
-  int notext = lua_isnoneornil(L, 3) ? 1 : lua_toboolean(L, 3);
+  int notext = lua_isnone(L, 3) ? 1 : lua_toboolean(L, 3);
   BIO *out  = NULL;
 
   luaL_argcheck(L, fmt == FORMAT_DER || fmt == FORMAT_PEM, 2,

@@ -226,7 +226,7 @@ static LUA_FUNCTION(openssl_crl_new)
     }
   }
   md = get_digest(L, 4, "sha256");;
-  step = lua_isnoneornil(L, 5) ? 7 * 24 * 3600 : luaL_checkint(L, 5);
+  step = lua_isnone(L, 5) ? 7 * 24 * 3600 : luaL_checkint(L, 5);
 
   if (ret == 1)
   {
@@ -737,7 +737,7 @@ static LUA_FUNCTION(openssl_crl_diff)
 check x509_crl with evp_pkey
 @function check
 @tparam evp_pkey pkey
-@tparam[opt=0] integer flags 
+@tparam[opt=0] integer flags
 @treturn boolean result true for pass
 */
 static LUA_FUNCTION(openssl_crl_check)
@@ -860,7 +860,7 @@ static LUA_FUNCTION(openssl_crl_export)
 {
   X509_CRL * crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
   int fmt = luaL_checkoption(L, 2, "pem", format);
-  int notext = lua_isnoneornil(L, 3) ? 1 : lua_toboolean(L, 3);
+  int notext = lua_isnone(L, 3) ? 1 : lua_toboolean(L, 3);
   BIO *out  = NULL;
 
   luaL_argcheck(L, fmt == FORMAT_DER || fmt == FORMAT_PEM, 2,
@@ -919,7 +919,7 @@ static LUA_FUNCTION(openssl_crl_count)
 get revoekd entry
 @function get
 @tparam number index
-@treturn table revoekd 
+@treturn table revoekd
 */
 static LUA_FUNCTION(openssl_crl_get)
 {

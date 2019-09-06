@@ -26,7 +26,7 @@ get lua-openssl version
 */
 static int openssl_version(lua_State*L)
 {
-  int num = lua_isnoneornil(L, 1) ? 0 : auxiliar_checkboolean(L, 1);
+  int num = lua_isnone(L, 1) ? 0 : auxiliar_checkboolean(L, 1);
   if (num)
   {
     lua_pushinteger(L, LOPENSSL_VERSION_NUM);
@@ -53,7 +53,7 @@ static LUA_FUNCTION(openssl_hex)
 {
   size_t l = 0;
   const char* s = luaL_checklstring(L, 1, &l);
-  int encode = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L, 2);
+  int encode = lua_isnone(L, 2) ? 1 : lua_toboolean(L, 2);
   char* h = NULL;
 
   if (l == 0)
@@ -88,8 +88,8 @@ base64 encode or decode
 static LUA_FUNCTION(openssl_base64)
 {
   BIO *inp = load_bio_object(L, 1);
-  int encode = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L, 2);
-  int nonl = lua_isnoneornil(L, 3) ? BIO_FLAGS_BASE64_NO_NL
+  int encode = lua_isnone(L, 2) ? 1 : lua_toboolean(L, 2);
+  int nonl = lua_isnone(L, 3) ? BIO_FLAGS_BASE64_NO_NL
              : (lua_toboolean(L, 3) ? BIO_FLAGS_BASE64_NO_NL : 0);
   BIO *b64 = BIO_new(BIO_f_base64());
   BIO *out = BIO_new(BIO_s_mem());

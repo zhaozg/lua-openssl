@@ -51,7 +51,7 @@ get special purpose info as table
 */
 static int openssl_x509_purpose(lua_State*L)
 {
-  if (lua_isnoneornil(L, 1))
+  if (lua_isnone(L, 1))
   {
     int count = X509_PURPOSE_get_count();
     int i;
@@ -89,6 +89,9 @@ static int openssl_x509_purpose(lua_State*L)
       lua_pushnil(L);
     return 1;
   }
+  else
+    luaL_argerror(L, 1, "only accpet none, string or number as nid or short name");
+
   return 0;
 };
 
@@ -468,7 +471,7 @@ static LUA_FUNCTION(openssl_x509_export)
 {
   X509 *cert = CHECK_OBJECT(1, X509, "openssl.x509");
   int fmt = luaL_checkoption(L, 2, "pem", format);
-  int notext = lua_isnoneornil(L, 3) ? 1 : lua_toboolean(L, 3);
+  int notext = lua_isnone(L, 3) ? 1 : lua_toboolean(L, 3);
   BIO* out = NULL;
 
   if (fmt != FORMAT_DER && fmt != FORMAT_PEM)
@@ -1239,7 +1242,7 @@ sign x509
 static int openssl_x509_sign(lua_State*L)
 {
   X509* x = CHECK_OBJECT(1, X509, "openssl.x509");
-  if (lua_isnoneornil(L, 2))
+  if (lua_isnone(L, 2))
   {
     unsigned char *out = NULL;
     int len = i2d_re_X509_tbs(x, &out);
@@ -1308,7 +1311,7 @@ static int openssl_x509_sign(lua_State*L)
 static int openssl_x509_verify(lua_State*L)
 {
   X509* x = CHECK_OBJECT(1, X509, "openssl.x509");
-  if (lua_isnoneornil(L, 2))
+  if (lua_isnone(L, 2))
   {
     unsigned char *out = NULL;
     int len = i2d_re_X509_tbs(x, &out);

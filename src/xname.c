@@ -73,7 +73,7 @@ static int openssl_xname_new(lua_State*L)
   X509_NAME* xn;
   int utf8;
   luaL_checktable(L, 1);
-  utf8 = lua_isnoneornil(L, 2) ? 1 : lua_toboolean(L, 2);
+  utf8 = lua_isnone(L, 2) ? 1 : lua_toboolean(L, 2);
   xn = X509_NAME_new();
   openssl_new_xname(L, xn, 1, utf8);
   PUSH_OBJECT(xn, "openssl.x509_name");
@@ -234,7 +234,7 @@ return x509_name as table
 static int openssl_xname_info(lua_State*L)
 {
   X509_NAME* name = CHECK_OBJECT(1, X509_NAME, "openssl.x509_name");
-  int obj = lua_isnoneornil(L, 2) ? 0 : lua_toboolean(L, 2);
+  int obj = lua_isnone(L, 2) ? 0 : lua_toboolean(L, 2);
   int i, n;
   lua_newtable(L);
   for (i = 0, n = X509_NAME_entry_count(name); i < n; i++)
@@ -353,7 +353,7 @@ static int openssl_xname_get_entry(lua_State*L)
 {
   X509_NAME* xn = CHECK_OBJECT(1, X509_NAME, "openssl.x509_name");
   int lastpos = luaL_checkint(L, 2);
-  int obj = lua_isnoneornil(L, 3) ? 0 : lua_toboolean(L, 3);
+  int obj = lua_isnone(L, 3) ? 0 : lua_toboolean(L, 3);
   X509_NAME_ENTRY *e = X509_NAME_get_entry(xn, lastpos);
   if (e)
   {
@@ -377,7 +377,7 @@ static int openssl_xname_add_entry(lua_State*L)
   ASN1_OBJECT *obj = openssl_get_asn1object(L, 2, 0);
   size_t size;
   const char*value = luaL_checklstring(L, 3, &size);
-  int utf8 = lua_isnoneornil(L, 4) ? 1 : lua_toboolean(L, 4);
+  int utf8 = lua_isnone(L, 4) ? 1 : lua_toboolean(L, 4);
 
   int ret = X509_NAME_add_entry_by_OBJ(xn, obj, utf8 ? MBSTRING_UTF8 : MBSTRING_ASC, (unsigned char*)value, (int)size, -1, 0);
   ASN1_OBJECT_free(obj);

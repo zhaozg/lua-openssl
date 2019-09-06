@@ -242,7 +242,7 @@ static int openssl_engine_ctrl(lua_State*L)
   if (lua_isnumber(L, 2))
   {
     int cmd = luaL_checkint(L, 2);
-    if (lua_isnoneornil(L, 3))
+    if (lua_isnone(L, 3))
     {
       ret = ENGINE_cmd_is_executable(eng, cmd);
     }
@@ -507,7 +507,7 @@ static int openssl_engine_ex_data(lua_State *L)
   ENGINE* eng = CHECK_OBJECT(1, ENGINE, "openssl.engine");
   int idx;
   int ret;
-  if (lua_isnoneornil(L, 2))
+  if (lua_isnone(L, 2))
   {
     idx = ENGINE_get_ex_new_index(0, NULL, NULL, NULL, NULL);
     if (idx == -1)
@@ -519,7 +519,7 @@ static int openssl_engine_ex_data(lua_State *L)
     return 1;
   }
   idx = luaL_checkinteger(L, 2);
-  if (lua_isnoneornil(L, 3))
+  if (lua_isnone(L, 3))
   {
     void *p = ENGINE_get_ex_data(eng, idx);
     if (p)

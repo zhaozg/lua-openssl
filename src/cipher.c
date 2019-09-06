@@ -21,7 +21,7 @@ list all support cipher algs
 */
 static LUA_FUNCTION(openssl_cipher_list)
 {
-  int alias = lua_isnoneornil(L, 1) ? 1 : lua_toboolean(L, 1);
+  int alias = lua_isnone(L, 1) ? 1 : lua_toboolean(L, 1);
   lua_newtable(L);
   OBJ_NAME_do_all_sorted(OBJ_NAME_TYPE_CIPHER_METH, alias ? openssl_add_method_or_alias : openssl_add_method, L);
   return 1;
@@ -90,7 +90,7 @@ static LUA_FUNCTION(openssl_evp_encrypt)
     const char *key = luaL_optlstring(L, 3, NULL, &key_len); /* can be NULL */
     size_t iv_len = 0;
     const char *iv = luaL_optlstring(L, 4, NULL, &iv_len);   /* can be NULL */
-    int pad = lua_isnoneornil(L, 5) ? 1 : lua_toboolean(L, 5);
+    int pad = lua_isnone(L, 5) ? 1 : lua_toboolean(L, 5);
     ENGINE *e = lua_isnoneornil(L, 6) ? NULL : CHECK_OBJECT(6, ENGINE, "openssl.engine");
 
     EVP_CIPHER_CTX *c = EVP_CIPHER_CTX_new();
@@ -179,7 +179,7 @@ static LUA_FUNCTION(openssl_evp_decrypt)
     const char *key = luaL_optlstring(L, 3, NULL, &key_len); /* can be NULL */
     size_t iv_len = 0;
     const char *iv = luaL_optlstring(L, 4, NULL, &iv_len); /* can be NULL */
-    int pad = lua_isnoneornil(L, 5) ? 1 : lua_toboolean(L, 5);
+    int pad = lua_isnone(L, 5) ? 1 : lua_toboolean(L, 5);
     ENGINE *e = lua_isnoneornil(L, 6) ? NULL : CHECK_OBJECT(6, ENGINE, "openssl.engine");
     EVP_CIPHER_CTX *c = EVP_CIPHER_CTX_new();
 
@@ -363,7 +363,7 @@ static LUA_FUNCTION(openssl_cipher_new)
     const char *key = luaL_checklstring(L, 3, &key_len);
     size_t iv_len = 0;
     const char *iv = luaL_optlstring(L, 4, NULL, &iv_len);
-    int pad = lua_isnoneornil(L, 5) ? 1 : lua_toboolean(L, 5);
+    int pad = lua_isnone(L, 5) ? 1 : lua_toboolean(L, 5);
     ENGINE *e = lua_isnoneornil(L, 6) ? NULL : CHECK_OBJECT(6, ENGINE, "openssl.engine");
     EVP_CIPHER_CTX *c = NULL;
 
@@ -419,7 +419,7 @@ static LUA_FUNCTION(openssl_cipher_encrypt_new)
     const char *key = luaL_optlstring(L, 2, NULL, &key_len); /* can be NULL */
     size_t iv_len = 0;
     const char *iv = luaL_optlstring(L, 3, NULL, &iv_len); /* can be NULL */
-    int pad = lua_isnoneornil(L, 4) ? 1 : lua_toboolean(L, 4);
+    int pad = lua_isnone(L, 4) ? 1 : lua_toboolean(L, 4);
     ENGINE *e = lua_isnoneornil(L, 5) ? NULL : CHECK_OBJECT(5, ENGINE, "openssl.engine");
     EVP_CIPHER_CTX *c = NULL;
 
@@ -475,7 +475,7 @@ static LUA_FUNCTION(openssl_cipher_decrypt_new)
     const char *key = luaL_optlstring(L, 2, NULL, &key_len); /* can be NULL */
     size_t iv_len = 0;
     const char *iv = luaL_optlstring(L, 3, NULL, &iv_len); /* can be NULL */
-    int pad = lua_isnoneornil(L, 4) ? 1 : lua_toboolean(L, 4);
+    int pad = lua_isnone(L, 4) ? 1 : lua_toboolean(L, 4);
     ENGINE *e = lua_isnoneornil(L, 5) ? NULL : CHECK_OBJECT(5, ENGINE, "openssl.engine");
     EVP_CIPHER_CTX *c = NULL;
 
@@ -829,4 +829,3 @@ int luaopen_cipher(lua_State *L)
 
   return 1;
 }
-
