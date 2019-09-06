@@ -383,9 +383,9 @@ static LUA_FUNCTION(openssl_cipher_new)
     EVP_CIPHER_CTX_init(c);
     if (!EVP_CipherInit_ex(c, cipher, e, key ? (const byte*)evp_key : NULL, iv_len > 0 ? (const byte*)evp_iv : NULL, enc))
     {
-      EVP_CIPHER_CTX_set_padding(c, pad);
       luaL_error(L, "EVP_CipherInit_ex failed, please check openssl error");
     }
+    EVP_CIPHER_CTX_set_padding(c, pad);
     PUSH_OBJECT(c, "openssl.evp_cipher_ctx");
     lua_pushinteger(L, DO_CIPHER);
     lua_rawsetp(L, LUA_REGISTRYINDEX, c);
