@@ -333,9 +333,9 @@ static LUA_FUNCTION(openssl_evp_cipher)
 
 typedef enum
 {
-  DO_CIPHER = -1,
-  DO_ENCRYPT = 0,
-  DO_DECRYPT = 1
+  DO_CIPHER = 0,
+  DO_ENCRYPT = 1,
+  DO_DECRYPT = 2
 } CIPHER_MODE;
 
 /***
