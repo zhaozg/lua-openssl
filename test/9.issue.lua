@@ -1,4 +1,5 @@
 local openssl = require'openssl'
+local unpack = unpack or table.unpack
 
 TestIssuer = {}
     local function dump(t,i)
@@ -72,7 +73,6 @@ veFd3yM=
         local final = c:final()
         assert(out or final)
         c:close()
-        c = nil
         collectgarbage("collect")
     end
 
