@@ -182,6 +182,8 @@ static int openssl_ocsp_request_sign(lua_State*L)
 
   ret = OCSP_request_sign(req, signer, pkey, md, others, sflags);
   lua_pushboolean(L, ret);
+  if (others!=NULL)
+    sk_X509_pop_free(others, X509_free);
   return 1;
 }
 

@@ -741,6 +741,8 @@ static LUA_FUNCTION(openssl_x509_check)
 #if 0
     X509_STORE_set_verify_cb_func(store, verify_cb);
 #endif
+    if (untrustedchain!=NULL)
+      sk_X509_pop_free(untrustedchain, X509_free);
     ret = check_cert(store, cert, untrustedchain, purpose);
     lua_pushboolean(L, ret == X509_V_OK);
     lua_pushinteger(L, ret);

@@ -78,6 +78,8 @@ static LUA_FUNCTION(openssl_pkcs12_export)
     lua_pushlstring(L, bio_buf->data, bio_buf->length);
     ret = 1;
   }
+  if (ca!=NULL)
+    sk_X509_pop_free(ca, X509_free);
   BIO_free(bio_out);
   PKCS12_free(p12);
 

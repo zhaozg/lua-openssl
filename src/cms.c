@@ -275,6 +275,7 @@ static int openssl_cms_sign(lua_State *L)
   CMS_ContentInfo *cms;
 
   cms = CMS_sign(signcert, pkey, certs, data, flags);
+  sk_X509_pop_free(certs, X509_free);
   if (cms)
   {
     PUSH_OBJECT(cms, "openssl.cms");
@@ -310,6 +311,7 @@ static int openssl_cms_verify(lua_State *L)
     BIO_get_mem_ptr(out, &mem);
     lua_pushlstring(L, mem->data, mem->length);
   }
+  sk_X509_pop_free(signers, X509_free);
   if (in!=NULL)
     BIO_free(in);
   if (out!=NULL)
@@ -543,6 +545,7 @@ static int openssl_cms_encrypt(lua_State *L)
         ret = CMS_final(cms, in, NULL, flags);
     }
   }
+  sk_X509_pop_free(encerts, X509_free);
   if (ret)
   {
     PUSH_OBJECT(cms, "openssl.cms");
@@ -821,9 +824,11 @@ static int openssl_cms_sign_receipt(lua_State*L)
     if (srcms)
     {
       PUSH_OBJECT(srcms, "openssl.cms");
+      sk_X509_pop_free(other, X509_free);
       return 1;
     }
   }
+  sk_X509_pop_free(other, X509_free);
   return openssl_pushresult(L, 0);
 }
 
