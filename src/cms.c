@@ -381,8 +381,7 @@ static int openssl_cms_EncryptedData_decrypt(lua_State*L)
     BIO_get_mem_ptr(out, &mem);
     lua_pushlstring(L, mem->data, mem->length);
   }
-  if(dcont)
-    BIO_free(dcont);
+  BIO_free(dcont);
   BIO_free(out);
   if(ret!=1)
     ret = openssl_pushresult(L, ret);
@@ -436,8 +435,7 @@ static int openssl_cms_digest_verify(lua_State*L)
     BIO_get_mem_ptr(out, &mem);
     lua_pushlstring(L, mem->data, mem->length);
   }
-  if(dcont)
-    BIO_free(dcont);
+  BIO_free(dcont);
   BIO_free(out);
   if(ret!=1)
     ret = openssl_pushresult(L, ret);
@@ -790,7 +788,7 @@ static int openssl_cms_get_signers(lua_State*L)
   if (signers)
   {
     openssl_sk_x509_totable(L, signers);
-    sk_X509_pop_free(signers, X509_free);
+    sk_X509_free(signers);
     return 1;
   }
   return 0;
