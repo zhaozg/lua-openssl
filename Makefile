@@ -103,7 +103,7 @@ OBJS=src/asn1.o deps/auxiliar/auxiliar.o src/bio.o src/cipher.o src/cms.o src/co
      src/x509.o src/xattrs.o src/xexts.o src/xname.o src/xstore.o src/xalgor.o         \
      src/callback.o src/srp.o deps/auxiliar/subsidiar.o
 
-.PHONY: all install test info
+.PHONY: all install test info doc
 
 .c.o:
 	$(CC) $(CFLAGS) -c -o $@ $?
@@ -120,6 +120,8 @@ lib$T.a: $(OBJS)
 install: all
 	mkdir -p $(LUA_LIBDIR)
 	cp $T.so $(LUA_LIBDIR)
+doc:
+	ldoc src -d doc
 
 info:
 	@echo "Target system: "$(SYS)

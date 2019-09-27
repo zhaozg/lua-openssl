@@ -603,7 +603,7 @@ static int openssl_ssl_ctx_set_engine(lua_State*L)
 /***
 create ssl object
 @function ssl
-@tparam bio bio
+@tparam number fd
 @tparam[opt=false] boolean server, true will make ssl server
 @treturn ssl
 */
@@ -611,7 +611,7 @@ create ssl object
 create ssl object
 @function ssl
 @tparam bio input
-@tparam bio ouput
+@tparam[opt=input] bio ouput, default will use input as output
 @tparam[opt=false] boolean server, true will make ssl server
 @treturn ssl
 */
@@ -648,7 +648,7 @@ static int openssl_ssl_ctx_new_ssl(lua_State*L)
 
   if (ret == 1 && !lua_isnone(L, mode_idx))
   {
-    server = auxiliar_checkboolean(L, mode_idx);
+    server = lua_isnil(L, mode_idx) ? 0 : auxiliar_checkboolean(L, mode_idx);
   }
 
   if (ret == 1)
