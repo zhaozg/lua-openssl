@@ -15,7 +15,6 @@ end
 M.digest = openssl.digest
 local dm = {}
 dm.__call = function(self,alg,msg,raw)
-    raw = raw or true
     return M.digest.digest(alg,msg,raw)
 end
 setmetatable(M.digest,dm)
