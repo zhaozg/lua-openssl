@@ -66,6 +66,29 @@ if opensslv >= 0x10101007 and (not helper.libressl) then
         secret2 = ec2:compute_key(pub1)
         assert(secret1==secret2)
       end
+
+    function testSM2:testEC_SignVerify()
+        local nec =  {'ec','SM2'}
+        local pri = pkey.new(unpack(nec))
+        local pub = pri:get_public()
+        local msg = openssl.random(33)
+
+        local sig = assert(pri:sign(msg))
+        assert(pub:verify(msg, sig))
+    end
+
+    function testSM2:testSM2_SignVerify()
+        local nec =  {'ec','SM2'}
+        local pri = pkey.new(unpack(nec))
+        local pub = pri:get_public()
+        local msg = openssl.random(33)
+
+        assert(pri:as_sm2())
+        assert(pub:as_sm2())
+
+        local sig = assert(pri:sign(msg))
+        assert(pub:verify(msg, sig))
+    end
 else
   print('Skip SM2')
 end

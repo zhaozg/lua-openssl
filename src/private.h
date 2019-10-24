@@ -48,6 +48,11 @@ extern "C" {
 #endif
 #define CONSTIFY_X509_get0 CONSTIFY_OPENSSL
 
+#if OPENSSL_VERSION_NUMBER > 0x1010100FL && !defined(OPENSSL_NO_EC) \
+  && !defined(LIBRESSL_VERSION_NUMBER)
+#define OPENSSL_SUPPORT_SM2
+#endif
+
 #define PUSH_BN(x)                                      \
   *(void **)(lua_newuserdata(L, sizeof(void *))) = (x); \
   luaL_getmetatable(L,"openssl.bn");                    \
