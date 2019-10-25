@@ -1118,47 +1118,6 @@ static LUA_FUNCTION(openssl_pkey_get_public)
   return ret;
 }
 
-/* private useage, and for sm2 */
-static LUA_FUNCTION(openssl_ec_userId)
-{
-#ifndef OPENSSL_NO_ENGINE
-  EVP_PKEY* pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
-  ENGINE* engine = CHECK_OBJECT(2, ENGINE, "openssl.engine");
-  EC_KEY *ec = NULL;
-
-  int ret = 0;
-  if (!pkey || EVP_PKEY_type(EVP_PKEY_id(pkey)) != EVP_PKEY_EC
-      || (ec = EVP_PKEY_get0_EC_KEY(pkey)) == NULL )
-  {
-    luaL_argerror(L, 1, "only support EC key");
-  }
-  if (!engine)
-    luaL_argerror(L, 1, "EC key must have engine field");
-
-  if (lua_gettop(L) == 2)
-  {
-    ASN1_OCTET_STRING *s = ASN1_OCTET_STRING_new();
-    ret = ENGINE_ctrl(engine, 0x474554, 0x4944, ec, (void(*)(void))s);
-    if (ret == 1)
-      lua_pushlstring(L, (const char*) ASN1_STRING_get0_data(s), ASN1_STRING_length(s));
-    else
-      ret = openssl_pushresult(L, ret);
-    return ret;
-  }
-  else
-  {
-    ASN1_OCTET_STRING *s = ASN1_OCTET_STRING_new();
-    size_t l;
-    const char* data = luaL_checklstring(L, 3, &l);
-    ASN1_OCTET_STRING_set(s, (const unsigned char*) data, l);
-    ret = ENGINE_ctrl(engine, 0x534554, 0x4944, ec, (void(*)(void))s);
-    return openssl_pushresult(L, ret);
-#else
-  return 0;
-#endif
-  }
-}
-
 /***
 compute dh key, check whether then supplied key is a private key
 by checking then prime factors whether set
@@ -1805,7 +1764,6 @@ static luaL_Reg pkey_funcs[] =
   {"open",          openssl_open},
 
   {"compute_key",   openssl_dh_compute_key},
-  {"ec_userId",     openssl_ec_userId},
 
 #if defined(OPENSSL_SUPPORT_SM2)
   {"as_sm2",        openssl_pkey_as_sm2},
