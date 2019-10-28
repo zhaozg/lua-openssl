@@ -94,7 +94,7 @@ WARN_MIN	 = -Wall -Wno-unused-value -Wno-unused-function
 WARN		 = -Wall
 WARN_MOST	 = $(WARN) -W -Waggregate-return -Wcast-align -Wmissing-prototypes \
 		   -Wnested-externs -Wshadow -Wwrite-strings -pedantic
-CFLAGS		+= $(WARN_MIN) -DPTHREADS -Ideps -Ideps/lua-compat -Ideps/auxiliar
+CFLAGS		+= $(WARN_MIN) -DPTHREADS -Ideps -Ideps/lua-compat/c-api -Ideps/auxiliar
 
 OBJS=src/asn1.o deps/auxiliar/auxiliar.o src/bio.o src/cipher.o src/cms.o src/compat.o \
      src/crl.o src/csr.o src/dh.o src/digest.o src/dsa.o src/ec.o src/engine.o         \

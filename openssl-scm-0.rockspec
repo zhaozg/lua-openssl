@@ -44,7 +44,7 @@ build = {
         "src/xalgor.c","src/xstore.c", "src/srp.c",
         "deps/auxiliar/subsidiar.c"
       },
-      incdirs = {"$(OPENSSL_DIR)/include", "deps/auxiliar", "deps/lua-compat"},
+      incdirs = {"$(OPENSSL_DIR)/include", "deps/auxiliar", "deps/lua-compat/c-api"},
       defines = {"PTHREADS"},
       libraries = {"ssl", "crypto"},
     }

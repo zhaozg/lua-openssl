@@ -66,7 +66,7 @@ target_include_directories(lua-openssl PUBLIC
     ${OPENSSL_INCLUDE_DIR}
     ${LUAJIT_INCLUDE_DIRS}
     deps
-    deps/lua-compat
+    deps/lua-compat/c-api
     deps/auxiliar
 )
 

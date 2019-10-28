@@ -15,7 +15,7 @@ src\callback.obj src\srp.obj deps\auxiliar\subsidiar.obj
 lib: src\$T.dll
 
 .c.obj:
-	$(CC) /nologo /c /I"deps/lua-compat" /I"deps/auxiliar" /DLUA_BUILD_AS_DLL /DLUA_LIB /Fo$@ $(CFLAGS) $<
+	$(CC) /nologo /c /I"deps/lua-compat/c-api" /I"deps/auxiliar" /DLUA_BUILD_AS_DLL /DLUA_LIB /Fo$@ $(CFLAGS) $<
 
 src\$T.dll: $(OBJS)
 	link /DLL /out:src\$T.dll $(OBJS) "$(LUA_LIB)" "$(OPENSSL_LIB)" \
