@@ -92,13 +92,13 @@ engine, cipher_ctx, and digest_ctx.
 openssl.bn is a big-number library for Lua 5.1. It handles only integers and is
 suitable for number-theoretical and cryptographic applications. It is based
 on the bn subsystem of OpenSSL cryptographic library:
-http://www.openssl.org/docs/crypto/bn.html
+https://github.com/openssl/openssl/blob/OpenSSL_1_0_2-stable/crypto/bn/bn.h
 If you're running Unix, you probably already have OpenSSL installed.
 
 To try the library, just edit Makefile to reflect your installation of Lua and
 then run make. This will build the library and run a simple test. For detailed
 installation instructions, see
-http://www.tecgraf.puc-rio.br/~lhf/ftp/lua/install.html
+http://webserver2.tecgraf.puc-rio.br/~lhf/ftp/lua/index.html#lbn
 
 There is no manual but the library is simple and intuitive; see the summary
 below.
