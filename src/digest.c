@@ -349,7 +349,7 @@ get result of digest
 
 @function final
 @tparam[opt] string last last part of data
-@tparam[opt] boolean raw binary or hex encoded result, default true for binary result
+@tparam[opt] boolean raw binary or hexadecimal result, default false for hexadecimal result
 @treturn string val hash result
 */
 static LUA_FUNCTION(openssl_evp_digest_final)
