@@ -9,10 +9,10 @@ env:
     - LUAROCKS=3.0.3
   matrix:
     - LUA=lua5.1
-    - LUA=lua5.1 SSL=openssl-1.0.2s
-    - LUA=lua5.2 SSL=libressl-2.9.2
-    - LUA=lua5.3 SSL=openssl-1.1.1c
-    - LUA=luajit SSL=openssl-1.1.0k
+    - LUA=lua5.1 SSL=openssl-1.0.2t
+    - LUA=lua5.2 SSL=libressl-3.0.2
+    - LUA=lua5.3 SSL=openssl-1.1.1d
+    - LUA=luajit SSL=openssl-1.1.0l
     - LUA=luajit2.1
 os:
   - linux
