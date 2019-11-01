@@ -49,6 +49,13 @@ typedef struct
 #endif
 } openssl_ssl_ctx_lua;
 
+#if OPENSSL_VERSION_NUMBER < 0x10002000L
+static int SSL_is_server(const SSL *s)
+{
+    return s->server;
+}
+#endif
+
 static int openssl_ssl_ctx_new(lua_State*L)
 {
 #if OPENSSL_VERSION_NUMBER > 0x10100000L && !defined(LIBRESSL_VERSION_NUMBER)
