@@ -123,6 +123,7 @@ static luaL_Reg R[] =
 openssl.x509_req object
 @type x509_req
 */
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 static X509 *X509_REQ_to_X509_ex(X509_REQ *r, int days, EVP_PKEY *pkey, const EVP_MD* md)
 {
   X509 *ret = NULL;
@@ -178,6 +179,7 @@ err:
   }
   return (ret);
 }
+#endif
 
 /***
 convert x509_req to x509 object
@@ -189,10 +191,12 @@ static LUA_FUNCTION(openssl_csr_to_x509)
   X509_REQ * csr  = CHECK_OBJECT(1, X509_REQ, "openssl.x509_req");
   EVP_PKEY * pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
   int days = luaL_optint(L, 3, 365);
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
   const EVP_MD* md = get_digest(L, 4, "sha256");
-  // X509_REQ_to_X509 default use EVP_md5() as digest method
-  // X509* cert = X509_REQ_to_X509(csr, days, pkey);
   X509* cert = X509_REQ_to_X509_ex(csr, days, pkey, md);
+#else
+  X509* cert = X509_REQ_to_X509(csr, days, pkey);
+#endif
   if (cert)
   {
     PUSH_OBJECT(cert, "openssl.x509");
