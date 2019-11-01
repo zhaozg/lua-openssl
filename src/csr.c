@@ -195,7 +195,19 @@ static LUA_FUNCTION(openssl_csr_to_x509)
   const EVP_MD* md = get_digest(L, 4, "sha256");
   X509* cert = X509_REQ_to_X509_ex(csr, days, pkey, md);
 #else
+  // X509_REQ_to_X509 default use EVP_md5() as digest method
+  // X509* cert = X509_REQ_to_X509(csr, days, pkey);
   X509* cert = X509_REQ_to_X509(csr, days, pkey);
+  if (!lua_isnoneornil(L, 4) && cert)
+  {
+    const EVP_MD* md = get_digest(L, 4, "sha256");
+    // do resign with digest
+    if (!X509_sign(cert, pkey, md))
+    {
+      X509_free(cert);
+      cert = NULL;
+    }
+  }
 #endif
   if (cert)
   {
