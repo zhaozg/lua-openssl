@@ -1365,7 +1365,6 @@ static int openssl_ts_verify_ctx_data(lua_State*L)
 {
   TS_VERIFY_CTX *ctx = CHECK_OBJECT(1, TS_VERIFY_CTX, "openssl.ts_verify_ctx");
   BIO* bio = load_bio_object(L, 2);
-  BIO_up_ref(bio);
   TS_VERIFY_CTX_set_data(ctx, bio);
   return 0;
 }
