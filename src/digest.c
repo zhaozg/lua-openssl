@@ -372,6 +372,8 @@ static LUA_FUNCTION(openssl_evp_digest_final)
     }
     raw = (lua_isnone(L, 3)) ? 0 : lua_toboolean(L, 3);
   }
+  else if (lua_gettop(L) >= 3)
+    raw = lua_toboolean(L, 3);
   else
     raw = (lua_isnone(L, 2)) ? 0 : lua_toboolean(L, 2);
 
