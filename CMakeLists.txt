@@ -9,7 +9,7 @@ option(BUILD_SHARED_LUA_OPENSSL "Shared or Static libluv" ON)
 include(GNUInstallDirs)
 
 find_package(LuaJIT)
-if(NOT LUAJIT_LIBRARY)
+if(NOT LUAJIT_FOUND)
     find_package(Lua REQUIRED)
 endif()
 find_package(OpenSSL REQUIRED)
@@ -78,7 +78,7 @@ target_include_directories(lua-openssl PUBLIC
 
 target_link_libraries(lua-openssl PUBLIC
     ${OPENSSL_LIBRARIES}
-    ${LUAJIT_LIBRARIES}
+    ${LUA_LIBRARIES}
     Threads::Threads
 )
 
