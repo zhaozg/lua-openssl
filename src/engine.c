@@ -86,6 +86,7 @@ int openssl_engine(lua_State *L)
 static int openssl_engine_next(lua_State*L)
 {
   ENGINE* eng = CHECK_OBJECT(1, ENGINE, "openssl.engine");
+  ENGINE_up_ref(eng);
   eng = ENGINE_get_next(eng);
   if (eng)
   {
@@ -99,6 +100,7 @@ static int openssl_engine_next(lua_State*L)
 static int openssl_engine_prev(lua_State*L)
 {
   ENGINE* eng = CHECK_OBJECT(1, ENGINE, "openssl.engine");
+  ENGINE_up_ref(eng);
   eng = ENGINE_get_prev(eng);
   if (eng)
   {
@@ -288,7 +290,7 @@ static int openssl_engine_ctrl(lua_State*L)
 static int openssl_engine_gc(lua_State*L)
 {
   ENGINE* eng = CHECK_OBJECT(1, ENGINE, "openssl.engine");
-  (void) eng;
+  ENGINE_free(eng);
   return 0;
 }
 
