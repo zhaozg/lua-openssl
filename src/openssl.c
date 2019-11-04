@@ -503,6 +503,7 @@ LUALIB_API int luaopen_openssl(lua_State*L)
 #ifndef OPENSSL_NO_ENGINE
     ENGINE_load_dynamic();
     ENGINE_load_openssl();
+    ENGINE_load_builtin_engines();
 #endif
 #ifdef LOAD_ENGINE_CUSTOM
     LOAD_ENGINE_CUSTOM
