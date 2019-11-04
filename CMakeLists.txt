@@ -21,6 +21,7 @@ add_definitions(-DPTHREADS)
 
 if(BUILD_SHARED_LUA_OPENSSL)
     set(LUA_OPENSSL_LIBTYPE SHARED)
+    add_definitions(-DLUA_LIB)
 else()
     set(LUA_OPENSSL_LIBTYPE STATIC)
 endif()
