@@ -52,7 +52,7 @@ typedef struct
 #if OPENSSL_VERSION_NUMBER < 0x10002000L
 static int SSL_is_server(const SSL *s)
 {
-    return s->server;
+  return s->server;
 }
 #endif
 
@@ -1469,7 +1469,7 @@ static int openssl_session_cache_mode(lua_State *L)
   return 1;
 }
 
-#if OPENSSL_VERSION_NUMBER > 0x10101000L && !defined(LIBRESSL_VERSION_NUMBER)
+#if OPENSSL_VERSION_NUMBER > 0x1010100FL && !defined(LIBRESSL_VERSION_NUMBER)
 static int openssl_ssl_ctx_num_tickets(lua_State*L)
 {
   SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
@@ -1504,7 +1504,7 @@ static luaL_Reg ssl_ctx_funcs[] =
   {"mode",            openssl_ssl_ctx_mode},
   {"timeout",         openssl_ssl_ctx_timeout},
   {"options",         openssl_ssl_ctx_options},
-#if OPENSSL_VERSION_NUMBER > 0x10101000L && !defined(LIBRESSL_VERSION_NUMBER)
+#if OPENSSL_VERSION_NUMBER > 0x1010100FL && !defined(LIBRESSL_VERSION_NUMBER)
   {"num_tickets",     openssl_ssl_ctx_num_tickets},
 #endif
   {"quiet_shutdown",  openssl_ssl_ctx_quiet_shutdown},
