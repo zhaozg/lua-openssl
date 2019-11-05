@@ -125,7 +125,7 @@ static LUA_FUNCTION(openssl_evp_encrypt)
         if ( ret == 1 )
         {
           output_len += len;
-          ret = EVP_EncryptFinal(c, (byte*)buffer + len, &len);
+          ret = EVP_EncryptFinal_ex(c, (byte*)buffer + len, &len);
           if (ret == 1)
           {
             output_len += len;
@@ -214,7 +214,7 @@ static LUA_FUNCTION(openssl_evp_decrypt)
         {
           output_len += len;
           len = input_len - len;
-          ret = EVP_DecryptFinal(c, (byte*)buffer + output_len, &len);
+          ret = EVP_DecryptFinal_ex(c, (byte*)buffer + output_len, &len);
           if (ret == 1)
           {
             output_len += len;
@@ -311,7 +311,7 @@ static LUA_FUNCTION(openssl_evp_cipher)
         {
           output_len += len;
           len = input_len + EVP_MAX_BLOCK_LENGTH - len;
-          ret = EVP_CipherFinal(c, (byte*)buffer + output_len, &len);
+          ret = EVP_CipherFinal_ex(c, (byte*)buffer + output_len, &len);
           if (ret == 1)
           {
             output_len += len;
