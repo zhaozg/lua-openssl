@@ -36,6 +36,6 @@ dofile('sm2.lua')
 local runner = LuaUnit.new()
 runner:setOutputType("tap")
 runner:runSuite()
-print(openssl.error(true))
+print(openssl.print_errors():get_mem())
 collectgarbage()
 
