@@ -21,7 +21,8 @@ add_definitions(-DPTHREADS)
 
 if(BUILD_SHARED_LUA_OPENSSL)
     set(LUA_OPENSSL_LIBTYPE SHARED)
-    add_definitions(-DLUA_LIB)
+    add_definitions(-DLUA_BUILD_AS_DLL -DLUA_LIB)
+    set(EXTRA_LIBS "ws2_32.lib" "crypt32.lib")
 else()
     set(LUA_OPENSSL_LIBTYPE STATIC)
 endif()
@@ -79,6 +80,7 @@ target_include_directories(lua-openssl PUBLIC
 target_link_libraries(lua-openssl PUBLIC
     ${OPENSSL_LIBRARIES}
     ${LUA_LIBRARIES}
+    ${EXTRA_LIBS}
     Threads::Threads
 )
 
