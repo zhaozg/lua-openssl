@@ -207,6 +207,20 @@ static LUA_FUNCTION(openssl_error_string)
   return ret;
 }
 
+static LUA_FUNCTION(openssl_print_errors)
+{
+  BIO *out = BIO_new(BIO_s_mem());
+  if(out)
+  {
+    ERR_print_errors(out);
+    PUSH_OBJECT(out, "openssl.bio");
+    return 1;
+  }
+  lua_pushnil(L);
+  lua_pushstring(L, "out of memory");
+  return 2;
+}
+
 /***
 mixes the num bytes at buf into the PRNG state.
 @function rand_add
@@ -405,6 +419,7 @@ static const luaL_Reg eay_functions[] =
   {"random",      openssl_random_bytes},
 
   {"error",       openssl_error_string},
+  {"print_errors",openssl_print_errors},
   {"engine",      openssl_engine},
   {"FIPS_mode",   openssl_fips_mode},
 
