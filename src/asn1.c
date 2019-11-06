@@ -507,8 +507,13 @@ static int openssl_asn1object_new(lua_State* L)
     else
       luaL_argerror(L, 1, "create object fail");
   }
+  else if(lua_isnone(L, 1))
+  {
+    ASN1_OBJECT* obj = ASN1_OBJECT_new();
+    PUSH_OBJECT(obj, "openssl.asn1_object");
+  }
   else
-    luaL_argerror(L, 1, "need accept paramater");
+    luaL_argerror(L, 1, "need accept paramater or none");
 
   return 1;
 }
@@ -888,6 +893,46 @@ static int openssl_asn1object_dup(lua_State* L)
   return 1;
 }
 
+/***
+read der in to asn1_object
+
+@function d2i
+@treturn boolean
+*/
+static int openssl_asn1object_d2i(lua_State* L)
+{
+  size_t l;
+  ASN1_OBJECT* o = CHECK_OBJECT(1, ASN1_OBJECT, "openssl.asn1_object");
+  const unsigned char* p = (const unsigned char*) luaL_checklstring(L, 2, &l);
+
+  lua_pushboolean(L, d2i_ASN1_OBJECT(&o, &p, l)!=NULL);
+  return 1;
+}
+
+/***
+get der encoded of asn1_object
+
+@function i2d
+@treturn string
+*/
+static int openssl_asn1object_i2d(lua_State* L)
+{
+  ASN1_OBJECT* o = CHECK_OBJECT(1, ASN1_OBJECT, "openssl.asn1_object");
+  int ret = i2d_ASN1_OBJECT(o, NULL);
+  if (ret > 0)
+  {
+    unsigned char *p, *O;
+    p = O = OPENSSL_malloc(ret);
+    ret = i2d_ASN1_OBJECT(o, &p);
+    if (ret>0)
+      lua_pushlstring(L, (const char*)O, ret);
+    OPENSSL_free(O);
+  }
+  if (ret==0)
+    lua_pushnil(L);
+  return 1;
+}
+
 static luaL_Reg asn1obj_funcs[] =
 {
   {"nid",         openssl_asn1object_nid},
@@ -898,6 +943,8 @@ static luaL_Reg asn1obj_funcs[] =
   {"dup",         openssl_asn1object_dup},
   {"data",        openssl_asn1object_data},
   {"equals",      openssl_asn1object_equals},
+  {"d2i",         openssl_asn1object_d2i},
+  {"i2d",         openssl_asn1object_i2d},
 
   {"__eq",        openssl_asn1object_equals},
   {"__gc",        openssl_asn1object_free},
