@@ -817,20 +817,8 @@ sign ts_req and get ts_resp, alias of create_response
 static LUA_FUNCTION(openssl_ts_create_response)
 {
   TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
-  BIO *bio = NULL;
-  TS_RESP * resp;
-  if (lua_isstring(L, 2))
-  {
-    bio = load_bio_object(L, 2);
-  }
-  else
-  {
-    TS_REQ *req = CHECK_OBJECT(2, TS_REQ, "openssl.ts_req");
-    bio = BIO_new(BIO_s_mem());
-    i2d_TS_REQ_bio(bio, req);
-  }
-
-  resp  = TS_RESP_create_response(ctx, bio);
+  BIO *bio = load_bio_object(L, 2);
+  TS_RESP *resp  = TS_RESP_create_response(ctx, bio);
   if (resp)
   {
     PUSH_OBJECT(resp, "openssl.ts_resp");
