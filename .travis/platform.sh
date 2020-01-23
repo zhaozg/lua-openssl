@@ -6,6 +6,7 @@ fi
 
 if [ "$PLATFORM" == "osx" ]; then
   PLATFORM="macosx"
+  export MACOSX_DEPLOYMENT_TARGET=10.12
 fi
 
 if [ -z "$PLATFORM" ]; then
@@ -13,5 +14,6 @@ if [ -z "$PLATFORM" ]; then
     PLATFORM="linux"
   else
     PLATFORM="macosx"
+    export MACOSX_DEPLOYMENT_TARGET=10.12
   fi
 fi

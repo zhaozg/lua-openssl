@@ -1,4 +1,4 @@
-#! /bin/bash
+#MACOSX_DEPLOYMENT_TARGET! /bin/bash
 
 # A script for setting up environment for travis-ci testing.
 # Sets up Lua and Luarocks.

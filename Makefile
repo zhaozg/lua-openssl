@@ -60,7 +60,7 @@ ifneq (, $(findstring apple, $(SYS)))
   LUA_LIBT	 =
   CFLAGS	 = -fPIC
   LDFLAGS	 = -fPIC -undefined dynamic_lookup -ldl
-  #MACOSX_DEPLOYMENT_TARGET="10.3"
+  MACOSX_DEPLOYMENT_TARGET="10.12"
   CC		:= MACOSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET} $(CC)
 endif
 
