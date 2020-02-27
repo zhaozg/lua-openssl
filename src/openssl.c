@@ -207,6 +207,12 @@ static LUA_FUNCTION(openssl_error_string)
   return ret;
 }
 
+static LUA_FUNCTION(openssl_clear_error)
+{
+  ERR_clear_error();
+  return 0;
+}
+
 static LUA_FUNCTION(openssl_print_errors)
 {
   BIO *out = BIO_new(BIO_s_mem());
@@ -418,6 +424,7 @@ static const luaL_Reg eay_functions[] =
   {"rand_write",  openssl_random_write},
   {"random",      openssl_random_bytes},
 
+  {"clear_error", openssl_clear_error},
   {"error",       openssl_error_string},
   {"print_errors",openssl_print_errors},
   {"engine",      openssl_engine},
