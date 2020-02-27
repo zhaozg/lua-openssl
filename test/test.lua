@@ -35,7 +35,8 @@ dofile('sm2.lua')
 --LuaUnit.verbosity = 0
 local runner = LuaUnit.new()
 runner:setOutputType("tap")
-runner:runSuite()
+local retcode = runner:runSuite()
 print(openssl.print_errors():get_mem())
 collectgarbage()
+os.exit(retcode)
 

@@ -60,7 +60,6 @@ TestObject = {}
         assertEquals(txt, ln)
         assertEquals(o1:txt(false), txt)
 
-        assertErrorMsgContains('(need accept paramater)', asn1.new_object)
         local options = {
             oid ='1.2.840.10045.2.1.2.1',
             sn  ='gmsm21',
