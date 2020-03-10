@@ -142,21 +142,34 @@ static int openssl_get_object(lua_State*L)
 {
   size_t l = 0;
   const char* asn1s = luaL_checklstring(L, 1, &l);
-  size_t off = posrelat(luaL_optinteger(L, 2, 1), l);
-  size_t length = posrelat(luaL_optinteger(L, 3, l), l);
+  size_t start = posrelat(luaL_optinteger(L, 2, 1), l);
+  size_t stop = posrelat(luaL_optinteger(L, 3, l), l);
 
-  const unsigned char *p = (const unsigned char *)asn1s + off - 1;
+  const unsigned char *p = (const unsigned char *)asn1s + start - 1;
   long len = 0;
   int tag = 0;
   int class = 0;
   int ret;
 
-  p = (const unsigned char *)asn1s + off - 1;
-  ret = ASN1_get_object(&p, &len, &tag, &class, length - off + 1);
+  if (start > l)
+  {
+    lua_pushnil(L);
+    openssl_pushargerror(L, 2, "out of range");
+    return 2;
+  }
+  if (start>stop)
+  {
+    lua_pushnil(L);
+    openssl_pushargerror(L, 3, "before of start");
+    return 2;
+  }
+
+  p = (const unsigned char *)asn1s + start - 1;
+  ret = ASN1_get_object(&p, &len, &tag, &class, stop - start + 1);
   if (ret & 0x80)
   {
     lua_pushnil(L);
-    lua_pushstring(L, "arg 1 with error encoding");
+    lua_pushstring(L, "arg #1 with error encoding");
     lua_pushinteger(L, ret);
     return 3;
   }

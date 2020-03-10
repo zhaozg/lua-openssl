@@ -258,6 +258,9 @@ int openssl_sk_x509_name_totable(lua_State *L, const STACK_OF(X509_NAME)* sk);
 
 X509_ATTRIBUTE* openssl_new_xattribute(lua_State*L, X509_ATTRIBUTE** a, int idx, const char* eprefix);
 
+int openssl_pusherror (lua_State *L, const char *fmt, ...);
+int openssl_pushargerror (lua_State *L, int arg, const char *extramsg);
+
 #if !defined(OPENSSL_NO_SRP)
 #if defined(LIBRESSL_VERSION_NUMBER) || OPENSSL_VERSION_NUMBER <= 0x10002000
 #define OPENSSL_NO_SRP
