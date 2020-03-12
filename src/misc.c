@@ -313,7 +313,7 @@ int openssl_pushargerror (lua_State *L, int arg, const char *extramsg)
                                ar.name, extramsg);
   }
   if (ar.name == NULL)
-#ifndef COMPAT53_C_
+#if !defined(COMPAT53_C_) || LUA_VERSION_NUM == 502
     ar.name = "?";
 #else
     ar.name = (compat53_pushglobalfuncname(L, &ar)) ? lua_tostring(L, -1) : "?";
