@@ -87,7 +87,7 @@ target_link_libraries(lua-openssl PUBLIC
 set_target_properties(lua-openssl PROPERTIES
     PREFIX ""
     OUTPUT_NAME "openssl"
-    VERSION 0.7.7.0 SOVERSION 1
+    VERSION 0.7.8.0 SOVERSION 1
 )
 
 install(TARGETS lua-openssl

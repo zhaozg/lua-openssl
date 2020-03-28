@@ -9,10 +9,6 @@
 #include <openssl/rsa.h>
 #include <openssl/engine.h>
 
-#define MYNAME    "rsa"
-#define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
-  "based on OpenSSL " SHLIB_VERSION_NUMBER
-
 static LUA_FUNCTION(openssl_rsa_free)
 {
   RSA* rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");
@@ -169,13 +165,13 @@ static LUA_FUNCTION(openssl_rsa_read)
   return 1;
 }
 
-static int openssl_rsa_set_method(lua_State *L) 
+static int openssl_rsa_set_method(lua_State *L)
 {
 #ifndef OPENSSL_NO_ENGINE
   RSA* rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");
   ENGINE *e = CHECK_OBJECT(2, ENGINE, "openssl.engine");
   const RSA_METHOD *m = ENGINE_get_RSA(e);
-  if (m) 
+  if (m)
   {
     int r = RSA_set_method(rsa, m);
     return openssl_pushresult(L, r);
@@ -220,9 +216,6 @@ int luaopen_rsa(lua_State *L)
   auxiliar_newclass(L, "openssl.rsa",     rsa_funs);
   lua_newtable(L);
   luaL_setfuncs(L, R, 0);
-  lua_pushliteral(L, "version");
-  lua_pushliteral(L, MYVERSION);
-  lua_settable(L, -3);
 
   return 1;
 }

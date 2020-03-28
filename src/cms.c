@@ -32,10 +32,6 @@ OpenSSL not give full document about CMS api, so some function will be dangers.
 #ifndef OPENSSL_NO_CMS
 #include <openssl/cms.h>
 
-#define MYNAME    "cms"
-#define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
-  "based on OpenSSL " SHLIB_VERSION_NUMBER
-
 static LuaL_Enumeration cms_flags[] =
 {
   {"text",                  0x1},
@@ -881,9 +877,6 @@ int luaopen_cms(lua_State *L)
 
   lua_newtable(L);
   luaL_setfuncs(L, R, 0);
-  lua_pushliteral(L, "version");
-  lua_pushliteral(L, MYVERSION);
-  lua_settable(L, -3);
 
   auxiliar_enumerate(L, -1, cms_flags);
 #else

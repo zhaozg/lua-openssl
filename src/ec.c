@@ -6,10 +6,6 @@ ec module for lua-openssl binding
 #include "private.h"
 #include <openssl/engine.h>
 
-#define MYNAME    "ec"
-#define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
-  "based on OpenSSL " SHLIB_VERSION_NUMBER
-
 #ifndef OPENSSL_NO_EC
 
 static int openssl_ecpoint_affine_coordinates(lua_State *L)
@@ -762,9 +758,6 @@ int luaopen_ec(lua_State *L)
 
   lua_newtable(L);
   luaL_setfuncs(L, R, 0);
-  lua_pushliteral(L, "version");    /** version */
-  lua_pushliteral(L, MYVERSION);
-  lua_settable(L, -3);
 
   return 1;
 }

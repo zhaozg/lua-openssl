@@ -11,9 +11,6 @@ Sometime when you want to custome x509, you maybe need to use this.
 #include "openssl.h"
 #include "private.h"
 #include <openssl/asn1.h>
-#define MYNAME    "asn1"
-#define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
-  "based on OpenSSL " SHLIB_VERSION_NUMBER
 
 #ifdef WIN32
 #define timezone _timezone
@@ -1490,10 +1487,6 @@ int luaopen_asn1(lua_State *L)
 
   lua_newtable(L);
   luaL_setfuncs(L, R, 0);
-
-  lua_pushliteral(L, "version");    /** version */
-  lua_pushliteral(L, MYVERSION);
-  lua_settable(L, -3);
 
   auxiliar_enumerate(L, -1, asn1_const);
 

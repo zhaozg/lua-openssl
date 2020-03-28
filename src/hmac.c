@@ -9,10 +9,6 @@ hamc module for lua-openssl binding
 #include "openssl.h"
 #include "private.h"
 
-#define MYNAME    "hmac"
-#define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
-  "based on OpenSSL " SHLIB_VERSION_NUMBER
-
 /***
 get hamc_ctx object
 
@@ -212,9 +208,6 @@ int luaopen_hmac(lua_State *L)
 
   lua_newtable(L);
   luaL_setfuncs(L, R, 0);
-  lua_pushliteral(L, "version");    /** version */
-  lua_pushliteral(L, MYVERSION);
-  lua_settable(L, -3);
 
   return 1;
 }

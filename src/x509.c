@@ -12,10 +12,6 @@ create and manage x509 certificate
 #define CRYPTO_LOCK_REF
 #include "sk.h"
 
-#define MYNAME    "x509"
-#define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
-  "based on OpenSSL " SHLIB_VERSION_NUMBER
-
 #if OPENSSL_VERSION_NUMBER < 0x1010000fL || \
 	(defined(LIBRESSL_VERSION_NUMBER) && (LIBRESSL_VERSION_NUMBER < 0x20700000L))
 #define X509_get0_notBefore X509_get_notBefore
@@ -1455,10 +1451,6 @@ int luaopen_x509(lua_State *L)
   lua_setfield(L, -2, "req");
   luaopen_x509_crl(L);
   lua_setfield(L, -2, "crl");
-
-  lua_pushliteral(L, "version");    /** version */
-  lua_pushliteral(L, MYVERSION);
-  lua_settable(L, -3);
 
 #if OPENSSL_VERSION_NUMBER > 0x10002000L
   lua_pushliteral(L, "check_flag");

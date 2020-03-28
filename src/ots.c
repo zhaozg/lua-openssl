@@ -11,10 +11,6 @@ create and manage x509 certificate sign request
 #if OPENSSL_VERSION_NUMBER >= 0x10000000L
 #include <openssl/ts.h>
 
-#define MYNAME    "ts"
-#define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
-  "based on OpenSSL " SHLIB_VERSION_NUMBER
-
 /***
 create a new ts_req object.
 @function req_new
@@ -1524,10 +1520,6 @@ int luaopen_ts(lua_State *L)
 
   lua_newtable(L);
   luaL_setfuncs(L, R, 0);
-
-  lua_pushliteral(L, "version");    /** version */
-  lua_pushliteral(L, MYVERSION);
-  lua_settable(L, -3);
 #else
   lua_pushnil(L);
 #endif

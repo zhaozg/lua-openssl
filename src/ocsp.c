@@ -8,10 +8,6 @@
 #include "private.h"
 #include "openssl/ocsp.h"
 
-#define MYNAME    "ocsp"
-#define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
-  "based on OpenSSL " SHLIB_VERSION_NUMBER
-
 static int openssl_ocsp_request_new(lua_State*L)
 {
   OCSP_REQUEST *req = NULL;
@@ -519,10 +515,6 @@ int luaopen_ocsp(lua_State *L)
 
   lua_newtable(L);
   luaL_setfuncs(L, R, 0);
-
-  lua_pushliteral(L, "version");    /** version */
-  lua_pushliteral(L, MYVERSION);
-  lua_settable(L, -3);
 
   return 1;
 }

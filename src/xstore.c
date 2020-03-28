@@ -7,8 +7,6 @@ Provide x509_store as lua object, create and manage x509 store object
 #include "openssl.h"
 #include "private.h"
 
-#define MYNAME "x509.store"
-
 /***
 create or generate a new x509_store object.
 @function new

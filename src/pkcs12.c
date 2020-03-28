@@ -7,10 +7,6 @@
 #include "openssl.h"
 #include "private.h"
 
-#define MYNAME    "pkcs12"
-#define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
-  "based on OpenSSL " SHLIB_VERSION_NUMBER
-
 /***
 Provide pkcs12 function in lua.
 
@@ -152,10 +148,6 @@ int luaopen_pkcs12(lua_State *L)
 {
   lua_newtable(L);
   luaL_setfuncs(L, R, 0);
-
-  lua_pushliteral(L, "version");
-  lua_pushliteral(L, MYVERSION);
-  lua_settable(L, -3);
 
   return 1;
 }

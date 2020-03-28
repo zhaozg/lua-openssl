@@ -10,8 +10,6 @@ Sometime when you make CSR,TS or X509, you maybe need to use this.
 #include "private.h"
 #include "sk.h"
 
-#define MYNAME "x509.attribute"
-
 /***
 x509_attribute contrust param table.
 

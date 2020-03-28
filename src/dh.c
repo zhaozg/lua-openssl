@@ -9,10 +9,6 @@
 #include <openssl/dh.h>
 #include <openssl/engine.h>
 
-#define MYNAME    "dh"
-#define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
-  "based on OpenSSL " SHLIB_VERSION_NUMBER
-
 static LUA_FUNCTION(openssl_dh_free)
 {
   DH* dh = CHECK_OBJECT(1, DH, "openssl.dh");
@@ -81,8 +77,6 @@ int luaopen_dh(lua_State *L)
 
   lua_newtable(L);
   luaL_setfuncs(L, R, 0);
-  lua_pushliteral(L, "version");
-  lua_pushliteral(L, MYVERSION);
-  lua_settable(L, -3);
+
   return 1;
 }

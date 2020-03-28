@@ -11,10 +11,6 @@ openssl.bio is a help object, it is useful, but rarely use.
 #include <openssl/bn.h>
 #include <openssl/ssl.h>
 
-#define MYNAME    "bio"
-#define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
-  "based on OpenSSL " SHLIB_VERSION_NUMBER
-
 /*
 static const int* iMethods[] = {
   BIO_TYPE_NONE,
@@ -940,9 +936,6 @@ int luaopen_bio(lua_State *L)
 
   lua_newtable(L);
   luaL_setfuncs(L, R, 0);
-  lua_pushliteral(L, "version");    /** version */
-  lua_pushliteral(L, MYVERSION);
-  lua_settable(L, -3);
 
   return 1;
 }

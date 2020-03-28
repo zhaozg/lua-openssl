@@ -11,8 +11,6 @@ Sometime when you make CSR,TS or X509, you maybe need to use this.
 
 #include "sk.h"
 
-#define MYNAME "x509.name"
-
 int openssl_push_xname_asobject(lua_State*L, X509_NAME* xname)
 {
   X509_NAME* dup = X509_NAME_dup(xname);

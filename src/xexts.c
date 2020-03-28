@@ -13,8 +13,6 @@ Sometime when you make CSR,TS or X509, you maybe need to use this.
 
 #include "sk.h"
 
-#define MYNAME "x509.extension"
-
 /***
 x509_extension contrust param table.
 
@@ -112,7 +110,9 @@ static X509_EXTENSION* openssl_new_xextension(lua_State*L, int idx, int v3)
           if (method->it) ASN1_item_free(ext_struc, ASN1_ITEM_ptr(method->it));
           else method->ext_free(ext_struc);
         }
-      }else{
+      }
+      else
+      {
         value = ASN1_STRING_type_new(V_ASN1_OCTET_STRING);
         ASN1_STRING_set(value, data, size);
       }

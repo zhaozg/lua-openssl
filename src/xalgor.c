@@ -11,8 +11,6 @@ Sometime when you make CSR,TS or X509, you maybe need to use this.
 #include "sk.h"
 IMP_LUA_SK(X509_ALGOR, x509_algor)
 
-#define MYNAME "x509.algor"
-
 /***
 Create x509_algor object
 

@@ -8,10 +8,6 @@ PKCS7 module for lua-openssl binding
 #include "openssl.h"
 #include "private.h"
 
-#define MYNAME    "pkcs7"
-#define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
-  "based on OpenSSL " SHLIB_VERSION_NUMBER
-
 #if (OPENSSL_VERSION_NUMBER < 0x10100000L) \
  || (defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x2090000fL)
 #define OPENSSL_USE_M_ASN1
@@ -1527,10 +1523,6 @@ int luaopen_pkcs7(lua_State *L)
 
   lua_newtable(L);
   luaL_setfuncs(L, R, 0);
-
-  lua_pushliteral(L, "version");    /** version */
-  lua_pushliteral(L, MYVERSION);
-  lua_settable(L, -3);
 
   auxiliar_enumerate(L, -1, pkcs7_const);
   return 1;

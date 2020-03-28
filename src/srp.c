@@ -5,10 +5,6 @@
 #include <openssl/srp.h>
 #include <openssl/bn.h>
 
-#define MYNAME    "srp"
-#define MYVERSION MYNAME " library for " LUA_VERSION " / May 2018 / "\
-  "based on OpenSSL " SHLIB_VERSION_NUMBER
-
 /* server side */
 static int openssl_srp_create_verifier(lua_State *L)
 {
@@ -194,9 +190,7 @@ int luaopen_srp(lua_State *L)
 
   lua_newtable(L);
   luaL_setfuncs(L, R, 0);
-  lua_pushliteral(L, "version");
-  lua_pushliteral(L, MYVERSION);
-  lua_settable(L, -3);
+
   return 1;
 }
 #endif

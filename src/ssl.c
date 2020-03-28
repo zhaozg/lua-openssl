@@ -10,10 +10,6 @@ ssl modules for lua-openssl binding, provide ssl function in lua.
 #include <stdint.h>
 #include "ssl_options.h"
 
-#define MYNAME    "ssl"
-#define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2014 / "\
-  "based on OpenSSL " SHLIB_VERSION_NUMBER
-
 #include <openssl/ssl.h>
 
 /***
@@ -2618,10 +2614,6 @@ int luaopen_ssl(lua_State *L)
 
   lua_newtable(L);
   luaL_setfuncs(L, R, 0);
-
-  lua_pushliteral(L, "version");    /** version */
-  lua_pushliteral(L, MYVERSION);
-  lua_settable(L, -3);
 
   auxiliar_enumerate(L, -1, ssl_options);
   for (i = 0; sVerifyMode_Options[i]; i++)
