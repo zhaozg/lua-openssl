@@ -12,10 +12,6 @@ Sometime when you want to custome x509, you maybe need to use this.
 #include "private.h"
 #include <openssl/asn1.h>
 
-#ifdef WIN32
-#define timezone _timezone
-#endif
-
 static LuaL_Enumeration asn1_const[] =
 {
   /* 0 */
@@ -1068,6 +1064,19 @@ static time_t ASN1_TIME_get(ASN1_TIME* time, time_t off)
   return mktime(&t) + off;
 }
 
+static double get_gmt_offset()
+{
+  time_t now = time(NULL);
+
+  struct tm *gm = gmtime(&now);
+  time_t gmt = mktime(gm);
+
+  struct tm *loc = localtime(&now);
+  time_t local = mktime(loc);
+
+  return difftime(local, gmt);
+}
+
 /***
 @function get
 */
@@ -1087,7 +1096,7 @@ static int openssl_asn1group_get(lua_State *L)
   case V_ASN1_GENERALIZEDTIME:
   {
     ASN1_TIME *at = CHECK_OBJECT(1, ASN1_TIME, "openssl.asn1_time");
-    time_t offset = timezone;
+    time_t offset = get_gmt_offset();
     time_t get = ASN1_TIME_get(at, -offset);
     lua_pushnumber(L, (lua_Number) get);
     return 1;

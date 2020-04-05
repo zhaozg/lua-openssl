@@ -88,10 +88,6 @@ __pragma(warning(pop))
 #define MAX_PATH 260
 #endif
 
-#ifdef NETWARE
-#define timezone _timezone  /* timezone is called _timezone in LibC */
-#endif
-
 #ifdef WIN32
 #define snprintf _snprintf
 #ifndef strcasecmp
