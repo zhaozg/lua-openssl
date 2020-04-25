@@ -4,7 +4,7 @@ project(lua-openssl C)
 set(CMAKE_MACOSX_RPATH 1)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules")
-option(BUILD_SHARED_LUA_OPENSSL "Shared or Static libluv" ON)
+option(BUILD_SHARED_LUA_OPENSSL "Shared or Static lua-openssl" ON)
 
 include(GNUInstallDirs)
 
@@ -21,8 +21,10 @@ add_definitions(-DPTHREADS)
 
 if(BUILD_SHARED_LUA_OPENSSL)
     set(LUA_OPENSSL_LIBTYPE SHARED)
-    add_definitions(-DLUA_BUILD_AS_DLL -DLUA_LIB)
-    set(EXTRA_LIBS "ws2_32.lib" "crypt32.lib")
+    if(WIN32)
+        add_definitions(-DLUA_BUILD_AS_DLL)
+        set(EXTRA_LIBS "ws2_32.lib" "crypt32.lib")
+    endif()
 else()
     set(LUA_OPENSSL_LIBTYPE STATIC)
 endif()
@@ -83,6 +85,8 @@ target_link_libraries(lua-openssl PUBLIC
     ${EXTRA_LIBS}
     Threads::Threads
 )
+
+target_compile_options(lua-openssl PRIVATE -DLUA_LIB)
 
 set_target_properties(lua-openssl PROPERTIES
     PREFIX ""
