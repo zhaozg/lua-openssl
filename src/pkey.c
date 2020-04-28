@@ -739,7 +739,7 @@ static LUA_FUNCTION(openssl_pkey_new)
   {
     RSA* rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");
     pkey = EVP_PKEY_new();
-    EVP_PKEY_assign_RSA(pkey, rsa);
+    EVP_PKEY_set1_RSA(pkey, rsa);
   }
 
   if (pkey && EVP_PKEY_id(pkey) != NID_undef)
