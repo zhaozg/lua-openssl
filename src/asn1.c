@@ -1482,7 +1482,6 @@ static luaL_Reg asn1str_funcs[] =
 
 int luaopen_asn1(lua_State *L)
 {
-  tzset();
   auxiliar_newclass(L, "openssl.asn1_object", asn1obj_funcs);
   auxiliar_newclass(L, "openssl.asn1_type", asn1type_funcs);
 
