@@ -1432,12 +1432,13 @@ static int openssl_asn1time_adj(lua_State* L)
   return 0;
 }
 
+#if !defined(LIBRESSL_VERSION_NUMBER)
 static int openssl_asn1time_diff(lua_State* L)
 {
   int day, sec, ret;
   ASN1_TIME *from = CHECK_OBJECT(1, ASN1_TIME, "openssl.asn1_time");
   ASN1_TIME *to = lua_isnoneornil(L, 2) ? NULL
-    : CHECK_OBJECT(2, ASN1_TIME, "openssl.asn1_time");
+                  : CHECK_OBJECT(2, ASN1_TIME, "openssl.asn1_time");
 
   ret = ASN1_TIME_diff(&day, &sec, from, to);
   if (ret==0)
@@ -1446,6 +1447,7 @@ static int openssl_asn1time_diff(lua_State* L)
   lua_pushinteger(L, sec);
   return 2;
 }
+#endif
 
 static luaL_Reg asn1str_funcs[] =
 {
@@ -1476,7 +1478,9 @@ static luaL_Reg asn1str_funcs[] =
 
   /* asn1time,asn1generalizedtime */
   {"adj", openssl_asn1time_adj},
+#if !defined(LIBRESSL_VERSION_NUMBER)
   {"diff", openssl_asn1time_diff},
+#endif
   {"check", openssl_asn1time_check},
 
   {NULL, NULL}
