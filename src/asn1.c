@@ -1064,19 +1064,6 @@ static time_t ASN1_TIME_get(ASN1_TIME* time, time_t off)
   return mktime(&t) + off;
 }
 
-static double get_gmt_offset()
-{
-  time_t now = time(NULL);
-
-  struct tm *gm = gmtime(&now);
-  time_t gmt = mktime(gm);
-
-  struct tm *loc = localtime(&now);
-  time_t local = mktime(loc);
-
-  return difftime(local, gmt);
-}
-
 /***
 @function get
 */
@@ -1096,8 +1083,7 @@ static int openssl_asn1group_get(lua_State *L)
   case V_ASN1_GENERALIZEDTIME:
   {
     ASN1_TIME *at = CHECK_OBJECT(1, ASN1_TIME, "openssl.asn1_time");
-    time_t offset = get_gmt_offset();
-    time_t get = ASN1_TIME_get(at, -offset);
+    time_t get = ASN1_TIME_get(at, 0);
     lua_pushnumber(L, (lua_Number) get);
     return 1;
   }
@@ -1446,6 +1432,21 @@ static int openssl_asn1time_adj(lua_State* L)
   return 0;
 }
 
+static int openssl_asn1time_diff(lua_State* L)
+{
+  int day, sec, ret;
+  ASN1_TIME *from = CHECK_OBJECT(1, ASN1_TIME, "openssl.asn1_time");
+  ASN1_TIME *to = lua_isnoneornil(L, 2) ? NULL
+    : CHECK_OBJECT(2, ASN1_TIME, "openssl.asn1_time");
+
+  ret = ASN1_TIME_diff(&day, &sec, from, to);
+  if (ret==0)
+    return openssl_pushresult(L, ret);
+  lua_pushinteger(L, day);
+  lua_pushinteger(L, sec);
+  return 2;
+}
+
 static luaL_Reg asn1str_funcs[] =
 {
   /* asn1string */
@@ -1475,6 +1476,7 @@ static luaL_Reg asn1str_funcs[] =
 
   /* asn1time,asn1generalizedtime */
   {"adj", openssl_asn1time_adj},
+  {"diff", openssl_asn1time_diff},
   {"check", openssl_asn1time_check},
 
   {NULL, NULL}
