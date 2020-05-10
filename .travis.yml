@@ -1,7 +1,5 @@
 language: c
 
-sudo: false
-
 dist: bionic
 
 env:
@@ -40,6 +38,9 @@ script:
   - LD_LIBRARY_PATH=$HOME/.usr/lib lua -e "package.cpath='../?.so'" test.lua
   - cd ..
 
+after_success:
+  - if [[ "$TRAVIS_OS_NAME" == "linux" && -z "$SSL" ]]; then coveralls --exclude luv --gcov-options '\-lp'; fi
+
 before_deploy:
   - bash .travis/make_rockspec.sh $TRAVIS_TAG
 
@@ -47,7 +48,7 @@ deploy:
   provider: releases
   api_key: $GITHUB_TOKEN
   file: openssl-$TRAVIS_TAG.tar.gz
-  skip_cleanup: true
+  cleanup: false
   on:
     tags: true
     branch: master
