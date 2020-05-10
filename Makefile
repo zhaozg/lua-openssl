@@ -49,8 +49,8 @@ OPENSSL_LIBS	?= $(shell $(PKG_CONFIG) openssl --static --libs)
 
 ifneq (, $(findstring linux, $(SYS)))
   # Do linux things
-  CFLAGS	 = -fPIC
-  LDFLAGS	 = -fPIC # -Wl,--no-undefined
+  CFLAGS	+= -fPIC
+  LDFLAGS	+= -fPIC # -Wl,--no-undefined
 endif
 
 ifneq (, $(findstring apple, $(SYS)))
@@ -58,26 +58,26 @@ ifneq (, $(findstring apple, $(SYS)))
   LUA_LIBT	 = $(subst -pagezero_size 10000 -image_base 100000000, , $(LUA_LIBS))
   LUA_LIBS	 = $(LUA_LIBT)
   LUA_LIBT	 =
-  CFLAGS	 = -fPIC
-  LDFLAGS	 = -fPIC -undefined dynamic_lookup -ldl
+  CFLAGS	+= -fPIC
+  LDFLAGS	+= -fPIC -undefined dynamic_lookup -ldl
   MACOSX_DEPLOYMENT_TARGET="10.12"
   CC		:= MACOSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET} $(CC)
 endif
 
 ifneq (, $(findstring mingw, $(SYS)))
   # Do mingw things
-  CFLAGS	 = -DLUA_LIB -DLUA_BUILD_AS_DLL -DWIN32_LEAN_AND_MEAN
+  CFLAGS	+= -DLUA_LIB -DLUA_BUILD_AS_DLL -DWIN32_LEAN_AND_MEAN
 endif
 
 ifneq (, $(findstring cygwin, $(SYS)))
   # Do cygwin things
-  CFLAGS	 = -fPIC
+  CFLAGS	+= -fPIC
 endif
 
 ifneq (, $(findstring iOS, $(SYS)))
   # Do iOS things
-  CFLAGS	 = -fPIC
-  LDFLAGS	 = -fPIC -ldl
+  CFLAGS	+= -fPIC
+  LDFLAGS	+= -fPIC -ldl
 endif
 
 #custom config

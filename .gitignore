@@ -34,6 +34,10 @@ doc
 #misc
 *.orgi
 
+#coverage
+*.gcda
+*.gcno
+
 #devel temp
 oscca/
 tmp/
