@@ -25,7 +25,6 @@ port = arg[2] or "8383"
 local address = {
   port = tonumber(port),
   address = host,
-
 }
 
 local ctx = ssl.new_ctx {
@@ -35,7 +34,6 @@ local ctx = ssl.new_ctx {
   cafile = "../luasec/certs/rootA.pem",
   verify = ssl.none,
   --   options = {"all", "no_sslv2"}
-
 }
 
 function create_server (host, port, on_connection)

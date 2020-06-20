@@ -26,14 +26,12 @@ port = arg[2] or "8383"
 local address = {
   port = tonumber(port),
   address = host,
-
 }
 
 local ctx = ssl.new_ctx {
-  protocol = helper.sslProtocol(false)
+  protocol = helper.sslProtocol(false),
   verify = ssl.none,
   --   options = {"all", "no_sslv2"}
-
 }
 
 
