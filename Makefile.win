@@ -19,7 +19,7 @@ lib: src\$T.dll
 
 src\$T.dll: $(OBJS)
 	link /DLL /out:src\$T.dll $(OBJS) "$(LUA_LIB)" "$(OPENSSL_LIB)" \
-		ws2_32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib 
+		crypt32.lib ws2_32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib 
 	IF EXIST src\$T.dll.manifest mt -manifest src\$T.dll.manifest -outputresource:src\$T.dll;2
 
 install: src\$T.dll
