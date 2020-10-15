@@ -1721,6 +1721,70 @@ static int openssl_pkey_bits(lua_State *L)
   return  1;
 };
 
+static int openssl_pkey_set_engine(lua_State *L)
+{
+  EVP_PKEY *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
+  ENGINE *eng = CHECK_OBJECT(2, ENGINE, "openssl.engine");
+
+  int ret = -1;
+  int typ = EVP_PKEY_type(EVP_PKEY_id(pkey));
+  switch (typ)
+  {
+#ifndef OPENSSL_NO_RSA
+  case EVP_PKEY_RSA:
+  {
+    RSA *rsa = EVP_PKEY_get0_RSA(pkey);
+    const RSA_METHOD *m = ENGINE_get_RSA(eng);
+    if (m!=NULL)
+      ret = RSA_set_method(rsa, m);
+    break;
+  }
+#endif
+#ifndef OPENSSL_NO_DSA
+  case EVP_PKEY_DSA:
+  {
+    DSA *dsa = EVP_PKEY_get0_DSA(pkey);
+    const DSA_METHOD *m = ENGINE_get_DSA(eng);
+    if (m!=NULL)
+      ret = DSA_set_method(dsa, m);
+    break;
+  }
+#endif
+#ifndef OPENSSL_NO_DH
+  case EVP_PKEY_DH:
+  {
+    DH *dh = EVP_PKEY_get0_DH(pkey);
+    const DH_METHOD *m = ENGINE_get_DH(eng);
+    if (m!=NULL)
+      ret = DH_set_method(dh, m);
+    break;
+  }
+#endif
+#ifndef OPENSSL_NO_EC
+  case EVP_PKEY_EC:
+  {
+    EC_KEY *ec = EVP_PKEY_get0_EC_KEY(pkey);
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
+    const ECDSA_METHOD *m = ENGINE_get_ECDSA(eng);
+    if (m!=NULL)
+      ret = ECDSA_set_method(ec, m);
+#else
+    const EC_KEY_METHOD *m = ENGINE_get_EC(eng);
+    if (m!=NULL)
+      ret = EC_KEY_set_method(ec, m);
+#endif
+    break;
+  }
+#endif
+  default:
+    break;
+  }
+  if (ret==-1)
+    return 0;
+  lua_pushboolean(L, ret);
+  return 1;
+}
+
 #if defined(OPENSSL_SUPPORT_SM2)
 static int openssl_pkey_as_sm2(lua_State *L)
 {
@@ -1746,6 +1810,7 @@ static luaL_Reg pkey_funcs[] =
 {
   {"is_private",    openssl_pkey_is_private1},
   {"get_public",    openssl_pkey_get_public},
+  {"set_engine",    openssl_pkey_set_engine},
 
   {"export",        openssl_pkey_export},
   {"parse",         openssl_pkey_parse},
@@ -1786,6 +1851,7 @@ static const luaL_Reg R[] =
   {"open_final",    openssl_open_final},
 
   {"get_public",    openssl_pkey_get_public},
+  {"set_engine",    openssl_pkey_set_engine},
   {"is_private",    openssl_pkey_is_private1},
   {"export",        openssl_pkey_export},
   {"parse",         openssl_pkey_parse},
