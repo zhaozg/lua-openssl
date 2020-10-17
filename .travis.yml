@@ -6,14 +6,14 @@ env:
   global:
     - LUAROCKS=3.3.1
   matrix:
-    - LUA=lua5.1
-    - LUA=lua5.1 SSL=openssl-1.0.2u
-    - LUA=luajit2.1 SSL=openssl-1.0.2u
+    #- LUA=lua5.1
+    #- LUA=lua5.1 SSL=openssl-1.0.2u
+    #- LUA=luajit2.1 SSL=openssl-1.0.2u
     - LUA=lua5.2 SSL=libressl-3.2.1
-    - LUA=lua5.3 SSL=openssl-1.1.1h
-    - LUA=lua5.4 SSL=openssl-1.1.1h
-    - LUA=luajit SSL=openssl-1.1.0l
-    - LUA=luajit2.1
+    #- LUA=lua5.3 SSL=openssl-1.1.1h
+    #- LUA=lua5.4 SSL=openssl-1.1.1h
+    #- LUA=luajit SSL=openssl-1.1.0l
+    #- LUA=luajit2.1
 os:
   - linux
   - osx
@@ -38,6 +38,7 @@ install:
 script:
   - cd test
   - LD_LIBRARY_PATH=$HOME/.usr/lib lua -e "package.cpath='../?.so'" test.lua
+  - if [[ "$PLATFORM" == "linux" && "$SSL" =~ ^libressl ]]; then LD_LIBRARY_PATH=$HOME/.usr/lib valgrind --trace-children=yes -v --tool=memcheck --leak-check=full --track-origins=yes --leak-resolution=high --show-reachable=yes lua -e "package.cpath='../?.so'" test.lua; fi
   - cd ..
 
 after_success:
