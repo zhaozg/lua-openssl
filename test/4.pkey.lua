@@ -20,8 +20,9 @@ TestPKEYMY = {}
                 {'ec','prime256v1'}
         }
     end
---[[
-    function TestPKEYMY:testModule()
+
+    function TestPKEYMY:testBasic()
+        local eng = openssl.engine('openssl')
         for i,v in ipairs(self.genalg ) do
                 --print(v)
                 local k = mk_key(v)
@@ -89,7 +90,7 @@ TestPKEYMY = {}
         local raw = pkey.decrypt(rsa,out)
         assert(msg==raw)
     end
---]]
+
     function testKeyFmt()
     local keys = {
 RSA= {[[
