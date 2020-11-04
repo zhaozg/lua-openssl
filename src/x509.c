@@ -395,7 +395,6 @@ int openssl_push_general_name(lua_State*L, const GENERAL_NAME* general_name)
     lua_setfield(L, -2, "type");
     break;
   case GEN_IPADD:
-    lua_newtable(L);
     PUSH_ASN1_OCTET_STRING(L, general_name->d.iPAddress);
     lua_setfield(L, -2, "iPAddress");
     lua_pushstring(L, "iPAddress");
@@ -413,7 +412,6 @@ int openssl_push_general_name(lua_State*L, const GENERAL_NAME* general_name)
     lua_setfield(L, -2, "type");
     break;
   case GEN_RID:
-    lua_newtable(L);
     openssl_push_asn1object(L, general_name->d.registeredID);
     lua_setfield(L, -2, "registeredID");
     lua_pushstring(L, "registeredID");
