@@ -55,9 +55,6 @@ endif
 
 ifneq (, $(findstring apple, $(SYS)))
   # Do darwin things
-  LUA_LIBT	 = $(subst -pagezero_size 10000 -image_base 100000000, , $(LUA_LIBS))
-  LUA_LIBS	 = $(LUA_LIBT)
-  LUA_LIBT	 =
   CFLAGS	+= -fPIC
   LDFLAGS	+= -fPIC -undefined dynamic_lookup -ldl
   MACOSX_DEPLOYMENT_TARGET="10.12"
