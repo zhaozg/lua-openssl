@@ -259,7 +259,7 @@ static int openssl_engine_ctrl(lua_State*L)
   else
   {
     const char* cmd = luaL_checkstring(L, 2);
-    if (lua_isnumber(L, 3))
+    if (lua_type(L, 3) == LUA_TNUMBER)
     {
       long i = (long)luaL_checknumber(L, 3);
       if (lua_isstring(L, 4))
