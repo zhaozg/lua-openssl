@@ -1,9 +1,5 @@
 local openssl = require'openssl'
-EXPORT_ASSERT_TO_GLOBALS = true
-require'luaunit'
-
-print('ENTER to continue,and need long time to finish')
-io.read()
+local lu=require'luaunit'
 
 openssl.rand_load()
 
@@ -28,21 +24,34 @@ dofile('5.ts.lua')
 dofile('6.pkcs7.lua')
 dofile('7.pkcs12.lua')
 dofile('8.ssl_options.lua')
---[[
-dofile('0.tcp.lua')
-dofile('8.ssl.lua')
---]]
-LuaUnit:setVerbosity(0)
-for i=1, 1000000 do
-    LuaUnit:run()
-    print(openssl.error(true))
+
+collectgarbage()
+collectgarbage()
+
+local mem_start, mem_current, mem_previos
+mem_start = collectgarbage("count")
+mem_previos = mem_start
+
+local count = 1000
+local step = 10
+assert(step < count/9, string.format("step should be %d", math.floor(count/10)))
+
+local runner = lu.LuaUnit.new()
+runner:setOutputType("nil")
+
+for _=1, count do
+    runner:runSuite()
     collectgarbage()
+    collectgarbage()
+    mem_current = collectgarbage("count")
+    if _ % step == 0 then
+        print(string.format("** %d\tincrement %.02f%%", _, (mem_current-mem_previos)/mem_previos))
+        mem_previos = mem_current
+    end
 end
+
 collectgarbage()
-io.read()
 collectgarbage()
-io.read()
-collectgarbage()
-io.read()
-collectgarbage()
-io.read()
+mem_current = collectgarbage("count")
+print(string.format("****From %d to %d, increment=%.02f%%",
+    mem_start, mem_current, (mem_current-mem_start)/mem_start))
