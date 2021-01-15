@@ -26,7 +26,6 @@ local params = {
    password = 'password'
 }
 --]]
-    print(params.protocol)
     local protocol = params.protocol and string.upper(string.sub(params.protocol,1,3))
         ..string.sub(params.protocol,4,-1) or helper.sslProtocol()
     local ctx = ssl.ctx_new(protocol,params.ciphers)

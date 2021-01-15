@@ -1,6 +1,5 @@
+local lu = require'luaunit'
 local openssl = require'openssl'
-EXPORT_ASSERT_TO_GLOBALS = true
-require'luaunit'
 
 openssl.rand_load()
 print('VERSION:', openssl.version())
@@ -32,8 +31,7 @@ dofile('rsa.lua')
 dofile('ec.lua')
 dofile('sm2.lua')
 
---LuaUnit.verbosity = 0
-local runner = LuaUnit.new()
+local runner = lu.LuaUnit.new()
 runner:setOutputType("tap")
 local retcode = runner:runSuite()
 print(openssl.print_errors():get_mem())
