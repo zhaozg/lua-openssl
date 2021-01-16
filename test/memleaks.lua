@@ -45,7 +45,7 @@ for _=1, count do
     collectgarbage()
     mem_current = collectgarbage("count")
     if _ % step == 0 then
-        print(string.format("** %d\tincrement %.02f%%", _, (mem_current-mem_previos)/mem_previos))
+        print(string.format("** %d\tincrement %.04f%%", _, (mem_current-mem_previos)/mem_previos))
         mem_previos = mem_current
     end
 end
@@ -53,5 +53,5 @@ end
 collectgarbage()
 collectgarbage()
 mem_current = collectgarbage("count")
-print(string.format("****From %d to %d, increment=%.02f%%",
+print(string.format("****From %d to %d, increment=%.04f%%",
     mem_start, mem_current, (mem_current-mem_start)/mem_start))

@@ -1,3 +1,4 @@
+local lu = require'luaunit'
 local openssl = require'openssl'
 local pkey = openssl.pkey
 local unpack = unpack or table.unpack
@@ -12,10 +13,10 @@ if opensslv >= 0x10101007 and (not helper.libressl) then
         local nec =  {'ec','SM2'}
         local ec = pkey.new(unpack(nec))
         local t = ec:parse().ec:parse('pem') --make basic table
-        assertEquals(type(t.curve_name), 'number')
-        assertStrContains(t.x.version, 'bn library')
-        assertStrContains(t.y.version, 'bn library')
-        assertStrContains(t.d.version, 'bn library')
+        lu.assertEquals(type(t.curve_name), 'number')
+        lu.assertStrContains(t.x.version, 'bn library')
+        lu.assertStrContains(t.y.version, 'bn library')
+        lu.assertStrContains(t.d.version, 'bn library')
 
         local k1 = pkey.get_public(ec)
         assert(not k1:is_private())
@@ -25,16 +26,16 @@ if opensslv >= 0x10101007 and (not helper.libressl) then
         assert(t.size==72)
         local r = t.ec
         t = r:parse(true) --make basic table
-        assertEquals(type(t.curve_name), 'number')
-        assertStrContains(t.x.version, 'bn library')
-        assertStrContains(t.y.version, 'bn library')
-        assertEquals(t.d, nil)
+        lu.assertEquals(type(t.curve_name), 'number')
+        lu.assertStrContains(t.x.version, 'bn library')
+        lu.assertStrContains(t.y.version, 'bn library')
+        lu.assertEquals(t.d, nil)
         t = r:parse()
-        assertStrContains(tostring(t.pub_key), 'openssl.ec_point')
-        assertStrContains(tostring(t.group), 'openssl.ec_group')
+        lu.assertStrContains(tostring(t.pub_key), 'openssl.ec_point')
+        lu.assertStrContains(tostring(t.group), 'openssl.ec_group')
         local x, y = t.group:affine_coordinates(t.pub_key)
-        assertStrContains(x.version, 'bn library')
-        assertStrContains(y.version, 'bn library')
+        lu.assertStrContains(x.version, 'bn library')
+        lu.assertStrContains(y.version, 'bn library')
         local ec2p = {
             alg = 'ec',
             ec_name = t.group:parse().curve_name,
