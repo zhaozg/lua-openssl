@@ -51,7 +51,7 @@ if [ "$LUAJIT" == "yes" ]; then
   fi
 
   make && make install PREFIX="$LUA_HOME_DIR"
-  ln -s $HOME/.usr/bin/luajit $HOME/.usr/bin/lua
+  ln -s $TRAVIS_BUILD_DIR/bin/luajit $TRAVIS_BUILD_DIR/bin/lua
 else
 
   if [ "$LUA" == "lua5.1" ]; then
@@ -70,6 +70,8 @@ else
   make $PLATFORM
   make INSTALL_TOP="$LUA_HOME_DIR" install
 fi
+
+export PATH=$LUA_HOME_DIR/bin:$PATH
 
 cd $TRAVIS_BUILD_DIR
 
