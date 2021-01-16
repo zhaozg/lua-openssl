@@ -37,7 +37,7 @@ install:
 
 script:
   - cd test
-  - LD_LIBRARY_PATH=$HOME/.usr/lib lua -e "package.cpath='../?.so'" test.lua
+  - LD_LIBRARY_PATH=$HOME/.usr/lib $HOME/.usr/bin/lua -e "package.cpath='../?.so'" test.lua
   - if [[ "$PLATFORM" == "linux" && "$SSL" =~ ^libressl ]]; then LD_LIBRARY_PATH=$HOME/.usr/lib valgrind --trace-children=yes -v --tool=memcheck --leak-check=full --track-origins=yes --leak-resolution=high --show-reachable=yes lua -e "package.cpath='../?.so'" test.lua; fi
   - cd ..
 
