@@ -443,6 +443,7 @@ static int check_cert(X509_STORE *ca, X509 *x, STACK_OF(X509) *untrustedchain, i
       else
         ret = X509_STORE_CTX_get_error(csc);
     }
+    X509_STORE_CTX_cleanup(csc);
     X509_STORE_CTX_free(csc);
     return ret;
   }

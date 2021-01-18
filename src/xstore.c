@@ -19,17 +19,22 @@ static int openssl_xstore_new(lua_State*L)
 {
   X509_STORE* ctx = X509_STORE_new();
   int i, n;
-  luaL_checktable(L, 1);
-  n = lua_rawlen(L, 1);
-  for (i = 0; i < n; i++)
+
+  if (!lua_isnoneornil(L, 1))
   {
-    X509* x;
-    lua_rawgeti(L, 1, i + 1);
-    luaL_argcheck(L, auxiliar_getclassudata(L, "openssl.x509", -1), 1, "only contains x509 object");
-    x = CHECK_OBJECT(-1, X509, "openssl.x509");
-    lua_pop(L, 1);
-    X509_STORE_add_cert(ctx, x);
+    luaL_checktable(L, 1);
+    n = lua_rawlen(L, 1);
+    for (i = 0; i < n; i++)
+    {
+      X509* x;
+      lua_rawgeti(L, 1, i + 1);
+      luaL_argcheck(L, auxiliar_getclassudata(L, "openssl.x509", -1), 1, "only contains x509 object");
+      x = CHECK_OBJECT(-1, X509, "openssl.x509");
+      lua_pop(L, 1);
+      X509_STORE_add_cert(ctx, x);
+    }
   }
+
   if (!lua_isnoneornil(L, 2))
   {
     luaL_checktable(L, 2);
