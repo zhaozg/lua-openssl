@@ -51,7 +51,8 @@ compute hmac one step, in module openssl.hamc
 @tparam evp_digest|string|nid digest digest alg identity
 @tparam string message
 @tparam string key
-@treturn string result binary string
+@tparam[opt] boolean raw binary or hex encoded result, default false for hex encoded result
+@treturn string result hex string or binary string if raw is true
 */
 /***
 alias for hmac
@@ -60,7 +61,8 @@ alias for hmac
 @tparam evp_digest|string|nid digest digest alg identity
 @tparam string message
 @tparam string key
-@treturn string result binary string
+@tparam[opt] boolean raw binary or hex encoded result, default false for hex encoded result
+@treturn string result hex string or binary string if raw is true
 */
 static int openssl_hmac(lua_State *L)
 {
