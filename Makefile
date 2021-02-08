@@ -85,7 +85,7 @@ endif
 LIBNAME= $T.so.$V
 
 CFLAGS		+= $(OPENSSL_CFLAGS) $(LUA_CFLAGS) $(TARGET_FLAGS)
-LDFLAGS		+= $(OPENSSL_LIBS) $(LUA_LIBS)
+LDFLAGS		+= $(OPENSSL_LIBS)
 # Compilation directives
 WARN_MIN	 = -Wall -Wno-unused-value -Wno-unused-function
 WARN		 = -Wall
