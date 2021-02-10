@@ -380,6 +380,7 @@ int RSA_set0_crt_params(RSA *r, BIGNUM *dmp1, BIGNUM *dmq1, BIGNUM *iqmp)
 }
 #endif
 
+#if !defined(LIBRESSL_VERSION_NUMBER)
 EVP_MD_CTX *EVP_MD_CTX_new(void)
 {
   return OPENSSL_malloc(sizeof(EVP_MD_CTX));
@@ -393,6 +394,7 @@ void EVP_MD_CTX_free(EVP_MD_CTX *ctx)
   EVP_MD_CTX_cleanup(ctx);
   OPENSSL_free(ctx);
 }
+#endif
 
 void X509_REQ_get0_signature(const X509_REQ *req, const ASN1_BIT_STRING **psig,
                              const X509_ALGOR **palg)
