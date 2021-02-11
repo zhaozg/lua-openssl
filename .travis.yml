@@ -9,9 +9,9 @@ env:
     - LUA=lua5.1
     - LUA=lua5.1 SSL=openssl-1.0.2u
     - LUA=luajit2.1 SSL=openssl-1.0.2u
-    - LUA=lua5.2 SSL=libressl-3.2.1
-    - LUA=lua5.3 SSL=openssl-1.1.1h
-    - LUA=lua5.4 SSL=openssl-1.1.1h
+    - LUA=lua5.2 SSL=libressl-3.2.3
+    - LUA=lua5.3 SSL=openssl-1.1.1i
+    - LUA=lua5.4 SSL=openssl-1.1.1i
     - LUA=luajit SSL=openssl-1.1.0l
     - LUA=luajit2.1
 os:
