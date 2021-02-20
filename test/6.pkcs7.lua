@@ -38,16 +38,14 @@ function TestCompat:testNew()
 
   local skcert = {cert}
   local p7 = assert(pkcs7.encrypt(msg, skcert))
-  local ret, signer = assert(pkcs7.decrypt(p7, cert, dkey))
+  local ret = assert(pkcs7.decrypt(p7, cert, dkey))
   lu.assertEquals(msg, ret)
-  assert(signer)
   -------------------------------------
   p7 = assert(pkcs7.sign(msg, cert, dkey))
   assert(p7:export())
   local store = openssl.x509.store.new({cacert})
-  ret, signer = assert(p7:verify(skcert, store))
+  ret = assert(p7:verify(skcert, store))
   assert(ret)
-  assert(signer)
 end
 
 function TestCompat:testStep()

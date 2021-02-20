@@ -63,9 +63,7 @@ function TestDigestMY:testList()
   t1 = ctx1:info()
   local ctx = digest.new('sha1')
   t2 = ctx:info()
-  for k, _ in pairs(t1) do
-    if (k ~= 'digest') then assert(t1[k] == t2[k]) end
-  end
+  for k, _ in pairs(t1) do if (k ~= 'digest') then assert(t1[k] == t2[k]) end end
   assert(t1.size == 20)
 end
 
@@ -81,14 +79,14 @@ function TestSignVry:setUp()
   self.msg = 'abcd'
   self.alg = 'sha1'
   self.prik = mk_key({'rsa',  2048,  3})
-  self.pubk = openssl.pkey.get_public(self.prik)
+  self.pubk = assert(openssl.pkey.get_public(self.prik))
 end
 function TestSignVry:testSignVry()
-  local md = digest.get(self.alg)
-  local sctx = digest.signInit(md, self.pubk);
+  local md = assert(digest.get(self.alg))
+  local sctx = digest.signInit(md, self.prik);
   assert(sctx:signUpdate(self.msg))
   assert(sctx:signUpdate(self.msg))
-  local sig = sctx:signFinal(self.prik)
+  local sig = sctx:signFinal()
   lu.assertEquals(#sig, 256)
   local vctx = digest.verifyInit(md, self.pubk)
   assert(vctx:verifyUpdate(self.msg))
@@ -100,10 +98,10 @@ function TestSignVry:testSignVry1()
   local sctx = md:signInit(self.prik);
   assert(sctx:signUpdate(self.msg))
   assert(sctx:signUpdate(self.msg))
-  local sig = sctx:signFinal(self.prik)
+  local sig = sctx:signFinal()
   lu.assertEquals(#sig, 256)
   local vctx = md:verifyInit(self.pubk)
   assert(vctx:verifyUpdate(self.msg))
   assert(vctx:verifyUpdate(self.msg))
-  assert(vctx:verifyFinal(sig, self.pubk))
+  assert(vctx:verifyFinal(sig))
 end

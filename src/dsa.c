@@ -22,8 +22,10 @@ static LUA_FUNCTION(openssl_dsa_parse)
   DSA* dsa = CHECK_OBJECT(1, DSA, "openssl.rsa");
   lua_newtable(L);
 
+#if (OPENSSL_VERSION_NUMBER < 0x30000000L)
   lua_pushinteger(L, DSA_size(dsa));
   lua_setfield(L, -2, "size");
+#endif
 
   lua_pushinteger(L, DSA_bits(dsa));
   lua_setfield(L, -2, "bits");
@@ -39,6 +41,7 @@ static LUA_FUNCTION(openssl_dsa_parse)
   return 1;
 }
 
+#if (OPENSSL_VERSION_NUMBER < 0x30000000L)
 static int openssl_dsa_set_method(lua_State *L)
 {
 #ifndef OPENSSL_NO_ENGINE
@@ -53,11 +56,14 @@ static int openssl_dsa_set_method(lua_State *L)
 #endif
   return 0;
 }
+#endif
 
 static luaL_Reg dsa_funs[] =
 {
   {"parse",       openssl_dsa_parse},
+#if (OPENSSL_VERSION_NUMBER < 0x30000000L)
   {"set_method",  openssl_dsa_set_method},
+#endif
 
   {"__gc",        openssl_dsa_free},
   {"__tostring",  auxiliar_tostring},

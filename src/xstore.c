@@ -195,7 +195,15 @@ static int openssl_xstore_load(lua_State* L)
   int ret;
   if (file || dir)
   {
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
+    ret = !(file == NULL && dir == NULL);
+    if (file != NULL)
+      ret = X509_STORE_load_file(ctx, file);
+    if (ret == 1 && dir != NULL)
+      ret = X509_STORE_load_path(ctx, dir);
+#else
     ret = X509_STORE_load_locations (ctx, file, dir);
+#endif
   }
   else
     ret = X509_STORE_set_default_paths(ctx);

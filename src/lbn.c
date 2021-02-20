@@ -22,7 +22,9 @@ big-number library for Lua 5.1 based on OpenSSL bn
 #include "lualib.h"
 
 #include "private.h"
-
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
+#define SHLIB_VERSION_NUMBER OPENSSL_VERSION_STR
+#endif
 #define MYNAME    "bn"
 #define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2010 / "\
       "based on OpenSSL " SHLIB_VERSION_NUMBER
@@ -408,10 +410,16 @@ static int Baprime(lua_State *L)    /** aprime(bits) */
 
 static int Bisprime(lua_State *L)   /** isprime(x,[checks]) */
 {
-  int checks = luaL_optint(L, 2, BN_prime_checks);
   BIGNUM *a = Bget(L, 1);
   BN_CTX *ctx = BN_CTX_new();
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
+  BN_GENCB *cb = BN_GENCB_new();
+  lua_pushboolean(L, BN_check_prime(a, ctx, cb));
+  BN_GENCB_free(cb);
+#else
+  int checks = luaL_optint(L, 2, BN_prime_checks);
   lua_pushboolean(L, BN_is_prime_fasttest_ex(a, checks, ctx, 1, NULL));
+#endif
   BN_CTX_free(ctx);
   return 1;
 }

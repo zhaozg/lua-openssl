@@ -12,6 +12,10 @@ extern "C" {
 #include "compat-5.3.h"
 #endif
 
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
+#include "openssl/provider.h"
+#endif
+
 #define luaL_checktable(L, n) luaL_checktype(L, n, LUA_TTABLE)
 
 #if LUA_VERSION_NUM >= 502
@@ -57,6 +61,12 @@ extern "C" {
   *(void **)(lua_newuserdata(L, sizeof(void *))) = (x); \
   luaL_getmetatable(L,"openssl.bn");                    \
   lua_setmetatable(L,-2)
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
+#define EC_POINT_set_affine_coordinates EC_POINT_set_affine_coordinates_GFp
+#define EC_POINT_get_affine_coordinates EC_POINT_get_affine_coordinates_GFp
+#define EC_GROUP_get_curve EC_GROUP_get_curve_GFp
+#endif
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
 int BIO_up_ref(BIO *b);

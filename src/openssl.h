@@ -107,7 +107,7 @@ int openssl_s2i_revoke_reason(const char*s);
 
 LUALIB_API LUA_FUNCTION(luaopen_openssl);
 LUA_FUNCTION(luaopen_digest);
-LUA_FUNCTION(luaopen_hmac);
+LUA_FUNCTION(luaopen_mac);
 LUA_FUNCTION(luaopen_cipher);
 LUA_FUNCTION(luaopen_bn);
 LUA_FUNCTION(luaopen_pkey);
