@@ -551,7 +551,15 @@ static int openssl_ssl_ctx_load_verify_locations(lua_State*L)
   SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
   const char* CAfile = luaL_checkstring(L, 2);
   const char* CApath = luaL_optstring(L, 3, NULL);
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
+  int ret = !(CAfile == NULL && CApath == NULL);
+  if (CAfile != NULL)
+    ret = SSL_CTX_load_verify_file(ctx, CAfile);
+  if ( ret==1 && CApath != NULL)
+    ret = SSL_CTX_load_verify_dir(ctx, CApath);
+#else
   int ret = SSL_CTX_load_verify_locations(ctx, CAfile, CApath);
+#endif
   return openssl_pushresult(L, ret);
 }
 

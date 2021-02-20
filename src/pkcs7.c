@@ -6,6 +6,7 @@ PKCS7 module for lua-openssl binding
   pkcs7 = require('openssl').pkcs7
 */
 #include "openssl.h"
+#include <openssl/pkcs7.h>
 #include "private.h"
 
 #if (OPENSSL_VERSION_NUMBER < 0x10100000L) \
@@ -126,6 +127,7 @@ static LUA_FUNCTION(openssl_pkcs7_add)
   return openssl_pushresult(L, ret);
 }
 
+#if (OPENSSL_VERSION_NUMBER < 0x30000000L)
 static int PKCS7_type_is_other(PKCS7* p7)
 {
   int isOther = 1;
@@ -158,6 +160,7 @@ static ASN1_OCTET_STRING *PKCS7_get_octet_string(PKCS7 *p7)
     return p7->d.other->value.octet_string;
   return NULL;
 }
+#endif
 
 static BIO *PKCS7_find_digest(EVP_MD_CTX **pmd, BIO *bio, int nid)
 {

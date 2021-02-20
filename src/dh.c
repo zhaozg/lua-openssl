@@ -22,7 +22,11 @@ static LUA_FUNCTION(openssl_dh_parse)
   DH* dh = CHECK_OBJECT(1, DH, "openssl.dh");
   lua_newtable(L);
 
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
+  lua_pushinteger(L, DH_bits(dh)/8);
+#else
   lua_pushinteger(L, DH_size(dh));
+#endif
   lua_setfield(L, -2, "size");
 
   lua_pushinteger(L, DH_bits(dh));
@@ -42,7 +46,7 @@ static LUA_FUNCTION(openssl_dh_parse)
 
 static int openssl_dh_set_method(lua_State *L)
 {
-#ifndef OPENSSL_NO_ENGINE
+#if !defined(OPENSSL_NO_ENGINE) && OPENSSL_VERSION_NUMBER < 0x30000000L
   DH* dh = CHECK_OBJECT(1, DH, "openssl.dh");
   ENGINE *e = CHECK_OBJECT(2, ENGINE, "openssl.engine");
   const DH_METHOD *m = ENGINE_get_DH(e);
@@ -58,7 +62,9 @@ static int openssl_dh_set_method(lua_State *L)
 static luaL_Reg dh_funs[] =
 {
   {"parse",       openssl_dh_parse},
+#if !defined(OPENSSL_NO_ENGINE) && OPENSSL_VERSION_NUMBER < 0x30000000L
   {"set_method",  openssl_dh_set_method},
+#endif
 
   {"__gc",        openssl_dh_free},
   {"__tostring",  auxiliar_tostring},

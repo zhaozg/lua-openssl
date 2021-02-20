@@ -53,8 +53,6 @@ function TestCipherCompat:testObject()
   bb = assert(obj1:update(aa))
   local dd = assert(obj1:final())
   bb = bb .. dd
-  local ee = assert(obj1:final())
-  lu.assertEquals(dd, ee)
   lu.assertEquals(self.msg, bb)
   assert(#self.msg < #aa)
 end
@@ -143,3 +141,4 @@ function TestCipherMY:testAesCTR()
   lu.assertEquals(self.msg, bb)
   assert(#self.msg <= #aa)
 end
+

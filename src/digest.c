@@ -559,20 +559,19 @@ get result of sign
 static LUA_FUNCTION(openssl_signFinal)
 {
   EVP_MD_CTX *ctx = CHECK_OBJECT(1, EVP_MD_CTX, "openssl.evp_digest_ctx");
-  EVP_PKEY *pkey = lua_gettop(L) > 1 ? CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey") : NULL;
-  size_t siglen = EVP_PKEY_size(pkey);
-  unsigned char *sigbuf = malloc(siglen + 1);
-  int ret = 0;
-  if (pkey)
-    ret = EVP_SignFinal(ctx, sigbuf, (unsigned int *)&siglen, pkey);
-  else
-    ret = EVP_DigestSignFinal(ctx, sigbuf, &siglen);
+  size_t siglen = 0;
+  int ret = EVP_DigestSignFinal(ctx, NULL, &siglen);
   if (ret == 1)
   {
-    lua_pushlstring(L, (char *)sigbuf, siglen);
+    unsigned char *sigbuf = OPENSSL_malloc(siglen);
+    ret = EVP_DigestSignFinal(ctx, sigbuf, &siglen);
+    if (ret == 1)
+    {
+      lua_pushlstring(L, (char *)sigbuf, siglen);
+    }
+    free(sigbuf);
+    EVP_MD_CTX_reset(ctx);
   }
-  free(sigbuf);
-  EVP_MD_CTX_reset(ctx);
   if (ret == 1)
     return 1;
   return openssl_pushresult(L, ret);
@@ -590,12 +589,7 @@ static LUA_FUNCTION(openssl_verifyFinal)
   EVP_MD_CTX *ctx = CHECK_OBJECT(1, EVP_MD_CTX, "openssl.evp_digest_ctx");
   size_t signature_len;
   const char* signature = luaL_checklstring(L, 2, &signature_len);
-  EVP_PKEY *pkey = lua_gettop(L) > 2 ? CHECK_OBJECT(3, EVP_PKEY, "openssl.evp_pkey") : NULL;
-  int ret = 0;
-  if (pkey)
-    ret = EVP_VerifyFinal(ctx, (const unsigned char*) signature, signature_len, pkey);
-  else
-    ret = EVP_DigestVerifyFinal(ctx, (unsigned char*) signature, signature_len);
+  int ret = EVP_DigestVerifyFinal(ctx, (unsigned char*) signature, signature_len);
 
   EVP_MD_CTX_reset(ctx);
   return openssl_pushresult(L, ret);

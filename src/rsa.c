@@ -30,6 +30,7 @@ static LUA_FUNCTION(openssl_rsa_isprivate)
   return 1;
 };
 
+#if (OPENSSL_VERSION_NUMBER < 0x30000000L)
 static LUA_FUNCTION(openssl_rsa_size)
 {
   RSA* rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");
@@ -118,6 +119,7 @@ static LUA_FUNCTION(openssl_rsa_verify)
   int ret = RSA_verify(type, from, flen, sig, slen, rsa);
   return openssl_pushresult(L, ret);
 };
+#endif
 
 static LUA_FUNCTION(openssl_rsa_parse)
 {
@@ -132,8 +134,10 @@ static LUA_FUNCTION(openssl_rsa_parse)
 
 
   lua_newtable(L);
+#if (OPENSSL_VERSION_NUMBER < 0x30000000L)
   lua_pushinteger(L, RSA_size(rsa));
   lua_setfield(L, -2, "size");
+#endif
   lua_pushinteger(L, RSA_bits(rsa));
   lua_setfield(L, -2, "bits");
   OPENSSL_PKEY_GET_BN(n, n);
@@ -165,6 +169,7 @@ static LUA_FUNCTION(openssl_rsa_read)
   return 1;
 }
 
+#if (OPENSSL_VERSION_NUMBER < 0x30000000L)
 static int openssl_rsa_set_method(lua_State *L)
 {
 #ifndef OPENSSL_NO_ENGINE
@@ -179,17 +184,20 @@ static int openssl_rsa_set_method(lua_State *L)
 #endif
   return 0;
 }
+#endif
 
 static luaL_Reg rsa_funs[] =
 {
   {"parse",       openssl_rsa_parse},
   {"isprivate",   openssl_rsa_isprivate},
+#if (OPENSSL_VERSION_NUMBER < 0x30000000L)
   {"encrypt",     openssl_rsa_encrypt},
   {"decrypt",     openssl_rsa_decrypt},
   {"sign",        openssl_rsa_sign},
   {"verify",      openssl_rsa_verify},
   {"size",        openssl_rsa_size},
   {"set_method",  openssl_rsa_set_method},
+#endif
 
   {"__gc",        openssl_rsa_free},
   {"__tostring",  auxiliar_tostring},
@@ -201,11 +209,13 @@ static luaL_Reg R[] =
 {
   {"parse",       openssl_rsa_parse},
   {"isprivate",   openssl_rsa_isprivate},
+#if (OPENSSL_VERSION_NUMBER < 0x30000000L)
   {"encrypt",     openssl_rsa_encrypt},
   {"decrypt",     openssl_rsa_decrypt},
   {"sign",        openssl_rsa_sign},
   {"verify",      openssl_rsa_verify},
   {"size",        openssl_rsa_size},
+#endif
   {"read",        openssl_rsa_read},
 
   {NULL, NULL}
