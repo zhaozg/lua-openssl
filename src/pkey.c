@@ -414,7 +414,6 @@ static LUA_FUNCTION(openssl_pkey_new)
 
   if (lua_isnoneornil(L, 1) || lua_isstring(L, 1))
   {
-    int ret = 0;
     alg = luaL_optstring(L, 1, alg);
     if (strcasecmp(alg, "rsa") == 0)
     {
@@ -462,7 +461,7 @@ static LUA_FUNCTION(openssl_pkey_new)
       EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new_id(EVP_PKEY_DH, eng);
       if (ctx)
       {
-        ret = EVP_PKEY_paramgen_init(ctx);
+        int ret = EVP_PKEY_paramgen_init(ctx);
         if (ret == 1)
         {
           ret = EVP_PKEY_keygen_init(ctx);
