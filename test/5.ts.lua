@@ -27,6 +27,13 @@ local function get_timezone()
   local now = os.time()
   return os.difftime(now, os.time(os.date("!*t", now)))
 end
+
+local function notAfter(a, b)
+  a = a:sub(1, -2)
+  b = b:sub(1, -2)
+  return a <= b
+end
+
 --[[
 typedef struct TS_req_st {
 	ASN1_INTEGER *version;
@@ -145,7 +152,7 @@ local function signReq(self, req_ctx, req, sn, now)
     local timezone = get_timezone()
     now = os.date('%Y%m%d%H%M%SZ', now - timezone)
   end
-  lu.assertEquals(tst.time:tostring(), now)
+  assert(notAfter(tst.time:tostring(), now))
 
   if req:nonce() then
     lu.assertIsString(tst.nonce:tostring())
