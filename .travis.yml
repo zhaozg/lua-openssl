@@ -42,7 +42,7 @@ script:
   - cd ..
 
 after_success:
-  - if [[ "$TRAVIS_OS_NAME" == "linux" && -z "$SSL" ]]; then coveralls --exclude luv --gcov-options '\-lp'; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" && -z "$SSL" ]]; then coveralls --exclude deps --gcov-options '\-lp'; fi
 
 before_deploy:
   - bash .travis/make_rockspec.sh $TRAVIS_TAG
