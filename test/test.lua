@@ -4,6 +4,7 @@ local openssl = require'openssl'
 openssl.rand_load()
 print('VERSION:', openssl.version())
 
+dofile('0.bn.lua')
 dofile('0.engine.lua')
 dofile('0.misc.lua')
 dofile('0.tcp.lua')
