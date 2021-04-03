@@ -21,6 +21,29 @@ end
 function TestX509ext:tearDown()
 end
 
+function TestX509ext:testSupport()
+  local supports = ext.support()
+  assert(#supports>0)
+  assert(supports[1].sname)
+  assert(supports[1].lname)
+  assert(supports[1].nid)
+
+  local caext = ext.new_extension(self.ca)
+  assert(ext.support(caext))
+
+  local obj = openssl.asn1.new_object('extendedKeyUsage')
+  assert(ext.support(obj))
+  obj = openssl.asn1.new_object('emailAddress')
+  assert(obj)
+  assert(not ext.support(obj))
+
+  local subjectAltName = ext.new_extension {
+    object = 'subjectAltName',
+    value = "IP:192.168.0.1"
+  }
+  assert(ext.support(subjectAltName))
+end
+
 function TestX509ext:testAll()
   local n1 = ext.new_extension(self.ca)
   lu.assertStrContains(tostring(n1), 'openssl.x509_extension')
