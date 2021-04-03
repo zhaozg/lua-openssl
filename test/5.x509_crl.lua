@@ -62,11 +62,33 @@ function TestCRL:testNew()
   assert(other:sign(ca.pkey, ca.cacert:issuer()))
   assert(other:verify(ca.cacert))
   assert(other:verify(ca.pkey))
+  if (other.check) then
+    --FIXME:
+    --assert(other:check(ca.pkey))
+  end
 
   assert(other:export())
-  local t = other:get(0)
+  local info = other:parse()
+  assert(type(info.revoked)=='table')
+  assert(type(info.extensions)=='table')
+  local t = other:get(0, true)
   lu.assertIsTable(t)
   assert(type(other:digest())=='string')
+  local r = other:get(0)
+  info = r:info()
+  assert(type(info)=='table')
+  assert(info.code)
+  assert(info.reason)
+  assert(info.revocationDate)
+  assert(info.serialNumber)
+  assert(info.extensions)
+
+  local code, reason = r:reason()
+  assert(type(code)=='number')
+  assert(type(reason)=='string')
+  assert(r:revocationDate())
+  assert(r:serialNumber())
+  assert(r:extensions())
 
   if other.diff then
     local crx = crl.read(pem)

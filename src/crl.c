@@ -949,7 +949,15 @@ static LUA_FUNCTION(openssl_crl_get)
   }
   if (revoked)
   {
-    openssl_revoked2table(L, revoked);
+    int parse = lua_isnone(L, 3) ?  0 : lua_toboolean(L, 3);
+    if (parse) {
+      openssl_revoked2table(L, revoked);
+    }
+    else
+    {
+      revoked = X509_REVOKED_dup(revoked);
+      PUSH_OBJECT(revoked, "openssl.x509_revoked");
+    }
   }
   else
     lua_pushnil(L);
