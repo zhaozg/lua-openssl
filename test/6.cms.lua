@@ -22,30 +22,22 @@ TestCMS = {}
 --]]
 function TestCMS:setUp()
   self.alg = 'sha1'
-  self.cadn = openssl.x509.name.new({{commonName = 'CA'},  {C = 'CN'}})
-  self.alicedn = openssl.x509.name.new({{commonName = 'Alice'},  {C = 'CN'}})
-  self.bobdn = openssl.x509.name.new({{commonName = 'Bob'},  {C = 'CN'}})
+  self.cadn = {{commonName = 'CA'},  {C = 'CN'}}
+  self.alicedn = {{commonName = 'Alice'},  {C = 'CN'}}
+  self.bobdn = {{commonName = 'Bob'},  {C = 'CN'}}
 
-  local cakey, cacert = helper.new_ca(self.cadn)
-  self.cakey, self.cacert = cakey, cacert
-  self.castore = openssl.x509.store.new({cacert})
+  local ca = helper.get_ca()
 
-  local pkey = openssl.pkey.new()
-  local req = assert(csr.new(self.alicedn, pkey))
-  local cert = openssl.x509.new(2, req)
-  cert:validat(os.time(), os.time() + 3600 * 24 * 365)
-  assert(cert:sign(cakey, cacert))
+  local req, pkey = helper.new_req(self.alicedn)
+  local cert = ca:sign(req)
   self.alice = {key = pkey,  cert = cert}
 
-  pkey = openssl.pkey.new()
-  req = assert(csr.new(self.bobdn, pkey))
-  cert = openssl.x509.new(2, req)
-  cert:validat(os.time(), os.time() + 3600 * 24 * 365)
-  assert(cert:sign(cakey, cacert))
+  cert, pkey = assert(helper.sign(self.bobdn))
   self.bob = {key = pkey,  cert = cert}
 
   self.msg = openssl.hex(openssl.random(128))
   self.digest = 'sha1WithRSAEncryption'
+  self.castore = assert(ca:get_store())
 end
 
 function TestCMS:testEncrypt()

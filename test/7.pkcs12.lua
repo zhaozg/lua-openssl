@@ -6,17 +6,13 @@ local helper = require 'helper'
 TestCompat = {}
 function TestCompat:setUp()
   self.alg = 'sha1'
-  self.cadn = openssl.x509.name.new({{commonName = 'CA'},  {C = 'CN'}})
   self.dn = openssl.x509.name.new({{commonName = 'DEMO'},  {C = 'CN'}})
 
+  self.ca = helper.get_ca()
   self.digest = 'sha1WithRSAEncryption'
 end
 
 function TestCompat:testNew()
-  local pkey, cacert = helper.new_ca(self.cadn)
-  local dkey = openssl.pkey.new()
-  local req = assert(csr.new(self.dn, dkey))
-
   local extensions = {
     {
       object = 'nsCertType',
@@ -25,11 +21,9 @@ function TestCompat:testNew()
     },  {object = 'extendedKeyUsage',  value = 'emailProtection'}
   }
 
-  local cert = openssl.x509.new(2, req, extensions)
-  cert:validat(os.time(), os.time() + 3600 * 24 * 365)
-  assert(cert:sign(pkey, cacert))
+  local cert, pkey = helper.sign(self.dn, extensions)
 
-  local ss = assert(openssl.pkcs12.export(cert, dkey, 'secret', 'USER'))
+  local ss = assert(openssl.pkcs12.export(cert, pkey, 'secret', 'USER'))
   local tt = assert(openssl.pkcs12.read(ss, 'secret'))
   lu.assertIsTable(tt)
   lu.assertStrContains(tostring(tt.cert), "openssl.x509")

@@ -9,39 +9,24 @@ TestX509 = {}
 function TestX509:setUp()
   self.alg = 'sha1'
 
-  self.cadn = openssl.x509.name.new({{commonName = 'CA'},  {C = 'CN'}})
-  self.dn = openssl.x509.name.new({{commonName = 'DEMO'},  {C = 'CN'}})
+  self.dn = {{commonName = 'DEMO'},  {C = 'CN'}}
 
   self.digest = 'sha1WithRSAEncryption'
 end
 
 function TestX509:testNew()
-  local pkey, cacert = helper.new_ca(self.cadn)
-  lu.assertEquals(cacert:subject(), cacert:issuer())
-  assert(cacert:parse().ca, 'invalid ca certificate')
+  local ca = helper.get_ca()
+  local cert, pkey = helper.sign(self.dn)
 
-  local c = cacert:pubkey():encrypt('abcd')
+  lu.assertEquals(ca.cacert:subject(), cert:issuer())
+  assert(ca.cacert:parse().ca, 'invalid ca certificate')
+
+  local c = cert:pubkey():encrypt('abcd')
   local d = pkey:decrypt(c)
   assert(d == 'abcd')
-  assert(cacert:check(pkey), 'self sign check failed')
-  local castore = openssl.x509.store.new({cacert})
-  assert(cacert:check(castore))
-
-  -- sign cert by cacert
-
-  local dkey = openssl.pkey.new()
-  local req = assert(csr.new(self.dn, dkey))
-  local cert = openssl.x509.new(2, req)
-  cert:notbefore(os.time())
-  cert:validat(os.time(), os.time() + 3600 * 24 * 360)
-  assert(cert:sign(pkey, cacert))
-
-  c = cert:pubkey():encrypt('abcd')
-  d = dkey:decrypt(c)
-  assert(d == 'abcd')
-  assert(cert:check(dkey), 'self private match failed')
-
-  assert(cert:check(castore))
+  assert(cert:check(pkey), 'self sign check failed')
+  local store = assert(ca:get_store())
+  assert(cert:check(store))
 end
 
 function TestX509:testIO()
