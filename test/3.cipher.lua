@@ -36,8 +36,27 @@ function TestCipherCompat:testObject()
   local obj, obj1
 
   obj = cipher.new(self.alg, true, self.key)
+  obj:padding(true)
   a = assert(obj:update(self.msg))
   a = a .. obj:final()
+
+  local info = obj:info()
+  --
+  -- assert(info.name)
+  assert(info.block_size)
+  assert(info.key_length)
+  assert(info.iv_length)
+  assert(info.flags)
+  assert(info.mode)
+
+  --FIXME:
+  --obj:ctrl
+
+  --FIXME:
+  --obj:init(self.key)
+  --b = assert(obj:update(self.msg))
+  --b = b .. obj:final()
+  --assert(a==b)
 
   obj1 = cipher.new(self.alg, false, self.key)
   b = assert(obj1:update(a))
