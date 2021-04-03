@@ -10,7 +10,7 @@ PKG_CONFIG_PATH=$HOME/.usr/lib/pkgconfig
 if [[ "$TRAVIS_OS_NAME" == "osx" && -z "$SSL" ]]; then
   PKG_CONFIG_PATH=/usr/local/opt/openssl/lib/pkgconfig:$PKG_CONFIG_PATH
 fi
-if [[ "$TRAVIS_OS_NAME" == "linux" && -n "$SSL" ]]; then
+if [[ "$TRAVIS_OS_NAME" == "linux" && -z "$SSL" ]]; then
   pip install cpp-coveralls
   export CFLAGS="-g -fPIC -fprofile-arcs -ftest-coverage"
   export LDFLAGS="-g -fprofile-arcs"
