@@ -25,10 +25,20 @@ function TestHMACCompat:testDigest()
   a = assert(hmac.new(self.alg, self.key))
   print('ctx', a)
   a:update(self.msg)
-  a = a:final()
-  lu.assertEquals(a, b)
-
-  c = hmac.new(self.alg, self.key)
-  c = c:final(self.msg)
+  c = a:final()
   lu.assertEquals(c, b)
+
+  --FIXME:
+  --a = assert(hmac(self.alg, self.key, self.msg))
+  --lu.assertEquals(c, b)
+
+  a = assert(hmac.new(self.alg, self.key))
+  c = a:final(self.msg)
+  lu.assertEquals(c, b)
+
+  --FIXME:
+  --a:reset()
+  --a = assert(hmac.new(self.alg, self.key))
+  c = a:final(self.msg, true)
+  assert(c, openssl.hex(b))
 end
