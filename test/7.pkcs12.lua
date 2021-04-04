@@ -3,8 +3,8 @@ local openssl = require 'openssl'
 local csr = openssl.x509.req
 local helper = require 'helper'
 
-TestCompat = {}
-function TestCompat:setUp()
+TestPKCS12 = {}
+function TestPKCS12:setUp()
   self.alg = 'sha1'
   self.dn = openssl.x509.name.new({{commonName = 'DEMO'},  {C = 'CN'}})
 
@@ -12,7 +12,7 @@ function TestCompat:setUp()
   self.digest = 'sha1WithRSAEncryption'
 end
 
-function TestCompat:testNew()
+function TestPKCS12:testNew()
   local extensions = {
     {
       object = 'nsCertType',

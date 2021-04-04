@@ -74,14 +74,14 @@ local function mk_key(args)
   return k
 end
 
-TestSignVry = {}
-function TestSignVry:setUp()
+TestDigestSignVry = {}
+function TestDigestSignVry:setUp()
   self.msg = 'abcd'
   self.alg = 'sha1'
   self.prik = mk_key({'rsa',  2048,  3})
   self.pubk = assert(openssl.pkey.get_public(self.prik))
 end
-function TestSignVry:testSignVry()
+function TestDigestSignVry:testSignVry()
   local md = assert(digest.get(self.alg))
   local sctx = digest.signInit(md, self.prik);
   assert(sctx:signUpdate(self.msg))
@@ -93,7 +93,7 @@ function TestSignVry:testSignVry()
   assert(vctx:verifyUpdate(self.msg))
   assert(vctx:verifyFinal(sig))
 end
-function TestSignVry:testSignVry1()
+function TestDigestSignVry:testSignVry1()
   local md = digest.get(self.alg)
   local sctx = md:signInit(self.prik);
   assert(sctx:signUpdate(self.msg))

@@ -290,8 +290,8 @@ vgPnEUG6Mk9bkxMZKRgsiKn6QGKDYGbOvnS1xmkMfRARBsJAq369VOTjMB/Qhs5q
   end
 end
 
-TestSignVry = {}
-function TestSignVry:setUp()
+TestPKEYSignVry = {}
+function TestPKEYSignVry:setUp()
   self.msg = 'abcd'
   self.alg = 'sha1'
   self.prik = mk_key({'rsa',  2048,  3})
@@ -299,7 +299,7 @@ function TestSignVry:setUp()
   assert(self.prik:export('pem', true))
   assert(self.pubk:export('pem'))
 end
-function TestSignVry:testSignVry()
+function TestPKEYSignVry:testSignVry()
   local md = digest.get(self.alg)
   local sctx = digest.signInit(md, self.prik);
   assert(sctx:signUpdate(self.msg))
@@ -311,7 +311,7 @@ function TestSignVry:testSignVry()
   assert(vctx:verifyUpdate(self.msg))
   assert(vctx:verifyFinal(sig))
 end
-function TestSignVry:testSignVry1()
+function TestPKEYSignVry:testSignVry1()
   local md = digest.get(self.alg)
   local sctx = md:signInit(self.prik);
   assert(sctx:signUpdate(self.msg))
