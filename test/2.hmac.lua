@@ -23,7 +23,7 @@ function TestHMACCompat:testDigest()
   lu.assertEquals(openssl.hex(a):lower(), b)
 
   a = assert(hmac.new(self.alg, self.key))
-  print('ctx', a)
+  assert(a:size()>0)
   a:update(self.msg)
   c = a:final()
   lu.assertEquals(c, b)
