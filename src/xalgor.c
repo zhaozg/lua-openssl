@@ -137,7 +137,7 @@ static int openssl_xalgor_set(lua_State* L)
   X509_ALGOR* alg = CHECK_OBJECT(1, X509_ALGOR, "openssl.x509_algor");
   ASN1_OBJECT* obj = CHECK_OBJECT(2, ASN1_OBJECT, "openssl.asn1_object");
   ASN1_STRING* val = lua_isnone(L, 3) ?
-                     NULL : auxiliar_checkgroup(L, "openssl.asn1_string", 3);
+                     NULL : CHECK_OBJECT(3, ASN1_STRING, "openssl.asn1_string");
   obj = OBJ_dup(obj);
   if(val)
   {

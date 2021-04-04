@@ -20,14 +20,23 @@ function TestX509Algor:testAll()
   assert(alg1~=alg2)
 
   local o1 = openssl.asn1.new_object('C')
-  --FIXME
-  --local s = openssl.asn1.new_string('CN',  openssl.asn1.UTF8STRING)
-  --alg1:set(o1, s)
   alg1:set(o1)
+  local a, b = alg1:get()
+  print(tostring(a))
+  assert(tostring(a):match('openssl.asn1_object:'))
+  assert(b==nil)
 
-  local a = alg1:get()
+  local s = openssl.asn1.new_string('CN',  openssl.asn1.UTF8STRING)
+  alg1:set(o1, s)
+
+  a, b = alg1:get()
+  assert(tostring(a):match('openssl.asn1_object'))
   assert(o1==a)
+  assert(b==s)
+
   local b = alg2:get()
   assert(a~=b)
+  alg2 = assert(alg1:dup())
+  assert(alg2==alg1)
 end
 
