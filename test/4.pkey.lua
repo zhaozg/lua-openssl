@@ -18,7 +18,7 @@ function TestPKEYMY:setUp()
     {nil},  -- default to create rsa 1024 bits with 65537
     {'rsa',  1024,  3},  -- create rsa with give bits length and e
     {'dsa',  1024},
-    --{'dh',  1024},
+    --{'dh',  1024},  --FIXME:
     {'ec',  'prime256v1'}
   }
 end
@@ -29,13 +29,16 @@ function TestPKEYMY:testBasic()
   for _, v in ipairs(self.genalg) do
     -- print(v)
     local k = mk_key(v)
+    local m = mk_key(v)
     local k1 = pkey.get_public(k)
+    k:set_engine(eng)
     assert(not k1:is_private())
 
     local t = k:parse()
     local len = t.bits / 8
 
     local msg = openssl.random(len - 11)
+    print(t.type)
     if t.type == 'rsa' then
       local out = pkey.encrypt(k1, msg)
       local raw = pkey.decrypt(k, out)
@@ -47,10 +50,25 @@ function TestPKEYMY:testBasic()
       out, sk, iv = pkey.seal(k1, msg)
       raw = pkey.open(k, out, sk, iv)
       lu.assertEquals(msg, raw)
+
+      local ctx
+      ctx, sk, iv = pkey.seal_init(k1)
+      out = assert(pkey.seal_update(ctx, msg))
+      out = out .. assert(pkey.seal_final(ctx))
+
+      ctx = pkey.open_init(k, sk, iv)
+      out = assert(pkey.open_update(ctx, out))
+      raw = out .. assert(pkey.open_final(ctx))
+      lu.assertEquals(msg, raw)
     end
     if t.type ~= 'ec' and t.type ~= 'dh' then
       local sig = assert(pkey.sign(k, msg))
       assert(true == pkey.verify(k1, msg, sig))
+    else
+      --FIXME
+      --m = k:derive(m)
+      --assert(type(m)=='string')
+      --assert(m)
     end
 
     assert(string.len(k1:export()) > 0)
