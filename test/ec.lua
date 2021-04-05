@@ -127,6 +127,16 @@ if openssl.ec then
 
     local der = ec:sign('abcd')
     assert(#der>=70 and #der <= 72)
+    assert(ec:verify('abcd', der))
+
+    der = ec:export()
+    assert(type(der)=='string')
+    local ec1 = openssl.ec.read(der)
+    assert(ec1:set_method(openssl.engine('openssl')))
+    assert(ec1:conv_form('hybrid'))
+    assert(ec1:enc_flags('explicit'))
+    assert(ec1:check())
+    assert(ec1:export())
 
     local x, y = ec:sign('abcd', false)
     assert(ec:verify('abcd', x, y))
