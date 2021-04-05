@@ -1,7 +1,10 @@
 local lu = require 'luaunit'
 local ok, uv = pcall(require, 'luv')
 local math = require'math'
-if not ok then uv = nil end
+if not ok then
+  uv = nil
+  print('skip SSL, bacause luv not avalible')
+end
 
 TestSSL = {}
 local LUA = arg and arg[-1] or nil
