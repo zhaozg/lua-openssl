@@ -232,20 +232,21 @@ static int openssl_xstore_add(lua_State* L)
       for (j = 1; j <= k; j++)
       {
         lua_rawgeti(L, i, j);
-        if (auxiliar_getclassudata(L, "openssl.x509", i))
+        if (auxiliar_getclassudata(L, "openssl.x509", -1))
         {
-          X509* x = CHECK_OBJECT(i, X509, "openssl.x509");
+          X509* x = CHECK_OBJECT(-1, X509, "openssl.x509");
           ret = X509_STORE_add_cert(ctx, x);
         }
-        else if (auxiliar_getclassudata(L, "openssl.x509_crl", i))
+        else if (auxiliar_getclassudata(L, "openssl.x509_crl", -1))
         {
-          X509_CRL* c = CHECK_OBJECT(i, X509_CRL, "openssl.x509_crl");
+          X509_CRL* c = CHECK_OBJECT(-1, X509_CRL, "openssl.x509_crl");
           ret = X509_STORE_add_crl(ctx, c);
         }
         else
         {
           luaL_argerror(L, i, "only accept table with x509 or x509_crl object");
         }
+        lua_pop(L, 1);
       }
     }
     else if (auxiliar_getclassudata(L, "openssl.x509", i))
