@@ -106,7 +106,7 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_new)
   {
     ret = X509_check_private_key(signer, pkey);
     if (ret != 1)
-      luaL_error(L, "singer cert and private key not match");
+      luaL_error(L, "signer cert and private key not match");
   }
 
   ctx = TS_RESP_CTX_new();
@@ -839,7 +839,7 @@ set signer cert and pkey
 @tparam evp_pkey pkey signer pkey
 @treturn boolean result
 */
-static LUA_FUNCTION(openssl_ts_resp_ctx_singer)
+static LUA_FUNCTION(openssl_ts_resp_ctx_signer)
 {
   TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
   X509 *signer = CHECK_OBJECT(2, X509, "openssl.x509");
@@ -1322,7 +1322,7 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_gc)
 static luaL_Reg ts_resp_ctx_funs[] =
 {
   /* get and set */
-  {"signer",              openssl_ts_resp_ctx_singer},
+  {"signer",              openssl_ts_resp_ctx_signer},
   {"certs",               openssl_ts_resp_ctx_certs},
   {"default_policy",      openssl_ts_resp_ctx_default_policy},
   {"policies",            openssl_ts_resp_ctx_policies},
@@ -1510,6 +1510,39 @@ static luaL_Reg ts_verify_ctx_funs[] =
 };
 #endif
 
+static LuaL_Enumeration ots_const[] =
+{
+  {"STATUS_GRANTED",                 TS_STATUS_GRANTED},
+  {"STATUS_GRANTED_WITH_MODS",       TS_STATUS_GRANTED_WITH_MODS},
+  {"STATUS_REJECTION",               TS_STATUS_REJECTION},
+  {"STATUS_WAITING",                 TS_STATUS_WAITING},
+  {"STATUS_REVOCATION_WARNIN",       TS_STATUS_REVOCATION_WARNING},
+  {"STATUS_REVOCATION_NOTIFICATION", TS_STATUS_REVOCATION_NOTIFICATION},
+
+  {"INFO_BAD_ALG",               TS_INFO_BAD_ALG},
+  {"INFO_BAD_REQUEST",           TS_INFO_BAD_REQUEST},
+  {"INFO_BAD_DATA_FORMA",        TS_INFO_BAD_DATA_FORMAT},
+  {"INFO_TIME_NOT_AVAILABL",     TS_INFO_TIME_NOT_AVAILABLE},
+  {"INFO_UNACCEPTED_POLICY",     TS_INFO_UNACCEPTED_POLICY},
+  {"INFO_UNACCEPTED_EXTENSION",  TS_INFO_UNACCEPTED_EXTENSION},
+  {"INFO_ADD_INFO_NOT_AVAILABL", TS_INFO_ADD_INFO_NOT_AVAILABLE},
+  {"INFO_SYSTEM_FAILUR",         TS_INFO_SYSTEM_FAILURE},
+
+  {"VFY_SIGNATURE",   TS_VFY_SIGNATURE},
+  {"VFY_VERSION",     TS_VFY_VERSION},
+  {"VFY_POLICY",      TS_VFY_POLICY},
+  {"VFY_IMPRINT",     TS_VFY_IMPRINT},
+  {"VFY_DATA",        TS_VFY_DATA},
+  {"VFY_NONCE",       TS_VFY_NONCE},
+  {"VFY_SIGNER",      TS_VFY_SIGNER},
+  {"VFY_TSA_NAME",    TS_VFY_TSA_NAME},
+  {"VFY_ALL_IMPRINT", TS_VFY_ALL_IMPRINT},
+  {"VFY_ALL_DATA",    TS_VFY_ALL_DATA},
+
+
+  {NULL,           0}
+};
+
 int luaopen_ts(lua_State *L)
 {
 #if OPENSSL_VERSION_NUMBER >= 0x10000000L
@@ -1520,6 +1553,8 @@ int luaopen_ts(lua_State *L)
 
   lua_newtable(L);
   luaL_setfuncs(L, R, 0);
+
+  auxiliar_enumerate(L, -1, ots_const);
 #else
   lua_pushnil(L);
 #endif

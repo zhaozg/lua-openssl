@@ -150,7 +150,7 @@ local function signReq(self, req_ctx, req, sn, now)
   if not now then
     now = os.time()
     local timezone = get_timezone()
-    now = os.date('%Y%m%d%H%M%SZ', now - timezone)
+    now = os.date('%Y%m%d%H%M%SZ', now - timezone + 1)
   end
   assert(notAfter(tst.time:tostring(), now))
 
@@ -179,6 +179,7 @@ local function signReq(self, req_ctx, req, sn, now)
   vry:data(self.dat)
   vry:store(self.ca.store)
   assert(vry:verify(res))
+  return res
 end
 
 testTS = {}
@@ -210,8 +211,26 @@ end
 function testTS:testBasic()
   local req = createQuery(self)
   local req_ctx = createRespCtx(self)
+  assert(req_ctx:signer(self.tsa.cert, self.tsa.pkey))
+  assert(req_ctx:certs({self.ca.cert, self.tsa.cert}))
+  assert(req_ctx:default_policy(policy_obj))
+  assert(req_ctx:policies(policies))
+  assert(req_ctx:accuracy(1, 1, 1))
+  assert(req_ctx:clock_precision_digits(20))
+  --FIXME
+  --assert(req_ctx:set_status_info(6, "XX"))
+  --assert(req_ctx:set_status_info_cond(7, "XX"))
+  --assert(req_ctx:add_failure_info(8, "xx"))
+  --FIXME
+  --assert(req_ctx:flags(openssl.ts.VFY_SIGNATURE, true))
+  --assert(req_ctx:tst_info(0, "version"))
+  req_ctx:request()
   lu.assertEquals(false, req:cert_req())
+
   signReq(self, req_ctx, req)
+  assert(req:dup():export()==req:export())
+  assert(req:version(2))
+  assert(req:version()==2)
 end
 function testTS:testPloicyId()
   -- FIXME: libressl will crash random
@@ -262,6 +281,18 @@ function testTS:testTimeCallback()
     return this.time
   end
   local req_ctx = createRespCtx(self, nil, time_cb)
-  signReq(self, req_ctx, req, nil, '20380119031407Z')
+  local res = signReq(self, req_ctx, req, nil, '20380119031407Z')
+  local t = assert(res:info())
+  lu.assertIsTable(t)
+
+  assert(t.status_info.status:tostring() == '0')
+  assert(not t.status_info.text)
+  assert(not t.status_info.failure_info)
+  for k, v in pairs(t.tst_info) do
+    local V = res:tst_info(k)
+    assert(type(V)==type(v))
+  end
+
+  --assert(res:dup():export()==res:dup())
 end
 
