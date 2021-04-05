@@ -13,7 +13,7 @@ loop = arg[3] and tonumber(arg[3]) or 100
 
 local params = {
   mode = "client",
-  protocol = "tlsv1",
+  protocol = "TLS",
   key = "luasec/certs/clientAkey.pem",
   certificate = "luasec/certs/clientA.pem",
   cafile = "luasec/certs/rootA.pem",

@@ -7,7 +7,7 @@ local util   = require("util")
 
 local params = {
    mode = "client",
-   protocol = "tlsv1",
+   protocol = "TLS",
    key = "../certs/clientAkey.pem",
    certificate = "../certs/clientA.pem",
    cafile = "../certs/rootA.pem",

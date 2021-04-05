@@ -17,7 +17,7 @@ function M.new(params)
 --[[
 local params = {
    mode = "server",
-   protocol = "tlsv1",
+   protocol = "TLS",
    key = "../certs/serverAkey.pem",
    certificate = "../certs/serverA.pem",
    cafile = "../certs/rootA.pem",

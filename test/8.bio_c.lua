@@ -13,7 +13,7 @@ local _, _, opensslv = openssl.version(true)
 
 local params = {
   mode = "client",
-  protocol = "tlsv1",
+  protocol = "TLS",
   key = "luasec/certs/clientAkey.pem",
   certificate = "luasec/certs/clientA.pem",
   cafile = "luasec/certs/rootA.pem",
