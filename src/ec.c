@@ -552,8 +552,8 @@ static int openssl_ecdsa_verify(lua_State*L)
 static int openssl_ec_point_copy(lua_State *L)
 {
   EC_POINT* self = CHECK_OBJECT(1, EC_POINT, "openssl.ec_point");
-  EC_POINT* to = CHECK_OBJECT(2, EC_POINT, "openssl.ec_point");
-  int ret = EC_POINT_copy(to, self);
+  EC_POINT* from = CHECK_OBJECT(2, EC_POINT, "openssl.ec_point");
+  int ret = EC_POINT_copy(self, from);
   return openssl_pushresult(L, ret);
 }
 

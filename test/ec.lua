@@ -104,7 +104,6 @@ if openssl.ec then
 
     assert(grp:point_conversion_form('compressed'))
     oct = grp:point2oct(pnt)
-    print(#oct, oct)
     assert(#oct==33)
     local pnt2 = grp:oct2point(oct, 'compressed')
     assert(grp:point_equal(pnt2, pnt1))
@@ -121,12 +120,34 @@ if openssl.ec then
     local t = ec:parse()
     assert(type(t)=='table')
     local grp1 = ec:group()
-    print(grp1, pnt)
 
+    assert(grp1:asn1_flag('explicit'))
+    assert(grp1:point_conversion_form('hybrid'))
     assert(grp==grp1)
+
+    local der = ec:sign('abcd')
+    assert(#der>=70 and #der <= 72)
+
+    local x, y = ec:sign('abcd', false)
+    assert(ec:verify('abcd', x, y))
 
     pnt = assert(grp:point_new())
     pnt1 = assert(grp:point_dup(pnt))
     assert(grp:point_equal(pnt, pnt1))
+
+    local factor = {
+      alg = "ec",
+      ec_name = 415,
+      x = assert(openssl.base64('fBEMZtz9qAf25p5F3bPHT2mhSE0gPo3Frajpqd18s8c=',
+                                false)),
+      y = assert(openssl.base64('DfRImG5RveXRV2+ZkB+cLGqAakf9kHZDpyuDVZfvyMY=',
+                                false)),
+      d = assert(openssl.base64('H+M5UMX0YRJK6ZLCvf3xxzsWFfVxvVZ+YNGaofSM30I=',
+                                false))
+    }
+    grp:affine_coordinates(pnt, openssl.bn.text(factor.x), openssl.bn.text(factor.y))
+    pnt1:copy(pnt)
+    assert(grp:point_equal(pnt, pnt1))
   end
 end
+
