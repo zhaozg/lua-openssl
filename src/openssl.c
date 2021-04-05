@@ -531,8 +531,11 @@ LUALIB_API int luaopen_openssl(lua_State*L)
 #endif
 
 #ifndef OPENSSL_NO_ENGINE
-    ENGINE_load_dynamic();
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
     ENGINE_load_openssl();
+#else
+    OPENSSL_init_crypto(OPENSSL_INIT_ENGINE_OPENSSL, NULL);
+#endif
     ENGINE_load_builtin_engines();
 #endif
 #ifdef LOAD_ENGINE_CUSTOM

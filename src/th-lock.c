@@ -312,7 +312,7 @@ unsigned long irix_thread_id(void)
 
 /* Linux and a few others */
 #ifdef PTHREADS
-#ifndef OPENSSL_SYS_WIN32
+#if !defined(OPENSSL_SYS_WIN32) && (OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER))
 static pthread_mutex_t *lock_cs;
 static long *lock_count;
 
