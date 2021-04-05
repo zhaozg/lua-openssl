@@ -62,8 +62,7 @@ function testBase64()
 end
 
 function testAll()
-  local f = io.open('openssl.cnf', 'r')
-  if not f then f = io.open('test/openssl.cnf', 'r') end
+  local f = io.open('luasec/certs/rootB.cnf', 'r')
   if f then
     local data = f:read('*a')
     f:close()
@@ -80,11 +79,11 @@ function testAll()
 
     assert(conf:get_string('ca', 'default_ca'))
     assert(conf:get_string('CA_default', 'default_days'))
+    assert(conf:get_number('req', 'default_bits')==1024)
 
-    local c1 = openssl.lhash_load('openssl.cnf') or
-                 openssl.lhash_load('test/openssl.cnf')
+    local c1 = openssl.lhash_load('luasec/certs/rootB.cnf')
     t = c1:parse()
+    assert(type(c1:export())=='string')
     lu.assertIsTable(t)
-
   end
 end
