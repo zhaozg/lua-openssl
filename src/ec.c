@@ -309,6 +309,17 @@ static int openssl_ec_point_dup(lua_State *L)
   return 1;
 }
 
+static int openssl_ec_point_equal(lua_State *L)
+{
+  const EC_GROUP* group = CHECK_OBJECT(1, EC_GROUP, "openssl.ec_group");
+  const EC_POINT* a = CHECK_OBJECT(2, EC_POINT, "openssl.ec_point");
+  const EC_POINT* b = CHECK_OBJECT(2, EC_POINT, "openssl.ec_point");
+
+  int ret = EC_POINT_cmp(group, a, b, NULL)==0;
+  lua_pushboolean(L, ret);
+  return 1;
+}
+
 static int openssl_ec_point_oct2point(lua_State *L)
 {
   const EC_GROUP* group  = CHECK_OBJECT(1, EC_GROUP, "openssl.ec_group");
@@ -328,7 +339,9 @@ static int openssl_ec_point_point2oct(lua_State *L)
 {
   const EC_GROUP* group = CHECK_OBJECT(1, EC_GROUP, "openssl.ec_group");
   const EC_POINT* point = CHECK_OBJECT(2, EC_POINT, "openssl.ec_point");
-  point_conversion_form_t form = openssl_to_point_conversion_form(L, 3, "uncompressed");
+  point_conversion_form_t form = lua_isnone(L, 3) ?
+                                 EC_GROUP_get_point_conversion_form(group) :
+                                 openssl_to_point_conversion_form(L, 3, "uncompressed");
   size_t size = EC_POINT_point2oct(group, point, form, NULL, 0, NULL);
   if(size>0)
   {
@@ -360,8 +373,9 @@ static int openssl_ec_point_point2bn(lua_State *L)
 {
   const EC_GROUP* group = CHECK_OBJECT(1, EC_GROUP, "openssl.ec_group");
   const EC_POINT* point = CHECK_OBJECT(2, EC_POINT, "openssl.ec_point");
-  point_conversion_form_t form = openssl_to_point_conversion_form(L, 3, "uncompressed");
-
+  point_conversion_form_t form = lua_isnone(L, 3) ?
+                                 EC_GROUP_get_point_conversion_form(group) :
+                                 openssl_to_point_conversion_form(L, 3, "uncompressed");
   BIGNUM *bn = EC_POINT_point2bn(group, point, form, NULL, NULL);
   if(bn)
     PUSH_OBJECT(bn, "openssl.bn");
@@ -387,8 +401,9 @@ static int openssl_ec_point_point2hex(lua_State *L)
 {
   const EC_GROUP* group = CHECK_OBJECT(1, EC_GROUP, "openssl.ec_group");
   const EC_POINT* point = CHECK_OBJECT(2, EC_POINT, "openssl.ec_point");
-  point_conversion_form_t form = openssl_to_point_conversion_form(L, 3, "uncompressed");
-
+  point_conversion_form_t form = lua_isnone(L, 3) ?
+                                 EC_GROUP_get_point_conversion_form(group) :
+                                 openssl_to_point_conversion_form(L, 3, "uncompressed");
   char* hex = EC_POINT_point2hex(group, point, form, NULL);
   if(hex)
   {
@@ -400,11 +415,41 @@ static int openssl_ec_point_point2hex(lua_State *L)
   return 1;
 }
 
+static int openssl_ec_group_generate_key(lua_State *L)
+{
+  const EC_GROUP* group = CHECK_OBJECT(1, EC_GROUP, "openssl.ec_group");
+
+  EC_KEY *ec = EC_KEY_new();
+  if (ec)
+  {
+    int ret;
+    EC_KEY_set_group(ec, group);
+    ret = EC_KEY_generate_key(ec);
+    if (ret==1)
+    {
+      PUSH_OBJECT(ec, "openssl.ec_key");
+      return 1;
+    }
+    EC_KEY_free(ec);
+    return openssl_pushresult(L, ret);
+  }
+  return 0;
+}
+
+static int openssl_ec_group_equal(lua_State *L)
+{
+  const EC_GROUP* a = CHECK_OBJECT(1, EC_GROUP, "openssl.ec_group");
+  const EC_GROUP* b = CHECK_OBJECT(2, EC_GROUP, "openssl.ec_group");
+  lua_pushboolean(L, EC_GROUP_cmp(a, b, NULL)==0);
+  return 1;
+}
 
 static luaL_Reg ec_group_funs[] =
 {
   {"__tostring",            auxiliar_tostring},
   {"__gc",                  openssl_ec_group_free},
+  {"__eq",                  openssl_ec_group_equal},
+  {"equal",                 openssl_ec_group_equal},
 
   {"affine_coordinates",    openssl_ecpoint_affine_coordinates},
   {"parse",                 openssl_ec_group_parse},
@@ -413,12 +458,15 @@ static luaL_Reg ec_group_funs[] =
   {"point_conversion_form", openssl_ec_group_point_conversion_form},
   {"point_new",             openssl_ec_group_point_new},
   {"point_dup",             openssl_ec_point_dup},
+  {"point_equal",           openssl_ec_point_equal},
   {"point2oct",             openssl_ec_point_point2oct},
   {"oct2point",             openssl_ec_point_oct2point},
   {"point2bn",              openssl_ec_point_point2bn},
   {"bn2point",              openssl_ec_point_bn2point},
   {"point2hex",             openssl_ec_point_point2hex},
   {"hex2point",             openssl_ec_point_hex2point},
+
+  {"generate_key",          openssl_ec_group_generate_key},
 
   { NULL, NULL }
 };
@@ -635,6 +683,13 @@ static int openssl_ecdsa_set_method(lua_State *L)
   return 0;
 }
 
+static int openssl_ec_key_check_key(lua_State *L)
+{
+  EC_KEY *ec = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
+  lua_pushboolean(L, EC_KEY_check_key(ec));
+  return 1;
+}
+
 static int openssl_ec_key_export(lua_State *L)
 {
   EC_KEY *ec = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
@@ -726,6 +781,7 @@ EC_EXT_DEFINE
 
 static luaL_Reg ec_key_funs[] =
 {
+  {"check",       openssl_ec_key_check_key},
   {"export",      openssl_ec_key_export},
   {"parse",       openssl_ec_key_parse},
   {"group",       openssl_ec_key_group},

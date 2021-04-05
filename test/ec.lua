@@ -69,7 +69,7 @@ function TestEC:TestEC()
   assert(ec2priv:is_private())
 end
 
-function TestEC:TestEC()
+function TestEC:TestEC2()
   local nec = {'ec',  'prime256v1'}
   local key1 = pkey.new(unpack(nec))
   local key2 = pkey.new(unpack(nec))
@@ -87,4 +87,46 @@ function TestEC:TestEC()
   secret1 = ec1:compute_key(pub2)
   secret2 = ec2:compute_key(pub1)
   assert(secret1 == secret2)
+end
+
+if openssl.ec then
+  function TestEC:TestEC2()
+    local lc = openssl.ec.list()
+    assert(type(lc)=='table')
+    local grp, pnt = openssl.ec.group('prime256v1', "uncompressed", "named_curve")
+    assert(grp:asn1_flag() == 'named_curve')
+    assert(grp:point_conversion_form() == 'uncompressed')
+
+    local oct = grp:point2oct(pnt)
+    assert(#oct==65)
+    local pnt1 = grp:oct2point(oct)
+    assert(grp:point_equal(pnt, pnt1))
+
+    assert(grp:point_conversion_form('compressed'))
+    oct = grp:point2oct(pnt)
+    print(#oct, oct)
+    assert(#oct==33)
+    local pnt2 = grp:oct2point(oct, 'compressed')
+    assert(grp:point_equal(pnt2, pnt1))
+
+    local bn = grp:point2bn(pnt)
+    pnt2 = grp:bn2point(bn)
+    assert(grp:point_equal(pnt2, pnt1))
+
+    local hex = grp:point2hex(pnt)
+    pnt2 = grp:hex2point(hex)
+    assert(grp:point_equal(pnt2, pnt1))
+
+    local ec = grp:generate_key()
+    local t = ec:parse()
+    assert(type(t)=='table')
+    local grp1 = ec:group()
+    print(grp1, pnt)
+
+    assert(grp==grp1)
+
+    pnt = assert(grp:point_new())
+    pnt1 = assert(grp:point_dup(pnt))
+    assert(grp:point_equal(pnt, pnt1))
+  end
 end
