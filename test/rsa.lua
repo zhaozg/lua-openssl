@@ -1,24 +1,34 @@
 local openssl = require 'openssl'
-local pkey = require'openssl'.pkey
-local unpack = unpack or table.unpack
+local rsa = require'openssl'.rsa
 
 TestRSA = {}
 function TestRSA:TestRSA()
-  local nrsa = {'rsa',  1024,  3}
-  local rsa = pkey.new(unpack(nrsa))
-  local k1 = pkey.get_public(rsa)
-  assert(not k1:is_private())
-  local t = k1:parse()
-  assert(t.bits == 1024)
-  assert(t.type == 'rsa')
-  assert(t.size == 128)
-  local r = t.rsa
-  t = r:parse()
-  t.alg = 'rsa'
-  local r2 = pkey.new(t)
-  local msg = openssl.random(128 - 11)
+  local k = rsa.generate_key(2048)
+  assert(k:isprivate())
 
-  local out = pkey.encrypt(r2, msg)
-  local raw = pkey.decrypt(rsa, out)
-  assert(msg == raw)
+  local t = k:parse()
+  assert(t.bits == 2048)
+  assert(t.size == 256)
+
+  if rsa.encrypt then
+    assert(k:size()==256)
+    k:set_engine(openssl.engine('openssl'))
+
+    local msg = openssl.random(200)
+
+    local out = assert(rsa.encrypt(k,msg))
+    local raw = assert(k:decrypt(out, nil, false))
+    assert(msg == raw)
+
+    msg = openssl.random(32)
+    out = assert(rsa.sign(k, msg, 'sha256'))
+    assert(k:verify(msg, out, 'sha256'))
+  end
+
+  local der = k:export()
+  assert(rsa.read(der))
+
+  der = k:export(false)
+  k = rsa.read(der, false)
+  assert(not k:isprivate())
 end
