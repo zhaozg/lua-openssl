@@ -42,13 +42,31 @@ function TestPKCS7:testNew()
   ret = assert(p7:verify(skcert, store))
   assert(ret)
 
-  local der = p7:export()
+  p7 = assert(pkcs7.sign(msg, cert, pkey, nil, openssl.pkcs7.DETACHED))
+  assert(p7:export())
+  local store = openssl.x509.store.new({ca.cacert})
+  ret = assert(p7:verify(skcert, store, msg, openssl.pkcs7.DETACHED))
+  assert(ret)
+
+  local der = assert(p7:export('der'))
+  p7 = assert(openssl.pkcs7.read(der, 'der'))
+
+  der = assert(p7:export('smime'))
+  p7 = assert(openssl.pkcs7.read(der, 'smime'))
+
+  der = p7:export()
   p7 = openssl.pkcs7.read(der)
   p7:add(ca.cacert)
   p7:add(cert)
   p7:add(ca.crl)
   assert(p7:export())
   assert(p7:parse())
+
+  der = p7:export('der')
+  assert(der)
+  p7 = openssl.pkcs7.read(der, 'der')
+  --FIXME
+  --assert(p7)
 end
 
 function TestPKCS7:testStep()
@@ -70,6 +88,7 @@ function TestPKCS7:testStep()
   mdc:update(msg)
   mdc:update(msg)
   local hash = mdc:data()
+
   local p7 = assert(openssl.pkcs7.new())
   -- assert(p7:add(cert))
   assert(p7:add_signer(cert, pkey, md))
@@ -83,6 +102,25 @@ function TestPKCS7:testStep()
   ret, signer =
     assert(p7:verify_digest(nil, nil, hash, pkcs7.DETACHED, true))
   assert(ret)
+  --FIXME:
+  --assert(signer)
+
+  p7 = assert(openssl.pkcs7.new())
+  -- assert(p7:add(cert))
+  assert(p7:add_signer(cert, pkey, md))
+  local pp7 = p7:sign_digest(hash, 0, true)
+  assert(pp7)
+
+  local ret, signer = assert(p7:verify(nil, nil, msg .. msg, 0))
+  assert(ret)
+  --FIXME:
+  --assert(signer)
+  ret, signer =
+    assert(p7:verify_digest(nil, nil, nil, 0, true))
+  assert(ret)
+  local ln, sn = p7:type()
+  assert(ln)
+  assert(sn)
   --FIXME:
   --assert(signer)
 end

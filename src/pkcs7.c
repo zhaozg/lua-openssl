@@ -857,39 +857,36 @@ export pkcs7 as string
 */
 static LUA_FUNCTION(openssl_pkcs7_export)
 {
+  int ret = 0;
   PKCS7 * p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
   BIO* bio_out = NULL;
   int fmt = lua_type(L, 2);
   luaL_argcheck(L, fmt == LUA_TSTRING || fmt == LUA_TNONE, 2,
                 "only accept 'pem','der' or none");
   fmt = luaL_checkoption(L, 2, "pem", format);
-  luaL_argcheck(L, fmt == FORMAT_PEM || fmt == FORMAT_DER, 2,
-                "only accept pem or der, default is pem");
+  luaL_argcheck(L,
+                fmt == FORMAT_PEM || fmt == FORMAT_DER || fmt == FORMAT_SMIME,
+                2,
+                "only accept pem, der or smime, default is pem");
 
   bio_out  = BIO_new(BIO_s_mem());
   if (fmt == FORMAT_PEM)
+    ret = PEM_write_bio_PKCS7(bio_out, p7);
+  else if(fmt == FORMAT_DER)
+    ret = i2d_PKCS7_bio(bio_out, p7);
+  else if(fmt == FORMAT_SMIME)
   {
+    ret = SMIME_write_PKCS7(bio_out, p7, NULL, 0);
+  }
 
-    if (PEM_write_bio_PKCS7(bio_out, p7))
-    {
-      BUF_MEM *bio_buf;
-      BIO_get_mem_ptr(bio_out, &bio_buf);
-      lua_pushlstring(L, bio_buf->data, bio_buf->length);
-    }
-    else
-      lua_pushnil(L);
+  if (ret==1)
+  {
+    BUF_MEM *bio_buf;
+    BIO_get_mem_ptr(bio_out, &bio_buf);
+    lua_pushlstring(L, bio_buf->data, bio_buf->length);
   }
   else
-  {
-    if (i2d_PKCS7_bio(bio_out, p7))
-    {
-      BUF_MEM *bio_buf;
-      BIO_get_mem_ptr(bio_out, &bio_buf);
-      lua_pushlstring(L, bio_buf->data, bio_buf->length);
-    }
-    else
-      lua_pushnil(L);
-  }
+    lua_pushnil(L);
 
   BIO_free(bio_out);
   return 1;
