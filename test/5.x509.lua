@@ -93,6 +93,38 @@ function TestX509:testNew()
   cert = assert(helper.sign(self.dn, extensions))
   assert(cert:check_ip_asc('192.168.1.1'))
 
+  extensions = {
+    {
+      object = 'subjectAltName',
+      value = 'IP:192.168.1.1,RID:1.2.3.4'
+    },
+    {
+      object = 'subjectAltName',
+      value = 'IP:192.168.1.1'
+    },
+    {
+      object = 'subjectAltName',
+      value = 'DNS:abc.xyz'
+    },
+    {
+      object = 'subjectAltName',
+      value = 'URI:http://my.url.here/'
+    },
+    {
+      object = 'subjectAltName',
+      value = 'otherName:1.2.3.4;UTF8:some other identifier'
+    },
+    {
+      object = 'subjectAltName',
+      value = 'email:123@abc.com'
+    }
+  }
+
+  cert = assert(helper.sign(self.dn, extensions))
+  local info = cert:parse()
+  for i=1, #info.extensions do
+    assert(type(info.extensions[i]:info())=='table')
+  end
 end
 
 function TestX509:testIO()
