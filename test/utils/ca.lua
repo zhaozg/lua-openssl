@@ -73,8 +73,11 @@ function M:sign(csr, extensions)
   local sn = openssl.random(16)
   sn = openssl.bn.text(sn)
 
-  local cert = openssl.x509.new(sn, csr, extensions)
+  local cert = openssl.x509.new(sn, csr)
   cert:notbefore(os.time())
+  if extensions then
+    cert:extensions(M.to_extensions(extensions))
+  end
   cert:validat(os.time(), os.time() + 3600 * 24 * 360)
   assert(cert:sign(self.pkey, self.cacert))
   return cert

@@ -175,7 +175,7 @@ static int openssl_cms_create(lua_State*L)
 {
   CMS_ContentInfo *cms = NULL;
 
-  if (lua_gettop(L) == 1)
+  if (lua_gettop(L) == 0)
   {
     cms = CMS_ContentInfo_new();
   }

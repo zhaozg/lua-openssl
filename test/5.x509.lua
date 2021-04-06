@@ -14,6 +14,17 @@ function TestX509:setUp()
   self.digest = 'sha1WithRSAEncryption'
 end
 
+function TestX509:testX509()
+  local t = x509.certtypes("standard")
+  assert(type(t)=='table')
+  t = x509.certtypes("netscape")
+  assert(type(t)=='table')
+  t = x509.certtypes("extend")
+  assert(type(t)=='table')
+  t = x509.verify_cert_error_string(1)
+  assert(type(t)=='string')
+end
+
 function TestX509:testNew()
   local ca = helper.get_ca()
   local cert, pkey = helper.sign(self.dn)
@@ -27,6 +38,61 @@ function TestX509:testNew()
   assert(cert:check(pkey), 'self sign check failed')
   local store = assert(ca:get_store())
   assert(cert:check(store))
+  assert(cert:verify(ca.cacert:pubkey()))
+
+  local x, y, z = cert:verify()
+  assert(x and y and z)
+
+  local s = cert:export('der')
+  x = x509.read(s, 'der')
+  assert(x==cert)
+
+  s = cert:export('pem')
+  x = x509.read(s, 'pem')
+  assert(x==cert)
+
+  assert(cert:pubkey(assert(cert:pubkey())))
+  assert(cert:subject(assert(cert:subject())))
+  assert(cert:issuer(assert(cert:issuer())))
+  assert(cert:version(assert(cert:version())))
+  assert(cert:serial(assert(cert:serial(false))))
+  assert(string.len(cert:digest()) == 32)
+  local b, e = cert:validat()
+  assert(b, e)
+  assert(cert:validat(os.time()))
+
+  local extensions = {
+    {
+      object = 'subjectAltName',
+      value = 'email:123@abc.com'
+      -- critical = true
+    }
+  }
+
+  cert = assert(helper.sign(self.dn, extensions))
+  assert(cert:check_email('123@abc.com'))
+
+  extensions = {
+    {
+      object = 'subjectAltName',
+      value = 'DNS:abc.xyz'
+    }
+  }
+
+  cert = assert(helper.sign(self.dn, extensions))
+  assert(cert:check_host('abc.xyz'))
+
+  extensions = {
+    {
+      object = 'subjectAltName',
+      value = 'IP:192.168.1.1'
+
+    }
+  }
+
+  cert = assert(helper.sign(self.dn, extensions))
+  assert(cert:check_ip_asc('192.168.1.1'))
+
 end
 
 function TestX509:testIO()

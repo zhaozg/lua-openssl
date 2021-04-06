@@ -832,10 +832,9 @@ check x509 for ip address (ipv4 or ipv6, only for openssl 1.0.2 or greater)
 static LUA_FUNCTION(openssl_x509_check_ip)
 {
   X509 * cert = CHECK_OBJECT(1, X509, "openssl.x509");
-  size_t sz;
-  const char *ip = luaL_checklstring(L, 2, &sz);
+  const char *ip = luaL_checkstring(L, 2);
   int flags = luaL_optint(L, 3, 0);
-  int ret = X509_check_ip(cert, (const unsigned char*)ip, sz, flags);
+  int ret = X509_check_ip_asc(cert, ip, flags);
   return openssl_push_check_result(L, ret, NULL);
 }
 #endif
@@ -938,7 +937,6 @@ static int openssl_x509_digest(lua_State* L)
 {
   unsigned int bytes;
   unsigned char buffer[EVP_MAX_MD_SIZE];
-  char hex_buffer[EVP_MAX_MD_SIZE * 2];
   X509 *cert = CHECK_OBJECT(1, X509, "openssl.x509");
   const EVP_MD *digest = get_digest(L, 2, "sha256");
   int ret;
@@ -949,10 +947,9 @@ static int openssl_x509_digest(lua_State* L)
     return 2;
   }
   ret = X509_digest(cert, digest, buffer, &bytes);
-  if (ret)
+  if (ret == 1)
   {
-    to_hex((char*)buffer, bytes, hex_buffer);
-    lua_pushlstring(L, hex_buffer, bytes * 2);
+    lua_pushlstring(L, (const char*)buffer, bytes);
     return 1;
   }
   return openssl_pushresult(L, ret);
@@ -1377,6 +1374,14 @@ static int openssl_x509_verify(lua_State*L)
   }
 }
 
+static int openssl_x509_equal(lua_State *L)
+{
+  X509* x = CHECK_OBJECT(1, X509, "openssl.x509");
+  X509* y = CHECK_OBJECT(2, X509, "openssl.x509");
+  lua_pushboolean(L, X509_cmp(x, y)==0);
+  return 1;
+}
+
 static luaL_Reg x509_funcs[] =
 {
   {"parse",       openssl_x509_parse},
@@ -1391,7 +1396,10 @@ static luaL_Reg x509_funcs[] =
   {"version",     openssl_x509_version},
 
   {"__gc",        openssl_x509_free},
+  {"__eq",        openssl_x509_equal},
   {"__tostring",  auxiliar_tostring},
+
+  {"equal",       openssl_x509_equal},
 
   /* compat with luasec */
   {"digest",     openssl_x509_digest},

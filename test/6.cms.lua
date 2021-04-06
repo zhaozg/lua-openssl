@@ -74,3 +74,20 @@ function TestCMS:testDigest()
   local msg = assert(cms.digest_verify(c1))
   lu.assertEquals(msg, self.msg)
 end
+
+function TestCMS:testData()
+  local c = cms.create()
+  assert(c)
+
+  c = cms.create("data")
+  assert(c)
+  assert(c:type())
+
+  --FIXME:
+  --c = cms.compress('data')
+  --FIXME:
+  --assert(c:bio_new())
+  --FIXME:
+  --cms.uncompress(c)
+end
+
