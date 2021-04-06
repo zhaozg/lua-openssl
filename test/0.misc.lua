@@ -9,6 +9,7 @@ function testHex()
   local raw = openssl.hex(ano, false)
   lu.assertEquals(raw, msg)
   lu.assertEquals(#msg * 2, #ano)
+  lu.assertEquals("", openssl.hex(""))
 end
 
 function testBase64()
@@ -62,6 +63,13 @@ function testBase64()
 end
 
 function testAll()
+  local t = openssl.list('digests')
+  assert(type(t)=='table')
+  assert(type(openssl.FIPS_mode())=='boolean')
+  local rand = openssl.random(1024)
+  openssl.rand_add(rand)
+  openssl.random(16, true)
+
   local f = io.open('luasec/certs/rootB.cnf', 'r')
   if f then
     local data = f:read('*a')

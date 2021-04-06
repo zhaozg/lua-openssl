@@ -32,6 +32,9 @@ end
 
 local function ssl_mode()
   local ctx = assert(sslctx.new(params))
+  assert(ctx:verify_mode())
+  assert(ctx:verify_depth(9)==9)
+
   if certstore then ctx:cert_store(certstore) end
   -- ctx:set_cert_verify({always_continue=true,verify_depth=4})
   ctx:set_cert_verify(function(arg)
