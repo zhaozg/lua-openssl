@@ -343,12 +343,13 @@ static int openssl_ocsp_response_new(lua_State *L)
 
     if (lua_istable(L, 5))
     {
-      BUF_MEM *buf;
-      (void)BIO_reset(bio);
-      i2a_ASN1_INTEGER(bio, serial);
+      BIGNUM* sn = ASN1_INTEGER_to_BN(serial, NULL);
+      const char* hex = BN_bn2hex(sn);
 
-      BIO_get_mem_ptr(bio, &buf);
-      lua_pushlstring(L, buf->data, buf->length);
+      lua_pushstring(L, hex);
+      OPENSSL_free(hex);
+      BN_free(sn);
+
       lua_gettable(L, 5);
       if (lua_isnil(L, -1))
         status = V_OCSP_CERTSTATUS_UNKNOWN;

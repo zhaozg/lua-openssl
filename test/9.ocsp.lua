@@ -34,7 +34,7 @@ function TestOCSP:testAll()
   assert(oreq)
   assert(type(oreq:export(true)))
 
-  oreq = ocsp.request_new(self.ca.cacert, self.bob.cert:serial())
+  oreq = ocsp.request_new(self.ca.cacert, self.bob.cert)
   assert(oreq)
   assert(type(oreq:export(false)))
 
@@ -57,10 +57,13 @@ function TestOCSP:testAll()
 
   local ocert, okey = helper.sign(self.ocspdn)
 
-  local resp = ocsp.response_new(oreq, self.ca.cacert, ocert, okey, function(...)
-    print(...)
-    return true
-  end )
+  local resp = ocsp.response_new(oreq, self.ca.cacert, ocert, okey, {
+      [tostring(self.bob.cert:serial())] = {
+        reovked = true,
+        revoked_time = os.time(),
+        reason = 0
+      }
+  })
   assert(resp)
   der = assert(resp:export(false))
   resp = ocsp.response_read(der, false)
