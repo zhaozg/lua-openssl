@@ -19,13 +19,8 @@ static LUA_FUNCTION(openssl_dsa_free)
 static LUA_FUNCTION(openssl_dsa_parse)
 {
   const BIGNUM *p = NULL, *q = NULL, *g = NULL, *pub = NULL, *pri = NULL;
-  DSA* dsa = CHECK_OBJECT(1, DSA, "openssl.rsa");
+  DSA* dsa = CHECK_OBJECT(1, DSA, "openssl.dsa");
   lua_newtable(L);
-
-#if (OPENSSL_VERSION_NUMBER < 0x30000000L)
-  lua_pushinteger(L, DSA_size(dsa));
-  lua_setfield(L, -2, "size");
-#endif
 
   lua_pushinteger(L, DSA_bits(dsa));
   lua_setfield(L, -2, "bits");
@@ -42,7 +37,7 @@ static LUA_FUNCTION(openssl_dsa_parse)
 }
 
 #if (OPENSSL_VERSION_NUMBER < 0x30000000L)
-static int openssl_dsa_set_method(lua_State *L)
+static int openssl_dsa_set_engine(lua_State *L)
 {
 #ifndef OPENSSL_NO_ENGINE
   DSA* dsa = CHECK_OBJECT(1, DSA, "openssl.dsa");
@@ -58,11 +53,31 @@ static int openssl_dsa_set_method(lua_State *L)
 }
 #endif
 
+static int openssl_dsa_generate_key(lua_State *L)
+{
+  int bits = luaL_optint(L, 1, 1024);
+  size_t seed_len = 0;
+  const char* seed = luaL_optlstring(L, 2, NULL, &seed_len);
+  ENGINE *eng = lua_isnoneornil(L, 3) ? NULL : CHECK_OBJECT(3, ENGINE, "openssl.engine");
+
+  DSA *dsa = eng ? DSA_new_method(eng) : DSA_new();
+  int ret = DSA_generate_parameters_ex(dsa, bits, (byte*)seed, seed_len, NULL, NULL, NULL);
+  if (ret == 1)
+    ret = DSA_generate_key(dsa);
+  if (ret == 1)
+  {
+    PUSH_OBJECT(dsa, "openssl.dsa");
+    return 1;
+  }
+  DSA_free(dsa);
+  return openssl_pushresult(L, ret);
+}
+
 static luaL_Reg dsa_funs[] =
 {
   {"parse",       openssl_dsa_parse},
 #if (OPENSSL_VERSION_NUMBER < 0x30000000L)
-  {"set_method",  openssl_dsa_set_method},
+  {"set_engine",  openssl_dsa_set_engine},
 #endif
 
   {"__gc",        openssl_dsa_free},
@@ -73,6 +88,8 @@ static luaL_Reg dsa_funs[] =
 
 static luaL_Reg R[] =
 {
+  {"generate_key", openssl_dsa_generate_key},
+
   {NULL, NULL}
 };
 
