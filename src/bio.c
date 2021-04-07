@@ -56,7 +56,7 @@ return 1;
 static const char* close_flags[] =
 {
   "noclose",  /* #define BIO_NOCLOSE    0x00 */
-  "close",  /* #define BIO_CLOSE    0x01 */
+  "close",    /* #define BIO_CLOSE      0x01 */
   NULL
 };
 
@@ -82,7 +82,6 @@ static LUA_FUNCTION(openssl_bio_new_mem)
     BIO_write(bio, d, l);
   }
 
-  (void)BIO_set_close(bio, BIO_CLOSE);
   PUSH_OBJECT(bio, "openssl.bio");
   return 1;
 }
@@ -280,9 +279,11 @@ static LUA_FUNCTION(openssl_bio_new_filter)
   {
   case 0:
     bio = BIO_new(BIO_f_base64());
+    closeflag = luaL_checkoption(L, 2, "noclose", close_flags);
     break;
   case 1:
     bio = BIO_new(BIO_f_buffer());
+    closeflag = luaL_checkoption(L, 2, "noclose", close_flags);
     break;
   case 2:
   {
@@ -291,6 +292,7 @@ static LUA_FUNCTION(openssl_bio_new_filter)
     const char* k = luaL_checklstring(L, 3, &kl);
     const char* v = luaL_checklstring(L, 4, &il);
     int encrypt = auxiliar_checkboolean(L, 5);
+    closeflag = luaL_checkoption(L, 6, "noclose", close_flags);
 
     bio = BIO_new(BIO_f_cipher());
     BIO_set_cipher(bio, c, (const unsigned char*)k, (const unsigned char*)v, encrypt);
@@ -299,6 +301,7 @@ static LUA_FUNCTION(openssl_bio_new_filter)
   case 3:
   {
     const EVP_MD* md = get_digest(L, 2, NULL);
+    closeflag = luaL_checkoption(L, 3, "noclose", close_flags);
     bio = BIO_new(BIO_f_md());
     ret = BIO_set_md(bio, md);
   }
@@ -582,7 +585,15 @@ static LUA_FUNCTION(openssl_bio_push)
   BIO* append = CHECK_OBJECT(2, BIO, "openssl.bio");
   bio = BIO_push(bio, append);
   if (bio)
-    PUSH_OBJECT(bio, "openssl.bio");
+  {
+    lua_pushvalue(L, 1);
+
+    openssl_newvalue(L, bio);
+    lua_pushboolean(L, 1);
+    openssl_valueset(L, bio, "free_all");
+
+    BIO_up_ref(bio);
+  }
   else
     lua_pushnil(L);
   return 1;
@@ -627,6 +638,44 @@ static LUA_FUNCTION(openssl_bio_get_mem)
   }
   return openssl_pushresult(L, ret);
 }
+
+static LUA_FUNCTION(openssl_bio_get_md)
+{
+  BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
+
+	bio = BIO_find_type(bio, BIO_TYPE_MD);
+  if (bio)
+  {
+	  EVP_MD *md;
+	  BIO_get_md(bio, &md);
+    PUSH_OBJECT(bio, "openssl.bio");
+    BIO_up_ref(bio);
+    PUSH_OBJECT(md, "openssl.evp_digest");
+    return 2;
+  }
+  return 0;
+}
+
+static LUA_FUNCTION(openssl_bio_next)
+{
+  BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
+	bio = BIO_next(bio);
+  if (bio)
+  {
+    PUSH_OBJECT(bio, "openssl.bio");
+    BIO_up_ref(bio);
+    return 1;
+  }
+  return 0;
+}
+
+static LUA_FUNCTION(openssl_bio_cipher_status)
+{
+  BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
+  lua_pushboolean(L, BIO_get_cipher_status(bio));
+  return 1;
+}
+
 
 /* network socket */
 /***
@@ -902,6 +951,9 @@ static luaL_Reg bio_funs[] =
   /* for filter bio */
   {"push",  openssl_bio_push},
   {"pop",   openssl_bio_pop},
+  {"next",   openssl_bio_next},
+  {"get_md", openssl_bio_get_md},
+  {"cipher_status", openssl_bio_cipher_status},
   {"free",   openssl_bio_free},
 
   /* for mem */
