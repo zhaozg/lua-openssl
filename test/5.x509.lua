@@ -29,6 +29,9 @@ function TestX509:testNew()
   local ca = helper.get_ca()
   local cert, pkey = helper.sign(self.dn)
 
+  local subject = x509.new(self.subject)
+  assert(x509.new(subject))
+
   lu.assertEquals(ca.cacert:subject(), cert:issuer())
   assert(ca.cacert:parse().ca, 'invalid ca certificate')
 
@@ -65,7 +68,6 @@ function TestX509:testNew()
     {
       object = 'subjectAltName',
       value = 'email:123@abc.com'
-      -- critical = true
     }
   }
 
@@ -117,7 +119,19 @@ function TestX509:testNew()
     {
       object = 'subjectAltName',
       value = 'email:123@abc.com'
-    }
+    },
+    --{
+    --  object = 'subjectAltName',
+    --  value = 'X400Name:C=US/O=Organization/G=Nuno/CN=demo'
+    --},
+    --{
+    --  object = 'subjectAltName',
+    --  value = 'EdiPartyName:123@abc.com'
+    --},
+    --{
+    --  object = 'subjectAltName',
+    --  value = 'DirName:/C=NZ/L=Wellington/OU=Cert-stamping/CN=Jackov'
+    --}
   }
 
   cert = assert(helper.sign(self.dn, extensions))
@@ -125,6 +139,14 @@ function TestX509:testNew()
   for i=1, #info.extensions do
     assert(type(info.extensions[i]:info())=='table')
   end
+  cert:notbefore("Jan 16 05:19:30 2002 GMT")
+  cert:notafter("Jan 16 05:19:30 2022 GMT")
+  --advance
+  s = cert:sign()
+  assert(type(s)=='string')
+  s = ca.pkey:sign(s)
+  local o  = openssl.asn1.new_object('sha1WithRSAEncryption')
+  assert(cert:sign(s, o))
 end
 
 function TestX509:testIO()
@@ -157,6 +179,8 @@ sggwDQYJKoZIhvcNAQEEBQADQQCU5SSgapJSdRXJoX+CpCvFy+JVh9HpSjCpSNKO
   assert(x:subject())
   assert(x:issuer())
 
-  x = x509.purpose()
-  assert(#x == 9)
+  t = x509.purpose()
+  assert(#t == 9)
+  assert(type(x509.purpose(t[1].purpose))=='table')
+  assert(type(x509.purpose(t[1].sname))=='table')
 end
