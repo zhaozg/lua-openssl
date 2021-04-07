@@ -136,6 +136,7 @@ end
 function TestCipherMY:testAesCTR()
 
   local C = cipher.get('aes-128-ctr')
+  assert(type(C:info())=='table')
 
   local a, b, aa, bb
   local obj, obj1

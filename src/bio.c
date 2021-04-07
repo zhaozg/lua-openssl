@@ -87,6 +87,14 @@ static LUA_FUNCTION(openssl_bio_new_mem)
   return 1;
 }
 
+static LUA_FUNCTION(openssl_bio_new_null)
+{
+  BIO *bio = BIO_new(BIO_s_null());
+
+  PUSH_OBJECT(bio, "openssl.bio");
+  return 1;
+}
+
 /***
 make tcp bio from socket fd
 
@@ -294,6 +302,7 @@ static LUA_FUNCTION(openssl_bio_new_filter)
     bio = BIO_new(BIO_f_md());
     ret = BIO_set_md(bio, md);
   }
+  break;
   case 4:
   {
     SSL* ssl = CHECK_OBJECT(2, SSL, "openssl.ssl");
@@ -573,7 +582,7 @@ static LUA_FUNCTION(openssl_bio_push)
   BIO* append = CHECK_OBJECT(2, BIO, "openssl.bio");
   bio = BIO_push(bio, append);
   if (bio)
-    lua_pushvalue(L, 1);
+    PUSH_OBJECT(bio, "openssl.bio");
   else
     lua_pushnil(L);
   return 1;
@@ -608,16 +617,15 @@ get mem data, only support mem bio object
 */
 static LUA_FUNCTION(openssl_bio_get_mem)
 {
+  BUF_MEM* mem;
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
-  if (BIO_method_type(bio) == BIO_TYPE_MEM)
+  int ret = BIO_get_mem_ptr(bio, &mem);
+  if (ret == 1)
   {
-    BUF_MEM* mem;
-    BIO_get_mem_ptr(bio, &mem);
     lua_pushlstring(L, mem->data, mem->length);
-    return 1;
+    return ret;
   }
-  luaL_error(L, "#1 BIO must be memory type");
-  return 0;
+  return openssl_pushresult(L, ret);
 }
 
 /* network socket */
@@ -876,54 +884,55 @@ close bio
 static luaL_Reg bio_funs[] =
 {
   /* generate operation */
-  {"read",  openssl_bio_read  },
-  {"gets",  openssl_bio_gets  },
-  {"write", openssl_bio_write },
-  {"puts",  openssl_bio_puts  },
-  {"flush", openssl_bio_flush },
-  {"close", openssl_bio_free  },
-  {"type",  openssl_bio_type  },
-  {"nbio",  openssl_bio_nbio  },
-  {"reset", openssl_bio_reset },
-  {"retry", openssl_bio_retry },
-  {"pending", openssl_bio_pending },
+  {"read",  openssl_bio_read},
+  {"gets",  openssl_bio_gets},
+  {"write", openssl_bio_write},
+  {"puts",  openssl_bio_puts},
+  {"flush", openssl_bio_flush},
+  {"close", openssl_bio_free},
+  {"type",  openssl_bio_type},
+  {"nbio",  openssl_bio_nbio},
+  {"reset", openssl_bio_reset},
+  {"retry", openssl_bio_retry},
+  {"pending", openssl_bio_pending},
 #if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
-  {"set_callback", openssl_bio_set_callback },
+  {"set_callback", openssl_bio_set_callback},
 #endif
 
   /* for filter bio */
-  {"push",  openssl_bio_push  },
-  {"pop",   openssl_bio_pop   },
-  {"free",    openssl_bio_free},
+  {"push",  openssl_bio_push},
+  {"pop",   openssl_bio_pop},
+  {"free",   openssl_bio_free},
 
   /* for mem */
-  {"get_mem", openssl_bio_get_mem },
+  {"get_mem", openssl_bio_get_mem},
 
   /* network socket */
-  {"accept",    openssl_bio_accept },
-  {"connect",   openssl_bio_connect },
-  {"handshake", openssl_bio_handshake },
+  {"accept",    openssl_bio_accept},
+  {"connect",   openssl_bio_connect},
+  {"handshake", openssl_bio_handshake},
 
   {"shutdown",  openssl_bio_shutdown},
-  {"fd",        openssl_bio_fd },
+  {"fd",        openssl_bio_fd},
   {"ssl",       openssl_bio_get_ssl},
 
-  {"__tostring",  auxiliar_tostring },
-  {"__gc",  openssl_bio_free  },
+  {"__tostring",  auxiliar_tostring},
+  {"__gc",  openssl_bio_free},
 
   {NULL,    NULL}
 };
 
 static luaL_Reg R[] =
 {
-  {"mem",     openssl_bio_new_mem    },
-  {"socket",  openssl_bio_new_socket   },
-  {"dgram",   openssl_bio_new_dgram    },
-  {"fd",      openssl_bio_new_fd     },
-  {"file",    openssl_bio_new_file   },
-  {"filter",  openssl_bio_new_filter   },
+  {"null",    openssl_bio_new_null},
+  {"mem",     openssl_bio_new_mem},
+  {"socket",  openssl_bio_new_socket},
+  {"dgram",   openssl_bio_new_dgram},
+  {"fd",      openssl_bio_new_fd},
+  {"file",    openssl_bio_new_file},
+  {"filter",  openssl_bio_new_filter},
 
-  {"accept",    openssl_bio_new_accept },
+  {"accept",    openssl_bio_new_accept},
   {"connect",   openssl_bio_new_connect},
 
   {"__call",    openssl_bio_new_mem},
