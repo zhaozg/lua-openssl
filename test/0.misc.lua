@@ -1,4 +1,5 @@
 local openssl = require('openssl')
+local helper = require('helper')
 local lu = require('luaunit')
 
 local msg = 'The quick brown fox jumps over the lazy dog.'
@@ -65,7 +66,9 @@ end
 function testAll()
   local t = openssl.list('digests')
   assert(type(t)=='table')
-  assert(type(openssl.FIPS_mode())=='boolean')
+  if not helper.libressl then
+    assert(type(openssl.FIPS_mode())=='boolean')
+  end
   local rand = openssl.random(1024)
   openssl.rand_add(rand)
   openssl.random(16, true)

@@ -1442,26 +1442,27 @@ static int openssl_asn1time_adj(lua_State* L)
   time_t t = luaL_checkinteger(L, 2);
   int offset_day = luaL_optint(L, 3, 0);
   long offset_sec = luaL_optlong(L, 4, 0);
-  int ret = 0;
 
+#if OPENSSL_VERSION_NUMBER < 0x10101000L || defined(LIBRESSL_VERSION_NUMBER)
+  ASN1_TIME_adj(at, t, offset_day, offset_sec);
+#else
   switch(at->type)
   {
   case V_ASN1_UTCTIME:
   {
     ASN1_UTCTIME *a = (ASN1_UTCTIME*)at;
-    ret = ASN1_UTCTIME_adj(a, t, offset_day, offset_sec) != NULL;
+    ASN1_UTCTIME_adj(a, t, offset_day, offset_sec);
     break;
   }
   case V_ASN1_GENERALIZEDTIME:
   {
     ASN1_GENERALIZEDTIME *a = (ASN1_UTCTIME*)at;
-    ret = ASN1_GENERALIZEDTIME_adj(a, t, offset_day, offset_sec) != NULL;
+    ASN1_GENERALIZEDTIME_adj(a, t, offset_day, offset_sec);
     break;
   }
-  default:
-    ret = 0;
   }
-  lua_pushboolean(L, ret);
+#endif
+  lua_pushvalue(L, 1);
   return 1;
 }
 

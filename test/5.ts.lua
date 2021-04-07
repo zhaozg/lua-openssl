@@ -136,7 +136,12 @@ local function signReq(self, req_ctx, req, sn, now)
   local res = req_ctx:sign(req:export())
   local t = assert(res:info())
   lu.assertIsTable(t)
-
+  local status = t.status_info.status:get()
+  --FIXME: libressl
+  if status ~= 0 then
+    print(require'inspect'(t))
+    return
+  end
   assert(t.status_info.status:tostring() == '0')
   assert(not t.status_info.text)
   assert(not t.status_info.failure_info)
