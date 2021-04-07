@@ -605,7 +605,7 @@ static int openssl_push_ts_msg_imprint(lua_State*L, TS_MSG_IMPRINT* imprint)
   return 1;
 };
 
-static int openssl_push_ts_tst_info(lua_State*L, TS_TST_INFO* info, const char* field)
+static int openssl_push_ts_tst_info(lua_State*L, TS_TST_INFO* info, const char* field, int asobj)
 {
   if(field==NULL)
   {
@@ -626,7 +626,7 @@ static int openssl_push_ts_tst_info(lua_State*L, TS_TST_INFO* info, const char* 
     openssl_push_asn1(L, TS_TST_INFO_get_time(info), V_ASN1_GENERALIZEDTIME);
     lua_setfield(L, -2, "time");
 
-    openssl_push_ts_accuracy(L, TS_TST_INFO_get_accuracy(info), 1);
+    openssl_push_ts_accuracy(L, TS_TST_INFO_get_accuracy(info), asobj);
     lua_setfield(L, -2, "accuracy");
 
     AUXILIAR_SET(L, -1, "ordering", TS_TST_INFO_get_ordering(info), boolean);
@@ -708,11 +708,22 @@ static LUA_FUNCTION(openssl_ts_resp_tst_info)
 {
   TS_RESP *resp = CHECK_OBJECT(1, TS_RESP, "openssl.ts_resp");
   TS_TST_INFO *info = TS_RESP_get_tst_info(resp);
-  const char* field = lua_isnone(L, 2) ? NULL : luaL_checkstring(L, 2);
+  int typ = lua_type(L, 2);
+  int asobj = 0;
+  const char* field = NULL;
+  if (typ == LUA_TBOOLEAN)
+  {
+    asobj = lua_toboolean(L, 2);
+  }else if(typ == LUA_TSTRING)
+  {
+    field = luaL_checkstring(L, 2);
+    asobj = lua_toboolean(L, 3);
+  } else if(typ != LUA_TNONE)
+    luaL_argerror(L, 2, "must be boolean, string or none");
 
   if(info)
   {
-    if(openssl_push_ts_tst_info(L, info, field)==0)
+    if(openssl_push_ts_tst_info(L, info, field, asobj)==0)
       return luaL_argerror(L, 2, "invalid field of tst_info");
   }
   else
@@ -729,6 +740,7 @@ get info as table
 static LUA_FUNCTION(openssl_ts_resp_info)
 {
   TS_RESP *res = CHECK_OBJECT(1, TS_RESP, "openssl.ts_resp");
+  int asobj = lua_toboolean(L, 2);
 
   lua_newtable(L);
 
@@ -773,7 +785,7 @@ static LUA_FUNCTION(openssl_ts_resp_info)
 
   if (TS_RESP_get_tst_info(res))
   {
-    openssl_push_ts_tst_info(L, TS_RESP_get_tst_info(res), NULL);
+    openssl_push_ts_tst_info(L, TS_RESP_get_tst_info(res), NULL, asobj);
     lua_setfield(L, -2, "tst_info");
   }
 
@@ -1091,11 +1103,22 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_tst_info)
 {
   TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
   TS_TST_INFO *info = TS_RESP_CTX_get_tst_info(ctx);
-  const char* field = lua_isnone(L, 2) ? NULL : luaL_checkstring(L, 2);
+  int typ = lua_type(L, 2);
+  int asobj = 0;
+  const char* field = NULL;
+  if (typ == LUA_TBOOLEAN)
+  {
+    asobj = lua_toboolean(L, 2);
+  }else if(typ == LUA_TSTRING)
+  {
+    field = luaL_checkstring(L, 2);
+    asobj = lua_toboolean(L, 3);
+  } else if(typ != LUA_TNONE)
+    luaL_argerror(L, 2, "must be boolean, string or none");
 
   if(info)
   {
-    if(openssl_push_ts_tst_info(L, info, field)==0)
+    if(openssl_push_ts_tst_info(L, info, field, asobj)==0)
       return luaL_argerror(L, 2, "invalid field of tst_info");
   }
   else

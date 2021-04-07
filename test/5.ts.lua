@@ -48,6 +48,8 @@ typedef struct TS_req_st {
 local function createQuery(self, policy_id, nonce, cert_req, extensions)
   local req = assert(openssl.ts.req_new())
   assert(req:msg_imprint(self.hash, self.alg))
+  local m, a = req:msg_imprint()
+  assert(m and a)
   if cert_req ~= nil then
     assert(req:cert_req(cert_req))
   else
@@ -126,6 +128,7 @@ local function createRespCtx(self, serial_cb, time_cb)
   if serial_cb then req_ctx:set_serial_cb(serial_cb, self) end
 
   if time_cb then req_ctx:set_time_cb(time_cb, self) end
+  assert(req_ctx:md('sha256')==true)
   return req_ctx
 end
 
@@ -159,7 +162,10 @@ local function signReq(self, req_ctx, req, sn, now)
     lu.assertEquals(req:nonce(), tst.nonce)
   end
 
+  res = res:dup()
   res = assert(openssl.ts.resp_read(res:export()))
+  assert(type(res:tst_info())=='table')
+  assert(type(res:tst_info(true))=='table')
   local vry = assert(req:to_verify_ctx())
   vry:store(self.ca.store)
   assert(vry:verify(res))
@@ -179,6 +185,19 @@ local function signReq(self, req_ctx, req, sn, now)
   vry:data(self.dat)
   vry:store(self.ca.store)
   assert(vry:verify(res))
+
+  vry = assert(ts.verify_ctx_new(req:export()))
+  vry:imprint(self.hash)
+  vry:data(self.dat)
+  vry:store(self.ca.store)
+  assert(vry:verify(res))
+
+  vry = assert(ts.verify_ctx_new(req))
+  vry:imprint(self.hash)
+  vry:data(self.dat)
+  vry:store(self.ca.store)
+  assert(vry:verify(res))
+
   return res
 end
 
