@@ -145,6 +145,9 @@ function TestString:testAll()
 
   local o = asn1.new_string('octet', asn1.OCTET_STRING)
   lu.assertEquals(o:type(), asn1.OCTET_STRING)
+
+  assert(type(asn1.tostring(asn1.UNIVERSAL,'tag'))=='string')
+  assert(type(asn1.tostring(asn1.APPLICATION,'class'))=='string')
 end
 
 TestTime = {}
@@ -186,13 +189,13 @@ function TestTime:testUTCTime()
 end
 
 function TestTime:testGENERALIZEDTime()
-  local at = openssl.asn1.new_generalizedtime()
+  local at = openssl.asn1.new_generalizedtime(self.time)
   assert(at:set(self.time))
   local t1 = at:get()
   local d = at:i2d()
   assert(type(d)=='string')
-  local ab = openssl.asn1.new_utctime()
-  ab:d2i(d)
+  local ab = openssl.asn1.new_generalizedtime(self.time)
+  assert(ab:d2i(d))
   assert(ab==at)
   lu.assertEquals(self.gmt, t1)
   assert(type(ab:toprint()=='string'))
@@ -235,10 +238,23 @@ function TestType:testBasic()
   d = assert(o:i2d())
   assert(asn1.d2i_asn1type(d)==o)
 
+  s = asn1.new_string("BIT", asn1.BIT_STRING)
+  o = asn1.new_type(s)
+  d = assert(o:i2d())
+  assert(asn1.d2i_asn1type(d)==o)
+  assert(o:info())
+
+  s = asn1.new_string("BMP", asn1.BMP_STRING)
+  o = asn1.new_type(s)
+  d = assert(o:i2d())
+  assert(asn1.d2i_asn1type(d)==o)
+  assert(o:info())
+
   s = asn1.new_string("octet", asn1.OCTET_STRING)
   o = asn1.new_type(s)
   d = assert(o:i2d())
   assert(asn1.d2i_asn1type(d)==o)
+  assert(o:info())
 
   assert(o:octet()=='octet')
   assert(o:octet('abcd'))
