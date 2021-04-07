@@ -303,7 +303,7 @@ static int openssl_asn1string_new(lua_State* L)
 {
   size_t size = 0;
   const char* data = luaL_checklstring(L, 1, &size);
-  int type = luaL_checkint(L, 2);
+  int type = luaL_optint(L, 2, V_ASN1_UTF8STRING);
   ASN1_STRING *s = ASN1_STRING_type_new(type);
   ASN1_STRING_set(s, data, size);
   PUSH_OBJECT(s, "openssl.asn1_string");

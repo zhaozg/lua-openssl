@@ -142,6 +142,10 @@ function TestString:testAll()
   s5 = s4:dup()
   lu.assertEquals(s5, s3)
   assert(s4 == s3)
+
+  local o = asn1.new_string('octet', asn1.OCTET_STRING)
+  print(o:type(), asn1.OCTET_STRING)
+  lu.assertEquals(o:type(), asn1.OCTET_STRING)
 end
 
 TestTime = {}
@@ -162,12 +166,17 @@ function TestTime:testUTCTime()
   assert(at:set(self.time))
   local t1 = at:get()
   lu.assertEquals(self.gmt, t1)
+  at = openssl.asn1.new_utctime(self.time)
+  assert(at)
+  assert(type(at:tostring())=='string')
+  assert(type(at:i2d())=='string')
 end
 
 function TestTime:testGENERALIZEDTime()
   local at = openssl.asn1.new_generalizedtime()
   assert(at:set(self.time))
   local t1 = at:get()
+  assert(type(at:i2d())=='string')
   lu.assertEquals(self.gmt, t1)
 end
 
@@ -175,12 +184,53 @@ TestNumber = {}
 function TestNumber:testBasic()
   local i = 0
   local n = asn1.new_integer(i):i2d()
-  assert(n)
   local m = asn1.new_integer()
+  assert(type(m:tostring())=='string')
   m:d2i(n)
   assert(m:i2d() == n)
   n = asn1.new_integer():i2d()
   assert(n)
   n = asn1.new_integer(nil):i2d()
   assert(n)
+  n = asn1.new_integer("Xabcdef")
+  assert(n)
+  local b = n:bn()
+  i = asn1.new_integer(b)
+  assert(i==n)
+  n:set(1)
 end
+
+TestType = {}
+function TestType:testBasic()
+  local o = asn1.new_type('timeStamping')
+  local d = assert(o:i2d())
+  assert(asn1.d2i_asn1type(d)==o)
+  o = asn1.new_type(true)
+  d = assert(o:i2d())
+  assert(asn1.d2i_asn1type(d)==o)
+  o = asn1.new_type(100)
+  d = assert(o:i2d())
+  assert(asn1.d2i_asn1type(d)==o)
+  local s = asn1.new_string("中文")
+  o = asn1.new_type(s)
+  d = assert(o:i2d())
+  assert(asn1.d2i_asn1type(d)==o)
+
+  s = asn1.new_string("octet", asn1.OCTET_STRING)
+  o = asn1.new_type(s)
+  d = assert(o:i2d())
+  assert(asn1.d2i_asn1type(d)==o)
+
+  assert(o:octet()=='octet')
+  assert(o:octet('abcd'))
+  assert(o:octet()=='abcd')
+
+  local t = openssl.asn1.new_utctime()
+  o = asn1.new_type(t)
+  d = assert(o:i2d())
+  assert(asn1.d2i_asn1type(d)==o)
+  assert(o:type())
+  assert(o:info())
+  assert(o:asn1string())
+end
+
