@@ -144,7 +144,6 @@ function TestString:testAll()
   assert(s4 == s3)
 
   local o = asn1.new_string('octet', asn1.OCTET_STRING)
-  print(o:type(), asn1.OCTET_STRING)
   lu.assertEquals(o:type(), asn1.OCTET_STRING)
 end
 
@@ -169,15 +168,34 @@ function TestTime:testUTCTime()
   at = openssl.asn1.new_utctime(self.time)
   assert(at)
   assert(type(at:tostring())=='string')
-  assert(type(at:i2d())=='string')
+  local d = at:i2d()
+  assert(type(d)=='string')
+  local ab = openssl.asn1.new_utctime()
+  ab:d2i(d)
+  assert(ab==at)
+  assert(at:check())
+  ab = openssl.asn1.new_utctime(self.time+1)
+  local day, sec = ab:diff(at)
+  assert(day==0)
+  assert(sec==-1)
+  at:adj(self.time, 1, 1)
+  day, sec = ab:diff(at)
+  assert(day==1)
+  assert(sec==0)
+  assert(type(ab:toprint()=='string'))
 end
 
 function TestTime:testGENERALIZEDTime()
   local at = openssl.asn1.new_generalizedtime()
   assert(at:set(self.time))
   local t1 = at:get()
-  assert(type(at:i2d())=='string')
+  local d = at:i2d()
+  assert(type(d)=='string')
+  local ab = openssl.asn1.new_utctime()
+  ab:d2i(d)
+  assert(ab==at)
   lu.assertEquals(self.gmt, t1)
+  assert(type(ab:toprint()=='string'))
 end
 
 TestNumber = {}
@@ -198,6 +216,7 @@ function TestNumber:testBasic()
   i = asn1.new_integer(b)
   assert(i==n)
   n:set(1)
+  assert(type(i:toprint()=='string'))
 end
 
 TestType = {}
@@ -233,4 +252,3 @@ function TestType:testBasic()
   assert(o:info())
   assert(o:asn1string())
 end
-
