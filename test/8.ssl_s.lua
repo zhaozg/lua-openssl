@@ -11,7 +11,7 @@ loop = arg[3] and tonumber(arg[3]) or 100
 
 local params = {
   mode = "server",
-  protocol = "TLS",
+  protocol = ssl.default,
   key = "luasec/certs/serverAkey.pem",
   certificate = "luasec/certs/serverA.pem",
   cafile = "luasec/certs/rootA.pem",
@@ -51,25 +51,28 @@ local function ssl_mode()
   local srv = assert(bio.accept(host .. ':' .. port))
   local i = 0
   if srv then
-    assert(srv:accept(true)) -- make real listen
-    while i < loop do
-      local cli = assert(srv:accept()) -- bio tcp
-      local s = ctx:ssl(cli, true)
-      if (i % 2 == 0) then
-        assert(s:handshake())
-      else
-        assert(s:accept())
+    -- make real listen
+    -- FIXME
+    if(srv:accept(true)) then
+      while i < loop do
+        local cli = assert(srv:accept()) -- bio tcp
+        local s = ctx:ssl(cli, true)
+        if (i % 2 == 0) then
+          assert(s:handshake())
+        else
+          assert(s:accept())
+        end
+        repeat
+          local d = s:read()
+          if d then assert(#d == s:write(d)) end
+        until not d
+        s:shutdown()
+        cli:close()
+        cli = nil
+        assert(cli==nil)
+        collectgarbage()
+        i = i + 1
       end
-      repeat
-        local d = s:read()
-        if d then assert(#d == s:write(d)) end
-      until not d
-      s:shutdown()
-      cli:close()
-      cli = nil
-      assert(cli==nil)
-      collectgarbage()
-      i = i + 1
     end
     srv:close()
   end

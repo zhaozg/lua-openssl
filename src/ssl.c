@@ -19,17 +19,19 @@ create ssl_ctx object, which mapping to SSL_CTX in openssl.
 @tparam[opt] string support_ciphers, if not given, default of openssl will be used
 @treturn ssl_ctx
 */
-#if OPENSSL_VERSION_NUMBER > 0x10100000L && !defined(LIBRESSL_VERSION_NUMBER)
+#if OPENSSL_VERSION_NUMBER > 0x10100000L
 #define  TLS_PROTOCOL_TIPS  \
   "only support TLS, DTLS to negotiate highest available SSL/TLS or DTLS " \
   "version above openssl v1.1.0\n" \
   "optional followed by _client or _server\n" \
   "default is TLS\n"
+#define DEFAULT_PROTOCOL "TLS"
 #else
 #define  TLS_PROTOCOL_TIPS  \
   "SSLv23, TLSv1_2, TLSv1_1, TLSv1, DTLSv1_2 or DTLSv1, optional followed by _client or _server\n" \
   "optional followed by _client or _server\n" \
   "default is SSLv23 to negotiate highest available SSL/TLS\n"
+#define DEFAULT_PROTOCOL "SSLv23"
 #endif
 
 typedef struct
@@ -54,11 +56,7 @@ static int SSL_is_server(const SSL *s)
 
 static int openssl_ssl_ctx_new(lua_State*L)
 {
-#if OPENSSL_VERSION_NUMBER > 0x10100000L && !defined(LIBRESSL_VERSION_NUMBER)
-  const char* meth = luaL_optstring(L, 1, "TLS");
-#else
-  const char* meth = luaL_optstring(L, 1, "SSLv23");
-#endif
+  const char* meth = luaL_optstring(L, 1, DEFAULT_PROTOCOL);
 #if OPENSSL_VERSION_NUMBER >= 0x01000000L
   const
 #endif
@@ -67,7 +65,7 @@ static int openssl_ssl_ctx_new(lua_State*L)
   SSL_CTX* ctx;
 
   if (0);
-#if OPENSSL_VERSION_NUMBER > 0x10100000L && !defined(LIBRESSL_VERSION_NUMBER)
+#if OPENSSL_VERSION_NUMBER > 0x10100000L
   else if (strcmp(meth, "TLS") == 0)
     method = TLS_method();
   else if (strcmp(meth, "TLS_server") == 0)
@@ -1370,7 +1368,7 @@ set session cache mode,and return old mode
 @tparam string mode support 'no_auto_clear','server','client','both','off',
 'no_auto_clear' can be combine with others, so accept one or two param.
 */
-#if OPENSSL_VERSION_NUMBER > 0x10100000L && !defined(LIBRESSL_VERSION_NUMBER)
+#if OPENSSL_VERSION_NUMBER > 0x10100000L
 #endif
 static int openssl_session_cache_mode(lua_State *L)
 {
@@ -1623,7 +1621,7 @@ static int openssl_ssl_session_id(lua_State*L)
   }
   else
   {
-#if OPENSSL_VERSION_NUMBER > 0x10100000L && !defined(LIBRESSL_VERSION_NUMBER)
+#if OPENSSL_VERSION_NUMBER > 0x10100000L
     size_t len;
     const char* id = luaL_checklstring(L, 2, &len);
     int ret = SSL_SESSION_set1_id((SSL_SESSION*)session, (const unsigned char*)id, len);
@@ -1676,7 +1674,7 @@ static int openssl_ssl_session_is_resumable(lua_State*L)
 }
 #endif
 
-#if OPENSSL_VERSION_NUMBER > 0x10100000L && !defined(LIBRESSL_VERSION_NUMBER)
+#if OPENSSL_VERSION_NUMBER > 0x10100000L
 static int openssl_ssl_session_has_ticket(lua_State*L)
 {
   SSL_SESSION* session = CHECK_OBJECT(1, SSL_SESSION, "openssl.ssl_session");
@@ -1699,7 +1697,7 @@ static luaL_Reg ssl_session_funcs[] =
 #if OPENSSL_VERSION_NUMBER > 0x10101000L && !defined(LIBRESSL_VERSION_NUMBER)
   {"is_resumable",  openssl_ssl_session_is_resumable},
 #endif
-#if OPENSSL_VERSION_NUMBER > 0x10100000L && !defined(LIBRESSL_VERSION_NUMBER)
+#if OPENSSL_VERSION_NUMBER > 0x10100000L
   {"has_ticket",    openssl_ssl_session_has_ticket},
 #endif
 
@@ -1814,7 +1812,7 @@ static int openssl_ssl_want(lua_State*L)
   lua_pushinteger(L, st);
   return 2;
 }
-#if !defined(OPENSSL_NO_COMP) && !defined(LIBRESSL_VERSION_NUMBER)
+#if !defined(OPENSSL_NO_COMP)
 /***
 get current compression name
 @function current_compression
@@ -2570,7 +2568,7 @@ static luaL_Reg ssl_funcs[] =
   {"is_server", openssl_ssl_is_server},
 
   {"current_cipher",        openssl_ssl_current_cipher},
-#if !defined(OPENSSL_NO_COMP) && !defined(LIBRESSL_VERSION_NUMBER)
+#if !defined(OPENSSL_NO_COMP)
   {"current_compression",   openssl_ssl_current_compression},
 #endif
   {"getpeerverification",   openssl_ssl_getpeerverification},
@@ -2629,6 +2627,8 @@ int luaopen_ssl(lua_State *L)
     lua_pushinteger(L, iVerifyMode_Options[i]);
     lua_setfield(L, -2, sVerifyMode_Options[i]);
   }
+  lua_pushstring(L, DEFAULT_PROTOCOL);
+  lua_setfield(L, -2, "default");
 
   return 1;
 }

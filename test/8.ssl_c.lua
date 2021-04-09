@@ -13,7 +13,7 @@ loop = arg[3] and tonumber(arg[3]) or 100
 
 local params = {
   mode = "client",
-  protocol = "TLS",
+  protocol = ssl.default,
   key = "luasec/certs/clientAkey.pem",
   certificate = "luasec/certs/clientA.pem",
   cafile = "luasec/certs/rootA.pem",
@@ -64,8 +64,15 @@ local function mk_connection(_host, _port, i)
     else
       assert(S:connect())
     end
-    local b =S:getpeerverification()
-    assert(b)
+    --FIXME
+    local succ, errs =S:getpeerverification()
+    if type(errs)=='table' then
+      for i, err in pairs(errs) do
+        for j, msg in ipairs(err) do
+          print("depth = " .. i, "error = " .. msg)
+        end
+      end
+    end
     local s = 'aaa'
     io.write('.')
     for _ = 1, 100 do

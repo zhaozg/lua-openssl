@@ -6,7 +6,7 @@ local ssl    = require("ssl")
 
 local params = {
    mode = "client",
-   protocol = "TLS",
+   protocol = ssl.default,
    key = "../certs/serverBkey.pem",
    certificate = "../certs/serverB.pem",
    cafile = "../certs/rootB.pem",

@@ -7,12 +7,7 @@ M.luaopensslv, M.luav, M.opensslv = openssl.version()
 M.libressl = M.opensslv:find('^LibreSSL')
 
 function M.sslProtocol(srv, protocol)
-  local _,_,opensslv = openssl.version(true)
-  if M.libressl or opensslv < 0x10100000 then
-    protocol = protocol or 'SSLv23'
-  else
-    protocol = protocol or 'TLS'
-  end
+  protocol = protocol or openssl.ssl.default
   if srv==true then
     return protocol.."_server"
   elseif srv==false then
