@@ -139,7 +139,6 @@ local function signReq(self, req_ctx, req, sn, now)
   local status = t.status_info.status:get()
   --FIXME: libressl
   if status ~= 0 then
-    print(require'inspect'(t))
     return
   end
   assert(t.status_info.status:tostring() == '0')
