@@ -5,7 +5,7 @@
 #include "openssl.h"
 #include "private.h"
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 int BIO_up_ref(BIO *b)
 {
   CRYPTO_add(&b->references, 1, CRYPTO_LOCK_BIO);
@@ -26,7 +26,10 @@ int EVP_PKEY_up_ref(EVP_PKEY *pkey)
   CRYPTO_add(&pkey->references, 1, CRYPTO_LOCK_EVP_PKEY);
   return 1;
 }
+#endif
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
+#if !defined(LIBRESSL_VERSION_NUMBER)
 int RSA_bits(const RSA *r)
 {
   return (BN_num_bits(r->n));
@@ -47,6 +50,7 @@ int ECDSA_SIG_set0(ECDSA_SIG *sig, BIGNUM *r, BIGNUM *s)
   sig->s = s;
   return 1;
 }
+
 void RSA_get0_key(const RSA *r,
                   const BIGNUM **n, const BIGNUM **e, const BIGNUM **d)
 {
@@ -97,8 +101,15 @@ void HMAC_CTX_free(HMAC_CTX *ctx)
     OPENSSL_free(ctx);
   }
 }
+#endif
 
 #ifndef OPENSSL_NO_DSA
+int DSA_bits(const DSA *dsa)
+{
+  return BN_num_bits(dsa->p);
+}
+
+#if !defined(LIBRESSL_VERSION_NUMBER)
 DSA *EVP_PKEY_get0_DSA(EVP_PKEY *pkey)
 {
   if (pkey->type != EVP_PKEY_DSA)
@@ -106,11 +117,6 @@ DSA *EVP_PKEY_get0_DSA(EVP_PKEY *pkey)
     return NULL;
   }
   return pkey->pkey.dsa;
-}
-
-int DSA_bits(const DSA *dsa)
-{
-  return BN_num_bits(dsa->p);
 }
 
 void DSA_get0_pqg(const DSA *d,
@@ -185,9 +191,11 @@ int DSA_set0_key(DSA *d, BIGNUM *pub_key, BIGNUM *priv_key)
   return 1;
 }
 #endif
+#endif
 
 #ifndef OPENSSL_NO_EC
 
+#if !defined(LIBRESSL_VERSION_NUMBER)
 EC_KEY *EVP_PKEY_get0_EC_KEY(EVP_PKEY *pkey)
 {
   if (pkey->type != EVP_PKEY_EC)
@@ -196,10 +204,11 @@ EC_KEY *EVP_PKEY_get0_EC_KEY(EVP_PKEY *pkey)
   }
   return pkey->pkey.ec;
 }
-
+#endif
 #endif
 
 #ifndef OPENSSL_NO_DH
+#if !defined(LIBRESSL_VERSION_NUMBER)
 DH *EVP_PKEY_get0_DH(EVP_PKEY *pkey)
 {
   if (pkey->type != EVP_PKEY_DH)
@@ -288,8 +297,10 @@ int DH_set0_pqg(DH *dh, BIGNUM *p, BIGNUM *q, BIGNUM *g)
   return 1;
 }
 #endif
+#endif
 
 #ifndef OPENSSL_NO_RSA
+#if !defined(LIBRESSL_VERSION_NUMBER)
 RSA *EVP_PKEY_get0_RSA(EVP_PKEY *pkey)
 {
   if (pkey->type != EVP_PKEY_RSA)
@@ -298,6 +309,7 @@ RSA *EVP_PKEY_get0_RSA(EVP_PKEY *pkey)
   }
   return pkey->pkey.rsa;
 }
+
 int RSA_set0_key(RSA *r, BIGNUM *n, BIGNUM *e, BIGNUM *d)
 {
   /* If the fields n and e in r are NULL, the corresponding input
@@ -379,22 +391,24 @@ int RSA_set0_crt_params(RSA *r, BIGNUM *dmp1, BIGNUM *dmq1, BIGNUM *iqmp)
   return 1;
 }
 #endif
+#endif
 
 #if !defined(LIBRESSL_VERSION_NUMBER)
 EVP_MD_CTX *EVP_MD_CTX_new(void)
 {
   return OPENSSL_malloc(sizeof(EVP_MD_CTX));
 }
+
 int EVP_MD_CTX_reset(EVP_MD_CTX *ctx)
 {
   return EVP_MD_CTX_cleanup(ctx);
 }
+
 void EVP_MD_CTX_free(EVP_MD_CTX *ctx)
 {
   EVP_MD_CTX_cleanup(ctx);
   OPENSSL_free(ctx);
 }
-#endif
 
 void X509_REQ_get0_signature(const X509_REQ *req, const ASN1_BIT_STRING **psig,
                              const X509_ALGOR **palg)
@@ -404,12 +418,20 @@ void X509_REQ_get0_signature(const X509_REQ *req, const ASN1_BIT_STRING **psig,
   if (palg != NULL)
     *palg = req->sig_alg;
 }
+#endif
 
 X509_PUBKEY *X509_REQ_get_X509_PUBKEY(X509_REQ *req)
 {
   return req->req_info->pubkey;
 }
 
+int i2d_re_X509_REQ_tbs(X509_REQ *req, unsigned char **pp)
+{
+  req->req_info->enc.modified = 1;
+  return i2d_X509_REQ_INFO(req->req_info, pp);
+}
+
+#if !defined(LIBRESSL_VERSION_NUMBER)
 const ASN1_INTEGER *X509_get0_serialNumber(const X509 *a)
 {
   return a->cert_info->serialNumber;
@@ -419,11 +441,7 @@ const STACK_OF(X509_EXTENSION) *X509_get0_extensions(const X509 *x)
 {
   return x->cert_info->extensions;
 }
-int i2d_re_X509_REQ_tbs(X509_REQ *req, unsigned char **pp)
-{
-  req->req_info->enc.modified = 1;
-  return i2d_X509_REQ_INFO(req->req_info, pp);
-}
+
 const ASN1_TIME *X509_REVOKED_get0_revocationDate(const X509_REVOKED *x)
 {
   return x->revocationDate;
@@ -438,6 +456,7 @@ const STACK_OF(X509_EXTENSION) *X509_REVOKED_get0_extensions(const X509_REVOKED 
 {
   return r->extensions;
 }
+
 const STACK_OF(X509_EXTENSION) *X509_CRL_get0_extensions(const X509_CRL *crl)
 {
   return crl->crl->extensions;
@@ -451,6 +470,17 @@ void X509_CRL_get0_signature(const X509_CRL *crl, const ASN1_BIT_STRING **psig,
   if (palg != NULL)
     *palg = crl->sig_alg;
 }
+
+const ASN1_TIME *X509_CRL_get0_lastUpdate(const X509_CRL *crl)
+{
+  return crl->crl->lastUpdate;
+}
+
+const ASN1_TIME *X509_CRL_get0_nextUpdate(const X509_CRL *crl)
+{
+  return crl->crl->nextUpdate;
+}
+#endif
 
 const ASN1_INTEGER *TS_STATUS_INFO_get0_status(const TS_STATUS_INFO *a)
 {
@@ -483,13 +513,12 @@ void X509_get0_signature(CONSTIFY_X509_get0 ASN1_BIT_STRING **psig,
   if (palg)
     *palg = x->sig_alg;
 }
-#endif
 
 int X509_get_signature_nid(const X509 *x)
 {
   return OBJ_obj2nid(x->sig_alg->algorithm);
 }
-
+#endif
 #endif /* < 1.0.2 */
 
 
@@ -532,19 +561,11 @@ unsigned char *TS_VERIFY_CTX_set_imprint(TS_VERIFY_CTX *ctx,
   return ctx->imprint;
 }
 
+#if !defined(LIBRESSL_VERSION_NUMBER)
 const unsigned char *ASN1_STRING_get0_data(const ASN1_STRING *x)
 {
   return x->data;
 }
-
-const ASN1_TIME *X509_CRL_get0_lastUpdate(const X509_CRL *crl)
-{
-  return crl->crl->lastUpdate;
-}
-
-const ASN1_TIME *X509_CRL_get0_nextUpdate(const X509_CRL *crl)
-{
-  return crl->crl->nextUpdate;
-}
+#endif
 
 #endif /* < 1.1.0 */

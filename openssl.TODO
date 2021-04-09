@@ -6,8 +6,12 @@ others:
 
   ☐ clean unused/private code
   ☐ more compat with other tools/nodejs/java
+  ☐ FIXME
+  ☐ TODO
 
 document:
 
-  ☐ ... 
+  ☐ ...
+
+duplicate:
 
