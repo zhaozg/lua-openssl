@@ -29,7 +29,29 @@ function TestBIO:testMem()
   m:reset()
 end
 
+function TestBIO:testNetwork()
+  local cli = bio.connect("kkhub.com", false)
+  cli:retry()
+  assert(cli)
+  cli = bio.connect({
+      hostname= 'kkhub.com',
+      port = "12345"
+  }, false)
+  assert(cli:nbio(false))
+  cli:retry()
+  assert(cli)
+  cli = bio.connect()
+  assert(cli:nbio(true))
+  cli:shutdown()
+  assert(cli)
+end
+
 function TestBIO:testFilter()
+  local m
+
+  local buf = bio.filter('buffer')
+  buf:close()
+
   local b64 = bio.filter('base64')
   local mem = bio.mem()
   b64 = assert(b64:push(mem))
@@ -43,34 +65,35 @@ function TestBIO:testFilter()
   md = assert(md:push(mem))
   md:write('abcd')
   md:flush()
-
-  local m
   md, m = md:get_md()
-  s = md:gets()
-  --FIXME: howto get digest
+  assert(md)
+  assert( m)
   assert(md:next():get_md()==nil)
+  --FIXME: howto get digest
+  --print(md:read())
+  md = md:pop()
+  assert(md)
+  assert(nil==md:pop())
 
   m = '1234567812345678'
   local cipher = bio.filter('cipher', 'aes-128-ecb', '1234567812345678', '1234567812345678', true)
   mem = bio.mem()
 
   cipher = assert(cipher:push(mem))
-  cipher:write(m)
-  cipher:flush()
-  s = cipher:read()
-  assert(#s==32)
+  mem:write(m)
   assert(cipher:cipher_status())
-
-  --
-  cipher = bio.filter('cipher', 'aes-128-ecb', '1234567812345678', '1234567812345678', false)
-  mem = bio.mem()
-
-  cipher = assert(cipher:push(mem))
-  cipher:write(s)
-  cipher:flush()
   s = cipher:read()
   assert(#s==16)
+
+  cipher = bio.filter('cipher', 'aes-128-ecb', '1234567812345678', '1234567812345678', false)
+  mem = bio.mem(s)
+
+  cipher = assert(cipher:push(mem))
+  assert(cipher:cipher_status())
+  s = cipher:read()
+  assert(s)
   --FIXME:
+  --assert(#s==16)
   --assert(s==m)
 end
 
@@ -81,18 +104,19 @@ function TestBIO:testSocket()
   local d = bio.dgram(555)
   d:close()
 
-  --FIXME
-  --s = bio.accept(899)
-  --local c = bio.connect('127.0.0.1:899', true)
-  --c:close()
-  --s:close()
+  s = bio.accept(899)
+  s:close()
 end
 
 function TestBIO:testFile()
-  local s = bio.fd(2)
-  s:close()
+  local f = bio.fd(2)
+  assert(2==f:fd())
+  assert(1==f:fd(1))
+  f:close()
 
-  local f = bio.file('./test.lua')
+  f = bio.file('./test.lua')
+  assert(f:seek(0));
+  assert(f:tell())
   f:close()
 end
 

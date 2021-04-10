@@ -186,55 +186,68 @@ make tcp client socket
 @tparam[opt=true] boolean connect default connect immediately
 @treturn bio
 */
+
+/***
+make tcp client socket
+@function connect
+@tparam address table with hostname, ip, port filed
+@tparam[opt=true] boolean connect default connect immediately
+@treturn bio
+*/
 static int openssl_bio_new_connect(lua_State *L)
 {
-  const char *host = luaL_checkstring(L, 1);
-  BIO* bio = BIO_new_connect((char*)host);
+  BIO* bio = NULL;
   int doconn = 1;
+  int ret = 1;
 
-  if (lua_isstring(L, 2))
+  if (lua_isstring(L, 1))
   {
-    if (BIO_set_conn_port(bio, lua_tostring(L, 2)) <= 0)
-    {
-      BIO_free(bio);
-      bio = NULL;
-    }
-    else
-    {
-      doconn = lua_isnone(L, 3) ? doconn : auxiliar_checkboolean(L, 3);
-    }
+    const char *host = luaL_checkstring(L, 1);
+    bio = BIO_new_connect((char*)host);
   }
-  else
-    doconn = auxiliar_checkboolean(L, 2);
-
-  if (bio)
+  else if (lua_istable(L, 1))
   {
-    int ret = 1;
-    if (doconn)
-    {
-      ret = BIO_do_connect(bio);
-    }
+    bio = BIO_new(BIO_s_connect());
 
-    if (ret == 1)
-    {
+    lua_getfield(L, 1, "hostname");
+    if (!lua_isnil(L, -1)) {
+      BIO_set_conn_hostname(bio, (char*) lua_tostring(L, -1));
+    }
+    lua_pop(L, 1);
+
+    lua_getfield(L, 1, "port");
+    if(!lua_isnil(L, -1)) {
+      BIO_set_conn_port(bio, (char *)lua_tostring(L, -1));
+    }
+    lua_pop(L, 1);
+
+    lua_getfield(L, 1, "ip");
+    if (!lua_isnil(L, -1)) {
+      BIO_set_conn_hostname(bio, (char*) lua_tostring(L, -1));
+    }
+    lua_pop(L, 1);
+  } else
+  {
+    bio = BIO_new(BIO_s_connect());
+    doconn = 0;
+  }
+
+  doconn = lua_isnone(L, 2) ? doconn : lua_toboolean(L, 2);
+  if (doconn)
+    ret = BIO_do_connect(bio);
+
+  if (ret == 1)
+  {
       PUSH_OBJECT(bio, "openssl.bio");
       openssl_newvalue(L, bio);
 
       lua_pushboolean(L, 1);
       openssl_valueset(L, bio, "free_all");
       return 1;
-    }
-    else
-    {
-      BIO_free(bio);
-      luaL_error(L, "Error creating connection to remote machine");
-    }
   }
 
-  if (!bio)
-    luaL_error(L, "Error creating connection BIO");
-
-  return 0;
+  BIO_free(bio);
+  return openssl_pushresult(L, ret);
 }
 
 /***
@@ -786,21 +799,60 @@ set fd of bio object
 static LUA_FUNCTION(openssl_bio_fd)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
-  int typ = BIO_method_type(bio);
-  if (typ & BIO_TYPE_FD)
+  int type = BIO_method_type(bio);
+  luaL_argcheck(L,
+                type & (BIO_TYPE_FD
+                       |BIO_TYPE_CONNECT
+                       |BIO_TYPE_ACCEPT
+                       |BIO_TYPE_DGRAM
+                       |BIO_TYPE_SOCKET),
+                1,
+                "not a supported BIO type");
+  if (!lua_isnone(L, 2))
   {
-    int fd = -1;
-    if (!lua_isnone(L, 2))
-    {
-      fd = lua_tointeger(L, 2);
-      BIO_set_fd(bio, fd, BIO_NOCLOSE);
-    }
-    else
-      fd = BIO_get_fd(bio, 0);
-    lua_pushinteger(L, fd);
+    int fd = luaL_checkint(L, 2);
+    BIO_set_fd(bio, fd, BIO_NOCLOSE);
   }
-  else
-    luaL_error(L, "BIO type miss match");
+  lua_pushnumber(L, BIO_get_fd(bio, 0));
+  return 1;
+}
+
+/* BIO_s_file() */
+# define BIO_set_fp(b,fp,c)      BIO_ctrl(b,BIO_C_SET_FILE_PTR,c,(char *)fp)
+# define BIO_get_fp(b,fpp)       BIO_ctrl(b,BIO_C_GET_FILE_PTR,0,(char *)fpp)
+
+static LUA_FUNCTION(openssl_bio_seek)
+{
+  BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
+  int type = BIO_method_type(bio);
+  int ofs, ret;
+  luaL_argcheck(L,
+                type & (BIO_TYPE_FD
+                       |BIO_TYPE_FILE),
+                1,
+                "not a fd or file BIO type");
+  ofs = luaL_checkint(L, 2);
+  ret = BIO_seek(bio, ofs);
+  if (ret<0)
+    return openssl_pushresult(L, ret);
+  lua_pushinteger(L, ret);
+  return 1;
+}
+
+static LUA_FUNCTION(openssl_bio_tell)
+{
+  BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
+  int type = BIO_method_type(bio);
+  int ret;
+  luaL_argcheck(L,
+                type & (BIO_TYPE_FD
+                       |BIO_TYPE_FILE),
+                1,
+                "not a fd or file BIO type");
+  ret = BIO_tell(bio);
+  if (ret<0)
+    return openssl_pushresult(L, ret);
+  lua_pushinteger(L, ret);
   return 1;
 }
 
@@ -960,8 +1012,16 @@ static luaL_Reg bio_funs[] =
   {"handshake", openssl_bio_handshake},
 
   {"shutdown",  openssl_bio_shutdown},
+
+  /* BIO_s_datagram(), BIO_s_fd(), BIO_s_socket(),
+   * BIO_s_accept() and BIO_s_connect() */
   {"fd",        openssl_bio_fd},
+
   {"ssl",       openssl_bio_get_ssl},
+
+  /* BIO_s_fd() and BIO_s_file() */
+  {"seek",      openssl_bio_seek},
+  {"tell",      openssl_bio_tell},
 
   {"__tostring",  auxiliar_tostring},
   {"__gc",  openssl_bio_free},
