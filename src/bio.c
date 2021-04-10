@@ -703,13 +703,8 @@ static LUA_FUNCTION(openssl_bio_accept)
       openssl_valueset(L, nb, "free_all");
       return 1;
     }
-    else
-      return openssl_pushresult(L, ret);
   }
-  else
-    luaL_error(L, "BIO_do_accept fail");
-
-  return 0;
+  return openssl_pushresult(L, ret);
 }
 
 /***

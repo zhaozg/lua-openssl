@@ -215,18 +215,21 @@ static LUA_FUNCTION(openssl_clear_error)
   return 0;
 }
 
-static LUA_FUNCTION(openssl_print_errors)
+static LUA_FUNCTION(openssl_errors)
 {
   BIO *out = BIO_new(BIO_s_mem());
   if(out)
   {
+    BUF_MEM* mem;
+
     ERR_print_errors(out);
-    PUSH_OBJECT(out, "openssl.bio");
+    BIO_get_mem_ptr(out, &mem);
+    lua_pushlstring(L, mem->data, mem->length);
+    BIO_free(out);
+
     return 1;
   }
-  lua_pushnil(L);
-  lua_pushstring(L, "out of memory");
-  return 2;
+  return 0;
 }
 
 /***
@@ -428,7 +431,7 @@ static const luaL_Reg eay_functions[] =
 
   {"clear_error", openssl_clear_error},
   {"error",       openssl_error_string},
-  {"print_errors",openssl_print_errors},
+  {"errors",      openssl_errors},
   {"engine",      openssl_engine},
   {"FIPS_mode",   openssl_fips_mode},
 

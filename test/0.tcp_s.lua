@@ -11,19 +11,23 @@ print(string.format('Listen at %s:%s', host, port))
 local i = 0;
 local srv = assert(bio.accept(host .. ':' .. port))
 if srv then
-  assert(srv:accept(true)) -- make real listen
-  while i < loop do
-    local cli = assert(srv:accept())
-    repeat
-      local s = cli:read()
-      if s then
-        cli:write(s)
-        cli:flush()
-      end
-    until not s
-    cli:close()
-    collectgarbage()
-    i = i + 1
+  -- make real listen
+  if(srv:accept(true)) then
+    while i < loop do
+      local cli = assert(srv:accept())
+      repeat
+        local s = cli:read()
+        if s then
+          cli:write(s)
+          cli:flush()
+        end
+      until not s
+      cli:close()
+      collectgarbage()
+      i = i + 1
+    end
+  else
+    print(openssl.errors())
   end
   srv:close()
 end

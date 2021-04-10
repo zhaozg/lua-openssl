@@ -96,3 +96,10 @@ function TestBIO:testFile()
   f:close()
 end
 
+function TestBIO:testNull()
+  local n = bio.null()
+  n:write('abcd')
+  assert(n:read()==nil)
+  n:close()
+end
+
