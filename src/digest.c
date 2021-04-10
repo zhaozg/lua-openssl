@@ -98,17 +98,6 @@ static LUA_FUNCTION(openssl_digest)
   unsigned int  blen = sizeof(buf);
   int raw, status;
 
-  if (lua_istable(L, 1))
-  {
-    if (lua_getmetatable(L, 1) && lua_equal(L, 1, -1))
-    {
-      lua_pop(L, 1);
-      lua_remove(L, 1);
-    }
-    else
-      luaL_error(L, "call function with invalid state");
-  }
-
   md = get_digest(L, 1, NULL);
   in = luaL_checklstring(L, 2, &inl);
   raw = (lua_isnone(L, 3)) ? 0 : lua_toboolean(L, 3);
@@ -632,7 +621,6 @@ static luaL_Reg digest_ctx_funs[] =
 
 static const luaL_Reg R[] =
 {
-  {"__call",     openssl_digest},
   {"list",       openssl_digest_list},
   {"get",        openssl_digest_get},
   {"new",        openssl_digest_new},

@@ -504,7 +504,6 @@ static luaL_Reg mac_ctx_funs[] =
 
 static const luaL_Reg mac_R[] =
 {
-  { "__call",   openssl_hmac},
   { "new",      openssl_hmac_ctx_new},
   { "hmac",     openssl_hmac},
   { "digest",   openssl_hmac},

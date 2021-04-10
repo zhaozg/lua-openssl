@@ -987,7 +987,6 @@ static luaL_Reg R[] =
   {"accept",    openssl_bio_new_accept},
   {"connect",   openssl_bio_new_connect},
 
-  {"__call",    openssl_bio_new_mem},
   {NULL,    NULL}
 };
 

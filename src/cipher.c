@@ -69,19 +69,7 @@ quick encrypt
 */
 static LUA_FUNCTION(openssl_evp_encrypt)
 {
-  const EVP_CIPHER* cipher = NULL;
-  if (lua_istable(L, 1))
-  {
-    if (lua_getmetatable(L, 1) && lua_equal(L, 1, -1))
-    {
-      lua_pop(L, 1);
-      lua_remove(L, 1);
-    }
-    else
-      luaL_error(L, "call function with invalid state");
-  }
-
-  cipher = get_cipher(L, 1, NULL);
+  const EVP_CIPHER* cipher  = get_cipher(L, 1, NULL);
   if (cipher)
   {
     size_t input_len = 0;
@@ -157,19 +145,7 @@ quick decrypt
 */
 static LUA_FUNCTION(openssl_evp_decrypt)
 {
-  const EVP_CIPHER* cipher;
-  if (lua_istable(L, 1))
-  {
-    if (lua_getmetatable(L, 1) && lua_equal(L, 1, -1))
-    {
-      lua_pop(L, 1);
-      lua_remove(L, 1);
-    }
-    else
-      luaL_error(L, "call function with invalid state");
-  }
-
-  cipher = get_cipher(L, 1, NULL);
+  const EVP_CIPHER* cipher = get_cipher(L, 1, NULL);
   if (cipher)
   {
     size_t input_len = 0;
@@ -246,19 +222,7 @@ quick encrypt or decrypt
 */
 static LUA_FUNCTION(openssl_evp_cipher)
 {
-  const EVP_CIPHER* cipher = NULL;
-  if (lua_istable(L, 1))
-  {
-    if (lua_getmetatable(L, 1) && lua_equal(L, 1, -1))
-    {
-      lua_pop(L, 1);
-      lua_remove(L, 1);
-    }
-    else
-      luaL_error(L, "call function with invalid state");
-  }
-
-  cipher = get_cipher(L, 1, NULL);
+  const EVP_CIPHER* cipher = get_cipher(L, 1, NULL);
 
   if (cipher)
   {
@@ -979,7 +943,6 @@ static luaL_Reg cipher_ctx_funs[] =
 
 static const luaL_Reg R[] =
 {
-  { "__call",  openssl_evp_cipher},
   { "list",    openssl_cipher_list},
   { "get",     openssl_cipher_get},
   { "encrypt", openssl_evp_encrypt},
