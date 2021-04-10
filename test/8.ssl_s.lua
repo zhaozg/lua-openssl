@@ -19,6 +19,28 @@ local params = {
   options = {"all",  "no_sslv2"}
 }
 
+local params01 = {
+  mode = "server",
+  protocol = ssl.default,
+  key = "luasec/certs/serverAkey.pem",
+  certificate = "luasec/certs/serverA.pem",
+  cafile = "luasec/certs/rootA.pem",
+  verify = ssl.none,
+  options = {"all",  "no_sslv2"},
+  ciphers = "ALL:!ADH:@STRENGTH",
+}
+
+local params02 = {
+  mode = "server",
+  protocol = ssl.default,
+  key = "luasec/certs/serverBkey.pem",
+  certificate = "luasec/certs/serverB.pem",
+  cafile = "luasec/certs/rootB.pem",
+  verify = ssl.none,
+  options = {"all",  "no_sslv2"},
+  ciphers = "ALL:!ADH:@STRENGTH",
+}
+
 local certstore
 if opensslv > 0x10002000 then
   certstore = openssl.x509.store:new()
@@ -34,6 +56,14 @@ local function ssl_mode()
   local ctx = assert(sslctx.new(params))
   assert(ctx:verify_mode())
   assert(ctx:verify_depth(9)==9)
+
+  local ctx01 = assert(sslctx.new(params01))
+  local ctx02 = assert(sslctx.new(params02))
+
+  ctx:set_servername_callback({
+    ["servera.br"]  = ctx01,
+    ["serveraa.br"] = ctx02,
+  })
 
   if certstore then ctx:cert_store(certstore) end
   -- ctx:set_cert_verify({always_continue=true,verify_depth=4})
@@ -62,11 +92,19 @@ local function ssl_mode()
         else
           assert(s:accept())
         end
+        s:getpeerverification()
+        s:dup()
         repeat
           local d = s:read()
           if d then assert(#d == s:write(d)) end
         until not d
         s:shutdown()
+        s:session()
+        s:ctx()
+        s:cache_hit()
+        s:session_reused()
+        s:clear()
+        assert(type(tostring(s))=='string')
         cli:close()
         cli = nil
         assert(cli==nil)

@@ -20,6 +20,7 @@ local params = {
   options = {"all",  "no_sslv2"}
 }
 
+--
 local certstore
 if opensslv > 0x10002000 then
   certstore = openssl.x509.store:new()
@@ -31,7 +32,15 @@ if opensslv > 0x10002000 then
 end
 
 local ctx = assert(sslctx.new(params))
-if certstore then ctx:cert_store(certstore) end
+
+if certstore then
+  ctx:cert_store(certstore)
+end
+assert(ctx:cert_store())
+ctx:timeout(60)
+assert(ctx:timeout()==60)
+ctx:quiet_shutdown(1)
+assert(ctx:quiet_shutdown()==1)
 
 ctx:verify_mode(ssl.peer, function(_arg)
   --[[

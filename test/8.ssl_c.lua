@@ -3,13 +3,14 @@ local openssl = require 'openssl'
 local bio, ssl = openssl.bio, openssl.ssl
 local sslctx = require 'sslctx'
 local _, _, opensslv = openssl.version(true)
-local host, port, loop
+local host, port, loop, name
 
 local arg = arg
 
 host = arg[1] or "127.0.0.1"; -- only ip
 port = arg[2] or "8383";
 loop = arg[3] and tonumber(arg[3]) or 100
+name = arg[4]
 
 local params = {
   mode = "client",
@@ -59,6 +60,9 @@ local function mk_connection(_host, _port, i)
   local cli = assert(bio.connect(_host .. ':' .. _port, true))
   if (cli) then
     local S = ctx:ssl(cli, false)
+    if name then
+      cli:set('hostname', name)
+    end
     if (i % 2 == 2) then
       assert(S:handshake())
     else
@@ -79,6 +83,11 @@ local function mk_connection(_host, _port, i)
       assert(S:write(s))
       assert(S:read())
     end
+    local t = S:current_cipher()
+    assert(type(t)=='table')
+    assert(S:getfd())
+    assert(not S:is_server())
+    S:get('side')
     S:shutdown()
     cli:shutdown()
     cli:close()

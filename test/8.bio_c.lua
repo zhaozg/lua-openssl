@@ -9,6 +9,7 @@ local arg = arg
 host = arg[1] or "127.0.0.1"; -- only ip
 port = arg[2] or "8383";
 loop = arg[3] and tonumber(arg[3]) or 100
+
 local _, _, opensslv = openssl.version(true)
 
 local params = {
@@ -20,6 +21,7 @@ local params = {
   verify = ssl.peer + ssl.fail,
   options = {"all",  "no_sslv2"}
 }
+
 local certstore = nil
 if opensslv > 0x10002000 then
   certstore = openssl.x509.store:new()

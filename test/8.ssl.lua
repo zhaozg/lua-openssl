@@ -139,7 +139,7 @@ if uv then
     set_timeout(2000, function()
       local _child
       _child = uv.spawn(LUA, {
-        args = {"8.ssl_c.lua",  '127.0.0.1',  port},
+        args = {"8.ssl_c.lua",  '127.0.0.1',  port, "serveraa.br"},
         stdio = {nil,  stdout2,  stderr2}
       }, function(code, signal)
         lu.assertEquals(code, 0)
