@@ -79,10 +79,6 @@ local function createQuery(self, policy_id, nonce, cert_req, extensions)
     assert(ano:policy_id():data(), t.policy_id:data())
   end
   if extensions then assert(req:extensions()) end
-  assert(req:add_ext(openssl.x509.extension.new_extension({
-    object = 'subjectAltName',
-    value = "IP:192.168.0.1"
-  })))
   return req
 end
 
@@ -236,6 +232,10 @@ end
 
 function testTS:testBasic()
   local req = createQuery(self)
+  assert(req:add_ext(openssl.x509.extension.new_extension({
+    object = 'subjectAltName',
+    value = "IP:192.168.0.1"
+  })))
   local req_ctx = createRespCtx(self)
   assert(req_ctx:signer(self.tsa.cert, self.tsa.pkey))
   assert(req_ctx:certs({self.ca.cert, self.tsa.cert}))

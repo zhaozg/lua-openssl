@@ -44,15 +44,10 @@ ctx:verify_mode(ssl.peer, function(_arg)
 end)
 
 print(string.format('Listen at %s:%s with %s', host, port, tostring(ctx)))
-ctx:set_cert_verify(function(_arg)
-  -- do some check
-  --[[
-      for k,v in pairs(arg) do
-            print(k,v)
-      end
-      --]]
-  return true -- return false will fail ssh handshake
-end)
+ctx:set_cert_verify({
+  always_continue = true,
+  verify_depth = 9
+})
 
 local function ssl_mode()
   local srv = assert(ctx:bio(host .. ':' .. port, true))
