@@ -99,7 +99,7 @@ function testRSA()
 
   local k1 = pkey.get_public(rsa)
   assert(not k1:is_private())
-  local t = k1:parse()
+  local t = rsa:parse()
   assert(t.bits == 1024)
   assert(t.type == 'rsa')
   assert(t.size == 128)
@@ -109,12 +109,42 @@ function testRSA()
   assert(t.e)
   t.alg = 'rsa'
   local r2 = pkey.new(t)
-  assert(not r2:is_private())
+  assert(r2:is_private())
   local msg = openssl.random(128 - 11)
 
-  local out = pkey.encrypt(r2, msg)
-  local raw = pkey.decrypt(rsa, out)
+  local out = pkey.encrypt(k1, msg)
+  local raw = pkey.decrypt(r2, out)
   assert(msg == raw)
+end
+
+function testDSA()
+  local dsa = {'dsa',  1024}
+  dsa = pkey.new(unpack(dsa))
+
+  local k1 = pkey.get_public(dsa)
+  assert(not k1:is_private())
+  local t = dsa:parse()
+  assert(t.bits == 1024)
+  assert(t.type == 'dsa')
+  assert(t.size)
+
+  local r = t.dsa
+  t = r:parse()
+  assert(t.g)
+  assert(t.p)
+  assert(t.q)
+  assert(t.pub_key)
+
+  t.alg = 'dsa'
+  local r2 = pkey.new(t)
+  assert(r2:is_private())
+  local msg = openssl.random(128 - 11)
+
+  local out = pkey.sign(r2, msg)
+  local ret = pkey.verify(k1, msg, out)
+  assert(ret)
+  ret = pkey.verify(r2, msg, out)
+  assert(ret)
 end
 
 function testKeyFmt()
