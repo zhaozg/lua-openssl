@@ -3,7 +3,8 @@ local dh = openssl.dh
 
 TestDH = {}
 function TestDH:Testdh()
-  local k = dh.generate_key(512)
+  local p = dh.generate_parameters(512)
+  local k = p:generate_key()
 
   local t = k:parse()
   assert(t.bits == 512)
