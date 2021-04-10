@@ -266,7 +266,7 @@ int openssl_sk_x509_extension_totable(lua_State *L, const STACK_OF(X509_EXTENSIO
 int openssl_sk_x509_algor_totable(lua_State *L, const STACK_OF(X509_ALGOR)* sk);
 int openssl_sk_x509_name_totable(lua_State *L, const STACK_OF(X509_NAME)* sk);
 
-X509_ATTRIBUTE* openssl_new_xattribute(lua_State*L, X509_ATTRIBUTE** a, int idx, const char* eprefix);
+X509_ATTRIBUTE* openssl_new_xattribute(lua_State*L, X509_ATTRIBUTE** a, int idx);
 
 int openssl_pusherror (lua_State *L, const char *fmt, ...);
 int openssl_pushargerror (lua_State *L, int arg, const char *extramsg);

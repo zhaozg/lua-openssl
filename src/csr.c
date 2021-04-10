@@ -692,7 +692,7 @@ static LUA_FUNCTION(openssl_csr_attribute)
       attr = NULL;
       if (lua_istable(L, -1))
       {
-        attr = openssl_new_xattribute(L, &attr, -1, NULL);
+        attr = openssl_new_xattribute(L, &attr, -1);
         ret = X509_REQ_add1_attr(csr, attr);
         X509_ATTRIBUTE_free(attr);
       }

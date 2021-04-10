@@ -53,4 +53,6 @@ function TestX509attr:testAll()
   lu.assertEquals(n1:object():sn(), 'extendedKeyUsage')
 
   lu.assertEquals(n1:data(0, asn1.OCTET_STRING):tostring(), 'CA:FALSE')
+
+  assert(n1:data(0, "ABCD"))
 end
