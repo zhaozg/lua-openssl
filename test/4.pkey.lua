@@ -17,8 +17,8 @@ function TestPKEYMY:setUp()
   self.genalg = {
     {nil},  -- default to create rsa 1024 bits with 65537
     {'rsa',  1024,  3},  -- create rsa with give bits length and e
-    {'dsa',  1024},
-    {'dh',  512},  --FIXME:
+    {'dsa',  512},
+    -- {'dh',  512},  --FIXME: DHParams
     {'ec',  'prime256v1'}
   }
 end
@@ -28,10 +28,8 @@ function TestPKEYMY:testBasic()
   assert(eng)
   for _, v in ipairs(self.genalg) do
     local k = mk_key(v)
-    local m = mk_key(v)
     assert(k:is_private())
-    --FIXME:
-    --k:set_engine(eng)
+    k:set_engine(eng)
     local k1 = pkey.get_public(k)
     assert(not k1:is_private())
 
@@ -64,14 +62,17 @@ function TestPKEYMY:testBasic()
       raw = out .. assert(pkey.open_final(ctx))
       lu.assertEquals(msg, raw)
     end
-    if t.type ~= 'ec' and t.type ~= 'dh' then
+    if t.type ~= 'dh' then
       local sig = assert(pkey.sign(k, msg))
       assert(true == pkey.verify(k1, msg, sig))
-    else
-      --FIXME
-      --m = k:derive(m)
-      --assert(type(m)=='string')
-      --assert(m)
+    end
+    --FIXME: DH generate with use right DHParams
+    if t.type == 'ec' then
+      local p = mk_key(v)
+      p = pkey.get_public(p)
+      assert(not p:is_private())
+      p,_ = k:derive(p)
+      assert(type(p)=='string')
     end
 
     assert(string.len(k1:export()) > 0)
@@ -177,21 +178,25 @@ vgPnEUG6Mk9bkxMZKRgsiKn6QGKDYGbOvnS1xmkMfRARBsJAq369VOTjMB/Qhs5q
     local pri = pkey.read(v[1], true, 'pem')
     local pub = assert(pri:get_public())
 
-    -- evp_pkey:export ([format='pem'[, raw=false[, passphrase]]])
-
     -- private
     -- 1 format='pem', raw=false, passphrase=nil
     local pem1 = pri:export()
     lu.assertStrContains(pem1, '-----BEGIN PRIVATE KEY-----')
     lu.assertStrContains(pem1, '-----END PRIVATE KEY-----')
+    local tmp = pkey.read(pem1, true)
+    assert(tmp)
 
     pem1 = pri:export('pem')
     lu.assertStrContains(pem1, '-----BEGIN PRIVATE KEY-----')
     lu.assertStrContains(pem1, '-----END PRIVATE KEY-----')
+    tmp = pkey.read(pem1, true)
+    assert(tmp)
 
     pem1 = pri:export('pem', false)
     lu.assertStrContains(pem1, '-----BEGIN PRIVATE KEY-----')
     lu.assertStrContains(pem1, '-----END PRIVATE KEY-----')
+    tmp = pkey.read(pem1, true)
+    assert(tmp)
 
     local k1 = pkey.read(pem1, true)
     lu.assertEquals(pri:export(), k1:export())
@@ -276,10 +281,10 @@ vgPnEUG6Mk9bkxMZKRgsiKn6QGKDYGbOvnS1xmkMfRARBsJAq369VOTjMB/Qhs5q
 
     -- 2 format='pem', raw=true, passphrase=nil
     pem2 = pub:export('pem', true)
-    if k ~= "EC" and k ~= 'DSA' then
-      lu.assertStrContains(pem2, '-----BEGIN ' .. k .. ' PUBLIC KEY-----')
-      lu.assertStrContains(pem2, '-----END ' .. k .. ' PUBLIC KEY-----')
-    end
+    tmp = (k~='EC' and k~='DSA') and k..' ' or ''
+    lu.assertStrContains(pem2, '-----BEGIN ' .. tmp .. 'PUBLIC KEY-----')
+    lu.assertStrContains(pem2, '-----END ' .. tmp .. 'PUBLIC KEY-----')
+
     k2 = pkey.read(pem2, false, 'pem', k)
     lu.assertEquals(pub:export(), k2:export())
 
@@ -302,12 +307,10 @@ vgPnEUG6Mk9bkxMZKRgsiKn6QGKDYGbOvnS1xmkMfRARBsJAq369VOTjMB/Qhs5q
     hex = openssl.hex(export)
     lu.assertEquals(hex:upper(), v[4])
 
-    if (k ~= 'EC' and k ~= 'DSA') then
-      local k1 = assert(pkey.read(export, false, 'der', k))
-      local p1 = k1:export('der', true)
-      lu.assertEquals(p1, export)
-      lu.assertEquals(k1:export(), pub:export())
-    end
+    k1 = assert(pkey.read(export, false, 'der', k))
+    local p1 = k1:export('der', true)
+    lu.assertEquals(p1, export)
+    lu.assertEquals(k1:export(), pub:export())
   end
 end
 

@@ -1197,6 +1197,7 @@ static LUA_FUNCTION(openssl_derive)
       lua_pushstring(L, "not supported by the public key algorithm");
       ret = 2;
     }
+    EVP_PKEY_CTX_free(ctx);
   }
   else
   {
@@ -1204,7 +1205,7 @@ static LUA_FUNCTION(openssl_derive)
     lua_pushstring(L, "Out of memory");
   }
 
-  if (ret==0)
+  if (ret<1)
     ret = openssl_pushresult(L, ret);
   return ret;
 }
