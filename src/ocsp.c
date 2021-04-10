@@ -344,7 +344,7 @@ static int openssl_ocsp_response_new(lua_State *L)
     if (lua_istable(L, 5))
     {
       BIGNUM* sn = ASN1_INTEGER_to_BN(serial, NULL);
-      const char* hex = BN_bn2hex(sn);
+      char* hex = BN_bn2hex(sn);
 
       lua_pushstring(L, hex);
       OPENSSL_free(hex);

@@ -1,5 +1,5 @@
 local openssl = require 'openssl'
-local dh = require'openssl'.dh
+local dh = openssl.dh
 
 TestDH = {}
 function TestDH:Testdh()

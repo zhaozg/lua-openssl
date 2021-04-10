@@ -79,7 +79,10 @@ local function createQuery(self, policy_id, nonce, cert_req, extensions)
     assert(ano:policy_id():data(), t.policy_id:data())
   end
   if extensions then assert(req:extensions()) end
-
+  assert(req:add_ext(openssl.x509.extension.new_extension({
+    object = 'subjectAltName',
+    value = "IP:192.168.0.1"
+  })))
   return req
 end
 
@@ -172,12 +175,12 @@ local function signReq(self, req_ctx, req, sn, now)
   assert(type(res:tst_info(true))=='table')
   local vry = assert(req:to_verify_ctx())
   vry:store(self.ca.store)
-  assert(vry:verify(res))
+  assert(vry:verify(res:info().token))
 
   vry = assert(ts.verify_ctx_new())
   vry:imprint(self.hash)
   vry:store(self.ca.store)
-  assert(vry:verify(res))
+  assert(vry:verify(res:export()))
 
   vry = assert(ts.verify_ctx_new())
   vry:data(self.dat)
@@ -246,7 +249,10 @@ function testTS:testBasic()
   --assert(req_ctx:add_failure_info(8, "xx"))
   --FIXME
   --assert(req_ctx:flags(openssl.ts.VFY_SIGNATURE, true))
-  --assert(req_ctx:tst_info(0, "version"))
+  req_ctx:tst_info()
+  req_ctx:tst_info(false, "version")
+  req_ctx:tst_info(true, "version")
+  req_ctx:tst_info(false, "version")
   req_ctx:request()
   lu.assertEquals(false, req:cert_req())
 

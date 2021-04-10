@@ -420,6 +420,16 @@ static LUA_FUNCTION(openssl_ts_req_export)
   return 0;
 }
 
+static LUA_FUNCTION(openssl_ts_req_add_ext)
+{
+  TS_REQ *ts_req = CHECK_OBJECT(1, TS_REQ, "openssl.ts_req");
+  X509_EXTENSION *x = CHECK_OBJECT(2, X509_EXTENSION, "openssl.x509_extension");
+  int loc = luaL_optint(L, 3, TS_REQ_get_ext_count(ts_req));
+
+  int ret = TS_REQ_add_ext(ts_req, x, loc);
+  return openssl_pushresult(L, ret);
+}
+
 /***
 get info as table
 @function info
@@ -497,6 +507,7 @@ static luaL_Reg ts_req_funs[] =
   {"version",       openssl_ts_req_version},
   {"info",          openssl_ts_req_info},
   {"export",        openssl_ts_req_export},
+  {"add_ext",       openssl_ts_req_add_ext},
 
   {"to_verify_ctx", openssl_ts_req_to_verify_ctx},
 
