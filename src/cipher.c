@@ -630,11 +630,12 @@ static LUA_FUNCTION(openssl_evp_cipher_init)
 {
   EVP_CIPHER_CTX* c = CHECK_OBJECT(1, EVP_CIPHER_CTX, "openssl.evp_cipher_ctx");
   int ret;
-  CIPHER_MODE mode;
+  CIPHER_MODE mode = 0;
   size_t key_len = 0;
   const char *key = luaL_checklstring(L, 2, &key_len);
   size_t iv_len = 0;
   const char *iv = luaL_optlstring(L, 3, NULL, &iv_len); /* can be NULL */
+  int enc = lua_toboolean(L, 4);
 
   lua_rawgetp(L, LUA_REGISTRYINDEX, c);
   mode = lua_tointeger(L, -1);
@@ -654,7 +655,11 @@ static LUA_FUNCTION(openssl_evp_cipher_init)
   }
 
   ret = 0;
-  if (mode == DO_ENCRYPT)
+  if (mode == DO_CIPHER)
+    ret = EVP_CipherInit_ex(c, NULL, NULL,
+                            key ? (const byte*)evp_key : NULL,
+                            iv_len > 0 ? (const byte*)evp_iv : NULL, enc);
+  else if (mode == DO_ENCRYPT)
     ret = EVP_EncryptInit_ex(c, NULL, NULL,
                              key ? (const byte*)evp_key : NULL,
                              iv_len > 0 ? (const byte*)evp_iv : NULL);
