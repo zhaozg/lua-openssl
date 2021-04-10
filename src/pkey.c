@@ -180,19 +180,6 @@ static int openssl_pkey_read(lua_State*L)
         break;
       }
       case EVP_PKEY_DSA:
-      case EVP_PKEY_DH:
-      case EVP_PKEY_EC:
-      {
-        char * bio_mem_ptr;
-        long bio_mem_len;
-        const unsigned char **pp;
-        bio_mem_len = BIO_get_mem_data(in, &bio_mem_ptr);
-        pp = (const unsigned char **)&bio_mem_ptr;
-
-        key = d2i_PublicKey(type, NULL, pp, bio_mem_len);
-      }
-      /*
-      case EVP_PKEY_DSA:
       {
         DSA *dsa = d2i_DSA_PUBKEY_bio(in, NULL);
         if (dsa)
@@ -222,7 +209,6 @@ static int openssl_pkey_read(lua_State*L)
         }
         break;
       }
-      */
       default:
         key = d2i_PUBKEY_bio(in, NULL);
         break;
