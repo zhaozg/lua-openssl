@@ -34,22 +34,28 @@ function TestOCSP:testAll()
   assert(oreq)
   assert(type(oreq:export(true)))
 
+  assert(oreq:add_ext(openssl.x509.extension.new_extension({
+    object = 'subjectAltName',
+    value = "IP:192.168.0.1"
+  })))
+  assert(type(oreq:export(true))=='string')
+  assert(type(oreq:parse().extensions)=='table')
+
   oreq = ocsp.request_new(self.ca.cacert, self.bob.cert)
   assert(oreq)
   assert(type(oreq:export(false)))
 
   local der = oreq:export(false)
   assert(type(der)=='string')
-  --FIXME: crash
-  --oreq = ocsp.request_read(der, false)
-  --assert(oreq)
+  oreq = ocsp.request_read(der, false)
+  assert(oreq)
   assert(oreq:sign(self.bob.cert, self.bob.key, nil, 0, 'sha256'))
   assert(oreq:sign(self.bob.cert, self.bob.key, {self.bob.cert, self.ca.cert}, 0, 'sha256'))
   der = oreq:export(true)
   assert(type(der)=='string')
-  --FIXME: crash
-  --oreq = ocsp.request_read(der, true)
-  --assert(oreq)
+
+  oreq = ocsp.request_read(der, true)
+  assert(oreq)
   local t = oreq:parse()
   assert(type(t)=='table')
   oreq = ocsp.request_new(self.ca.cacert, {self.bob.cert, self.alice.cert})

@@ -105,6 +105,17 @@ static int openssl_ocsp_request_new(lua_State *L)
   return 1;
 }
 
+static int openssl_ocsp_request_add_ext(lua_State *L)
+{
+  OCSP_REQUEST *req = CHECK_OBJECT(1, OCSP_REQUEST, "openssl.ocsp_request");
+  X509_EXTENSION *x = CHECK_OBJECT(2, X509_EXTENSION, "openssl.x509_extension");
+  int loc = luaL_optint(L, 3, OCSP_REQUEST_get_ext_count(req));
+  int ret;
+
+  x = X509_EXTENSION_dup(x);
+  ret = OCSP_REQUEST_add_ext(req, x, loc);
+  return openssl_pushresult(L, ret);
+}
 
 static int openssl_ocsp_request_read(lua_State *L)
 {
@@ -252,6 +263,7 @@ static int openssl_ocsp_request_parse(lua_State*L)
   for (i = 0; i < num; i++)
   {
     X509_EXTENSION* e = OCSP_REQUEST_get_ext(req, i);
+    e = X509_EXTENSION_dup(e);
     PUSH_OBJECT(e, "openssl.x509_extension");
     lua_rawseti(L, -2, i + 1);
   }
@@ -484,11 +496,12 @@ int openssl_ocsp_response_free(lua_State*L)
 static luaL_Reg ocsp_req_cfuns[] =
 {
   {"export",      openssl_ocsp_request_export },
-  {"parse",     openssl_ocsp_request_parse  },
-  {"sign",      openssl_ocsp_request_sign },
+  {"parse",       openssl_ocsp_request_parse  },
+  {"sign",        openssl_ocsp_request_sign },
+  {"add_ext",     openssl_ocsp_request_add_ext },
 
-  {"__tostring",    auxiliar_tostring },
-  {"__gc",      openssl_ocsp_request_free },
+  {"__tostring",  auxiliar_tostring },
+  {"__gc",        openssl_ocsp_request_free },
 
   {NULL,        NULL  }
 };
@@ -496,10 +509,10 @@ static luaL_Reg ocsp_req_cfuns[] =
 static luaL_Reg ocsp_res_cfuns[] =
 {
   {"export",      openssl_ocsp_response_export  },
-  {"parse",     openssl_ocsp_response_parse },
-  {"__gc",      openssl_ocsp_response_free  },
+  {"parse",       openssl_ocsp_response_parse },
+  {"__gc",        openssl_ocsp_response_free  },
 
-  {"__tostring",    auxiliar_tostring },
+  {"__tostring",  auxiliar_tostring },
 
   {NULL,        NULL  }
 };
