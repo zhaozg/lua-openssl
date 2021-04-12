@@ -94,7 +94,7 @@ if uv then
     uv.read_start(stdout1, onread)
     uv.read_start(stderr1, onread)
 
-    set_timeout(2000, function()
+    set_timeout(5000, function()
       local _child
       _child = uv.spawn(LUA, {
         args = {"8.bio_c.lua",  '127.0.0.1',  port},

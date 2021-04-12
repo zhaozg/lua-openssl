@@ -46,7 +46,7 @@ if uv then
     if pid then
       uv.read_start(stdout1, onread)
       uv.read_start(stderr1, onread)
-      set_timeout(2000, function()
+      set_timeout(5000, function()
         local _child, _pid
         _child, _pid = uv.spawn(LUA, {
           args = {"0.tcp_c.lua",  '127.0.0.1',  8081},
