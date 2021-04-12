@@ -116,7 +116,7 @@ write cms object to bio object
 @treturn string
 @return nil, and followed by error message
 */
-static int openssl_cms_write(lua_State *L)
+static int openssl_cms_export(lua_State *L)
 {
   CMS_ContentInfo *cms = CHECK_OBJECT(1, CMS_ContentInfo, "openssl.cms");
   BIO *in = lua_isnoneornil(L, 2) ? NULL : load_bio_object(L, 2);
@@ -182,16 +182,23 @@ static int openssl_cms_create(lua_State*L)
   else
   {
     BIO* in = load_bio_object(L, 1);
-    if (lua_isuserdata(L, 2))
+    int type = lua_type(L, 2);
+    int flags;
+    switch (type)
+    {
+    case LUA_TNONE:
+    case LUA_TNUMBER:
+    {
+      int flags = luaL_optint(L, 3, 0);
+      cms = CMS_data_create(in, flags);
+      break;
+    }
+    default:
     {
       const EVP_MD* md = get_digest(L, 2, NULL);
-      int flags = luaL_optint(L, 3, 0);
+      flags = luaL_optint(L, 3, 0);
       cms = CMS_digest_create(in, md, flags);
     }
-    else
-    {
-      int flags = luaL_optint(L, 2, 0);
-      cms = CMS_data_create(in, flags);
     }
     BIO_free(in);
   }
@@ -199,6 +206,14 @@ static int openssl_cms_create(lua_State*L)
   PUSH_OBJECT(cms, "openssl.cms");
   return 1;
 }
+
+static int openssl_compress_nid[] = {
+  NID_zlib_compression,
+#ifdef NID_rle_compression
+  NID_rle_compression,
+#endif
+  0
+};
 
 /***
 create compress cms object
@@ -216,14 +231,16 @@ static int openssl_cms_compress(lua_State *L)
   const char* compress_options[] =
   {
     "zlib",
+#ifdef NID_rle_compression
     "rle",
+#endif
     NULL
   };
   CMS_ContentInfo *cms;
   nid = luaL_checkoption(L, 2, "zlib", compress_options);
   flags = luaL_optint(L, 3, 0);
 
-  cms = CMS_compress(in, nid, flags);
+  cms = CMS_compress(in, openssl_compress_nid[nid], flags);
   BIO_free(in);
 
   if (cms)
@@ -645,7 +662,7 @@ static int openssl_cms_bio_new(lua_State*L)
 static const luaL_Reg R[] =
 {
   {"read",                  openssl_cms_read},
-  {"write",                 openssl_cms_write},
+  {"export",                openssl_cms_export},
 
   {"bio_new",               openssl_cms_bio_new},
   {"create",                openssl_cms_create},
@@ -853,6 +870,7 @@ static luaL_Reg cms_ctx_funs[] =
   {"data",          openssl_cms_data},
   {"signers",       openssl_cms_get_signers},
   {"detached",      openssl_cms_detached},
+  {"export",        openssl_cms_export},
 
   {"sign_receipt",  openssl_cms_sign_receipt},
   {"get_signers",   openssl_cms_get_signers},
