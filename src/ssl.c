@@ -1619,7 +1619,7 @@ static int openssl_ssl_session_peer(lua_State*L)
 {
   SSL_SESSION* session = CHECK_OBJECT(1, SSL_SESSION, "openssl.ssl_session");
   X509 *x = SSL_SESSION_get0_peer(session);
-  PUSH_OBJECT(x, "openssl.x509");
+  PUSH_OBJECT(X509_dup(x), "openssl.x509");
   return 1;
 }
 #endif

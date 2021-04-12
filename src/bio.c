@@ -86,6 +86,23 @@ static LUA_FUNCTION(openssl_bio_new_mem)
   return 1;
 }
 
+static LUA_FUNCTION(openssl_bio_new_pair)
+{
+  size_t b1 = luaL_optint(L, 1, 0);
+  size_t b2 = luaL_optint(L, 2, b1);
+  BIO *B1 = NULL;
+  BIO *B2 = NULL;
+
+  int ret = BIO_new_bio_pair(&B1, b1, &B2, b2);
+  if (ret==1)
+  {
+    PUSH_OBJECT(B1, "openssl.bio");
+    PUSH_OBJECT(B2, "openssl.bio");
+    return 2;
+  }
+  return openssl_pushresult(L, ret);
+}
+
 static LUA_FUNCTION(openssl_bio_new_null)
 {
   BIO *bio = BIO_new(BIO_s_null());
@@ -1033,6 +1050,7 @@ static luaL_Reg R[] =
 {
   {"null",    openssl_bio_new_null},
   {"mem",     openssl_bio_new_mem},
+  {"pair",    openssl_bio_new_pair},
   {"socket",  openssl_bio_new_socket},
   {"dgram",   openssl_bio_new_dgram},
   {"fd",      openssl_bio_new_fd},

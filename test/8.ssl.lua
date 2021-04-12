@@ -1,7 +1,10 @@
 local lu = require 'luaunit'
 local ok, uv = pcall(require, 'luv')
 local math = require'math'
-local ssl = require'openssl'.ssl
+local openssl = require "openssl"
+local helper = require'helper'
+local bio, ssl = openssl.bio, openssl.ssl
+
 if not ok then
   uv = nil
   print('skip SSL, bacause luv not avalible')
@@ -329,5 +332,211 @@ if luv then
 
     luv.run()
     luv.close()
+  end
+
+  function TestSSL:testSNI()
+    local ca = helper.get_ca()
+    local store = ca:get_store()
+    assert(store:trust(true))
+    store:add(ca.cacert)
+    store:add(ca.crl)
+
+    local certs = {}
+
+    local function create_ctx(dn, mode)
+      mode = mode or '_server'
+      local ctx = ssl.ctx_new(ssl.default..mode)
+      if dn then
+        local cert, pkey = helper.sign(dn)
+        assert(ctx:use(pkey, cert))
+        certs[#certs+1] = cert
+      end
+      return ctx
+    end
+
+    local function create_srv_ctx()
+      local ctx = create_ctx({
+          {CN="server"},
+          {C="CN"}
+      })
+
+      ctx:set_servername_callback({
+        ["serverA"]  = create_ctx{
+          {CN="serverA"},
+          {C="CN" }
+        },
+        ["serverB"] = create_ctx{
+          {CN="serverB"},
+          {C="CN" }
+        },
+      })
+      if store then ctx:cert_store(store) end
+
+      ctx:set_cert_verify()
+      ctx:set_cert_verify({always_continue=true,verify_depth=4})
+      return ctx
+    end
+
+    local function create_cli_ctx()
+      local ctx = create_ctx(nil, '_client')
+      if store then ctx:cert_store(store) end
+      ctx:set_cert_verify({always_continue=true,verify_depth=4})
+      return ctx
+    end
+
+
+    local bs, bc = bio.pair()
+
+    local rs, cs, es, ec, i, o, sess
+
+    local srv_ctx = create_srv_ctx()
+    local cli_ctx = create_cli_ctx()
+    local srv = assert(srv_ctx:ssl(bs, bs, true))
+    local cli = assert(cli_ctx:ssl(bc, bc, false))
+
+    srv_ctx:add(ca.cacert, certs)
+    srv_ctx:set_engine(openssl.engine('openssl'))
+    srv_ctx:timeout(500)
+    assert(srv_ctx:timeout()==500)
+    local t = assert(srv_ctx:session_cache_mode())
+    srv_ctx:mode(true,
+    "enable_partial_write",
+    "accept_moving_write_buffer",
+    "auto_retry",
+    "no_auto_chain")
+    srv_ctx:mode(false,
+    "enable_partial_write",
+    "accept_moving_write_buffer",
+    "auto_retry",
+    "no_auto_chain")
+
+    srv_ctx:set_session_callback(
+      function(...)
+        --add
+        print(...)
+      end,
+      function(...)
+        --get
+        print(...)
+      end,
+      function(...)
+        --del
+        print(...)
+      end
+    )
+    srv_ctx:flush_sessions(10000)
+
+    repeat
+      cs, ec = cli:handshake()
+      rs, es = srv:handshake()
+    until (rs and cs) or (rs==nil or cs==nil)
+    assert(rs and cs)
+    i,o = cli:pending()
+    local msg = openssl.random(20)
+    cli:write(msg)
+    srv:write(srv:read())
+    local got = cli:read()
+    assert(got==msg)
+    local peer = cli:peer()
+    assert(peer:subject():oneline()=="/CN=server/C=CN")
+    sess = cli:session()
+    cli:shutdown()
+    srv:shutdown()
+    bs:close()
+    bc:close()
+
+    bs, bc = bio.pair()
+    srv = assert(srv_ctx:ssl(bs, true))
+    cli = assert(cli_ctx:ssl(bc, false))
+    cli:set('hostname', 'serverB')
+    cli:session(sess)
+    repeat
+      cs, ec = cli:handshake()
+      rs, es = srv:handshake()
+    until (rs and cs) or (rs==nil or cs==nil)
+    assert(rs and cs)
+    rc, ec = cli:renegotiate()
+    rs, es = srv:renegotiate_abbreviated()
+    print(cli:renegotiate_pending())
+    assert(cli:read()==false)
+    assert(srv:read()==false)
+    repeat
+      cs, ec = cli:handshake()
+      rs, es = srv:handshake()
+    until (rs and cs) or (rs==nil or cs==nil)
+    assert(rs and cs)
+    cli:write(msg)
+    srv:write(srv:read())
+    got = cli:read()
+    assert(got==msg)
+    peer = cli:peer()
+    cli:shutdown('read')
+    cli:shutdown('write')
+    cli:shutdown('quiet')
+    cli:shutdown('noquiet')
+    cli:shutdown(true)
+    cli:shutdown(false)
+    assert(peer:subject():oneline()=="/CN=serverB/C=CN")
+    bs:close()
+    bc:close()
+
+    local cert, pkey = helper.sign({
+          {CN="server"},
+          {C="CN"}
+    })
+
+    bs, bc = bio.pair()
+    srv = assert(srv_ctx:ssl(bs))
+    srv:set_accept_state()
+    cli = assert(cli_ctx:ssl(bc))
+    cli:use(cert, pkey)
+    cli:set_connect_state()
+    cli:set('hostname', 'serverB')
+    repeat
+      cs, ec = cli:handshake()
+      rs, es = srv:handshake()
+      srv:want()
+    until (rs and cs) or (rs==nil or cs==nil)
+    assert(rs and cs)
+    cli:write(msg)
+    srv:write(srv:read())
+    got = cli:peek()
+    assert(got==msg)
+    got = cli:read()
+    assert(got==msg)
+    peer = cli:peer()
+    cli:current_compression()
+    assert(peer:subject():oneline()=="/CN=serverB/C=CN")
+    assert(cli:get('hostname')=='serverB')
+    sess = cli:session()
+    local S = sess:export()
+    S = ssl.session_read(S)
+    assert(S)
+    if sess.has_ticket then
+      assert(type(sess:has_ticket())=='boolean')
+    end
+    if sess.is_resumable then
+      assert(sess:is_resumable())
+    end
+    assert(sess:peer())
+    assert(sess:compress_id())
+    assert(sess:timeout())
+    assert(sess:timeout(500))
+    assert(sess:time())
+    assert(sess:time(50))
+    assert(sess:id())
+    local id = assert(sess:id())
+    sess:id(id)
+
+    local ctx = cli:ctx()
+    --FIXME:
+    --cli:ctx(ctx)
+    --FIXME:
+    --srv_ctx:session(sess, true)
+    --srv_ctx:session(sess, false)
+    --srv_ctx:session(sess:id(), false)
+
+    bs:close()
+    bc:close()
   end
 end
