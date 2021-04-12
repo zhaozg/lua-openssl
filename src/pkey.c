@@ -761,6 +761,12 @@ static LUA_FUNCTION(openssl_pkey_new)
     pkey = EVP_PKEY_new();
     EVP_PKEY_set1_EC_KEY(pkey, ec);
   }
+  else if (auxiliar_getclassudata(L, "openssl.dsa", 1))
+  {
+    DSA *dsa = CHECK_OBJECT(1, DSA, "openssl.dsa");
+    pkey = EVP_PKEY_new();
+    EVP_PKEY_set1_DSA(pkey, dsa);
+  }
 
   if (pkey && EVP_PKEY_id(pkey) != NID_undef)
   {

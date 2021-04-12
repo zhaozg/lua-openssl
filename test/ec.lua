@@ -26,6 +26,10 @@ vf3xxzsWFfVxvVZ+YNGaofSM30KhRANCAAR8EQxm3P2oB/bmnkXds8dPaaFITSA+
 jcWtqOmp3Xyzxw30SJhuUb3l0VdvmZAfnCxqgGpH/ZB2Q6crg1WX78jG
 -----END PRIVATE KEY-----
 ]])
+
+  factor.x, factor.y = nil, nil
+  ec = assert(pkey.new(factor))
+  assert(pem, ec:export('pem'))
 end
 
 function TestEC:TestEC()

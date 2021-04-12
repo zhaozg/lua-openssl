@@ -48,11 +48,19 @@ function TestPKEYMY:testBasic()
       lu.assertEquals(msg, raw)
 
       local sk, iv
+      out, sk, iv = pkey.seal({k1}, msg)
+      assert(out)
+      assert(type(sk)=='table')
+      assert(iv)
       out, sk, iv = pkey.seal(k1, msg)
       raw = pkey.open(k, out, sk, iv)
       lu.assertEquals(msg, raw)
 
       local ctx
+      ctx, sk, iv = pkey.seal_init({k1})
+      assert(ctx)
+      assert(type(sk)=='table')
+      assert(iv)
       ctx, sk, iv = pkey.seal_init(k1)
       out = assert(pkey.seal_update(ctx, msg))
       out = out .. assert(pkey.seal_final(ctx))
@@ -90,6 +98,7 @@ function TestPKEYMY:testBasic()
 
     assert(string.len(k:export('pem', false, 'secret')) > 0)
     assert(string.len(k:export('der', false, 'secret')) > 0)
+    assert(pkey.new(t[t.type]))
   end
 end
 
