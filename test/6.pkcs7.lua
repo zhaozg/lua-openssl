@@ -14,6 +14,10 @@ end
 
 function TestPKCS7:testNew()
   local ca = helper.get_ca()
+  local store = ca:get_store()
+  assert(store:trust(true))
+  store:add(ca.cacert)
+  store:add(ca.crl)
 
   local e = openssl.x509.extension.new_extension(
               {object = 'keyUsage',  value = 'smimesign'}, false)
@@ -38,13 +42,11 @@ function TestPKCS7:testNew()
   -------------------------------------
   p7 = assert(pkcs7.sign(msg, cert, pkey))
   assert(p7:export())
-  local store = openssl.x509.store.new({ca.cacert})
   ret = assert(p7:verify(skcert, store))
   assert(ret)
 
   p7 = assert(pkcs7.sign(msg, cert, pkey, nil, openssl.pkcs7.DETACHED))
   assert(p7:export())
-  local store = openssl.x509.store.new({ca.cacert})
   ret = assert(p7:verify(skcert, store, msg, openssl.pkcs7.DETACHED))
   assert(ret)
 
@@ -55,18 +57,17 @@ function TestPKCS7:testNew()
   p7 = assert(openssl.pkcs7.read(der, 'smime'))
 
   der = p7:export()
-  p7 = openssl.pkcs7.read(der)
+  assert(der)
+
+  p7 = openssl.pkcs7.new()
   p7:add(ca.cacert)
   p7:add(cert)
   p7:add(ca.crl)
-  assert(p7:export())
   assert(p7:parse())
+  assert(p7:export())
 
   der = p7:export('der')
   assert(der)
-  p7 = openssl.pkcs7.read(der, 'der')
-  --FIXME
-  --assert(p7)
 end
 
 function TestPKCS7:testStep()
@@ -112,13 +113,18 @@ function TestPKCS7:testStep()
   assert(pp7)
 
   if not helper.libressl then
+    local store = ca:get_store()
+    assert(store:trust(true))
+    store:add(ca.cacert)
+    store:add(ca.crl)
+
     --FIXME: libressl
-    local ret, signer = assert(p7:verify(nil, nil, msg .. msg, 0))
+    local ret, signer = assert(p7:verify(nil, store, msg .. msg, 0))
     assert(ret)
     --FIXME:
     --assert(signer)
     ret, signer =
-      assert(p7:verify_digest(nil, nil, nil, 0, true))
+      assert(p7:verify_digest(nil, store, nil, 0, true))
     assert(ret)
     local ln, sn = p7:type()
     assert(ln)
@@ -128,3 +134,12 @@ function TestPKCS7:testStep()
     end
 end
 
+function TestPKCS7:testFinal()
+
+  local p7 = assert(openssl.pkcs7.new())
+  assert(p7:final("context", 0))
+  local ln, sn = p7:type()
+  assert(ln)
+  assert(sn)
+
+end

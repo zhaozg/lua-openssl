@@ -12,7 +12,7 @@ loop = arg[3] and tonumber(arg[3]) or 100
 
 local params = {
   mode = "server",
-  protocol = ssl.default,
+  protocol = ssl.default.."_server",
   key = "luasec/certs/serverAkey.pem",
   certificate = "luasec/certs/serverA.pem",
   cafile = "luasec/certs/rootA.pem",
