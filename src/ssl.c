@@ -161,24 +161,40 @@ static int openssl_ssl_ctx_new(lua_State*L)
 }
 
 /***
-get alert_string for ssl state
-@function alert_string
+get alert_type for ssl state
+@function alert_type
 @tparam number alert
 @tparam[opt=false] boolean long
 @treturn string alert type
-@treturn string desc string, if long set true will return long info
 */
-static int openssl_ssl_alert_string(lua_State*L)
+static int openssl_ssl_alert_type(lua_State*L)
 {
   int v = luaL_checkint(L, 1);
   int _long = lua_isnone(L, 2) ? 0 : auxiliar_checkboolean(L, 2);
   const char* val;
 
   if (_long)
-    val = SSL_alert_type_string_long(v);
+    val = SSL_alert_type_string_long(v << 8);
   else
-    val = SSL_alert_type_string(v);
+    val = SSL_alert_type_string(v << 8);
   lua_pushstring(L, val);
+
+  return 1;
+}
+
+/***
+get alert_desc for ssl state
+@function alert_desc
+@tparam number alert
+@tparam[opt=false] boolean long
+@treturn string alert type
+@treturn string desc string, if long set true will return long info
+*/
+static int openssl_ssl_alert_desc(lua_State*L)
+{
+  int v = luaL_checkint(L, 1);
+  int _long = lua_isnone(L, 2) ? 0 : auxiliar_checkboolean(L, 2);
+  const char* val;
 
   if (_long)
     val = SSL_alert_desc_string_long(v);
@@ -186,7 +202,7 @@ static int openssl_ssl_alert_string(lua_State*L)
     val = SSL_alert_desc_string(v);
   lua_pushstring(L, val);
 
-  return 2;
+  return 1;
 }
 
 static int openssl_ssl_session_new(lua_State*L)
@@ -217,7 +233,8 @@ static int openssl_ssl_session_read(lua_State*L)
 static luaL_Reg R[] =
 {
   {"ctx_new",       openssl_ssl_ctx_new },
-  {"alert_string",  openssl_ssl_alert_string },
+  {"alert_type",    openssl_ssl_alert_type },
+  {"alert_desc",    openssl_ssl_alert_desc },
 
   {"session_new",   openssl_ssl_session_new},
   {"session_read",  openssl_ssl_session_read},
@@ -1967,9 +1984,10 @@ get value according to arg
  <br/>iversion
  <br/>version
  <br/>default_timeout,
- <br/>certificates
+ <br/>certificate
  <br/>verify_result
  <br/>state
+ <br/>hostname
  <br/>state_string
  <br/>side
 @return according to arg

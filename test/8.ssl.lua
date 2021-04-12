@@ -1,6 +1,7 @@
 local lu = require 'luaunit'
 local ok, uv = pcall(require, 'luv')
 local math = require'math'
+local ssl = require'openssl'.ssl
 if not ok then
   uv = nil
   print('skip SSL, bacause luv not avalible')
@@ -21,6 +22,21 @@ if uv then
     end
     uv.timer_start(timer, timeout, 0, ontimeout)
     return timer
+  end
+
+  function TestSSL:testMisc()
+    assert(ssl.alert_type(1)=='W')
+    assert(ssl.alert_type(1, true)=='warning')
+    assert(ssl.alert_type(2)=='F')
+    assert(ssl.alert_type(2, true)=='fatal')
+    assert(ssl.alert_type(3)=='U')
+    assert(ssl.alert_type(3, true)=='unknown')
+
+    local list = {10, 20, 21, 22, 30, 40, 50, 60, 70, 80, 90, 100}
+    for _, i in pairs(list) do
+      assert(ssl.alert_desc(i)~='U', i)
+      assert(ssl.alert_desc(i, true)~='unknown', i)
+    end
   end
 
   function TestSSL:testUVSSL()
