@@ -68,7 +68,7 @@ local function createQuery(self, policy_id, nonce, cert_req, extensions)
   lu.assertEquals(t.msg_imprint.hash_algo:tostring(), self.alg)
   lu.assertEquals(cert_req, t.cert_req)
   if nonce then
-    lu.assertEquals(t.nonce:data(), nonce:totext())
+    lu.assertEquals(t.nonce:totext(), nonce:totext())
   else
     lu.assertEquals(nil, t.nonce)
   end
@@ -135,7 +135,7 @@ local function signReq(self, req_ctx, req, sn, now)
   local res = req_ctx:sign(req:export())
   local t = assert(res:info())
   lu.assertIsTable(t)
-  local status = t.status_info.status:get()
+  local status = t.status_info.status:tonumber()
   --FIXME: libressl
   if status ~= 0 then
     return
@@ -148,7 +148,7 @@ local function signReq(self, req_ctx, req, sn, now)
 
   local tst = t.tst_info
   sn = sn or '01'
-  lu.assertEquals(sn, tst.serial:tostring())
+  lu.assertEquals(sn, tst.serial:tohex())
   lu.assertEquals(1, tst.version)
   lu.assertEquals(tst.ordering, false)
   lu.assertEquals(self.policy_id:txt(true), tst.policy_id:txt(true))
@@ -243,12 +243,7 @@ function testTS:testBasic()
   assert(req_ctx:policies(policies))
   assert(req_ctx:accuracy(1, 1, 1))
   assert(req_ctx:clock_precision_digits(20))
-  --FIXME
-  --assert(req_ctx:set_status_info(6, "XX"))
-  --assert(req_ctx:set_status_info_cond(7, "XX"))
-  --assert(req_ctx:add_failure_info(8, "xx"))
-  --FIXME
-  --assert(req_ctx:flags(openssl.ts.VFY_SIGNATURE, true))
+  req_ctx:add_flags(openssl.ts.VFY_SIGNATURE)
   req_ctx:tst_info()
   req_ctx:tst_info(false, "version")
   req_ctx:tst_info(true, "version")
@@ -260,7 +255,13 @@ function testTS:testBasic()
   assert(req:dup():export()==req:export())
   assert(req:version(2))
   assert(req:version()==2)
+
+  --assert(req_ctx:set_status_info(0, "OK"))
+  --assert(req_ctx:set_status_info(1, "XX"))
+  --assert(req_ctx:set_status_info_cond(7, "XX"))
+  --assert(req_ctx:add_failure_info(8, "xx"))
 end
+
 function testTS:testPloicyId()
   -- FIXME: libressl will crash random
   if not helper.libressl then
@@ -322,6 +323,6 @@ function testTS:testTimeCallback()
     assert(type(V)==type(v))
   end
 
-  --assert(res:dup():export()==res:dup())
+  assert(res:dup():export()==res:export())
 end
 

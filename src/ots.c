@@ -10,6 +10,19 @@ create and manage x509 certificate sign request
 #include <stdint.h>
 #if OPENSSL_VERSION_NUMBER >= 0x10000000L
 #include <openssl/ts.h>
+#include <openssl/asn1.h>
+
+static int openssl_push_asn1_integer(lua_State *L, const ASN1_INTEGER* ai)
+{
+  if(ai!=NULL)
+  {
+    BIGNUM *bn;
+    bn = ASN1_INTEGER_to_BN(ai, NULL);
+    PUSH_OBJECT(bn, "openssl.bn");
+  } else
+    lua_pushnil(L);
+  return 1;
+}
 
 /***
 create a new ts_req object.
@@ -247,17 +260,7 @@ static int openssl_ts_req_nonce(lua_State*L)
   TS_REQ* req = CHECK_OBJECT(1, TS_REQ, "openssl.ts_req");
   if (lua_isnone(L, 2))
   {
-    const ASN1_INTEGER* ai = TS_REQ_get_nonce(req);
-    if (ai)
-    {
-      BIGNUM *bn;
-      PUSH_ASN1_INTEGER(L, ai);
-      bn = ASN1_INTEGER_to_BN(ai, NULL);
-      PUSH_OBJECT(bn, "openssl.bn");
-      return 2;
-    }
-    lua_pushnil(L);
-    return 0;
+    return openssl_push_asn1_integer(L, TS_REQ_get_nonce(req));
   }
   else
   {
@@ -425,8 +428,10 @@ static LUA_FUNCTION(openssl_ts_req_add_ext)
   TS_REQ *ts_req = CHECK_OBJECT(1, TS_REQ, "openssl.ts_req");
   X509_EXTENSION *x = CHECK_OBJECT(2, X509_EXTENSION, "openssl.x509_extension");
   int loc = luaL_optint(L, 3, TS_REQ_get_ext_count(ts_req));
+  int ret;
 
-  int ret = TS_REQ_add_ext(ts_req, x, loc);
+  x = X509_EXTENSION_dup(x);
+  ret = TS_REQ_add_ext(ts_req, x, loc);
   return openssl_pushresult(L, ret);
 }
 
@@ -461,11 +466,9 @@ static LUA_FUNCTION(openssl_ts_req_info)
     openssl_push_asn1object(L, TS_REQ_get_policy_id(req));
     lua_setfield(L, -2, "policy_id");
   }
-  if (TS_REQ_get_nonce(req))
-  {
-    PUSH_ASN1_INTEGER(L, TS_REQ_get_nonce(req));
-    lua_setfield(L, -2, "nonce");
-  }
+
+  openssl_push_asn1_integer(L, TS_REQ_get_nonce(req));
+  lua_setfield(L, -2, "nonce");
 
   lua_newtable(L);
   {
@@ -582,11 +585,13 @@ static int openssl_push_ts_accuracy(lua_State*L, const TS_ACCURACY* accuracy, in
     {
       lua_newtable(L);
 
-      PUSH_ASN1_INTEGER(L, TS_ACCURACY_get_micros(accuracy));
+      openssl_push_asn1_integer(L, TS_ACCURACY_get_micros(accuracy));
       lua_setfield(L, -2, "micros");
-      PUSH_ASN1_INTEGER(L, TS_ACCURACY_get_millis(accuracy));
+
+      openssl_push_asn1_integer(L, TS_ACCURACY_get_millis(accuracy));
       lua_setfield(L, -2, "millis");
-      PUSH_ASN1_INTEGER(L, TS_ACCURACY_get_seconds(accuracy));
+
+      openssl_push_asn1_integer(L, TS_ACCURACY_get_seconds(accuracy));
       lua_setfield(L, -2, "seconds");
     }
   }
@@ -631,7 +636,7 @@ static int openssl_push_ts_tst_info(lua_State*L, TS_TST_INFO* info, const char* 
     openssl_push_ts_msg_imprint(L, TS_TST_INFO_get_msg_imprint(info));
     lua_setfield(L, -2, "msg_imprint");
 
-    PUSH_ASN1_INTEGER(L, TS_TST_INFO_get_serial(info));
+    openssl_push_asn1_integer(L, TS_TST_INFO_get_serial(info));
     lua_setfield(L, -2, "serial");
 
     openssl_push_asn1(L, TS_TST_INFO_get_time(info), V_ASN1_GENERALIZEDTIME);
@@ -642,7 +647,7 @@ static int openssl_push_ts_tst_info(lua_State*L, TS_TST_INFO* info, const char* 
 
     AUXILIAR_SET(L, -1, "ordering", TS_TST_INFO_get_ordering(info), boolean);
 
-    PUSH_ASN1_INTEGER(L, TS_TST_INFO_get_nonce(info));
+    openssl_push_asn1_integer(L, TS_TST_INFO_get_nonce(info));
     lua_setfield(L, -2, "nonce");
 
     openssl_push_general_name(L, TS_TST_INFO_get_tsa(info));
@@ -671,7 +676,7 @@ static int openssl_push_ts_tst_info(lua_State*L, TS_TST_INFO* info, const char* 
     }
     else if(strcmp(field, "serial")==0)
     {
-      PUSH_ASN1_INTEGER(L, TS_TST_INFO_get_serial(info));
+      openssl_push_asn1_integer(L, TS_TST_INFO_get_serial(info));
     }
     else if(strcmp(field, "time")==0)
     {
@@ -687,7 +692,7 @@ static int openssl_push_ts_tst_info(lua_State*L, TS_TST_INFO* info, const char* 
     }
     else if(strcmp(field, "nonce")==0)
     {
-      PUSH_ASN1_INTEGER(L, TS_TST_INFO_get_nonce(info));
+      openssl_push_asn1_integer(L, TS_TST_INFO_get_nonce(info));
     }
     else if(strcmp(field, "tsa")==0)
     {
@@ -757,36 +762,40 @@ static LUA_FUNCTION(openssl_ts_resp_info)
 
   {
     TS_STATUS_INFO *si = TS_RESP_get_status_info(res);
-    const ASN1_BIT_STRING *failure_info = TS_STATUS_INFO_get0_failure_info(si);
 
     lua_newtable(L);
-    PUSH_ASN1_INTEGER(L, TS_STATUS_INFO_get0_status(si));
+
+    openssl_push_asn1_integer(L, TS_STATUS_INFO_get0_status(si));
     lua_setfield(L, -2, "status");
 
-    if (failure_info)
     {
-      openssl_push_asn1(L, failure_info, V_ASN1_BIT_STRING);
-      lua_setfield(L, -2, "failure_info");
+      const ASN1_BIT_STRING *failure_info = TS_STATUS_INFO_get0_failure_info(si);
+      if (failure_info)
+      {
+        openssl_push_asn1(L, failure_info, V_ASN1_BIT_STRING);
+        lua_setfield(L, -2, "failure_info");
+      }
     }
 
-    if (TS_STATUS_INFO_get0_text(si))
     {
       const STACK_OF(ASN1_UTF8STRING) * sk = TS_STATUS_INFO_get0_text(si);
-      int i = 0, n = 0;
-      lua_newtable(L);
-      n = sk_ASN1_UTF8STRING_num(sk);
-      for (i = 0; i < n; i++)
+      if (sk)
       {
-        ASN1_UTF8STRING *x = sk_ASN1_UTF8STRING_value(sk, i);
-        lua_pushlstring(L, (const char*)x->data, x->length);
-        lua_rawseti(L, -2, i + 1);
+        int i = 0, n = 0;
+        lua_newtable(L);
+        n = sk_ASN1_UTF8STRING_num(sk);
+        for (i = 0; i < n; i++)
+        {
+          ASN1_UTF8STRING *x = sk_ASN1_UTF8STRING_value(sk, i);
+          lua_pushlstring(L, (const char*)x->data, x->length);
+          lua_rawseti(L, -2, i + 1);
+        }
+        lua_setfield(L, -2, "text");
       }
-      lua_setfield(L, -2, "text");
     }
 
     lua_setfield(L, -2, "status_info");
   }
-
 
   if (TS_RESP_get_token(res))
   {
@@ -1049,7 +1058,7 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_add_failure_info)
 get flags
 @function flags
 */
-static LUA_FUNCTION(openssl_ts_resp_ctx_flags)
+static LUA_FUNCTION(openssl_ts_resp_ctx_add_flags)
 {
   TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
   int flags = luaL_checkint(L, 2);
@@ -1363,7 +1372,7 @@ static luaL_Reg ts_resp_ctx_funs[] =
   {"accuracy",            openssl_ts_resp_ctx_accuracy},
   {"clock_precision_digits",  openssl_ts_resp_ctx_clock_precision_digits},
   {"md",                  openssl_ts_resp_ctx_md},
-  {"flags",               openssl_ts_resp_ctx_flags},
+  {"add_flags",           openssl_ts_resp_ctx_add_flags},
 
   /* set */
   {"set_status_info",         openssl_ts_resp_ctx_set_status_info},
