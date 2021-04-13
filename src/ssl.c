@@ -1899,44 +1899,45 @@ static int openssl_ssl_pushresult(lua_State* L, SSL*ssl, int ret_code)
   switch (err)
   {
   case SSL_ERROR_NONE:
+    lua_pushboolean(L, 1);
     lua_pushinteger(L, ret_code);
-    return 1;
+    break;
   case SSL_ERROR_ZERO_RETURN:
     lua_pushboolean(L, 0);
     lua_pushinteger(L, 0);
-    return 2;
+    break;
   case SSL_ERROR_SSL:
     lua_pushnil(L);
     lua_pushstring(L, "ssl");
-    return 2;
+    break;
   case SSL_ERROR_WANT_READ:
     lua_pushboolean(L, 0);
     lua_pushstring(L, "want_read");
-    return 2;
+    break;
   case SSL_ERROR_WANT_WRITE:
     lua_pushboolean(L, 0);
     lua_pushstring(L, "want_write");
-    return 2;
+    break;
   case SSL_ERROR_WANT_X509_LOOKUP:
     lua_pushboolean(L, 0);
     lua_pushstring(L, "want_x509_lookup");
-    return 2;
+    break;
   case SSL_ERROR_SYSCALL:
     lua_pushnil(L);
     lua_pushstring(L, "syscall");
-    return 2;
+    break;
   case SSL_ERROR_WANT_CONNECT:
     lua_pushboolean(L, 0);
     lua_pushstring(L, "want_connect");
-    return 2;
+    break;
   case SSL_ERROR_WANT_ACCEPT:
     lua_pushboolean(L, 0);
     lua_pushstring(L, "want_accept");
-    return 2;
+    break;
   default:
-    lua_pushnil(L);
-    return 1;
+    return 0;
   }
+  return 2;
 }
 
 /***
@@ -2071,16 +2072,15 @@ static int openssl_ssl_get(lua_State*L)
     else if (strcmp(what, "certificate") == 0)
     {
       X509* cert = SSL_get_certificate(s);
-      PUSH_OBJECT(cert, "openssl.x509");
+      if (cert)
+        PUSH_OBJECT(X509_dup(cert), "openssl.x509");
+      else
+        lua_pushnil(L);
     }
     else if (strcmp(what, "verify_result") == 0)
     {
       long l = SSL_get_verify_result(s);
       lua_pushinteger(L, l);
-    }
-    else if (strcmp(what, "version") == 0)
-    {
-      lua_pushstring(L, SSL_get_version(s));
     }
     else if (strcmp(what, "state") == 0)
     {

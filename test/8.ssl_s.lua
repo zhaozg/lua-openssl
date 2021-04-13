@@ -82,7 +82,6 @@ local function ssl_mode()
   local i = 0
   if srv then
     -- make real listen
-    -- FIXME
     if(srv:accept(true)) then
       while i < loop do
         local cli = assert(srv:accept()) -- bio tcp
@@ -92,42 +91,12 @@ local function ssl_mode()
         else
           assert(s:accept())
         end
-        s:getpeerverification()
-        s:get('version')
-        s:get('certificate')
-        s:get('client_CA_list')
-        s:get('fd')
-        s:get('rfd')
-        s:get('wfd')
-        s:get('read_ahead')
-        s:get('shared_ciphers')
-        s:get('cipher_list')
-        s:get('verify_mode')
-        s:get('verify_depth')
-        s:get('state_string')
-        s:get('state_string_long')
-        s:get('rstate_string')
-        s:get('rstate_string_long')
-        s:get('iversion')
-        s:get('version')
-        s:get('default_timeout')
-        s:get('verify_result')
-        s:get('state')
-        s:get('state_string')
-        s:get('side')
-
-        s:dup()
         repeat
           local d = s:read()
           if d then assert(#d == s:write(d)) end
         until not d
-        s:shutdown()
-        s:session()
-        s:ctx()
-        s:cache_hit()
-        s:session_reused()
-        s:clear()
         assert(type(tostring(s))=='string')
+        s:shutdown()
         cli:close()
         cli = nil
         assert(cli==nil)
@@ -135,9 +104,13 @@ local function ssl_mode()
         i = i + 1
       end
     end
+    -- FIXME
+    -- Howto close listen socket
+    srv:shutdown()
     srv:close()
   end
 end
 
 ssl_mode()
 print(openssl.error(true))
+print("SSL Server done")
