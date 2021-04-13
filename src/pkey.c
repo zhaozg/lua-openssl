@@ -1272,7 +1272,7 @@ static LUA_FUNCTION(openssl_sign)
   {
     pctx = EVP_PKEY_CTX_new(pkey, NULL);
     EVP_PKEY_CTX_set1_id(pctx, userId, idlen);
-    EVP_MD_CTX_set_pkey_ctx(ctx, pctx);;
+    EVP_MD_CTX_set_pkey_ctx(ctx, pctx);
   }
 #endif
 
@@ -1361,7 +1361,7 @@ static LUA_FUNCTION(openssl_verify)
   {
     pctx = EVP_PKEY_CTX_new(pkey, NULL);
     EVP_PKEY_CTX_set1_id(pctx, userId, idlen);
-    EVP_MD_CTX_set_pkey_ctx(ctx, pctx);;
+    EVP_MD_CTX_set_pkey_ctx(ctx, pctx);
   }
 #endif
 

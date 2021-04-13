@@ -12,18 +12,6 @@ create and manage x509 certificate sign request
 #include <openssl/ts.h>
 #include <openssl/asn1.h>
 
-static int openssl_push_asn1_integer(lua_State *L, const ASN1_INTEGER* ai)
-{
-  if(ai!=NULL)
-  {
-    BIGNUM *bn;
-    bn = ASN1_INTEGER_to_BN(ai, NULL);
-    PUSH_OBJECT(bn, "openssl.bn");
-  } else
-    lua_pushnil(L);
-  return 1;
-}
-
 /***
 create a new ts_req object.
 @function req_new
@@ -260,7 +248,7 @@ static int openssl_ts_req_nonce(lua_State*L)
   TS_REQ* req = CHECK_OBJECT(1, TS_REQ, "openssl.ts_req");
   if (lua_isnone(L, 2))
   {
-    return openssl_push_asn1_integer(L, TS_REQ_get_nonce(req));
+    return openssl_push_asn1integer_as_bn(L, TS_REQ_get_nonce(req));
   }
   else
   {
@@ -467,7 +455,7 @@ static LUA_FUNCTION(openssl_ts_req_info)
     lua_setfield(L, -2, "policy_id");
   }
 
-  openssl_push_asn1_integer(L, TS_REQ_get_nonce(req));
+  openssl_push_asn1integer_as_bn(L, TS_REQ_get_nonce(req));
   lua_setfield(L, -2, "nonce");
 
   lua_newtable(L);
@@ -585,13 +573,13 @@ static int openssl_push_ts_accuracy(lua_State*L, const TS_ACCURACY* accuracy, in
     {
       lua_newtable(L);
 
-      openssl_push_asn1_integer(L, TS_ACCURACY_get_micros(accuracy));
+      openssl_push_asn1integer_as_bn(L, TS_ACCURACY_get_micros(accuracy));
       lua_setfield(L, -2, "micros");
 
-      openssl_push_asn1_integer(L, TS_ACCURACY_get_millis(accuracy));
+      openssl_push_asn1integer_as_bn(L, TS_ACCURACY_get_millis(accuracy));
       lua_setfield(L, -2, "millis");
 
-      openssl_push_asn1_integer(L, TS_ACCURACY_get_seconds(accuracy));
+      openssl_push_asn1integer_as_bn(L, TS_ACCURACY_get_seconds(accuracy));
       lua_setfield(L, -2, "seconds");
     }
   }
@@ -636,7 +624,7 @@ static int openssl_push_ts_tst_info(lua_State*L, TS_TST_INFO* info, const char* 
     openssl_push_ts_msg_imprint(L, TS_TST_INFO_get_msg_imprint(info));
     lua_setfield(L, -2, "msg_imprint");
 
-    openssl_push_asn1_integer(L, TS_TST_INFO_get_serial(info));
+    openssl_push_asn1integer_as_bn(L, TS_TST_INFO_get_serial(info));
     lua_setfield(L, -2, "serial");
 
     openssl_push_asn1(L, TS_TST_INFO_get_time(info), V_ASN1_GENERALIZEDTIME);
@@ -647,7 +635,7 @@ static int openssl_push_ts_tst_info(lua_State*L, TS_TST_INFO* info, const char* 
 
     AUXILIAR_SET(L, -1, "ordering", TS_TST_INFO_get_ordering(info), boolean);
 
-    openssl_push_asn1_integer(L, TS_TST_INFO_get_nonce(info));
+    openssl_push_asn1integer_as_bn(L, TS_TST_INFO_get_nonce(info));
     lua_setfield(L, -2, "nonce");
 
     openssl_push_general_name(L, TS_TST_INFO_get_tsa(info));
@@ -676,7 +664,7 @@ static int openssl_push_ts_tst_info(lua_State*L, TS_TST_INFO* info, const char* 
     }
     else if(strcmp(field, "serial")==0)
     {
-      openssl_push_asn1_integer(L, TS_TST_INFO_get_serial(info));
+      openssl_push_asn1integer_as_bn(L, TS_TST_INFO_get_serial(info));
     }
     else if(strcmp(field, "time")==0)
     {
@@ -692,7 +680,7 @@ static int openssl_push_ts_tst_info(lua_State*L, TS_TST_INFO* info, const char* 
     }
     else if(strcmp(field, "nonce")==0)
     {
-      openssl_push_asn1_integer(L, TS_TST_INFO_get_nonce(info));
+      openssl_push_asn1integer_as_bn(L, TS_TST_INFO_get_nonce(info));
     }
     else if(strcmp(field, "tsa")==0)
     {
@@ -765,7 +753,7 @@ static LUA_FUNCTION(openssl_ts_resp_info)
 
     lua_newtable(L);
 
-    openssl_push_asn1_integer(L, TS_STATUS_INFO_get0_status(si));
+    openssl_push_asn1integer_as_bn(L, TS_STATUS_INFO_get0_status(si));
     lua_setfield(L, -2, "status");
 
     {

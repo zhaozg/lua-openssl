@@ -136,7 +136,7 @@ static int openssl_xname_oneline(lua_State*L)
   X509_NAME* xname = CHECK_OBJECT(1, X509_NAME, "openssl.x509_name");
   char* p = X509_NAME_oneline(xname, NULL, 0);
 
-  lua_pushstring(L, p);;
+  lua_pushstring(L, p);
   OPENSSL_free(p);
   return 1;
 };

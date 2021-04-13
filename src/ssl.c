@@ -1851,7 +1851,7 @@ static int openssl_ssl_current_cipher(lua_State *L)
   if (c)
   {
     int bits, algbits;
-    char err[LUAL_BUFFERSIZE] = {0};;
+    char err[LUAL_BUFFERSIZE] = {0};
 
     lua_newtable(L);
 

@@ -1617,3 +1617,15 @@ int openssl_push_asn1(lua_State* L, const ASN1_STRING* string, int type)
   }
 
 }
+
+int openssl_push_asn1integer_as_bn(lua_State *L, const ASN1_INTEGER* ai)
+{
+  if(ai!=NULL)
+  {
+    BIGNUM *bn;
+    bn = ASN1_INTEGER_to_BN(ai, NULL);
+    PUSH_OBJECT(bn, "openssl.bn");
+  } else
+    lua_pushnil(L);
+  return 1;
+}

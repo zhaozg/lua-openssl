@@ -112,7 +112,7 @@ static X509_REVOKED *create_revoked(const BIGNUM* bn, time_t t, int reason)
 {
   X509_REVOKED *revoked = X509_REVOKED_new();
   ASN1_TIME *tm = ASN1_TIME_new();
-  ASN1_INTEGER *it =  BN_to_ASN1_INTEGER(bn, NULL);;
+  ASN1_INTEGER *it =  BN_to_ASN1_INTEGER(bn, NULL);
 
   ASN1_TIME_set(tm, t);
 
@@ -225,7 +225,7 @@ static LUA_FUNCTION(openssl_crl_new)
       luaL_argcheck(L, X509_check_private_key(cacert, capkey) == 1, 3, "evp_pkey not match with x509 in #2");
     }
   }
-  md = get_digest(L, 4, "sha256");;
+  md = get_digest(L, 4, "sha256");
   step = lua_isnone(L, 5) ? 7 * 24 * 3600 : luaL_checkint(L, 5);
 
   if (ret == 1)

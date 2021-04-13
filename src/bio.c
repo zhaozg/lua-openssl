@@ -751,7 +751,7 @@ static LUA_FUNCTION(openssl_bio_shutdown)
   }
   else if (BIO_method_type(bio) & (BIO_TYPE_SOCKET | BIO_TYPE_FD))
   {
-    (void)BIO_shutdown_wr(bio);;
+    (void)BIO_shutdown_wr(bio);
   }
   else
     luaL_error(L, "don't know how to shutdown");

@@ -215,7 +215,7 @@ static int openssl_xattr_type(lua_State*L)
   ASN1_TYPE *type = X509_ATTRIBUTE_get0_type(attr, loc);
   if (type)
   {
-    openssl_push_asn1type(L, type);;
+    openssl_push_asn1type(L, type);
     return 1;
   }
   return 0;

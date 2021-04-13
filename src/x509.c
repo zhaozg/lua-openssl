@@ -1071,7 +1071,7 @@ static int openssl_x509_valid_at(lua_State* L)
   X509* cert = CHECK_OBJECT(1, X509, "openssl.x509");
   if (lua_isnone(L, 2))
   {
-    time_t now = 0;;
+    time_t now = 0;
     time(&now);
 
     lua_pushboolean(L, (X509_cmp_time(X509_get0_notAfter(cert), &now)     >= 0
