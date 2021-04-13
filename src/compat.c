@@ -26,6 +26,18 @@ int EVP_PKEY_up_ref(EVP_PKEY *pkey)
   CRYPTO_add(&pkey->references, 1, CRYPTO_LOCK_EVP_PKEY);
   return 1;
 }
+
+int SSL_up_ref(SSL *ssl)
+{
+  CRYPTO_add(&ssl->references, 1, CRYPTO_LOCK_SSL);
+  return 1;
+}
+
+int SSL_SESSION_up_ref(SSL_SESSION *sess)
+{
+  CRYPTO_add(&sess->references, 1, CRYPTO_LOCK_SSL_SESSION);
+  return 1;
+}
 #endif
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)

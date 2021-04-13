@@ -74,6 +74,9 @@ int X509_up_ref(X509 *x);
 int X509_STORE_up_ref(X509_STORE *s);
 int EVP_PKEY_up_ref(EVP_PKEY *pkey);
 
+int SSL_up_ref(SSL_SESSION *s);
+int SSL_SESSION_up_ref(SSL_SESSION *s);
+
 DH *EVP_PKEY_get0_DH(EVP_PKEY *pkey);
 int DH_bits(const DH *dh);
 void DH_get0_key(const DH *dh,

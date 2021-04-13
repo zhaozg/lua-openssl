@@ -394,8 +394,6 @@ function TestSSL:testSNI()
   srv_ctx:mode(false, "enable_partial_write", "accept_moving_write_buffer",
                "auto_retry", "no_auto_chain")
 
---[[
--- FIXME:
   srv_ctx:set_session_callback(function(...)
     -- add
     print('set session')
@@ -410,7 +408,6 @@ function TestSSL:testSNI()
     print(...)
   end)
   srv_ctx:flush_sessions(10000)
---]]
 
   repeat
     cs, ec = cli:handshake()
