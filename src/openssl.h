@@ -137,17 +137,13 @@ void openssl_add_method(const OBJ_NAME *name, void *arg);
 static inline void* openssl_getclass(lua_State *L, const char* name, int idx)
 {
   void **p = (void**)auxiliar_getclassudata(L, name, idx);
-  if(p)
-    return *p;
-  return NULL;
+  return p!=NULL ? *p : NULL;
 }
 
 static inline void* openssl_getgroup(lua_State *L, const char* name, int idx)
 {
   void **p = (void**)auxiliar_getgroupudata(L, name, idx);
-  if(p)
-    return *p;
-  return NULL;
+  return p!=NULL ? *p : NULL;
 }
 
 #define GET_OBJECT(n,type,name) ((type*)openssl_getclass(L,name,n))
