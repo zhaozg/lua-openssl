@@ -149,11 +149,22 @@ static int openssl_cms_export(lua_State *L)
     return 1;
   return openssl_pushresult(L, ret);
 }
+
 /***
 create empty cms object
 @function create
 @treturn cms
 */
+
+static int openssl_cms_new(lua_State*L)
+{
+  CMS_ContentInfo *cms = CMS_ContentInfo_new();
+  if (cms) {
+    PUSH_OBJECT(cms, "openssl.cms");
+  } else
+    lua_pushnil(L);
+  return 1;
+}
 
 /***
 create cms object from string or bio object
@@ -162,48 +173,16 @@ create cms object from string or bio object
 @tparam[opt=0] number flags
 @treturn cms
 */
-
-/***
-create digest cms object
-@function create
-@tparam bio input
-@tparam evp_digest|string md_alg
-@tparam[opt=0] number flags
-@treturn cms
-*/
-static int openssl_cms_create(lua_State*L)
+static int openssl_cms_data_create(lua_State *L)
 {
-  CMS_ContentInfo *cms = NULL;
-
-  if (lua_gettop(L) == 0)
-  {
-    cms = CMS_ContentInfo_new();
-  }
-  else
-  {
-    BIO* in = load_bio_object(L, 1);
-    int type = lua_type(L, 2);
-    int flags;
-    switch (type)
-    {
-    case LUA_TNONE:
-    case LUA_TNUMBER:
-    {
-      int flags = luaL_optint(L, 3, 0);
-      cms = CMS_data_create(in, flags);
-      break;
-    }
-    default:
-    {
-      const EVP_MD* md = get_digest(L, 2, NULL);
-      flags = luaL_optint(L, 3, 0);
-      cms = CMS_digest_create(in, md, flags);
-    }
-    }
-    BIO_free(in);
-  }
-
-  PUSH_OBJECT(cms, "openssl.cms");
+  BIO* in = load_bio_object(L, 1);
+  int flags = luaL_optint(L, 2, 0);
+  CMS_ContentInfo *cms = CMS_data_create(in, flags);
+  BIO_free(in);
+  if (cms) {
+    PUSH_OBJECT(cms, "openssl.cms");
+  } else
+    lua_pushnil(L);
   return 1;
 }
 
@@ -286,6 +265,7 @@ make signed cms object
 */
 static int openssl_cms_sign(lua_State *L)
 {
+  /* look aat apps/cms.c operation & SMIME_SIGNERS */
   X509* signcert = CHECK_OBJECT(1, X509, "openssl.x509");
   EVP_PKEY* pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
   BIO* data = load_bio_object(L, 3);
@@ -303,7 +283,6 @@ static int openssl_cms_sign(lua_State *L)
   }
   return openssl_pushresult(L, 0);
 }
-
 
 /***
 verfiy signed cms object
@@ -356,10 +335,11 @@ static int openssl_cms_EncryptedData_encrypt(lua_State*L)
   BIO* in = load_bio_object(L, 1);
   size_t klen;
   const char* key = luaL_checklstring(L, 2, &klen);
-  const EVP_CIPHER* ciphers = get_cipher(L, 3, "des-ede3-cbc");
+  const EVP_CIPHER* ciphers = get_cipher(L, 3, "aes-128-cbc");
   unsigned int flags = luaL_optint(L, 4, 0);
 
-  CMS_ContentInfo *cms = CMS_EncryptedData_encrypt(in, ciphers, (const unsigned char*) key, klen, flags);
+  CMS_ContentInfo *cms = CMS_EncryptedData_encrypt(in, ciphers,
+                                                   (const unsigned char*) key, klen, flags);
   BIO_free(in);
   if (cms)
   {
@@ -498,20 +478,21 @@ encrypt with recipt certs
 */
 static int openssl_cms_encrypt(lua_State *L)
 {
-  STACK_OF(X509)* encerts = openssl_sk_x509_fromtable(L, 1);
-  BIO* in = load_bio_object(L, 2);
-  const EVP_CIPHER* ciphers = get_cipher(L, 3, "des-ede3-cbc");
-  unsigned int flags = luaL_optint(L, 4, 0);
+  BIO* in = load_bio_object(L, 1);
+  STACK_OF(X509)* encerts = openssl_sk_x509_fromtable(L, 2);
+  const EVP_CIPHER* ciphers = get_cipher(L, 3, "aes-128-cbc");
+  unsigned int flags = luaL_optint(L, 4, CMS_PARTIAL);
+
   CMS_ContentInfo *cms = CMS_encrypt(encerts, in, ciphers, flags);
   int ret = 1;
   if (cms)
   {
-    if (lua_istable(L, 5))
+    if (lua_istable(L, 2))
     {
       CMS_RecipientInfo *recipient;
 
-      lua_getfield(L, 5, "key");
-      lua_getfield(L, 5, "keyid");
+      lua_getfield(L, 2, "key");
+      lua_getfield(L, 2, "keyid");
       if (lua_isstring(L, -1) && lua_isstring(L, -2))
       {
         size_t keylen, keyidlen;
@@ -531,46 +512,51 @@ static int openssl_cms_encrypt(lua_State *L)
       }
       else if (!lua_isnil(L, -1) || !lua_isnil(L, -2))
       {
-        luaL_argerror(L, 5, "key and keyid field must be string");
+        luaL_argerror(L, 2, "key and keyid field must be string");
       }
-      else
-        ret = 1;
       lua_pop(L, 2);
 
       if (ret)
       {
-        lua_getfield(L, 5, "password");
+        lua_getfield(L, 2, "password");
         if (lua_isstring(L, -1))
         {
-          unsigned char*passwd = (unsigned char*)lua_tostring(L, -1);
+          const char *passwd = lua_tostring(L, -1);
+          passwd = OPENSSL_strdup(passwd);
           recipient = CMS_add0_recipient_password(cms,
                                                   -1, NID_undef, NID_undef,
-                                                  passwd, -1, NULL);
+                                                  (unsigned char *)passwd, -1, NULL);
           if (!recipient)
             ret = 0;
+          passwd = NULL;
         }
         else if (!lua_isnil(L, -1))
         {
-          luaL_argerror(L, 5, "password field must be string");
+          luaL_argerror(L, 2, "password field must be string");
         }
         lua_pop(L, 1);
+      }
+
+
+      if (ret==1 && lua_rawlen(L, 3)>0)
+      {
+        /* look at apps/cms.c operation == SMIME_ENCRYPT */
       }
     }
 
     if (ret)
     {
-      if (flags & CMS_STREAM)
+      if (!(flags & CMS_STREAM))
         ret = CMS_final(cms, in, NULL, flags);
     }
   }
   BIO_free(in);
   sk_X509_pop_free(encerts, X509_free);
-  if (ret)
-  {
+  if (ret == 1)
     PUSH_OBJECT(cms, "openssl.cms");
-    return 1;
-  }
-  return openssl_pushresult(L, ret);
+  else
+    ret = openssl_pushresult(L, ret);
+  return ret;
 }
 
 /***
@@ -650,34 +636,27 @@ static int openssl_cms_decrypt(lua_State *L)
   return 1;
 }
 
-static int openssl_cms_bio_new(lua_State*L)
-{
-  CMS_ContentInfo *cms = CHECK_OBJECT(1, CMS_ContentInfo, "openssl.cms");
-  BIO* out = lua_isnoneornil(L, 2) ? NULL : load_bio_object(L, 2);
-  out = BIO_new_CMS(out, cms);
-  PUSH_OBJECT(out, "openssl.bio");
-  return 1;
-}
-
 static const luaL_Reg R[] =
 {
   {"read",                  openssl_cms_read},
   {"export",                openssl_cms_export},
 
-  {"bio_new",               openssl_cms_bio_new},
-  {"create",                openssl_cms_create},
+  {"new",                   openssl_cms_new},
+  {"data",                  openssl_cms_data_create},
+  {"compress",              openssl_cms_compress},
+  {"uncompress",            openssl_cms_uncompress},
 
   {"sign",                  openssl_cms_sign},
   {"verify",                openssl_cms_verify},
   {"encrypt",               openssl_cms_encrypt},
   {"decrypt",               openssl_cms_decrypt},
 
+  {"digest",                openssl_cms_digest_create},
   {"digest_create",         openssl_cms_digest_create},
   {"digest_verify",         openssl_cms_digest_verify},
+
   {"EncryptedData_encrypt", openssl_cms_EncryptedData_encrypt},
   {"EncryptedData_decrypt", openssl_cms_EncryptedData_decrypt},
-  {"compress",              openssl_cms_compress},
-  {"uncompress",            openssl_cms_uncompress},
 
   {NULL,  NULL}
 };
@@ -700,44 +679,6 @@ static int openssl_cms_type(lua_State *L)
   const ASN1_OBJECT *obj = CMS_get0_type(cms);
   PUSH_OBJECT(obj, "openssl.asn1_object");
 
-  return 1;
-}
-
-/***
-do dataInit
-@function datainit
-@tparam[opt] bio|string data
-@treturn bio cmsbio
-@return nil for fail
-@warning inner use
-*/
-static int openssl_cms_datainit(lua_State *L)
-{
-  CMS_ContentInfo *cms = CHECK_OBJECT(1, CMS_ContentInfo, "openssl.cms");
-  BIO* icont = lua_isnoneornil(L, 2) ? NULL : load_bio_object(L, 2);
-  BIO* cbio = CMS_dataInit(cms, icont);
-  if(cbio!=NULL)
-    PUSH_OBJECT(icont, "openssl.bio");
-  else
-    lua_pushnil(L);
-  BIO_free(icont);
-  return 1;
-}
-
-/***
-do dataFinal
-@function datafnal
-@tparam bio cmsbio bio returned by datainit
-@treturn boolean true for success, other value will followed by error message
-@warning inner use
-*/
-static int openssl_cms_datafinal(lua_State *L)
-{
-  CMS_ContentInfo *cms = CHECK_OBJECT(1, CMS_ContentInfo, "openssl.cms");
-  BIO* bio = load_bio_object(L, 2);
-  int ret = CMS_dataFinal(cms, bio);
-  lua_pushboolean(L, ret);
-  BIO_free(bio);
   return 1;
 }
 
@@ -810,19 +751,27 @@ static int openssl_cms_get_signers(lua_State*L)
 static int openssl_cms_data(lua_State *L)
 {
   CMS_ContentInfo *cms = CHECK_OBJECT(1, CMS_ContentInfo, "openssl.cms");
-  BIO *out = load_bio_object(L, 2);
-  unsigned int flags = luaL_optint(L, 3, 0);
-  int ret = CMS_data(cms, out, flags);
-  BIO_free(out);
-  return openssl_pushresult(L, ret);
-}
+  unsigned int flags = luaL_optint(L, 2, 0);
+  BIO *out = BIO_new(BIO_s_mem());
+  /* TODO: check type is data */
 
+  int ret = CMS_data(cms, out, flags);
+  if (ret==1)
+  {
+    BUF_MEM *mem;
+    BIO_get_mem_ptr(out, &mem);
+    lua_pushlstring(L, mem->data, mem->length);
+  }else
+    ret = openssl_pushresult(L, ret);
+  BIO_free(out);
+  return ret;
+}
 
 static int openssl_cms_final(lua_State*L)
 {
   CMS_ContentInfo *cms = CHECK_OBJECT(1, CMS_ContentInfo, "openssl.cms");
   BIO* in = load_bio_object(L, 2);
-  int flags = luaL_optint(L, 3, 0);
+  int flags = luaL_optint(L, 3, CMS_STREAM);
 
   int ret = CMS_final(cms, in, NULL, flags);
   BIO_free(in);
@@ -853,6 +802,19 @@ static int openssl_cms_sign_receipt(lua_State*L)
   return openssl_pushresult(L, 0);
 }
 
+static int openssl_cms_verify_receipt(lua_State*L)
+{
+  CMS_ContentInfo *rcms = CHECK_OBJECT(1, CMS_ContentInfo, "openssl.cms");
+  CMS_ContentInfo *cms = CHECK_OBJECT(2, CMS_ContentInfo, "openssl.cms");
+  STACK_OF(X509) *other = openssl_sk_x509_fromtable(L, 3);
+  X509_STORE* store = CHECK_OBJECT(4, X509_STORE, "openssl.x509_store");
+  unsigned int flags = luaL_optint(L, 5, 0);
+
+  int ret = CMS_verify_receipt(rcms, cms, other, store, flags);
+  lua_pushboolean(L, ret>0);
+  return 1;
+}
+
 static int openssl_cms_free(lua_State *L)
 {
   CMS_ContentInfo *cms = CHECK_OBJECT(1, CMS_ContentInfo, "openssl.cms");
@@ -864,18 +826,21 @@ static int openssl_cms_free(lua_State *L)
 static luaL_Reg cms_ctx_funs[] =
 {
   {"type",          openssl_cms_type},
-  {"datainit",      openssl_cms_datainit},
-  {"datafinal",     openssl_cms_datafinal},
   {"content",       openssl_cms_content},
-  {"data",          openssl_cms_data},
-  {"signers",       openssl_cms_get_signers},
+
   {"detached",      openssl_cms_detached},
   {"export",        openssl_cms_export},
 
-  {"sign_receipt",  openssl_cms_sign_receipt},
-  {"get_signers",   openssl_cms_get_signers},
+  /* data */
+  {"data",          openssl_cms_data},
+  /* digest */
+  {"verify",        openssl_cms_digest_verify},
 
-  {"bio_new",       openssl_cms_bio_new},
+  {"signers",       openssl_cms_get_signers},
+
+  {"sign_receipt",  openssl_cms_sign_receipt},
+  {"verify_receipt",openssl_cms_verify_receipt},
+
   {"final",         openssl_cms_final},
 
   {"__tostring",    auxiliar_tostring},

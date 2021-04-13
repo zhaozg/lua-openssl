@@ -18,12 +18,6 @@ function TestCMS:testCompress()
   if cs then
     local ret = assert(cms.uncompress(cs))
     lu.assertEquals(msg, ret)
-    --FIXME:
-    --c = cms.compress('data')
-    --FIXME:
-    --assert(c:bio_new())
-    --FIXME:
-    --cms.uncompress(c)
   end
 end
 
@@ -45,30 +39,48 @@ function TestCMS:setUp()
   self.msg = openssl.hex(openssl.random(128))
   self.digest = 'sha1WithRSAEncryption'
   self.castore = assert(ca:get_store())
+
+  local c = cms.new()
+  assert(c)
 end
 
 function TestCMS:testEncrypt()
-  local recipts = {self.alice.cert}
-  local msg = assert(cms.encrypt(recipts, self.msg))
+  local opts = {
+    self.alice.cert,
+    key = "1234567890abcdef",
+    keyid = "aes-128-cbc",
+    password = 'secret'
+  }
+  local msg = assert(cms.encrypt(self.msg, opts))
   local smime = assert(cms.export(msg))
   local ss = assert(cms.read(smime, 'smime'))
-  local raw = assert(cms.decrypt(ss, self.alice.key, self.alice.cert))
+  local raw = assert(cms.decrypt(ss, self.alice.key, self.alice.cert, nil, 0, opts))
   lu.assertEquals(raw, self.msg)
 end
 
 function TestCMS:testSign()
-  local c1 = assert(cms.sign(self.bob.cert, self.bob.key, self.msg, {}))
-  local smime = assert(cms.export(c1))
+  local c1 = assert(cms.sign(
+    self.bob.cert, self.bob.key, self.msg, {}))
+  assert(cms.export(c1))
   local msg = assert(cms.verify(c1, {self.bob.cert}, self.castore))
   lu.assertEquals(msg, self.msg)
   msg = assert(cms.verify(c1, {}, self.castore))
   lu.assertEquals(msg, self.msg)
+
+  local rc = c1:sign_receipt(
+    self.bob.cert,
+    self.bob.key,
+    {self.alice.cert},
+    0)
+  if rc then
+    assert(rc:verify_receipt(c1, {self.bob.cert}, self.castore, 0))
+  end
 end
 
 function TestCMS:testEncryptedData()
-  local key = openssl.random(24)
+  local key = openssl.random(16)
   local c1 = assert(cms.EncryptedData_encrypt(self.msg, key))
-  local smime = assert(cms.export(c1))
+  assert(cms.export(c1))
   local msg = assert(cms.EncryptedData_decrypt(c1, key))
   lu.assertEquals(msg, self.msg)
 end
@@ -82,20 +94,20 @@ function TestCMS:testDigest()
   local msg = assert(cms.digest_verify(c1))
   lu.assertEquals(msg, self.msg)
 
-  c1 = assert(cms.create(self.msg, "sha1"))
+  c1 = assert(cms.digest(self.msg, "sha1"))
   smime = assert(cms.export(c1))
   assert(smime)
-  msg = assert(cms.digest_verify(c1))
+  msg = assert(c1:verify())
   lu.assertEquals(msg, self.msg)
 end
 
 function TestCMS:testData()
-  local c = cms.create()
+  local c = cms.data("data")
   assert(c)
-
-  c = cms.create("data")
-  assert(c)
+  assert(c:detached()==false)
   assert(c:type())
+  assert(c:data()=='data')
+  assert(c:content()=='data')
 
   local d = assert(c:export("data", 0, "der"))
   d = cms.read(d, 'der')
@@ -107,5 +119,9 @@ function TestCMS:testData()
   d = cms.read(d, 'smime')
   assert(d)
 
+  assert(c:detached(true))
+  assert(c:detached() == true)
+  d = assert(c:export("data", 0, "der"))
+  assert(d)
 end
 
