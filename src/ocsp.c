@@ -209,17 +209,31 @@ static int openssl_push_ocsp_certid(lua_State*L, OCSP_CERTID* cid)
   {
     lua_newtable(L);
 
-    PUSH_ASN1_OCTET_STRING(L, iNameHash);
-    lua_setfield(L, -2, "issuerNameHash");
+    if(iNameHash)
+    {
+      PUSH_ASN1_OCTET_STRING(L, iNameHash);
+      lua_setfield(L, -2, "issuerNameHash");
+    }
 
-    PUSH_ASN1_OCTET_STRING(L, ikeyHash);
-    lua_setfield(L, -2, "issuerKeyHash");
+    if(ikeyHash)
+    {
+      PUSH_ASN1_OCTET_STRING(L, ikeyHash);
+      lua_setfield(L, -2, "issuerKeyHash");
+    }
 
-    PUSH_ASN1_INTEGER(L, serial);
-    lua_setfield(L, -2, "serialNumber");
+    if (serial)
+    {
+      BIGNUM *bn = ASN1_INTEGER_to_BN(serial, NULL);
+      PUSH_OBJECT(bn, "openssl.bn");
+      lua_setfield(L, -2, "serialNumber");
+    }
 
-    PUSH_OBJECT(md, "openssl.asn1_object");
-    lua_setfield(L, -2, "hashAlgorithm");
+    if(md)
+    {
+      md = OBJ_dup(md);
+      PUSH_OBJECT(md, "openssl.asn1_object");
+      lua_setfield(L, -2, "hashAlgorithm");
+    }
   }
   else
     lua_pushnil(L);
@@ -233,7 +247,6 @@ static int openssl_ocsp_request_parse(lua_State*L)
   OCSP_REQINFO *inf = req->tbsRequest;
   OCSP_SIGNATURE *sig = req->optionalSignature;
 #endif
-  BIO* bio = BIO_new(BIO_s_mem());
   int i, num;
   lua_newtable(L);
 
@@ -244,7 +257,6 @@ static int openssl_ocsp_request_parse(lua_State*L)
     openssl_push_general_name(L, inf->requestorName);
     lua_setfield(L, -2, "requestorName");
   }
-  num = sk_OCSP_ONEREQ_num(inf->requestList);
 #endif
 
   num = OCSP_request_onereq_count(req);
@@ -272,6 +284,7 @@ static int openssl_ocsp_request_parse(lua_State*L)
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
   if (sig)
   {
+    BIO* bio = BIO_new(BIO_s_mem());
     (void)BIO_reset(bio);
     X509_signature_print(bio, sig->signatureAlgorithm, sig->signature);
     for (i = 0; i < sk_X509_num(sig->certs); i++)
@@ -279,9 +292,10 @@ static int openssl_ocsp_request_parse(lua_State*L)
       X509_print(bio, sk_X509_value(sig->certs, i));
       PEM_write_bio_X509(bio, sk_X509_value(sig->certs, i));
     }
+    BIO_free(bio);
   }
 #endif
-  BIO_free(bio);
+ 
   return 1;
 }
 
