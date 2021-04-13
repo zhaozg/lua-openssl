@@ -56,7 +56,7 @@ if uv then
     local port = math.random(8000, 9000)
     local child, pid
     child, pid = uv.spawn(LUA, {
-      args = {"8.ssl_s.lua",  '127.0.0.1',  port}, 
+      args = {"8.ssl_s.lua",  '127.0.0.1',  port},
       stdio = {nil,  stdout1,  stderr1}
     }, function(code, signal)
       lu.assertEquals(code, 0)
@@ -71,7 +71,7 @@ if uv then
       set_timeout(2000, function()
         local _child
         _child = uv.spawn(LUA, {
-          args = {"8.ssl_c.lua",  '127.0.0.1',  port}, 
+          args = {"8.ssl_c.lua",  '127.0.0.1',  port},
           stdio = {nil,  stdout2,  stderr2}
         }, function(code, signal)
           lu.assertEquals(code, 0)
@@ -102,7 +102,7 @@ if uv then
     local port = math.random(8000, 9000)
     local child
     child = uv.spawn(LUA, {
-      args = {"8.bio_s.lua",  '127.0.0.1',  port}, 
+      args = {"8.bio_s.lua",  '127.0.0.1',  port},
       stdio = {nil,  stdout1,  stderr1}
     }, function(code, signal)
       lu.assertEquals(code, 0)
@@ -116,7 +116,7 @@ if uv then
     set_timeout(5000, function()
       local _child
       _child = uv.spawn(LUA, {
-        args = {"8.bio_c.lua",  '127.0.0.1',  port}, 
+        args = {"8.bio_c.lua",  '127.0.0.1',  port},
         stdio = {nil,  stdout2,  stderr2}
       }, function(code, signal)
         lu.assertEquals(code, 0)
@@ -145,7 +145,7 @@ if uv then
     local port = math.random(8000, 9000)
     local child
     child = uv.spawn(LUA, {
-      args = {"8.bio_s.lua",  '127.0.0.1',  port}, 
+      args = {"8.bio_s.lua",  '127.0.0.1',  port},
       stdio = {nil,  stdout1,  stderr1}
     }, function(code, signal)
       lu.assertEquals(code, 0)
@@ -158,7 +158,7 @@ if uv then
     set_timeout(2000, function()
       local _child
       _child = uv.spawn(LUA, {
-        args = {"8.ssl_c.lua",  '127.0.0.1',  port,  "serveraa.br"}, 
+        args = {"8.ssl_c.lua",  '127.0.0.1',  port,  "serveraa.br"},
         stdio = {nil,  stdout2,  stderr2}
       }, function(code, signal)
         lu.assertEquals(code, 0)
@@ -186,7 +186,7 @@ if uv then
     local port = math.random(8000, 9000)
     local child
     child = uv.spawn(LUA, {
-      args = {"8.ssl_s.lua",  '127.0.0.1',  port}, 
+      args = {"8.ssl_s.lua",  '127.0.0.1',  port},
       stdio = {nil,  stdout1,  stderr1}
     }, function(code, signal)
       lu.assertEquals(code, 0)
@@ -199,7 +199,7 @@ if uv then
     set_timeout(2000, function()
       local _child
       _child = uv.spawn(LUA, {
-        args = {"8.bio_c.lua",  '127.0.0.1',  port}, 
+        args = {"8.bio_c.lua",  '127.0.0.1',  port},
         stdio = {nil,  stdout2,  stderr2}
       }, function(code, signal)
         lu.assertEquals(code, 0)
@@ -223,7 +223,7 @@ local lua_spawn
 do
   local function P(pipe, read)
     return {
-      stream = pipe, 
+      stream = pipe,
       flags = luv.CREATE_PIPE +
         (read and luv.READABLE_PIPE or luv.WRITABLE_PIPE)
     }
@@ -231,8 +231,8 @@ do
 
   lua_spawn = function(f, o, e, c)
     return luv.spawn({
-      file = LUA, 
-      args = {f}, 
+      file = LUA,
+      args = {f},
       stdio = {{},  P(o, false),  P(e, false)}
     }, c)
   end
@@ -443,7 +443,6 @@ function TestSSL:testSNI()
     rc, ec = cli:renegotiate()
     rs, es = srv:renegotiate_abbreviated()
     cli:renegotiate_pending()
-    print(cli:read())
     assert(cli:read() == false)
     assert(srv:read() == false)
     repeat

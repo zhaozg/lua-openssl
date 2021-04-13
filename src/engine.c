@@ -37,13 +37,22 @@ static const char* const list[] =
 {
   "RSA",      /* 0 */
   "DSA",
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
   "ECDH",     /* 2 */
   "ECDSA",
+#else
+  "EC",
+#endif
   "DH",       /* 4 */
   "RAND",
-  "STORE",    /* 6 */
   "ciphers",
   "digests",  /* 8 */
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
+  "STORE",    /* 6 */
+#else
+  "PKEY",
+  "ASN1",
+#endif
   "complete", /* 9 */
 
   NULL
@@ -71,7 +80,9 @@ int openssl_engine(lua_State *L)
                "#1 may be string or boolean\n"
                "\tstring for an engine id to load\n"
                "\ttrue for first engine, false or last engine\n"
-               "\tbut we get %s:%s", lua_typename(L, lua_type(L,  1)), lua_tostring(L, 1));
+               "\tbut we get %s:%s",
+               lua_typename(L, lua_type(L,  1)),
+               lua_tostring(L, 1));
   if (eng)
   {
     PUSH_OBJECT((void*)eng, "openssl.engine");
@@ -298,15 +309,14 @@ static int openssl_engine_id(lua_State*L)
 {
   ENGINE* eng = CHECK_OBJECT(1, ENGINE, "openssl.engine");
   const char*id = NULL;
-  int ret = 0;
   if (lua_isstring(L, 2))
   {
+    int ret;
     id = luaL_checkstring(L, 2);
     ret = ENGINE_set_id(eng, id);
     lua_pushboolean(L, ret);
-    return 1;
-  }
-  lua_pushstring(L, ENGINE_get_id(eng));
+  } else
+    lua_pushstring(L, ENGINE_get_id(eng));
   return 1;
 }
 
@@ -315,15 +325,14 @@ static int openssl_engine_name(lua_State*L)
 {
   ENGINE* eng = CHECK_OBJECT(1, ENGINE, "openssl.engine");
   const char*id = NULL;
-  int ret = 0;
   if (lua_isstring(L, 2))
   {
+    int ret;
     id = luaL_checkstring(L, 2);
     ret = ENGINE_set_name(eng, id);
     lua_pushboolean(L, ret);
-    return 1;
-  }
-  lua_pushstring(L, ENGINE_get_name(eng));
+  }else
+    lua_pushstring(L, ENGINE_get_name(eng));
   return 1;
 }
 
@@ -331,15 +340,13 @@ static int openssl_engine_name(lua_State*L)
 static int openssl_engine_flags(lua_State*L)
 {
   ENGINE* eng = CHECK_OBJECT(1, ENGINE, "openssl.engine");
-  int ret = 0;
-  if (lua_isstring(L, 2))
+  if (!lua_isnone(L, 2))
   {
     int flags = luaL_checkint(L, 2);
-    ret = ENGINE_set_flags(eng, flags);
+    int ret = ENGINE_set_flags(eng, flags);
     lua_pushboolean(L, ret);
-    return 1;
-  }
-  lua_pushinteger(L, ENGINE_get_flags(eng));
+  }else
+    lua_pushinteger(L, ENGINE_get_flags(eng));
   return 1;
 }
 
@@ -371,18 +378,8 @@ static int openssl_engine_set_default(lua_State*L)
   int top = lua_gettop(L);
   if (top == 2)
   {
-    if (lua_isnumber(L, 2))
-    {
-      int methods = luaL_checkint(L, 2);
-      ret = ENGINE_set_default(eng, methods);
-    }
-    else if (lua_isstring(L, 2))
-    {
-      const char* s = luaL_checkstring(L, 2);
-      ret = ENGINE_set_default_string(eng, s);
-    }
-    else
-      luaL_error(L, "#2 must be a number or string");
+    const char* s = luaL_checkstring(L, 2);
+    ret = ENGINE_set_default_string(eng, s);
     return openssl_pushresult(L, ret);
   }
 
