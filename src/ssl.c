@@ -1226,7 +1226,7 @@ static int openssl_add_session(SSL *ssl, SSL_SESSION *session)
   ret = lua_pcall(L, 2, 1, 0);
   if (ret != LUA_OK)
   {
-    fprintf(stderr, "Uncatch error: %s\n", lua_tostring(L, -1));
+    fprintf(stderr, "add session callback error: %s\n", lua_tostring(L, -1));
     ret = 0;
   }
   else
@@ -1252,7 +1252,7 @@ static SSL_SESSION *openssl_get_session(SSL *ssl,
   ret = lua_pcall(L, 2, 1, 0);
   if (ret != LUA_OK)
   {
-    fprintf(stderr, "Uncatch error: %s\n", lua_tostring(L, -1));
+    fprintf(stderr, "get session callback error: %s\n", lua_tostring(L, -1));
     lua_pop(L, 1);
     return NULL;
   }
@@ -1288,7 +1288,7 @@ static void openssl_del_session(SSL_CTX *sctx, SSL_SESSION *session)
   ret = lua_pcall(L, 2, 0, 0);
   if (ret != LUA_OK)
   {
-    fprintf(stderr, "Uncatch error: %s\n", lua_tostring(L, -1));
+    fprintf(stderr, "del session callback error: %s\n", lua_tostring(L, -1));
     lua_pop(L, 1);
   }
 }

@@ -68,7 +68,6 @@ local function mk_connection(_host, _port, i)
     else
       assert(S:connect())
     end
-    --FIXME
     local succ, errs =S:getpeerverification()
     if type(errs)=='table' then
       for i, err in pairs(errs) do

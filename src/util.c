@@ -63,18 +63,6 @@ int openssl_valuegeti(lua_State*L, const void*p, int i)
   return lua_type(L, -1);
 }
 
-size_t openssl_valuelen(lua_State*L, const void*p)
-{
-  size_t s = 0;
-  lua_rawgetp(L, LUA_REGISTRYINDEX, p);
-  if (!lua_isnil(L, -1))
-  {
-    s = lua_rawlen(L, -1);
-  }
-  lua_pop(L, 1);
-  return s;
-}
-
 int openssl_refrence(lua_State*L, const void*p, int op)
 {
   int ref;

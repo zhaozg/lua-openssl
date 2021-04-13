@@ -104,8 +104,7 @@ local function ssl_mode()
         i = i + 1
       end
     end
-    -- FIXME
-    -- Howto close listen socket
+    -- TODO: close listen socket correctly
     srv:shutdown()
     srv:close()
   end

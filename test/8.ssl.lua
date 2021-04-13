@@ -352,6 +352,19 @@ function TestSSL:testSNI()
       assert(ctx:use(pkey, cert))
       certs[#certs + 1] = cert
     end
+    ctx:set_session_callback(function(s, ss)
+      -- add
+      assert(tostring(s):match('openssl.ssl '))
+      assert(tostring(ss):match('openssl.ssl_session'))
+    end, function(s, id)
+      -- get
+      assert(tostring(s):match('openssl.ssl '))
+      assert(type(id)=='string')
+    end, function(c, ss)
+      -- del
+      assert(tostring(c):match('openssl.ssl_ctx'))
+      assert(tostring(ss):match('openssl.ssl_session'))
+    end)
     return ctx
   end
 
@@ -359,7 +372,7 @@ function TestSSL:testSNI()
     local ctx = create_ctx({{CN = "server"},  {C = "CN"}})
 
     ctx:set_servername_callback({
-      ["serverA"] = create_ctx {{CN = "serverA"},  {C = "CN"}}, 
+      ["serverA"] = create_ctx {{CN = "serverA"},  {C = "CN"}},
       ["serverB"] = create_ctx {{CN = "serverB"},  {C = "CN"}}
     })
     if store then ctx:cert_store(store) end
@@ -394,19 +407,6 @@ function TestSSL:testSNI()
   srv_ctx:mode(false, "enable_partial_write", "accept_moving_write_buffer",
                "auto_retry", "no_auto_chain")
 
-  srv_ctx:set_session_callback(function(...)
-    -- add
-    print('set session')
-    print(...)
-  end, function(...)
-    -- get
-    print('get session')
-    print(...)
-  end, function(...)
-    -- del
-    print('del session')
-    print(...)
-  end)
   srv_ctx:flush_sessions(10000)
 
   repeat
@@ -441,7 +441,7 @@ function TestSSL:testSNI()
   assert(peer:subject():oneline() == "/CN=server/C=CN")
   rc, ec = cli:renegotiate()
   rs, es = srv:renegotiate_abbreviated()
-  print(cli:renegotiate_pending())
+  cli:renegotiate_pending()
   assert(cli:read() == false)
   assert(srv:read() == false)
   repeat

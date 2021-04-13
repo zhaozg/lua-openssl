@@ -253,7 +253,6 @@ int openssl_valueset(lua_State*L, const void*p, const char*field);
 int openssl_valueget(lua_State*L, const void*p, const char*field);
 int openssl_valueseti(lua_State*L, const void*p, int i);
 int openssl_valuegeti(lua_State*L, const void*p, int i);
-size_t openssl_valuelen(lua_State*L, const void*p);
 int openssl_refrence(lua_State*L, const void*p, int op);
 
 int openssl_verify_cb(int preverify_ok, X509_STORE_CTX *xctx);
