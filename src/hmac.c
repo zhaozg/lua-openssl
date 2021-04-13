@@ -458,7 +458,6 @@ static int openssl_mac_ctx_reset(lua_State *L)
 #if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
   int ret = HMAC_CTX_reset(c);
 #else
-  //FIXME:
   int ret = HMAC_Init_ex(c, NULL, 0, NULL, NULL);
 #endif
 
