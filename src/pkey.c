@@ -475,6 +475,8 @@ static LUA_FUNCTION(openssl_pkey_new)
         if (DH_generate_key(dh))
         {
           pkey = EVP_PKEY_new();
+          //TODO: remove up_ref
+          DH_up_ref(dh);
           EVP_PKEY_assign_DH(pkey, dh);
         }
         else
@@ -760,6 +762,12 @@ static LUA_FUNCTION(openssl_pkey_new)
     EC_KEY* ec = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
     pkey = EVP_PKEY_new();
     EVP_PKEY_set1_EC_KEY(pkey, ec);
+  }
+  else if (auxiliar_getclassudata(L, "openssl.dh", 1))
+  {
+    DH *dh= CHECK_OBJECT(1, DH, "openssl.dh");
+    pkey = EVP_PKEY_new();
+    EVP_PKEY_set1_DH(pkey, dh);
   }
   else if (auxiliar_getclassudata(L, "openssl.dsa", 1))
   {

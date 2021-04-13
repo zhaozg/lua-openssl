@@ -18,7 +18,7 @@ function TestPKEYMY:setUp()
     {nil},  -- default to create rsa 1024 bits with 65537
     {'rsa',  1024,  3},  -- create rsa with give bits length and e
     {'dsa',  512},
-    {'dh',  512},  --FIXME: DHParams
+    {'dh',  512},
     {'ec',  'prime256v1'}
   }
 end
@@ -29,10 +29,7 @@ function TestPKEYMY:testBasic()
   for _, v in ipairs(self.genalg) do
     local k = mk_key(v)
     assert(k:is_private())
-    if (v[1]~='dh') then
-      --FIXME:
-      k:set_engine(eng)
-    end
+    k:set_engine(eng)
     local k1 = pkey.get_public(k)
     assert(not k1:is_private())
 
@@ -77,7 +74,6 @@ function TestPKEYMY:testBasic()
       local sig = assert(pkey.sign(k, msg))
       assert(true == pkey.verify(k1, msg, sig))
     end
-    --FIXME: DH generate with use right DHParams
     if t.type == 'ec' then
       local p = mk_key(v)
       p = pkey.get_public(p)

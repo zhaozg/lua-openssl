@@ -10,6 +10,5 @@ function TestDH:Testdh()
   assert(t.bits == 512)
   assert(t.size == 64)
 
-  --FIXME: crash
-  --k:set_engine(openssl.engine('openssl'))
+  k:set_engine(openssl.engine('openssl'))
 end
