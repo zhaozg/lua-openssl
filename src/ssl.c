@@ -1098,7 +1098,7 @@ static int openssl_ssl_ctx_set_tmp(lua_State *L)
     {
       openssl_valueseti(L, ctx, SSL_CTX_TEMP_ECDH);
       luaL_argcheck(L, lua_isstring(L, 4), 4, "must supply curve name");
-      lua_pushvalue(4);
+      lua_pushvalue(L, 4);
       openssl_valueseti(L, ctx, SSL_CTX_TEMP_EC_CURVE);
       SSL_CTX_set_tmp_ecdh_callback(ctx, tmp_ecdh_callback);
     }

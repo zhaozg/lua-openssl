@@ -74,7 +74,8 @@ int X509_up_ref(X509 *x);
 int X509_STORE_up_ref(X509_STORE *s);
 int EVP_PKEY_up_ref(EVP_PKEY *pkey);
 
-int SSL_up_ref(SSL_SESSION *s);
+#include <openssl/ssl.h>
+int SSL_up_ref(SSL *s);
 int SSL_SESSION_up_ref(SSL_SESSION *s);
 
 DH *EVP_PKEY_get0_DH(EVP_PKEY *pkey);
