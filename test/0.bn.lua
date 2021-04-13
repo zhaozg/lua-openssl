@@ -10,7 +10,7 @@ function testOpenSSL_BIGNUM()
 
   p = bn.random(32)
   q = p:totext()
-  assert(#q==4)
+  assert(#q==4 or #q==3)
 
   p = bn.aprime(100)
   assert(p:bits()==100)

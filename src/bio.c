@@ -835,8 +835,10 @@ static LUA_FUNCTION(openssl_bio_fd)
 }
 
 /* BIO_s_file() */
+/*
 # define BIO_set_fp(b,fp,c)      BIO_ctrl(b,BIO_C_SET_FILE_PTR,c,(char *)fp)
 # define BIO_get_fp(b,fpp)       BIO_ctrl(b,BIO_C_GET_FILE_PTR,0,(char *)fpp)
+*/
 
 static LUA_FUNCTION(openssl_bio_seek)
 {
