@@ -50,9 +50,15 @@ before_deploy:
 
 deploy:
   provider: releases
+  tag_name: $TRAVIS_TAG
+  target_commitish: $TRAVIS_COMMIT
+  name: $TRAVIS_TAG
   api_key: $GITHUB_TOKEN
-  file: openssl-$TRAVIS_TAG.tar.gz
-  cleanup: false
+  file:
+    - openssl-$TRAVIS_TAG.tar.gz
+  file_glob: true
+  overwrite: true
+  skip_cleanup: true
   on:
     tags: true
     branch: master
