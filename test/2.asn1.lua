@@ -15,8 +15,14 @@ local function asn1parse(s, off, last, indent)
   indent = indent or 0
   local tab = '  '
   local tag, cls, start, stop, cons
+  cons, tag, cls = pcall(asn1.get_object, s, off, last)
+  if not tag then
+    assert(type(cls)=='string')
+    return
+  end
+
   tag, cls, start, stop, cons = asn1.get_object(s, off, last)
-  assert(tag, cls)
+  assert(tag, string.format('%d-%d', off, last))
 
   if first then
     print(string.format('%sTAG=%s CLS=%s START=%s STOP=%s, %s',
@@ -41,6 +47,13 @@ end
 
 TestAsn1_2 = {}
 function TestAsn1_2.testParse()
+
+  d = {}
+  -- fire error
+  asn1parse(ss, 8, 8)
+  asn1parse(ss, #ss+1)
+  asn1parse(ss, #ss+1, #ss-1)
+
   d = {}
   asn1parse(ss)
   local s1 = table.concat(d, '')
