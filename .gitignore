@@ -35,8 +35,7 @@ doc
 *.orgi
 
 #coverage
-*.gcda
-*.gcno
+*.gc*
 
 #devel temp
 oscca/
