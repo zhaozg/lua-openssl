@@ -66,13 +66,16 @@ function TestCMS:testSign()
   lu.assertEquals(msg, self.msg)
   msg = assert(cms.verify(c1, {}, self.castore))
   lu.assertEquals(msg, self.msg)
+  assert(c1:signers()[1]==self.bob.cert)
 
+  --FIXME:
   local rc = c1:sign_receipt(
     self.bob.cert,
     self.bob.key,
     {self.alice.cert},
     0)
   if rc then
+    print(rc:signers())
     assert(rc:verify_receipt(c1, {self.bob.cert}, self.castore, 0))
   end
 end
