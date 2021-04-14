@@ -58,9 +58,9 @@
 */
 
 /*                              MNNFFPPS  */
-#define LOPENSSL_VERSION_NUM  0x0070800f
+#define LOPENSSL_VERSION_NUM  0x0080000f
 #ifndef LOPENSSL_VERSION
-#define LOPENSSL_VERSION  "0.7.8"
+#define LOPENSSL_VERSION  "0.8.0"
 #endif
 
 #if OPENSSL_VERSION_NUMBER >= 0x10000000L

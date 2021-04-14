@@ -91,7 +91,7 @@ target_compile_options(lua-openssl PRIVATE -DLUA_LIB)
 set_target_properties(lua-openssl PROPERTIES
     PREFIX ""
     OUTPUT_NAME "openssl"
-    VERSION 0.7.8.0 SOVERSION 1
+    VERSION 0.8.0.0 SOVERSION 0
 )
 
 install(TARGETS lua-openssl
