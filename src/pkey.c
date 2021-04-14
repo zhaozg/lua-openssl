@@ -1111,7 +1111,7 @@ static LUA_FUNCTION(openssl_pkey_decrypt)
 }
 
 /***
-return key is private or public
+return key is private or not
 @function is_private
 @treturn boolean ture is private or public key
 */
@@ -1154,7 +1154,7 @@ Derive public key algorithm shared secret
 @function derive
 @tparam evp_pkey pkey private key
 @tparam evp_pkey peer public key
-@tparam[opt] engine
+@tparam[opt] engine eng
 @treturn string
 */
 static LUA_FUNCTION(openssl_derive)
