@@ -470,7 +470,6 @@ static LUA_FUNCTION(openssl_digest_ctx_data)
   if (lua_isnone(L, 2))
   {
     lua_pushlstring(L, ctx->md_data, ctx->digest->ctx_size);
-    return 1;
   }
   else
   {
@@ -479,6 +478,7 @@ static LUA_FUNCTION(openssl_digest_ctx_data)
     if (l == (size_t)ctx->digest->ctx_size)
     {
       memcpy(ctx->md_data, d, l);
+      lua_pushboolean(L, 1);
     }
     else
       luaL_error(L, "data with wrong data");
@@ -488,7 +488,6 @@ static LUA_FUNCTION(openssl_digest_ctx_data)
   if (lua_isnone(L, 2))
   {
     lua_pushlstring(L, EVP_MD_CTX_md_data(ctx), ctx_size);
-    return 1;
   }
   else
   {
@@ -496,12 +495,13 @@ static LUA_FUNCTION(openssl_digest_ctx_data)
     if (ctx_size == (size_t)EVP_MD_meth_get_app_datasize(EVP_MD_CTX_md(ctx)))
     {
       memcpy(EVP_MD_CTX_md_data(ctx), d, ctx_size);
+      lua_pushboolean(L, 1);
     }
     else
       luaL_error(L, "data with wrong data");
   }
 #endif
-  return 0;
+  return 1;
 }
 
 /***

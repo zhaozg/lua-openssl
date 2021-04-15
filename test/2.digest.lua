@@ -58,13 +58,22 @@ function TestDigestMY:testList()
   local md = digest.get('sha1')
   t = md:info()
   assert(t.size == 20)
+  t = md:digest('abcd')
+  assert(type(t)=='string')
+  assert(#t==20)
 
   local ctx1 = md:new()
   t1 = ctx1:info()
+  assert(ctx1:update('ab'))
+  local dat = ctx1:data()
   local ctx = digest.new('sha1')
   t2 = ctx:info()
   for k, _ in pairs(t1) do if (k ~= 'digest') then assert(t1[k] == t2[k]) end end
+  assert(ctx:data(dat))
   assert(t1.size == 20)
+  assert(ctx:update('cd'))
+  t2 = ctx:final(true)
+  assert(t==t2)
 end
 
 local function mk_key(args)
