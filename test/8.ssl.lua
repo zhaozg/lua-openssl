@@ -549,6 +549,8 @@ function TestSSL:testSNI()
   srv_ctx:session(sess, false)
   srv_ctx:session(sess:id(), false)
 
+  local eng = openssl.engine('openssl')
+  eng:load_ssl_client_cert(cli)
   cli:clear()
   cli:shutdown()
 

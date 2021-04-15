@@ -8,7 +8,6 @@ function TestEngine:testAll()
   assert(eng:id('openssl'))
   assert(eng:set_default('RSA'))
   local v= eng:name()
-  print(v)
   assert(eng:name(v))
   v = eng:flags()
   assert(eng:flags(v))
@@ -35,13 +34,13 @@ function TestEngine:testAll()
     "complete"
   }
   if sslv >= 0x10100000 and not helper.libressl then
-    table.insert(list, 1, "EC")
-    table.insert(list, 1, "PKEY")
-    table.insert(list, 1, "ASN1")
+    table.insert(list, 2, "EC")
+    table.insert(list, 2, "PKEY")
+    table.insert(list, 2, "ASN1")
   else
-    table.insert(list, 1, "ECDH")
-    table.insert(list, 1, "ECDSA")
-    table.insert(list, 1, "STORE")
+    table.insert(list, 2, "ECDH")
+    table.insert(list, 2, "ECDSA")
+    table.insert(list, 2, "STORE")
   end
 
   for _, v in pairs(list) do
@@ -67,13 +66,11 @@ end
 
 function TestEngine:testLoop()
   local e = openssl.engine(true)
-  print(e)
   while e do
     e = e:next()
   end
 
   e = openssl.engine(false)
-  print(e)
   while e do
     e = e:prev()
   end
