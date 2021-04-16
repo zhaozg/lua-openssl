@@ -11,6 +11,10 @@ ssl modules for lua-openssl binding, provide ssl function in lua.
 #include "ssl_options.h"
 
 #include <openssl/ssl.h>
+#include <openssl/rsa.h>
+#include <openssl/ec.h>
+#include <openssl/dh.h>
+
 
 /***
 create ssl_ctx object, which mapping to SSL_CTX in openssl.
@@ -43,7 +47,6 @@ typedef enum{
   SSL_CTX_TEMP_DH,
   SSL_CTX_TEMP_RSA,
   SSL_CTX_TEMP_ECDH,
-  SSL_CTX_TEMP_EC_CURVE,
 #endif
   SSL_CTX_MAX_IDX
 }SSL_CTX_INDEX;
@@ -1058,14 +1061,9 @@ set temp callback
 set tmp key content pem format
 @function set_tmp
 @tparam string keytype, 'dh','ecdh',or 'rsa'
-@tparam string key_pem
+@tparam[opt] string private key file
 */
-/***
-set ecdh with given curvename as tmp key
-@function set_tmp
-@tparam string keytype, must be 'ecdh'
-@tparam string curvename
-*/
+
 static int openssl_ssl_ctx_set_tmp(lua_State *L)
 {
   SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
@@ -1077,13 +1075,12 @@ static int openssl_ssl_ctx_set_tmp(lua_State *L)
     NULL
   };
 
-  int nwhich = luaL_checkoption(L, 2, NULL, which);
-  int ret = 0;
+  int nwhich = luaL_checkoption(L, 2, "rsa", which);
 
   if (lua_isfunction(L, 3))
   {
     lua_pushvalue(L, 3);
-    ret = 1;
+    /* set callback function */
     switch (nwhich)
     {
     case 0:
@@ -1095,65 +1092,147 @@ static int openssl_ssl_ctx_set_tmp(lua_State *L)
       SSL_CTX_set_tmp_rsa_callback(ctx, tmp_rsa_callback);
       break;
     case 2:
-    {
       openssl_valueseti(L, ctx, SSL_CTX_TEMP_ECDH);
-      luaL_argcheck(L, lua_isstring(L, 4), 4, "must supply curve name");
-      lua_pushvalue(L, 4);
-      openssl_valueseti(L, ctx, SSL_CTX_TEMP_EC_CURVE);
       SSL_CTX_set_tmp_ecdh_callback(ctx, tmp_ecdh_callback);
-    }
     break;
     }
-  }
-  else if (lua_isstring(L, 3))
-  {
-    BIO* bio = load_bio_object(L, 3);
-    switch (nwhich)
-    {
-    case 0:
-    {
-      DH* dh = PEM_read_bio_DHparams(bio, NULL, NULL, NULL);
-      if (dh)
-        ret = SSL_CTX_set_tmp_dh(ctx, dh);
-      else
-        luaL_error(L, "generate new tmp dh fail");
-    }
-    break;
-    case 1:
-    {
-      RSA* rsa = PEM_read_bio_RSAPrivateKey(bio, NULL, NULL, NULL);
-      if (rsa)
-        ret = SSL_CTX_set_tmp_rsa(ctx, rsa);
-      else
-        luaL_error(L, "generate new tmp rsa fail");
-    }
-    break;
-    case 2:
-    {
-      EC_KEY* ec = PEM_read_bio_ECPrivateKey(bio, NULL, NULL, NULL);
-      if (ec == NULL)
-      {
-        int nid = OBJ_txt2nid(lua_tostring(L, 3));
-        if (nid != NID_undef)
-          ec = EC_KEY_new_by_curve_name(nid);
-      }
-      if (ec)
-        ret = SSL_CTX_set_tmp_ecdh(ctx, ec);
-      else
-        luaL_error(L, "generate new tmp ec_key fail");
-    }
-    break;
-    }
-    BIO_free(bio);
+    lua_pushboolean(L, 1);
+    return 1;
   }
   else if (lua_isuserdata(L, 3))
   {
     luaL_argerror(L, 3, "userdata arg NYI");
   }
   else
-    luaL_argerror(L, 3, "should be tmp key callback function or pem string or key object");
+  {
+    int ret;
+    BIO* bio = lua_isstring(L, 3) ? load_bio_object(L, 3) : NULL;
+    switch (nwhich)
+    {
+    case 0:
+    {
+      DH* dh = NULL;
+      if (bio)
+      {
+        dh = PEM_read_bio_DHparams(bio, NULL, NULL, NULL);
+        BIO_free(bio);
+      } else
+      {
+        int bits = 1024;
+        int generator = 2;
+        dh = DH_new();
+        ret = DH_generate_parameters_ex(dh, bits, generator, NULL);
+        if (ret == 1)
+        {
+          ret = DH_generate_key(dh);
+        }
+        if (ret!=1)
+        {
+          DH_free(dh);
+          dh = NULL;
+        }
+      }
+      if (dh)
+      {
+        ret = SSL_CTX_set_tmp_dh(ctx, dh);
+        if (ret)
+          PUSH_OBJECT(DHparams_dup(dh), "openssl.dh");
+        else
+        {
+          DH_free(dh);
+          lua_pushnil(L);
+        }
+        return 1;
+      }
+      else
+        luaL_error(L, "load or generate new tmp dh fail");
+    }
+    break;
+    case 1:
+    {
+      RSA* rsa = NULL;
+      if (bio)
+      {
+        rsa = PEM_read_bio_RSAPrivateKey(bio, NULL, NULL, NULL);
+        BIO_free(bio);
+      }
+      else{
+        rsa = RSA_generate_key(1024, RSA_F4, NULL, NULL);
+      }
 
-  return openssl_pushresult(L, ret);
+      if (rsa)
+      {
+        ret = SSL_CTX_set_tmp_rsa(ctx, rsa);
+        if (ret)
+        {
+          PUSH_OBJECT(RSAPrivateKey_dup(rsa), "openssl.rsa");
+        } else {
+          RSA_free(rsa);
+          lua_pushnil(L);
+        }
+        return 1;
+      }
+      else
+        luaL_error(L, "load or generate new tmp rsa fail");
+    }
+    break;
+    case 2:
+    {
+      int nid = NID_undef;
+      EC_GROUP *g = NULL;
+      EC_KEY* ec = NULL;
+
+      if (lua_isstring(L, 3))
+      {
+        nid = OBJ_txt2nid(lua_tostring(L, 3));
+        if (nid != NID_undef)
+        {
+          BIO_free(bio);
+          bio = NULL;
+        }
+      }else
+      {
+        nid = OBJ_txt2nid("prime256v1");
+      }
+      if (nid != NID_undef)
+        g = EC_GROUP_new_by_curve_name(nid);
+
+      if (bio)
+      {
+        ec = PEM_read_bio_ECPrivateKey(bio, NULL, NULL, NULL);
+        BIO_free(bio);
+      } else if(g) {
+        ec = EC_KEY_new();
+        EC_KEY_set_group(ec, g);
+        EC_GROUP_free(g);
+        ret = EC_KEY_generate_key(ec);
+        if (ret!=1)
+        {
+          EC_KEY_free(ec);
+          ec = NULL;
+        }
+      }
+
+      if (ec)
+      {
+        ret = SSL_CTX_set_tmp_ecdh(ctx, ec);
+        if (ret)
+        {
+          PUSH_OBJECT(EC_KEY_dup(ec), "openssl.ec_key");
+        } else {
+          EC_KEY_free(ec);
+          lua_pushnil(L);
+        }
+        return 1;
+      }
+      else
+        luaL_error(L, "load or generate new tmp ec_key fail");
+    }
+    break;
+    }
+  }
+
+  return openssl_pushresult(L, 0);
 }
 #endif
 

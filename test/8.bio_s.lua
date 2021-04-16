@@ -17,7 +17,8 @@ local params = {
   certificate = "luasec/certs/serverA.pem",
   cafile = "luasec/certs/rootA.pem",
   verify = ssl.peer + ssl.fail,
-  options = {"all",  "no_sslv2"}
+  options = {"all",  "no_sslv2"},
+  ciphers = "ALL:!ECDHE"
 }
 
 --
@@ -32,7 +33,6 @@ if opensslv > 0x10002000 then
 end
 
 local ctx = assert(sslctx.new(params))
-
 if certstore then
   ctx:cert_store(certstore)
 end

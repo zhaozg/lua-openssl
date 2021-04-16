@@ -73,6 +73,10 @@ local params = {
     if params.curve then
         ctx:set_tmp('ecdh',params.curve)
     end
+    if ctx.set_tmp then
+        ctx:set_tmp()
+        ctx:set_tmp('ecdh')
+    end
     return ctx
 end
 

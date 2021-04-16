@@ -54,6 +54,7 @@ end
 
 local function ssl_mode()
   local ctx = assert(sslctx.new(params))
+
   assert(ctx:verify_mode())
   assert(ctx:verify_depth(9)==9)
 

@@ -19,7 +19,8 @@ local params = {
   certificate = "luasec/certs/clientA.pem",
   cafile = "luasec/certs/rootA.pem",
   verify = ssl.peer + ssl.fail,
-  options = {"all",  "no_sslv2"}
+  options = {"all",  "no_sslv2"},
+  ciphers = "ALL:!ECDHE"
 }
 
 local certstore = nil
