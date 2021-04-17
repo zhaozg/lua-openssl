@@ -7,8 +7,8 @@ LUA_INC= "c:\luajit-2.0\src"
 LUA_LIB= "c:\luajit-2.0\src\lua51.lib"
 
 # Openssl include and lib
-OPENSSL_INC="c:\openssl-win32\include"
-OPENSSL_LIB="c:\openssl-win32\lib\libeay32.lib c:\openssl-win32\lib\ssleay32.lib"
+OPENSSL_INC="c:\openssl-v111-win32\include"
+OPENSSL_LIB="c:\openssl-v111-win32\lib\libcrypto_static.lib c:\openssl-v111-win32\lib\libssl_static.lib"
 
 LIBNAME= $T.dll
 

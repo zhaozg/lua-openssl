@@ -1,5 +1,6 @@
 version: 0.4.{build}
 configuration: Release
+image: Visual Studio 2019
 platform: x86
 clone_depth: 2
 clone_folder: C:\lua-openssl
@@ -7,10 +8,9 @@ install:
 - cd c:\lua-openssl
 - git submodule update --init --recursive
 - git submodule update --recursive
-- '"C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat" x86'
+- call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars32.bat"
+- ls C:\openssl-v111-win32\lib
 - cd C:\
-#- ps: Start-FileDownload 'https://github.com/zhaozg/openssl-win32/blob/1.0.2/misc/luv.dll?raw=true' -FileName 'C:\luv.dll'
-#- git clone https://github.com/zhaozg/openssl-win32.git C:\openssl-win32
 - git clone http://luajit.org/git/luajit-2.0.git C:\luajit-2.0
 build_script:
 - cd c:\luajit-2.0\src

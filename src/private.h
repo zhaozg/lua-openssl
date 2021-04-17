@@ -43,6 +43,10 @@ extern "C" {
 #endif
 #endif
 
+#ifdef _WIN32
+#define strcasecmp stricmp
+#endif
+
 #include "openssl.h"
 
 #if OPENSSL_VERSION_NUMBER > 0x10100000L
