@@ -5,18 +5,27 @@ platform: x86
 clone_depth: 2
 clone_folder: C:\lua-openssl
 install:
-- cd c:\lua-openssl
-- git submodule update --init --recursive
-- git submodule update --recursive
 - call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars32.bat"
-- ls C:\openssl-v111-win32\lib
 - cd C:\
-- git clone http://luajit.org/git/luajit-2.0.git C:\luajit-2.0
-build_script:
-- cd c:\luajit-2.0\src
+- git clone https://github.com/LuaJIT/LuaJIT.git C:\luajit
+- cd c:\luajit\src
 - msvcbuild.bat
 - copy luajit.exe C:\
 - copy lua51.* C:\
+- curl https://www.openssl.org/source/old/1.0.2/openssl-1.0.2u.tar.gz > openssl-1.0.2u.tar.gz
+- 7z x "openssl-1.0.2u.tar.gz" -so | 7z x -aoa -si -ttar -o"penssl-1.0.2u"
+- cd openssl-1.0.2u
+- ls .
+- perl Configure --prefix=C:\openssl-win32 no-asm no-shared VC-WIN32
+- do\ms.bat
+- nmake -f do\nt.mak
+- nmake -f do\nt.mak install
+- ls C:\openssl-win32\lib
+- ls C:\openssl-win32\bin
+- cd c:\lua-openssl
+- git submodule update --init --recursive
+- git submodule update --recursive
+build_script:
 - cd c:\lua-openssl
 - nmake -f makefile.win
 - copy src\openssl.dll c:\

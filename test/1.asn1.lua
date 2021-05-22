@@ -185,7 +185,7 @@ function TestTime:testUTCTime()
     at:adj(self.time, 1, 1)
     day, sec = ab:diff(at)
     assert(day==1, day)
-    assert(sec==0, day)
+    assert(sec==0, sec)
     assert(type(ab:toprint()=='string'))
   end
 end
