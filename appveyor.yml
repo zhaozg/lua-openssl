@@ -13,13 +13,13 @@ install:
 - copy luajit.exe C:\
 - copy lua51.* C:\
 - curl https://www.openssl.org/source/old/1.0.2/openssl-1.0.2u.tar.gz > openssl-1.0.2u.tar.gz
-- 7z x "openssl-1.0.2u.tar.gz" -so | 7z x -aoa -si -ttar -o"penssl-1.0.2u"
+- 7z x "openssl-1.0.2u.tar.gz" -so | 7z x -aoa -si -ttar
 - cd openssl-1.0.2u
 - ls .
 - perl Configure --prefix=C:\openssl-win32 no-asm no-shared VC-WIN32
-- do\ms.bat
-- nmake -f do\nt.mak
-- nmake -f do\nt.mak install
+- ms\do_ms.bat
+- nmake -f ms\nt.mak
+- nmake -f ms\nt.mak install
 - ls C:\openssl-win32\lib
 - ls C:\openssl-win32\bin
 - cd c:\lua-openssl
