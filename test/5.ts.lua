@@ -36,9 +36,10 @@ end
 
 local function createQuery(self, policy_id, nonce, cert_req, extensions)
   local req = assert(openssl.ts.req_new())
-  assert(req:msg_imprint(self.hash, self.alg))
-  local m, a = req:msg_imprint()
-  assert(m and a)
+  local msg = openssl.ts.ts_msg_imprint_new(self.hash, self.alg)
+  assert(req:msg_imprint(msg))
+  local m = req:msg_imprint()
+  assert(msg:export()==m:export())
   if cert_req ~= nil then
     assert(req:cert_req(cert_req))
   else
@@ -123,44 +124,50 @@ end
 
 local function signReq(self, req_ctx, req, sn, now)
   local res = req_ctx:sign(req:export())
-  local t = assert(res:info())
+  local t = assert(res:status_info())
+
   lu.assertIsTable(t)
-  local status = t.status_info.status:tonumber()
+  local status = t.status:tonumber()
   if status ~= 0 then
+    assert(t.failure_info)
+    assert(#t>0)
     return
   end
-  assert(t.status_info.status:tostring() == '0')
-  assert(not t.status_info.text)
-  assert(not t.status_info.failure_info)
-  lu.assertIsTable(t.tst_info)
-  lu.assertIsUserdata(t.token)
 
-  local tst = t.tst_info
+  assert(t.status:tostring() == '0')
+  assert(not t.text)
+  assert(not t.failure_info)
+
+  local token = res:token()
+  lu.assertIsUserdata(token)
+
+  local tst = res:tst_info()
+  lu.assertIsUserdata(tst)
+
   sn = sn or '01'
-  lu.assertEquals(sn, tst.serial:tohex())
-  lu.assertEquals(1, tst.version)
-  lu.assertEquals(tst.ordering, false)
-  lu.assertEquals(self.policy_id:txt(true), tst.policy_id:txt(true))
+  lu.assertEquals(sn, tst:serial():tohex())
+  lu.assertEquals(1, tst:version())
+  lu.assertEquals(tst:ordering(), false)
+  lu.assertEquals(self.policy_id:txt(true), tst:policy_id():txt(true))
 
   if not now then
     now = os.time()
     local timezone = get_timezone()
     now = os.date('%Y%m%d%H%M%SZ', now - timezone + 1)
   end
-  assert(notAfter(tst.time:tostring(), now))
+  assert(notAfter(tst:time():tostring(), now))
 
   if req:nonce() then
-    lu.assertIsString(tst.nonce:tostring())
-    lu.assertEquals(req:nonce(), tst.nonce)
+    lu.assertIsString(tst:nonce():tostring())
+    lu.assertEquals(req:nonce(), tst:nonce())
   end
 
   res = res:dup()
   res = assert(openssl.ts.resp_read(res:export()))
-  assert(type(res:tst_info())=='table')
-  assert(type(res:tst_info(true))=='table')
+  assert(type(res:tst_info())=='userdata')
   local vry = assert(req:to_verify_ctx())
   vry:store(self.ca.store)
-  assert(vry:verify(res:info().token))
+  assert(vry:verify(res:token()))
 
   vry = assert(ts.verify_ctx_new())
   vry:imprint(self.hash)
@@ -197,7 +204,7 @@ TestTS = {}
 
 function TestTS:setUp()
   math.randomseed(os.time())
-  self.msg = 'abcd'
+  self.msg = openssl.random(32)
   self.alg = 'sha1'
   self.hash = assert(openssl.digest.digest(self.alg, self.msg, true))
   self.nonce = openssl.bn.text(openssl.random(16))
@@ -294,19 +301,26 @@ function TestTS:testTimeCallback()
   end
   local req_ctx = createRespCtx(self, nil, time_cb)
   local res = signReq(self, req_ctx, req, nil, '20380119031407Z')
-  local t = assert(res:info())
+  local t = assert(res:status_info())
   lu.assertIsTable(t)
 
-  assert(t.status_info.status:tostring() == '0')
-  assert(not t.status_info.text)
-  assert(not t.status_info.failure_info)
-  for k, v in pairs(t.tst_info) do
-    local V = res:tst_info(k)
-    if type(V)~=type(v) then
-      print(string.format("TST_INFO %s field should be fix", k))
-    end
-  end
-
+  assert(t.status:tostring() == '0')
+  assert(not t.text)
+  assert(not t.failure_info)
   assert(res:dup():export()==res:export())
+
+  local tst = res:tst_info()
+  assert(tst:version()==1)
+  assert(tst.policy_id)
+  assert(tst:policy_id():txt()=="1.2.3.4.100")
+  assert(tst:msg_imprint())
+  assert(tst:serial():tostring())
+  assert(tst:time():tostring())
+  assert(tst:accuracy())
+  assert(tst:ordering()==false)
+  tst:nonce()
+  tst:tsa()
+  tst:extensions()
+
 end
 
