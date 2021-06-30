@@ -47,6 +47,18 @@ static int openssl_ts_msg_imprint_new(lua_State *L)
   return ret;
 }
 
+static int openssl_ts_msg_imprint_read(lua_State *L)
+{
+  size_t sz = 0;
+  const unsigned char* data = (const unsigned char*)luaL_checklstring(L, 1, &sz);
+  TS_MSG_IMPRINT *msg = d2i_TS_MSG_IMPRINT(NULL, &data, sz);
+  if (msg)
+    PUSH_OBJECT(msg, "openssl.ts_msg_imprint");
+  else
+    lua_pushnil(L);
+  return 1;
+}
+
 /***
 export a ts_msg_imprint object as DER encoded data
 @function export
@@ -154,6 +166,190 @@ static luaL_Reg ts_msg_imprint_funcs[] =
   {NULL,    NULL}
 };
 
+static int openssl_ts_accuracy_new(lua_State *L)
+{
+  int ret;
+  time_t seconds = 0;
+  int millis = 0, micros = 0;
+
+  TS_ACCURACY *accuracy = NULL;
+  ASN1_INTEGER *sec= NULL;
+  ASN1_INTEGER *mil= NULL;
+  ASN1_INTEGER *mic= NULL;
+
+  seconds = luaL_checkinteger(L, 1);
+  millis = luaL_optinteger(L, 2, millis);
+  micros = luaL_optinteger(L, 0, micros);
+
+  accuracy = TS_ACCURACY_new();
+  sec = ASN1_INTEGER_new();
+  mil = ASN1_INTEGER_new();
+  mic = ASN1_INTEGER_new();
+
+  ret = ASN1_INTEGER_set(sec, (long)seconds);
+  if (ret==1)
+    ASN1_INTEGER_set(mil, millis);
+  if (ret==1)
+    ASN1_INTEGER_set(mic, micros);
+
+  if (ret==1)
+  {
+    PUSH_OBJECT(accuracy, "openssl.ts_accuracy");
+  }else
+  {
+    TS_ACCURACY_free(accuracy);
+    ret = 0;
+  }
+
+  ASN1_INTEGER_free(sec);
+  ASN1_INTEGER_free(mil);
+  ASN1_INTEGER_free(mic);
+  return ret;
+}
+
+static int openssl_ts_accuracy_seconds(lua_State *L)
+{
+  int ret = 0;
+  TS_ACCURACY *accuracy = CHECK_OBJECT(1, TS_ACCURACY, "openssl.ts_accuracy");
+  if (lua_isnone(L, 2))
+  {
+    const ASN1_INTEGER *ai = TS_ACCURACY_get_seconds(accuracy);
+    lua_pushinteger(L, ASN1_INTEGER_get(ai));
+    ret = 1;
+  }
+  else
+  {
+    time_t seconds = luaL_checkinteger(L, 2);
+    ASN1_INTEGER *ai = ASN1_INTEGER_new();
+    ret = ASN1_INTEGER_set(ai, (long)seconds);
+    if (ret==1)
+      ret = TS_ACCURACY_set_seconds(accuracy, ai);
+    ret = openssl_pushresult(L, ret);
+    ASN1_INTEGER_free(ai);
+  }
+  return ret;
+}
+
+static int openssl_ts_accuracy_millis(lua_State *L)
+{
+  int ret = 0;
+  TS_ACCURACY *accuracy = CHECK_OBJECT(1, TS_ACCURACY, "openssl.ts_accuracy");
+  if (lua_isnone(L, 2))
+  {
+    const ASN1_INTEGER *ai = TS_ACCURACY_get_millis(accuracy);
+    lua_pushinteger(L, ASN1_INTEGER_get(ai));
+    ret = 1;
+  }
+  else
+  {
+    int millies = luaL_checkinteger(L, 2);
+    ASN1_INTEGER *ai = ASN1_INTEGER_new();
+    ret = ASN1_INTEGER_set(ai, (long)millies);
+    if (ret==1)
+      ret = TS_ACCURACY_set_millis(accuracy, ai);
+    ret = openssl_pushresult(L, ret);
+    ASN1_INTEGER_free(ai);
+  }
+  return ret;
+}
+
+static int openssl_ts_accuracy_micros(lua_State *L)
+{
+  int ret = 0;
+  TS_ACCURACY *accuracy = CHECK_OBJECT(1, TS_ACCURACY, "openssl.ts_accuracy");
+  if (lua_isnone(L, 2))
+  {
+    const ASN1_INTEGER *ai = TS_ACCURACY_get_micros(accuracy);
+    lua_pushinteger(L, ASN1_INTEGER_get(ai));
+    ret = 1;
+  }
+  else
+  {
+    int micros= luaL_checkinteger(L, 2);
+    ASN1_INTEGER *ai = ASN1_INTEGER_new();
+    ret = ASN1_INTEGER_set(ai, (long)micros);
+    if (ret==1)
+      ret = TS_ACCURACY_set_micros(accuracy, ai);
+    ret = openssl_pushresult(L, ret);
+    ASN1_INTEGER_free(ai);
+  }
+  return ret;
+}
+
+static int openssl_ts_accuracy_dup(lua_State *L)
+{
+  TS_ACCURACY *accuracy = CHECK_OBJECT(1, TS_ACCURACY, "openssl.ts_accuracy");
+  accuracy = TS_ACCURACY_dup(accuracy);
+  PUSH_OBJECT(accuracy, "openssl.ts_accuracy");
+  return 1;
+}
+
+static int openssl_ts_accuracy_gc(lua_State *L)
+{
+  TS_ACCURACY *accuracy = CHECK_OBJECT(1, TS_ACCURACY, "openssl.ts_accuracy");
+  TS_ACCURACY_free(accuracy);
+  return 0;
+}
+
+static int openssl_ts_accuracy_export(lua_State *L)
+{
+  TS_ACCURACY *accuracy = CHECK_OBJECT(1, TS_ACCURACY, "openssl.ts_accuracy");
+  unsigned char* buf = NULL;
+  int len = i2d_TS_ACCURACY(accuracy, &buf);
+  if (len>=0)
+  {
+    lua_pushlstring(L, (const char*)buf, len);
+    OPENSSL_free(buf);
+    len = 1;
+  }
+  else
+    len = openssl_pushresult(L, len);
+  return len;
+}
+
+static int openssl_ts_accuracy_read(lua_State *L)
+{
+  size_t sz = 0;
+  const unsigned char* data = (const unsigned char*)luaL_checklstring(L, 1, &sz);
+  TS_ACCURACY *accuracy = d2i_TS_ACCURACY(NULL, &data, sz);
+  if (accuracy)
+    PUSH_OBJECT(accuracy, "openssl.ts_accuracy");
+  else
+    lua_pushnil(L);
+  return 1;
+}
+
+static int openssl_ts_accuracy_totable(lua_State*L)
+{
+  TS_ACCURACY *accuracy = CHECK_OBJECT(1, TS_ACCURACY, "openssl.ts_accuracy");
+  lua_newtable(L);
+
+  lua_pushinteger(L, ASN1_INTEGER_get(TS_ACCURACY_get_micros(accuracy)));
+  lua_setfield(L, -2, "micros");
+
+  lua_pushinteger(L, ASN1_INTEGER_get(TS_ACCURACY_get_millis(accuracy)));
+  lua_setfield(L, -2, "millis");
+
+  lua_pushinteger(L, ASN1_INTEGER_get(TS_ACCURACY_get_seconds(accuracy)));
+  lua_setfield(L, -2, "seconds");
+
+  return 1;
+}
+
+static luaL_Reg ts_accuracy_funcs[] =
+{
+  {"dup",           openssl_ts_accuracy_dup},
+  {"micros",        openssl_ts_accuracy_micros},
+  {"millis",        openssl_ts_accuracy_millis},
+  {"seconds",       openssl_ts_accuracy_seconds},
+  {"export",        openssl_ts_accuracy_export},
+  {"totable",       openssl_ts_accuracy_totable},
+
+  {"__gc",          openssl_ts_accuracy_gc},
+  {"__tostring",    auxiliar_tostring},
+
+  {NULL,    NULL}
+};
 
 /***
 get version of ts_tst_info object object
@@ -221,7 +417,6 @@ static int openssl_ts_info_time(lua_State *L)
   return 1;
 }
 
-static int openssl_push_ts_accuracy(lua_State*L, const TS_ACCURACY* accuracy);
 /***
 get accuracy of ts_tst_info object object
 @function accuracy
@@ -229,9 +424,20 @@ get accuracy of ts_tst_info object object
 */
 static int openssl_ts_info_accuracy(lua_State *L)
 {
+  int ret = 0;
   TS_TST_INFO *info = CHECK_OBJECT(1, TS_TST_INFO, "openssl.ts_tst_info");
-  openssl_push_ts_accuracy(L, TS_TST_INFO_get_accuracy(info));
-  return 1;
+  if (lua_isnone(L, 2))
+  {
+    TS_ACCURACY *accuracy = TS_TST_INFO_get_accuracy(info);
+    accuracy = TS_ACCURACY_dup(accuracy);
+    PUSH_OBJECT(accuracy, "openssl.ts_accuracy");
+    ret = 1;
+  } else {
+    TS_ACCURACY *accuracy = CHECK_OBJECT(2, TS_ACCURACY, "openssl.ts_accuracy");
+    int ret = TS_TST_INFO_set_accuracy(info, accuracy);
+    ret = openssl_pushresult(L, ret);
+  }
+  return ret;
 }
 
 /***
@@ -483,9 +689,13 @@ static luaL_Reg R[] =
   {"req_new",         openssl_ts_req_new},
   {"req_read",        openssl_ts_req_read},
   {"resp_read",       openssl_ts_resp_read},
+  {"ts_accuracy_read",openssl_ts_accuracy_read},
+  {"ts_msg_imprint_read",
+                      openssl_ts_msg_imprint_read},
 
-  {"resp_ctx_new",    openssl_ts_resp_ctx_new },
-  {"verify_ctx_new",  openssl_ts_verify_ctx_new },
+  {"resp_ctx_new",    openssl_ts_resp_ctx_new},
+  {"verify_ctx_new",  openssl_ts_verify_ctx_new},
+  {"ts_accuracy_new", openssl_ts_accuracy_new},
   {"ts_msg_imprint_new",
                       openssl_ts_msg_imprint_new},
 
@@ -824,27 +1034,6 @@ static LUA_FUNCTION(openssl_ts_resp_export)
   }
   BIO_free(bio);
   return ret;
-}
-
-static int openssl_push_ts_accuracy(lua_State*L, const TS_ACCURACY* accuracy)
-{
-  if (accuracy)
-  {
-    lua_newtable(L);
-
-    openssl_push_asn1integer_as_bn(L, TS_ACCURACY_get_micros(accuracy));
-    lua_setfield(L, -2, "micros");
-
-    openssl_push_asn1integer_as_bn(L, TS_ACCURACY_get_millis(accuracy));
-    lua_setfield(L, -2, "millis");
-
-    openssl_push_asn1integer_as_bn(L, TS_ACCURACY_get_seconds(accuracy));
-    lua_setfield(L, -2, "seconds");
-  }
-  else
-    lua_pushnil(L);
-
-  return 1;
 }
 
 /***
@@ -1647,6 +1836,7 @@ int luaopen_ts(lua_State *L)
   auxiliar_newclass(L, "openssl.ts_resp_ctx",   ts_resp_ctx_funs);
   auxiliar_newclass(L, "openssl.ts_verify_ctx", ts_verify_ctx_funs);
   auxiliar_newclass(L, "openssl.ts_tst_info",   ts_tst_info_funcs);
+  auxiliar_newclass(L, "openssl.ts_accuracy",   ts_accuracy_funcs);
   auxiliar_newclass(L, "openssl.ts_msg_imprint",ts_msg_imprint_funcs);
 
   lua_newtable(L);
