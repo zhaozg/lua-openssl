@@ -129,7 +129,7 @@ local function signReq(self, req_ctx, req, sn, now)
   lu.assertIsTable(t)
   local status = t.status:tonumber()
   if status ~= 0 then
-    assert(t.failure_info)
+    assert(t.failure_info or helper.libressl)
     assert(#t>0)
     return
   end
