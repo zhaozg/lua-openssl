@@ -135,7 +135,7 @@ local function signReq(self, req_ctx, req, sn, now)
   end
 
   assert(t.status:tostring() == '0')
-  assert(not t.text)
+  assert(#t == 0)
   assert(not t.failure_info)
 
   local token = res:token()
@@ -305,7 +305,7 @@ function TestTS:testTimeCallback()
   lu.assertIsTable(t)
 
   assert(t.status:tostring() == '0')
-  assert(not t.text)
+  assert(#t == 0)
   assert(not t.failure_info)
   assert(res:dup():export()==res:export())
 
