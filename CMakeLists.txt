@@ -20,7 +20,7 @@ find_package(Threads REQUIRED)
 add_definitions(-DPTHREADS)
 
 if(BUILD_SHARED_LUA_OPENSSL)
-    set(LUA_OPENSSL_LIBTYPE SHARED)
+    set(LUA_OPENSSL_LIBTYPE MODULE)
     if(WIN32)
         add_definitions(-DLUA_BUILD_AS_DLL)
         set(EXTRA_LIBS "ws2_32.lib" "crypt32.lib")
@@ -45,7 +45,7 @@ add_library(lua-openssl ${LUA_OPENSSL_LIBTYPE}
     src/dsa.c
     src/ec.c
     src/engine.c
-    src/mac.c
+    src/hmac.c
     src/lbn.c
     src/lhash.c
     src/misc.c
@@ -73,7 +73,7 @@ add_library(lua-openssl ${LUA_OPENSSL_LIBTYPE}
 
 target_include_directories(lua-openssl PUBLIC
     ${OPENSSL_INCLUDE_DIR}
-    ${LUA_INCLUDE_DIRS}
+    ${LUA_INCLUDE_DIR}
     deps
     deps/lua-compat/c-api
     deps/auxiliar
@@ -81,17 +81,25 @@ target_include_directories(lua-openssl PUBLIC
 
 target_link_libraries(lua-openssl PUBLIC
     ${OPENSSL_LIBRARIES}
-    ${LUA_LIBRARIES}
     ${EXTRA_LIBS}
     Threads::Threads
 )
+
+if(WIN32)
+    target_link_libraries(lua-openssl PUBLIC
+        ${LUA_LIBRARIES}
+    )
+endif()
+
+if(APPLE)
+    target_link_options(lua-openssl PUBLIC -bundle -undefined dynamic_lookup)
+endif()
 
 target_compile_options(lua-openssl PRIVATE -DLUA_LIB)
 
 set_target_properties(lua-openssl PROPERTIES
     PREFIX ""
     OUTPUT_NAME "openssl"
-    VERSION 0.8.0.0 SOVERSION 0
 )
 
 install(TARGETS lua-openssl
