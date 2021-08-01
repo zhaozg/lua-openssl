@@ -49,10 +49,12 @@ function TestRSA:TestRSA()
 
     for _=1, #padding+1 do
       local pad = padding[_]
-      local msg = openssl.random(pad=='no' and 256 or 200)
+      local msg = string.char(0) .. openssl.random(pad=='no' and 255 or 200)
 
       local out, raw
       if pad~='oaep' then
+        local n = openssl.bn.text(msg)
+        assert(n:bits() <  t.n:bits())
         out = assert(rsa.encrypt(k, msg, pad, true))
         raw = assert(k:decrypt(out, pad, false))
         assert(msg == raw)
