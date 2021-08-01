@@ -314,7 +314,6 @@ static int openssl_random_status(lua_State *L)
 get random bytes
 @function random
 @tparam number length
-@tparam[opt=false] boolean strong true to generate strong randome bytes
 @treturn string
 */
 static LUA_FUNCTION(openssl_random_bytes)
@@ -331,29 +330,14 @@ static LUA_FUNCTION(openssl_random_bytes)
   }
 
   buffer = malloc(length + 1);
-  if (strong)
+  ret = RAND_bytes((byte*)buffer, length);
+  if (ret == 1)
   {
-    ret = RAND_bytes((byte*)buffer, length);
-    if (ret == 1)
-    {
-      lua_pushlstring(L, buffer, length);
-    }
-    else
-    {
-      lua_pushboolean(L, 0);
-    }
+    lua_pushlstring(L, buffer, length);
   }
   else
   {
-    ret = RAND_bytes((byte*)buffer, length);
-    if (ret == 1)
-    {
-      lua_pushlstring(L, buffer, length);
-    }
-    else
-    {
-      lua_pushboolean(L, 0);
-    }
+    lua_pushboolean(L, 0);
   }
   free(buffer);
   return 1;
