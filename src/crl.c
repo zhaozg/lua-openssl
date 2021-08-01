@@ -525,13 +525,14 @@ static LUA_FUNCTION(openssl_crl_nextUpdate)
 /***
 get updateTime time
 @function updateTime
-@treturn string lastUpdate
+@treturn asn1_time lastUpdate
+@treturn asn1_time nextUpdate
 */
 /***
 set updateTime time
 @function updateTime
 @tparam[opt=os.time()] lastUpdate, default use current time
-@tparam number periord periord how long time(seconds)
+@tparam number period period how long time(seconds)
 @treturn boolean result
 */
 static LUA_FUNCTION(openssl_crl_updateTime)
@@ -561,8 +562,8 @@ static LUA_FUNCTION(openssl_crl_updateTime)
     else
     {
       last = luaL_checkint(L, 2);
-      next = last + luaL_checkint(L, 3);
-      luaL_argcheck(L, next > last, 3, "value must after #2");
+      next = luaL_checkint(L, 3);
+      next = last + next;
     }
 
     ltm = ASN1_TIME_new();

@@ -45,7 +45,8 @@ function TestCRL:testNew()
   assert(other:verify(ca.cacert))
   local pem = other:export()
 
-  assert(other:updateTime(os.time(), os.time()+3600))
+  assert(other:updateTime(3600))
+  assert(other:updateTime(os.time(), 3600))
 
   assert(other:extensions({
     openssl.x509.extension.new_extension(
