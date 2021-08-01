@@ -1,15 +1,35 @@
 local openssl = require 'openssl'
 local rsa = require'openssl'.rsa
 
+local function checkRSA(r, c)
+  local t = r:parse()
+  for _,v in pairs(t) do
+    if type(v)=='userdata' then
+      if (c)  then print(_, v:bits()) end
+      if _=='q' or _=='p' or _=='dmp1' or _=='dmq1' or _=='iqmp' then
+        if (v:bits() ~= t.bits/2) then
+          print(_, v:bits(), t.bits/2)
+          return false
+        end
+      elseif _=='d' and v:bits() ~= t.bits then
+        print(_, v:bits(), t.bits)
+        return false
+      elseif (_~='e' and v:bits()+7 < t.bits) then
+        print(_, v:bits(), t.bits)
+        return false
+      end
+    end
+  end
+  return true
+end
+
 TestRSA = {}
 function TestRSA:TestRSA()
   local k = rsa.generate_key(2048)
-  local n = k:parse().n
-  while n:bits()~=2048 do
-    print('need', 2048, 'but', n)
-    k = rsa.generate_key(2048)
-    n = k:parse().n
-  end
+  --repeat
+  --  k= rsa.generate_key(2048)
+  --until checkRSA(k)
+
   assert(k:isprivate())
 
   local t = k:parse()
@@ -21,7 +41,7 @@ function TestRSA:TestRSA()
 
     local padding = {
       "pkcs1",
-      'oaep',
+      "oaep",
       "no"
     }
 
