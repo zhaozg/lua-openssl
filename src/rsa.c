@@ -158,7 +158,7 @@ static LUA_FUNCTION(openssl_rsa_read)
   int ispriv = lua_isnone(L, 2) ? 1 : lua_toboolean(L, 2);
   const unsigned char* in = (const unsigned char*)data;
   RSA *rsa = ispriv ? d2i_RSAPrivateKey(NULL, &in, l)
-    : d2i_RSA_PUBKEY(NULL, &in, l);
+             : d2i_RSA_PUBKEY(NULL, &in, l);
 
   if (rsa)
     PUSH_OBJECT(rsa, "openssl.rsa");
@@ -175,7 +175,7 @@ static LUA_FUNCTION(openssl_rsa_export)
 
   int ret = 0;
   int len = ispriv ? i2d_RSAPrivateKey_bio(out, rsa)
-    : i2d_RSA_PUBKEY_bio(out, rsa);
+            : i2d_RSA_PUBKEY_bio(out, rsa);
 
   if (len>0)
   {
@@ -234,6 +234,158 @@ static int openssl_rsa_generate_key(lua_State *L)
   return ret;
 }
 
+static int openssl_pading_result(lua_State*L, unsigned long val)
+{
+    lua_pushnil(L);
+    if (val)
+    {
+      lua_pushstring(L, ERR_reason_error_string(val));
+      lua_pushinteger(L, val);
+    }
+    else
+    {
+      lua_pushstring(L, "UNKNOWN ERROR");
+      lua_pushnil(L);
+    }
+    return 3;
+}
+
+static int openssl_padding_add(lua_State *L)
+{
+  size_t l;
+  const unsigned char* from = (const unsigned char *) luaL_checklstring(L, 1, &l);
+  int padding = openssl_get_padding(L, 2, NULL);
+  int sz = luaL_checkinteger(L, 3);
+  unsigned char* to = OPENSSL_malloc(sz);
+  int ret = 0;
+
+  switch(padding)
+  {
+  case RSA_PKCS1_PADDING:
+  {
+    luaL_checktype(L, 4, LUA_TBOOLEAN);
+
+    /* true for private, false for public */
+    if (lua_toboolean(L, 4))
+    {
+      ret = RSA_padding_add_PKCS1_type_1(to, sz,from, l);
+    }
+    else
+    {
+      ret = RSA_padding_add_PKCS1_type_2(to, sz,from, l);
+    }
+
+    break;
+  }
+  case RSA_SSLV23_PADDING:
+    ret = RSA_padding_add_SSLv23(to, sz,from, l);
+    break;
+  case RSA_NO_PADDING:
+    ret = RSA_padding_add_none(to, sz,from, l);
+    break;
+  case RSA_PKCS1_OAEP_PADDING:
+  {
+    size_t pl;
+    const unsigned char* p = (const unsigned char *) luaL_optlstring(L, 4, NULL, &pl);
+    if (lua_isnone(L, 5))
+    {
+      ret = RSA_padding_add_PKCS1_OAEP(to, sz,from, l, p, pl);
+    }
+    else
+    {
+      const EVP_MD *md = get_digest(L, 5, NULL);
+      const EVP_MD *mgf1md = lua_isnone(L, 6) ? NULL : get_digest(L, 6, NULL);
+      ret = RSA_padding_add_PKCS1_OAEP_mgf1(to, sz,from, l, p, pl, md, mgf1md);
+    }
+    break;
+  }
+  case RSA_X931_PADDING:
+#if OPENSSL_VERSION_NUMBER > 0x10000000L
+  case RSA_PKCS1_PSS_PADDING:
+#endif
+  default:
+    break;
+  }
+  if (ret==1)
+  {
+    lua_pushlstring(L, (const char*)to, sz);
+  }
+  else
+  {
+    ret = openssl_pading_result(L, RSA_R_UNKNOWN_PADDING_TYPE);
+  }
+  OPENSSL_free(to);
+  return ret;
+}
+
+static int openssl_padding_check(lua_State *L)
+{
+  size_t l;
+  const unsigned char* from = (const unsigned char *) luaL_checklstring(L, 1, &l);
+  int padding = openssl_get_padding(L, 2, NULL);
+  int sz = luaL_checkinteger(L, 3);
+  unsigned char* to = OPENSSL_malloc(sz);
+  int ret = 0;
+
+  switch(padding)
+  {
+  case RSA_PKCS1_PADDING:
+  {
+    luaL_checktype(L, 4, LUA_TBOOLEAN);
+
+    /* true for private, false for public */
+    if (lua_toboolean(L, 4))
+    {
+      ret = RSA_padding_check_PKCS1_type_1(to, sz, from, l, sz);
+    }
+    else
+    {
+      ret = RSA_padding_check_PKCS1_type_2(to, sz, from, l, sz);
+    }
+    break;
+  }
+  case RSA_SSLV23_PADDING:
+    ret = RSA_padding_check_SSLv23(to, sz, from, l, sz);
+    break;
+  case RSA_PKCS1_OAEP_PADDING:
+  {
+    size_t pl;
+    const unsigned char* p = (const unsigned char *) luaL_optlstring(L, 4, NULL, &pl);
+    if (lua_isnone(L, 5))
+    {
+      ret = RSA_padding_check_PKCS1_OAEP(to, sz,from, l, sz, p, pl);
+    }
+    else
+    {
+      const EVP_MD *md = get_digest(L, 5, NULL);
+      const EVP_MD *mgf1md = lua_isnone(L, 6) ? NULL : get_digest(L, 6, NULL);
+      ret = RSA_padding_check_PKCS1_OAEP_mgf1(to, sz,from, l, sz, p, pl, md, mgf1md);
+    }
+    break;
+  }
+  case RSA_NO_PADDING:
+    ret = RSA_padding_check_none(to, sz, from, l, sz);
+    break;
+  case RSA_X931_PADDING:
+#if OPENSSL_VERSION_NUMBER > 0x10000000L
+  case RSA_PKCS1_PSS_PADDING:
+#endif
+  default:
+    break;
+  }
+  if (ret>0)
+  {
+    lua_pushlstring(L, (const char*)to, ret);
+    ret = 1;
+  }
+  else
+  {
+    ret = openssl_pading_result(L, RSA_R_PADDING_CHECK_FAILED);
+  }
+  OPENSSL_free(to);
+  return ret;
+}
+
 static luaL_Reg rsa_funs[] =
 {
   {"parse",       openssl_rsa_parse},
@@ -269,6 +421,9 @@ static luaL_Reg R[] =
   {"read",        openssl_rsa_read},
 
   {"generate_key", openssl_rsa_generate_key},
+
+  {"padding_add",   openssl_padding_add},
+  {"padding_check", openssl_padding_check},
 
   {NULL, NULL}
 };
