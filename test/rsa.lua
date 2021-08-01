@@ -4,6 +4,12 @@ local rsa = require'openssl'.rsa
 TestRSA = {}
 function TestRSA:TestRSA()
   local k = rsa.generate_key(2048)
+  local n = k:parse().n
+  while n:bits()~=2048 do
+    print('need', 2048, 'but', n)
+    k = rsa.generate_key(2048)
+    n = k:parse().n
+  end
   assert(k:isprivate())
 
   local t = k:parse()
