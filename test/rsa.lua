@@ -12,17 +12,30 @@ function TestRSA:TestRSA()
 
   if rsa.encrypt then
     assert(k:size()==256)
+
+    local padding = {
+      "pkcs1",
+      "sslv23",
+      "no",
+      "oaep",
+      "x931",
+    }
+
+
+
     k:set_engine(openssl.engine('openssl'))
 
-    local msg = openssl.random(200)
+    for _=1, #padding+1 do
+      local msg = openssl.random(padding[_]=='no' and 256 or 200)
 
-    local out = assert(rsa.encrypt(k,msg))
-    local raw = assert(k:decrypt(out, nil, false))
-    assert(msg == raw)
+      local out = assert(rsa.encrypt(k,msg, padding))
+      local raw = assert(k:decrypt(out, padding, false))
+      assert(msg == raw)
 
-    msg = openssl.random(32)
-    out = assert(rsa.sign(k, msg, 'sha256'))
-    assert(k:verify(msg, out, 'sha256'))
+      msg = openssl.random(32)
+      out = assert(rsa.sign(k, msg, 'sha256'))
+      assert(k:verify(msg, out, 'sha256'))
+    end
   end
 
   local der = k:export()
