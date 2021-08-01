@@ -1,0 +1,34 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+        luarocks_version: [2.4.4]
+        #luarocks_version: [2.4.4, 3.7.0]
+        lua_version: [luajit2.1]
+        #openssl_version: [openssl-1.0.2u, libressl-3.2.5, openssl-1.1.1j]
+        openssl_version: [openssl-1.0.2u, openssl-1.1.1j]
+    env:
+      MACOSX_DEPLOYMENT_TARGET: 10.12
+      LUAROCKS: ${{ matrix.luarocks_version }}
+      LUA: ${{ matrix.lua_version }}
+      SSL: ${{ matrix.openssl_version }}
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: recursive
+
+    - name: Prepare
+      run: .github/shell/setup_lua.sh && .github/shell/setup_ssl.sh
+
+    - name: Build
+      run: PKG_CONFIG_PATH=$HOME/.usr/lib/pkgconfig make
+
+    - name: Test
+      run: PKG_CONFIG_PATH=$HOME/.usr/lib/pkgconfig PATH=$HOME/.usr/bin:$PATH LD_LIBRARY_PATH=$HOME/.usr/lib make test
