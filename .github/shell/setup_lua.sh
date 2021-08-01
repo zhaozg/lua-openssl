@@ -11,14 +11,12 @@ set -eufo pipefail
 LUAJIT_VERSION="2.0.5"
 LUAJIT_BASE="LuaJIT-$LUAJIT_VERSION"
 
-source .travis/platform.sh
-
 LUA_HOME_DIR=$HOME/.usr
 LR_HOME_DIR=$HOME/.usr
 
 LUAJIT="no"
 
-if [ "$PLATFORM" == "macosx" ]; then
+if [ "$RUNNER_OS" == "macOS" ]; then
   if [ "$LUA" == "luajit" ]; then
     LUAJIT="yes"
   fi
@@ -70,13 +68,11 @@ else
 
   # Build Lua without backwards compatibility for testing
   perl -i -pe 's/-DLUA_COMPAT_(ALL|5_2)//' src/Makefile
-  make $PLATFORM
+  make
   make INSTALL_TOP="$LUA_HOME_DIR" install
 fi
 
 export PATH=$LUA_HOME_DIR/bin:$PATH
-
-cd $TRAVIS_BUILD_DIR
 
 lua -v
 
@@ -97,8 +93,6 @@ else
 fi
 
 make build && make install
-
-cd $TRAVIS_BUILD_DIR
 
 luarocks --version
 
