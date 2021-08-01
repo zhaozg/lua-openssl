@@ -1,5 +1,4 @@
-#!/bin/sh
-source .travis/platform.sh
+#!/bin/bash
 
 if [ -z "$SSL" ]; then
         echo '$SSL not set, use default openssl' >&2
@@ -34,10 +33,10 @@ if [ ! -d "$HOME/opt/$SSL" ]; then
         tar -xzf "$SSL.tar.gz" || exit 1
         cd "$SSL" || exit 1
         export OPENSSL_DIR=$HOME/.usr
-        if [ "$PLATFORM" == "linux" ]; then
+        if [ "$RUNNER_OS" == "Linux" ]; then
                 ./config shared --prefix="$OPENSSL_DIR" || exit 1
         fi
-        if [ "$PLATFORM" == "macosx" ]; then
+        if [ "$RUNNER_OS" == "macOS" ]; then
                 if [ -z "$LIBRESSL" ]; then
                         ./Configure darwin64-x86_64-cc shared --prefix="$OPENSSL_DIR" || exit 1
                 else
