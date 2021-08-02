@@ -319,7 +319,6 @@ get random bytes
 static LUA_FUNCTION(openssl_random_bytes)
 {
   long length = luaL_checkint(L, 1);
-  int strong = lua_isnil(L, 2) ? 0 : lua_toboolean(L, 2);
 
   char *buffer = NULL;
   int ret = 0;
