@@ -562,9 +562,9 @@ static LUA_FUNCTION(openssl_ecdsa_sign)
 {
   EC_KEY *eckey = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
   size_t dgstlen = 0;
-  const uint8_t *dgst = (const uint8_t*)luaL_checklstring(L, 2, &dgstlen);
+  const unsigned char *dgst = (const unsigned char*)luaL_checklstring(L, 2, &dgstlen);
   const EVP_MD* md = get_digest(L, 3, "sm3");
-  uint8_t sig[SM2_SIG_MAX_LEN] = {0};
+  unsigned char sig[SM2_SIG_MAX_LEN] = {0};
   unsigned int siglen = sizeof(sig);
 
   int ret = ECDSA_sign(EVP_MD_type(md), dgst, dgstlen, sig, &siglen, eckey);
@@ -592,9 +592,9 @@ static LUA_FUNCTION(openssl_ecdsa_verify)
 {
   EC_KEY *eckey = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
   size_t dgstlen = 0;
-  const uint8_t *dgst = (const uint8_t*)luaL_checklstring(L, 2, &dgstlen);
+  const unsigned char *dgst = (const unsigned char*)luaL_checklstring(L, 2, &dgstlen);
   size_t siglen = 0;
-  const uint8_t *sig = (const uint8_t*)luaL_checklstring(L, 3, &siglen);
+  const unsigned char *sig = (const unsigned char*)luaL_checklstring(L, 3, &siglen);
   const EVP_MD* md = get_digest(L, 4, "sm3");
   int type = EVP_MD_type(md);
 
