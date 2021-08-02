@@ -471,7 +471,7 @@ static luaL_Reg ec_group_funs[] =
   { NULL, NULL }
 };
 
-static int openssl_ecdsa_sign(lua_State*L)
+static int openssl_ecdsa_do_sign(lua_State*L)
 {
   EC_KEY* ec = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
   size_t l;
@@ -507,7 +507,7 @@ static int openssl_ecdsa_sign(lua_State*L)
   return ret;
 }
 
-static int openssl_ecdsa_verify(lua_State*L)
+static int openssl_ecdsa_do_verify(lua_State*L)
 {
   size_t l, sigl;
   int ret;
@@ -546,6 +546,67 @@ static int openssl_ecdsa_verify(lua_State*L)
     ECDSA_SIG_free(sig);
     return ret;
   }
+}
+
+#define SM2_SIG_MAX_LEN 72
+/***
+do SM2 sign, input is SM3 digest result
+
+@function sign
+@tparam ec_key sm2key
+@tparam string digest result of SM3 digest to be signed
+@tparam[opt='sm3'] evp_md|string|nid digest digest alg identity, default is sm3
+@treturn string signature
+*/
+static LUA_FUNCTION(openssl_ecdsa_sign)
+{
+  EC_KEY *eckey = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
+  size_t dgstlen = 0;
+  const uint8_t *dgst = (const uint8_t*)luaL_checklstring(L, 2, &dgstlen);
+  const EVP_MD* md = get_digest(L, 3, "sm3");
+  uint8_t sig[SM2_SIG_MAX_LEN] = {0};
+  unsigned int siglen = sizeof(sig);
+
+  int ret = ECDSA_sign(EVP_MD_type(md), dgst, dgstlen, sig, &siglen, eckey);
+  if (ret==1)
+  {
+    lua_pushlstring(L, (const char*)sig, siglen);
+  }
+  else
+    ret = openssl_pushresult(L, ret);
+  return ret;
+}
+
+/***
+do SM2 verify, input msg is sm3 digest result
+
+@function verify
+@tparam ec_key sm2key
+@tparam string digest result of SM3 digest to be signed
+@tparam string signature
+@tparam[opt='sm3'] evp_md|string|nid digest digest alg identity, default is sm3
+@treturn boolean true for verified, false for invalid signature
+@return nil for error, and followed by error message
+*/
+static LUA_FUNCTION(openssl_ecdsa_verify)
+{
+  EC_KEY *eckey = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
+  size_t dgstlen = 0;
+  const uint8_t *dgst = (const uint8_t*)luaL_checklstring(L, 2, &dgstlen);
+  size_t siglen = 0;
+  const uint8_t *sig = (const uint8_t*)luaL_checklstring(L, 3, &siglen);
+  const EVP_MD* md = get_digest(L, 4, "sm3");
+  int type = EVP_MD_type(md);
+
+  int ret = ECDSA_verify(type, dgst, (int)dgstlen, sig, (int)siglen, eckey);
+  if(ret==-1)
+    ret = openssl_pushresult(L, ret);
+  else
+  {
+    lua_pushboolean(L, ret);
+    ret = 1;
+  }
+  return ret;
 }
 
 /* ec_point */
@@ -785,6 +846,8 @@ static luaL_Reg ec_key_funs[] =
   {"export",      openssl_ec_key_export},
   {"parse",       openssl_ec_key_parse},
   {"group",       openssl_ec_key_group},
+  {"do_sign",     openssl_ecdsa_do_sign},
+  {"do_verify",   openssl_ecdsa_do_verify},
   {"sign",        openssl_ecdsa_sign},
   {"verify",      openssl_ecdsa_verify},
   {"compute_key", openssl_ecdh_compute_key},
@@ -849,6 +912,11 @@ static luaL_Reg R[] =
   {"read",     openssl_ec_key_read},
   {"list",     openssl_ec_list_curve_name},
   {"group",    openssl_eckey_group},
+
+  {"do_sign",  openssl_ecdsa_do_sign},
+  {"do_verify",openssl_ecdsa_do_verify},
+  {"sign",     openssl_ecdsa_sign},
+  {"verify",   openssl_ecdsa_verify},
 
   { NULL, NULL }
 };

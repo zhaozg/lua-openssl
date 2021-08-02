@@ -129,9 +129,9 @@ if openssl.ec then
     assert(grp1:point_conversion_form('hybrid'))
     assert(grp==grp1)
 
-    local der = ec:sign('abcd')
+    local der = ec:do_sign('abcd')
     assert(#der>=70 and #der <= 72)
-    assert(ec:verify('abcd', der))
+    assert(ec:do_verify('abcd', der))
 
     der = ec:export()
     assert(type(der)=='string')
@@ -142,8 +142,13 @@ if openssl.ec then
     assert(ec1:check())
     assert(ec1:export())
 
-    local x, y = ec:sign('abcd', false)
-    assert(ec:verify('abcd', x, y))
+    local x, y = ec:do_sign('abcd', false)
+    assert(ec:do_verify('abcd', x, y))
+
+    local msg = openssl.random(32)
+
+    local sig = ec:do_sign(msg)
+    assert(ec:do_verify(msg, sig))
 
     pnt = assert(grp:point_new())
     pnt1 = assert(grp:point_dup(pnt))
