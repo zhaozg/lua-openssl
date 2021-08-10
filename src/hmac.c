@@ -39,13 +39,6 @@ static int openssl_mac_is_a(lua_State *L)
   return openssl_pushresult(L, ret);
 }
 
-static int openssl_mac_number(lua_State *L)
-{
-  EVP_MAC *mac = CHECK_OBJECT(1, EVP_MAC, "openssl.mac");
-  lua_pushinteger(L, EVP_MAC_number(mac));
-  return 1;
-}
-
 static void openssl_mac_names_do(const char *name, void *data)
 {
   lua_State *L = data;
@@ -66,8 +59,8 @@ static int openssl_mac_names(lua_State *L)
 static int openssl_mac_provider(lua_State *L)
 {
   EVP_MAC *mac = CHECK_OBJECT(1, EVP_MAC, "openssl.mac");
-  const OSSL_PROVIDER *provider = EVP_MAC_provider(mac);
-  const char *name = OSSL_PROVIDER_name(provider);
+  const OSSL_PROVIDER *provider = EVP_MAC_get0_provider(mac);
+  const char *name = OSSL_PROVIDER_get0_name(provider);
   lua_pushstring(L, name);
   return 1;
 }
@@ -82,21 +75,6 @@ static int openssl_mac_get_params(lua_State *L)
   lua_pushnil(L);
   lua_pushstring(L, "NYI");
   return 2;
-}
-
-static int openssl_mac_ctx_new(lua_State *L)
-{
-  EVP_MAC *mac = CHECK_OBJECT(1, EVP_MAC, "openssl.mac");
-  EVP_MAC_CTX* ctx = EVP_MAC_CTX_new(mac);
-  int ret = EVP_MAC_init(ctx);
-  if (ret==1)
-  {
-    //EVP_MAC_up_ref
-    PUSH_OBJECT(ctx, "openssl.mac_ctx");
-    return 1;
-  }
-  EVP_MAC_CTX_free(ctx);
-  return openssl_pushresult(L, ret);
 }
 
 static int openssl_mac_ctx_gc(lua_State *L)
@@ -117,7 +95,7 @@ static int openssl_mac_ctx_dup(lua_State *L)
 static int openssl_mac_ctx_mac(lua_State *L)
 {
   EVP_MAC_CTX* ctx = CHECK_OBJECT(1, EVP_MAC_CTX, "openssl.mac_ctx");
-  EVP_MAC* mac = EVP_MAC_CTX_mac(ctx);
+  EVP_MAC* mac = EVP_MAC_CTX_get0_mac(ctx);
   PUSH_OBJECT(mac, "openssl.mac");
   return 1;
 }
@@ -174,7 +152,7 @@ static int openssl_hmac_ctx_new(lua_State *L)
 {
   int ret;
 #if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
-  OSSL_PARAM params[3];
+  OSSL_PARAM params[2];
   size_t params_n = 0;
   size_t l;
 
@@ -187,15 +165,9 @@ static int openssl_hmac_ctx_new(lua_State *L)
 
   params[params_n++] =
     OSSL_PARAM_construct_utf8_string("digest", (char*)EVP_MD_name(type), 0);
-  params[params_n++] =
-    OSSL_PARAM_construct_octet_string("key", (void*)k, l);
   params[params_n] = OSSL_PARAM_construct_end();
 
-  ret = EVP_MAC_CTX_set_params(c, params);
-  if (ret==1)
-  {
-    ret = EVP_MAC_init(c);
-  }
+  ret = EVP_MAC_init(c, k, l, params);
   if (ret==1)
     PUSH_OBJECT(c, "openssl.mac_ctx");
   else
@@ -280,7 +252,7 @@ static int openssl_hmac(lua_State *L)
     EVP_MAC *mac;
     EVP_MAC_CTX *ctx = NULL;
 
-    OSSL_PARAM params[4];
+    OSSL_PARAM params[2];
     size_t params_n = 0;
 
     mac = EVP_MAC_fetch(NULL, "hmac", NULL);
@@ -288,23 +260,17 @@ static int openssl_hmac(lua_State *L)
     {
       params[params_n++] =
         OSSL_PARAM_construct_utf8_string("digest", (char*)EVP_MD_name(type), 0);
-      params[params_n++] =
-        OSSL_PARAM_construct_octet_string("key", (void*)k, l);
       params[params_n] = OSSL_PARAM_construct_end();
 
       ctx = EVP_MAC_CTX_new(mac);
       if (ctx)
       {
-        ret = EVP_MAC_CTX_set_params(ctx, params);
+        ret = EVP_MAC_init(ctx, k, l, params);
         if (ret==1)
         {
-          ret = EVP_MAC_init(ctx);
+          ret = EVP_MAC_update(ctx, (const unsigned char *)dat, len);
           if (ret==1)
-          {
-            ret = EVP_MAC_update(ctx, (const unsigned char *)dat, len);
-            if (ret==1)
-              ret = EVP_MAC_final(ctx, digest, &dlen, dlen);
-          }
+            ret = EVP_MAC_final(ctx, digest, &dlen, dlen);
         }
         EVP_MAC_CTX_free(ctx);
       }
@@ -469,11 +435,9 @@ static int openssl_mac_ctx_reset(lua_State *L)
 static luaL_Reg mac_funs[] =
 {
   {"is_a",        openssl_mac_is_a},
-  {"number",      openssl_mac_number},
   {"names",       openssl_mac_names},
   {"provider",    openssl_mac_provider},
   {"get_params",  openssl_mac_get_params},
-  {"new",         openssl_mac_ctx_new},
 
   {"__tostring",  auxiliar_tostring},
   {"__gc",        openssl_mac_gc},

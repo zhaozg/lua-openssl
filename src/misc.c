@@ -204,7 +204,9 @@ int openssl_push_bit_string_bitname(lua_State* L, const BIT_STRING_BITNAME* name
 static const char* sPadding[] =
 {
   "pkcs1",
+#ifdef RSA_SSLV23_PADDING
   "sslv23",
+#endif
   "no",
   "oaep",
   "x931",
@@ -217,7 +219,9 @@ static const char* sPadding[] =
 static int iPadding[] =
 {
   RSA_PKCS1_PADDING,
+#ifdef RSA_SSLV23_PADDING
   RSA_SSLV23_PADDING,
+#endif
   RSA_NO_PADDING,
   RSA_PKCS1_OAEP_PADDING,
   RSA_X931_PADDING,

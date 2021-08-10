@@ -277,9 +277,11 @@ static int openssl_padding_add(lua_State *L)
 
     break;
   }
+#ifdef RSA_SSLV23_PADDING
   case RSA_SSLV23_PADDING:
     ret = RSA_padding_add_SSLv23(to, sz,from, l);
     break;
+#endif
   case RSA_NO_PADDING:
     ret = RSA_padding_add_none(to, sz,from, l);
     break;
@@ -344,9 +346,11 @@ static int openssl_padding_check(lua_State *L)
     }
     break;
   }
+#ifdef RSA_SSLV23_PADDING
   case RSA_SSLV23_PADDING:
     ret = RSA_padding_check_SSLv23(to, sz, from, l, sz);
     break;
+#endif
   case RSA_PKCS1_OAEP_PADDING:
   {
     size_t pl;

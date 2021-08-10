@@ -1848,7 +1848,7 @@ static int openssl_pkey_set_engine(lua_State *L)
   return 1;
 }
 
-#if defined(OPENSSL_SUPPORT_SM2)
+#if defined(OPENSSL_SUPPORT_SM2) && OPENSSL_VERSION_NUMBER < 0x30000000L
 static int openssl_pkey_as_sm2(lua_State *L)
 {
   EVP_PKEY *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
@@ -1889,7 +1889,7 @@ static luaL_Reg pkey_funcs[] =
 
   {"derive",        openssl_derive},
 
-#if defined(OPENSSL_SUPPORT_SM2)
+#if defined(OPENSSL_SUPPORT_SM2) && OPENSSL_VERSION_NUMBER < 0x30000000L
   {"as_sm2",        openssl_pkey_as_sm2},
 #endif
 
@@ -1926,7 +1926,7 @@ static const luaL_Reg R[] =
   {"verify",        openssl_verify},
   {"derive",        openssl_derive},
 
-#if defined(OPENSSL_SUPPORT_SM2)
+#if defined(OPENSSL_SUPPORT_SM2) && OPENSSL_VERSION_NUMBER < 0x30000000L
   {"as_sm2",        openssl_pkey_as_sm2},
 #endif
 
