@@ -136,7 +136,7 @@ test:	all
 	cd test && LUA_CPATH=../?.so $(LUA) test.lua && cd ..
 
 coveralls: test
-	coveralls -E [^src] -i src --gcov-options '\-lp'
+	coveralls -b . -i src --gcov-options '\-lp'
 
 clean:
 	rm -f $T.so lib$T.a $(OBJS)
