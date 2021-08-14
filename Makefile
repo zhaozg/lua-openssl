@@ -47,6 +47,12 @@ endif
 OPENSSL_CFLAGS	?= $(shell $(PKG_CONFIG) openssl --cflags)
 OPENSSL_LIBS	?= $(shell $(PKG_CONFIG) openssl --static --libs)
 
+TARGET  = $(MAKECMDGOALS)
+ifeq (coveralls, ${TARGET})
+  CFLAGS	+=-g -fprofile-arcs -ftest-coverage
+  LDFLAGS	+=-g -fprofile-arcs
+endif
+
 ifneq (, $(findstring linux, $(SYS)))
   # Do linux things
   CFLAGS	+= -fPIC
@@ -100,7 +106,7 @@ OBJS=src/asn1.o deps/auxiliar/auxiliar.o src/bio.o src/cipher.o src/cms.o src/co
      src/x509.o src/xattrs.o src/xexts.o src/xname.o src/xstore.o src/xalgor.o         \
      src/callback.o src/srp.o deps/auxiliar/subsidiar.o
 
-.PHONY: all install test info doc
+.PHONY: all install test info doc coveralls
 
 .c.o:
 	$(CC) $(CFLAGS) -c -o $@ $?
@@ -128,6 +134,9 @@ info:
 
 test:	all
 	cd test && LUA_CPATH=../?.so $(LUA) test.lua && cd ..
+
+coveralls: test
+	coveralls -E [^src] -i src --gcov-options '\-lp'
 
 clean:
 	rm -f $T.so lib$T.a $(OBJS)

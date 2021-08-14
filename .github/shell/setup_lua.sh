@@ -76,27 +76,29 @@ export PATH=$LUA_HOME_DIR/bin:$PATH
 
 lua -v
 
-LUAROCKS_BASE=luarocks-$LUAROCKS
+if [[ -n "$LUAROCKS" ]]; then
+  LUAROCKS_BASE=luarocks-$LUAROCKS
 
-curl --location http://luarocks.org/releases/$LUAROCKS_BASE.tar.gz | tar xz
+  curl --location http://luarocks.org/releases/$LUAROCKS_BASE.tar.gz | tar xz
 
-cd $LUAROCKS_BASE
+  cd $LUAROCKS_BASE
 
-if [ "$LUA" == "luajit" ]; then
-  ./configure --lua-suffix=jit --with-lua-include="$LUA_HOME_DIR/include/luajit-2.0" --prefix="$LR_HOME_DIR"
-elif [ "$LUA" == "luajit2.0" ]; then
-  ./configure --lua-suffix=jit --with-lua-include="$LUA_HOME_DIR/include/luajit-2.0" --prefix="$LR_HOME_DIR"
-elif [ "$LUA" == "luajit2.1" ]; then
-  ./configure --lua-suffix=jit --with-lua-include="$LUA_HOME_DIR/include/luajit-2.1" --prefix="$LR_HOME_DIR"
-else
-  ./configure --with-lua="$LUA_HOME_DIR" --prefix="$LR_HOME_DIR"
+  if [ "$LUA" == "luajit" ]; then
+    ./configure --lua-suffix=jit --with-lua-include="$LUA_HOME_DIR/include/luajit-2.0" --prefix="$LR_HOME_DIR"
+  elif [ "$LUA" == "luajit2.0" ]; then
+    ./configure --lua-suffix=jit --with-lua-include="$LUA_HOME_DIR/include/luajit-2.0" --prefix="$LR_HOME_DIR"
+  elif [ "$LUA" == "luajit2.1" ]; then
+    ./configure --lua-suffix=jit --with-lua-include="$LUA_HOME_DIR/include/luajit-2.1" --prefix="$LR_HOME_DIR"
+  else
+    ./configure --with-lua="$LUA_HOME_DIR" --prefix="$LR_HOME_DIR"
+  fi
+
+  make build && make install
+
+  luarocks --version
+
+  rm -rf $LUAROCKS_BASE
 fi
-
-make build && make install
-
-luarocks --version
-
-rm -rf $LUAROCKS_BASE
 
 if [ "$LUAJIT" == "yes" ]; then
   rm -rf $LUAJIT_BASE
