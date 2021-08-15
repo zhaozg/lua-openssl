@@ -112,7 +112,6 @@ static int openssl_ocsp_request_add_ext(lua_State *L)
   int loc = luaL_optint(L, 3, OCSP_REQUEST_get_ext_count(req));
   int ret;
 
-  x = X509_EXTENSION_dup(x);
   ret = OCSP_REQUEST_add_ext(req, x, loc);
   return openssl_pushresult(L, ret);
 }
@@ -457,6 +456,11 @@ static int openssl_ocsp_response_new(lua_State *L)
 
   res = OCSP_response_create(OCSP_RESPONSE_STATUS_SUCCESSFUL, bs);
   BIO_free(bio);
+
+  ASN1_TIME_free(thispnd);
+  ASN1_TIME_free(nextpnd);
+  OCSP_BASICRESP_free(bs);
+  OCSP_CERTID_free(ca_id);
 
   if (res)
   {
