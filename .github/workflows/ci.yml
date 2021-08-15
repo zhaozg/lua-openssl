@@ -3,11 +3,9 @@ name: CI
 on: [push, pull_request]
 
 jobs:
-  bindings-coverage:
+  Coverage:
     runs-on: ubuntu-latest
     env:
-      LUA: luajit2.1
-      LUAROCKS: ""
       COVERALLS_GIT_BRANCH: "${{ github.ref }}"
       COVERALLS_REPO_TOKEN: "${{ secrets.COVERALLS_REPO_TOKEN }}"
     steps:
@@ -16,12 +14,21 @@ jobs:
         submodules: recursive
     - name: cpp-coveralls
       run: pip install cpp-coveralls PyYAML
-    - name: openssl
-      run: sudo apt install libssl-dev -y
-    - name: luajit2
-      run: .github/shell/setup_lua.sh
+    - name: depends
+      run: sudo apt update && sudo apt install -y libssl-dev luajit libluajit-5.1-dev valgrind
     - name: run
-      run: PKG_CONFIG_PATH=$HOME/.usr/lib/pkgconfig PATH=$HOME/.usr/bin:$PATH LD_LIBRARY_PATH=$HOME/.usr/lib make coveralls
+      run: make coveralls
+
+  Valgrind:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: recursive
+    - name: depends
+      run: sudo apt update && sudo apt install -y libssl-dev luajit libluajit-5.1-dev valgrind
+    - name: run
+      run: make valgrind
 
   build:
     runs-on: ${{ matrix.os }}
