@@ -412,7 +412,7 @@ static int openssl_crl_extensions(lua_State* L)
     for (i = 0; i < n; i++)
     {
       X509_EXTENSION *ext = sk_X509_EXTENSION_value(exts, i);
-      X509_CRL_add_ext(crl, X509_EXTENSION_dup(ext), i);
+      X509_CRL_add_ext(crl, ext, i);
     };
     sk_X509_EXTENSION_pop_free(exts, X509_EXTENSION_free);
     return openssl_pushresult(L, 1);
