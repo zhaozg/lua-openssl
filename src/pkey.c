@@ -475,8 +475,6 @@ static LUA_FUNCTION(openssl_pkey_new)
         if (DH_generate_key(dh))
         {
           pkey = EVP_PKEY_new();
-          //TODO: remove up_ref
-          DH_up_ref(dh);
           EVP_PKEY_assign_DH(pkey, dh);
         }
         else
@@ -1243,10 +1241,8 @@ static LUA_FUNCTION(openssl_sign)
   EVP_MD_CTX *ctx;
 
 #if defined(OPENSSL_SUPPORT_SM2)
-  EVP_PKEY_CTX* pctx;
-  const char* userId = NULL;
-  size_t idlen = 0;
   int is_SM2 = 0;
+  EVP_PKEY_CTX* pctx = NULL;
 #endif
 
   pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
@@ -1261,15 +1257,14 @@ static LUA_FUNCTION(openssl_sign)
 
   md = get_digest(L, 3, md_alg);
 
-#if defined(OPENSSL_SUPPORT_SM2)
-  if (is_SM2)
-    userId = luaL_optlstring (L, 4, SM2_DEFAULT_USERID, &idlen);
-#endif
-
   ctx = EVP_MD_CTX_create();
 #if defined(OPENSSL_SUPPORT_SM2)
   if (is_SM2)
   {
+    size_t idlen = 0;
+
+    const char* userId = luaL_optlstring (L, 4, SM2_DEFAULT_USERID, &idlen);
+
     pctx = EVP_PKEY_CTX_new(pkey, NULL);
     EVP_PKEY_CTX_set1_id(pctx, userId, idlen);
     EVP_MD_CTX_set_pkey_ctx(ctx, pctx);
@@ -1308,6 +1303,11 @@ static LUA_FUNCTION(openssl_sign)
     ret = openssl_pushresult(L, ret);
 
   EVP_MD_CTX_destroy(ctx);
+#if defined(OPENSSL_SUPPORT_SM2)
+  if (pctx)
+    EVP_PKEY_CTX_free(pctx);
+#endif
+
   return ret;
 }
 
@@ -1331,10 +1331,8 @@ static LUA_FUNCTION(openssl_verify)
   EVP_MD_CTX *ctx;
 
 #if defined(OPENSSL_SUPPORT_SM2)
-  EVP_PKEY_CTX* pctx;
-  const char* userId = NULL;
-  size_t idlen = 0;
   int is_SM2 = 0;
+  EVP_PKEY_CTX* pctx = NULL;
 #endif
 
   pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
@@ -1350,15 +1348,14 @@ static LUA_FUNCTION(openssl_verify)
 
   md = get_digest(L, 4, md_alg);
 
-#if defined(OPENSSL_SUPPORT_SM2)
-  if (is_SM2)
-    userId = luaL_optlstring (L, 5, SM2_DEFAULT_USERID, &idlen);
-#endif
-
   ctx = EVP_MD_CTX_create();
 #if defined(OPENSSL_SUPPORT_SM2)
   if (is_SM2)
   {
+    size_t idlen = 0;
+
+    const char* userId = luaL_optlstring (L, 5, SM2_DEFAULT_USERID, &idlen);
+
     pctx = EVP_PKEY_CTX_new(pkey, NULL);
     EVP_PKEY_CTX_set1_id(pctx, userId, idlen);
     EVP_MD_CTX_set_pkey_ctx(ctx, pctx);
@@ -1386,6 +1383,10 @@ static LUA_FUNCTION(openssl_verify)
     ret = openssl_pushresult(L, ret);
 
   EVP_MD_CTX_destroy(ctx);
+#if defined(OPENSSL_SUPPORT_SM2)
+  if (pctx)
+    EVP_PKEY_CTX_free(pctx);
+#endif
   return ret;
 }
 
