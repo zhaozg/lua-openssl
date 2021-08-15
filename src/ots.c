@@ -911,7 +911,6 @@ static LUA_FUNCTION(openssl_ts_req_add_ext)
   int loc = luaL_optint(L, 3, TS_REQ_get_ext_count(ts_req));
   int ret;
 
-  x = X509_EXTENSION_dup(x);
   ret = TS_REQ_add_ext(ts_req, x, loc);
   return openssl_pushresult(L, ret);
 }
