@@ -335,6 +335,7 @@ static int openssl_xext_totable(lua_State* L, X509_EXTENSION *x)
       lua_rawseti(L, -2, i + 1);
     }
     lua_settable(L, -3);
+    sk_GENERAL_NAME_pop_free(values, GENERAL_NAME_free);
   }
   default:
     break;
