@@ -1735,6 +1735,7 @@ static LUA_FUNCTION(openssl_ts_verify_ctx_gc)
     CRYPTO_add(&ctx->store->references, -1, CRYPTO_LOCK_X509_STORE);
   ctx->store = NULL;
 #endif
+  TS_VERIFY_CTX_cleanup(ctx);
   TS_VERIFY_CTX_free(ctx);
   return 0;
 }
