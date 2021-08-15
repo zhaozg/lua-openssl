@@ -53,6 +53,11 @@ ifeq (coveralls, ${TARGET})
   LDFLAGS	+=-g -fprofile-arcs
 endif
 
+ifeq (valgrind, ${TARGET})
+  CFLAGS	+=-g -Og
+  LDFLAGS	+=-g -Og
+endif
+
 ifneq (, $(findstring linux, $(SYS)))
   # Do linux things
   CFLAGS	+= -fPIC
@@ -137,6 +142,13 @@ test:	all
 
 coveralls: test
 	coveralls -b . -i src --gcov-options '\-lp'
+
+valgrind: all
+	cd test && LUA_CPATH=../?.so \
+	valgrind --suppressions=../.github/pthread_create.supp --error-exitcode=1 \
+	--leak-check=full --child-silent-after-fork=yes \
+	$(LUA)	-e "collectgarbage('setpause', 0); collectgarbage('setstepmul', 10000000000000)" \
+	test.lua && cd ..
 
 clean:
 	rm -f $T.so lib$T.a $(OBJS)
