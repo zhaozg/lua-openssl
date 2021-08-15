@@ -1682,16 +1682,21 @@ static LUA_FUNCTION(openssl_seal_update)
   const char *data = luaL_checklstring(L, 2, &data_len);
   int len = data_len + EVP_CIPHER_CTX_block_size(ctx);
   unsigned char *buf =  malloc(len);
+  int ret;
 
-  if (!EVP_SealUpdate(ctx, buf, &len, (unsigned char *)data, data_len))
+  ret = EVP_SealUpdate(ctx, buf, &len, (unsigned char *)data, data_len);
+
+  if(ret==1)
   {
-    free(buf);
-    luaL_error(L, "EVP_SealUpdate fail");
+    lua_pushlstring(L, (const char*)buf, len);
+  }
+  else
+  {
+    ret = openssl_pushresult(L, ret);
   }
 
-  lua_pushlstring(L, (const char*)buf, len);
   free(buf);
-  return 1;
+  return ret;
 }
 
 static LUA_FUNCTION(openssl_seal_final)
@@ -1699,16 +1704,20 @@ static LUA_FUNCTION(openssl_seal_final)
   EVP_CIPHER_CTX* ctx = CHECK_OBJECT(1, EVP_CIPHER_CTX, "openssl.evp_cipher_ctx");
   int len = EVP_CIPHER_CTX_block_size(ctx);
   unsigned char *buf = malloc(len);
+  int ret;
 
-
-  if (!EVP_SealFinal(ctx, buf, &len))
+  ret = EVP_SealFinal(ctx, buf, &len);
+  if (ret==1)
   {
-    free(buf);
-    luaL_error(L, "EVP_SealFinal fail");
+    lua_pushlstring(L, (const char*)buf, len);
+  }
+  else
+  {
+    ret = openssl_pushresult(L, ret);
   }
 
-  lua_pushlstring(L, (const char*)buf, len);
-  return 1;
+  free(buf);
+  return ret;
 }
 
 static LUA_FUNCTION(openssl_open_init)
