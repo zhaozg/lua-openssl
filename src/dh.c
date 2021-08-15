@@ -85,7 +85,6 @@ static int openssl_dh_generate_key(lua_State *L)
   int ret = DH_generate_key(dh);
   if (ret == 1)
   {
-    //TODO: remove up_ref
     DH_up_ref(dh);
     PUSH_OBJECT(dh, "openssl.dh");
     return 1;
