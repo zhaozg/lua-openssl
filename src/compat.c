@@ -38,6 +38,7 @@ int SSL_SESSION_up_ref(SSL_SESSION *sess)
   CRYPTO_add(&sess->references, 1, CRYPTO_LOCK_SSL_SESSION);
   return 1;
 }
+
 #endif
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
