@@ -1,0 +1,59 @@
+# pthread
+{
+   pthread_create unknown leak
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:allocate_dtv
+   fun:_dl_allocate_tls
+   fun:allocate_stack
+}
+
+# LuaJIT-2.1
+{
+   LuaJIT-2.1 lua_pushlstring noices
+   Memcheck:Cond
+   obj:/usr/bin/luajit
+   fun:lua_pushlstring
+}
+
+{
+   LuaJIT-2.1 lua_pushstring noices
+   Memcheck:Cond
+   obj:/usr/bin/luajit
+   fun:lua_pushstring
+}
+
+# OpenSSL-1.1.1
+{
+   Maybe bug in TS_REQ_to_TS_VERIFY_CTX
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:TS_REQ_to_TS_VERIFY_CTX
+   fun:openssl_ts_verify_ctx_new
+}
+
+{
+   Maybe bug in OCSP_request_sign
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:CRYPTO_zalloc
+   obj:/usr/lib/x86_64-linux-gnu/libcrypto.so.1.1
+   fun:ASN1_item_new
+   fun:OCSP_request_sign
+   fun:openssl_ocsp_request_sign
+}
+
+{
+   Maybe bug in CMS_decrypt_set1_password
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   obj:/usr/lib/x86_64-linux-gnu/libcrypto.so.1.1
+   fun:CMS_RecipientInfo_decrypt
+   fun:CMS_decrypt_set1_password
+   fun:openssl_cms_decrypt
+}
+
