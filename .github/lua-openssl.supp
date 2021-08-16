@@ -24,6 +24,20 @@
    fun:lua_pushstring
 }
 
+{
+   LuaJIT-2 lua_getfield
+   Memcheck:Cond
+   obj:/usr/bin/luajit
+   fun:lua_getfield
+}
+
+{
+   LuaJIT-2 lua_setfield
+   Memcheck:Cond
+   obj:/usr/bin/luajit
+   fun:lua_setfield
+}
+
 # OpenSSL-1.1.1
 {
    Maybe bug in TS_REQ_to_TS_VERIFY_CTX
@@ -43,7 +57,7 @@
    obj:/usr/lib/x86_64-linux-gnu/libcrypto.so.1.1
    fun:ASN1_item_new
    fun:OCSP_request_sign
-   fun:openssl_ocsp_request_sign
+   obj:*
 }
 
 {
@@ -54,6 +68,6 @@
    obj:/usr/lib/x86_64-linux-gnu/libcrypto.so.1.1
    fun:CMS_RecipientInfo_decrypt
    fun:CMS_decrypt_set1_password
-   fun:openssl_cms_decrypt
+   obj:*
 }
 

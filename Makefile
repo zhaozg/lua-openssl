@@ -150,14 +150,16 @@ coveralls: test
 
 valgrind: all
 	cd test && LUA_CPATH=../?.so \
-	valgrind --suppressions=../.github/lua-openssl.supp --error-exitcode=1 \
-	--leak-check=full --child-silent-after-fork=yes \
-	$(LUA) -e "collectgarbage('setpause', 0); collectgarbage('setstepmul', 10000000000000)" \
+	valgrind --gen-suppressions=all --suppressions=../.github/lua-openssl.supp \
+	--error-exitcode=1 --leak-check=full --child-silent-after-fork=yes \
+	$(LUA) -e \
+	"collectgarbage('setpause', 0); collectgarbage('setstepmul', 10000000000000)" \
 	test.lua && cd ..
 
 asan: all
 	cd test && LUA_CPATH=../?.so \
-	LD_PRELOAD=libclang_rt.asan.so $(LUA) -e \
+	LD_PRELOAD=/lib/clang/10/lib/linux/libclang_rt.asan-x86_64.so \
+	$(LUA) -e \
 	"collectgarbage('setpause', 0); collectgarbage('setstepmul', 10000000000000)" \
 	test.lua && cd ..
 
