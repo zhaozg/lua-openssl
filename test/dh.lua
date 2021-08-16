@@ -9,6 +9,4 @@ function TestDH:Testdh()
   local t = k:parse()
   assert(t.bits == 512)
   assert(t.size == 64)
-
-  k:set_engine(openssl.engine('openssl'))
 end
