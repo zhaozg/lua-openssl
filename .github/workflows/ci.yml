@@ -30,6 +30,22 @@ jobs:
     - name: run
       run: make valgrind
 
+  Asan:
+    runs-on: ubuntu-latest
+    env:
+      ASAN_OPTIONS: detect_leaks=1:check_initialization_order=1
+      UBSAN_OPTIONS: print_stacktrace=1
+      CC: clang
+      CXX: clang++
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: recursive
+    - name: depends
+      run: sudo apt update && sudo apt install -y libssl-dev luajit libluajit-5.1-dev valgrind
+    - name: run
+      run: make asan
+
   build:
     runs-on: ${{ matrix.os }}
     strategy:

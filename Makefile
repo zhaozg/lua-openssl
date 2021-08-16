@@ -53,9 +53,14 @@ ifeq (coveralls, ${TARGET})
   LDFLAGS	+=-g -fprofile-arcs
 endif
 
+ifeq (asan, ${TARGET})
+  CFLAGS	+=-g -O0 -fsanitize=address,undefined
+  LDFLAGS       +=-g -fsanitize=address
+endif
+
 ifeq (valgrind, ${TARGET})
-  CFLAGS	+=-g -Og
-  LDFLAGS	+=-g -Og
+  CFLAGS	+=-g -O0
+  LDFLAGS	+=-g -O0
 endif
 
 ifneq (, $(findstring linux, $(SYS)))
@@ -111,7 +116,7 @@ OBJS=src/asn1.o deps/auxiliar/auxiliar.o src/bio.o src/cipher.o src/cms.o src/co
      src/x509.o src/xattrs.o src/xexts.o src/xname.o src/xstore.o src/xalgor.o         \
      src/callback.o src/srp.o deps/auxiliar/subsidiar.o
 
-.PHONY: all install test info doc coveralls
+.PHONY: all install test info doc coveralls asan
 
 .c.o:
 	$(CC) $(CFLAGS) -c -o $@ $?
@@ -148,6 +153,12 @@ valgrind: all
 	valgrind --suppressions=../.github/lua-openssl.supp --error-exitcode=1 \
 	--leak-check=full --child-silent-after-fork=yes \
 	$(LUA) -e "collectgarbage('setpause', 0); collectgarbage('setstepmul', 10000000000000)" \
+	test.lua && cd ..
+
+asan: all
+	cd test && LUA_CPATH=../?.so \
+	LD_PRELOAD=libclang_rt.asan.so $(LUA) -e \
+	"collectgarbage('setpause', 0); collectgarbage('setstepmul', 10000000000000)" \
 	test.lua && cd ..
 
 clean:
