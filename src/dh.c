@@ -24,9 +24,8 @@ static LUA_FUNCTION(openssl_dh_parse)
 
 #if (OPENSSL_VERSION_NUMBER < 0x30000000L)
   lua_pushinteger(L, DH_size(dh));
-#endif
-
   lua_setfield(L, -2, "size");
+#endif
 
   lua_pushinteger(L, DH_bits(dh));
   lua_setfield(L, -2, "bits");
@@ -41,21 +40,6 @@ static LUA_FUNCTION(openssl_dh_parse)
   OPENSSL_PKEY_GET_BN(pri, priv_key);
 
   return 1;
-}
-
-static int openssl_dh_set_engine(lua_State *L)
-{
-#if !defined(OPENSSL_NO_ENGINE) && OPENSSL_VERSION_NUMBER < 0x30000000L
-  DH* dh = CHECK_OBJECT(1, DH, "openssl.dh");
-  ENGINE *e = CHECK_OBJECT(2, ENGINE, "openssl.engine");
-  const DH_METHOD *m = ENGINE_get_DH(e);
-  if (m)
-  {
-    int r = DH_set_method(dh, m);
-    return openssl_pushresult(L, r);
-  }
-#endif
-  return 0;
 }
 
 static int openssl_dh_generate_parameters(lua_State *L)
@@ -85,7 +69,6 @@ static int openssl_dh_generate_key(lua_State *L)
   int ret = DH_generate_key(dh);
   if (ret == 1)
   {
-    DH_up_ref(dh);
     PUSH_OBJECT(dh, "openssl.dh");
     return 1;
   }
@@ -97,9 +80,6 @@ static luaL_Reg dh_funs[] =
 {
   {"generate_key",  openssl_dh_generate_key},
   {"parse",         openssl_dh_parse},
-#if !defined(OPENSSL_NO_ENGINE) && OPENSSL_VERSION_NUMBER < 0x30000000L
-  {"set_engine",    openssl_dh_set_engine},
-#endif
 
   {"__gc",          openssl_dh_free},
   {"__tostring",    auxiliar_tostring},
