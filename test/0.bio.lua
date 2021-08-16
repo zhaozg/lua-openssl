@@ -59,6 +59,7 @@ function TestBIO:testFilter()
   b64:flush()
   local s = b64:get_mem()
   assert(s=='YWJjZA==\n')
+  b64:free()
 
   local md = bio.filter('md', 'sha1')
   mem = bio.mem('abcd')
@@ -69,11 +70,11 @@ function TestBIO:testFilter()
   assert(md)
   assert( m)
   assert(md:next():get_md()==nil)
-  --FIXME: howto get digest
-  --print(md:read())
+
   md = md:pop()
   assert(md)
   assert(nil==md:pop())
+  md:free()
 
   m = '1234567812345678'
   local cipher = bio.filter('cipher', 'aes-128-ecb', '1234567812345678', '1234567812345678', true)
@@ -84,6 +85,7 @@ function TestBIO:testFilter()
   assert(cipher:cipher_status())
   s = cipher:read()
   assert(#s==16)
+  cipher:free()
 
   cipher = bio.filter('cipher', 'aes-128-ecb', '1234567812345678', '1234567812345678', false)
   mem = bio.mem(s)
@@ -92,9 +94,7 @@ function TestBIO:testFilter()
   assert(cipher:cipher_status())
   s = cipher:read()
   assert(s)
-  --FIXME:
-  --assert(#s==16)
-  --assert(s==m)
+  cipher:free()
 end
 
 function TestBIO:testSocket()

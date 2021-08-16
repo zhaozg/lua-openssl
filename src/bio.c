@@ -53,13 +53,6 @@ return 1;
 }
 */
 
-static const char* close_flags[] =
-{
-  "noclose",  /* #define BIO_NOCLOSE    0x00 */
-  "close",    /* #define BIO_CLOSE      0x01 */
-  NULL
-};
-
 /***
 make string as bio object
 
@@ -122,7 +115,7 @@ make tcp bio from socket fd
 static LUA_FUNCTION(openssl_bio_new_socket)
 {
   int s = luaL_checkint(L, 1);
-  int closeflag = luaL_checkoption(L, 2, "noclose", close_flags);
+  int closeflag = luaL_optinteger(L, 2, 0);
   BIO *bio = BIO_new_socket(s, closeflag);
 
   PUSH_OBJECT(bio, "openssl.bio");
@@ -140,8 +133,9 @@ make dgram bio from socket fd
 static LUA_FUNCTION(openssl_bio_new_dgram)
 {
   int s = luaL_checkint(L, 1);
-  int closeflag = luaL_checkoption(L, 2, "noclose", close_flags);
+  int closeflag = luaL_optinteger(L, 2, 0);
   BIO *bio = BIO_new_dgram(s, closeflag);
+
   PUSH_OBJECT(bio, "openssl.bio");
   return 1;
 }
@@ -156,7 +150,7 @@ make socket or file bio with fd
 static LUA_FUNCTION(openssl_bio_new_fd)
 {
   int fd = luaL_checkint(L, 1);
-  int closeflag = luaL_checkoption(L, 2, "noclose", close_flags);
+  int closeflag = luaL_optinteger(L, 2, 0);
   BIO *bio = BIO_new_fd(fd, closeflag);
 
   PUSH_OBJECT(bio, "openssl.bio");
@@ -256,10 +250,6 @@ static int openssl_bio_new_connect(lua_State *L)
   if (ret == 1)
   {
       PUSH_OBJECT(bio, "openssl.bio");
-      openssl_newvalue(L, bio);
-
-      lua_pushboolean(L, 1);
-      openssl_valueset(L, bio, "free_all");
       return 1;
   }
 
@@ -304,16 +294,13 @@ static LUA_FUNCTION(openssl_bio_new_filter)
   int type = luaL_checkoption(L, 1, NULL, sType);
   BIO* bio = NULL;
   int ret = 1;
-  int closeflag = 0;
   switch (type)
   {
   case 0:
     bio = BIO_new(BIO_f_base64());
-    closeflag = luaL_checkoption(L, 2, "noclose", close_flags);
     break;
   case 1:
     bio = BIO_new(BIO_f_buffer());
-    closeflag = luaL_checkoption(L, 2, "noclose", close_flags);
     break;
   case 2:
   {
@@ -322,7 +309,6 @@ static LUA_FUNCTION(openssl_bio_new_filter)
     const char* k = luaL_checklstring(L, 3, &kl);
     const char* v = luaL_checklstring(L, 4, &il);
     int encrypt = auxiliar_checkboolean(L, 5);
-    closeflag = luaL_checkoption(L, 6, "noclose", close_flags);
 
     bio = BIO_new(BIO_f_cipher());
     BIO_set_cipher(bio, c, (const unsigned char*)k, (const unsigned char*)v, encrypt);
@@ -331,7 +317,7 @@ static LUA_FUNCTION(openssl_bio_new_filter)
   case 3:
   {
     const EVP_MD* md = get_digest(L, 2, NULL);
-    closeflag = luaL_checkoption(L, 3, "noclose", close_flags);
+
     bio = BIO_new(BIO_f_md());
     ret = BIO_set_md(bio, md);
   }
@@ -339,7 +325,8 @@ static LUA_FUNCTION(openssl_bio_new_filter)
   case 4:
   {
     SSL* ssl = CHECK_OBJECT(2, SSL, "openssl.ssl");
-    closeflag = luaL_checkoption(L, 3, "noclose", close_flags);
+    int closeflag = luaL_optinteger(L, 3, 0);
+
     bio = BIO_new(BIO_f_ssl());
     ret = BIO_set_ssl(bio, ssl, closeflag);
   }
@@ -350,19 +337,12 @@ static LUA_FUNCTION(openssl_bio_new_filter)
   if (ret == 1 && bio)
   {
     PUSH_OBJECT(bio, "openssl.bio");
-    if (closeflag)
-    {
-      openssl_newvalue(L, bio);
-
-      lua_pushboolean(L, 1);
-      openssl_valueset(L, bio, "free_all");
-    }
     return 1;
   }
   else
   {
     if (bio)
-      BIO_free(bio);
+      BIO_free_all(bio);
     return openssl_pushresult(L, ret);
   }
 }
@@ -527,24 +507,26 @@ static LUA_FUNCTION(openssl_bio_flush)
 
 static LUA_FUNCTION(openssl_bio_free)
 {
+  int flags;
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
-  int all = 0;
+  if (bio==NULL)
+    return 0;
 
-  if (lua_isboolean(L, 2))
-    all = lua_toboolean(L, 2);
-  else
-  {
-    openssl_valueget(L, bio, "free_all");
-    all = lua_toboolean(L, -1);
-    lua_pop(L, 1);
-  }
+  /* avoid bio be free, which ref in SSL object */
+  lua_rawgetp(L, LUA_REGISTRYINDEX, bio);
+  flags = lua_toboolean(L, -1);
+  lua_pop(L, 1);
+  if (flags)
+    return 0;
 
-  if (all)
+  flags = lua_toboolean(L, 2);
+  if (flags)
     BIO_free_all(bio);
   else
     BIO_free(bio);
-  lua_pushnil(L);
-  lua_setmetatable(L, 1);
+
+  *(void**)lua_touserdata(L, -1) = NULL;
+
   return 0;
 }
 
@@ -617,12 +599,6 @@ static LUA_FUNCTION(openssl_bio_push)
   if (bio)
   {
     lua_pushvalue(L, 1);
-
-    openssl_newvalue(L, bio);
-    lua_pushboolean(L, 1);
-    openssl_valueset(L, bio, "free_all");
-
-    BIO_up_ref(bio);
   }
   else
     lua_pushnil(L);
@@ -727,10 +703,6 @@ static LUA_FUNCTION(openssl_bio_accept)
       BIO *nb = BIO_pop(bio);
 
       PUSH_OBJECT(nb, "openssl.bio");
-      openssl_newvalue(L, nb);
-
-      lua_pushboolean(L, 1);
-      openssl_valueset(L, nb, "free_all");
       return 1;
     }
   }
@@ -987,11 +959,6 @@ static LUA_FUNCTION(openssl_bio_pending)
 }
 
 /***
-free a chain
-@function free_all
-*/
-
-/***
 close bio
 @function close
 */
@@ -1071,6 +1038,12 @@ int luaopen_bio(lua_State *L)
 
   lua_newtable(L);
   luaL_setfuncs(L, R, 0);
+
+  lua_pushinteger(L, BIO_NOCLOSE);
+  lua_setfield(L, -2, "NCLOSE");
+
+  lua_pushinteger(L, BIO_CLOSE);
+  lua_setfield(L, -2, "CLOSE");
 
   return 1;
 }
