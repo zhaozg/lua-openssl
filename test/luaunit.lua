@@ -14,7 +14,7 @@ local M={}
 -- private exported functions (for testing)
 M.private = {}
 
-M.VERSION='3.4-dev'
+M.VERSION='3.4'
 M._VERSION=M.VERSION -- For LuaUnit v2 compatibility
 
 -- a version which distinguish between regular Lua and LuaJit
@@ -95,8 +95,10 @@ Options:
                           Make sure you escape magic chars like +? with %
   testname1, testname2, ... : tests to run in the form of testFunction,
                               TestClass or TestClass.testMethod
-]]
 
+You may also control LuaUnit options with the following environment variables:
+* LUAUNIT_OUTPUT: same as --output
+* LUAUNIT_JUNIT_FNAME: same as --name ]]
 
 ----------------------------------------------------------------
 --
@@ -125,7 +127,7 @@ To force exit LuaUnit while running, please call before os.exit (assuming lu is 
     lu.unregisterCurrentSuite() 
 
 ]]
-        error(msg)
+        M.private.error_fmt(2, msg)
     end
     M.oldOsExit(...)
 end
@@ -1314,6 +1316,7 @@ local function error_fmt(level, ...)
      -- printf-style error()
     error(string.format(...), (level or 1) + 1 + M.STRIP_EXTRA_ENTRIES_IN_STACK_TRACE)
 end
+M.private.error_fmt = error_fmt
 
 ----------------------------------------------------------------
 --
@@ -1876,21 +1879,21 @@ function M.assertNotIsMinusZero(value, extra_msg_or_nil)
     end
 end
 
-function M.assertTableContains(t, expected)
+function M.assertTableContains(t, expected, extra_msg_or_nil)
     -- checks that table t contains the expected element
     if table_findkeyof(t, expected) == nil then
         t, expected = prettystrPairs(t, expected)
-        fail_fmt(2, 'Table %s does NOT contain the expected element %s',
+        fail_fmt(2, extra_msg_or_nil, 'Table %s does NOT contain the expected element %s',
                  t, expected)
     end
 end
 
-function M.assertNotTableContains(t, expected)
+function M.assertNotTableContains(t, expected, extra_msg_or_nil)
     -- checks that table t doesn't contain the expected element
     local k = table_findkeyof(t, expected)
     if k ~= nil then
         t, expected = prettystrPairs(t, expected)
-        fail_fmt(2, 'Table %s DOES contain the unwanted element %s (at key %s)',
+        fail_fmt(2, extra_msg_or_nil, 'Table %s DOES contain the unwanted element %s (at key %s)',
                  t, expected, prettystr(k))
     end
 end
@@ -2927,7 +2930,7 @@ end
             if self.quitOnError or self.quitOnFailure then
                 -- Runtime error - abort test execution as requested by
                 -- "--error" option. This is done by setting a special
-                -- flag that gets handled in runSuiteByInstances().
+                -- flag that gets handled in internalRunSuiteByInstances().
                 print("\nERROR during LuaUnit test execution:\n" .. node.msg)
                 self.result.aborted = true
             end
@@ -2935,7 +2938,7 @@ end
             if self.quitOnFailure then
                 -- Failure - abort test execution as requested by
                 -- "--failure" option. This is done by setting a special
-                -- flag that gets handled in runSuiteByInstances().
+                -- flag that gets handled in internalRunSuiteByInstances().
                 print("\nFailure during LuaUnit test execution:\n" .. node.msg)
                 self.result.aborted = true
             end
@@ -3216,11 +3219,13 @@ end
         end
     end
 
-    function M.LuaUnit:runSuiteByInstances( listOfNameAndInst )
+    function M.LuaUnit:internalRunSuiteByInstances( listOfNameAndInst )
         --[[ Run an explicit list of tests. Each item of the list must be one of:
         * { function name, function instance }
         * { class name, class instance }
         * { class.method name, class instance }
+
+        This function is internal to LuaUnit. The official API to perform this action is runSuiteByInstances()
         ]]
 
         local expandedList = self.expandClasses( listOfNameAndInst )
@@ -3265,10 +3270,10 @@ end
         end
     end
 
-    function M.LuaUnit:runSuiteByNames( listOfName )
+    function M.LuaUnit:internalRunSuiteByNames( listOfName )
         --[[ Run LuaUnit with a list of generic names, coming either from command-line or from global
             namespace analysis. Convert the list into a list of (name, valid instances (table or function))
-            and calls runSuiteByInstances.
+            and calls internalRunSuiteByInstances.
         ]]
 
         local instanceName, instance
@@ -3315,7 +3320,7 @@ end
             table.insert( listOfNameAndInst, { name, instance } )
         end
 
-        self:runSuiteByInstances( listOfNameAndInst )
+        self:internalRunSuiteByInstances( listOfNameAndInst )
     end
 
     function M.LuaUnit.run(...)
@@ -3359,7 +3364,12 @@ end
 
     end
 
-    function M.LuaUnit:runSuite( ... )
+    function M.LuaUnit:initFromArguments( ... )
+        --[[Parses all arguments from either command-line or direct call and set internal
+        flags of LuaUnit runner according to it.
+
+        Return the list of names which were possibly passed on the command-line or as arguments
+        ]]
         local args = {...}
         if type(args[1]) == 'table' and args[1].__class__ == 'LuaUnit' then
             -- run was called with the syntax M.LuaUnit:runSuite()
@@ -3395,12 +3405,36 @@ end
             pcall_or_abort(self.setOutputType, self, options.output, options.fname)
         end
 
-        self:registerSuite()
-        self:runSuiteByNames( options.testNames or M.LuaUnit.collectTests() )
-        self:unregisterSuite()
+        return options.testNames
+    end
 
+    function M.LuaUnit:runSuite( ... )
+        testNames = self:initFromArguments(...)
+        self:registerSuite()
+        self:internalRunSuiteByNames( testNames or M.LuaUnit.collectTests() )
+        self:unregisterSuite()
         return self.result.notSuccessCount
     end
+
+    function M.LuaUnit:runSuiteByInstances( listOfNameAndInst, commandLineArguments )
+        --[[
+        Run all test functions or tables provided as input.
+
+        Input: a list of { name, instance }
+            instance can either be a function or a table containing test functions starting with the prefix "test"
+
+        return the number of failures and errors, 0 meaning success
+        ]]
+        -- parse the command-line arguments
+        testNames = self:initFromArguments( commandLineArguments )
+        self:registerSuite()
+        self:internalRunSuiteByInstances( listOfNameAndInst )
+        self:unregisterSuite()
+        return self.result.notSuccessCount
+    end
+
+
+
 -- class LuaUnit
 
 -- For compatbility with LuaUnit v2
@@ -3408,6 +3442,7 @@ M.run = M.LuaUnit.run
 M.Run = M.LuaUnit.run
 
 function M:setVerbosity( verbosity )
+    -- set the verbosity value (as integer)
     M.LuaUnit.verbosity = verbosity
 end
 M.set_verbosity = M.setVerbosity
@@ -3415,3 +3450,4 @@ M.SetVerbosity = M.setVerbosity
 
 
 return M
+
