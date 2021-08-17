@@ -1,3 +1,6 @@
+collectgarbage('setpause', 0)
+collectgarbage('setstepmul', 10000000000000)
+
 local lu = require'luaunit'
 local openssl = require'openssl'
 
