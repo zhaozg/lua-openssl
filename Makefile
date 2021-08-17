@@ -54,11 +54,7 @@ ifeq (coveralls, ${TARGET})
 endif
 
 ifeq (asan, ${TARGET})
-ifneq (, $(findstring apple, $(SYS)))
   ASAN_LIB       = /usr/local/opt/llvm/lib/clang/12.0.1/lib/darwin/libclang_rt.asan_osx_dynamic.dylib
-else
-  ASAN_LIB	 = /lib/clang/10/lib/linux/libclang_rt.asan-x86_64.so
-endif
   CC             = clang
   LD             = clang
   CFLAGS	+=-g -O0 -fsanitize=address,undefined
@@ -162,15 +158,9 @@ valgrind: all
 	$(LUA) test.lua && cd ..
 
 asan: all
-ifneq (, $(findstring apple, $(SYS)))
 	cd test && LUA_CPATH=../?.so \
 	DYLD_INSERT_LIBRARIES=$(ASAN_LIB) \
 	$(LUA) test.lua && cd ..
-else
-	cd test && LUA_CPATH=../?.so \
-	LD_PRELOAD=$(ASAN_LIB) \
-	$(LUA) test.lua && cd ..
-endif
 
 clean:
 	rm -f $T.so lib$T.a $(OBJS)

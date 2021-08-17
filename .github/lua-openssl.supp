@@ -45,7 +45,7 @@
    match-leak-kinds: definite
    fun:malloc
    fun:TS_REQ_to_TS_VERIFY_CTX
-   fun:openssl_ts_verify_ctx_new
+   obj:*
 }
 
 {
