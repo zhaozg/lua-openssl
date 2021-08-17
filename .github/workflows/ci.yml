@@ -33,6 +33,7 @@ jobs:
   Asan:
     runs-on: ubuntu-latest
     env:
+      LSAN_OPTIONS: suppressions=../.github/asan.supp
       ASAN_OPTIONS: detect_leaks=1:check_initialization_order=1
       UBSAN_OPTIONS: print_stacktrace=1
       CC: clang
