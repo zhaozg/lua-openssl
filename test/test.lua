@@ -51,5 +51,5 @@ local helper = require'helper'
 if not helper.libressl then
   collectgarbage()
 end
-os.exit(retcode)
+os.exit(retcode, true)
 
