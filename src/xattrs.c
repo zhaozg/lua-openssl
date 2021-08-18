@@ -49,7 +49,7 @@ static int openssl_xattr_new(lua_State*L)
   X509_ATTRIBUTE *x = NULL;
   luaL_checktable(L, 1);
 
-  x = openssl_new_xattribute(L, &x, 1);
+  x = openssl_new_xattribute(L, NULL, 1);
   PUSH_OBJECT(x, "openssl.x509_attribute");
   return 1;
 }
@@ -149,6 +149,12 @@ static int openssl_xattr_dup(lua_State*L)
 static int openssl_xattr_free(lua_State*L)
 {
   X509_ATTRIBUTE* attr = CHECK_OBJECT(1, X509_ATTRIBUTE, "openssl.x509_attribute");
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+  sk_ASN1_TYPE_pop_free(attr->value.set, ASN1_TYPE_free);
+  attr->value.ptr = NULL;
+#endif
+
   X509_ATTRIBUTE_free(attr);
   return 0;
 }
@@ -179,12 +185,8 @@ static int openssl_xattr_data(lua_State*L)
     int ret;
     const char *data = luaL_checklstring(L, 3, &size);
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
-    if (X509_ATTRIBUTE_count(attr) == 1)
-      ASN1_TYPE_free((ASN1_TYPE*)attr->value.ptr);
-    else
-      sk_ASN1_TYPE_pop_free(attr->value.set, ASN1_TYPE_free);
+    sk_ASN1_TYPE_pop_free(attr->value.set, ASN1_TYPE_free);
     attr->value.ptr = NULL;
-#else
 #endif
     ret = X509_ATTRIBUTE_set1_data(attr, attrtype, data, size);
     return openssl_pushresult(L, ret);
