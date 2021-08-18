@@ -1638,10 +1638,6 @@ static LUA_FUNCTION(openssl_seal_init)
       eks[0] = malloc(eksl[0]);
     }
     ctx = EVP_CIPHER_CTX_new();
-    if (!EVP_EncryptInit(ctx, cipher, NULL, NULL))
-    {
-      luaL_error(L, "EVP_EncryptInit failed");
-    }
     if (!EVP_SealInit(ctx, cipher, eks, eksl, (unsigned char*) iv, pkeys, nkeys))
     {
       luaL_error(L, "EVP_SealInit failed");
