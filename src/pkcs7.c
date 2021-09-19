@@ -191,7 +191,6 @@ static LUA_FUNCTION(openssl_pkcs7_verify)
   long flags = luaL_optint(L, 5, 0);
   BIO* out = NULL;
 
-  if (!store) flags |= PKCS7_NOVERIFY;
   if ((flags & PKCS7_DETACHED) == 0) out = BIO_new(BIO_s_mem());
 
   if (PKCS7_verify(p7, signers, store, in, out, flags) == 1)
