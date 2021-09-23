@@ -64,15 +64,20 @@ local function ssl_mode()
   if srv then
     print('listen BIO:', srv)
     assert(srv:accept(true), 'Error in accept BIO') -- make real listen
+    print('accpeting...')
     while i < loop do
       local cli = assert(srv:accept(), 'Error in ssl connection') -- bio tcp
+      io.write('+')
+      io.flush()
       assert(cli:handshake(), 'handshake fail')
       repeat
         local d = cli:read()
-        if d then cli:write(d) end
+        if d then
+          assert(#d == cli:write(d))
+        end
       until not d
       cli:shutdown()
-      cli:close()
+      cli:close(true)
       collectgarbage()
       i = i + 1
     end
