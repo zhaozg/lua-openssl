@@ -656,17 +656,20 @@ static int openssl_ssl_ctx_new_ssl(lua_State*L)
   {
     BIO *bi = CHECK_OBJECT(2, BIO, "openssl.bio");
     BIO *bo = bi;
-    BIO_set_close(bi, BIO_NOCLOSE);
+
     /* avoid bi be gc */
-    lua_pushboolean(L, 1);
-    lua_rawsetp(L, LUA_REGISTRYINDEX, bi);
+    BIO_up_ref(bi);
+
     if (auxiliar_getclassudata(L, "openssl.bio", 3))
     {
       bo = CHECK_OBJECT(3, BIO, "openssl.bio");
-      BIO_set_close(bo, BIO_NOCLOSE);
+
       /* avoid bo be gc */
-      lua_pushboolean(L, 1);
-      lua_rawsetp(L, LUA_REGISTRYINDEX, bo);
+      if (bo!=bi)
+      {
+        BIO_up_ref(bo);
+      }
+
       mode_idx = 4;
     }
     else
@@ -724,13 +727,17 @@ static int openssl_ssl_ctx_new_bio(lua_State*L)
   int server = lua_isnone(L, 3) ? 0 : auxiliar_checkboolean(L, 3);
   int autoretry = lua_isnone(L, 4) ? 1 : auxiliar_checkboolean(L, 4);
 
-  SSL *ssl = NULL;
   BIO *bio = server ? BIO_new_ssl(ctx, 0) : BIO_new_ssl_connect(ctx);
-  int ret = BIO_get_ssl(bio, &ssl);
-  if (ret == 1 && ssl)
+  if (bio)
   {
+    int ret = 0;
     if (autoretry)
-      SSL_set_mode(ssl, SSL_MODE_AUTO_RETRY);
+    {
+      SSL *ssl = NULL;
+      ret = BIO_get_ssl(bio, &ssl);
+      if (ret==1)
+        SSL_set_mode(ssl, SSL_MODE_AUTO_RETRY);
+    }
     if (server)
     {
       BIO* acpt = BIO_new_accept((char*)host_addr);
@@ -1141,7 +1148,7 @@ static int openssl_ssl_ctx_set_tmp(lua_State *L)
       {
         ret = SSL_CTX_set_tmp_dh(ctx, dh);
         if (ret)
-          PUSH_OBJECT(DHparams_dup(dh), "openssl.dh");
+          PUSH_OBJECT(dh, "openssl.dh");
         else
         {
           DH_free(dh);
@@ -1170,7 +1177,7 @@ static int openssl_ssl_ctx_set_tmp(lua_State *L)
         ret = SSL_CTX_set_tmp_rsa(ctx, rsa);
         if (ret)
         {
-          PUSH_OBJECT(RSAPrivateKey_dup(rsa), "openssl.rsa");
+          PUSH_OBJECT(rsa, "openssl.rsa");
         } else {
           RSA_free(rsa);
           lua_pushnil(L);
@@ -1223,7 +1230,7 @@ static int openssl_ssl_ctx_set_tmp(lua_State *L)
         ret = SSL_CTX_set_tmp_ecdh(ctx, ec);
         if (ret)
         {
-          PUSH_OBJECT(EC_KEY_dup(ec), "openssl.ec_key");
+          PUSH_OBJECT(ec, "openssl.ec_key");
         } else {
           EC_KEY_free(ec);
           lua_pushnil(L);

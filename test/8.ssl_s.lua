@@ -114,3 +114,5 @@ end
 ssl_mode()
 print(openssl.error(true))
 print("SSL Server done")
+
+os.exit(0, true)

@@ -44,11 +44,11 @@ assert(ctx:quiet_shutdown()==1)
 
 ctx:verify_mode(ssl.peer, function(_arg)
   --[[
-            --do some check
-            for k,v in pairs(arg) do
-                  print(k,v)
-            end
-            --]]
+  --do some check
+  for k,v in pairs(arg) do
+        print(k,v)
+  end
+  --]]
   return true -- return false will fail ssh handshake
 end)
 
@@ -71,6 +71,7 @@ local function ssl_mode()
         local d = cli:read()
         if d then cli:write(d) end
       until not d
+      cli:shutdown()
       cli:close()
       collectgarbage()
       i = i + 1

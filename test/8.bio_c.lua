@@ -37,11 +37,11 @@ if (certstore) then ctx:cert_store(certstore) end
 
 ctx:verify_mode(ssl.peer, function(_arg)
   --[[
-            --do some check
-            for k,v in pairs(arg) do
-                  print(k,v)
-            end
-            --]]
+  --do some check
+  for k,v in pairs(arg) do
+        print(k,v)
+  end
+  --]]
   return true -- return false will fail ssh handshake
 end)
 
@@ -50,7 +50,6 @@ print(string.format('CONNECT to %s:%s with %s', host, port, tostring(ctx)))
 local function mk_connection(_host, _port, i)
   local cli = assert(ctx:bio(_host .. ':' .. _port))
   if (cli) then
-    assert(cli:handshake())
     ---[[
     if (i % 2 == 2) then
       assert(cli:handshake())
@@ -65,10 +64,13 @@ local function mk_connection(_host, _port, i)
       assert(cli:read())
     end
     cli:shutdown()
-    cli:close()
+    cli:free(true)
     collectgarbage()
   end
   openssl.error(true)
 end
 
 for i = 1, loop do mk_connection(host, port, i) end
+print()
+print('SSL bio client done')
+os.exit(0, true)

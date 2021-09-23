@@ -40,21 +40,20 @@ local function mk_connection(_host, _port, i)
   if (certstore) then ctx:cert_store(certstore) end
   ctx:verify_mode(ssl.peer, function(_arg)
     --[[
-            print(arg)
-            --do some check
-            for k,v in pairs(arg) do
-                  print(k,v)
-            end
-      --]]
+    --do some check
+    for k,v in pairs(arg) do
+          print(k,v)
+    end
+    --]]
     return true -- return false will fail ssh handshake
   end)
   ctx:set_cert_verify(function(arg)
     -- do some check
     --[[
-            for k,v in pairs(arg) do
-                  print(k,v)
-            end
-            --]]
+    for k,v in pairs(arg) do
+          print(k,v)
+    end
+    --]]
     return true -- return false will fail ssh handshake
   end)
 
@@ -98,3 +97,7 @@ local function mk_connection(_host, _port, i)
 end
 
 for i = 1, loop do mk_connection(host, port, i) end
+
+print()
+print("SSL Client done")
+os.exit(0, true)

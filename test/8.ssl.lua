@@ -15,6 +15,7 @@ local LUA = arg and arg[-1] or nil
 assert(LUA)
 
 if uv then
+
   math.randomseed(os.time())
   local function set_timeout(timeout, callback)
     local timer = uv.new_timer()
