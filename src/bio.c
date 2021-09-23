@@ -512,20 +512,13 @@ static LUA_FUNCTION(openssl_bio_free)
   if (bio==NULL)
     return 0;
 
-  /* avoid bio be free, which ref in SSL object */
-  lua_rawgetp(L, LUA_REGISTRYINDEX, bio);
-  flags = lua_toboolean(L, -1);
-  lua_pop(L, 1);
-  if (flags)
-    return 0;
-
   flags = lua_toboolean(L, 2);
   if (flags)
     BIO_free_all(bio);
   else
     BIO_free(bio);
 
-  *(void**)lua_touserdata(L, -1) = NULL;
+  *(void**)lua_touserdata(L, 1) = NULL;
 
   return 0;
 }
@@ -934,9 +927,8 @@ static LUA_FUNCTION(openssl_bio_set_callback)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
   int ret;
-  luaL_argcheck(L, lua_isfunction(L, 2), 2, "need function");
-  lua_pushvalue(L, 2);
-  lua_rawsetp(L, LUA_REGISTRYINDEX, bio);
+  luaL_checktype(L, 2, LUA_TFUNCTION);
+
   ret = BIO_set_info_callback(bio, BIO_info_callback);
   return openssl_pushresult(L, ret);
 }

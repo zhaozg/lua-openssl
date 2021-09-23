@@ -44,11 +44,11 @@ assert(ctx:quiet_shutdown()==1)
 
 ctx:verify_mode(ssl.peer, function(_arg)
   --[[
-            --do some check
-            for k,v in pairs(arg) do
-                  print(k,v)
-            end
-            --]]
+  --do some check
+  for k,v in pairs(arg) do
+        print(k,v)
+  end
+  --]]
   return true -- return false will fail ssh handshake
 end)
 
@@ -64,14 +64,20 @@ local function ssl_mode()
   if srv then
     print('listen BIO:', srv)
     assert(srv:accept(true), 'Error in accept BIO') -- make real listen
+    print('accpeting...')
     while i < loop do
       local cli = assert(srv:accept(), 'Error in ssl connection') -- bio tcp
+      io.write('+')
+      io.flush()
       assert(cli:handshake(), 'handshake fail')
       repeat
         local d = cli:read()
-        if d then cli:write(d) end
+        if d then
+          assert(#d == cli:write(d))
+        end
       until not d
-      cli:close()
+      cli:shutdown()
+      cli:close(true)
       collectgarbage()
       i = i + 1
     end

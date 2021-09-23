@@ -15,13 +15,14 @@ local LUA = arg and arg[-1] or nil
 assert(LUA)
 
 if uv then
+
   math.randomseed(os.time())
   local function set_timeout(timeout, callback)
     local timer = uv.new_timer()
     local function ontimeout()
       uv.timer_stop(timer)
       uv.close(timer)
-      callback(timer)
+      callback()
     end
     uv.timer_start(timer, timeout, 0, ontimeout)
     return timer
@@ -42,33 +43,36 @@ if uv then
     end
   end
 
-  function TestSSL:testUVSSL()
+  function TestSSL:testUV_1SSL()
     local lcode
-    local stdout1 = uv.new_pipe(false)
-    local stderr1 = uv.new_pipe(false)
-    local stdout2 = uv.new_pipe(false)
-    local stderr2 = uv.new_pipe(false)
+    local stdout1 = uv.new_pipe()
+    local stderr1 = uv.new_pipe()
+    local stdout2 = uv.new_pipe()
+    local stderr2 = uv.new_pipe()
     local function onread(err, chunk)
       assert(not err, err)
-      if (chunk) then print(chunk) end
+      if (chunk) then
+        io.write(chunk)
+        io.flush()
+      end
     end
 
     local port = math.random(8000, 9000)
-    local child, pid
-    child, pid = uv.spawn(LUA, {
+    local server, pid
+    server, pid = assert(uv.spawn(LUA, {
       args = {"8.ssl_s.lua",  '127.0.0.1',  port},
       stdio = {nil,  stdout1,  stderr1}
     }, function(code, signal)
       lu.assertEquals(code, 0)
       lu.assertEquals(signal, 0)
-      uv.close(child)
+      uv.close(server)
       lcode = code
-    end)
+    end))
 
     if pid then
       uv.read_start(stdout1, onread)
       uv.read_start(stderr1, onread)
-      set_timeout(2000, function()
+      set_timeout(5000, function()
         local _child
         _child = uv.spawn(LUA, {
           args = {"8.ssl_c.lua",  '127.0.0.1',  port},
@@ -88,20 +92,23 @@ if uv then
     lu.assertEquals(lcode, 0)
   end
 
-  function TestSSL:testUVBio()
+  function TestSSL:testUV_2BIO()
     local lcode
-    local stdout1 = uv.new_pipe(false)
-    local stderr1 = uv.new_pipe(false)
-    local stdout2 = uv.new_pipe(false)
-    local stderr2 = uv.new_pipe(false)
+    local stdout1 = uv.new_pipe()
+    local stderr1 = uv.new_pipe()
+    local stdout2 = uv.new_pipe()
+    local stderr2 = uv.new_pipe()
     local function onread(err, chunk)
       assert(not err, err)
-      if (chunk) then print(chunk) end
+      if (chunk) then
+        io.write(chunk)
+        io.flush()
+      end
     end
 
     local port = math.random(8000, 9000)
-    local child
-    child = uv.spawn(LUA, {
+    local child, pid
+    child = assert(uv.spawn(LUA, {
       args = {"8.bio_s.lua",  '127.0.0.1',  port},
       stdio = {nil,  stdout1,  stderr1}
     }, function(code, signal)
@@ -109,7 +116,7 @@ if uv then
       lu.assertEquals(signal, 0)
       uv.close(child)
       lcode = code
-    end)
+    end))
     uv.read_start(stdout1, onread)
     uv.read_start(stderr1, onread)
 
@@ -132,7 +139,7 @@ if uv then
     lu.assertEquals(lcode, 0)
   end
 
-  function TestSSL:testUVsslconnectbio()
+  function TestSSL:testUV_3SSLCBIO()
     local lcode
     local stdout1 = uv.new_pipe(false)
     local stderr1 = uv.new_pipe(false)
@@ -140,7 +147,10 @@ if uv then
     local stderr2 = uv.new_pipe(false)
     local function onread(err, chunk)
       assert(not err, err)
-      if (chunk) then print(chunk) end
+      if (chunk) then
+        io.write(chunk)
+        io.flush()
+      end
     end
     local port = math.random(8000, 9000)
     local child
@@ -155,7 +165,7 @@ if uv then
     uv.read_start(stdout1, onread)
     uv.read_start(stderr1, onread)
 
-    set_timeout(2000, function()
+    set_timeout(5000, function()
       local _child
       _child = uv.spawn(LUA, {
         args = {"8.ssl_c.lua",  '127.0.0.1',  port,  "serveraa.br"},
@@ -173,30 +183,32 @@ if uv then
     lu.assertEquals(lcode, 0)
   end
 
-  function TestSSL:testUVbioconnectssl()
+  function TestSSL:testUV_4BIOCSSL()
     local lcode = nil
-    local stdout1 = uv.new_pipe(false)
-    local stderr1 = uv.new_pipe(false)
-    local stdout2 = uv.new_pipe(false)
-    local stderr2 = uv.new_pipe(false)
-    local function onread(err, chunk)
-      assert(not err, err)
-      if (chunk) then print(chunk) end
-    end
+    local stdout1 = uv.new_pipe()
+    local stderr1 = uv.new_pipe()
+    local stdout2 = uv.new_pipe()
+    local stderr2 = uv.new_pipe()
     local port = math.random(8000, 9000)
-    local child
-    child = uv.spawn(LUA, {
+    local server
+    server= assert(uv.spawn(LUA, {
       args = {"8.ssl_s.lua",  '127.0.0.1',  port},
       stdio = {nil,  stdout1,  stderr1}
     }, function(code, signal)
       lu.assertEquals(code, 0)
-      uv.close(child)
+      uv.close(server)
       lcode = code
-    end)
-    uv.read_start(stdout1, onread)
-    uv.read_start(stderr1, onread)
+    end))
 
-    set_timeout(2000, function()
+    local function onread(err, chunk)
+      assert(not err, err)
+      if (chunk) then
+        io.write(chunk)
+        io.flush()
+      end
+    end
+
+    set_timeout(5000, function()
       local _child
       _child = uv.spawn(LUA, {
         args = {"8.bio_c.lua",  '127.0.0.1',  port},
@@ -209,6 +221,9 @@ if uv then
       uv.read_start(stdout2, onread)
       uv.read_start(stderr2, onread)
     end)
+
+    uv.read_start(stdout1, onread)
+    uv.read_start(stderr1, onread)
 
     uv.run()
     lu.assertEquals(lcode, 0)
