@@ -1,18 +1,18 @@
-local openssl = require'openssl'
-local ca = require'utils.ca'
+local openssl = require("openssl")
+local ca = require("utils.ca")
 
 local M = {}
 
 M.luaopensslv, M.luav, M.opensslv = openssl.version()
-M.libressl = M.opensslv:find('^LibreSSL')
+M.libressl = M.opensslv:find("^LibreSSL")
 
 function M.sslProtocol(srv, protocol)
   protocol = protocol or openssl.ssl.default
-  if srv==true then
-    return protocol.."_server"
-  elseif srv==false then
-    return protocol.."_client"
-  elseif srv==nil then
+  if srv == true then
+    return protocol .. "_server"
+  elseif srv == false then
+    return protocol .. "_client"
+  elseif srv == nil then
     return protocol
   end
   assert(nil)
@@ -27,7 +27,7 @@ end
 
 function M.new_req(subject)
   local pkey = openssl.pkey.new()
-  if type(subject)=='table' then
+  if type(subject) == "table" then
     subject = openssl.x509.name.new(subject)
   end
   local req = assert(openssl.x509.req.new(subject, pkey))
@@ -44,5 +44,56 @@ function M.sign(subject, extensions)
   return CA:sign(subject, extensions)
 end
 
-return M
+function M.spawn(cmd, args, pattern, after_start, after_close, env)
+  local uv = require("luv")
 
+  local function stderr_read(err, chunk)
+    assert(not err, err)
+    if (chunk) then
+      io.write(chunk)
+      io.flush()
+    end
+  end
+
+  local resutls = ''
+  local function stdout_read(err, chunk)
+    assert(not err, err)
+    if (chunk) then
+      io.write(chunk)
+      io.flush()
+      resutls = resutls .. chunk
+      if pattern and resutls:match(pattern) then
+        print('matched.ing')
+        if after_start then
+          after_start()
+        end
+        resutls=''
+      end
+    end
+  end
+
+  local stdin = uv.new_pipe(false)
+  local stdout = uv.new_pipe(false)
+  local stderr = uv.new_pipe(false)
+
+  local handle, pid
+  handle, pid = uv.spawn(
+    cmd,
+    {
+      args = args,
+      env = env,
+      stdio = { stdin, stdout, stderr },
+    },
+    function(code, signal)
+      uv.close(handle)
+      if after_close then
+        after_close(code, signal)
+      end
+    end
+  )
+  uv.read_start(stdout, stdout_read)
+  uv.read_start(stderr, stderr_read)
+  return handle, pid
+end
+
+return M

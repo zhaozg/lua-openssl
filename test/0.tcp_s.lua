@@ -13,6 +13,8 @@ local srv = assert(bio.accept(host .. ':' .. port))
 if srv then
   -- make real listen
   if(srv:accept(true)) then
+    print('accepting...')
+    io.flush()
     while i < loop do
       local cli = assert(srv:accept())
       repeat
