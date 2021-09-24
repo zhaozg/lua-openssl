@@ -1,4 +1,5 @@
 local lu = require 'luaunit'
+local helper = require'helper'
 
 local ok, uv = pcall(require, 'luv')
 if not ok then uv = nil end
@@ -23,49 +24,18 @@ if uv then
   end
 
   function TestTCP:testUVTcp()
-    local lcode = 1
-    local stdout1 = uv.new_pipe(false)
-    local stderr1 = uv.new_pipe(false)
-    local stdout2 = uv.new_pipe(false)
-    local stderr2 = uv.new_pipe(false)
-
-    local function onread(err, chunk)
-      assert(not err, err)
-      if (chunk) then print(chunk) end
-    end
-
-    local child, pid
-    child, pid = uv.spawn(LUA, {
-      args = {"0.tcp_s.lua",  '127.0.0.1',  8081},
-      stdio = {nil,  stdout1,  stderr1}
-    }, function(code, signal)
-      lu.assertEquals(code, 0)
-      uv.close(child)
-      lcode = 0
-    end)
-    if pid then
-      uv.read_start(stdout1, onread)
-      uv.read_start(stderr1, onread)
-      set_timeout(5000, function()
-        local _child, _pid
-        _child, _pid = uv.spawn(LUA, {
-          args = {"0.tcp_c.lua",  '127.0.0.1',  8081},
-          stdio = {nil,  stdout2,  stderr2}
-        }, function(code, signal)
-          lu.assertEquals(code, 0)
-          uv.close(_child)
-          lcode = 0
-        end)
-        if _pid then
-          uv.read_start(stdout2, onread)
-          uv.read_start(stderr2, onread)
-        end
-      end)
-    end
-
+    local port = math.random(8000, 9000)
+    helper.spawn(LUA,
+      {"0.tcp_s.lua",  '127.0.0.1',  port},
+      'accepting...',
+      function()
+        print('started')
+        helper.spawn(LUA,
+          {"0.tcp_c.lua",  '127.0.0.1',  port}
+        )
+      end
+    )
     uv.run()
-    uv.loop_close()
-    lu.assertEquals(lcode, 0)
   end
 end
 

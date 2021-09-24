@@ -65,6 +65,7 @@ local function ssl_mode()
     print('listen BIO:', srv)
     assert(srv:accept(true), 'Error in accept BIO') -- make real listen
     print('accpeting...')
+    io.flush()
     while i < loop do
       local cli = assert(srv:accept(), 'Error in ssl connection') -- bio tcp
       io.write('+')

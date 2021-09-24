@@ -86,6 +86,7 @@ local function ssl_mode()
     -- make real listen
     if srv:accept(true) then
       print("accpeting...")
+      io.flush()
       while i < loop do
         local cli = assert(srv:accept()) -- bio tcp
         io.write('+')
