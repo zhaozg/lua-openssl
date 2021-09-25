@@ -32,13 +32,6 @@ jobs:
 
   Asan:
     runs-on: macos-latest
-    env:
-      PKG_CONFIG_PATH: /usr/local/opt/openssl/lib/pkgconfig
-      LSAN_OPTIONS: suppressions=../.github/asan.supp
-      ASAN_OPTIONS: detect_leaks=1:check_initialization_order=1
-      UBSAN_OPTIONS: print_stacktrace=1
-      CC: clang
-      LD: clang
     steps:
     - uses: actions/checkout@v2
       with:
@@ -46,6 +39,13 @@ jobs:
     - name: depends
       run: brew install luajit --HEAD
     - name: run
+      env:
+        PKG_CONFIG_PATH: /usr/local/opt/openssl/lib/pkgconfig
+        LSAN_OPTIONS: suppressions=../.github/asan.supp
+        ASAN_OPTIONS: detect_leaks=1:check_initialization_order=1
+        UBSAN_OPTIONS: print_stacktrace=1
+        CC: clang
+        LD: clang
       run: export PATH=/usr/local/opt/llvm/bin:$PATH && make asan
 
   build:
