@@ -226,10 +226,6 @@ if luv then
 end
 
 function TestSSL:testSNI()
-  if jit then
-    print("Skip testSNI, maybe crash on LuaJIT2 ???")
-    return
-  end
   local ca = helper.get_ca()
   local store = ca:get_store()
   assert(store:trust(true))
@@ -237,6 +233,8 @@ function TestSSL:testSNI()
   store:add(ca.crl)
 
   local certs = {}
+
+  local session_cache = {}
 
   local function create_ctx(dn, mode)
     mode = mode or '_server'
@@ -246,25 +244,35 @@ function TestSSL:testSNI()
       assert(ctx:use(pkey, cert))
       certs[#certs + 1] = cert
     end
-    ctx:set_session_callback(function(s, ss)
-      -- add
-      assert(tostring(s):match('openssl.ssl '))
-      assert(tostring(ss):match('openssl.ssl_session'))
-    end, function(s, id)
-      -- get
-      assert(tostring(s):match('openssl.ssl '))
-      assert(type(id)=='string')
-    end, function(c, ss)
-      -- del
-      assert(tostring(c):match('openssl.ssl_ctx'))
-      assert(tostring(ss):match('openssl.ssl_session'))
-    end)
+    ctx:set_session_callback(
+      function(s, ss)
+        -- add
+        assert(tostring(s):match('openssl.ssl '))
+        assert(tostring(ss):match('openssl.ssl_session'))
+        local id = ss:id()
+        session_cache[id] = ss
+        return true
+      end,
+      function(s, id)
+        -- get
+        assert(tostring(s):match('openssl.ssl '))
+        assert(type(id)=='string')
+      end
+      --[[
+      -- uncommit will cause crash when gc
+      ,function(c, ss)
+        -- del
+        assert(tostring(c):match('openssl.ssl_ctx'))
+        assert(tostring(ss):match('openssl.ssl_session'))
+        print('add session: '..openssl.hex(ss:id()))
+      end
+      --]]
+    )
     return ctx
   end
 
   local function create_srv_ctx()
     local ctx = create_ctx({{CN = "server"},  {C = "CN"}})
-
     ctx:set_servername_callback({
       ["serverA"] = create_ctx {{CN = "serverA"},  {C = "CN"}},
       ["serverB"] = create_ctx {{CN = "serverB"},  {C = "CN"}}
@@ -301,7 +309,6 @@ function TestSSL:testSNI()
                "auto_retry", "no_auto_chain")
 
   srv_ctx:flush_sessions(10000)
-
   repeat
     cs, ec = cli:handshake()
     rs, es = srv:handshake()
@@ -331,8 +338,8 @@ function TestSSL:testSNI()
     rs, es = srv:handshake()
   until (rs and cs) or (rs == nil or cs == nil)
   assert(rs and cs)
-  --peer = cli:peer()
-  --assert(peer:subject():oneline() == "/CN=server/C=CN")
+  peer = cli:peer()
+  assert(peer:subject():oneline() == "/CN=server/C=CN")
   if not helper.libressl then
     rc, ec = cli:renegotiate()
     rs, es = srv:renegotiate_abbreviated()
