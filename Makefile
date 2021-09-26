@@ -61,6 +61,11 @@ ifeq (asan, ${TARGET})
   LDFLAGS       +=-g -fsanitize=address
 endif
 
+ifeq (debug, ${TARGET})
+  CFLAGS	+=-g -Og
+  LDFLAGS       +=-g -Og
+endif
+
 ifeq (valgrind, ${TARGET})
   CFLAGS	+=-g -O0
   LDFLAGS	+=-g -O0
@@ -148,6 +153,8 @@ info:
 test:	all
 	cd test && LUA_CPATH=../?.so $(LUA) test.lua && cd ..
 
+debug: all
+
 coveralls: test
 	coveralls -b . -i src --gcov-options '\-lp'
 
@@ -158,6 +165,7 @@ valgrind: all
 	$(LUA) test.lua && cd ..
 
 asan: all
+	export ASAN_LIB=$(ASAN_LIB) && \
 	cd test && LUA_CPATH=../?.so \
 	DYLD_INSERT_LIBRARIES=$(ASAN_LIB) \
 	$(LUA) test.lua && cd ..
