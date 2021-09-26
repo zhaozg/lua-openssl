@@ -84,22 +84,3 @@ int openssl_valuegetp(lua_State*L, const void*p, const void *d)
   return lua_type(L, -1);
 }
 
-int openssl_refrence(lua_State*L, const void*p, int op)
-{
-  int ref;
-  lua_rawgetp(L, LUA_REGISTRYINDEX, p);
-  if (lua_isnil(L, -1))
-  {
-    lua_pop(L, 1);
-    return -1;
-  }
-  lua_getfield(L, -1, "refrence");
-  ref = lua_isnil(L, -1) ? 0 : luaL_checkint(L, -1);
-  lua_pop(L, 1);
-
-  ref = ref + op;
-  lua_pushinteger(L, ref);
-  lua_setfield(L, -2, "refrence");
-  lua_pop(L, 1);
-  return ref;
-}

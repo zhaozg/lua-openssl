@@ -735,12 +735,17 @@ static LUA_FUNCTION(openssl_bio_get_ssl)
   int ret = BIO_get_ssl(bio, &ssl);
   if (ret == 1)
   {
-    openssl_newvalue(L, ssl);
-    PUSH_OBJECT(ssl, "openssl.ssl");
-    openssl_refrence(L, ssl, +1);
+    if (openssl_valueget(L, ssl, "self")==LUA_TNIL)
+    {
+      lua_pop(L, 1);
+      PUSH_OBJECT(ssl, "openssl.ssl");
+      openssl_newvalue(L, ssl);
+      lua_pushvalue(L, -1);
+      openssl_valueset(L, ssl, "self");
+    }
     return 1;
   }
-  return 0;
+  return openssl_pushresult(L, ret);
 }
 
 /***

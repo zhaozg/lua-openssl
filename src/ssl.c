@@ -156,10 +156,10 @@ static int openssl_ssl_ctx_new(lua_State*L)
   ciphers = luaL_optstring(L, 2, SSL_DEFAULT_CIPHER_LIST);
   if(!SSL_CTX_set_cipher_list(ctx, ciphers))
     luaL_argerror(L, 2, "Error to set cipher list");
-  openssl_newvalue(L, ctx);
+
   PUSH_OBJECT(ctx, "openssl.ssl_ctx");
-  openssl_refrence(L, ctx, 1);
   SSL_CTX_set_app_data(ctx, L);
+  openssl_newvalue(L, ctx);
   lua_pushvalue(L, -1);
   openssl_valueset(L, ctx, "self");
 
@@ -318,8 +318,7 @@ static int openssl_ssl_ctx_add(lua_State*L)
 static int openssl_ssl_ctx_gc(lua_State*L)
 {
   SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
-  int ref = ctx ? openssl_refrence(L, ctx, -1) : 0;
-  if (ctx && ref == 0)
+  if (ctx)
   {
     SSL_CTX_free(ctx);
     openssl_freevalue(L, ctx);
@@ -652,7 +651,6 @@ static int openssl_ssl_ctx_new_ssl(lua_State*L)
   int mode_idx = 2;
   SSL *ssl = SSL_new(ctx);
   int ret = 1;
-  openssl_newvalue(L, ssl);
 
   if (auxiliar_getclassudata(L, "openssl.bio", 2))
   {
@@ -700,7 +698,9 @@ static int openssl_ssl_ctx_new_ssl(lua_State*L)
       SSL_set_connect_state(ssl);
 
     PUSH_OBJECT(ssl, "openssl.ssl");
-    openssl_refrence(L, ssl, 1);
+    openssl_newvalue(L, ssl);
+    lua_pushvalue(L, -1);
+    openssl_valueset(L, ssl, "self");
 
     /* ref to ctx */
     lua_pushvalue(L, 1);
@@ -1312,9 +1312,16 @@ static int openssl_add_session(SSL *ssl, SSL_SESSION *session)
   lua_State *L = SSL_CTX_get_app_data(ctx);
 
   openssl_valuegeti(L, ctx, SSL_CTX_SESSION_ADD);
-  openssl_refrence(L, ssl, 1);
-  PUSH_OBJECT(ssl, "openssl.ssl");
-  SSL_SESSION_up_ref(session);
+  if (openssl_valueget(L, ssl, "self") == LUA_TNIL)
+  {
+    lua_pop(L, 1);
+    SSL_up_ref(ssl);
+    PUSH_OBJECT(ssl, "openssl.ssl");
+    openssl_newvalue(L, ssl);
+    lua_pushvalue(L, -1);
+    openssl_valueset(L, ssl, "self");
+  }
+
   PUSH_OBJECT(session, "openssl.ssl_session");
 
   ret = lua_pcall(L, 2, 1, 0);
@@ -1324,7 +1331,8 @@ static int openssl_add_session(SSL *ssl, SSL_SESSION *session)
     ret = 0;
   }
   else
-    ret = lua_tointeger(L, -1);
+    ret = lua_isboolean(L, -1) ? lua_toboolean(L, -1) : lua_tointeger(L, -1);
+
   lua_pop(L, 1);
   return ret;
 }
@@ -1339,8 +1347,15 @@ static SSL_SESSION *openssl_get_session(SSL *ssl,
   SSL_SESSION *session = NULL;
 
   openssl_valuegeti(L, ctx, SSL_CTX_SESSION_GET);
-  openssl_refrence(L, ssl, 1);
-  PUSH_OBJECT(ssl, "openssl.ssl");
+  if (openssl_valueget(L, ssl, "self") == LUA_TNIL)
+  {
+    lua_pop(L, 1);
+    SSL_up_ref(ssl);
+    PUSH_OBJECT(ssl, "openssl.ssl");
+    openssl_newvalue(L, ssl);
+    lua_pushvalue(L, -1);
+    openssl_valueset(L, ssl, "self");
+  }
   lua_pushlstring(L, (const char*)id, idlen);
 
   ret = lua_pcall(L, 2, 1, 0);
@@ -1375,7 +1390,6 @@ static void openssl_del_session(SSL_CTX *ctx, SSL_SESSION *session)
   openssl_valuegeti(L, ctx, SSL_CTX_SESSION_DEL);
   openssl_valueget(L, ctx, "self");
 
-  SSL_SESSION_up_ref( session);
   PUSH_OBJECT(session, "openssl.ssl_session");
 
   ret = lua_pcall(L, 2, 0, 0);
@@ -1438,23 +1452,18 @@ static int openssl_ssl_ctx_sessions(lua_State*L)
     size_t s;
     unsigned char* sid_ctx = (unsigned char*)luaL_checklstring(L, 2, &s);
     int ret = SSL_CTX_set_session_id_context(ctx, sid_ctx, s);
-    lua_pushboolean(L, ret);
-    return 1;
+    return openssl_pushresult(L, ret);
   }
   else
   {
     SSL_SESSION *s = CHECK_OBJECT(2, SSL_SESSION, "openssl.ssl_session");
-    int add = 1;
-    if (!lua_isnone(L, 3))
-      add = auxiliar_checkboolean(L, 3);
+    int add = lua_isnone(L, 3) ? 1 : auxiliar_checkboolean(L, 3);
 
     if (add)
       add = SSL_CTX_add_session(ctx, s);
     else
       add = SSL_CTX_remove_session(ctx, s);
-
-    lua_pushboolean(L, add);
-    return 1;
+    return openssl_pushresult(L, add);
   }
 }
 
@@ -1885,13 +1894,8 @@ static int openssl_ssl_peer(lua_State*L)
 static int openssl_ssl_gc(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
-  int ref = openssl_refrence(L, s, -1);
-  if (ref <= 0)
-  {
-    SSL_clear(s);
-    SSL_free(s);
-    openssl_freevalue(L, s);
-  }
+  SSL_free(s);
+  openssl_freevalue(L, s);
 
   return 0;
 }
@@ -2542,7 +2546,14 @@ static int openssl_ssl_dup(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
   SSL* ss = SSL_dup(s);
-  PUSH_OBJECT(ss, "openssl.ssl");
+  openssl_valueget(L, ss, "self");
+  if (lua_isnil(L, -1))
+  {
+    PUSH_OBJECT(ss, "openssl.ssl");
+    openssl_newvalue(L, ss);
+    lua_pushvalue(L, -1);
+    openssl_valueset(L, ss, "self");
+  }
   return 1;
 }
 
@@ -2641,6 +2652,8 @@ static int openssl_ssl_session(lua_State*L)
       if (lua_isnone(L, 3))
       {
         int ret = SSL_set_session(s, ss);
+        if (ret==1)
+          SSL_up_ref(s);
         lua_pushboolean(L, ret);
       }
       else
