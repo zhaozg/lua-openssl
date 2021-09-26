@@ -46,6 +46,8 @@ end
 
 function M.spawn(cmd, args, pattern, after_start, after_close, env)
   local uv = require("luv")
+  env = env or {}
+  env['DYLD_INSERT_LIBRARIES'] = os.getenv('ASAN_LIB')
 
   local function stderr_read(err, chunk)
     assert(not err, err)
