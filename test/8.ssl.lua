@@ -252,14 +252,14 @@ function TestSSL:testSNI()
         local id = ss:id()
         session_cache[id] = ss
         return true
-      end,
-      function(s, id)
+      end
+      ,function(s, id)
         -- get
         assert(tostring(s):match('openssl.ssl '))
         assert(type(id)=='string')
       end
       --[[
-      -- uncommit will cause crash when gc
+      -- uncommit will cause crash when gc on OpenSSL 1.1.1
       ,function(c, ss)
         -- del
         assert(tostring(c):match('openssl.ssl_ctx'))
@@ -437,8 +437,11 @@ function TestSSL:testSNI()
   cli:cache_hit()
   cli:session_reused()
 
+  --[[
+  -- uncommit cause crash on OpenSSL 1.0.2
   local D = cli:dup()
   assert(D)
+  --]]
 
   local ctx = cli:ctx()
   assert(ctx)

@@ -80,6 +80,7 @@ int EVP_PKEY_up_ref(EVP_PKEY *pkey);
 
 #include <openssl/ssl.h>
 int SSL_up_ref(SSL *s);
+int SSL_CTX_up_ref(SSL_CTX *ctx);
 int SSL_SESSION_up_ref(SSL_SESSION *s);
 
 DH *EVP_PKEY_get0_DH(EVP_PKEY *pkey);
