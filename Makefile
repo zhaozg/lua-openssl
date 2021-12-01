@@ -54,7 +54,7 @@ ifeq (coveralls, ${TARGET})
 endif
 
 ifeq (asan, ${TARGET})
-  ASAN_LIB       = /usr/local/opt/llvm/lib/clang/12.0.1/lib/darwin/libclang_rt.asan_osx_dynamic.dylib
+  ASAN_LIB       = /usr/local/opt/llvm/lib/clang/$(shell llvm-config --version)/lib/darwin/libclang_rt.asan_osx_dynamic.dylib
   CC             = clang
   LD             = clang
   CFLAGS	+=-g -O0 -fsanitize=address,undefined
