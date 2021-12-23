@@ -518,15 +518,8 @@ static int openssl_ecdsa_do_verify(lua_State*L)
     const char* s = luaL_checklstring(L, 3, &sigl);
     ECDSA_SIG* sig = d2i_ECDSA_SIG(NULL, (const unsigned char**)&s, sigl);
     ret = ECDSA_do_verify((const unsigned char*)dgst, l, sig, ec);
-    if (ret == -1)
-      ret = openssl_pushresult(L, -1);
-    else
-    {
-      lua_pushboolean(L, ret);
-      ret = 1;
-    }
     ECDSA_SIG_free(sig);
-    return ret;
+    ret = openssl_pushboolean(L, ret);
   }
   else
   {
@@ -535,16 +528,10 @@ static int openssl_ecdsa_do_verify(lua_State*L)
     ECDSA_SIG* sig = ECDSA_SIG_new();
     ECDSA_SIG_set0(sig, r, s);
     ret = ECDSA_do_verify((const unsigned char*)dgst, l, sig, ec);
-    if (ret == -1)
-      ret = openssl_pushresult(L, -1);
-    else
-    {
-      lua_pushboolean(L, ret);
-      ret = 1;
-    }
     ECDSA_SIG_free(sig);
-    return ret;
+    ret = openssl_pushboolean(L, ret);
   }
+  return ret;
 }
 
 #define SM2_SIG_MAX_LEN 72
@@ -598,14 +585,7 @@ static LUA_FUNCTION(openssl_ecdsa_verify)
   int type = EVP_MD_type(md);
 
   int ret = ECDSA_verify(type, dgst, (int)dgstlen, sig, (int)siglen, eckey);
-  if(ret==-1)
-    ret = openssl_pushresult(L, ret);
-  else
-  {
-    lua_pushboolean(L, ret);
-    ret = 1;
-  }
-  return ret;
+  return openssl_pushboolean(L, ret);
 }
 
 /* ec_point */

@@ -252,6 +252,7 @@ int openssl_register_xextension(lua_State*L);
 int openssl_register_xstore(lua_State*L);
 int openssl_register_xalgor(lua_State*L);
 
+int openssl_pushboolean(lua_State *L, int result);
 int openssl_pushresult(lua_State*L, int result);
 
 int openssl_newvalue(lua_State*L, const void*p);
