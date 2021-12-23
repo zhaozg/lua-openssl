@@ -84,8 +84,10 @@ if opensslv >= 0x10101007 and (not helper.libressl) then
         local pub = pri:get_public()
         local msg = openssl.random(33)
 
-        assert(pri:as_sm2())
-        assert(pub:as_sm2())
+        if pri.as_sm2 then
+            assert(pri:as_sm2())
+            assert(pub:as_sm2())
+        end
 
         local sig = assert(pri:sign(msg))
         assert(pub:verify(msg, sig))
