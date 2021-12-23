@@ -11,12 +11,6 @@ pkey module for lua-openssl binding
 #include <openssl/dsa.h>
 #include <openssl/engine.h>
 
-#if defined(OPENSSL_SUPPORT_SM2)
-#ifndef SM2_DEFAULT_USERID
-#  define SM2_DEFAULT_USERID "1234567812345678"
-#endif
-#endif
-
 #if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
 #define EVP_CIPHER_CTX_reset EVP_CIPHER_CTX_init
 #endif

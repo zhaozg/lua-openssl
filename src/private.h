@@ -292,6 +292,12 @@ int openssl_pushargerror (lua_State *L, int arg, const char *extramsg);
 #include HAVE_USER_CUSTOME
 #endif
 
+#if defined(OPENSSL_SUPPORT_SM2)
+#ifndef SM2_DEFAULT_USERID
+#  define SM2_DEFAULT_USERID "1234567812345678"
+#endif
+#endif
+
 #if defined(__cplusplus)
 }
 #endif
