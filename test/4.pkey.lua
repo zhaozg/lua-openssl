@@ -3,6 +3,7 @@ local openssl = require 'openssl'
 local pkey = require('openssl').pkey
 local unpack = unpack or table.unpack
 local digest = openssl.digest
+local helper = require'helper'
 
 local function mk_key(args)
   assert(type(args), 'table')
@@ -17,10 +18,12 @@ function TestPKEYMY:setUp()
   self.genalg = {
     {nil},  -- default to create rsa 1024 bits with 65537
     {'rsa',  1024,  3},  -- create rsa with give bits length and e
-    {'dsa',  512},
-    {'dh',  512},
     {'ec',  'prime256v1'}
   }
+  if not helper.openssl3 then
+    self.genalg[#self.genalg + 1] = {'dsa',  512}
+    self.genalg[#self.genalg + 1] = {'dh',  512}
+  end
 end
 
 function TestPKEYMY:testBasic()

@@ -1,6 +1,7 @@
 local lu = require 'luaunit'
 local openssl = require 'openssl'
 local digest = require'openssl'.digest
+local helper = require'helper'
 local unpack = unpack or table.unpack
 
 TestDigestCompat = {}
@@ -62,6 +63,7 @@ function TestDigestMY:testList()
   assert(type(t)=='string')
   assert(#t==20)
 
+  if not helper.openssl3 then
   local ctx1 = md:new()
   t1 = ctx1:info()
   assert(ctx1:update('ab'))
@@ -74,6 +76,7 @@ function TestDigestMY:testList()
   assert(ctx:update('cd'))
   t2 = ctx:final(true)
   assert(t==t2)
+  end
 end
 
 local function mk_key(args)

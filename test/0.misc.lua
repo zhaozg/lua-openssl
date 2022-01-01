@@ -66,7 +66,7 @@ end
 function testAll()
   local t = openssl.list('digests')
   assert(type(t)=='table')
-  if not helper.libressl then
+  if not helper.openssl3 and not helper.libressl then
     assert(type(openssl.FIPS_mode())=='boolean')
   end
   local rand = openssl.random(1024)

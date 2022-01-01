@@ -342,7 +342,7 @@ static int openssl_mac_ctx_final(lua_State *L)
   HMAC_CTX *c = CHECK_OBJECT(1, HMAC_CTX, "openssl.hmac_ctx");
 #endif
   unsigned char digest[EVP_MAX_MD_SIZE];
-  size_t len = 0;
+  size_t len = sizeof(digest);
   int raw = 0;
   int ret = 1;
 

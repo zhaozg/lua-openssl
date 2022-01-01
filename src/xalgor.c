@@ -67,7 +67,10 @@ static int openssl_xalgor_cmp(lua_State* L)
 {
   X509_ALGOR* alg = CHECK_OBJECT(1, X509_ALGOR, "openssl.x509_algor");
   X509_ALGOR* ano = CHECK_OBJECT(2, X509_ALGOR, "openssl.x509_algor");
-  lua_pushboolean(L, X509_ALGOR_cmp(alg, ano) == 0);
+  if ( alg->algorithm != NULL && ano->algorithm != NULL)
+    lua_pushboolean(L, X509_ALGOR_cmp(alg, ano) == 0);
+  else
+    lua_pushboolean(L, 1);
   return 1;
 }
 #endif

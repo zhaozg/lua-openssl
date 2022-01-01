@@ -497,6 +497,19 @@ static int luaclose_openssl(lua_State *L)
   return 0;
 }
 
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+static OSSL_PROVIDER* legacy = NULL;
+static OSSL_PROVIDER* openssl= NULL;
+
+void openssl_atexit()
+{
+  if (legacy)
+    OSSL_PROVIDER_unload(legacy);
+  if (openssl)
+    OSSL_PROVIDER_unload(openssl);
+}
+#endif
+
 LUALIB_API int luaopen_openssl(lua_State*L)
 {
   if (atomic_fetch_add(&init, 1) == 0)
@@ -532,8 +545,9 @@ LUALIB_API int luaopen_openssl(lua_State*L)
 #endif
 
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L
-    OSSL_PROVIDER_load(NULL, "legacy");
-    OSSL_PROVIDER_load(NULL, "default");
+    legacy = OSSL_PROVIDER_load(NULL, "legacy");
+    openssl = OSSL_PROVIDER_load(NULL, "default");
+    atexit(openssl_atexit);
 #endif
   }
 
