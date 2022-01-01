@@ -22,10 +22,8 @@ static LUA_FUNCTION(openssl_dh_parse)
   DH* dh = CHECK_OBJECT(1, DH, "openssl.dh");
   lua_newtable(L);
 
-#if (OPENSSL_VERSION_NUMBER < 0x30000000L)
   lua_pushinteger(L, DH_size(dh));
   lua_setfield(L, -2, "size");
-#endif
 
   lua_pushinteger(L, DH_bits(dh));
   lua_setfield(L, -2, "bits");

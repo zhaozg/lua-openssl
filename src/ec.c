@@ -619,14 +619,15 @@ static int openssl_ec_key_parse(lua_State*L)
   const EC_GROUP* group = EC_KEY_get0_group(ec);
   const BIGNUM *priv = EC_KEY_get0_private_key(ec);
   lua_newtable(L);
+
+  AUXILIAR_SET(L, -1, "enc_flag", EC_KEY_get_enc_flags(ec), integer);
+  AUXILIAR_SET(L, -1, "conv_form", EC_KEY_get_conv_form(ec), integer);
+  AUXILIAR_SET(L, -1, "curve_name", EC_GROUP_get_curve_name(group), integer);
+
   if (basic)
   {
     BIGNUM* x = BN_new();
     BIGNUM* y = BN_new();
-
-    AUXILIAR_SET(L, -1, "enc_flag", EC_KEY_get_enc_flags(ec), integer);
-    AUXILIAR_SET(L, -1, "conv_form", EC_KEY_get_conv_form(ec), integer);
-    AUXILIAR_SET(L, -1, "curve_name", EC_GROUP_get_curve_name(group), integer);
 
     priv = BN_dup(priv);
     AUXILIAR_SETOBJECT(L, priv, "openssl.bn", -1, "d");
@@ -639,9 +640,6 @@ static int openssl_ec_key_parse(lua_State*L)
   }
   else
   {
-    AUXILIAR_SET(L, -1, "enc_flag", EC_KEY_get_enc_flags(ec), integer);
-    AUXILIAR_SET(L, -1, "conv_form", EC_KEY_get_conv_form(ec), integer);
-
     point = EC_POINT_dup(point, group);
     AUXILIAR_SETOBJECT(L, point, "openssl.ec_point", -1, "pub_key");
     group = EC_GROUP_dup(group);

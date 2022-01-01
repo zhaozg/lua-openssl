@@ -415,18 +415,30 @@ int RSA_set0_crt_params(RSA *r, BIGNUM *dmp1, BIGNUM *dmq1, BIGNUM *iqmp)
 #if !defined(LIBRESSL_VERSION_NUMBER)
 EVP_MD_CTX *EVP_MD_CTX_new(void)
 {
+#if OPENSSL_VERSION_NUMBER > 0x30000000L
+  return EVP_MD_CTX_new();
+#else
   return OPENSSL_malloc(sizeof(EVP_MD_CTX));
+#endif
 }
 
 int EVP_MD_CTX_reset(EVP_MD_CTX *ctx)
 {
+#if OPENSSL_VERSION_NUMBER > 0x30000000L
+  return EVP_MD_CTX_reset(ctx);
+#else
   return EVP_MD_CTX_cleanup(ctx);
+#endif
 }
 
 void EVP_MD_CTX_free(EVP_MD_CTX *ctx)
 {
+#if OPENSSL_VERSION_NUMBER > 0x30000000L
+  EVP_MD_CTX_free(ctx);
+#else
   EVP_MD_CTX_cleanup(ctx);
   OPENSSL_free(ctx);
+#endif
 }
 
 void X509_REQ_get0_signature(const X509_REQ *req, const ASN1_BIT_STRING **psig,

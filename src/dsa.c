@@ -36,7 +36,6 @@ static LUA_FUNCTION(openssl_dsa_parse)
   return 1;
 }
 
-#if (OPENSSL_VERSION_NUMBER < 0x30000000L)
 static int openssl_dsa_set_engine(lua_State *L)
 {
 #ifndef OPENSSL_NO_ENGINE
@@ -51,7 +50,6 @@ static int openssl_dsa_set_engine(lua_State *L)
 #endif
   return 0;
 }
-#endif
 
 static int openssl_dsa_generate_key(lua_State *L)
 {
@@ -76,9 +74,7 @@ static int openssl_dsa_generate_key(lua_State *L)
 static luaL_Reg dsa_funs[] =
 {
   {"parse",       openssl_dsa_parse},
-#if (OPENSSL_VERSION_NUMBER < 0x30000000L)
   {"set_engine",  openssl_dsa_set_engine},
-#endif
 
   {"__gc",        openssl_dsa_free},
   {"__tostring",  auxiliar_tostring},

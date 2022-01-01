@@ -70,6 +70,26 @@ int openssl_pkey_is_private(EVP_PKEY* pkey)
   return ret;
 }
 
+#if defined(OPENSSL_SUPPORT_SM2)
+static int openssl_pkey_is_sm2(const EVP_PKEY *pkey)
+{
+  int id;
+  id = EVP_PKEY_id(pkey);
+  if (id == EVP_PKEY_SM2)
+    return 1;
+
+  id = EVP_PKEY_base_id(pkey);
+  if(id==EVP_PKEY_EC)
+  {
+    const EC_KEY *ec = EVP_PKEY_get0_EC_KEY(pkey);
+    const EC_GROUP *grp = EC_KEY_get0_group(ec);
+    int curve = EC_GROUP_get_curve_name(grp);
+    return curve==NID_sm2;
+  }
+  return 0;
+}
+#endif
+
 /***
 read public/private key from data
 @function read
@@ -931,6 +951,90 @@ static LUA_FUNCTION(openssl_pkey_free)
   return 0;
 }
 
+/* copy from openssl v3 crypto/evp/p_lib.c */
+/*
+ * These hard coded cases are pure hackery to get around the fact
+ * that names in crypto/objects/objects.txt are a mess.  There is
+ * no "EC", and "RSA" leads to the NID for 2.5.8.1.1, an OID that's
+ * fallen out in favor of { pkcs-1 1 }, i.e. 1.2.840.113549.1.1.1,
+ * the NID of which is used for EVP_PKEY_RSA.  Strangely enough,
+ * "DSA" is accurate...  but still, better be safe and hard-code
+ * names that we know.
+ * On a similar topic, EVP_PKEY_type(EVP_PKEY_SM2) will result in
+ * EVP_PKEY_EC, because of aliasing.
+ * This should be cleaned away along with all other #legacy support.
+ */
+
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
+typedef struct ossl_item_st {
+    unsigned int id;
+    void *ptr;
+}OSSL_ITEM;
+#endif
+static const OSSL_ITEM standard_name2type[] = {
+    { EVP_PKEY_RSA,     "RSA" },
+#ifdef EVP_PKEY_RSA_PSS
+    { EVP_PKEY_RSA_PSS, "RSA-PSS" },
+#endif
+    { EVP_PKEY_EC,      "EC" },
+#ifdef EVP_PKEY_ED25519
+    { EVP_PKEY_ED25519, "ED25519" },
+#endif
+#ifdef EVP_PKEY_ED448
+    { EVP_PKEY_ED448,   "ED448" },
+#endif
+#ifdef EVP_PKEY_X25519
+    { EVP_PKEY_X25519,  "X25519" },
+#endif
+#ifdef EVP_PKEY_X448
+    { EVP_PKEY_X448,    "X448" },
+#endif
+#ifdef EVP_PKEY_SM2
+    { EVP_PKEY_SM2,     "SM2" },
+#endif
+#ifdef EVP_PKEY_DH
+    { EVP_PKEY_DH,      "DH" },
+#endif
+#ifdef EVP_PKEY_DHX
+    { EVP_PKEY_DHX,     "X9.42 DH" },
+#endif
+#ifdef EVP_PKEY_DHX
+    { EVP_PKEY_DHX,     "DHX" },
+#endif
+#ifdef EVP_PKEY_DSA
+    { EVP_PKEY_DSA,     "DSA" },
+#endif
+};
+
+#define OSSL_NELEM(ary) (sizeof(ary)/sizeof(ary[0]))
+
+static int evp_pkey_name2type(const char *name)
+{
+    int type;
+    size_t i;
+
+    for (i = 0; i < OSSL_NELEM(standard_name2type); i++) {
+        if (strcasecmp(name, standard_name2type[i].ptr) == 0)
+            return (int)standard_name2type[i].id;
+    }
+
+    if ((type = EVP_PKEY_type(OBJ_sn2nid(name))) != NID_undef)
+        return type;
+    return EVP_PKEY_type(OBJ_ln2nid(name));
+}
+
+static const char *evp_pkey_type2name(int type)
+{
+    size_t i;
+
+    for (i = 0; i < OSSL_NELEM(standard_name2type); i++) {
+        if (type == (int)standard_name2type[i].id)
+            return standard_name2type[i].ptr;
+    }
+
+    return OBJ_nid2sn(type);
+}
+
 /***
 get key details as table
 @function parse
@@ -941,54 +1045,52 @@ static LUA_FUNCTION(openssl_pkey_parse)
   EVP_PKEY *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
   if (EVP_PKEY_id(pkey) != NID_undef)
   {
+    int typ = EVP_PKEY_type(EVP_PKEY_id(pkey));
     lua_newtable(L);
 
     AUXILIAR_SET(L, -1, "bits", EVP_PKEY_bits(pkey), integer);
     AUXILIAR_SET(L, -1, "size", EVP_PKEY_size(pkey), integer);
+    AUXILIAR_SET(L, -1, "type", evp_pkey_type2name(typ), string);
 
-    switch (EVP_PKEY_type(EVP_PKEY_id(pkey)))
+    switch (typ)
     {
     case EVP_PKEY_RSA:
     {
       RSA* rsa = EVP_PKEY_get1_RSA(pkey);
       PUSH_OBJECT(rsa, "openssl.rsa");
       lua_setfield(L, -2, "rsa");
-
-      AUXILIAR_SET(L, -1, "type", "rsa", string);
     }
-
     break;
+
     case EVP_PKEY_DSA:
     {
       DSA* dsa = EVP_PKEY_get1_DSA(pkey);
       PUSH_OBJECT(dsa, "openssl.dsa");
       lua_setfield(L, -2, "dsa");
-
-      AUXILIAR_SET(L, -1, "type", "dsa", string);
     }
     break;
+
     case EVP_PKEY_DH:
     {
       DH* dh = EVP_PKEY_get1_DH(pkey);
       PUSH_OBJECT(dh, "openssl.dh");
-      lua_rawseti(L, -2, 0);
-
-      AUXILIAR_SET(L, -1, "type", "dh", string);
+      lua_setfield(L, -2, "dh");
     }
-
     break;
+
 #ifndef OPENSSL_NO_EC
     case EVP_PKEY_EC:
+#ifdef EVP_PKEY_SM2
+    case EVP_PKEY_SM2:
+#endif
     {
       const EC_KEY* ec = EVP_PKEY_get1_EC_KEY(pkey);
       PUSH_OBJECT(ec, "openssl.ec_key");
       lua_setfield(L, -2, "ec");
-
-      AUXILIAR_SET(L, -1, "type", "ec", string);
     }
-
     break;
 #endif
+
     default:
       break;
     };
@@ -1128,16 +1230,42 @@ return public key
 static LUA_FUNCTION(openssl_pkey_get_public)
 {
   EVP_PKEY *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
-  int ret = 0;
-  BIO* bio = BIO_new(BIO_s_mem());
-  if (i2d_PUBKEY_bio(bio, pkey))
+
+  int len = i2d_PublicKey(pkey, NULL);
+  if (len > 0)
   {
-    EVP_PKEY *pub = d2i_PUBKEY_bio(bio, NULL);
-    PUSH_OBJECT(pub, "openssl.evp_pkey");
-    ret = 1;
+    unsigned char *buf = OPENSSL_malloc(len);
+    if (buf != NULL)
+    {
+      unsigned char *p = buf;
+      int type = EVP_PKEY_base_id(pkey);
+      EVP_PKEY *pub = EVP_PKEY_new();
+      if (type == EVP_PKEY_EC)
+      {
+        const EC_GROUP *grp = EC_KEY_get0_group(EVP_PKEY_get0_EC_KEY(pkey));
+        int nid = EC_GROUP_get_curve_name(grp);
+
+        EC_KEY *ec = EC_KEY_new_by_curve_name(nid);
+        EVP_PKEY_assign_EC_KEY(pub, ec);
+        type = EVP_PKEY_id(pkey);
+      }
+
+      len = i2d_PublicKey(pkey, &p);
+      p = buf;
+      pub = d2i_PublicKey(type, &pub, (const unsigned char **)&p, len);
+      if (pub)
+        PUSH_OBJECT(pub, "openssl.evp_pkey");
+      else
+      {
+        lua_pushnil(L);
+        EVP_PKEY_free(pub);
+      }
+      OPENSSL_free(buf);
+      return 1;
+    }
+
   }
-  BIO_free(bio);
-  return ret;
+  return 0;
 }
 
 /***
@@ -1244,7 +1372,7 @@ static LUA_FUNCTION(openssl_sign)
 
   md_alg = "sha256";
 #if defined(OPENSSL_SUPPORT_SM2)
-  is_SM2 = EVP_PKEY_id(pkey)==EVP_PKEY_SM2;
+  is_SM2 = openssl_pkey_is_sm2(pkey);
   if (is_SM2)
     md_alg = "sm3";
 #endif
@@ -1335,7 +1463,7 @@ static LUA_FUNCTION(openssl_verify)
 
   md_alg = "sha256";
 #if defined(OPENSSL_SUPPORT_SM2)
-  is_SM2 = EVP_PKEY_id(pkey)==EVP_PKEY_SM2;
+  is_SM2 = openssl_pkey_is_sm2(pkey);
   if (is_SM2)
     md_alg = "sm3";
 #endif

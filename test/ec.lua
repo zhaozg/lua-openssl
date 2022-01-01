@@ -45,7 +45,7 @@ function TestEC:TestEC()
   assert(not k1:is_private())
   t = k1:parse()
   assert(t.bits == 256)
-  assert(t.type == 'ec')
+  assert(t.type == 'EC')
   assert(t.size == 72)
   local r = t.ec
   t = r:parse(true) -- make basic table

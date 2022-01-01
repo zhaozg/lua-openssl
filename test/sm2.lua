@@ -12,7 +12,7 @@ if opensslv >= 0x10101007 and (not helper.libressl) then
     function testSM2:testSM2()
         local nec =  {'ec','SM2'}
         local ec = pkey.new(unpack(nec))
-        local t = ec:parse().ec:parse('pem') --make basic table
+        local t = ec:parse().ec:parse(true) --make basic table
         lu.assertEquals(type(t.curve_name), 'number')
         lu.assertStrContains(t.x.version, 'bn library')
         lu.assertStrContains(t.y.version, 'bn library')
@@ -22,7 +22,7 @@ if opensslv >= 0x10101007 and (not helper.libressl) then
         assert(not k1:is_private())
         t = k1:parse()
         assert(t.bits==256)
-        assert(t.type=='ec')
+        assert(t.type=='EC')
         assert(t.size==72)
         local r = t.ec
         t = r:parse(true) --make basic table
