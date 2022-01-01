@@ -172,6 +172,7 @@ static int openssl_hmac_ctx_new(lua_State *L)
     PUSH_OBJECT(c, "openssl.mac_ctx");
   else
     ret = openssl_pushresult(L, ret);
+  EVP_MAC_free(mac);
 #else
   const EVP_MD *type = get_digest(L, 1, NULL);
   size_t l;
