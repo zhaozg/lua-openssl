@@ -15,6 +15,9 @@ pkey module for lua-openssl binding
 #define EVP_CIPHER_CTX_reset EVP_CIPHER_CTX_init
 #endif
 
+static int evp_pkey_name2type(const char *name);
+static const char *evp_pkey_type2name(int type);
+
 int openssl_pkey_is_private(EVP_PKEY* pkey)
 {
   int ret = 1;
@@ -107,18 +110,7 @@ static int openssl_pkey_read(lua_State*L)
   int priv = lua_isnone(L, 2) ? 0 : auxiliar_checkboolean(L, 2);
   int fmt = luaL_checkoption(L, 3, "auto", format);
   const char* passphrase = luaL_optstring(L, 4, NULL);
-  int type = -1;
-  if (passphrase)
-  {
-    if (strcmp(passphrase, "rsa") == 0 || strcmp(passphrase, "RSA") == 0)
-      type = EVP_PKEY_RSA;
-    else if (strcmp(passphrase, "dsa") == 0 || strcmp(passphrase, "DSA") == 0)
-      type = EVP_PKEY_DSA;
-    else if (strcmp(passphrase, "ec") == 0 || strcmp(passphrase, "EC") == 0)
-      type = EVP_PKEY_EC;
-    else if (strcmp(passphrase, "dh") == 0 || strcmp(passphrase, "DH") == 0)
-      type = EVP_PKEY_DH;
-  }
+  int type = passphrase != NULL ? evp_pkey_name2type(passphrase) : -1;
 
   if (fmt == FORMAT_AUTO)
   {
