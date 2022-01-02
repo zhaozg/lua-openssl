@@ -50,6 +50,7 @@ function TestOCSP:testAll()
   oreq = ocsp.request_read(der, false)
   assert(oreq)
   assert(oreq:sign(self.bob.cert, self.bob.key, nil, 0, 'sha256'))
+  -- FIXME:
   -- memleak bugs, can't suppressed when asan
   -- assert(oreq:sign(self.bob.cert, self.bob.key, {self.bob.cert, self.ca.cert}, 0, 'sha256'))
   der = oreq:export(true)
@@ -77,7 +78,8 @@ function TestOCSP:testAll()
 
   assert(resp:export(true))
   assert(resp:export(false))
-  --FIXME:
-  pcall(resp.parse, resp)
+  -- FIXME
+  -- local t= resp:parse()
+  -- assert(type(t)=='table')
 end
 

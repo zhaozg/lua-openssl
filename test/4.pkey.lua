@@ -21,9 +21,9 @@ function TestPKEYMY:setUp()
     {'ec',  'prime256v1'}
   }
   if not helper.openssl3 then
-    self.genalg[#self.genalg + 1] = {'dsa',  512}
-    -- FIXME: get_public
-    --self.genalg[#self.genalg + 1] = {'dh',  512}
+    -- FIXME: openssl3
+    self.genalg[#self.genalg+1] = {'dsa',  512}
+    self.genalg[#self.genalg+1] = {'dh',  512}
   end
 end
 
@@ -46,7 +46,6 @@ function TestPKEYMY:testBasic()
     assert(t.bits==k1:bits())
 
     local msg = openssl.random(len - 11)
-    print(t.type)
     if t.type == 'RSA' then
       local out = pkey.encrypt(k1, msg)
       local raw = pkey.decrypt(k, out)

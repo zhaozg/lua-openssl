@@ -64,7 +64,7 @@ function TestCRL:testNew()
   assert(other:verify(ca.cacert))
   assert(other:verify(ca.pkey))
   if (other.check) then
-    --FIXME:
+    -- FIXME:
     --assert(other:check(ca.pkey))
   end
 

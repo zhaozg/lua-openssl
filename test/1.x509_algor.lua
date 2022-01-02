@@ -6,8 +6,7 @@ TestX509Algor = {}
 
 function TestX509Algor:testAll()
   local alg1 = algor.new()
-  --FIXME
-  --assert(alg1:dup() == nil)
+  assert(alg1:dup() == nil)
   local alg2 = algor.new()
   if alg1.equals then
     assert(alg1:equals(alg2))
