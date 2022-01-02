@@ -81,7 +81,7 @@ static int openssl_pkey_is_sm2(const EVP_PKEY *pkey)
   id = EVP_PKEY_base_id(pkey);
   if(id==EVP_PKEY_EC)
   {
-    const EC_KEY *ec = EVP_PKEY_get0_EC_KEY(pkey);
+    const EC_KEY *ec = EVP_PKEY_get0_EC_KEY((EVP_PKEY*)pkey);
     const EC_GROUP *grp = EC_KEY_get0_group(ec);
     int curve = EC_GROUP_get_curve_name(grp);
     return curve==NID_sm2;
@@ -1231,34 +1231,22 @@ static LUA_FUNCTION(openssl_pkey_get_public)
 {
   EVP_PKEY *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
 
-  int len = i2d_PublicKey(pkey, NULL);
+  int len = i2d_PUBKEY(pkey, NULL);
   if (len > 0)
   {
     unsigned char *buf = OPENSSL_malloc(len);
     if (buf != NULL)
     {
       unsigned char *p = buf;
-      int type = EVP_PKEY_base_id(pkey);
-      EVP_PKEY *pub = EVP_PKEY_new();
-      if (type == EVP_PKEY_EC)
-      {
-        const EC_GROUP *grp = EC_KEY_get0_group(EVP_PKEY_get0_EC_KEY(pkey));
-        int nid = EC_GROUP_get_curve_name(grp);
-
-        EC_KEY *ec = EC_KEY_new_by_curve_name(nid);
-        EVP_PKEY_assign_EC_KEY(pub, ec);
-        type = EVP_PKEY_id(pkey);
-      }
-
-      len = i2d_PublicKey(pkey, &p);
+      EVP_PKEY *pub;
+      len = i2d_PUBKEY(pkey, &p);
       p = buf;
-      pub = d2i_PublicKey(type, &pub, (const unsigned char **)&p, len);
+      pub = d2i_PUBKEY(NULL, (const unsigned char **)&p, len);
       if (pub)
         PUSH_OBJECT(pub, "openssl.evp_pkey");
       else
       {
         lua_pushnil(L);
-        EVP_PKEY_free(pub);
       }
       OPENSSL_free(buf);
       return 1;
@@ -1378,6 +1366,10 @@ static LUA_FUNCTION(openssl_sign)
 #endif
 
   md = get_digest(L, 3, md_alg);
+#if defined(OPENSSL_SUPPORT_SM2)
+  if (is_SM2)
+    is_SM2 = EVP_MD_type(md) == NID_sm3;
+#endif
 
   ctx = EVP_MD_CTX_create();
 #if defined(OPENSSL_SUPPORT_SM2)
