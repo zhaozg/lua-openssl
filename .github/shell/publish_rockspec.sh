@@ -5,9 +5,8 @@ if [ -z "${OPENSSL_TAG}" ]; then
   OPENSSL_TAG=$(git describe --tags)
 fi
 
-bash .travis/make_rockspec.sh ${OPENSSL_TAG}
-github-release upload --user zhaozg --repo lua-openssl --tag ${OPENSSL_TAG} \
-  --file openssl-${OPENSSL_TAG}.tar.gz --name openssl-${OPENSSL_TAG}.tar.gz
+bash .github/shell/make_rockspec.sh ${OPENSSL_TAG}
 if [ -n "${LUAROCKS_TOKEN}" ]; then
-  luarocks upload openssl-${OPENSSL_TAG}.rockspec --api-key=${LUAROCKS_TOKEN}
+  $HOME/.usr/bin/luarocks install lua-cjson
+  $HOME/.usr/bin/luarocks upload openssl-${OPENSSL_TAG}.rockspec --api-key=${LUAROCKS_TOKEN}
 fi
