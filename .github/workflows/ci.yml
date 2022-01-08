@@ -102,12 +102,9 @@ jobs:
       run:
         .github/shell/setup_lua.sh
 
-    - name: Luarocks Release
-      # lua-cjson is required for luarocks upload
-      env:
-        LUAROCKS_TOKEN: ${{ secrets.LUAROCKS_TOKEN }}
-      run: |
-        .github/shell/publish_rockspec.sh ${{ steps.get_version.outputs.VERSION }}
+    - name: Package
+      run:
+        .github/shell/make_rockspec.sh ${{ steps.get_version.outputs.VERSION }}
 
     - name: Github Release
       id: create_release
@@ -119,3 +116,8 @@ jobs:
         draft: false
         prerelease: false
 
+    - name: Luarocks Release
+      # lua-cjson is required for luarocks upload
+      run: |
+        $HOME/.usr/bin/luarocks install lua-cjson
+        $HOME/.usr/bin/luarocks upload openssl-${{ steps.get_version.outputs.VERSION }}.rockspec --api-key=${{ secrets.LUAROCKS_TOKEN }}
