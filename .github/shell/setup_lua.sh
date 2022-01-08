@@ -15,6 +15,7 @@ LUA_HOME_DIR=$HOME/.usr
 LR_HOME_DIR=$HOME/.usr
 
 LUAJIT="no"
+PLATFORM=linux
 
 if [ "$RUNNER_OS" == "macOS" ]; then
   if [ "$LUA" == "luajit" ]; then
@@ -26,6 +27,7 @@ if [ "$RUNNER_OS" == "macOS" ]; then
   if [ "$LUA" == "luajit2.1" ]; then
     LUAJIT="yes"
   fi
+  PLATFORM=macosx
 elif [ "$(expr substr $LUA 1 6)" == "luajit" ]; then
   LUAJIT="yes"
 fi
@@ -63,12 +65,12 @@ else
     cd lua-5.3.6
   elif [ "$LUA" == "lua5.4" ]; then
     curl http://www.lua.org/ftp/lua-5.4.3.tar.gz | tar xz
-    cd lua-5.4.2
+    cd lua-5.4.3
   fi
 
   # Build Lua without backwards compatibility for testing
   perl -i -pe 's/-DLUA_COMPAT_(ALL|5_2)//' src/Makefile
-  make
+  make $PLATFORM
   make INSTALL_TOP="$LUA_HOME_DIR" install
 fi
 
@@ -107,7 +109,7 @@ elif [ "$LUA" == "lua5.1" ]; then
 elif [ "$LUA" == "lua5.2" ]; then
   rm -rf lua-5.2.4
 elif [ "$LUA" == "lua5.3" ]; then
-  rm -rf lua-5.3.5
+  rm -rf lua-5.3.6
 elif [ "$LUA" == "lua5.4" ]; then
   rm -rf lua-5.4.3
 fi
