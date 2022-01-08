@@ -32,6 +32,14 @@ The goal is to fully support openssl, include:
 Support backend include [OpenSSL](https://www.openssl.org/) and
 [LibreSSL](https://www.libressl.org/).
 
+Support [luajit](http://luajit.org/) and [lua](https://www.lua.org/), versions include:
+
+* luajit2
+* lua 5.1
+* lua 5.2
+* lua 5.2
+* lua 5.4
+
 Most of the lua-openssl functions require a key or certificate as argument, to
 make things easy to use OpenSSL.
 
