@@ -42,7 +42,7 @@ static int openssl_mac_is_a(lua_State *L)
 static void openssl_mac_names_do(const char *name, void *data)
 {
   lua_State *L = data;
-  int len = lua_objlen(L, -1);
+  int len = lua_rawlen(L, -1);
   lua_pushstring(L, name);
   lua_rawseti(L, -2, len+1);
 }
