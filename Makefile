@@ -151,7 +151,7 @@ info:
 	@echo "PREFIX:" $(PREFIX)
 
 test:	all
-	cd test && LUA_CPATH=../?.so $(LUA) test.lua && cd ..
+	cd test && LUA_CPATH=$(shell pwd)/?.so $(LUA) test.lua && cd ..
 
 debug: all
 
@@ -159,14 +159,14 @@ coveralls: test
 	coveralls -b . -i src --gcov-options '\-lp'
 
 valgrind: all
-	cd test && LUA_CPATH=../?.so \
+	cd test && LUA_CPATH=$(shell pwd)/?.so \
 	valgrind --gen-suppressions=all --suppressions=../.github/lua-openssl.supp \
 	--error-exitcode=1 --leak-check=full --child-silent-after-fork=yes \
 	$(LUA) test.lua && cd ..
 
 asan: all
 	export ASAN_LIB=$(ASAN_LIB) && \
-	cd test && LUA_CPATH=../?.so \
+	cd test && LUA_CPATH=$(shell pwd)/?.so \
 	DYLD_INSERT_LIBRARIES=$(ASAN_LIB) \
 	$(LUA) test.lua && cd ..
 

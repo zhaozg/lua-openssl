@@ -8,6 +8,9 @@ jobs:
     env:
       COVERALLS_GIT_BRANCH: "${{ github.ref }}"
       COVERALLS_REPO_TOKEN: "${{ secrets.COVERALLS_TOKEN }}"
+      WITH_LUA_ENGINE: LuaJIT
+      LUA: luajit2.1
+      LUAROCKS: 2.4.4
     steps:
     - uses: actions/checkout@v2
       with:
@@ -15,9 +18,15 @@ jobs:
     - name: cpp-coveralls
       run: pip install cpp-coveralls PyYAML
     - name: depends
-      run: sudo apt update && sudo apt install -y libssl-dev luajit libluajit-5.1-dev valgrind
+      run: sudo apt update && sudo apt install -y libssl-dev libuv1-dev
     - name: run
-      run: make coveralls
+      run: |
+        .github/shell/setup_lua.sh
+        export PATH=$HOME/.usr/bin:$PATH
+        $HOME/.usr/bin/luarocks install luv
+        ln -s $HOME/.usr/lib/lua/5.1/luv.so
+        export PKG_CONFIG_PATH=$HOME/.usr/lib/pkgconfig
+        make coveralls
 
   Valgrind:
     runs-on: ubuntu-latest
