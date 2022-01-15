@@ -29,16 +29,12 @@ The goal is to fully support openssl, include:
 - PKCS7/CMS.
 - SSL/TLS.
 
-Support backend include [OpenSSL](https://www.openssl.org/) and
-[LibreSSL](https://www.libressl.org/).
+This lua-openssl toolkit works with [Lua](https://www.lua.org/) 5.1/5.2/5.3/5.4 
+or [luajit](http://luajit.org/) 2.0/2.1, and [OpenSSL](https://www.openssl.org/) 
+0.9.8 or above 1.0.0 or [LibreSSL](https://www.libressl.org/).
 
-Support [luajit](http://luajit.org/) and [lua](https://www.lua.org/), versions include:
-
-* luajit2
-* lua 5.1
-* lua 5.2
-* lua 5.2
-* lua 5.4
+It is recommended to use the most up-to-date OpenSSL version because of the
+recent security fixes.
 
 Most of the lua-openssl functions require a key or certificate as argument, to
 make things easy to use OpenSSL.
@@ -133,12 +129,6 @@ bn library:
 ```
 
 ### Version
-
-This lua-openssl toolkit works with Lua 5.1/5.2/5.3/5.4 or LuaJIT 2.0/2.1, and
-OpenSSL(0.9.8 or above 1.0.0) or LibreSSL(v2.8.x).
-
-It is recommended to use the most up-to-date OpenSSL version because of the
-recent security fixes.
 
 You can get version of lua-openssl, lua and OpenSSL from a Lua script.
 
