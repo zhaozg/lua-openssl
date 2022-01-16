@@ -82,7 +82,7 @@ function M.spawn(cmd, args, pattern, after_start, after_close, env)
   local stderr = uv.new_pipe(false)
 
   local handle, pid
-  handle, pid = uv.spawn(
+  handle, pid = assert(uv.spawn(
     cmd,
     {
       args = args,
@@ -95,7 +95,7 @@ function M.spawn(cmd, args, pattern, after_start, after_close, env)
         after_close(code, signal)
       end
     end
-  )
+  ))
   uv.read_start(stdout, stdout_read)
   uv.read_start(stderr, stderr_read)
   return handle, pid

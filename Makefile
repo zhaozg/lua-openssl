@@ -151,7 +151,7 @@ info:
 	@echo "PREFIX:" $(PREFIX)
 
 test:	all
-	cd test && LUA_CPATH=$(shell pwd)/?.so $(LUA) test.lua && cd ..
+	cd test && LUA_CPATH=$(shell pwd)/?.so $(shell which $(LUA)) test.lua && cd ..
 
 debug: all
 
