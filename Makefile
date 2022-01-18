@@ -106,8 +106,6 @@ ifeq (.config, $(wildcard .config))
   include .config
 endif
 
-LIBNAME= $T.so.$V
-
 CFLAGS		+= $(OPENSSL_CFLAGS) $(LUA_CFLAGS) $(TARGET_FLAGS)
 LDFLAGS		+= $(OPENSSL_LIBS)
 # Compilation directives
