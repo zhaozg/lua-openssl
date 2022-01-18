@@ -12,16 +12,7 @@ loop = arg[3] and tonumber(arg[3]) or 100
 
 local _, _, opensslv = openssl.version(true)
 
-local params = {
-  mode = "client",
-  protocol = ssl.default .. "_client",
-  key = "luasec/certs/clientAkey.pem",
-  certificate = "luasec/certs/clientA.pem",
-  cafile = "luasec/certs/rootA.pem",
-  verify = ssl.peer + ssl.fail,
-  options = { "all", "no_sslv2" },
-  ciphers = "ALL:!ECDHE",
-}
+local params = sslctx.client
 
 local certstore = nil
 if opensslv > 0x10002000 then

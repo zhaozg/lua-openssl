@@ -80,4 +80,47 @@ local params = {
     return ctx
 end
 
+M.client = {
+  mode = "client",
+  protocol = ssl.default,
+  key = "certs/agent4-key.pem",
+  certificate = "certs/agent4-cert.pem",
+  cafile = "certs/ca2-cert.pem",
+  verify = ssl.peer + ssl.fail,
+  options = { "all", "no_sslv2" },
+  ciphers = "ALL:!ECDHE",
+}
+
+M.server = {
+  mode = "server",
+  protocol = ssl.default,
+  key = "certs/agent3-key.pem",
+  certificate = "certs/agent3-cert.pem",
+  cafile = "certs/ca2-cert.pem",
+  verify = ssl.peer + ssl.fail,
+  options = { "all", "no_sslv2" },
+}
+
+M.server01 = {
+  mode = "server",
+  protocol = ssl.default,
+  key = "certs/agent3-key.pem",
+  certificate = "certs/agent3-cert.pem",
+  cafile = "certs/ca2-cert.pem",
+  verify = ssl.none,
+  options = { "all", "no_sslv2" },
+  ciphers = "ALL:!ADH:@STRENGTH",
+}
+
+M.server02 = {
+  mode = "server",
+  protocol = ssl.default,
+  key = "certs/agent1-key.pem",
+  certificate = "certs/agent1-cert.pem",
+  cafile = "certs/ca1-cert.pem",
+  verify = ssl.none,
+  options = { "all", "no_sslv2" },
+  ciphers = "ALL:!ADH:@STRENGTH",
+}
+
 return M

@@ -9,37 +9,9 @@ host = arg[1] or "127.0.0.1" -- only ip
 port = arg[2] or "8383"
 loop = arg[3] and tonumber(arg[3]) or 100
 
-local params = {
-  mode = "server",
-  protocol = ssl.default,
-  key = "luasec/certs/serverAkey.pem",
-  certificate = "luasec/certs/serverA.pem",
-  cafile = "luasec/certs/rootA.pem",
-  verify = ssl.peer + ssl.fail,
-  options = { "all", "no_sslv2" },
-}
-
-local params01 = {
-  mode = "server",
-  protocol = ssl.default,
-  key = "luasec/certs/serverAkey.pem",
-  certificate = "luasec/certs/serverA.pem",
-  cafile = "luasec/certs/rootA.pem",
-  verify = ssl.none,
-  options = { "all", "no_sslv2" },
-  ciphers = "ALL:!ADH:@STRENGTH",
-}
-
-local params02 = {
-  mode = "server",
-  protocol = ssl.default,
-  key = "luasec/certs/serverBkey.pem",
-  certificate = "luasec/certs/serverB.pem",
-  cafile = "luasec/certs/rootB.pem",
-  verify = ssl.none,
-  options = { "all", "no_sslv2" },
-  ciphers = "ALL:!ADH:@STRENGTH",
-}
+local params = sslctx.server
+local params01 = sslctx.server01
+local params02 = sslctx.server02
 
 local certstore
 if opensslv > 0x10002000 then

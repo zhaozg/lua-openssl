@@ -12,16 +12,7 @@ port = arg[2] or "8383"
 loop = arg[3] and tonumber(arg[3]) or 100
 name = arg[4]
 
-local params = {
-  mode = "client",
-  protocol = ssl.default,
-  key = "luasec/certs/clientAkey.pem",
-  certificate = "luasec/certs/clientA.pem",
-  cafile = "luasec/certs/rootA.pem",
-  verify = ssl.peer + ssl.fail,
-  options = { "all", "no_sslv2" },
-  ciphers = "ALL:!ECDHE",
-}
+local params = sslctx.client
 
 print(string.format("CONNECT to %s:%s", host, port))
 
