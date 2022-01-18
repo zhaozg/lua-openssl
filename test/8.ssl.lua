@@ -450,6 +450,19 @@ function TestSSL:testSNI()
   srv_ctx:session(sess, false)
   srv_ctx:session(sess:id(), false)
 
+  srv_ctx:quiet_shutdown(1)
+  assert(srv_ctx:quiet_shutdown()==1)
+  srv_ctx:verify_locations('luasec/certs/rootA.pem')
+  assert(srv_ctx:cert_store())
+  assert(srv_ctx:verify_depth(9))
+  assert(srv_ctx:verify_mode())
+  srv_ctx:verify_mode(ssl.peer, function()
+    return true
+  end)
+
+  --FIXME:
+  --local dup = assert(cli:dup())
+
   local eng = openssl.engine('openssl')
   eng:load_ssl_client_cert(cli)
   cli:clear()
