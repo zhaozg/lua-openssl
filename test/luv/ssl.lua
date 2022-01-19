@@ -225,7 +225,6 @@ function M.connect (host, port, ctx, connected_cb)
       if err then
         print('ERROR', err)
       else
-        print('SCLI', scli)
         scli:handshake(function (self)
             if connected_cb then
               connected_cb(self)
