@@ -54,8 +54,6 @@ digest, cipher, x509, pkcs7, cms and so on, be write as modules.
 ```lua
    local digest = require'openssl'.digest
    local cipher = require'openssl'.cipher
-   local crypto = require'crypto'
-   local ssl    = require'ssl'
 ```
 
 digest() equals with digest.digest(), same cipher() equals with cipher.cipher().
