@@ -1401,7 +1401,6 @@ static luaL_Reg x509_funcs[] =
 
   {"equal",       openssl_x509_equal},
 
-  /* compat with luasec */
   {"digest",     openssl_x509_digest},
   {"extensions", openssl_x509_extensions},
   {"issuer",     openssl_x509_issuer},

@@ -452,7 +452,7 @@ function TestSSL:testSNI()
 
   srv_ctx:quiet_shutdown(1)
   assert(srv_ctx:quiet_shutdown()==1)
-  srv_ctx:verify_locations('luasec/certs/rootA.pem')
+  srv_ctx:verify_locations('certs/ca1-cert.pem')
   assert(srv_ctx:cert_store())
   assert(srv_ctx:verify_depth(9))
   assert(srv_ctx:verify_mode())

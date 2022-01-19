@@ -29,9 +29,9 @@ local address = {
 
 local ctx = ssl.new_ctx {
   protocol = helper.sslProtocol(true),
-  key = "../luasec/certs/serverAkey.pem",
-  certificate = "../luasec/certs/serverA.pem",
-  cafile = "../luasec/certs/rootA.pem",
+  key = "../certs/agent1-key.pem",
+  certificate = "../certs/agent1-cert.pem",
+  cafile = "../certs/agent1-ca.pem",
   verify = ssl.none,
   --   options = {"all", "no_sslv2"}
 }
