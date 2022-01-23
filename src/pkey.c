@@ -143,16 +143,6 @@ static int openssl_pkey_read(lua_State*L)
         }
         break;
       }
-      case EVP_PKEY_DH:
-      {
-        DH *dh = PEM_read_bio_DHparams(in, NULL, NULL, NULL);
-        if (dh)
-        {
-          key = EVP_PKEY_new();
-          EVP_PKEY_assign_DH(key, dh);
-        }
-        break;
-      }
       case EVP_PKEY_EC:
       {
         EC_KEY *ec = PEM_read_bio_EC_PUBKEY(in, NULL, NULL, NULL);
@@ -192,16 +182,6 @@ static int openssl_pkey_read(lua_State*L)
         {
           key = EVP_PKEY_new();
           EVP_PKEY_assign_DSA(key, dsa);
-        }
-        break;
-      }
-      case EVP_PKEY_DH:
-      {
-        DH *dh = d2i_DHparams_bio(in, NULL);
-        if (dh)
-        {
-          key = EVP_PKEY_new();
-          EVP_PKEY_assign_DH(key, dh);
         }
         break;
       }
@@ -252,15 +232,6 @@ static int openssl_pkey_read(lua_State*L)
           EVP_PKEY_assign_DSA(key, dsa);
         }
         break;
-      }
-      case EVP_PKEY_DH:
-      {
-        DH *dh = d2i_DHparams_bio(in, NULL);
-        if (dh)
-        {
-          key = EVP_PKEY_new();
-          EVP_PKEY_assign_DH(key, dh);
-        }
       }
       case EVP_PKEY_EC:
       {
@@ -843,9 +814,14 @@ static LUA_FUNCTION(openssl_pkey_export)
   {
     if (exraw == 0)
     {
-      ret = ispriv ?
-            PEM_write_bio_PrivateKey(bio_out, key, cipher, (unsigned char *)passphrase, passphrase_len, NULL, NULL) :
-            PEM_write_bio_PUBKEY(bio_out, key);
+      ret = ispriv ? PEM_write_bio_PrivateKey(bio_out,
+                                              key,
+                                              cipher,
+                                              (unsigned char *)passphrase,
+                                              passphrase_len,
+                                              NULL,
+                                              NULL)
+                  : PEM_write_bio_PUBKEY(bio_out, key);
     }
     else
     {
@@ -862,9 +838,6 @@ static LUA_FUNCTION(openssl_pkey_export)
               : PEM_write_bio_DSA_PUBKEY(bio_out, EVP_PKEY_get0_DSA(key));
       }
       break;
-      case EVP_PKEY_DH:
-        ret = PEM_write_bio_DHparams(bio_out, EVP_PKEY_get0_DH(key));
-        break;
 #ifndef OPENSSL_NO_EC
       case EVP_PKEY_EC:
         ret = ispriv ? PEM_write_bio_ECPrivateKey(bio_out, EVP_PKEY_get0_EC_KEY(key), cipher, (unsigned char *)passphrase, passphrase_len, NULL, NULL)
@@ -902,9 +875,6 @@ static LUA_FUNCTION(openssl_pkey_export)
               : i2d_DSA_PUBKEY_bio(bio_out, EVP_PKEY_get0_DSA(key));
       }
       break;
-      case EVP_PKEY_DH:
-        ret = i2d_DHparams_bio(bio_out, EVP_PKEY_get0_DH(key));
-        break;
 #ifndef OPENSSL_NO_EC
       case EVP_PKEY_EC:
         ret = ispriv ? i2d_ECPrivateKey_bio(bio_out, EVP_PKEY_get0_EC_KEY(key))
@@ -912,6 +882,9 @@ static LUA_FUNCTION(openssl_pkey_export)
         break;
 #endif
       default:
+        ret = ispriv ? i2d_PrivateKey_bio(bio_out, key)
+              : i2d_PUBKEY_bio(bio_out, key);
+        break;
         ret = 0;
         break;
       }
@@ -958,43 +931,45 @@ static LUA_FUNCTION(openssl_pkey_free)
  */
 
 #if OPENSSL_VERSION_NUMBER < 0x30000000L
-typedef struct ossl_item_st {
-    unsigned int id;
-    void *ptr;
-}OSSL_ITEM;
+typedef struct ossl_item_st
+{
+  unsigned int id;
+  void *ptr;
+} OSSL_ITEM;
 #endif
-static const OSSL_ITEM standard_name2type[] = {
-    { EVP_PKEY_RSA,     "RSA" },
+static const OSSL_ITEM standard_name2type[] =
+{
+  { EVP_PKEY_RSA,     "RSA" },
 #ifdef EVP_PKEY_RSA_PSS
-    { EVP_PKEY_RSA_PSS, "RSA-PSS" },
+  { EVP_PKEY_RSA_PSS, "RSA-PSS" },
 #endif
-    { EVP_PKEY_EC,      "EC" },
+  { EVP_PKEY_EC,      "EC" },
 #ifdef EVP_PKEY_ED25519
-    { EVP_PKEY_ED25519, "ED25519" },
+  { EVP_PKEY_ED25519, "ED25519" },
 #endif
 #ifdef EVP_PKEY_ED448
-    { EVP_PKEY_ED448,   "ED448" },
+  { EVP_PKEY_ED448,   "ED448" },
 #endif
 #ifdef EVP_PKEY_X25519
-    { EVP_PKEY_X25519,  "X25519" },
+  { EVP_PKEY_X25519,  "X25519" },
 #endif
 #ifdef EVP_PKEY_X448
-    { EVP_PKEY_X448,    "X448" },
+  { EVP_PKEY_X448,    "X448" },
 #endif
 #ifdef EVP_PKEY_SM2
-    { EVP_PKEY_SM2,     "SM2" },
+  { EVP_PKEY_SM2,     "SM2" },
 #endif
 #ifdef EVP_PKEY_DH
-    { EVP_PKEY_DH,      "DH" },
+  { EVP_PKEY_DH,      "DH" },
 #endif
 #ifdef EVP_PKEY_DHX
-    { EVP_PKEY_DHX,     "X9.42 DH" },
+  { EVP_PKEY_DHX,     "X9.42 DH" },
 #endif
 #ifdef EVP_PKEY_DHX
-    { EVP_PKEY_DHX,     "DHX" },
+  { EVP_PKEY_DHX,     "DHX" },
 #endif
 #ifdef EVP_PKEY_DSA
-    { EVP_PKEY_DSA,     "DSA" },
+  { EVP_PKEY_DSA,     "DSA" },
 #endif
 };
 
@@ -1002,29 +977,31 @@ static const OSSL_ITEM standard_name2type[] = {
 
 static int evp_pkey_name2type(const char *name)
 {
-    int type;
-    size_t i;
+  int type;
+  size_t i;
 
-    for (i = 0; i < OSSL_NELEM(standard_name2type); i++) {
-        if (strcasecmp(name, standard_name2type[i].ptr) == 0)
-            return (int)standard_name2type[i].id;
-    }
+  for (i = 0; i < OSSL_NELEM(standard_name2type); i++)
+  {
+    if (strcasecmp(name, standard_name2type[i].ptr) == 0)
+      return (int)standard_name2type[i].id;
+  }
 
-    if ((type = EVP_PKEY_type(OBJ_sn2nid(name))) != NID_undef)
-        return type;
-    return EVP_PKEY_type(OBJ_ln2nid(name));
+  if ((type = EVP_PKEY_type(OBJ_sn2nid(name))) != NID_undef)
+    return type;
+  return EVP_PKEY_type(OBJ_ln2nid(name));
 }
 
 static const char *evp_pkey_type2name(int type)
 {
-    size_t i;
+  size_t i;
 
-    for (i = 0; i < OSSL_NELEM(standard_name2type); i++) {
-        if (type == (int)standard_name2type[i].id)
-            return standard_name2type[i].ptr;
-    }
+  for (i = 0; i < OSSL_NELEM(standard_name2type); i++)
+  {
+    if (type == (int)standard_name2type[i].id)
+      return standard_name2type[i].ptr;
+  }
 
-    return OBJ_nid2sn(type);
+  return OBJ_nid2sn(type);
 }
 
 /***
