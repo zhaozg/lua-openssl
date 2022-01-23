@@ -46,61 +46,16 @@ static LUA_FUNCTION(openssl_dh_check)
   int ret = 0;
   int codes = 0;
 
-#if OPENSSL_VERSION_NUMBER > 0x10100000L && !defined(LIBRESSL_VERSION_NUMBER)
   if (lua_isuserdata(L, 2))
   {
     const BIGNUM* pub = CHECK_OBJECT(2, BIGNUM, "openssl.bn");
-    ret = DH_check_pub_key_ex(dh, pub);
-    return openssl_pushresult(L, ret);
+    ret = DH_check_pub_key(dh, pub, &codes);
   } else
-#endif
+    ret = DH_check(dh, &codes);
 
-  ret = DH_check(dh, &codes);
-  if (ret==1)
-  {
-    if (codes==0)
-    {
-      lua_pushboolean(L, 1);
-    }
-    else
-    {
-      lua_pushboolean(L, 0);
-      lua_pushboolean(L, codes);
-      switch(codes)
-      {
-      case DH_CHECK_P_NOT_PRIME:
-        lua_pushliteral(L, "DH_CHECK_P_NOT_PRIME");
-        break;
-      case DH_NOT_SUITABLE_GENERATOR:
-        lua_pushliteral(L, "DH_NOT_SUITABLE_GENERATOR");
-        break;
-      case DH_CHECK_P_NOT_SAFE_PRIME:
-        lua_pushliteral(L, "DH_CHECK_P_NOT_SAFE_PRIME");
-        break;
-      case DH_UNABLE_TO_CHECK_GENERATOR:
-        lua_pushliteral(L, "DH_CHECK_P_NOT_SAFE_PRIME");
-        break;
-      case DH_CHECK_Q_NOT_PRIME:
-        lua_pushliteral(L, "DH_CHECK_Q_NOT_PRIME");
-        break;
-      case DH_CHECK_INVALID_Q_VALUE:
-        lua_pushliteral(L, "DH_CHECK_INVALID_Q_VALUE");
-        break;
-      case DH_CHECK_INVALID_J_VALUE:
-        lua_pushliteral(L, "DH_CHECK_INVALID_J_VALUE");
-        break;
-      default:
-        lua_pushliteral(L, "DH_CHECK_FAIL_UNKNOW");
-      }
-      ret = 3;
-    }
-  }
-  else
-  {
-    lua_pushboolean(L, 0);
-    ret = 1;
-  }
-  return ret;
+  lua_pushboolean(L, ret);
+  lua_pushinteger(L, codes);
+  return 2;
 }
 
 static int openssl_dh_generate_parameters(lua_State *L)
@@ -149,12 +104,64 @@ static luaL_Reg dh_funs[] =
   { NULL, NULL }
 };
 
+static LuaL_Enumeration dh_problems[] =
+{
+  {"DH_CHECK_P_NOT_PRIME",         DH_CHECK_P_NOT_PRIME},
+  {"DH_CHECK_P_NOT_SAFE_PRIME",    DH_CHECK_P_NOT_SAFE_PRIME},
+  {"DH_UNABLE_TO_CHECK_GENERATOR", DH_UNABLE_TO_CHECK_GENERATOR},
+  {"DH_NOT_SUITABLE_GENERATOR",    DH_NOT_SUITABLE_GENERATOR},
+  {"DH_CHECK_Q_NOT_PRIME",         DH_CHECK_Q_NOT_PRIME},
+  {"DH_CHECK_INVALID_Q_VALUE",     DH_CHECK_INVALID_Q_VALUE},
+  {"DH_CHECK_INVALID_J_VALUE",     DH_CHECK_INVALID_J_VALUE},
+
+  {"DH_CHECK_PUBKEY_TOO_SMALL",    DH_CHECK_PUBKEY_TOO_SMALL},
+  {"DH_CHECK_PUBKEY_TOO_LARGE",    DH_CHECK_PUBKEY_TOO_LARGE},
+  {"DH_CHECK_PUBKEY_INVALID",      DH_CHECK_PUBKEY_INVALID},
+
+  {NULL,                           -1}
+};
+
+static int openssl_dh_problems(lua_State *L)
+{
+  int reason = luaL_checkint(L, 1);
+  int pub = lua_toboolean(L, 2);
+  int i = 1;
+
+#define VAL(r, v)  if(r & DH_##v) \
+  { lua_pushliteral(L, #v);  lua_rawseti(L, -2, i++); }
+
+  lua_newtable(L);
+  if (pub)
+  {
+    VAL(reason, CHECK_PUBKEY_TOO_SMALL);
+    VAL(reason, CHECK_PUBKEY_TOO_LARGE);
+    VAL(reason, CHECK_PUBKEY_INVALID);
+  }
+  else
+  {
+    VAL(reason, CHECK_P_NOT_PRIME);
+    VAL(reason, CHECK_PUBKEY_TOO_SMALL);
+    VAL(reason, UNABLE_TO_CHECK_GENERATOR);
+
+    VAL(reason, NOT_SUITABLE_GENERATOR);
+    VAL(reason, CHECK_Q_NOT_PRIME);
+    VAL(reason, CHECK_INVALID_Q_VALUE);
+    VAL(reason, CHECK_INVALID_J_VALUE);
+  }
+
+#undef VAL
+
+  return 1;
+}
+
 static luaL_Reg R[] =
 {
   {"generate_parameters", openssl_dh_generate_parameters},
+  {"problems",            openssl_dh_problems},
 
   {NULL, NULL}
 };
+
 
 int luaopen_dh(lua_State *L)
 {
@@ -162,6 +169,8 @@ int luaopen_dh(lua_State *L)
 
   lua_newtable(L);
   luaL_setfuncs(L, R, 0);
+
+  auxiliar_enumerate(L, -1, dh_problems);
 
   return 1;
 }

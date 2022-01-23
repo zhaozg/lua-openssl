@@ -12,8 +12,6 @@ function TestDH:testDH()
   local k = p:generate_key()
 
   assert(k:check())
-  assert(k:check(true))
-  assert(k:check(false))
 
   local t = k:parse()
   assert(t.bits == bits)
@@ -50,4 +48,8 @@ function TestDH:testDH()
   assert(openssl.pkey.read(pem, true))
   pem = assert(dh:get_public():export('pem'))
   assert(openssl.pkey.read(pem, false))
+  t = openssl.dh.problems(0xFF)
+  assert(#t==7)
+  t = openssl.dh.problems(0xF, true)
+  assert(#t==3)
 end

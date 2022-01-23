@@ -154,10 +154,10 @@ test:	all
 debug: all
 
 coveralls: test
-	if [[ -z $CI ]]; then lcov -c -d src -o coveralls.info; fi
-	if [[ -z $CI ]]; then \
-	genhtml -o coveralls.html -t "${T} coverage" --num-spaces 4 coveralls.info; \
-	fi
+ifeq ($(CI),)
+	lcov -c -d src -o ${T}.info
+	genhtml -o ${T}.html -t "${T} coverage" --num-spaces 2 ${T}.info
+endif
 
 valgrind: all
 	cd test && LUA_CPATH=$(shell pwd)/?.so \
@@ -172,6 +172,6 @@ asan: all
 	$(LUA) test.lua && cd ..
 
 clean:
-	rm -f $T.so lib$T.a $(OBJS)
+	rm -rf $T.* lib$T.a $(OBJS)
 
 # vim: ts=8 sw=8 noet
