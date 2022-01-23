@@ -4,10 +4,12 @@ on: [push, pull_request]
 
 jobs:
   Coverage:
+    # look at https://github.com/eddyxu/cpp-coveralls
     runs-on: ubuntu-latest
     env:
       COVERALLS_GIT_BRANCH: "${{ github.ref }}"
       COVERALLS_REPO_TOKEN: "${{ secrets.COVERALLS_TOKEN }}"
+      COVERALLS_SERVICE_NAME: github
       WITH_LUA_ENGINE: LuaJIT
       LUA: luajit2.1
       LUAROCKS: 2.4.4
