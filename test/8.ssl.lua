@@ -118,6 +118,21 @@ if uv then
     uv.run()
   end
 
+  function TestSSL:testUV_DTLS()
+    local port = math.random(8000, 9000)
+    helper.spawn(LUA,
+      {"8.bio_dtls_s.lua",  '127.0.0.1',  port},
+      'accpeting...',
+      function()
+        print('started')
+        helper.spawn(LUA,
+          {"8.bio_dtls_c.lua",  '127.0.0.1',  port}
+        )
+      end
+    )
+    uv.run()
+  end
+
 end
 
 local luv

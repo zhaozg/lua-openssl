@@ -13,7 +13,7 @@ local function load(path)
     end
 end
 
-function M.new(params)
+function M.new(params, protocol)
 --[[
 local params = {
    mode = "server",
@@ -26,8 +26,8 @@ local params = {
    password = 'password'
 }
 --]]
-    local protocol = params.protocol and string.upper(string.sub(params.protocol,1,3))
-        ..string.sub(params.protocol,4,-1) or helper.sslProtocol()
+    protocol = protocol or (params.protocol and string.upper(string.sub(params.protocol,1,3))
+        ..string.sub(params.protocol,4,-1) or helper.sslProtocol())
     local ctx = ssl.ctx_new(protocol,params.ciphers)
     local xkey = nil
     if (type(params.password)=='nil') then
