@@ -154,7 +154,10 @@ test:	all
 debug: all
 
 coveralls: test
-	coveralls -b . -i src --gcov-options '\-lp'
+	if [[ -z $CI ]]; then lcov -c -d src -o coveralls.info; fi
+	if [[ -z $CI ]]; then \
+	genhtml -o coveralls.html -t "${T} coverage" --num-spaces 4 coveralls.info; \
+	fi
 
 valgrind: all
 	cd test && LUA_CPATH=$(shell pwd)/?.so \

@@ -9,7 +9,6 @@ jobs:
     env:
       COVERALLS_GIT_BRANCH: "${{ github.ref }}"
       COVERALLS_REPO_TOKEN: "${{ secrets.COVERALLS_TOKEN }}"
-      COVERALLS_SERVICE_NAME: github
       WITH_LUA_ENGINE: LuaJIT
       LUA: luajit2.1
       LUAROCKS: 2.4.4
@@ -29,6 +28,7 @@ jobs:
         ln -s $HOME/.usr/lib/lua/5.1/luv.so
         export PKG_CONFIG_PATH=$HOME/.usr/lib/pkgconfig
         make coveralls
+        coveralls -b . -i src --gcov-options '\-lp'
 
   Valgrind:
     runs-on: ubuntu-latest
