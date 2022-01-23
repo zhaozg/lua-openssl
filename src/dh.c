@@ -55,8 +55,7 @@ static LUA_FUNCTION(openssl_dh_check)
   } else
 #endif
 
-    ret = DH_check(dh, &codes);
-
+  ret = DH_check(dh, &codes);
   if (ret==1)
   {
     if (codes==0)

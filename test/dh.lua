@@ -5,7 +5,7 @@ local pkey = openssl.pkey
 local unpack = table.unpack or unpack
 
 TestDH = {}
-function TestDH:TestDH()
+function TestDH:testDH()
   local bits = 1024
 
   local p = dh.generate_parameters(bits)

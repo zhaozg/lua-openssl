@@ -14,6 +14,12 @@ TestCMS = {}
 
 function TestCMS:testCompress()
   local msg = openssl.random(1000)
+  local cs = cms.compress(msg)
+  if cs then
+    local ret = assert(cms.uncompress(cs))
+    lu.assertEquals(msg, ret)
+  end
+
   local cs = cms.compress(msg, 'zlib')
   if cs then
     local ret = assert(cms.uncompress(cs))
@@ -77,6 +83,8 @@ function TestCMS:testSign()
   if rc then
     print(rc:signers())
     assert(rc:verify_receipt(c1, {self.bob.cert}, self.castore, 0))
+  else
+    print(openssl.errors())
   end
 end
 

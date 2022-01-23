@@ -107,6 +107,7 @@ if openssl.ec then
     else
       error(form)
     end
+
     local pnt1 = grp:oct2point(oct)
     assert(grp:point_equal(pnt, pnt1))
 
@@ -142,7 +143,9 @@ if openssl.ec then
     local ec1 = openssl.ec.read(der)
     assert(ec1:set_method(openssl.engine('openssl')))
     assert(ec1:conv_form('hybrid'))
+    assert(ec1:conv_form()=='hybrid')
     assert(ec1:enc_flags('explicit'))
+    assert(ec1:enc_flags()=='explicit')
     assert(ec1:check())
     assert(ec1:export())
 

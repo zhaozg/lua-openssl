@@ -124,9 +124,12 @@ static LUA_FUNCTION(openssl_pkcs12_read)
 
     AUXILIAR_SETOBJECT(L, cert, "openssl.x509", -1, "cert");
     AUXILIAR_SETOBJECT(L, pkey, "openssl.evp_pkey", -1, "pkey");
-    lua_pushstring(L, "extracerts");
-    openssl_sk_x509_totable(L, ca);
-    lua_rawset(L, -3);
+    if (ca != NULL) {
+      lua_pushstring(L, "extracerts");
+      openssl_sk_x509_totable(L, ca);
+      lua_rawset(L, -3);
+      sk_X509_pop_free(ca, X509_free);
+    }
 
     ret = 1;
   }
