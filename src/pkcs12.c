@@ -22,7 +22,7 @@ create and export pkcs12 data
 @tparam x509 cert
 @tparam evp_pkey pkey
 @tparam string password
-@tparam[opt] string friendlyname
+@tparam[opt=nil] string friendlyname
 @tparam[opt] table|stak_of_x509 extracerts
 @treturn string data
 */
@@ -43,12 +43,19 @@ static LUA_FUNCTION(openssl_pkcs12_export)
 
   if (top > 3)
   {
-    if (lua_isstring(L, 4))
-      friendly_name = lua_tostring(L, 4);
-    else if (lua_istable(L, 4))
-      ca = openssl_sk_x509_fromtable(L, 4);
-    else
-      luaL_argerror(L, 4, "must be string as friendly_name or table contians x509 object as cacets");
+    int idx = 4;
+    if (lua_isstring(L, idx))
+    {
+      friendly_name = lua_tostring(L, idx);
+      idx++;
+    }
+
+    if (lua_istable(L, idx))
+    {
+      ca = openssl_sk_x509_fromtable(L, idx);
+      if (ca == NULL)
+        luaL_argerror(L, idx, "must be table contians x509 object as cacets");
+    }
   }
 
   if (cert && !X509_check_private_key(cert, priv_key))
@@ -58,8 +65,18 @@ static LUA_FUNCTION(openssl_pkcs12_export)
 
   /* end parse extra config */
 
-  /*PKCS12 *PKCS12_create(char *pass, char *name, EVP_PKEY *pkey, X509 *cert, STACK_OF(X509) *ca,
-                                     int nid_key, int nid_cert, int iter, int mac_iter, int keytype);*/
+  /*
+   * PKCS12 *PKCS12_create(char *pass,
+   *                       char *name,
+   *                       EVP_PKEY *pkey,
+   *                       X509 *cert,
+   *                       STACK_OF(X509) *ca,
+   *                       int nid_key,
+   *                       int nid_cert,
+   *                       int iter,
+   *                       int mac_iter,
+   *                       int keytype);
+   */
 
   p12 = PKCS12_create(pass, (char*)friendly_name, priv_key, cert, ca, 0, 0, 0, 0, 0);
   if (!p12)
@@ -98,24 +115,8 @@ static LUA_FUNCTION(openssl_pkcs12_read)
   STACK_OF(X509) * ca = NULL;
   int ret = 0;
 
-  int base64 = 0;
-  int olb64 = 0;
-  BIO * b64 = NULL;
-
   BIO * bio_in = load_bio_object(L, 1);
   const char *pass = luaL_checkstring(L, 2);
-  if (!lua_isnone(L, 3))
-    base64 = auxiliar_checkboolean(L, 3);
-  if (!lua_isnone(L, 4))
-    olb64 = auxiliar_checkboolean(L, 4);
-
-  if (base64)
-  {
-    if ((b64 = BIO_new(BIO_f_base64())) == NULL)
-      return 0;
-    if (olb64) BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
-    bio_in = BIO_push(b64, bio_in);
-  }
 
   if (d2i_PKCS12_bio(bio_in, &p12) && PKCS12_parse(p12, pass, &pkey, &cert, &ca))
   {
@@ -129,8 +130,6 @@ static LUA_FUNCTION(openssl_pkcs12_read)
 
     ret = 1;
   }
-  if (b64)
-    BIO_free(b64);
   BIO_free(bio_in);
   PKCS12_free(p12);
   return ret;
