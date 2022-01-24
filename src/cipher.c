@@ -686,33 +686,15 @@ static LUA_FUNCTION(openssl_evp_cipher_update)
   int outl;
   char *out;
   CIPHER_MODE mode;
-  int ret, type, nout;
+  int ret, type;
 
   EVP_CIPHER_CTX* c = CHECK_OBJECT(1, EVP_CIPHER_CTX, "openssl.evp_cipher_ctx");
   type = lua_type(L, 2);
   luaL_argcheck(L, type==LUA_TNUMBER || type==LUA_TSTRING, 2, "expect integer or string");
 
-  if (type==LUA_TNUMBER)
-  {
-    inl = lua_tointeger(L, 2);
-    in = NULL;
-    nout = 1;
-  }
-  else
-  {
-    in = luaL_checklstring(L, 2, &inl);
-    nout = lua_isnone(L, 3) ? 0 : lua_toboolean(L, 3);
-  }
-  if (nout==0)
-  {
-    outl = inl + EVP_MAX_BLOCK_LENGTH;
-    out = OPENSSL_malloc(outl);
-  }
-  else
-  {
-    outl = 0;
-    out = NULL;
-  }
+  in = luaL_checklstring(L, 2, &inl);
+  outl = inl + EVP_MAX_BLOCK_LENGTH;
+  out = OPENSSL_malloc(outl);
 
   lua_rawgetp(L, LUA_REGISTRYINDEX, c);
   mode = lua_tointeger(L, -1);
@@ -729,16 +711,11 @@ static LUA_FUNCTION(openssl_evp_cipher_update)
     luaL_error(L, "never go here");
 
   if (ret == 1)
-  {
-    if (out == NULL)
-      lua_pushinteger(L, outl);
-    else
-      lua_pushlstring(L, out, outl);
-  }
+    lua_pushlstring(L, out, outl);
   else
     ret = openssl_pushresult(L, ret);
-  if(out)
-    OPENSSL_free(out);
+
+  OPENSSL_free(out);
 
   return ret;
 }

@@ -71,6 +71,9 @@ function TestEC:TestEC()
   ec2p.d = ec:parse().ec:parse().priv_key
   local ec2priv = pkey.new(ec2p)
   assert(ec2priv:is_private())
+
+  assert(openssl.ec.group(ec:parse().ec, 4, 1))
+  assert(openssl.ec.group(ec2, 4, 1))
 end
 
 function TestEC:TestPrime256v1()
@@ -114,6 +117,8 @@ if openssl.ec then
     assert(grp:point_conversion_form('compressed'))
     oct = grp:point2oct(pnt)
     assert(#oct==33)
+    oct = grp:point2oct(pnt, 'compressed')
+    assert(#oct==33)
     local pnt2 = grp:oct2point(oct, 'compressed')
     assert(grp:point_equal(pnt2, pnt1))
 
@@ -121,7 +126,15 @@ if openssl.ec then
     pnt2 = grp:bn2point(bn)
     assert(grp:point_equal(pnt2, pnt1))
 
+    bn = grp:point2bn(pnt, 'compressed')
+    pnt2 = grp:bn2point(bn)
+    assert(grp:point_equal(pnt2, pnt1))
+
     local hex = grp:point2hex(pnt)
+    pnt2 = grp:hex2point(hex)
+    assert(grp:point_equal(pnt2, pnt1))
+
+    local hex = grp:point2hex(pnt, 'compressed')
     pnt2 = grp:hex2point(hex)
     assert(grp:point_equal(pnt2, pnt1))
 
@@ -135,8 +148,13 @@ if openssl.ec then
     assert(grp==grp1)
 
     local der = ec:do_sign('abcd')
-    assert(#der>=70 and #der <= 72)
+    assert(#der>=68 and #der <= 72)
     assert(ec:do_verify('abcd', der))
+
+    local dgst = openssl.random(32)
+    der = ec:sign(dgst, 'sha256')
+    assert(#der>=68 and #der <= 72)
+    assert(ec:verify(dgst, der, 'sha256'))
 
     der = ec:export()
     assert(type(der)=='string')

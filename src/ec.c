@@ -243,12 +243,13 @@ EC_GROUP* openssl_get_ec_group(lua_State* L, int ec_name_idx, int param_enc_idx,
     if (param_enc_idx)
     {
       int form = 0;
-      if (lua_isstring(L, param_enc_idx))
+      int type = lua_type(L, param_enc_idx);
+      if (type == LUA_TSTRING)
       {
         form = openssl_to_point_conversion_form(L, param_enc_idx, NULL);
         EC_GROUP_set_point_conversion_form(g, form);
       }
-      else if (lua_isnumber(L, param_enc_idx))
+      else if (type == LUA_TNUMBER)
       {
         form = luaL_checkint(L, param_enc_idx);
         EC_GROUP_set_point_conversion_form(g, form);
@@ -266,12 +267,13 @@ EC_GROUP* openssl_get_ec_group(lua_State* L, int ec_name_idx, int param_enc_idx,
     if (conv_form_idx)
     {
       int asn1_flag = 0;
-      if (lua_isstring(L, conv_form_idx))
+      int type = lua_type(L, conv_form_idx);
+      if (type == LUA_TSTRING)
       {
         asn1_flag =  openssl_to_group_asn1_flag(L, conv_form_idx, NULL);
         EC_GROUP_set_asn1_flag(g, asn1_flag);
       }
-      else if (lua_isnumber(L, conv_form_idx))
+      else if (type == LUA_TNUMBER)
       {
         asn1_flag = luaL_checkint(L, conv_form_idx);
         EC_GROUP_set_asn1_flag(g, asn1_flag);

@@ -161,7 +161,13 @@ function TestCSR:testNew()
   assert(type(t) == 'table')
   lu.assertStrContains(tostring(req1:to_x509(pkey, 3650)), 'openssl.x509')
   lu.assertStrContains(tostring(req2:to_x509(pkey, 3650)), 'openssl.x509')
+  req2 = assert(req1:dup())
+  assert(req1:export()==req2:export())
 
+  --FIXME: memleaks
+  --local tosign = assert(req1:sign())
+  --local sig = assert(pkey:sign(tosign, 'sha256'))
+  --assert(req1:sign(sig, 'sha256')==true)
 end
 
 function TestCSR:testIO()

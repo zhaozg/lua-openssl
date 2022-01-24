@@ -18,7 +18,6 @@ local function run_ccm(evp)
     local k = openssl.random(info.key_length)
     local m = openssl.random(info.key_length)
     local i = openssl.random(13)
-    local a = openssl.random(info.key_length)
     local tn = 16
     local tag = tn
 
@@ -28,13 +27,9 @@ local function run_ccm(evp)
     assert(e:ctrl(openssl.cipher.EVP_CTRL_GCM_SET_IVLEN, #i))
     assert(e:ctrl(openssl.cipher.EVP_CTRL_GCM_SET_TAG, tag))
     assert(e:init(k, i))
-
-    local c = assert(e:update(#m))
-    assert(c==#m)
-    c = assert(e:update(a, true))
-    assert(c==#a)
     e:padding(false)
-    c = assert(e:update(m))
+
+    local c = assert(e:update(m))
     assert(#c==#m)
     c = c .. e:final()
     assert(#c==#m)
@@ -47,11 +42,8 @@ local function run_ccm(evp)
     assert(e:ctrl(openssl.cipher.EVP_CTRL_GCM_SET_IVLEN, #i))
     assert(e:ctrl(openssl.cipher.EVP_CTRL_GCM_SET_TAG, tag))
     assert(e:init(k, i))
-
-    local l = assert(e:update(#m))
-    assert(l==#m)
-    assert(e:update(a, true))
     e:padding(false)
+
     local r = assert(e:update(c))
     assert(#r==#c)
     return (r==m)
@@ -62,7 +54,6 @@ local function run_gcm(evp)
     local k = openssl.random(info.key_length)
     local m = openssl.random(info.key_length)
     local i = openssl.random(13)
-    local a = openssl.random(info.key_length)
     local tn = 16
     local tag = tn
 
@@ -70,11 +61,9 @@ local function run_gcm(evp)
     local e = evp:encrypt_new()
     assert(e:ctrl(openssl.cipher.EVP_CTRL_GCM_SET_IVLEN, #i))
     assert(e:init(k, i))
-
-    local c = assert(e:update(a, true))
-    assert(c==#a)
     e:padding(false)
-    c = assert(e:update(m))
+
+    local c = assert(e:update(m))
     assert(#c==#m)
     c = c .. e:final()
     assert(#c==#m)
@@ -86,9 +75,8 @@ local function run_gcm(evp)
     e = evp:decrypt_new()
     assert(e:ctrl(openssl.cipher.EVP_CTRL_GCM_SET_IVLEN, #i))
     assert(e:init(k, i))
-
-    assert(e:update(a, true))
     e:padding(false)
+
     local r = assert(e:update(c))
     assert(e:ctrl(openssl.cipher.EVP_CTRL_GCM_SET_TAG, tag))
     r = r .. assert(e:final())

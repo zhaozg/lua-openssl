@@ -119,6 +119,9 @@ if uv then
   end
 
   function TestSSL:testUV_DTLS()
+    if helper.opensslv:match('1.0.2') then
+      return
+    end
     local port = math.random(8000, 9000)
     helper.spawn(LUA,
       {"8.bio_dtls_s.lua",  '127.0.0.1',  port},

@@ -9,6 +9,9 @@ M.openssl3 = M.opensslv:find("^OpenSSL 3")
 
 function M.sslProtocol(srv, protocol)
   protocol = protocol or openssl.ssl.default
+  if M.opensslv:match('1.0.2') then
+    protocol = protocol:gsub('DTLS', 'DTLSv1_2')
+  end
   if srv == true then
     return protocol .. "_server"
   elseif srv == false then
