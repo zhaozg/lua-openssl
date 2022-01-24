@@ -1,4 +1,4 @@
-local openssl = require('openssl')
+local openssl = require("openssl")
 local cms = openssl.cms
 local x509 = openssl.x509
 
@@ -32,15 +32,21 @@ dgIhAPEBU53+71sigZYYn5CEM7+Np9dR+2iKFBTh47OpL1TIAAAAAAAA
 -----END CMS-----
 ]]
 
-
-local store = assert(x509.store.new({ assert(x509.read(console_public_key_data, 'pem')) }))
-local i=0
-local b = collectgarbage('count')
-local box = assert(cms.read(ver_blob, 'pem'))
-while (true) do
+function testIssue185()
+  local store = assert(x509.store.new({
+    assert(x509.read(console_public_key_data, "pem"))
+  }))
+  local i = 0
+  collectgarbage()
+  collectgarbage()
+  local b = collectgarbage("count")
+  local box = assert(cms.read(ver_blob, "pem"))
+  while i<10 do
     assert(cms.verify(box, {}, store))
-    i=i+1
+    i = i + 1
+  end
+  collectgarbage()
+  collectgarbage()
+  local e = collectgarbage("count")
+  assert(e-b <= 0, "Memleaks ".. tostring(e-b))
 end
-collectgarbage()
-local e = collectgarbage('count')
-print('Memleaks ', (e-b))

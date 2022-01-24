@@ -1,10 +1,7 @@
+local lu = require 'luaunit'
 local openssl = require('openssl')
+
 local supports = openssl.cipher.list()
-local function dump(v)
-    for k,v in pairs(v) do
-        print(k,v)
-    end
-end
 
 local function run_ccm(evp)
     --#aadcipher:key:iv:plaintext:ciphertext:aad:tag:0/1(decrypt/encrypt)
@@ -57,7 +54,7 @@ local function run_ccm(evp)
     e:padding(false)
     local r = assert(e:update(c))
     assert(#r==#c)
-    assert(r==m)
+    return (r==m)
 end
 
 local function run_gcm(evp)
@@ -96,7 +93,7 @@ local function run_gcm(evp)
     assert(e:ctrl(openssl.cipher.EVP_CTRL_GCM_SET_TAG, tag))
     r = r .. assert(e:final())
     assert(#r==#c)
-    assert(r==m)
+    return (r==m)
 end
 
 local function run_xts(evp)
@@ -110,7 +107,7 @@ local function run_xts(evp)
 
     local d = evp:new(false, k, i, false)
     local r = d:update(c) .. d:final()
-    assert(r==m)
+    return (r==m)
 end
 
 local function run_basic(evp)
@@ -127,7 +124,7 @@ local function run_basic(evp)
 
     local d = evp:new(false, k, i, false)
     local r = d:update(c) .. d:final()
-    assert(r==m)
+    return (r==m)
 end
 
 local function run(alg)
@@ -136,19 +133,20 @@ local function run(alg)
     local mode = alg:sub(-3, -1)
 
     if mode=='ccm' then
-        run_ccm(evp)
+        return run_ccm(evp)
     elseif mode=='gcm' then
-        run_gcm(evp)
+        return run_gcm(evp)
     elseif mode=='xts' then
-        run_xts(evp)
+        return run_xts(evp)
     else
-        run_basic(evp)
+        return run_basic(evp)
     end
 end
 
-for _,v in pairs(supports) do
-    if(v:match('^aes%-...%-...$')) then
-        print('support '..v)
-        run(v)
-    end
+function testAESMode()
+  for _,v in pairs(supports) do
+      if(v:match('^aes%-...%-...$')) then
+          assert(run(v), "fail to run " .. v)
+      end
+  end
 end
