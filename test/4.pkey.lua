@@ -21,7 +21,6 @@ function TestPKEYMY:setUp()
     {'ec',  'prime256v1'}
   }
   if not helper.openssl3 then
-    -- FIXME: openssl3
     self.genalg[#self.genalg+1] = {'dsa',  1024}
     self.genalg[#self.genalg+1] = {'dh',  1024}
   end
@@ -34,7 +33,7 @@ function TestPKEYMY:testBasic()
     local k = mk_key(v)
     assert(k:is_private())
     if v[1]~='dh' then
-      --avoid bug when dh
+      --FIXME: avoid bug when dh
       k:set_engine(eng)
     end
     local k1 = assert(pkey.get_public(k), v[1])

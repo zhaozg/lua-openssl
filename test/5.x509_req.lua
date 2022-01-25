@@ -170,10 +170,9 @@ function TestCSR:testNew()
     assert(req1:export()==req2:export())
   end
 
-  --FIXME: memleaks
-  --local tosign = assert(req1:sign())
-  --local sig = assert(pkey:sign(tosign, 'sha256'))
-  --assert(req1:sign(sig, 'sha256')==true)
+  local tosign = assert(req1:sign())
+  local sig = assert(pkey:sign(tosign, 'sha256'))
+  assert(req1:sign(sig, 'sha256')==true)
 end
 
 function TestCSR:testIO()

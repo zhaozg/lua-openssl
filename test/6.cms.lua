@@ -74,7 +74,7 @@ function TestCMS:testSign()
   lu.assertEquals(msg, self.msg)
   assert(c1:signers()[1]==self.bob.cert)
 
-  --FIXME:
+  --FIXME: lua-openssl
   local rc = c1:sign_receipt(
     self.bob.cert,
     self.bob.key,

@@ -101,9 +101,9 @@ static int reason_get(lua_State*L, int reasonidx)
 static int openssl_x509_revoked_get_reason(X509_REVOKED *revoked)
 {
   int crit = 0;
-  int reason;
+  int reason = 0;
   ASN1_ENUMERATED *areason = X509_REVOKED_get_ext_d2i(revoked, NID_crl_reason, &crit, NULL);
-  reason = (crit == -1) ? CRL_REASON_NONE : ASN1_ENUMERATED_get(areason);
+  //reason = (crit == -1) ? CRL_REASON_NONE : ASN1_ENUMERATED_get(areason);
   ASN1_ENUMERATED_free(areason);
   return reason;
 }
@@ -801,10 +801,17 @@ static LUA_FUNCTION(openssl_crl_parse)
     const X509_ALGOR *sig_alg = NULL;
 
     X509_CRL_get0_signature(crl, &sig, &alg);
-    PUSH_OBJECT(sig_alg, "openssl.x509_algor");
-    lua_setfield(L, -2, "sig_alg");
-    PUSH_ASN1_STRING(L, sig);
-    lua_setfield(L, -2, "signature");
+    if (alg != NULL && OBJ_obj2nid(alg->algorithm)!=NID_undef)
+    {
+      PUSH_OBJECT(sig_alg, "openssl.x509_algor");
+      lua_setfield(L, -2, "sig_alg");
+    }
+
+    if (sig != NULL && sig->length > 0)
+    {
+      PUSH_ASN1_STRING(L, sig);
+      lua_setfield(L, -2, "signature");
+    }
   }
   {
     ASN1_INTEGER *crl_number = X509_CRL_get_ext_d2i(crl, NID_crl_number, NULL, NULL);

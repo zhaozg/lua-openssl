@@ -470,11 +470,8 @@ function TestSSL:testSNI()
   cli:cache_hit()
   cli:session_reused()
 
-  --[[
-  -- uncommit cause crash on OpenSSL 1.0.2
-  local D = cli:dup()
-  assert(D)
-  --]]
+  -- FIXME: cause crash on OpenSSL 1.0.2
+  --assert(cli:dup())
 
   local ctx = cli:ctx()
   assert(ctx)
@@ -493,8 +490,8 @@ function TestSSL:testSNI()
     return true
   end)
 
-  --FIXME:
-  --local dup = assert(cli:dup())
+  -- FIXME: cause crash on OpenSSL 1.0.2
+  --assert(cli:dup())
 
   local eng = openssl.engine('openssl')
   eng:load_ssl_client_cert(cli)

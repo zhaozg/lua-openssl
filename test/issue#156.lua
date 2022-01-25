@@ -101,7 +101,7 @@ end
 
 local function run_basic(evp, alg)
     if helper.openssl3 and alg:match('ocb') then
-      -- FIXME:
+      -- FIXME: bugs in openssl3
       return true
     end
     local info = evp:info()
