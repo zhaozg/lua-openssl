@@ -235,13 +235,10 @@ function TestTS:testBasic()
     object = 'subjectAltName',
     value = "IP:192.168.0.1"
   })))
+  assert(req:msg_imprint())
+  req = assert(req:dup())
+
   local req_ctx = createRespCtx(self)
-  --assert(req:msg())
-  --assert(req:algo())
-  --assert(type(req:totable())=='table')
-  --req = assert(req:dup())
-  --req = assert(req:export())
-  --req = assert(openssl.ts.ts_msg_imprint_read(req))
   local res = req_ctx:sign(req:export())
   assert(res)
   assert(req_ctx:signer(self.tsa.cert, self.tsa.pkey))

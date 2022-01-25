@@ -218,8 +218,10 @@ static int openssl_cms_compress(lua_State *L)
   CMS_ContentInfo *cms;
   nid = lua_isnoneornil(L, 2) ? -1 : luaL_checkoption(L, 2, "zlib", compress_options);
   flags = luaL_optint(L, 3, 0);
+  if (nid != -1)
+    nid = openssl_compress_nid[nid];
 
-  cms = CMS_compress(in, nid==-1 ? nid : openssl_compress_nid[nid], flags);
+  cms = CMS_compress(in, nid, flags);
   BIO_free(in);
 
   if (cms)
