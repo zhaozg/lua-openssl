@@ -442,12 +442,19 @@ static LUA_FUNCTION(openssl_csr_parse)
     const X509_ALGOR *alg = NULL;
 
     X509_REQ_get0_signature(csr, &sig, &alg);
-    openssl_push_asn1(L, sig, V_ASN1_BIT_STRING);
-    lua_setfield(L, -2, "signature");
 
-    alg = X509_ALGOR_dup((X509_ALGOR *)alg);
-    PUSH_OBJECT(alg, "openssl.x509_algor");
-    lua_setfield(L, -2, "sig_alg");
+    if (OBJ_obj2nid(alg->algorithm)!=NID_undef)
+    {
+      alg = X509_ALGOR_dup((X509_ALGOR *)alg);
+      PUSH_OBJECT(alg, "openssl.x509_algor");
+      lua_setfield(L, -2, "sig_alg");
+    }
+    if (sig->length)
+    {
+      openssl_push_asn1(L, sig, V_ASN1_BIT_STRING);
+      lua_setfield(L, -2, "signature");
+
+    }
   }
 
   lua_newtable(L);
@@ -464,9 +471,9 @@ static LUA_FUNCTION(openssl_csr_parse)
 
   {
     X509_PUBKEY *xpub = X509_REQ_get_X509_PUBKEY(csr);
+    EVP_PKEY *pubkey = X509_PUBKEY_get(xpub);
     ASN1_OBJECT *oalg = NULL;
     int c;
-    EVP_PKEY *pubkey = X509_REQ_get_pubkey(csr);
 
     lua_newtable(L);
     c = X509_REQ_get_attr_count(csr);
@@ -484,15 +491,20 @@ static LUA_FUNCTION(openssl_csr_parse)
       lua_setfield(L, -2, "attributes");
     }
 
-    lua_newtable(L);
-    if (X509_PUBKEY_get0_param(&oalg, NULL, NULL, NULL, xpub))
-    {
-      openssl_push_asn1object(L, oalg);
-      lua_setfield(L, -2, "algorithm");
-    }
 
-    AUXILIAR_SETOBJECT(L, pubkey, "openssl.evp_pkey", -1, "pubkey");
-    lua_setfield(L, -2, "pubkey");
+    if (pubkey)
+    {
+
+      lua_newtable(L);
+      if (X509_PUBKEY_get0_param(&oalg, NULL, NULL, NULL, xpub))
+      {
+        openssl_push_asn1object(L, oalg);
+        lua_setfield(L, -2, "algorithm");
+      }
+
+      AUXILIAR_SETOBJECT(L, pubkey, "openssl.evp_pkey", -1, "pubkey");
+      lua_setfield(L, -2, "pubkey");
+    }
 
     lua_setfield(L, -2, "req_info");
   }

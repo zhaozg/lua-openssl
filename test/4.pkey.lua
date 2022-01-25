@@ -17,13 +17,13 @@ TestPKEYMY = {}
 function TestPKEYMY:setUp()
   self.genalg = {
     {nil},  -- default to create rsa 1024 bits with 65537
-    {'rsa',  1024,  3},  -- create rsa with give bits length and e
+    {'rsa',  2048,  3},  -- create rsa with give bits length and e
     {'ec',  'prime256v1'}
   }
   if not helper.openssl3 then
     -- FIXME: openssl3
-    self.genalg[#self.genalg+1] = {'dsa',  512}
-    self.genalg[#self.genalg+1] = {'dh',  512}
+    self.genalg[#self.genalg+1] = {'dsa',  1024}
+    self.genalg[#self.genalg+1] = {'dh',  1024}
   end
 end
 

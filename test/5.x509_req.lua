@@ -3,11 +3,12 @@ local lu = require 'luaunit'
 local openssl = require 'openssl'
 local csr = require'openssl'.x509.req
 local asn1 = require'openssl'.asn1
+local helper = require'helper'
 
 TestCSR = {}
 
 function TestCSR:setUp()
-  self.digest = 'md5'
+  self.digest = 'sha256'
   self.subject = openssl.x509.name.new({
     {C = 'CN'},  {O = 'kkhub.com'},  {CN = 'zhaozg'}
   })
@@ -56,7 +57,7 @@ function TestCSR:testNew()
   t = req2:parse()
   lu.assertIsTable(t)
   assert(req1:verify() == false);
-  assert(req2:verify());
+  assert(req2:verify())
 
   req1 = assert(csr.new(self.subject))
   req2 = assert(csr.new(self.subject, pkey))
@@ -77,7 +78,7 @@ function TestCSR:testNew()
   lu.assertIsTable(t)
 
   assert(req1:verify() == false);
-  assert(req2:verify());
+  assert(req2:verify())
 
   req1 = assert(csr.new(self.subject))
   req1:attribute(self.attributes)
@@ -87,7 +88,7 @@ function TestCSR:testNew()
   req2:extensions(self.extensions)
   assert(req2:sign(pkey))
   assert(req1:verify() == false);
-  assert(req2:verify());
+  assert(req2:verify())
 
   t = req1:parse()
   lu.assertIsTable(t)
@@ -95,7 +96,7 @@ function TestCSR:testNew()
   lu.assertIsTable(t)
 
   assert(req1:verify() == false);
-  assert(req2:verify());
+  assert(req2:verify())
 
   req1 = assert(csr.new(self.subject))
   req1:attribute(self.attributes)
@@ -111,8 +112,8 @@ function TestCSR:testNew()
   t = req2:parse()
   lu.assertIsTable(t)
 
-  assert(req1:verify());
-  assert(req2:verify());
+  assert(req1:verify())
+  assert(req2:verify())
 
   local pem = req2:export('pem')
   lu.assertIsString(pem)
@@ -161,8 +162,13 @@ function TestCSR:testNew()
   assert(type(t) == 'table')
   lu.assertStrContains(tostring(req1:to_x509(pkey, 3650)), 'openssl.x509')
   lu.assertStrContains(tostring(req2:to_x509(pkey, 3650)), 'openssl.x509')
-  req2 = assert(req1:dup())
-  assert(req1:export()==req2:export())
+
+  openssl.errors()
+
+  if not helper.openssl3 then -- FIXME:
+    req1 = assert(req2:dup())
+    assert(req1:export()==req2:export())
+  end
 
   --FIXME: memleaks
   --local tosign = assert(req1:sign())
