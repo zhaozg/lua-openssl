@@ -81,10 +81,7 @@ function TestCMS:testSign()
     {self.alice.cert},
     0)
   if rc then
-    print(rc:signers())
     assert(rc:verify_receipt(c1, {self.bob.cert}, self.castore, 0))
-  else
-    print(openssl.errors())
   end
 end
 

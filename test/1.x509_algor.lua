@@ -21,7 +21,6 @@ function TestX509Algor:testAll()
   local o1 = openssl.asn1.new_object('C')
   alg1:set(o1)
   local a, b = alg1:get()
-  print(tostring(a))
   assert(tostring(a):match('openssl.asn1_object:'))
   assert(b==nil)
 

@@ -257,10 +257,12 @@ static int openssl_padding_add(lua_State *L)
   {
   case RSA_PKCS1_PADDING:
   {
+    int pri;
     luaL_checktype(L, 4, LUA_TBOOLEAN);
+    pri = lua_toboolean(L, 4);
 
     /* true for private, false for public */
-    if (lua_toboolean(L, 4))
+    if (pri)
     {
       ret = RSA_padding_add_PKCS1_type_1(to, sz,from, l);
     }
@@ -272,9 +274,11 @@ static int openssl_padding_add(lua_State *L)
     break;
   }
 #ifdef RSA_SSLV23_PADDING
+#if !defined(LIBRESSL_VERSION_NUMBER) || LIBRESSL_VERSION_NUMBER < 0x3020000fL
   case RSA_SSLV23_PADDING:
     ret = RSA_padding_add_SSLv23(to, sz,from, l);
     break;
+#endif
 #endif
   case RSA_NO_PADDING:
     ret = RSA_padding_add_none(to, sz,from, l);
@@ -327,10 +331,12 @@ static int openssl_padding_check(lua_State *L)
   {
   case RSA_PKCS1_PADDING:
   {
+    int pri;
     luaL_checktype(L, 4, LUA_TBOOLEAN);
+    pri = lua_toboolean(L, 4);
 
     /* true for private, false for public */
-    if (lua_toboolean(L, 4))
+    if (pri)
     {
       ret = RSA_padding_check_PKCS1_type_1(to, sz, from, l, sz);
     }
@@ -341,9 +347,11 @@ static int openssl_padding_check(lua_State *L)
     break;
   }
 #ifdef RSA_SSLV23_PADDING
+#if !defined(LIBRESSL_VERSION_NUMBER) || LIBRESSL_VERSION_NUMBER < 0x3020000fL
   case RSA_SSLV23_PADDING:
     ret = RSA_padding_check_SSLv23(to, sz, from, l, sz);
     break;
+#endif
 #endif
   case RSA_PKCS1_OAEP_PADDING:
   {

@@ -230,7 +230,9 @@ static const char* sPadding[] =
 {
   "pkcs1",
 #ifdef RSA_SSLV23_PADDING
+#if !defined(LIBRESSL_VERSION_NUMBER) || LIBRESSL_VERSION_NUMBER < 0x3020000fL
   "sslv23",
+#endif
 #endif
   "no",
   "oaep",
@@ -245,7 +247,9 @@ static int iPadding[] =
 {
   RSA_PKCS1_PADDING,
 #ifdef RSA_SSLV23_PADDING
+#if !defined(LIBRESSL_VERSION_NUMBER) || LIBRESSL_VERSION_NUMBER < 0x3020000fL
   RSA_SSLV23_PADDING,
+#endif
 #endif
   RSA_NO_PADDING,
   RSA_PKCS1_OAEP_PADDING,

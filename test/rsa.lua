@@ -1,5 +1,6 @@
 local openssl = require 'openssl'
 local rsa = require'openssl'.rsa
+local helper = require'helper'
 
 local function checkRSA(r, c)
   local t = r:parse()
@@ -79,8 +80,12 @@ function TestRSA:TestRSA()
 end
 
 function TestRSA:TestPad_pkcs1()
+  if helper.libressl then
+    print("\tskip")
+    return
+  end
   local msg = openssl.random(128)
-  local padded = rsa.padding_add(msg,'pkcs1', 256, true)
+  local padded = rsa.padding_add(msg, 'pkcs1', 256, true)
   local raw = rsa.padding_check(padded, 'pkcs1', 256, true)
   assert(msg==raw)
 
