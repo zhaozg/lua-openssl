@@ -47,11 +47,16 @@ function TestOCSP:testAll()
 
   local der = oreq:export(false)
   assert(type(der)=='string')
-  oreq = ocsp.request_read(der, false)
-  assert(oreq)
-  assert(oreq:sign(self.bob.cert, self.bob.key, nil, 0, 'sha256'))
-  --FIXME: lua-openssl, memleaks
-  --assert(oreq:sign(self.bob.cert, self.bob.key, { self.ca.cert}, 0, 'sha256'))
+
+  -- avoid resign a ocsp request object, or memleaks
+  oreq = assert(ocsp.request_read(der, false))
+  assert(oreq:sign(self.bob.cert, self.bob.key))
+  oreq = assert(ocsp.request_read(der, false))
+  assert(oreq:sign(self.bob.cert, self.bob.key, {self.ca.cert}))
+  oreq = assert(ocsp.request_read(der, false))
+  assert(oreq:sign(self.bob.cert, self.bob.key, {self.ca.cert}, 0))
+  oreq = assert(ocsp.request_read(der, false))
+  assert(oreq:sign(self.bob.cert, self.bob.key, { self.ca.cert}, 0, 'sha256'))
   der = oreq:export(true)
   assert(type(der)=='string')
 

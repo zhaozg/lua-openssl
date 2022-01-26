@@ -187,7 +187,7 @@ static int openssl_ocsp_request_sign(lua_State*L)
     others = openssl_sk_x509_fromtable(L, 4);
   }
   sflags = luaL_optint(L, 5, sflags);
-  md = get_digest(L, 6, "sha256");
+  md = lua_isnoneornil(L, 6) ? NULL : get_digest(L, 6, "sha256");
 
   ret = OCSP_request_sign(req, signer, pkey, md, others, sflags);
   lua_pushboolean(L, ret);
