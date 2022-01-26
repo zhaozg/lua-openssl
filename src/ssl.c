@@ -2105,12 +2105,10 @@ static int openssl_ssl_get(lua_State*L)
     }
     else if (strcmp(what, "cipher_list") == 0)
     {
-      //TODO FIX
       lua_pushstring(L, SSL_get_cipher_list(s, 0));
     }
     else if (strcmp(what, "verify_mode") == 0)
     {
-      //FIX
       lua_pushinteger(L, SSL_get_verify_mode(s));
     }
     else if (strcmp(what, "verify_depth") == 0)
@@ -2241,13 +2239,11 @@ static int openssl_ssl_set(lua_State*L)
     }
     else if (strcmp(what, "purpose") == 0)
     {
-      //FIX
       int purpose = luaL_checkint(L, i + 1);
       ret = SSL_set_purpose(s, purpose);
     }
     else if (strcmp(what, "trust") == 0)
     {
-      //FIX
       int trust = luaL_checkint(L, i + 1);
       ret = SSL_set_trust(s, trust);
     }
@@ -2526,15 +2522,23 @@ duplicate ssl object
 static int openssl_ssl_dup(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
-  SSL* ss = SSL_dup(s);
-  if (ss)
+  BIO *rio = SSL_get_rbio(s);
+  BIO *wio = SSL_get_wbio(s);
+  if (rio != NULL || wio != NULL)
   {
-    PUSH_OBJECT(ss, "openssl.ssl");
-    openssl_newvalue(L, ss);
-  }
-  else
     lua_pushnil(L);
-  return 1;
+    lua_pushliteral(L, "invalid state: rbio or wbio already set");
+    return 2;
+  }
+
+  s = SSL_dup(s);
+  if (s)
+  {
+    PUSH_OBJECT(s, "openssl.ssl");
+    openssl_newvalue(L, s);
+    return 1;
+  }
+  return openssl_pushresult(L, 0);
 }
 
 /***
