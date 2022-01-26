@@ -53,10 +53,6 @@ runner:setOutputType("tap")
 local retcode = runner:runSuite()
 print(openssl.errors())
 openssl.clear_error()
---FIXME: libressl gc fail
-local helper = require'helper'
-if not helper.libressl then
-  collectgarbage()
-end
+collectgarbage()
 os.exit(retcode, true)
 
