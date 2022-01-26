@@ -2,6 +2,9 @@ local lu = require 'luaunit'
 local helper = require('helper')
 local openssl = require('openssl')
 
+-- Please read https://www.openssl.org/docs/manmaster/man3/EVP_EncryptInit.html
+-- AEAD INTERFACE
+
 local supports = openssl.cipher.list()
 
 local function run_ccm(evp)
@@ -50,11 +53,11 @@ local function run_ccm(evp)
     return (r==m)
 end
 
-local function run_gcm(evp)
+local function run_aead(evp, alg)
     local info = evp:info()
     local k = openssl.random(info.key_length)
     local m = openssl.random(info.key_length)
-    local i = openssl.random(13)
+    local i = openssl.random(info.iv_length)
     local tn = 16
     local tag = tn
 
@@ -65,9 +68,8 @@ local function run_gcm(evp)
     e:padding(false)
 
     local c = assert(e:update(m))
-    assert(#c==#m)
     c = c .. e:final()
-    assert(#c==#m)
+    assert(#c==#m, alg)
     -- Get the tag
     tag = assert(e:ctrl(openssl.cipher.EVP_CTRL_GCM_GET_TAG, tag))
     assert(#tag==tn)
@@ -100,10 +102,6 @@ local function run_xts(evp)
 end
 
 local function run_basic(evp, alg)
-    if helper.openssl3 and alg:match('ocb') then
-      -- FIXME: bugs in openssl3
-      return true
-    end
     local info = evp:info()
     local k = openssl.random(info.key_length)
     local m = openssl.random(info.block_size)
@@ -129,7 +127,9 @@ local function run(alg)
     if mode=='ccm' then
         return run_ccm(evp)
     elseif mode=='gcm' then
-        return run_gcm(evp)
+        return run_aead(evp, alg)
+    elseif mode=='ocb' then
+        return run_aead(evp, alg)
     elseif mode=='xts' then
         return run_xts(evp)
     else
