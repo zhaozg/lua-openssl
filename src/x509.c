@@ -1238,7 +1238,7 @@ static int openssl_x509_extensions(lua_State* L)
 #else
     int i;
     int n = sk_X509_EXTENSION_num(exts);
-    for (i = 0; i < n; i++)
+    for (i = n - 1; i >= 0; i--)
       sk_X509_EXTENSION_delete(exts, i);
     n = sk_X509_EXTENSION_num(others);
     for (i = 0; i < n; i++)
