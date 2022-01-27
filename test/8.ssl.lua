@@ -4,6 +4,7 @@ local math = require 'math'
 local openssl = require "openssl"
 local helper = require 'helper'
 local bio, ssl = openssl.bio, openssl.ssl
+local unpack = table.unpack or unpack
 
 if not ok then
   uv = nil
@@ -290,17 +291,19 @@ function TestSSL:testSNI()
         -- get
         assert(tostring(s):match('openssl.ssl '))
         assert(type(id)=='string')
+        local ss = session_cache[id]
+        print(ss)
+        return ss
+      end,
+      function(id)
+        session_cache[id] = nil
       end
-      --[[
-      -- uncommit will cause crash when gc on OpenSSL 1.1.1
-      ,function(c, ss)
-        -- del
-        assert(tostring(c):match('openssl.ssl_ctx'))
-        assert(tostring(ss):match('openssl.ssl_session'))
-        print('add session: '..openssl.hex(ss:id()))
-      end
-      --]]
     )
+    ctx:session_cache_mode('both', 'no_internal')
+    -- warning: https://stackoverflow.com/questions/14397917/reuse-ssl-session-on-c-client-server-application
+    if ssl.no_ticket then
+      ctx:options(ssl.no_ticket)
+    end
     return ctx
   end
 
@@ -374,7 +377,7 @@ function TestSSL:testSNI()
   until (rs and cs) or (rs == nil or cs == nil)
   assert(rs and cs)
   peer = cli:peer()
-  -- FIXME: ssl sni hostname
+  -- FIXME: libressl sni hostname
   if not helper.libressl then
     assert(peer:subject():oneline() == "/CN=server/C=CN")
   else
@@ -501,6 +504,37 @@ function TestSSL:testSNI()
   srv_ctx:verify_mode(ssl.peer, function()
     return true
   end)
+
+  if srv_ctx.num_tickets then
+    srv_ctx:num_tickets(assert(srv_ctx:num_tickets()))
+  end
+
+  local cache_mode = {
+    'client', 'server',
+    'no_auto_clear',
+    'no_internal_lookup', 'no_internal_store'
+  }
+
+  local old = srv_ctx:session_cache_mode()
+
+  srv_ctx:session_cache_mode(0)
+  local t = srv_ctx:session_cache_mode()
+  assert(#t==1 and t[1]=='off')
+
+  srv_ctx:session_cache_mode('client', 'no_internal_lookup')
+  t = srv_ctx:session_cache_mode()
+  assert(#t==2 and t[1]=='client' and t[2]=='no_internal_lookup')
+
+  srv_ctx:session_cache_mode('server', 'no_internal_store')
+  t = srv_ctx:session_cache_mode()
+  assert(#t==2 and t[1]=='server' and t[2]=='no_internal_store')
+
+  srv_ctx:session_cache_mode(unpack(cache_mode))
+  t = srv_ctx:session_cache_mode()
+  assert(#t==3 and t[1]=='no_auto_clear' and t[2]=='both' and t[3]=='no_internal')
+
+  srv_ctx:session_cache_mode(unpack(old))
+  lu.assertEquals(old, srv_ctx:session_cache_mode())
 
   local eng = openssl.engine('openssl')
   eng:load_ssl_client_cert(cli)

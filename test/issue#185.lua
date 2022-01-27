@@ -48,5 +48,5 @@ function testIssue185()
   collectgarbage()
   collectgarbage()
   local e = collectgarbage("count")
-  assert(e-b <= 0, "Memleaks ".. tostring(e-b))
+  assert(e-b <= 0.2, "Memleaks ".. tostring(e-b))
 end
