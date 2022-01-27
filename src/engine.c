@@ -257,6 +257,8 @@ static int openssl_engine_ctrl(lua_State*L)
     if (lua_isnone(L, 3))
     {
       ret = ENGINE_cmd_is_executable(eng, cmd);
+      lua_pushboolean(L, ret);
+      return 1;
     }
     else
     {
