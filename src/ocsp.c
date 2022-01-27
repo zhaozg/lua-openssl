@@ -375,13 +375,15 @@ static int openssl_ocsp_response_new(lua_State *L)
       OPENSSL_free(hex);
       BN_free(sn);
 
-      lua_gettable(L, 5);
+      lua_rawget(L, 5);
       if (lua_isnil(L, -1))
         status = V_OCSP_CERTSTATUS_UNKNOWN;
       else
       {
+        int top = lua_gettop(L);
         luaL_checktype(L, -1, LUA_TTABLE);
-        lua_getfield(L, -1, "revoked");
+        lua_pushliteral(L, "reovked");
+        lua_rawget(L, top);
         if (lua_toboolean(L, -1))
         {
           lua_pop(L, 1);
@@ -411,45 +413,22 @@ static int openssl_ocsp_response_new(lua_State *L)
       }
     }
     else
-    {
-      //TODO:
-    }
-
-    if (reason == 7)
-      reason = OCSP_REVOKED_STATUS_REMOVEFROMCRL;
-    else if (reason == 8)
-    {
-      reason = OCSP_REVOKED_STATUS_CERTIFICATEHOLD;
-      //inst = OBJ_txt2obj(str, 0);
-    }
-    else if (reason == 9 || reason == 10)
-    {
-      if ( reason == 9 )
-        reason = OCSP_REVOKED_STATUS_KEYCOMPROMISE;
-      else if (reason == 10)
-        reason = OCSP_REVOKED_STATUS_CACOMPROMISE;
-      /*
-      invtm = ASN1_GENERALIZEDTIME_new();
-      if (!ASN1_GENERALIZEDTIME_set_string(invtm, arg_str))
-      */
-    }
-
+      status = V_OCSP_CERTSTATUS_UNKNOWN;
 
     single = OCSP_basic_add1_status(bs, cid, status, reason, revtm, thispnd, nextpnd);
-
 
     if (invtm)
     {
       OCSP_SINGLERESP_add1_ext_i2d(single, NID_invalidity_date, invtm, 0, 0);
-      ASN1_TIME_free(revtm);
+      ASN1_GENERALIZEDTIME_free(invtm);
     }
     if (inst)
     {
       OCSP_SINGLERESP_add1_ext_i2d(single, NID_hold_instruction_code, inst, 0, 0);
       ASN1_OBJECT_free(inst);
     }
-    if (invtm)
-      ASN1_GENERALIZEDTIME_free(invtm);
+    if (revtm)
+      ASN1_TIME_free(revtm);
   }
   OCSP_copy_nonce(bs, req);
   OCSP_basic_sign(bs, rcert, rkey, EVP_sha1(), rother, flag);
@@ -470,8 +449,6 @@ static int openssl_ocsp_response_new(lua_State *L)
     lua_pushnil(L);
   return 1;
 }
-
-
 
 static int openssl_ocsp_response_export(lua_State*L)
 {
@@ -545,6 +522,29 @@ static luaL_Reg R[] =
   {NULL,    NULL}
 };
 
+static LuaL_Enumeration ocsp_reasons[] =
+{
+#define DEFINE_ENUM(x)  {#x,  OCSP_REVOKED_STATUS_##x}
+  DEFINE_ENUM(NOSTATUS),
+  DEFINE_ENUM(UNSPECIFIED),
+  DEFINE_ENUM(KEYCOMPROMISE),
+  DEFINE_ENUM(CACOMPROMISE),
+  DEFINE_ENUM(AFFILIATIONCHANGED),
+  DEFINE_ENUM(SUPERSEDED),
+  DEFINE_ENUM(CESSATIONOFOPERATION),
+  DEFINE_ENUM(CERTIFICATEHOLD),
+  DEFINE_ENUM(REMOVEFROMCRL),
+#undef DEFINE_ENUM
+
+#define DEFINE_ENUM(x)  {#x,  V_OCSP_CERTSTATUS_##x}
+  DEFINE_ENUM(GOOD),
+  DEFINE_ENUM(REVOKED),
+  DEFINE_ENUM(UNKNOWN),
+#undef DEFINE_ENUM
+
+  {NULL,                    -1}
+};
+
 int luaopen_ocsp(lua_State *L)
 {
   auxiliar_newclass(L, "openssl.ocsp_request",   ocsp_req_cfuns);
@@ -552,6 +552,7 @@ int luaopen_ocsp(lua_State *L)
 
   lua_newtable(L);
   luaL_setfuncs(L, R, 0);
+  auxiliar_enumerate(L, -1, ocsp_reasons);
 
   return 1;
 }

@@ -69,11 +69,18 @@ function TestOCSP:testAll()
 
   local ocert, okey = helper.sign(self.ocspdn)
 
+  local sn1 = tostring(self.bob.cert:serial())
+  local sn2 = tostring(self.alice.cert:serial())
   local resp = ocsp.response_new(oreq, self.ca.cacert, ocert, okey, {
-      [tostring(self.bob.cert:serial())] = {
+      [sn1] = {
         reovked = true,
         revoked_time = os.time(),
         reason = 0
+      },
+      [sn1] = {
+        reovked = true,
+        revoked_time = os.time(),
+        reason = 'AACompromise'
       }
   })
   assert(resp)
