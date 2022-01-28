@@ -99,7 +99,7 @@ static int openssl_cms_read(lua_State *L)
   {
     PUSH_OBJECT(cms, "openssl.cms");
     if(data!=NULL)
-      PUSH_OBJECT(data, "openssl.bn");
+      PUSH_OBJECT(data, "openssl.bio");
     return data!=NULL? 2 : 1;
   }
   return openssl_pushresult(L, 0);

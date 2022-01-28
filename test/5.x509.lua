@@ -88,7 +88,6 @@ function TestX509:testNew()
     {
       object = 'subjectAltName',
       value = 'IP:192.168.1.1'
-
     }
   }
 

@@ -790,7 +790,7 @@ static LUA_FUNCTION(openssl_cipher_ctx_padding)
 
 static LUA_FUNCTION(openssl_cipher_ctx_ctrl)
 {
-  int ret;
+  int ret = 0;
   EVP_CIPHER_CTX *ctx = CHECK_OBJECT(1, EVP_CIPHER_CTX, "openssl.evp_cipher_ctx");
   int type = luaL_checkint(L, 2);
   int arg = 0;
@@ -800,7 +800,7 @@ static LUA_FUNCTION(openssl_cipher_ctx_ctrl)
   {
   case EVP_CTRL_INIT:
     ret = EVP_CIPHER_CTX_ctrl(ctx, type, 0, NULL);
-    return openssl_pushresult(L, ret);
+    ret = openssl_pushresult(L, ret);
     break;
   case EVP_CTRL_SET_KEY_LENGTH:
   case EVP_CTRL_SET_RC2_KEY_BITS:
@@ -808,35 +808,28 @@ static LUA_FUNCTION(openssl_cipher_ctx_ctrl)
   case EVP_CTRL_GCM_SET_IVLEN:  //EVP_CTRL_CCM_SET_IVLEN
     arg = luaL_checkint(L, 3);
     ret = EVP_CIPHER_CTX_ctrl(ctx, type, arg, NULL);
-    return openssl_pushresult(L, ret);
+    ret = openssl_pushresult(L, ret);
     break;
   case EVP_CTRL_GCM_SET_TAG:    //EVP_CTRL_CCM_SET_TAG
   {
+    size_t sz = 0;
     luaL_argcheck(L, lua_isnumber(L, 3) || lua_isstring(L, 3), 3, "need integer or string");
-    if (lua_isnumber(L, 3))
-    {
-      arg = lua_tointeger(L, 3);
-      ret = EVP_CIPHER_CTX_ctrl(ctx, type, arg, ptr);
-    }
-    else
-    {
-      size_t sz = 0;
-      ptr = (void*)luaL_checklstring(L, 3, &sz);
-      arg = (int)sz;
-      ret = EVP_CIPHER_CTX_ctrl(ctx, type, arg, ptr);
-    }
-    return openssl_pushresult(L, ret);
+
+    ptr = (void*)luaL_checklstring(L, 3, &sz);
+    ret = EVP_CIPHER_CTX_ctrl(ctx, type, sz, ptr);
+
+    ret = openssl_pushresult(L, ret);
     break;
   }
   case EVP_CTRL_GET_RC2_KEY_BITS:
   case EVP_CTRL_GET_RC5_ROUNDS:
     ret = EVP_CIPHER_CTX_ctrl(ctx, type, 0, &arg);
-    if(ret==0)
+    if(ret==1)
     {
       lua_pushinteger(L, arg);
-      return 1;
-    }
-    return openssl_pushresult(L, ret);
+      ret = 1;
+    }else
+      ret = openssl_pushresult(L, ret);
   case EVP_CTRL_GCM_GET_TAG:    //EVP_CTRL_CCM_GET_TAG
   {
     char buf[16];
@@ -847,9 +840,10 @@ static LUA_FUNCTION(openssl_cipher_ctx_ctrl)
       if(ret==1)
       {
         lua_pushlstring(L, buf, arg);
-        return 1;
+        ret = 1;
       }
-      return openssl_pushresult(L, ret);
+      else 
+        ret = openssl_pushresult(L, ret);
     }
     else
       luaL_argerror(L, 3, "invalid integer, must be 4, 6, 10, 12, 14 or 16");
@@ -874,7 +868,7 @@ static LUA_FUNCTION(openssl_cipher_ctx_ctrl)
   default:
     luaL_error(L, "not support");
   }
-  return 0;
+  return ret;
 }
 
 static LUA_FUNCTION(openssl_cipher_ctx_free)

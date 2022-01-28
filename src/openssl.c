@@ -534,6 +534,8 @@ LUALIB_API int luaopen_openssl(lua_State*L)
     ENGINE_load_openssl();
 #else
     OPENSSL_init_crypto(OPENSSL_INIT_ENGINE_OPENSSL, NULL);
+    OPENSSL_init_ssl(OPENSSL_INIT_ENGINE_ALL_BUILTIN
+                    |OPENSSL_INIT_LOAD_CONFIG, NULL);
 #endif
     ENGINE_load_builtin_engines();
 #endif

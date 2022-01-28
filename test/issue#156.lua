@@ -22,14 +22,12 @@ local function run_ccm(evp)
     local k = openssl.random(info.key_length)
     local m = openssl.random(info.key_length)
     local i = openssl.random(13)
-    local tn = 16
-    local tag = tn
-
+    local tn = 12
+    local tag = nil
 
     --encrypt
     local e = evp:encrypt_new()
     assert(e:ctrl(openssl.cipher.EVP_CTRL_GCM_SET_IVLEN, #i))
-    assert(e:ctrl(openssl.cipher.EVP_CTRL_GCM_SET_TAG, tag))
     assert(e:init(k, i))
     e:padding(false)
 
@@ -38,7 +36,7 @@ local function run_ccm(evp)
     c = c .. e:final()
     assert(#c==#m)
     -- Get the tag
-    tag = assert(e:ctrl(openssl.cipher.EVP_CTRL_GCM_GET_TAG, tag))
+    tag = assert(e:ctrl(openssl.cipher.EVP_CTRL_GCM_GET_TAG, tn))
     assert(#tag==tn)
 
     --decrypt
@@ -139,7 +137,7 @@ end
 
 function testAESMode()
   for _,v in pairs(supports) do
-      if(v:match('^aes%-...%-...$')) then
+      if(v:match('^aes.-%-...%-...$')) then
           assert(run(v), "fail to run " .. v)
       end
   end

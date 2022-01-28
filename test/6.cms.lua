@@ -128,6 +128,7 @@ function TestCMS:testData()
   assert(c:content()=='data')
 
   local d = assert(c:export("data", 0, "der"))
+  assert(cms.read(d, 'auto'))
   d = cms.read(d, 'der')
   assert(d)
   d = assert(c:export("data", 0, "pem"))
