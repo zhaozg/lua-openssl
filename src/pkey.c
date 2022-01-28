@@ -977,7 +977,6 @@ static const OSSL_ITEM standard_name2type[] =
 
 static int evp_pkey_name2type(const char *name)
 {
-  int type;
   size_t i;
 
   for (i = 0; i < OSSL_NELEM(standard_name2type); i++)
@@ -986,9 +985,7 @@ static int evp_pkey_name2type(const char *name)
       return (int)standard_name2type[i].id;
   }
 
-  if ((type = EVP_PKEY_type(OBJ_sn2nid(name))) != NID_undef)
-    return type;
-  return EVP_PKEY_type(OBJ_ln2nid(name));
+  return -1;
 }
 
 static const char *evp_pkey_type2name(int type)
@@ -1001,7 +998,7 @@ static const char *evp_pkey_type2name(int type)
       return standard_name2type[i].ptr;
   }
 
-  return OBJ_nid2sn(type);
+  return NULL;
 }
 
 /***

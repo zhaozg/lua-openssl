@@ -39,12 +39,14 @@ function testIssue185()
   local i = 0
   collectgarbage()
   collectgarbage()
+  collectgarbage()
   local b = collectgarbage("count")
   local box = assert(cms.read(ver_blob, "pem"))
   while i<10 do
     assert(cms.verify(box, {}, store))
     i = i + 1
   end
+  collectgarbage()
   collectgarbage()
   collectgarbage()
   local e = collectgarbage("count")
