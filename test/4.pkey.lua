@@ -315,6 +315,11 @@ FV/lrqg=
     k2 = pkey.read(export, true, 'der')
     lu.assertEquals(pri:export(), k2:export())
 
+    if k~='DH' then
+      k2 = assert(pkey.read(export, true, 'der', k), k)
+      lu.assertEquals(pri:export(), k2:export())
+    end
+
     export = pri:export('der', false)
     hex = openssl.hex(export)
     lu.assertEquals(hex:upper(), v[2])

@@ -58,6 +58,7 @@ local function mk_connection(_host, _port, i)
       assert(cli:write(s))
       assert(cli:read())
     end
+    assert(cli:ssl())
     cli:shutdown()
     cli:free()
   end

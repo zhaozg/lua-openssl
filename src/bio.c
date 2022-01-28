@@ -736,6 +736,7 @@ static LUA_FUNCTION(openssl_bio_get_ssl)
   if (ret == 1)
   {
     PUSH_OBJECT(ssl, "openssl.ssl");
+    SSL_up_ref(ssl);
     openssl_newvalue(L, ssl);
     return 1;
   }

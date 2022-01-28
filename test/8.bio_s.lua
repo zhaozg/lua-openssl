@@ -68,6 +68,7 @@ local function ssl_mode()
           assert(#d == cli:write(d))
         end
       until not d
+      assert(cli:ssl())
       cli:shutdown()
       cli:close(true)
       collectgarbage()
