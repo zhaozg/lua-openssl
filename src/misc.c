@@ -151,31 +151,6 @@ void openssl_add_method(const OBJ_NAME *name, void *arg)
   }
 }
 
-int openssl_pushboolean(lua_State *L, int result)
-{
-  if (result >= 0)
-  {
-    lua_pushboolean(L, result);
-    return 1;
-  }
-  else
-  {
-    unsigned long val = ERR_get_error();
-    lua_pushnil(L);
-    if (val)
-    {
-      lua_pushstring(L, ERR_reason_error_string(val));
-      lua_pushinteger(L, val);
-    }
-    else
-    {
-      lua_pushstring(L, "UNKNOWN ERROR");
-      lua_pushnil(L);
-    }
-    return 3;
-  }
-}
-
 int openssl_pushresult(lua_State*L, int result)
 {
   if (result >= 1)
