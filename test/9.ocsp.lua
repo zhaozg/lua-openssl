@@ -22,16 +22,23 @@ end
 function TestOCSP:testAll()
   local req, pkey = helper.new_req(self.alicedn)
   local cert = self.ca:sign(req)
-  self.alice = {key = pkey,  cert = cert}
+  self.alice = {key = pkey,  cert = cert, id = assert(ocsp.certid_new(cert, self.ca.cacert))}
 
   cert, pkey = assert(helper.sign(self.bobdn))
-  self.bob = {key = pkey,  cert = cert}
+  local sn = cert:serial(false)
+  self.bob = {key = pkey,  cert = cert, id = assert(ocsp.certid_new(sn, self.ca.cacert))}
+  assert(type(self.bob.id:info())=='table')
 
-  local oreq = ocsp.request_new(self.ca.cacert, {self.bob.cert:serial(), self.alice.cert:serial()})
+  local oreq = ocsp.request_new()
   assert(oreq)
+  local one = assert(oreq:add(self.alice.id))
+  one = assert(oreq:add(self.bob.id))
+  assert(oreq:is_signed()==false)
 
-  oreq = ocsp.request_new(self.ca.cacert, self.bob.cert:serial())
-  assert(oreq)
+  assert(type(oreq:parse())=='table')
+
+  local ocert, okey = helper.sign(self.ocspdn)
+
   assert(type(oreq:export(true)))
 
   assert(oreq:add_ext(openssl.x509.extension.new_extension({
@@ -41,57 +48,59 @@ function TestOCSP:testAll()
   assert(type(oreq:export(true))=='string')
   assert(type(oreq:parse().extensions)=='table')
 
-  oreq = ocsp.request_new(self.ca.cacert, self.bob.cert)
-  assert(oreq)
-  assert(type(oreq:export(false)))
-
-  local der = oreq:export(false)
+  local der = assert(oreq:export(false))
   assert(type(der)=='string')
 
   -- avoid resign a ocsp request object, or memleaks
   oreq = assert(ocsp.request_read(der, false))
-  assert(oreq:sign(self.bob.cert, self.bob.key))
+  assert(oreq:sign(ocert, okey))
   oreq = assert(ocsp.request_read(der, false))
-  assert(oreq:sign(self.bob.cert, self.bob.key, {self.ca.cert}))
+  assert(oreq:sign(ocert, okey, {self.ca.cert}))
   oreq = assert(ocsp.request_read(der, false))
-  assert(oreq:sign(self.bob.cert, self.bob.key, {self.ca.cert}, 0))
+  assert(oreq:sign(ocert, okey, {self.ca.cert}, 0))
   oreq = assert(ocsp.request_read(der, false))
-  assert(oreq:sign(self.bob.cert, self.bob.key, { self.ca.cert}, 0, 'sha256'))
+  assert(oreq:sign(ocert, okey, { self.ca.cert}, 0, 'sha256'))
   der = oreq:export(true)
   assert(type(der)=='string')
+
+  assert(type(oreq:parse())=='table')
 
   oreq = ocsp.request_read(der, true)
   assert(oreq)
   local t = oreq:parse()
   assert(type(t)=='table')
-  oreq = ocsp.request_new(self.ca.cacert, {self.bob.cert, self.alice.cert})
-  assert(oreq)
 
-  local ocert, okey = helper.sign(self.ocspdn)
-
+  --OCSP_SINGLERESP_add1_ext_i2d(single, NID_invalidity_date, invtm, 0, 0);
+  --OCSP_SINGLERESP_add1_ext_i2d(single, NID_hold_instruction_code, inst, 0, 0);
   local sn1 = tostring(self.bob.cert:serial())
   local sn2 = tostring(self.alice.cert:serial())
-  local resp = ocsp.response_new(oreq, self.ca.cacert, ocert, okey, {
-      [sn1] = {
-        reovked = true,
-        revoked_time = os.time(),
-        reason = 0
-      },
-      [sn1] = {
-        reovked = true,
-        revoked_time = os.time(),
-        reason = 'AACompromise'
-      }
-  })
-  assert(resp)
+  local basic = assert(ocsp.basic_new())
+
+  assert(basic:add(self.alice.id, ocsp.GOOD, ocsp.NOSTATUS, nil))
+  local single = assert(basic:add(self.bob.id, ocsp.REVOKED, ocsp.UNSPECIFIED, os.time()))
+  assert(single:add_ext(openssl.x509.extension.new_extension({
+    object = 'subjectAltName',
+    value = "IP:192.168.0.1"
+  })))
+  assert(type(single:info())=='table')
+
+  assert(basic:add_ext(openssl.x509.extension.new_extension({
+    object = 'subjectAltName',
+    value = "IP:192.168.0.1"
+  })))
+  assert(basic:copy_nonce(oreq))
+  assert(basic:sign(ocert, okey))
+  assert(type(basic:info())=='table')
+
+  resp = assert(basic:response())
+
   der = assert(resp:export(false))
   resp = ocsp.response_read(der, false)
 
   assert(resp:export(true))
   assert(resp:export(false))
 
-  -- FIXME: do it
-  -- local t= resp:parse()
-  -- assert(type(t)=='table')
+  local t= resp:parse()
+  assert(type(t)=='table')
 end
 

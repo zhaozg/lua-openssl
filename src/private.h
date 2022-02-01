@@ -169,6 +169,18 @@ int X509_get_signature_nid(const X509 *x);
 const unsigned char *ASN1_STRING_get0_data(const ASN1_STRING *x);
 const ASN1_TIME *X509_CRL_get0_lastUpdate(const X509_CRL *crl);
 const ASN1_TIME *X509_CRL_get0_nextUpdate(const X509_CRL *crl);
+
+const OCSP_CERTID *OCSP_SINGLERESP_get0_id(const OCSP_SINGLERESP *x);
+
+const ASN1_GENERALIZEDTIME *OCSP_resp_get0_produced_at(const OCSP_BASICRESP* bs);
+const STACK_OF(X509) *OCSP_resp_get0_certs(const OCSP_BASICRESP *bs);
+int OCSP_resp_get0_id(const OCSP_BASICRESP *bs,
+                      const ASN1_OCTET_STRING **pid,
+                      const X509_NAME **pname);
+
+const ASN1_OCTET_STRING *OCSP_resp_get0_signature(const OCSP_BASICRESP *bs);
+const X509_ALGOR *OCSP_resp_get0_tbs_sigalg(const OCSP_BASICRESP *bs);
+
 #endif /* < 1.1.0 */
 
 #define AUXILIAR_SETOBJECT(L, cval, ltype, idx, lvar) \
@@ -232,6 +244,8 @@ int openssl_push_asn1object(lua_State* L, const ASN1_OBJECT* obj);
 int openssl_push_asn1(lua_State* L, const ASN1_STRING* string, int type);
 int openssl_push_general_name(lua_State*L, const GENERAL_NAME* name);
 int openssl_push_asn1integer_as_bn(lua_State *L, const ASN1_INTEGER* ai);
+
+int openssl_push_x509_signature(lua_State *L, const X509_ALGOR *alg, const ASN1_STRING *sig, int i);
 
 #define PUSH_ASN1_TIME(L, tm)             openssl_push_asn1(L, (ASN1_STRING*)(tm), V_ASN1_UTCTIME)
 #define PUSH_ASN1_INTEGER(L, i)           openssl_push_asn1(L, (ASN1_STRING*)(i),  V_ASN1_INTEGER)
