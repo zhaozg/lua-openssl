@@ -11,14 +11,14 @@ description = {
   license    = "MIT",
   maintainer = "George Zhao",
   detailed   = [[
-Full openssl bindings for luajit and lua 5.1/5.2/5.3.
+Full openssl bindings for luajit and lua 5.1/5.2/5.3/5.4.
 
 This library makes openssl available to lua scripts.
   ]],
 }
 
 dependencies = {
-  "lua >= 5.1, < 5.4"
+  "lua >= 5.1, <= 5.4"
 }
 
 external_dependencies = {
