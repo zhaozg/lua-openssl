@@ -424,6 +424,27 @@ int openssl_push_general_name(lua_State*L, const GENERAL_NAME* general_name)
   return 1;
 };
 
+int openssl_push_x509_signature(lua_State *L, const X509_ALGOR *alg, const ASN1_STRING *sig, int i)
+{
+  if (i==0) lua_newtable(L); else i = lua_absindex(L, i);
+
+  if (alg != NULL)
+  {
+    alg = X509_ALGOR_dup((X509_ALGOR*)alg);
+    lua_pushliteral(L, "sig_alg");
+    PUSH_OBJECT(alg, "openssl.x509_algor");
+    lua_rawset(L, i==0 ? -3 : i);
+  }
+  if (sig != NULL)
+  {
+    lua_pushliteral(L, "sig");
+    lua_pushlstring(L, (const char *)sig->data, sig->length);
+    lua_rawset(L, i==0 ? -3 : i);
+  }
+
+  return  i==0 ? 1 : 0;
+}
+
 static int check_cert(X509_STORE *ca, X509 *x, STACK_OF(X509) *untrustedchain, int purpose)
 {
   int ret = 0;
@@ -517,7 +538,7 @@ static LUA_FUNCTION(openssl_x509_parse)
 {
   int i;
   X509 * cert = CHECK_OBJECT(1, X509, "openssl.x509");
-  X509_ALGOR* alg = 0;
+
   lua_newtable(L);
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
   if (cert->name)
@@ -551,17 +572,7 @@ static LUA_FUNCTION(openssl_x509_parse)
     CONSTIFY_X509_get0 ASN1_BIT_STRING *psig = NULL;
 
     X509_get0_signature(&psig, &palg, cert);
-    if (palg != NULL)
-    {
-      alg = X509_ALGOR_dup((X509_ALGOR*)palg);
-      PUSH_OBJECT(alg, "openssl.x509_algor");
-      lua_setfield(L, -2, "sig_alg");
-    }
-    if (psig != NULL)
-    {
-      lua_pushlstring(L, (const char *)psig->data, psig->length);
-      lua_setfield(L, -2, "sig");
-    }
+    openssl_push_x509_signature(L, palg, psig, -1);
   }
 
   {

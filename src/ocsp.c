@@ -476,12 +476,221 @@ static int openssl_ocsp_response_export(lua_State*L)
   return ret;
 }
 
-static int openssl_ocsp_response_parse(lua_State *L)
+static int openssl_ocsp_push_certid(lua_State *L, OCSP_CERTID* cid)
 {
-  luaL_error(L, "NYI");
+  ASN1_OCTET_STRING *iNameHash = NULL, *ikeyHash = NULL;
+  ASN1_OBJECT *md = NULL;
+  ASN1_INTEGER *serial;
+
+  int ret;
+
+  lua_newtable(L);
+
+  ret = OCSP_id_get0_info(&iNameHash, &md, &ikeyHash, &serial, cid);
+  if (ret==1)
+  {
+    lua_pushliteral(L, "hashAlgorithm");
+    openssl_push_asn1object(L, md);
+    lua_rawset(L, -3);
+
+    lua_pushliteral(L, "issuerNameHash");
+    PUSH_ASN1_OCTET_STRING(L, iNameHash);
+    lua_rawset(L, -3);
+
+    lua_pushliteral(L, "issuerKeyHash");
+    PUSH_ASN1_OCTET_STRING(L, ikeyHash);
+    lua_rawset(L, -3);
+
+    lua_pushliteral(L, "serialNumber");
+    PUSH_ASN1_INTEGER(L, serial);
+    lua_rawset(L, -3);
+  }else
+    ret = 0;
+
+  return ret;
+}
+
+static int openssl_ocsp_push_singleresp(lua_State *L, const OCSP_SINGLERESP* single)
+{
+  int i, n, status = -1, reason = -1;
+
+  const OCSP_CERTID *id;
+  ASN1_GENERALIZEDTIME *revtime = NULL, *thisupd = NULL;
+
+  lua_newtable(L);
+
+  id = OCSP_SINGLERESP_get0_id(single);
+  lua_pushliteral(L, "id");
+  openssl_ocsp_push_certid(L, (OCSP_CERTID*)id);
+  lua_rawset(L, -3);
+
+  status = OCSP_single_get0_status((OCSP_SINGLERESP*)single, &reason, &revtime, &thisupd, NULL);
+
+  AUXILIAR_SET(L, -1, "status", status, integer);
+  AUXILIAR_SET(L, -1, "status_str", OCSP_response_status_str(status), string);
+
+  AUXILIAR_SET(L, -1, "reason", reason, integer);
+  AUXILIAR_SET(L, -1, "reason_str", OCSP_crl_reason_str(reason), string);
+
+  if (revtime)
+  {
+    lua_pushliteral(L, "revokeTime");
+    PUSH_ASN1_TIME(L, revtime);
+    lua_rawset(L, -3);
+  }
+
+  if (thisupd)
+  {
+    lua_pushliteral(L, "thisUpdate");
+    PUSH_ASN1_TIME(L, thisupd);
+    lua_rawset(L, -3);
+  }
+
+  n = OCSP_SINGLERESP_get_ext_count((OCSP_SINGLERESP*)single);
+  if (n > 0)
+  {
+    lua_pushstring(L, "extensions");
+    lua_newtable(L);
+
+    for (i=0; i<n; i++)
+    {
+      X509_EXTENSION *ext = OCSP_SINGLERESP_get_ext((OCSP_SINGLERESP*)single, i);
+
+      ext = X509_EXTENSION_dup(ext);
+      PUSH_OBJECT(ext, "openssl.x509_extension");
+      lua_rawseti(L, -2, i+1);
+    }
+
+    lua_rawset(L, -3);
+  }
+
   return 1;
 }
-int openssl_ocsp_response_free(lua_State*L)
+
+static int openssl_ocsp_push_basicresp(lua_State *L, OCSP_BASICRESP *br)
+{
+  int i, n;
+
+  const ASN1_OCTET_STRING *id = NULL;
+  const X509_NAME *name = NULL;
+  const ASN1_GENERALIZEDTIME *producedAt;
+  const STACK_OF(X509) *certs;
+
+  lua_newtable(L);
+
+  producedAt = OCSP_resp_get0_produced_at(br);
+  if (producedAt)
+  {
+    lua_pushliteral(L, "producedAt");
+    PUSH_ASN1_TIME(L, producedAt);
+    lua_rawset(L, -3);
+  }
+
+  certs = OCSP_resp_get0_certs(br);
+  if (certs)
+  {
+    if ((n = sk_X509_num(certs)) > 0)
+    {
+      lua_pushliteral(L, "certs");
+      lua_newtable(L);
+
+      for (i = 0; i < n; i++) {
+        X509 *x = sk_X509_value(certs, i);
+        X509_up_ref(x);
+        PUSH_OBJECT(x, "openssl.x509");
+        lua_rawseti(L, -2, i+1);
+      }
+
+      lua_rawset(L, -3);
+    }
+  }
+
+  if (OCSP_resp_get0_id(br, &id, &name)==1)
+  {
+    if (id)
+    {
+      lua_pushliteral(L, "id");
+      PUSH_ASN1_OCTET_STRING(L, id);
+      lua_rawset(L, -3);
+    }
+
+    if (name)
+    {
+      lua_pushliteral(L, "name");
+      openssl_push_xname_asobject(L, (X509_NAME*)name);
+      lua_rawset(L, -3);
+    }
+  }
+
+  n = OCSP_BASICRESP_get_ext_count(br);
+  if (n>0)
+  {
+    lua_pushliteral(L, "extensions");
+    lua_newtable(L);
+    for (i=0; i<n; i++)
+    {
+      X509_EXTENSION *ext = OCSP_BASICRESP_get_ext(br, i);
+      ext = X509_EXTENSION_dup(ext);
+      PUSH_OBJECT(ext, "openssl.x509_extension");
+      lua_rawseti(L, -2, i+1);
+    }
+    lua_rawset(L, -3);
+  }
+
+#if OPENSSL_VERSION_NUMBER >= 0x1010100FL && !defined(LIBRESSL_VERSION_NUMBER)
+  {
+    X509 *signer = NULL;
+
+    if (OCSP_resp_get0_signer(br, &signer, NULL) == 1)
+    {
+      X509_up_ref(signer);
+
+      lua_pushliteral(L, "signer");
+      PUSH_OBJECT(signer, "openssl.x509");
+      lua_rawset(L, -3);
+    }
+  }
+#endif
+
+  n = OCSP_resp_count(br);
+  for (i=0; i<n; i++)
+  {
+    OCSP_SINGLERESP *single = OCSP_resp_get0(br, i);
+    openssl_ocsp_push_singleresp(L, single);
+    lua_rawseti(L, -2, i+1);
+  }
+
+  openssl_push_x509_signature(L, OCSP_resp_get0_tbs_sigalg(br), OCSP_resp_get0_signature(br), -1);
+
+  return 1;
+}
+
+
+static int openssl_ocsp_response_parse(lua_State *L)
+{
+  int status;
+
+  OCSP_RESPONSE *resp = CHECK_OBJECT(1, OCSP_RESPONSE, "openssl.ocsp_response");
+  OCSP_BASICRESP *br = OCSP_response_get1_basic(resp);
+
+  lua_newtable(L);
+
+  status =  OCSP_response_status(resp);
+  AUXILIAR_SET(L, -1, "status", status, integer);
+  AUXILIAR_SET(L, -1, "status_str", OCSP_response_status_str(status), string);
+
+  if (br)
+  {
+    lua_pushliteral(L, "basic");
+    openssl_ocsp_push_basicresp(L, br);
+    lua_rawset(L, -3);
+    OCSP_BASICRESP_free(br);
+  }
+
+  return 1;
+}
+
+static int openssl_ocsp_response_free(lua_State*L)
 {
   OCSP_RESPONSE *res = CHECK_OBJECT(1, OCSP_RESPONSE, "openssl.ocsp_response");
   OCSP_RESPONSE_free(res);

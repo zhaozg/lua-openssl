@@ -32,6 +32,7 @@
 #include <openssl/bn.h>
 #include <openssl/hmac.h>
 #include <openssl/ts.h>
+#include <openssl/ocsp.h>
 
 /*-
 * Numeric release version identifier:

@@ -90,8 +90,7 @@ function TestOCSP:testAll()
   assert(resp:export(true))
   assert(resp:export(false))
 
-  -- FIXME: do it
-  -- local t= resp:parse()
-  -- assert(type(t)=='table')
+  local t= resp:parse()
+  assert(type(t)=='table')
 end
 
