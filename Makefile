@@ -172,6 +172,6 @@ asan: all
 	$(LUA) test.lua && cd ..
 
 clean:
-	rm -rf $T.* lib$T.a $(OBJS)
+	rm -rf $T.* lib$T.a $(OBJS) src/*.g*
 
 # vim: ts=8 sw=8 noet
