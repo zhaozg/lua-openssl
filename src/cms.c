@@ -72,6 +72,7 @@ static int openssl_cms_read(lua_State *L)
   BIO* in = load_bio_object(L, 1);
   int fmt = luaL_checkoption(L, 2, "auto", format);
   BIO* data = NULL;
+  int ret = 0;
 
   CMS_ContentInfo *cms = NULL;
   if (fmt == FORMAT_AUTO)
@@ -81,8 +82,6 @@ static int openssl_cms_read(lua_State *L)
   if (fmt == FORMAT_DER)
   {
     cms = d2i_CMS_bio(in, NULL);
-    //CMS_ContentInfo *cms = CMS_ContentInfo_new();
-    //int ret = i2d_CMS_bio(bio, cms);
   }
   else if (fmt == FORMAT_PEM)
   {
@@ -98,11 +97,14 @@ static int openssl_cms_read(lua_State *L)
   if (cms)
   {
     PUSH_OBJECT(cms, "openssl.cms");
+    ret = 1;
     if(data!=NULL)
+    {
       PUSH_OBJECT(data, "openssl.bio");
-    return data!=NULL? 2 : 1;
+      ret = 2;
+    }
   }
-  return openssl_pushresult(L, 0);
+  return ret;
 }
 
 /***
@@ -130,24 +132,19 @@ static int openssl_cms_export(lua_State *L)
   else if (fmt == FORMAT_PEM)
     ret = PEM_write_bio_CMS_stream(out, cms, in, flags);
   else if (fmt == FORMAT_DER)
-  {
     ret = i2d_CMS_bio_stream(out, cms, in, flags);
-  }
-  else
-    luaL_argerror(L, 5, "only accept smime, pem or der");
+
   if (ret==1)
   {
     BUF_MEM *mem;
     BIO_get_mem_ptr(out, &mem);
     lua_pushlstring(L, mem->data, mem->length);
   }
-  if(in!=NULL)
-    BIO_free(in);
-  if(out!=NULL)
-    BIO_free(out);
-  if(ret==1)
-    return 1;
-  return openssl_pushresult(L, ret);
+
+  if(in!=NULL) BIO_free(in);
+  if(out!=NULL) BIO_free(out);
+
+  return (ret==1) ? 1 : openssl_pushresult(L, ret);
 }
 
 /***
@@ -159,11 +156,12 @@ create empty cms object
 static int openssl_cms_new(lua_State*L)
 {
   CMS_ContentInfo *cms = CMS_ContentInfo_new();
+  int ret = 0;
   if (cms) {
     PUSH_OBJECT(cms, "openssl.cms");
-  } else
-    lua_pushnil(L);
-  return 1;
+    ret = 1;
+  }
+  return ret;
 }
 
 /***
@@ -177,13 +175,14 @@ static int openssl_cms_data_create(lua_State *L)
 {
   BIO* in = load_bio_object(L, 1);
   int flags = luaL_optint(L, 2, 0);
+  int ret = 0;
   CMS_ContentInfo *cms = CMS_data_create(in, flags);
   BIO_free(in);
   if (cms) {
     PUSH_OBJECT(cms, "openssl.cms");
-  } else
-    lua_pushnil(L);
-  return 1;
+    ret = 1;
+  }
+  return ret;
 }
 
 static int openssl_compress_nid[] = {
@@ -205,7 +204,7 @@ create compress cms object
 static int openssl_cms_compress(lua_State *L)
 {
   BIO* in = load_bio_object(L, 1);
-  int nid = NID_undef;
+  int ret = 0, nid = NID_undef;
   unsigned int flags = 0;
   const char* compress_options[] =
   {
@@ -216,10 +215,10 @@ static int openssl_cms_compress(lua_State *L)
     NULL
   };
   CMS_ContentInfo *cms;
+
   nid = lua_isnoneornil(L, 2) ? -1 : luaL_checkoption(L, 2, "zlib", compress_options);
   flags = luaL_optint(L, 3, 0);
-  if (nid != -1)
-    nid = openssl_compress_nid[nid];
+  if (nid != -1) nid = openssl_compress_nid[nid];
 
   cms = CMS_compress(in, nid, flags);
   BIO_free(in);
@@ -227,9 +226,9 @@ static int openssl_cms_compress(lua_State *L)
   if (cms)
   {
     PUSH_OBJECT(cms, "openssl.cms");
-    return 1;
+    ret = 1;
   }
-  return openssl_pushresult(L, 0);
+  return ret;
 }
 
 /***
@@ -237,21 +236,26 @@ uncompress cms object
 @function uncompress
 @tparam cms cms
 @tparam bio input
-@tparam bio out
 @tparam[opt=0] number flags
-@treturn boolean
+@treturn string
 */
 static int openssl_cms_uncompress(lua_State *L)
 {
   CMS_ContentInfo *cms = CHECK_OBJECT(1, CMS_ContentInfo, "openssl.cms");
   BIO *in = load_bio_object(L, 2);
-  BIO *out = load_bio_object(L, 3);
-  int flags = luaL_optint(L, 4, 0);
+  int flags = luaL_optint(L, 3, 0);
+  BIO *out = BIO_new(BIO_s_mem());
 
   int ret = CMS_uncompress(cms, in, out, flags);
+  if (ret==1)
+  {
+    BUF_MEM *mem;
+    BIO_get_mem_ptr(out, &mem);
+    lua_pushlstring(L, mem->data, mem->length);
+  }
   BIO_free(in);
   BIO_free(out);
-  return openssl_pushresult(L, ret);
+  return ret == 1 ? 1 : openssl_pushresult(L, ret);
 }
 
 /***
@@ -273,17 +277,18 @@ static int openssl_cms_sign(lua_State *L)
   BIO* data = load_bio_object(L, 3);
   STACK_OF(X509)* certs = openssl_sk_x509_fromtable(L, 4);
   unsigned int flags = luaL_optint(L, 5, 0);
-  CMS_ContentInfo *cms;
+  int ret = 0;
 
-  cms = CMS_sign(signcert, pkey, certs, data, flags);
+  CMS_ContentInfo *cms = CMS_sign(signcert, pkey, certs, data, flags);
   BIO_free(data);
+
   sk_X509_pop_free(certs, X509_free);
   if (cms)
   {
     PUSH_OBJECT(cms, "openssl.cms");
-    return 1;
+    ret = 1;
   }
-  return openssl_pushresult(L, 0);
+  return ret;
 }
 
 /***
@@ -313,13 +318,11 @@ static int openssl_cms_verify(lua_State *L)
     lua_pushlstring(L, mem->data, mem->length);
   }
   sk_X509_pop_free(signers, X509_free);
-  if (in!=NULL)
-    BIO_free(in);
-  if (out!=NULL)
-    BIO_free(out);
-  if (ret !=1)
-    ret = openssl_pushresult(L, ret);
-  return ret;
+
+  if (in!=NULL) BIO_free(in);
+  if (out!=NULL) BIO_free(out);
+
+  return ret == 1 ? 1 : openssl_pushresult(L, ret);
 }
 
 /***
@@ -339,16 +342,19 @@ static int openssl_cms_EncryptedData_encrypt(lua_State*L)
   const char* key = luaL_checklstring(L, 2, &klen);
   const EVP_CIPHER* ciphers = get_cipher(L, 3, "aes-128-cbc");
   unsigned int flags = luaL_optint(L, 4, 0);
+  int ret = 0;
 
   CMS_ContentInfo *cms = CMS_EncryptedData_encrypt(in, ciphers,
-                                                   (const unsigned char*) key, klen, flags);
+                                                   (const unsigned char*) key,
+                                                   klen,
+                                                   flags);
   BIO_free(in);
   if (cms)
   {
     PUSH_OBJECT(cms, "openssl.cms");
-    return 1;
+    ret = 1;
   }
-  return openssl_pushresult(L, 0);
+  return ret;
 }
 
 /***
@@ -378,9 +384,7 @@ static int openssl_cms_EncryptedData_decrypt(lua_State*L)
   }
   BIO_free(dcont);
   BIO_free(out);
-  if(ret!=1)
-    ret = openssl_pushresult(L, ret);
-  return ret;
+  return ret==1 ? 1 : openssl_pushresult(L, ret);
 }
 
 /***
@@ -397,15 +401,16 @@ static int openssl_cms_digest_create(lua_State*L)
   BIO* in = load_bio_object(L, 1);
   const EVP_MD* md = get_digest(L, 2, "sha256");
   unsigned int flags = luaL_optint(L, 3, 0);
+  int ret = 0;
 
   CMS_ContentInfo *cms = CMS_digest_create(in, md, flags);
   BIO_free(in);
   if (cms)
   {
     PUSH_OBJECT(cms, "openssl.cms");
-    return 1;
+    ret = 1;
   }
-  return openssl_pushresult(L, 0);
+  return ret;
 }
 
 /***
@@ -432,37 +437,30 @@ static int openssl_cms_digest_verify(lua_State*L)
   }
   BIO_free(dcont);
   BIO_free(out);
-  if(ret!=1)
-    ret = openssl_pushresult(L, ret);
-  return ret;
+
+  return ret==1 ? 1 : openssl_pushresult(L, ret);
 }
 
-static char *memdup(const char *src, size_t buffer_length)
+static char *memdup(const char *src, size_t len)
 {
-  size_t length;
   int add = 0;
   char *buffer;
 
-  if (buffer_length)
-    length = buffer_length;
-  else if (src)
+  if (src && len > 0)
   {
-    length = strlen(src);
     add = 1;
   }
   else
-    /* no length and a NULL src pointer! */
+    /* no len and a NULL src pointer! */
     return strdup("");
 
-  buffer = malloc(length + add);
-  if (!buffer)
-    return NULL; /* fail */
+  buffer = malloc(len + add);
+  if (!buffer) return NULL; /* fail */
 
-  memcpy(buffer, src, length);
+  memcpy(buffer, src, len);
 
-  /* if length unknown do null termination */
-  if (add)
-    buffer[length] = '\0';
+  /* if len unknown do null termination */
+  if (add) buffer[len] = '\0';
 
   return buffer;
 }
@@ -538,12 +536,6 @@ static int openssl_cms_encrypt(lua_State *L)
         }
         lua_pop(L, 1);
       }
-
-
-      if (ret==1 && lua_rawlen(L, 3)>0)
-      {
-        /* look at apps/cms.c operation == SMIME_ENCRYPT */
-      }
     }
 
     if (ret)
@@ -616,26 +608,27 @@ static int openssl_cms_decrypt(lua_State *L)
     }
   }
 
-  if (ret)
-    ret = CMS_decrypt_set1_pkey(cms, pkey, x509);
-
-  if (ret == 1)
-    ret = CMS_decrypt(cms, NULL, NULL, dcont, out, flags);
-
   if (ret == 1)
   {
-    BUF_MEM *mem;
-    BIO_get_mem_ptr(out, &mem);
-    lua_pushlstring(L, mem->data, mem->length);
+    ret = CMS_decrypt_set1_pkey(cms, pkey, x509);
+    if (ret == 1)
+    {
+      ret = CMS_decrypt(cms, NULL, NULL, dcont, out, flags);
+
+      if (ret == 1)
+      {
+        BUF_MEM *mem;
+        BIO_get_mem_ptr(out, &mem);
+        lua_pushlstring(L, mem->data, mem->length);
+      }
+    }
   }
 
-  if (dcont)
-    BIO_free(dcont);
+
+  if (dcont) BIO_free(dcont);
   BIO_free(out);
 
-  if (ret!=1)
-    return openssl_pushresult(L, ret);
-  return 1;
+  return ret == 1 ? 1 : openssl_pushresult(L, ret);
 }
 
 static const luaL_Reg R[] =
@@ -727,27 +720,28 @@ static int openssl_cms_content(lua_State *L)
 {
   CMS_ContentInfo *cms = CHECK_OBJECT(1, CMS_ContentInfo, "openssl.cms");
   ASN1_OCTET_STRING** content = CMS_get0_content(cms);
+  int ret = 0;
   if (content && *content)
   {
     ASN1_OCTET_STRING* s = *content;
     lua_pushlstring(L, (const char*)ASN1_STRING_get0_data(s), ASN1_STRING_length(s));
+    ret = 1;
   }
-  else
-    lua_pushnil(L);
-  return 1;
+  return ret;
 }
 
 static int openssl_cms_get_signers(lua_State*L)
 {
   CMS_ContentInfo *cms = CHECK_OBJECT(1, CMS_ContentInfo, "openssl.cms");
   STACK_OF(X509) *signers = CMS_get0_signers(cms);
+  int ret = 0;
   if (signers)
   {
     openssl_sk_x509_totable(L, signers);
     sk_X509_free(signers);
-    return 1;
+    ret = 1;
   }
-  return 0;
+  return ret;
 }
 
 static int openssl_cms_data(lua_State *L)

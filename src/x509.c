@@ -47,6 +47,14 @@ get special purpose info as table
 */
 static int openssl_x509_purpose(lua_State*L)
 {
+  int ret = lua_type(L, 1);
+
+  luaL_argcheck(L,
+                ret==LUA_TNONE || ret==LUA_TNUMBER || ret==LUA_TSTRING,
+                1,
+                "only accpet NONE, string or number as nid or short name");
+
+  ret = 0;
   if (lua_isnone(L, 1))
   {
     int count = X509_PURPOSE_get_count();
@@ -58,7 +66,7 @@ static int openssl_x509_purpose(lua_State*L)
       openssl_push_purpose(L, purpose);
       lua_rawseti(L, -2, i + 1);
     }
-    return 1;
+    ret = 1;
   }
   else if (lua_isnumber(L, 1))
   {
@@ -67,10 +75,8 @@ static int openssl_x509_purpose(lua_State*L)
     {
       X509_PURPOSE* purpose = X509_PURPOSE_get0(idx);
       openssl_push_purpose(L, purpose);
+      ret = 1;
     }
-    else
-      lua_pushnil(L);
-    return 1;
   }
   else if (lua_isstring(L, 1))
   {
@@ -80,15 +86,11 @@ static int openssl_x509_purpose(lua_State*L)
     {
       X509_PURPOSE* purpose = X509_PURPOSE_get0(idx);
       openssl_push_purpose(L, purpose);
+      ret = 1;
     }
-    else
-      lua_pushnil(L);
-    return 1;
   }
-  else
-    luaL_argerror(L, 1, "only accpet none, string or number as nid or short name");
 
-  return 0;
+  return ret;
 };
 
 static const char* usage_mode[] =
@@ -109,7 +111,7 @@ get support certtypes
 static int openssl_x509_certtypes(lua_State*L)
 {
   int mode = luaL_checkoption(L, 1, "standard", usage_mode);
-  int i;
+  int i, ret=0;
   const BIT_STRING_BITNAME* bitname;
 
   switch (mode)
@@ -135,8 +137,7 @@ static int openssl_x509_certtypes(lua_State*L)
       openssl_push_bit_string_bitname(L, bitname);
       lua_rawseti(L, -2, i + 1);
     }
-    return 1;
-
+    ret = 1;
   }
   case 1:
   {
@@ -158,7 +159,7 @@ static int openssl_x509_certtypes(lua_State*L)
       openssl_push_bit_string_bitname(L, bitname);
       lua_rawseti(L, -2, i + 1);
     }
-    return 1;
+    ret = 1;
   }
   case 2:
   {
@@ -190,10 +191,10 @@ static int openssl_x509_certtypes(lua_State*L)
       lua_setfield(L, -2, "nid");
       lua_rawseti(L, -2, i + 1);
     };
-    return 1;
+    ret = 1;
   }
   }
-  return 0;
+  return ret;
 }
 
 /***
@@ -222,6 +223,8 @@ static LUA_FUNCTION(openssl_x509_read)
   X509 *cert = NULL;
   BIO *in = load_bio_object(L, 1);
   int fmt = luaL_checkoption(L, 2, "auto", format);
+  int ret = 0;
+
   if (fmt == FORMAT_AUTO)
   {
     fmt = bio_is_der(in) ? FORMAT_DER : FORMAT_PEM;
@@ -241,9 +244,9 @@ static LUA_FUNCTION(openssl_x509_read)
   if (cert)
   {
     PUSH_OBJECT(cert, "openssl.x509");
-    return 1;
+    ret = 1;
   }
-  return openssl_pushresult(L, 0);
+  return ret == 1 ? 1 : openssl_pushresult(L, ret);
 }
 
 /***
@@ -264,10 +267,8 @@ static int openssl_x509_new(lua_State* L)
   X509 *x = X509_new();
 
   ret = X509_set_version(x, 2);
-  if (ret == 1 && (
-        auxiliar_getclassudata(L, "openssl.bn", i) ||
-        lua_isstring(L, i) || lua_isnumber(L, i)
-      ))
+  if (ret == 1 && ( auxiliar_getclassudata(L, "openssl.bn", i) ||
+                    lua_isstring(L, i) || lua_isnumber(L, i) ))
   {
     BIGNUM *bn = BN_get(L, i);
     ASN1_INTEGER* ai = BN_to_ASN1_INTEGER(bn, NULL);
@@ -277,7 +278,7 @@ static int openssl_x509_new(lua_State* L)
     i++;
   }
 
-  for (; i <= n; i++)
+  for (; i <= n && ret==1; i++)
   {
     if (ret == 1 && auxiliar_getclassudata(L, "openssl.x509_req", i))
     {
@@ -314,15 +315,14 @@ static int openssl_x509_new(lua_State* L)
   }
 
   if (ret == 1)
-  {
     PUSH_OBJECT(x, "openssl.x509");
-    return 1;
-  }
   else
   {
     X509_free(x);
-    return openssl_pushresult(L, ret);
+    ret = openssl_pushresult(L, ret);
   }
+
+  return ret;
 };
 
 static luaL_Reg R[] =
@@ -480,52 +480,29 @@ openssl.x509 object
 export x509_req to string
 @function export
 @tparam[opt='pem'] string format, 'der' or 'pem' default
-@tparam[opt='true'] boolean noext not export extension
 @treturn string
 */
 static LUA_FUNCTION(openssl_x509_export)
 {
   X509 *cert = CHECK_OBJECT(1, X509, "openssl.x509");
   int fmt = luaL_checkoption(L, 2, "pem", format);
-  int notext = lua_isnone(L, 3) ? 1 : lua_toboolean(L, 3);
   BIO* out = NULL;
-
-  if (fmt != FORMAT_DER && fmt != FORMAT_PEM)
-  {
-    luaL_argerror(L, 2, "format only accept pem or der");
-  }
+  int ret = 0;
 
   out  = BIO_new(BIO_s_mem());
-  if (fmt == FORMAT_PEM)
-  {
-    if (!notext)
-    {
-      X509_print(out, cert);
-    }
 
-    if (PEM_write_bio_X509(out, cert))
-    {
-      BUF_MEM *bio_buf;
-      BIO_get_mem_ptr(out, &bio_buf);
-      lua_pushlstring(L, bio_buf->data, bio_buf->length);
-    }
-    else
-      lua_pushnil(L);
-  }
-  else
+  ret = fmt == FORMAT_PEM ? PEM_write_bio_X509(out, cert)
+                          : i2d_X509_bio(out, cert);
+  if (ret)
   {
-    if (i2d_X509_bio(out, cert))
-    {
-      BUF_MEM *bio_buf;
-      BIO_get_mem_ptr(out, &bio_buf);
-      lua_pushlstring(L, bio_buf->data, bio_buf->length);
-    }
-    else
-      lua_pushnil(L);
+    BUF_MEM *bio_buf;
+    BIO_get_mem_ptr(out, &bio_buf);
+    lua_pushlstring(L, bio_buf->data, bio_buf->length);
+    ret = 1;
   }
 
   BIO_free(out);
-  return 1;
+  return ret;
 };
 
 /***
@@ -738,17 +715,13 @@ static LUA_FUNCTION(openssl_x509_check)
       if (purpose_id >= 0)
       {
         X509_PURPOSE* ppurpose = X509_PURPOSE_get0(purpose_id);
-        if (ppurpose)
-        {
-          purpose = ppurpose->purpose;
-        }
+        if (ppurpose) purpose = ppurpose->purpose;
       }
     }
 #if 0
     X509_STORE_set_verify_cb_func(store, verify_cb);
 #endif
-    if (untrustedchain!=NULL)
-      sk_X509_pop_free(untrustedchain, X509_free);
+    if (untrustedchain!=NULL) sk_X509_pop_free(untrustedchain, X509_free);
     ret = check_cert(store, cert, untrustedchain, purpose);
     lua_pushboolean(L, ret == X509_V_OK);
     lua_pushinteger(L, ret);
@@ -950,20 +923,13 @@ static int openssl_x509_digest(lua_State* L)
   unsigned char buffer[EVP_MAX_MD_SIZE];
   X509 *cert = CHECK_OBJECT(1, X509, "openssl.x509");
   const EVP_MD *digest = get_digest(L, 2, "sha256");
-  int ret;
-  if (!digest)
-  {
-    lua_pushnil(L);
-    lua_pushfstring(L, "digest algorithm not supported (%s)", lua_tostring(L, 2));
-    return 2;
-  }
-  ret = X509_digest(cert, digest, buffer, &bytes);
+
+  int ret = X509_digest(cert, digest, buffer, &bytes);
   if (ret == 1)
   {
     lua_pushlstring(L, (const char*)buffer, bytes);
-    return 1;
   }
-  return openssl_pushresult(L, ret);
+  return ret == 1 ? ret : openssl_pushresult(L, ret);
 };
 
 /***
@@ -1080,6 +1046,8 @@ set valid time, notbefore and notafter
 static int openssl_x509_valid_at(lua_State* L)
 {
   X509* cert = CHECK_OBJECT(1, X509, "openssl.x509");
+  int ret = 0;
+
   if (lua_isnone(L, 2))
   {
     time_t now = 0;
@@ -1089,7 +1057,7 @@ static int openssl_x509_valid_at(lua_State* L)
                         && X509_cmp_time(X509_get0_notBefore(cert), &now) <= 0));
     PUSH_ASN1_TIME(L, X509_get0_notBefore(cert));
     PUSH_ASN1_TIME(L, X509_get0_notAfter(cert));
-    return 3;
+    ret = 3;
   }
   else if (lua_gettop(L) == 2)
   {
@@ -1098,13 +1066,13 @@ static int openssl_x509_valid_at(lua_State* L)
                         && X509_cmp_time(X509_get0_notBefore(cert), &time) <= 0));
     PUSH_ASN1_TIME(L, X509_get0_notBefore(cert));
     PUSH_ASN1_TIME(L, X509_get0_notAfter(cert));
-    return 3;
+    ret = 3;
   }
   else if (lua_gettop(L) == 3)
   {
     time_t before, after;
     ASN1_TIME *ab, *aa;
-    int ret = 1;
+
     before = lua_tointeger(L, 2);
     after  = lua_tointeger(L, 3);
 
@@ -1119,9 +1087,9 @@ static int openssl_x509_valid_at(lua_State* L)
     ASN1_TIME_free(ab);
     ASN1_TIME_free(aa);
 
-    return openssl_pushresult(L, ret);
+    ret = openssl_pushresult(L, ret);
   }
-  return 0;
+  return ret;
 }
 
 /***
@@ -1230,15 +1198,15 @@ static int openssl_x509_extensions(lua_State* L)
 {
   X509 *self = CHECK_OBJECT(1, X509, "openssl.x509");
   STACK_OF(X509_EXTENSION) *exts = (STACK_OF(X509_EXTENSION) *)X509_get0_extensions(self);
+  int ret = 0;
+
   if (lua_isnone(L, 2))
   {
     if (exts)
     {
       openssl_sk_x509_extension_totable(L, exts);
+      ret = 1;
     }
-    else
-      lua_pushnil(L);
-    return 1;
   }
   else
   {
@@ -1262,8 +1230,9 @@ static int openssl_x509_extensions(lua_State* L)
     }
     sk_X509_EXTENSION_pop_free(others, X509_EXTENSION_free);
 #endif
-    return openssl_pushresult(L, 1);
+    ret = openssl_pushresult(L, 1);
   }
+  return ret;
 }
 
 /***
@@ -1277,39 +1246,40 @@ sign x509
 static int openssl_x509_sign(lua_State*L)
 {
   X509* x = CHECK_OBJECT(1, X509, "openssl.x509");
+  int ret = 0;
+
   if (lua_isnone(L, 2))
   {
     unsigned char *out = NULL;
-    int len = i2d_re_X509_tbs(x, &out);
-    if (len > 0)
+    ret = i2d_re_X509_tbs(x, &out);
+    if (ret > 0)
     {
-      lua_pushlstring(L, (const char *)out, len);
+      lua_pushlstring(L, (const char *)out, ret);
       OPENSSL_free(out);
-      return 1;
+      ret = 1;
     }
-    return openssl_pushresult(L, len);
+    else
+      ret = openssl_pushresult(L, ret);
   }
   else if (auxiliar_getclassudata(L, "openssl.evp_pkey", 2))
   {
     EVP_PKEY* pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
     const EVP_MD *md;
-    int ret = 1;
     int i = 3;
-    if (auxiliar_getclassudata(L, "openssl.x509_name", 3))
+
+    if (auxiliar_getclassudata(L, "openssl.x509_name", i))
     {
-      X509_NAME* xn = CHECK_OBJECT(3, X509_NAME, "openssl.x509_name");
+      X509_NAME* xn = CHECK_OBJECT(i, X509_NAME, "openssl.x509_name");
       ret = X509_set_issuer_name(x, xn);
       i++;
     }
     else
     {
-      X509* ca = CHECK_OBJECT(3, X509, "openssl.x509");
+      X509* ca = CHECK_OBJECT(i, X509, "openssl.x509");
       X509_NAME* xn = X509_get_subject_name(ca);
       ret = X509_check_private_key(ca, pkey);
       if (ret == 1)
-      {
         ret = X509_set_issuer_name(x, xn);
-      }
       i++;
     }
 
@@ -1317,19 +1287,18 @@ static int openssl_x509_sign(lua_State*L)
     {
       md = get_digest(L, i, "sha256");
       ret = X509_sign(x, pkey, md);
-      if (ret > 0)
-        ret = 1;
+      if (ret > 0) ret = 1;
     }
-    return openssl_pushresult(L, ret);
+    ret = openssl_pushresult(L, ret);
   }
   else
   {
     size_t sig_len;
     const char* sig = luaL_checklstring(L, 2, &sig_len);
     ASN1_OBJECT *obj = openssl_get_asn1object(L, 3, 0);
+
     CONSTIFY_X509_get0 ASN1_BIT_STRING *psig = NULL;
     CONSTIFY_X509_get0 X509_ALGOR *palg = NULL;
-    int ret;
 
     X509_get0_signature(&psig, &palg, x);
     ret = ASN1_BIT_STRING_set((ASN1_BIT_STRING*)psig, (unsigned char*)sig, (int)sig_len);
@@ -1339,50 +1308,42 @@ static int openssl_x509_sign(lua_State*L)
     }
     else
       ASN1_OBJECT_free(obj);
-    return openssl_pushresult(L, ret);
+    ret = openssl_pushresult(L, ret);
   }
+  return ret;
 }
 
 static int openssl_x509_verify(lua_State*L)
 {
   X509* x = CHECK_OBJECT(1, X509, "openssl.x509");
+  int ret = 0;
   if (lua_isnone(L, 2))
   {
     unsigned char *out = NULL;
-    int len = i2d_re_X509_tbs(x, &out);
-    if (len > 0)
+    ret = i2d_re_X509_tbs(x, &out);
+    if (ret > 0)
     {
-      CONSTIFY_X509_get0 ASN1_BIT_STRING *psig = NULL;
-      CONSTIFY_X509_get0 X509_ALGOR *palg = NULL;
+      CONSTIFY_X509_get0 ASN1_BIT_STRING *sig = NULL;
+      CONSTIFY_X509_get0 X509_ALGOR *alg = NULL;
 
-      lua_pushlstring(L, (const char *)out, len);
+      lua_pushlstring(L, (const char *)out, ret);
       OPENSSL_free(out);
 
-      X509_get0_signature(&psig, &palg, x);
-      if (psig != NULL)
-      {
-        lua_pushlstring(L, (const char *)psig->data, psig->length);
-      }
-      else
-        lua_pushnil(L);
+      X509_get0_signature(&sig, &alg, x);
+      openssl_push_x509_signature(L, alg, sig, 0);
 
-      if (palg)
-      {
-        X509_ALGOR *alg = X509_ALGOR_dup((X509_ALGOR *)palg);
-        PUSH_OBJECT(alg, "openssl.x509_algor");
-      }
-      else
-        lua_pushnil(L);
-      return 3;
+      ret = 2;
     }
-    return openssl_pushresult(L, len);
+    else
+      ret = openssl_pushresult(L, ret);
   }
   else
   {
     EVP_PKEY *pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
-    int ret = X509_verify(x, pkey);
-    return openssl_pushresult(L, ret);
+    ret = X509_verify(x, pkey);
+    ret = openssl_pushresult(L, ret);
   }
+  return ret;
 }
 
 static int openssl_x509_equal(lua_State *L)

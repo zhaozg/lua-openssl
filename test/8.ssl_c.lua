@@ -86,7 +86,7 @@ local function mk_connection(_host, _port, i)
     cli:close()
     collectgarbage()
   end
-  openssl.error(true)
+  openssl.errors()
 end
 
 for i = 1, loop do

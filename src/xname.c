@@ -18,15 +18,12 @@ int openssl_push_xname_asobject(lua_State*L, X509_NAME* xname)
   return 1;
 }
 
-static int openssl_new_xname(lua_State*L, X509_NAME* xname, int idx, int utf8)
+static X509_NAME* openssl_new_xname(lua_State*L, int idx, int utf8)
 {
-  int i, n;
-  luaL_checktable(L, idx);
-  luaL_argcheck(L, lua_istable(L, idx) && lua_rawlen(L, idx) > 0, idx,
-                "must be not empty table as array");
+  int i, n, ret;
+  X509_NAME *xn = X509_NAME_new();
 
-  n = lua_rawlen(L, idx);
-  for (i = 0; i < n; i++)
+  for (i = 0, n = lua_rawlen(L, idx), ret = 1; i < n && ret==1; i++)
   {
     lua_rawgeti(L, idx, i + 1);
     lua_pushnil(L);
@@ -34,21 +31,38 @@ static int openssl_new_xname(lua_State*L, X509_NAME* xname, int idx, int utf8)
     while (lua_next(L, -2) != 0)
     {
       size_t size;
-      ASN1_OBJECT *obj = openssl_get_asn1object(L, -2, 0);
+      ASN1_OBJECT *obj = openssl_get_asn1object(L, -2, 1);
       const char *value = luaL_checklstring(L, -1, &size);
 
-      int ret = X509_NAME_add_entry_by_OBJ(xname, obj, utf8 ? MBSTRING_UTF8 : MBSTRING_ASC, (unsigned char*)value, (int)size, -1, 0);
-      ASN1_OBJECT_free(obj);
-      if (ret != 1)
+      if (obj==NULL)
       {
-        lua_pushfstring(L, "node at %d which  %s=%s can't add to X509 name",
-                        i + 1, lua_tostring(L, -2), value);
-        luaL_argerror(L, idx, lua_tostring(L, -1));
+        ret = 0;
+        break;
       }
+
+      ret = X509_NAME_add_entry_by_OBJ(xn,
+                                       obj,
+                                       utf8 ? MBSTRING_UTF8 : MBSTRING_ASC,
+                                       (unsigned char*)value,
+                                       (int)size,
+                                       -1,
+                                       0);
+      ASN1_OBJECT_free(obj);
+      if (ret != 1) break;
       lua_pop(L, 1);
     }
   }
-  return 0;
+
+  if (ret != 1)
+  {
+    X509_NAME_free(xn);
+    xn = NULL;
+
+    lua_pushfstring(L, "can't add to openssl.x509_name with value (%s=%s) at %d of #%d table arg",
+                        lua_tostring(L, -2), lua_tostring(L, -1), i + 1, idx);
+  }
+
+  return xn;
 }
 
 /***
@@ -69,13 +83,27 @@ Create x509_name object
 static int openssl_xname_new(lua_State*L)
 {
   X509_NAME* xn;
-  int utf8;
+  int utf8, ret = 1;
+
   luaL_checktable(L, 1);
+  luaL_argcheck(L, lua_rawlen(L, 1) > 0, 1, "must be not empty table as array");
+
   utf8 = lua_isnone(L, 2) ? 1 : lua_toboolean(L, 2);
-  xn = X509_NAME_new();
-  openssl_new_xname(L, xn, 1, utf8);
-  PUSH_OBJECT(xn, "openssl.x509_name");
-  return 1;
+  xn = openssl_new_xname(L, 1, utf8);
+
+  if (xn)
+  {
+    PUSH_OBJECT(xn, "openssl.x509_name");
+  }
+  else
+  {
+    lua_pushnil(L);
+    lua_insert(L, lua_gettop(L) -1);
+    ret = 2;
+  }
+
+  /* if xn is NULL, top will be error string */
+  return ret;
 };
 
 /***
@@ -87,14 +115,17 @@ Create x509_name from der string
 */
 static int openssl_xname_d2i(lua_State*L)
 {
+  int ret = 0;
   size_t len;
   const unsigned char* dat = (const unsigned char*)luaL_checklstring(L, 1, &len);
   X509_NAME* xn = d2i_X509_NAME(NULL, &dat, len);
   if (xn)
+  {
     PUSH_OBJECT(xn, "openssl.x509_name");
-  else
-    openssl_pushresult(L, 0);
-  return 1;
+    ret = 1;
+  }
+
+  return ret ? ret : openssl_pushresult(L, 0);
 };
 
 static luaL_Reg R[] =
@@ -172,9 +203,8 @@ static int openssl_xname_digest(lua_State*L)
   int ret = X509_NAME_digest(xname, md, buf, &len);
   if (ret == 1)
     lua_pushlstring(L, (const char *) buf, len);
-  else
-    return openssl_pushresult(L, ret);
-  return 1;
+
+  return ret == 1 ? ret : openssl_pushresult(L, ret);
 };
 
 /***
@@ -186,20 +216,24 @@ print x509_name to bio object
 @tparam[opt] integer flags for output
 @treturn boolean result, follow by error message
 */
-static int openssl_xname_print(lua_State*L)
+static int openssl_xname_toprint(lua_State*L)
 {
   X509_NAME* xname = CHECK_OBJECT(1, X509_NAME, "openssl.x509_name");
-  BIO* bio = load_bio_object(L, 2);
-  int indent = luaL_optint(L, 3, 0);
-  unsigned long flags = luaL_optinteger(L, 4, 0);
+  int indent = luaL_optint(L, 2, 0);
+  unsigned long flags = luaL_optinteger(L, 3, 0);
+  BIO* out = BIO_new(BIO_s_mem());
 
-  int ret = X509_NAME_print_ex(bio, xname, indent, flags);
-  BIO_free(bio);
+  int ret = X509_NAME_print_ex(out, xname, indent, flags);
+
   if (ret == 1)
-    lua_pushboolean(L, 1);
-  else
-    return openssl_pushresult(L, ret);
-  return 1;
+  {
+    BUF_MEM *mem;
+    BIO_get_mem_ptr(out, &mem);
+    lua_pushlstring(L, mem->data, mem->length);
+  }
+  BIO_free(out);
+
+  return ret==1 ? ret : openssl_pushresult(L, ret);
 };
 
 static int openssl_push_xname_entry(lua_State* L, X509_NAME_ENTRY* ne, int obj)
@@ -287,15 +321,16 @@ static int openssl_xname_i2d(lua_State*L)
 {
   X509_NAME* xn = CHECK_OBJECT(1, X509_NAME, "openssl.x509_name");
   unsigned char* out = NULL;
-  int len = i2d_X509_NAME(xn, &out);
-  if (len > 0)
+  int ret = i2d_X509_NAME(xn, &out);
+
+  if (ret > 0)
   {
-    lua_pushlstring(L, (const char *)out, len);
+    lua_pushlstring(L, (const char *)out, ret);
     OPENSSL_free(out);
-    return 1;
+    ret = 1;
   }
-  else
-    return openssl_pushresult(L, len);
+
+  return ret > 0 ? ret : openssl_pushresult(L, ret);
 };
 
 /***
@@ -327,17 +362,20 @@ static int openssl_xname_get_text(lua_State*L)
   int lastpos = luaL_optint(L, 3, -1);
   X509_NAME_ENTRY *e;
   ASN1_STRING *s;
+  int ret = 0;
 
   lastpos = X509_NAME_get_index_by_OBJ(xn, obj, lastpos);
   ASN1_OBJECT_free(obj);
-  if (lastpos == -1)
-    return 0;
+  if (lastpos != -1)
+  {
+    e = X509_NAME_get_entry(xn, lastpos);
+    s = X509_NAME_ENTRY_get_data(e);
+    lua_pushlstring(L, (const char *)ASN1_STRING_get0_data(s), ASN1_STRING_length(s));
+    lua_pushinteger(L, lastpos);
+    ret = 2;
 
-  e = X509_NAME_get_entry(xn, lastpos);
-  s = X509_NAME_ENTRY_get_data(e);
-  lua_pushlstring(L, (const char *)ASN1_STRING_get0_data(s), ASN1_STRING_length(s));
-  lua_pushinteger(L, lastpos);
-  return 2;
+  }
+  return ret;
 };
 
 /***
@@ -353,11 +391,12 @@ static int openssl_xname_get_entry(lua_State*L)
   int lastpos = luaL_checkint(L, 2);
   int obj = lua_isnone(L, 3) ? 0 : lua_toboolean(L, 3);
   X509_NAME_ENTRY *e = X509_NAME_get_entry(xn, lastpos);
+  int ret = 0;
   if (e)
   {
-    return openssl_push_xname_entry(L, e, obj);
+    ret = openssl_push_xname_entry(L, e, obj);
   }
-  return 0;
+  return ret;
 };
 
 /***
@@ -377,12 +416,14 @@ static int openssl_xname_add_entry(lua_State*L)
   const char*value = luaL_checklstring(L, 3, &size);
   int utf8 = lua_isnone(L, 4) ? 1 : lua_toboolean(L, 4);
 
-  int ret = X509_NAME_add_entry_by_OBJ(xn, obj, utf8 ? MBSTRING_UTF8 : MBSTRING_ASC, (unsigned char*)value, (int)size, -1, 0);
+  int ret = X509_NAME_add_entry_by_OBJ(xn,
+                                       obj,
+                                       utf8 ? MBSTRING_UTF8 : MBSTRING_ASC,
+                                       (unsigned char*)value,
+                                       (int)size,
+                                       -1,
+                                       0);
   ASN1_OBJECT_free(obj);
-  if (ret != 1)
-  {
-    luaL_error(L,  "%s=%s can't add to X509 name",  lua_tostring(L, 2), value);
-  };
   return openssl_pushresult(L, ret);
 };
 
@@ -399,6 +440,7 @@ static int openssl_xname_delete_entry(lua_State*L)
 {
   X509_NAME* xn = CHECK_OBJECT(1, X509_NAME, "openssl.x509_name");
   int loc = luaL_checkint(L, 2);
+  int ret = 0;
 
   X509_NAME_ENTRY *xe = X509_NAME_delete_entry(xn, loc);
   if (xe)
@@ -406,12 +448,10 @@ static int openssl_xname_delete_entry(lua_State*L)
     openssl_push_asn1object(L, X509_NAME_ENTRY_get_object(xe));
     PUSH_ASN1_STRING(L, X509_NAME_ENTRY_get_data(xe));
     X509_NAME_ENTRY_free(xe);
-    return 2;
+    ret = 2;
   }
-  else
-    lua_pushnil(L);
 
-  return 1;
+  return ret;
 };
 
 static luaL_Reg xname_funcs[] =
@@ -419,7 +459,7 @@ static luaL_Reg xname_funcs[] =
   {"oneline",           openssl_xname_oneline},
   {"hash",              openssl_xname_hash},
   {"digest",            openssl_xname_digest},
-  {"print",             openssl_xname_print},
+  {"toprint",           openssl_xname_toprint},
   {"info",              openssl_xname_info},
   {"dup",               openssl_xname_dup},
   {"i2d",               openssl_xname_i2d},

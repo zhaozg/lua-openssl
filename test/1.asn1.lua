@@ -8,6 +8,7 @@ local first = true
 TestObject = {}
 
 function TestObject:setUp()
+  openssl.clear_error()
   self.sn = 'C'
   self.ln = 'countryName'
   self.oid = '2.5.4.6'
@@ -189,6 +190,8 @@ function TestTime:testUTCTime()
     assert(sec==0, sec)
     assert(type(ab:toprint()=='string'))
   end
+
+  ab:set("19971112153010.5Z")
   if not helper.libressl then  -- FIXME: libressl
     local ac = assert(openssl.asn1.new_utctime("19971112153010.5Z"))
     assert(ac:tostring())
@@ -196,16 +199,32 @@ function TestTime:testUTCTime()
 end
 
 function TestTime:testGENERALIZEDTime()
-  local at = openssl.asn1.new_generalizedtime(self.time)
+  local at = openssl.asn1.new_generalizedtime()
   assert(at:set(self.time))
   local t1 = at:get()
+  lu.assertEquals(self.gmt, t1)
+  at = openssl.asn1.new_generalizedtime(self.time)
+  assert(at)
+  assert(type(at:tostring())=='string')
   local d = at:i2d()
   assert(type(d)=='string')
-  local ab = openssl.asn1.new_generalizedtime(self.time)
-  assert(ab:d2i(d))
+  local ab = openssl.asn1.new_generalizedtime()
+  ab:d2i(d)
   assert(ab==at)
-  lu.assertEquals(self.gmt, t1)
-  assert(type(ab:toprint()=='string'))
+  assert(at:check())
+  ab = openssl.asn1.new_generalizedtime(self.time+1)
+  if ab.diff then
+    local day, sec = ab:diff(at)
+    assert(day==0)
+    assert(sec==-1)
+    at:adj(self.time, 1, 1)
+    day, sec = ab:diff(at)
+    assert(day==1, day)
+    assert(sec==0, sec)
+    assert(type(ab:toprint()=='string'))
+  end
+
+  ab:set("19971112153010.5Z")
   if not helper.libressl then  -- FIXME: libressl
     local ac = assert(openssl.asn1.new_generalizedtime("19971112153010.5Z"))
     assert(ac:tostring())
@@ -231,6 +250,8 @@ function TestNumber:testBasic()
   assert(i==n)
   n:set(1)
   assert(type(i:toprint()=='string'))
+  assert(i:bn(b))
+  assert(b==i:get())
 end
 
 TestType = {}

@@ -79,4 +79,4 @@ local function ssl_mode()
 end
 
 ssl_mode()
-print(openssl.error(true))
+print(openssl.errors())

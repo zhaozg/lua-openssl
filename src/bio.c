@@ -91,9 +91,9 @@ static LUA_FUNCTION(openssl_bio_new_pair)
   {
     PUSH_OBJECT(B1, "openssl.bio");
     PUSH_OBJECT(B2, "openssl.bio");
-    return 2;
+    ret = 2;
   }
-  return openssl_pushresult(L, ret);
+  return ret > 0 ? ret : openssl_pushresult(L, ret);
 }
 
 static LUA_FUNCTION(openssl_bio_new_null)
@@ -169,10 +169,12 @@ static LUA_FUNCTION(openssl_bio_new_file)
   const char* f = luaL_checkstring(L, 1);
   const char* m = luaL_optstring(L, 2, "r");
   BIO *bio = BIO_new_file(f, m);
-  if (!bio)
-    luaL_error(L, "error opening the file(%s) for mode (%s)", f, m);
-  PUSH_OBJECT(bio, "openssl.bio");
-  return 1;
+  if (bio)
+  {
+    PUSH_OBJECT(bio, "openssl.bio");
+  }
+
+  return bio ? 1 : openssl_pushresult(L, 0);
 }
 
 /***
@@ -231,12 +233,6 @@ static int openssl_bio_new_connect(lua_State *L)
       BIO_set_conn_port(bio, (char *)lua_tostring(L, -1));
     }
     lua_pop(L, 1);
-
-    lua_getfield(L, 1, "ip");
-    if (!lua_isnil(L, -1)) {
-      BIO_set_conn_hostname(bio, (char*) lua_tostring(L, -1));
-    }
-    lua_pop(L, 1);
   } else
   {
     bio = BIO_new(BIO_s_connect());
@@ -249,12 +245,11 @@ static int openssl_bio_new_connect(lua_State *L)
 
   if (ret == 1)
   {
-      PUSH_OBJECT(bio, "openssl.bio");
-      return 1;
+    PUSH_OBJECT(bio, "openssl.bio");
   }
-
-  BIO_free(bio);
-  return openssl_pushresult(L, ret);
+  else
+    BIO_free(bio);
+  return ret == 1 ? ret : openssl_pushresult(L, ret);
 }
 
 /***
@@ -633,39 +628,38 @@ static LUA_FUNCTION(openssl_bio_get_mem)
   if (ret == 1)
   {
     lua_pushlstring(L, mem->data, mem->length);
-    return ret;
   }
-  return openssl_pushresult(L, ret);
+  return ret == 1 ? 1 : openssl_pushresult(L, ret);
 }
 
 static LUA_FUNCTION(openssl_bio_get_md)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
+  bio = BIO_find_type(bio, BIO_TYPE_MD);
+  int ret = 0;
 
-	bio = BIO_find_type(bio, BIO_TYPE_MD);
   if (bio)
   {
-	  EVP_MD *md;
-	  BIO_get_md(bio, &md);
+    EVP_MD *md;
+    BIO_get_md(bio, &md);
     PUSH_OBJECT(bio, "openssl.bio");
     BIO_up_ref(bio);
     PUSH_OBJECT(md, "openssl.evp_digest");
-    return 2;
+    ret = 2;
   }
-  return 0;
+  return ret;
 }
 
 static LUA_FUNCTION(openssl_bio_next)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
-	bio = BIO_next(bio);
+  bio = BIO_next(bio);
   if (bio)
   {
     PUSH_OBJECT(bio, "openssl.bio");
     BIO_up_ref(bio);
-    return 1;
   }
-  return 0;
+  return bio ? 1 : 0;
 }
 
 static LUA_FUNCTION(openssl_bio_cipher_status)
@@ -710,17 +704,22 @@ static LUA_FUNCTION(openssl_bio_shutdown)
 {
   BIO* bio = CHECK_OBJECT(1, BIO, "openssl.bio");
 
+  luaL_argcheck(L,
+                BIO_method_type(bio) & (BIO_TYPE_SSL | BIO_TYPE_SOCKET | BIO_TYPE_FD),
+                1,
+                "don't know howto shutdown");
+
   if (BIO_method_type(bio) & BIO_TYPE_SSL)
   {
     BIO_ssl_shutdown(bio);
   }
   else if (BIO_method_type(bio) & (BIO_TYPE_SOCKET | BIO_TYPE_FD))
   {
-    (void)BIO_shutdown_wr(bio);
+    BIO_shutdown_wr(bio);
   }
-  else
-    luaL_error(L, "don't know how to shutdown");
-  return 0;
+
+  lua_pushvalue(L, 1);
+  return 1;
 }
 
 /***
@@ -738,9 +737,8 @@ static LUA_FUNCTION(openssl_bio_get_ssl)
     PUSH_OBJECT(ssl, "openssl.ssl");
     SSL_up_ref(ssl);
     openssl_newvalue(L, ssl);
-    return 1;
   }
-  return openssl_pushresult(L, ret);
+  return ret==1 ? ret : openssl_pushresult(L, ret);
 }
 
 /***
@@ -811,14 +809,12 @@ static LUA_FUNCTION(openssl_bio_seek)
   int type = BIO_method_type(bio);
   int ofs, ret;
   luaL_argcheck(L,
-                type & (BIO_TYPE_FD
-                       |BIO_TYPE_FILE),
+                type & (BIO_TYPE_FD|BIO_TYPE_FILE),
                 1,
                 "not a fd or file BIO type");
   ofs = luaL_checkint(L, 2);
   ret = BIO_seek(bio, ofs);
-  if (ret<0)
-    return openssl_pushresult(L, ret);
+  if (ret<0) return openssl_pushresult(L, ret);
   lua_pushinteger(L, ret);
   return 1;
 }
@@ -834,8 +830,7 @@ static LUA_FUNCTION(openssl_bio_tell)
                 1,
                 "not a fd or file BIO type");
   ret = BIO_tell(bio);
-  if (ret<0)
-    return openssl_pushresult(L, ret);
+  if (ret<0) return openssl_pushresult(L, ret);
   lua_pushinteger(L, ret);
   return 1;
 }

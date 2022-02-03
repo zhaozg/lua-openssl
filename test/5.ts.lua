@@ -223,6 +223,7 @@ function TestTS:setUp()
   self.policy_id = policy_obj
 
   local der = policy_obj:i2d()
+  assert(der)
   local ano = openssl.asn1.new_object()
   assert(ano:d2i(der))
   assert(ano:equals(policy_obj))

@@ -237,7 +237,7 @@ function M.connect (host, port, ctx, connected_cb)
 end
 
 function M.error ()
-  return openssl.error(true)
+  return openssl.errors()
 end
 
 return M

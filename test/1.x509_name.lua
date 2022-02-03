@@ -17,19 +17,15 @@ function TestX509Name:testAll()
   local der = n1:i2d()
   local n2 = name.d2i(der)
   assert(n1:cmp(n2) == (n1 == n2))
+  n2 = assert(n1:dup())
+  assert(n1:cmp(n2) == (n1 == n2))
   lu.assertEquals(n1, n2)
   lu.assertEquals(n1:oneline(), '/C=CN/O=kkhub.com/CN=zhaozg')
 
   lu.assertIsNumber(n1:hash())
   lu.assertEquals(#n1:digest('SHA1'), 20)
 
-  local out = openssl.bio.mem()
-  local out1 = openssl.bio.mem()
-  n1:print(out)
-  n2:print(out1)
-
-  assert(out1:get_mem() == out:get_mem())
-  lu.assertEquals(out1:get_mem(), 'C=CN, O=kkhub.com, CN=zhaozg')
+  lu.assertEquals(n2:toprint(), 'C=CN, O=kkhub.com, CN=zhaozg')
 
   local info = n1:info()
   lu.assertIsTable(info)
@@ -57,8 +53,21 @@ function TestX509Name:testAll()
 
   local t = n1:info()
   for _ = 1, #t do
-    v = t[i]
+    v = t[_]
     lu.assertIsTable(v)
+    for K,V in pairs(v) do
+      assert(type(K)=='string')
+      assert(type(V)=='string')
+    end
+  end
+
+  t = n1:info(true)
+  for _ = 1, #t do
+    v = t[_]
+    for K,V in pairs(v) do
+      assert(type(K)=='userdata')
+      assert(type(V)=='userdata')
+    end
   end
 
   local k, v = n1:delete_entry(3)
@@ -68,5 +77,9 @@ function TestX509Name:testAll()
     lu.assertEquals(v:toprint(), [[\UE4B8\UADE6\U9687\UE590\U8DE5\UAD97]])
     lu.assertEquals(v:tostring(), v:toutf8())
   end
+
+  k, v = name.new({{XXXX='SHOULDERROR'}})
+  assert(k==nil)
+  assert(v:match("can't add to openssl.x509_name with value"))
 end
 

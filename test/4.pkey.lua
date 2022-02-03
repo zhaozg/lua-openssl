@@ -134,6 +134,26 @@ function testRSA()
 
 end
 
+function testEC()
+  local nec = {'EC',  'prime256v1'}
+  local ec = pkey.new(unpack(nec))
+
+  local k1 = pkey.get_public(ec)
+  assert(not k1:is_private())
+  local t = ec:parse()
+  assert(t.bits == 256)
+  assert(t.type == 'EC')
+  assert(t.size == 72)
+  local r = t.ec
+  t = r:parse()
+
+  assert(t.priv_key)
+  assert(t.pub_key)
+
+  local r2 = assert(pkey.new(r))
+  assert(r2:is_private())
+end
+
 function testDSA()
   local dsa = {'dsa',  1024}
   dsa = pkey.new(unpack(dsa))

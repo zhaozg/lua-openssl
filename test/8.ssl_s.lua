@@ -91,7 +91,7 @@ local function ssl_mode()
 end
 
 ssl_mode()
-print(openssl.error(true))
+print(openssl.errors())
 print("SSL Server done")
 
 os.exit(0, true)

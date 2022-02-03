@@ -41,7 +41,10 @@ function TestRSA:TestRSA()
     assert(k:size()==256)
 
     local padding = {
+      "sslv23",
       "pkcs1",
+      'x931',
+      'pss',
       "oaep",
       "no"
     }
@@ -53,17 +56,19 @@ function TestRSA:TestRSA()
       local msg = string.char(0) .. openssl.random(pad=='no' and 255 or 200)
 
       local out, raw
-      if pad~='oaep' then
+      if pad~='oaep' and pad~='sslv23' and pad~='pss' then
         local n = openssl.bn.text(msg)
         assert(n:bits() <  t.n:bits())
-        out = assert(rsa.encrypt(k, msg, pad, true))
+        out = assert(rsa.encrypt(k, msg, pad, true), pad)
         raw = assert(k:decrypt(out, pad, false))
         assert(msg == raw)
       end
 
-      out = assert(rsa.encrypt(k,msg, pad, false))
-      raw = assert(k:decrypt(out, pad, true))
-      assert(msg == raw)
+      if pad~='sslv23' and pad~='x931' and pad~='pss' then
+        out = assert(rsa.encrypt(k,msg, pad, false), pad)
+        raw = assert(k:decrypt(out, pad, true))
+        assert(msg == raw)
+      end
 
       msg = openssl.random(32)
       out = assert(rsa.sign(k, msg, 'sha256'))

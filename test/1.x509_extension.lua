@@ -106,8 +106,8 @@ function TestX509ext:testAll()
 
   lu.assertEquals(n1:data():tostring(), 'CA:FALSE')
   lu.assertErrorMsgEquals(
-    'bad argument #2 to \'?\' (asn1_string type must be octet)', n1.data, n1,
-    self.timeStamping)
+    "bad argument #2 to '?' (only accpet asn1 octet string if is a asn1 string)",
+    n1.data, n1, self.timeStamping)
   assert(n1:data('CA:FALSE'))
   lu.assertEquals(n1:data(), self.cafalse)
 
@@ -116,4 +116,6 @@ function TestX509ext:testAll()
   local der = time:export()
   local t1 = ext.read_extension(der)
   assert(der == t1:export())
+
+  assert(n1:data(asn1.new_string('CA:FALSE', asn1.OCTET_STRING)))
 end

@@ -274,6 +274,7 @@ read x509_crl from string or bio input
 */
 static LUA_FUNCTION(openssl_crl_read)
 {
+  int ret = 0;
   BIO * in = load_bio_object(L, 1);
   int fmt = luaL_checkoption(L, 2, "auto", format);
   X509_CRL *crl = NULL;
@@ -297,9 +298,9 @@ static LUA_FUNCTION(openssl_crl_read)
   if (crl)
   {
     PUSH_OBJECT(crl, "openssl.x509_crl");
-    return 1;
+    ret = 1;
   }
-  return openssl_pushresult(L, 0);
+  return ret;
 }
 
 /***
@@ -432,28 +433,33 @@ set issuer x509_name object
 */
 static LUA_FUNCTION(openssl_crl_issuer)
 {
+  int ret = 0;
   X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
+  X509_NAME* xn = NULL;
+  X509* x = NULL;
+
   if (lua_isnone(L, 2))
   {
-    return openssl_push_xname_asobject(L, X509_CRL_get_issuer(crl));
-  }
-  else if (auxiliar_getclassudata(L, "openssl.x509_name", 2))
-  {
-    X509_NAME* xn = CHECK_OBJECT(2, X509_NAME, "openssl.x509_name");
-    int ret = X509_CRL_set_issuer_name(crl, xn);
-    return openssl_pushresult(L, ret);
-  }
-  else if (auxiliar_getclassudata(L, "openssl.x509", 2))
-  {
-    X509* x = CHECK_OBJECT(2, X509, "openssl.x509");
-    int ret = X509_CRL_set_issuer_name(crl, X509_get_issuer_name(x));
-    return openssl_pushresult(L, ret);
+    ret = openssl_push_xname_asobject(L, X509_CRL_get_issuer(crl));
   }
   else
   {
-    luaL_argerror(L, 2, "only accept x509 or x509_name object");
+    xn = GET_OBJECT(2, X509_NAME, "openssl.x509_name");
+    x = GET_OBJECT(2, X509, "openssl.x509");
+
+    luaL_argcheck(L, xn || x , 2,
+                  "only accept openssl.x509 or openssl.x509_name object");
+    if (xn)
+    {
+      ret = X509_CRL_set_issuer_name(crl, xn);
+    }
+    else if (x)
+    {
+      ret = X509_CRL_set_issuer_name(crl, X509_get_issuer_name(x));
+    }
+    ret = openssl_pushresult(L, ret);
   }
-  return 0;
+  return ret;
 }
 
 /***
@@ -639,8 +645,12 @@ LUA_FUNCTION(openssl_crl_sign)
   const EVP_MD *md = get_digest(L, 4, "sha256");
   int ret = 1;
 
-  luaL_argcheck(L, auxiliar_getclassudata(L, "openssl.x509", 3) || auxiliar_getclassudata(L, "openssl.x509_name", 3),
-                3, "must be openssl.x509 or openssl.x509_name object");
+  luaL_argcheck(L,
+                auxiliar_getclassudata(L, "openssl.x509", 3)
+                || auxiliar_getclassudata(L, "openssl.x509_name", 3),
+                3,
+                "must be openssl.x509 or openssl.x509_name object");
+
   if (auxiliar_getclassudata(L, "openssl.x509_name", 3))
   {
     X509_NAME* xn = CHECK_OBJECT(3, X509_NAME, "openssl.x509_name");
@@ -655,14 +665,18 @@ LUA_FUNCTION(openssl_crl_sign)
       ret = X509_check_private_key(ca, key);
       if (ret != 1)
       {
-        luaL_error(L, "private key not match with cacert");
+        lua_pushnil(L);
+        lua_pushstring(L, "private key not match with cacert");
+        return 2;
       }
     }
   }
   if (ret == 1)
+  {
     ret = X509_CRL_sort(crl);
-  if (ret == 1)
-    ret = X509_CRL_sign(crl, key, md) == EVP_PKEY_size(key);
+    if (ret == 1)
+      ret = X509_CRL_sign(crl, key, md);
+  }
   return openssl_pushresult(L, ret);
 }
 
@@ -683,9 +697,8 @@ static LUA_FUNCTION(openssl_crl_digest)
   if (ret == 1)
   {
     lua_pushlstring(L, (const char*)buf, (size_t)lbuf);
-    return ret;
   }
-  return openssl_pushresult(L, ret);
+  return ret==1 ? 1 : openssl_pushresult(L, ret);
 }
 
 /***
@@ -845,15 +858,14 @@ static LUA_FUNCTION(openssl_crl_free)
 export x509_crl to string
 @function export
 @tparam[opt='pem'] string format
-@tparam[opt='true'] boolean noext not export extension
 @treturn string
 */
 static LUA_FUNCTION(openssl_crl_export)
 {
   X509_CRL * crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
   int fmt = luaL_checkoption(L, 2, "pem", format);
-  int notext = lua_isnone(L, 3) ? 1 : lua_toboolean(L, 3);
   BIO *out  = NULL;
+  int ret = 0;
 
   luaL_argcheck(L, fmt == FORMAT_DER || fmt == FORMAT_PEM, 2,
                 "only accept der or pem");
@@ -861,19 +873,13 @@ static LUA_FUNCTION(openssl_crl_export)
   out  = BIO_new(BIO_s_mem());
   if (fmt == FORMAT_PEM)
   {
-    if (!notext)
-    {
-      X509_CRL_print(out, crl);
-    }
-
     if (PEM_write_bio_X509_CRL(out, crl))
     {
       BUF_MEM *bio_buf;
       BIO_get_mem_ptr(out, &bio_buf);
       lua_pushlstring(L, bio_buf->data, bio_buf->length);
+      ret = 1;
     }
-    else
-      lua_pushnil(L);
   }
   else
   {
@@ -882,13 +888,12 @@ static LUA_FUNCTION(openssl_crl_export)
       BUF_MEM *bio_buf;
       BIO_get_mem_ptr(out, &bio_buf);
       lua_pushlstring(L, bio_buf->data, bio_buf->length);
+      ret = 1;
     }
-    else
-      lua_pushnil(L);
   }
 
   BIO_free(out);
-  return 1;
+  return ret;
 }
 
 /***
@@ -918,7 +923,8 @@ static LUA_FUNCTION(openssl_crl_get)
   X509_CRL * crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
   STACK_OF(X509_REVOKED) *revokeds = X509_CRL_get_REVOKED(crl);
   X509_REVOKED *revoked = NULL;
-  int i = 0;
+  int i, ret=0;
+
   if (lua_isinteger(L, 2))
   {
     i = lua_tointeger(L, 2);
@@ -939,6 +945,7 @@ static LUA_FUNCTION(openssl_crl_get)
       }
     }
   }
+
   if (revoked)
   {
     int parse = lua_isnone(L, 3) ?  0 : lua_toboolean(L, 3);
@@ -950,10 +957,10 @@ static LUA_FUNCTION(openssl_crl_get)
       revoked = X509_REVOKED_dup(revoked);
       PUSH_OBJECT(revoked, "openssl.x509_revoked");
     }
+    ret = 1;
   }
-  else
-    lua_pushnil(L);
-  return 1;
+
+  return ret;
 }
 
 static luaL_Reg crl_funcs[] =
@@ -1087,13 +1094,13 @@ static int openssl_revoked_extensions(lua_State* L)
 {
   X509_REVOKED* revoked = CHECK_OBJECT(1, X509_REVOKED, "openssl.x509_revoked");
   const STACK_OF(X509_EXTENSION) *exts = X509_REVOKED_get0_extensions(revoked);
+  int ret = 0;
   if (exts)
   {
     openssl_sk_x509_extension_totable(L, exts);
+    ret = 1;
   }
-  else
-    lua_pushnil(L);
-  return 1;
+  return ret;
 };
 
 static int openssl_revoked_free(lua_State* L)

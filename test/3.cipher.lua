@@ -16,8 +16,10 @@ function TestCipherCompat:setUp()
 
   lu.assertEquals('nil', type(getmetatable(cipher)))
 end
+
 function TestCipherCompat:tearDown()
 end
+
 function TestCipherCompat:testCipher()
   local a, b, c, d
 
@@ -29,6 +31,14 @@ function TestCipherCompat:testCipher()
   c = cipher.encrypt(self.alg, self.msg, self.key, self.iv)
   lu.assertEquals(c, a)
   d = cipher.decrypt(self.alg, c, self.key, self.iv)
+  lu.assertEquals(d, self.msg)
+
+  local o = openssl.asn1.new_object(self.alg)
+  assert(type(o:nid())=='number')
+
+  c = cipher.encrypt(o, self.msg, self.key, self.iv)
+  lu.assertEquals(c, a)
+  d = cipher.decrypt(o:nid(), c, self.key, self.iv)
   lu.assertEquals(d, self.msg)
 end
 

@@ -25,4 +25,4 @@ local function mk_connection(_host, _port)
 end
 
 for _ = 1, loop do mk_connection(host, port) end
-print(openssl.error(true))
+print(openssl.errors())

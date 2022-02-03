@@ -8,9 +8,17 @@ collectgarbage('setstepmul', 10000000000000)
 
 local lu = require'luaunit'
 local openssl = require'openssl'
+local helper = require'helper'
 
 openssl.rand_load()
 print('VERSION:', openssl.version())
+assert(openssl.rand_status())
+
+if not (helper.openssl3 or helper.libressl) then
+assert(openssl.FIPS_mode()==false)
+assert(openssl.FIPS_mode(false))
+assert(openssl.FIPS_mode()==false)
+end
 
 dofile('0.bio.lua')
 dofile('0.bn.lua')
@@ -51,6 +59,7 @@ dofile('sm2.lua')
 local runner = lu.LuaUnit.new()
 runner:setOutputType("tap")
 local retcode = runner:runSuite()
+assert(openssl.rand_write())
 print(openssl.errors())
 openssl.clear_error()
 collectgarbage()

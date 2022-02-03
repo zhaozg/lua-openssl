@@ -53,11 +53,10 @@ static LUA_FUNCTION(openssl_rsa_encrypt)
   if (flen > 0)
   {
     lua_pushlstring(L, (const char*)to, flen);
-    OPENSSL_free(to);
-    return 1;
+    flen = 1;
   }
   OPENSSL_free(to);
-  return openssl_pushresult(L, flen);
+  return flen == 1 ? flen : openssl_pushresult(L, flen);
 };
 
 static LUA_FUNCTION(openssl_rsa_decrypt)
@@ -76,11 +75,10 @@ static LUA_FUNCTION(openssl_rsa_decrypt)
   if (flen > 0)
   {
     lua_pushlstring(L, (const char*)to, flen);
-    OPENSSL_free(to);
-    return 1;
+    flen = 1;
   }
   OPENSSL_free(to);
-  return openssl_pushresult(L, flen);
+  return flen == 1 ? flen : openssl_pushresult(L, flen);
 };
 
 static LUA_FUNCTION(openssl_rsa_sign)
@@ -97,11 +95,9 @@ static LUA_FUNCTION(openssl_rsa_sign)
   if (ret == 1)
   {
     lua_pushlstring(L, (const char*)sig, slen);
-    OPENSSL_free(sig);
-    return 1;
   }
   OPENSSL_free(sig);
-  return openssl_pushresult(L, ret);
+  return ret == 1 ? ret: openssl_pushresult(L, ret);
 };
 
 static LUA_FUNCTION(openssl_rsa_verify)
@@ -116,7 +112,8 @@ static LUA_FUNCTION(openssl_rsa_verify)
   int slen = s;
 
   int ret = RSA_verify(EVP_MD_type(md), from, flen, sig, slen, rsa);
-  return openssl_pushresult(L, ret);
+  lua_pushboolean(L, ret);
+  return 1;
 };
 
 static LUA_FUNCTION(openssl_rsa_parse)
@@ -154,13 +151,15 @@ static LUA_FUNCTION(openssl_rsa_read)
   int ispriv = lua_isnone(L, 2) ? 1 : lua_toboolean(L, 2);
   const unsigned char* in = (const unsigned char*)data;
   RSA *rsa = ispriv ? d2i_RSAPrivateKey(NULL, &in, l)
-             : d2i_RSA_PUBKEY(NULL, &in, l);
+                    : d2i_RSA_PUBKEY(NULL, &in, l);
+  int ret = 0;
 
   if (rsa)
+  {
     PUSH_OBJECT(rsa, "openssl.rsa");
-  else
-    lua_pushnil(L);
-  return 1;
+    ret = 1;
+  }
+  return ret;
 }
 
 static LUA_FUNCTION(openssl_rsa_export)
@@ -189,17 +188,18 @@ static LUA_FUNCTION(openssl_rsa_export)
 
 static int openssl_rsa_set_engine(lua_State *L)
 {
+  int ret = 0;
 #ifndef OPENSSL_NO_ENGINE
   RSA* rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");
   ENGINE *e = CHECK_OBJECT(2, ENGINE, "openssl.engine");
   const RSA_METHOD *m = ENGINE_get_RSA(e);
   if (m)
   {
-    int r = RSA_set_method(rsa, m);
-    return openssl_pushresult(L, r);
+    ret = RSA_set_method(rsa, m);
+    ret = openssl_pushresult(L, ret);
   }
 #endif
-  return 0;
+  return ret;
 }
 
 static int openssl_rsa_generate_key(lua_State *L)
@@ -230,18 +230,15 @@ static int openssl_rsa_generate_key(lua_State *L)
 
 static int openssl_pading_result(lua_State*L, unsigned long val)
 {
-    lua_pushnil(L);
-    if (val)
-    {
-      lua_pushstring(L, ERR_reason_error_string(val));
-      lua_pushinteger(L, val);
-    }
-    else
-    {
-      lua_pushstring(L, "UNKNOWN ERROR");
-      lua_pushnil(L);
-    }
-    return 3;
+  int ret = 1;
+  lua_pushnil(L);
+  if (val)
+  {
+    lua_pushstring(L, ERR_reason_error_string(val));
+    lua_pushinteger(L, val);
+    ret += 2;
+  }
+  return ret;
 }
 
 static int openssl_padding_add(lua_State *L)

@@ -23,7 +23,17 @@ function TestDigestCompat:testDigest()
   lu.assertEquals(a, b)
   c = digest.digest(self.alg, self.msg, true)
   lu.assertEquals(#c, 20)
+
+  local o = openssl.asn1.new_object(self.alg)
+  assert(type(o:nid())=='number')
+
+  c = digest.digest(o:nid(), self.msg, true)
+  lu.assertEquals(#c, 20)
+
+  c = digest.digest(o, self.msg, true)
+  lu.assertEquals(#c, 20)
 end
+
 function TestDigestCompat:testObject()
   local a, b, c, aa, bb
   local obj = digest.new(self.alg)
@@ -40,11 +50,11 @@ function TestDigestCompat:testObject()
   lu.assertEquals(2 * #c, #a)
 
   obj:reset()
-  local obj1 = obj:clone()
-
   obj:update(self.msg)
   aa = obj:final(self.msg)
-  bb = obj1:final(self.msg .. self.msg)
+
+  obj:reset()
+  bb = obj:final(self.msg .. self.msg)
   lu.assertEquals(aa, bb)
 end
 
