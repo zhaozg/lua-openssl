@@ -1228,7 +1228,12 @@ static int openssl_x509_extensions(lua_State* L)
       else
         X509_add_ext(self, ext, -1);
     }
-    sk_X509_EXTENSION_pop_free(others, X509_EXTENSION_free);
+    if (exts!=NULL) {
+      for (i = n - 1; i >= 0; i--)
+        sk_X509_EXTENSION_delete(others, i);
+      sk_X509_EXTENSION_free(others);
+    } else
+      sk_X509_EXTENSION_pop_free(others, X509_EXTENSION_free);
 #endif
     ret = openssl_pushresult(L, 1);
   }
