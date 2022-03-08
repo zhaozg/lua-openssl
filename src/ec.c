@@ -314,7 +314,7 @@ static int openssl_ec_point_equal(lua_State *L)
 {
   const EC_GROUP* group = CHECK_OBJECT(1, EC_GROUP, "openssl.ec_group");
   const EC_POINT* a = CHECK_OBJECT(2, EC_POINT, "openssl.ec_point");
-  const EC_POINT* b = CHECK_OBJECT(2, EC_POINT, "openssl.ec_point");
+  const EC_POINT* b = CHECK_OBJECT(3, EC_POINT, "openssl.ec_point");
 
   int ret = EC_POINT_cmp(group, a, b, NULL)==0;
   lua_pushboolean(L, ret);
