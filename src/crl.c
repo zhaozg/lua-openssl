@@ -635,7 +635,7 @@ sign x509_crl
 @function sign
 @tparam evp_pkey pkey private key to sign x509
 @tparam x509|x509_name cacert or cacert x509_name
-@tparam[opt='sha1WithRSAEncryption'] string|md_digest md_alg
+@tparam[opt='sha256WithRSAEncryption'] string|md_digest md_alg
 @treturn boolean result true for check pass
 */
 LUA_FUNCTION(openssl_crl_sign)
@@ -683,7 +683,7 @@ LUA_FUNCTION(openssl_crl_sign)
 /***
 get digest of x509_crl
 @function digest
-@tparam[opt='SHA1'] evp_md|string md_alg default use sha1
+@tparam[opt='sha256'] evp_md|string md_alg default use sha256
 @treturn string digest result
 */
 static LUA_FUNCTION(openssl_crl_digest)
@@ -724,7 +724,7 @@ make a delta x509_crl object
 @function diff
 @tparam x509_crl newer
 @tparam evp_pkey pkey
-@tparam[opt='sha1'] evp_md|string md_alg
+@tparam[opt='sha256'] evp_md|string md_alg
 @tparam[opt=0] integer flags
 @treturn x509_crl delta result x509_crl object
 */

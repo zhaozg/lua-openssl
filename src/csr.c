@@ -122,8 +122,12 @@ openssl.x509_req object
 */
 
 /***
-convert x509_req to x509 object
+convert x509_req to x509 object and sign it
 @function to_x509
+@tparam x509_req csr
+@tparam evp_pkey prikey
+@tparam[opt=365] number days
+@tparam[opt='sha256'] evp_md|string md_alg default use sha256
 @treturn x509 object not signed
 */
 static LUA_FUNCTION(openssl_csr_to_x509)
@@ -189,7 +193,7 @@ static LUA_FUNCTION(openssl_csr_export)
 /***
 get digest of x509_req
 @function digest
-@tparam[opt='SHA1'] evp_md|string md_alg default use sha1
+@tparam[opt='sha256'] evp_md|string md_alg default use sha256
 @treturn string digest result
 */
 static LUA_FUNCTION(openssl_csr_digest)
