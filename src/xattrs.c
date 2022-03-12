@@ -1,6 +1,5 @@
 /***
-x509 attributes module for lua-openssl binding, Provide x509_attribute as lua object.
-Sometime when you make CSR,TS or X509, you maybe need to use this.
+x509.attr module to mapping X509_ATTRIBUTE to lua object.
 
 @module x509.attr
 @usage

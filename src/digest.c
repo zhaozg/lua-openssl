@@ -1,5 +1,5 @@
 /***
-digest module for lua-openssl binding
+digest module perform digest operations base on OpenSSL EVP API.
 
 @module digest
 @usage

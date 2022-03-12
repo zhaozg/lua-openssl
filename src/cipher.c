@@ -1,5 +1,5 @@
 /***
-cipher module for lua-openssl binding
+cipher module do encrypt or decrypt base on OpenSSL EVP API.
 
 @module cipher
 @usage
@@ -842,7 +842,7 @@ static LUA_FUNCTION(openssl_cipher_ctx_ctrl)
         lua_pushlstring(L, buf, arg);
         ret = 1;
       }
-      else 
+      else
         ret = openssl_pushresult(L, ret);
     }
     else

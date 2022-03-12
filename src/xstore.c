@@ -1,5 +1,6 @@
 /***
-Provide x509_store as lua object, create and manage x509 store object
+x509.store module to mapping X509_STORE to lua object.
+
 @module x509.store
 @usage
   store = require'openssl'.x509.store

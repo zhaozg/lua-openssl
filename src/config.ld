@@ -6,4 +6,4 @@ backtick_references=false
 dir='doc'
 readme='README.md'
 style='!pale'
-kind_names={topic='Manual',script='Programs'}
+kind_names={topic='Manual',module='Libraries'}

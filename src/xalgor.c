@@ -1,6 +1,5 @@
 /***
-x509.algor module for lua-openssl binding, Provide X509_ALGOR as lua object.
-Sometime when you make CSR,TS or X509, you maybe need to use this.
+x509.algor module to mapping X509_ALGOR to lua object.
 
 @module x509.algor
 @usage

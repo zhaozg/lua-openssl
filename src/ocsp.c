@@ -7,6 +7,7 @@
 /***
 OCSP module for lua-openssl binding
 Generate, sign, process OCSP request and response.
+
 @module ocsp
 @usage
   ocsp = require'openssl'.ocsp
@@ -237,7 +238,7 @@ static int openssl_ocsp_request_free(lua_State *L)
 /***
 ocsp_request is_signed or not
 @function is_signed
-@tparam boolean
+@treturn boolean
 */
 static int openssl_ocsp_request_is_signed(lua_State *L)
 {

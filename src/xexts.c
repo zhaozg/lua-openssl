@@ -1,6 +1,5 @@
 /***
-Provide x509_extension as lua object.
-Sometime when you make CSR,TS or X509, you maybe need to use this.
+x509.extension module to mapping X509_EXTENSION to lua object.
 
 @module x509.extension
 @usage

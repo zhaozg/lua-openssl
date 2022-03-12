@@ -1,5 +1,5 @@
 /***
-PKCS7 module for lua-openssl binding
+pkcs7 module to create and process PKCS#7 files. That only understands PKCS#7 v 1.5 as specified in IETF RFC 2315, and not currently parse CMS as described in IETF RFC 2630.
 
 @module pkcs7
 @usage

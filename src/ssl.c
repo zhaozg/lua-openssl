@@ -1,5 +1,5 @@
 /***
-ssl modules for lua-openssl binding, provide ssl function in lua.
+ssl modules to create SSL/TLS server or client, send and recv data over SSL channels.
 
 @module ssl
 @usage

@@ -1,5 +1,6 @@
 /***
-ec module for lua-openssl binding
+ec module to create EC keys and do EC key processes.
+
 @module ec
 */
 #include "openssl.h"
@@ -535,14 +536,13 @@ static int openssl_ecdsa_do_verify(lua_State*L)
   return 1;
 }
 
-#define SM2_SIG_MAX_LEN 72
 /***
-do SM2 sign, input is SM3 digest result
+do EC sign
 
 @function sign
-@tparam ec_key sm2key
-@tparam string digest result of SM3 digest to be signed
-@tparam[opt='sm3'] evp_md|string|nid digest digest alg identity, default is sm3
+@tparam ec_key eckey
+@tparam string digest result of digest to be signed
+@tparam evp_md|string|nid digest digest alg identity, default is sm3
 @treturn string signature
 */
 static LUA_FUNCTION(openssl_ecdsa_sign)
@@ -550,9 +550,9 @@ static LUA_FUNCTION(openssl_ecdsa_sign)
   EC_KEY *eckey = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
   size_t dgstlen = 0;
   const unsigned char *dgst = (const unsigned char*)luaL_checklstring(L, 2, &dgstlen);
-  const EVP_MD* md = get_digest(L, 3, "sm3");
-  unsigned char sig[SM2_SIG_MAX_LEN] = {0};
-  unsigned int siglen = sizeof(sig);
+  const EVP_MD* md = get_digest(L, 3, NULL);
+  unsigned int siglen = ECDSA_size(eckey);
+  unsigned char *sig = OPENSSL_malloc(siglen);
 
   int ret = ECDSA_sign(EVP_MD_type(md), dgst, dgstlen, sig, &siglen, eckey);
   if (ret==1)
@@ -561,17 +561,18 @@ static LUA_FUNCTION(openssl_ecdsa_sign)
   }
   else
     ret = openssl_pushresult(L, ret);
+  OPENSSL_free(sig);
   return ret;
 }
 
 /***
-do SM2 verify, input msg is sm3 digest result
+do EC verify, input msg is digest result
 
 @function verify
-@tparam ec_key sm2key
-@tparam string digest result of SM3 digest to be signed
+@tparam ec_key eckey
+@tparam string digest result of digest to be signed
 @tparam string signature
-@tparam[opt='sm3'] evp_md|string|nid digest digest alg identity, default is sm3
+@tparam evp_md|string|nid digest digest alg identity
 @treturn boolean true for verified, false for invalid signature
 @return nil for error, and followed by error message
 */
@@ -582,7 +583,7 @@ static LUA_FUNCTION(openssl_ecdsa_verify)
   const unsigned char *dgst = (const unsigned char*)luaL_checklstring(L, 2, &dgstlen);
   size_t siglen = 0;
   const unsigned char *sig = (const unsigned char*)luaL_checklstring(L, 3, &siglen);
-  const EVP_MD* md = get_digest(L, 4, "sm3");
+  const EVP_MD* md = get_digest(L, 4, NULL);
   int type = EVP_MD_type(md);
 
   int ret = ECDSA_verify(type, dgst, (int)dgstlen, sig, (int)siglen, eckey);

@@ -1,6 +1,6 @@
 /***
-x509.crl module for lua-openssl binding, provide x509_crl as lua object.
-create and manage x509 certificate sign request
+x509.crl module to mapping `X509_CRL` to lua object, creates and  processes CRL file in DER or PEM format.
+
 @module x509.crl
 @usage
   crl = require'openssl'.x509.crl

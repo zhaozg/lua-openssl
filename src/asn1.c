@@ -1,7 +1,6 @@
 /***
-openssl.asn1 module for lua-openssl binding.
+asn1 module to generate or parse ASN.1 data.
 Provide asn1\_object, asn1\_string, asn1\_object as lua object.
-Sometime when you want to custome x509, you maybe need to use this.
 
 @module asn1
 @usage
@@ -290,7 +289,7 @@ static int openssl_asn1_tostring(lua_State*L)
 }
 
 /***
-Create asn1_string object
+create asn1_string object
 
 <br/><p> asn1_string object support types:   "integer", "enumerated", "bit", "octet", "utf8",
 "numeric", "printable", "t61", "teletex", "videotex", "ia5", "graphics", "iso64",
@@ -314,7 +313,7 @@ static int openssl_asn1string_new(lua_State* L)
 }
 
 /***
-Create asn1_integer object
+create asn1_integer object
 
 @function new_integer
 @tparam number|bn integer to create new asn1_integer
@@ -343,7 +342,7 @@ static int openssl_asn1int_new(lua_State* L)
 }
 
 /***
-Create asn1_time object
+create asn1_time object
 @function new_generalizedtime
 @tparam none|number|string time
 @treturn asn1_time
@@ -374,7 +373,7 @@ static int openssl_asn1generalizedtime_new(lua_State* L)
 }
 
 /***
-Create asn1_time object
+create asn1_time object
 @function new_utctime
 @tparam none|number|string time
 @treturn asn1_time
@@ -427,7 +426,7 @@ static int openssl_txt2nid(lua_State*L)
 }
 
 /***
-Create asn1_object object
+create asn1_object object
 
 @function new_object
 @tparam string name_or_oid  short name,long name or oid string
@@ -437,7 +436,7 @@ Create asn1_object object
 */
 
 /***
-Create asn1_object object
+create asn1_object object
 
 @function new_object
 @tparam integer nid ident to asn1_object
@@ -446,7 +445,7 @@ Create asn1_object object
 */
 
 /***
-Create asn1_object object
+create asn1_object object
 
 @function new_object
 @tparam table options have sn, ln, oid keys to create asn1_object

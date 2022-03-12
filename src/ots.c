@@ -1,6 +1,7 @@
 /***
-timestamp module for lua-openssl binding
-create and manage x509 certificate sign request
+timestamp module provide basic Time Stamping Authority (TSA) client and server operations as specified in RFC 3161 (Time-Stamp Protocol, TSP).
+A TSA can be part of a PKI deployment and its role is to provide long term proof of the existence of a certain datum before a particular time.
+
 @module ts
 @usage
   ts = require'openssl'.ts

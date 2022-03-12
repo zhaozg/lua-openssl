@@ -1,6 +1,5 @@
 /***
-x509_name module for lua-openssl binding, provide x509_name as lua object
-Sometime when you make CSR,TS or X509, you maybe need to use this.
+x509.name module to mapping X509_NAME to lua object.
 
 @module x509.name
 @usage

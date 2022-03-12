@@ -1,5 +1,5 @@
 /***
-lua-openssl binding, provide openssl base function in lua.
+Openssl binding for Lua, provide openssl full function in lua.
 
 @module openssl
 @usage

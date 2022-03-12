@@ -1,19 +1,13 @@
-/*=========================================================================*\
-* pkcs12.c
-* PKCS12 routines for lua-openssl binding
-*
-* Author:  george zhao <zhaozg(at)gmail.com>
-\*=========================================================================*/
-#include "openssl.h"
-#include "private.h"
-
 /***
-Provide pkcs12 function in lua.
+pkcs12 module to create and parse PKCS#12(PFX) files.
 
 @module pkcs12
 @usage
   pkcs12 = require('openssl').pkcs12
 */
+
+#include "openssl.h"
+#include "private.h"
 
 /***
 create and export pkcs12 data

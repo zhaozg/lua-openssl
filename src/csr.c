@@ -1,6 +1,6 @@
 /***
-x509.req module for lua-openssl binding, provide x509_req as lua object.
-create and manage x509 certificate sign request
+x509.req module to mapping `X509_REQ` to lua object, creates and processes certificate requests (CSRs) in PKCS#10 format.
+
 @module x509.req
 @usage
   req = require'openssl'.x509.req

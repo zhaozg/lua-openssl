@@ -1,11 +1,11 @@
 /***
-bio object for lua-openssl binding,  mapping to BIO in openssl
-openssl.bio is a help object, it is useful, but rarely use.
+bio module to mapping a BIO in openssl to a lua object.
 
 @module bio
 @usage
   bio = require'openssl'.bio
 */
+
 #include "openssl.h"
 #include "private.h"
 #include <openssl/bn.h>
@@ -253,28 +253,29 @@ static int openssl_bio_new_connect(lua_State *L)
 }
 
 /***
-Create base64 or buffer bio, which can append to an io BIO object
+make base64 or buffer bio, which can append to an io BIO object
 @function filter
 @tparam string mode support 'base64' or 'buffer'
 @treturn bio
 */
 /***
-Create digest bio, which can append to an io BIO object
+make digest bio, which can append to an io BIO object
 @function filter
 @tparam string mode must be 'digest'
 @tparam evp_md|string md_alg
 @treturn bio
 */
 /***
-Create ssl bio
+make ssl bio
 @function filter
 @tparam string mode must be 'ssl'
 @tparam ssl s
 @tparam[opt='noclose'] flag support 'close' or 'noclose' when close or gc
 @treturn bio
 */
+
 /***
-create cipher filter bio object
+make cipher filter bio object
 @function filter
 @tparam string mode must be 'cipher'
 @tparam string key

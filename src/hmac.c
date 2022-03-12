@@ -1,5 +1,6 @@
 /***
-hamc module for lua-openssl binding
+hmac module perform Message Authentication Code operations.
+It base on EVP_MAC in OpenSSL v3 or HMAC_CTX in OpenSSL v1.
 
 @module hmac
 @author  george zhao <zhaozg(at)gmail.com>

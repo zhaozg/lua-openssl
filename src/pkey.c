@@ -1,5 +1,6 @@
 /***
-pkey module for lua-openssl binding
+pkey module to create and process public or private key, do asymmetric key operations.
+
 @module pkey
 @usage
   pkey = require'openssl'.pkey

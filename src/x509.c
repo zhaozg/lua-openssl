@@ -1,6 +1,6 @@
 /***
-x509 modules for lua-openssl binding
-create and manage x509 certificate
+x509 modules to create, parse, process X509 objects, sign CSR.
+
 @module x509
 @usage
  x509 = require'openssl'.x509
