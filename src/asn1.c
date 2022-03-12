@@ -1479,7 +1479,7 @@ static int openssl_asn1time_diff(lua_State* L)
   ASN1_TIME *to = lua_isnoneornil(L, 2) ? NULL
                   : CHECK_OBJECT(2, ASN1_TIME, "openssl.asn1_time");
 
-  luaL_argcheck(L, to->type == from->type, 3, "time structure has mismatch type");
+  luaL_argcheck(L, to->type == from->type, 2, "asn1_time with mismatched type");
 
   ret = ASN1_TIME_diff(&day, &sec, from, to);
   if (ret==1)
