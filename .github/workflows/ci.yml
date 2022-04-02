@@ -64,7 +64,7 @@ jobs:
     strategy:
       matrix:
         os: [macos-latest, ubuntu-latest]
-        luarocks_version: [3.7.0]
+        luarocks_version: [3.8.0]
         lua_version: [luajit2.1, lua5.1, lua5.2, lua5.3, lua5.4]
         openssl_version: [openssl-1.0.2u, openssl-1.1.1m, openssl-3.0.1]
     env:
@@ -94,7 +94,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        luarocks_version: [3.7.0]
+        luarocks_version: [3.8.0]
         lua_version: [lua5.4]
         openssl_version: [libressl-3.2.7, libressl-3.3.5, libressl-3.4.2]
     env:
@@ -159,4 +159,6 @@ jobs:
       # lua-cjson is required for luarocks upload
       run: |
         $HOME/.usr/bin/luarocks install lua-cjson
+        $HOME/.usr/bin/luarocks build
+        $HOME/.usr/bin/luarocks test
         $HOME/.usr/bin/luarocks upload openssl-${{ steps.get_version.outputs.VERSION }}.rockspec --api-key=${{ secrets.LUAROCKS_TOKEN }}
