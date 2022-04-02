@@ -11,7 +11,7 @@ jobs:
       COVERALLS_REPO_TOKEN: "${{ secrets.COVERALLS_TOKEN }}"
       WITH_LUA_ENGINE: LuaJIT
       LUA: luajit2.1
-      LUAROCKS: 2.4.4
+      LUAROCKS: 3.8.0
     steps:
     - uses: actions/checkout@v2
       with:
@@ -127,7 +127,7 @@ jobs:
     env:
       WITH_LUA_ENGINE: LuaJIT
       LUA: luajit2.1
-      LUAROCKS: 2.4.4
+      LUAROCKS: 3.8.0
     steps:
     - uses: actions/checkout@v2
       with:
