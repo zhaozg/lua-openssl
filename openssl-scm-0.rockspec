@@ -1,5 +1,6 @@
 package = "openssl"
 version = "scm-0"
+rockspec_format = "3.0"
 
 source = {
   url = "https://github.com/zhaozg/lua-openssl/archive/master.zip"
@@ -104,4 +105,9 @@ build = {
       }
     }
   },
+}
+
+test = {
+  type = "command",
+  command = "LUA=`luarocks config deploy_bin_dir`/`luarocks config lua_interpreter` && cd test && $LUA test.lua"
 }
