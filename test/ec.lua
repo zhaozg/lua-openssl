@@ -204,5 +204,19 @@ if openssl.ec then
     ECConversionForm("hybrid", "named_curve")
     ECConversionForm("hybrid", "explicit")
   end
+
+  function TestEC:TestIssue262()
+    local grp = openssl.ec.group('prime256v1', "compressed", "named_curve")
+    local ec = grp:generate_key()
+
+    local dgst = openssl.random(32)
+    local der = ec:sign(dgst, 'sha256')
+    local der2 = der:sub(1, 20)
+
+    assert(ec:verify(dgst, der, 'sha256')) -- this is true
+    lu.assertErrorMsgEquals("bad argument #4 to '?' (invalid digest)", ec.verify, ec, dgst .. "x", der, 'sha256')
+    lu.assertErrorMsgEquals("bad argument #4 to '?' (invalid digest)", ec.verify, ec, dgst, der, 'sha1')
+    assert(ec:verify(dgst, der2, 'sha256')==nil)
+  end
 end
 

@@ -532,6 +532,8 @@ static int openssl_ecdsa_do_verify(lua_State*L)
     ret = ECDSA_do_verify((const unsigned char*)dgst, l, sig, ec);
     ECDSA_SIG_free(sig);
   }
+  if (ret==-1)
+    return openssl_pushresult(L, ret);
   lua_pushboolean(L, ret);
   return 1;
 }
@@ -547,6 +549,7 @@ do EC sign
 */
 static LUA_FUNCTION(openssl_ecdsa_sign)
 {
+  int ret;
   EC_KEY *eckey = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
   size_t dgstlen = 0;
   const unsigned char *dgst = (const unsigned char*)luaL_checklstring(L, 2, &dgstlen);
@@ -554,7 +557,8 @@ static LUA_FUNCTION(openssl_ecdsa_sign)
   unsigned int siglen = ECDSA_size(eckey);
   unsigned char *sig = OPENSSL_malloc(siglen);
 
-  int ret = ECDSA_sign(EVP_MD_type(md), dgst, dgstlen, sig, &siglen, eckey);
+  luaL_argcheck(L, dgstlen==EVP_MD_size(md), 4, "invalid digest");
+  ret = ECDSA_sign(EVP_MD_type(md), dgst, dgstlen, sig, &siglen, eckey);
   if (ret==1)
   {
     lua_pushlstring(L, (const char*)sig, siglen);
@@ -578,6 +582,7 @@ do EC verify, input msg is digest result
 */
 static LUA_FUNCTION(openssl_ecdsa_verify)
 {
+  int ret;
   EC_KEY *eckey = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
   size_t dgstlen = 0;
   const unsigned char *dgst = (const unsigned char*)luaL_checklstring(L, 2, &dgstlen);
@@ -586,7 +591,10 @@ static LUA_FUNCTION(openssl_ecdsa_verify)
   const EVP_MD* md = get_digest(L, 4, NULL);
   int type = EVP_MD_type(md);
 
-  int ret = ECDSA_verify(type, dgst, (int)dgstlen, sig, (int)siglen, eckey);
+  luaL_argcheck(L, dgstlen==EVP_MD_size(md), 4, "invalid digest");
+  ret = ECDSA_verify(type, dgst, (int)dgstlen, sig, (int)siglen, eckey);
+  if (ret==-1)
+    return openssl_pushresult(L, ret);
   lua_pushboolean(L, ret);
   return 1;
 }
