@@ -415,14 +415,15 @@ static int openssl_txt2nid(lua_State*L)
 {
   const char* txt = luaL_checkstring(L, 1);
   int nid = OBJ_txt2nid(txt);
+  int ret = 1;
   if (nid != NID_undef)
   {
     lua_pushinteger(L, nid);
   }
   else
-    lua_pushnil(L);
+    ret = openssl_pushresult(L, 0);
 
-  return 1;
+  return ret;
 }
 
 /***

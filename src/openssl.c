@@ -167,7 +167,6 @@ _code_ can pass to openssl.error() to get more error information.
 
 @function error
 @tparam[opt] number error, default use ERR_get_error() return value
-@tparam[opt=false] boolean clear the current thread's error queue.
 @treturn number errcode
 @treturn string reason
 @treturn string library name
