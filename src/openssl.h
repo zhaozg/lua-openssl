@@ -102,6 +102,16 @@ __pragma(warning(pop))
 # endif
 #endif
 
+#if defined(_AIX)
+# ifndef inline
+#  define inline __inline
+# endif
+#endif
+
+#if defined(__STDC__) && !defined(__STDC_VERSION__)
+#  define inline __inline
+#endif
+
 #define LUA_FUNCTION(X) int X(lua_State *L)
 
 int openssl_s2i_revoke_reason(const char*s);

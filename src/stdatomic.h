@@ -217,7 +217,7 @@ typedef enum
 #define	__CLANG_ATOMICS
 #elif __GNUC_PREREQ__(4, 7)
 #define	__GNUC_ATOMICS
-#elif !defined(__GNUC__)
+#elif !defined(__GNUC__) && !defined(_AIX)
 #error "stdatomic.h does not support your compiler"
 #endif
 #endif
