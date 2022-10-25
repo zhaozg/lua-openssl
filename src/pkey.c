@@ -1293,6 +1293,162 @@ static LUA_FUNCTION(openssl_pkey_get_public)
   return ret;
 }
 
+static LUA_FUNCTION(openssl_pkey_ctx)
+{
+  EVP_PKEY *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
+  ENGINE *engine = lua_isnoneornil(L, 2) ? NULL : CHECK_OBJECT(2, ENGINE, "openssl.engine");
+  EVP_PKEY_CTX *ctx = NULL;
+  int typ = EVP_PKEY_type(EVP_PKEY_id(pkey));
+
+  luaL_argcheck(L,
+                typ == EVP_PKEY_RSA || typ == EVP_PKEY_RSA2,
+                1,
+                "EVP_PKEY must be of type RSA or RSA2");
+
+  ctx = EVP_PKEY_CTX_new(pkey, engine);
+  PUSH_OBJECT(ctx, "openssl.evp_pkey_ctx");
+  return 1;
+}
+
+static LUA_FUNCTION(openssl_pkey_ctx_free)
+{
+  EVP_PKEY_CTX *ctx = CHECK_OBJECT(1, EVP_PKEY_CTX, "openssl.evp_pkey_ctx");
+  EVP_PKEY_CTX_free(ctx);
+  return 0;
+}
+
+static LUA_FUNCTION(openssl_pkey_ctx_ctrl)
+{
+  EVP_PKEY_CTX *ctx = CHECK_OBJECT(1, EVP_PKEY_CTX, "openssl.evp_pkey_ctx");
+  size_t dlen = 0;
+  const char *name = luaL_checklstring(L, 2, &dlen);
+  const char *value = luaL_checklstring(L, 3, &dlen);
+  const int res = EVP_PKEY_CTX_ctrl_str(ctx, name, value);
+  lua_pushboolean(L, res > 0);
+
+  return 1;
+}
+
+static LUA_FUNCTION(openssl_pkey_ctx_decrypt_init)
+{
+  EVP_PKEY_CTX *ctx = CHECK_OBJECT(1, EVP_PKEY_CTX, "openssl.evp_pkey_ctx");
+
+  if (EVP_PKEY_decrypt_init(ctx) <= 0)
+    luaL_error(L, "error");
+
+  return 0;
+}
+
+static LUA_FUNCTION(openssl_pkey_ctx_encrypt_init)
+{
+  EVP_PKEY_CTX *ctx = CHECK_OBJECT(1, EVP_PKEY_CTX, "openssl.evp_pkey_ctx");
+
+  if (EVP_PKEY_encrypt_init(ctx) <= 0)
+    luaL_error(L, "error");
+
+  return 0;
+}
+
+static LUA_FUNCTION(openssl_pkey_ctx_verify_init)
+{
+  EVP_PKEY_CTX *ctx = CHECK_OBJECT(1, EVP_PKEY_CTX, "openssl.evp_pkey_ctx");
+
+  if (EVP_PKEY_verify_init(ctx) <= 0)
+    luaL_error(L, "error");
+
+  return 0;
+}
+
+static LUA_FUNCTION(openssl_pkey_ctx_sign_init)
+{
+  EVP_PKEY_CTX *ctx = CHECK_OBJECT(1, EVP_PKEY_CTX, "openssl.evp_pkey_ctx");
+
+  if (EVP_PKEY_sign_init(ctx) <= 0)
+    luaL_error(L, "error");
+
+  return 0;
+}
+
+static LUA_FUNCTION(openssl_pkey_ctx_decrypt)
+{
+  EVP_PKEY_CTX *ctx = CHECK_OBJECT(1, EVP_PKEY_CTX, "openssl.evp_pkey_ctx");
+  size_t dlen = 0;
+  const char *data = luaL_checklstring(L, 2, &dlen);
+  int ret = 0;
+
+  size_t clen = dlen;
+  byte* buf = malloc(clen);
+  if (EVP_PKEY_decrypt(ctx, buf, &clen, (const unsigned char*)data, dlen) == 1)
+  {
+    lua_pushlstring(L, (const char*)buf, clen);
+    ret = 1;
+  }
+  free(buf);
+
+  return ret;
+}
+
+static LUA_FUNCTION(openssl_pkey_ctx_encrypt)
+{
+  EVP_PKEY_CTX *ctx = CHECK_OBJECT(1, EVP_PKEY_CTX, "openssl.evp_pkey_ctx");
+  size_t in_len = 0;
+  const char *in = luaL_checklstring(L, 2, &in_len);
+  int ret = 0;
+  size_t buf_len = 0;
+  byte* buf = NULL;
+
+  if (EVP_PKEY_encrypt(ctx, NULL, &buf_len, in, in_len) > 0)
+  {
+    buf = malloc(buf_len);
+    if (EVP_PKEY_encrypt(ctx, buf, &buf_len, in, in_len) > 0)
+    {
+      lua_pushlstring(L, (const char*)buf, buf_len);
+      ret = 1;
+    }
+    free(buf);
+  }
+
+  return ret;
+}
+
+static LUA_FUNCTION(openssl_pkey_ctx_verify)
+{
+  EVP_PKEY_CTX *pCtx = CHECK_OBJECT(1, EVP_PKEY_CTX, "openssl.evp_pkey_ctx");
+  size_t dlen = 0;
+  const char *data = luaL_checklstring(L, 2, &dlen);
+  size_t slen = 0;
+  const char *sign = luaL_checklstring(L, 3, &slen);
+
+  int ret = EVP_PKEY_verify(pCtx, data, dlen, sign, slen);
+  lua_pushboolean(L, ret > 0);
+
+  return 1;
+}
+
+
+static LUA_FUNCTION(openssl_pkey_ctx_sign)
+{
+  EVP_PKEY_CTX *pCtx = CHECK_OBJECT(1, EVP_PKEY_CTX, "openssl.evp_pkey_ctx");
+  size_t digest_len = 0;
+  const char *digest = luaL_checklstring(L, 2, &digest_len);
+  size_t sig_len = 0;
+  char* sig = NULL;
+  int ret = 0;
+
+  if (EVP_PKEY_sign(pCtx, NULL, &sig_len, digest, digest_len) > 0)
+  {
+    sig = malloc(sig_len);
+    if (EVP_PKEY_sign(pCtx, sig, &sig_len, digest, digest_len) > 0)
+    {
+      lua_pushlstring(L, (const char*)sig, sig_len);
+      ret = 1;
+    }
+    free(sig);
+  }
+
+  return ret;
+}
+
 /***
 Derive public key algorithm shared secret
 
@@ -1998,6 +2154,7 @@ static luaL_Reg pkey_funcs[] =
   {"parse",         openssl_pkey_parse},
   {"bits",          openssl_pkey_bits},
 
+  {"ctx",           openssl_pkey_ctx},
   {"encrypt",       openssl_pkey_encrypt},
   {"decrypt",       openssl_pkey_decrypt},
   {"sign",          openssl_sign},
@@ -2017,6 +2174,28 @@ static luaL_Reg pkey_funcs[] =
 
   {NULL,            NULL},
 };
+
+static luaL_Reg pkey_ctx_funcs[] =
+{
+  {"encrypt_init",  openssl_pkey_ctx_encrypt_init},
+  {"decrypt_init",  openssl_pkey_ctx_decrypt_init},
+  {"verify_init",   openssl_pkey_ctx_verify_init},
+  {"sign_init",     openssl_pkey_ctx_sign_init},
+
+  {"ctrl",          openssl_pkey_ctx_ctrl},
+
+  {"decrypt",       openssl_pkey_ctx_decrypt},
+  {"encrypt",       openssl_pkey_ctx_encrypt},
+
+  {"verify",        openssl_pkey_ctx_verify},
+  {"sign",          openssl_pkey_ctx_sign},
+
+  {"__gc",          openssl_pkey_ctx_free},
+  {"__tostring",    auxiliar_tostring},
+
+  {NULL,            NULL},
+};
+
 
 static const luaL_Reg R[] =
 {
@@ -2055,6 +2234,7 @@ static const luaL_Reg R[] =
 int luaopen_pkey(lua_State *L)
 {
   auxiliar_newclass(L, "openssl.evp_pkey", pkey_funcs);
+  auxiliar_newclass(L, "openssl.evp_pkey_ctx", pkey_ctx_funcs);
 
   lua_newtable(L);
   luaL_setfuncs(L, R, 0);
