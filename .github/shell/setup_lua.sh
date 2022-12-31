@@ -64,8 +64,8 @@ else
     curl http://www.lua.org/ftp/lua-5.3.6.tar.gz | tar xz
     cd lua-5.3.6
   elif [ "$LUA" == "lua5.4" ]; then
-    curl http://www.lua.org/ftp/lua-5.4.3.tar.gz | tar xz
-    cd lua-5.4.3
+    curl http://www.lua.org/ftp/lua-5.4.4.tar.gz | tar xz
+    cd lua-5.4.4
   fi
 
   # Build Lua without backwards compatibility for testing
