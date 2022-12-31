@@ -30,8 +30,8 @@ The goal is to fully support openssl, include:
 - PKCS7/CMS.
 - SSL/TLS.
 
-This lua-openssl toolkit works with [Lua](https://www.lua.org/) 5.1/5.2/5.3/5.4 
-or [luajit](http://luajit.org/) 2.0/2.1, and [OpenSSL](https://www.openssl.org/) 
+This lua-openssl toolkit works with [Lua](https://www.lua.org/) 5.1/5.2/5.3/5.4
+or [luajit](http://luajit.org/) 2.0/2.1, and [OpenSSL](https://www.openssl.org/)
 0.9.8 or above 1.0.0 or [LibreSSL](https://www.libressl.org/).
 
 It is recommended to use the most up-to-date OpenSSL version because of the
@@ -344,7 +344,7 @@ For more examples, please see test lua script file.
 
 **_lua-openssl License_**
 
-Copyright (c) 2011 - 2022 zhaozg, zhaozg(at)gmail.com
+Copyright (c) 2011 - 2023 zhaozg, zhaozg(at)gmail.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to
