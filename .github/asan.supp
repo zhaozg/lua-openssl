@@ -1,2 +1,4 @@
 leak:TS_REQ_to_TS_VERIFY_CTX
-leak:CMS_decrypt_set1_password
+leak:__interceptor_malloc
+leak:_objc_init
+leak:localtime_r

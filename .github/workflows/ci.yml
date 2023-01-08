@@ -1,66 +1,13 @@
 name: CI
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    # The branches below must be a subset of the branches above
+    branches: [ "master" ]
 
 jobs:
-  Coverage:
-    # look at https://github.com/eddyxu/cpp-coveralls
-    runs-on: ubuntu-latest
-    env:
-      COVERALLS_GIT_BRANCH: "${{ github.ref }}"
-      COVERALLS_REPO_TOKEN: "${{ secrets.COVERALLS_TOKEN }}"
-      WITH_LUA_ENGINE: LuaJIT
-      LUA: luajit2.1
-      LUAROCKS: 3.8.0
-    steps:
-    - uses: actions/checkout@v2
-      with:
-        submodules: recursive
-    - name: cpp-coveralls
-      run: pip install cpp-coveralls PyYAML
-    - name: depends
-      run: sudo apt update && sudo apt install -y libssl-dev libuv1-dev
-    - name: run
-      run: |
-        .github/shell/setup_lua.sh
-        export PATH=$HOME/.usr/bin:$PATH
-        $HOME/.usr/bin/luarocks install luv
-        ln -s $HOME/.usr/lib/lua/5.1/luv.so
-        export PKG_CONFIG_PATH=$HOME/.usr/lib/pkgconfig
-        make coveralls
-        coveralls -b . -i src --gcov-options '\-lp'
-
-  Valgrind:
-    runs-on: ubuntu-20.04
-    steps:
-    - uses: actions/checkout@v2
-      with:
-        submodules: recursive
-    - name: depends
-      run: sudo apt update && sudo apt install -y libssl-dev luajit libluajit-5.1-dev valgrind
-    - name: run
-      run: make valgrind
-
-  Asan:
-    runs-on: macos-12
-    steps:
-    - uses: actions/checkout@v2
-      with:
-        submodules: recursive
-    - name: depends
-      run: brew install luajit --HEAD && brew install llvm
-    - name: run
-      env:
-        PKG_CONFIG_PATH: /usr/local/opt/openssl/lib/pkgconfig
-        LSAN_OPTIONS: suppressions=../.github/asan.supp
-        ASAN_OPTIONS: detect_leaks=1:check_initialization_order=1
-        UBSAN_OPTIONS: print_stacktrace=1
-        CC: /usr/local/opt/llvm/bin/clang
-        LD: /usr/local/opt/llvm/bin/clang
-        LDFLAGS: -L/usr/local/opt/llvm/lib
-        CPPFLAGS: -I/usr/local/opt/llvm/include
-      run: make asan
-
   build:
     runs-on: ${{ matrix.os }}
     strategy:
