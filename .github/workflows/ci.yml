@@ -31,7 +31,7 @@ jobs:
         coveralls -b . -i src --gcov-options '\-lp'
 
   Valgrind:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
       with:
@@ -42,21 +42,23 @@ jobs:
       run: make valgrind
 
   Asan:
-    runs-on: macos-latest
+    runs-on: macos-12
     steps:
     - uses: actions/checkout@v2
       with:
         submodules: recursive
     - name: depends
-      run: brew install luajit --HEAD
+      run: brew install luajit --HEAD && brew install llvm
     - name: run
       env:
         PKG_CONFIG_PATH: /usr/local/opt/openssl/lib/pkgconfig
         LSAN_OPTIONS: suppressions=../.github/asan.supp
         ASAN_OPTIONS: detect_leaks=1:check_initialization_order=1
         UBSAN_OPTIONS: print_stacktrace=1
-        CC: clang
-        LD: clang
+        CC: /usr/local/opt/llvm/bin/clang
+        LD: /usr/local/opt/llvm/bin/clang
+        LDFLAGS: -L/usr/local/opt/llvm/lib
+        CPPFLAGS: -I/usr/local/opt/llvm/include
       run: make asan
 
   build:

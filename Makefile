@@ -55,8 +55,8 @@ endif
 
 ifeq (asan, ${TARGET})
   ASAN_LIB       = $(shell dirname $(shell dirname $(shell clang -print-libgcc-file-name)))/darwin/libclang_rt.asan_osx_dynamic.dylib
-  CC             = clang
-  LD             = clang
+  CC            ?= clang
+  LD            ?= clang
   CFLAGS	+=-g -O0 -fsanitize=address,undefined
   LDFLAGS       +=-g -fsanitize=address
 endif
