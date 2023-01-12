@@ -1,4 +1,4 @@
+# OpenSSL v1.1.1s
 leak:TS_REQ_to_TS_VERIFY_CTX
-leak:__interceptor_malloc
 leak:_objc_init
 leak:localtime_r
