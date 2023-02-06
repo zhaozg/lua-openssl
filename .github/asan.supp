@@ -1,4 +1,7 @@
 # OpenSSL v1.1.1s
 leak:TS_REQ_to_TS_VERIFY_CTX
+# OpenSSL v3.0.7
+leak:DSA_generate_parameters_ex
+# MacOS
 leak:_objc_init
 leak:localtime_r
