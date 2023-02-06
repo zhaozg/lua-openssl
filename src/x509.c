@@ -515,6 +515,7 @@ static LUA_FUNCTION(openssl_x509_parse)
 {
   int i;
   X509 * cert = CHECK_OBJECT(1, X509, "openssl.x509");
+  int ca = lua_isnone(L, 2) ? X509_check_ca(cert) : lua_toboolean(L, 2);
 
   lua_newtable(L);
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
@@ -571,18 +572,10 @@ static LUA_FUNCTION(openssl_x509_parse)
     int id = X509_PURPOSE_get_id(purp);
     const char * pname = X509_PURPOSE_get0_sname(purp);
 
-    set = X509_check_purpose(cert, id, 0);
+    set = X509_check_purpose(cert, id, ca);
     if (set)
     {
       AUXILIAR_SET(L, -1, pname, 1, boolean);
-    }
-    set = X509_check_purpose(cert, id, 1);
-    if (set)
-    {
-      lua_pushfstring(L, "%s CA", pname);
-      pname = lua_tostring(L, -1);
-      AUXILIAR_SET(L, -2, pname, 1, boolean);
-      lua_pop(L, 1);
     }
   }
   lua_setfield(L, -2, "purposes");
@@ -721,8 +714,8 @@ static LUA_FUNCTION(openssl_x509_check)
 #if 0
     X509_STORE_set_verify_cb_func(store, verify_cb);
 #endif
-    if (untrustedchain!=NULL) sk_X509_pop_free(untrustedchain, X509_free);
     ret = check_cert(store, cert, untrustedchain, purpose);
+    if (untrustedchain!=NULL) sk_X509_pop_free(untrustedchain, X509_free);
     lua_pushboolean(L, ret == X509_V_OK);
     lua_pushinteger(L, ret);
 

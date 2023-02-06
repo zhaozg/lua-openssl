@@ -29,12 +29,19 @@ function M.get_ca()
   return M.ca
 end
 
-function M.new_req(subject)
+function M.new_req(subject, exts, attrs)
   local pkey = openssl.pkey.new()
   if type(subject) == "table" then
     subject = openssl.x509.name.new(subject)
   end
-  local req = assert(openssl.x509.req.new(subject, pkey))
+  local req = assert(openssl.x509.req.new(subject))
+  if (exts) then
+    req:extensions(exts)
+  end
+  if (attrs) then
+    req:attributes(attrs)
+  end
+  assert(req:sign(pkey))
   return req, pkey
 end
 
