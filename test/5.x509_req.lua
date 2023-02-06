@@ -157,7 +157,7 @@ function TestCSR:testNew()
   lu.assertEquals(r, s)
   assert(req2:check(pkey))
 
-  local cert = req2:to_x509(pkey, 3650) -- self sign
+  local cert = assert(req2:to_x509(pkey, 3650)) -- self sign
   t = cert:parse()
   assert(type(t) == 'table')
   lu.assertStrContains(tostring(req1:to_x509(pkey, 3650)), 'openssl.x509')

@@ -116,63 +116,124 @@ static luaL_Reg R[] =
   {NULL,    NULL}
 };
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-static X509 *X509_REQ_to_X509_ex(X509_REQ *r, int days, EVP_PKEY *pkey, const EVP_MD* md)
+static int copy_extensions(X509 *x, X509_REQ *req, int override)
+{
+  STACK_OF(X509_EXTENSION) *exts = NULL;
+  X509_EXTENSION *ext, *tmpext;
+  ASN1_OBJECT *obj;
+  int i, idx, ret = 0;
+  if (!x || !req)
+    return 1;
+  exts = X509_REQ_get_extensions(req);
+
+  for (i = 0; i < sk_X509_EXTENSION_num(exts); i++) {
+    ext = sk_X509_EXTENSION_value(exts, i);
+    obj = X509_EXTENSION_get_object(ext);
+    idx = X509_get_ext_by_OBJ(x, obj, -1);
+    /* Does extension exist? */
+    if (idx != -1) {
+      /* If normal copy don't override existing extension */
+      if (override == 0)
+        continue;
+      /* Delete all extensions of same type */
+      do {
+        tmpext = X509_get_ext(x, idx);
+        X509_delete_ext(x, idx);
+        X509_EXTENSION_free(tmpext);
+        idx = X509_get_ext_by_OBJ(x, obj, -1);
+      } while (idx != -1);
+    }
+    if (!X509_add_ext(x, ext, -1))
+      goto end;
+  }
+
+  ret = 1;
+
+ end:
+
+  sk_X509_EXTENSION_pop_free(exts, X509_EXTENSION_free);
+
+  return ret;
+}
+static int X509_REQ_to_X509_ex(X509_REQ *r, int days, EVP_PKEY *pkey, const EVP_MD* md, X509 **x)
 {
   X509 *ret = NULL;
-  X509_CINF *xi = NULL;
-  X509_NAME *xn;
+  X509_NAME *xn = NULL;
   EVP_PKEY *pubkey = NULL;
+  ASN1_TIME *notBefore = NULL, *notAfter = NULL;
+  ASN1_INTEGER *serial = NULL;
+
+  time_t tm;
   int res;
 
   if ((ret = X509_new()) == NULL)
   {
-    X509err(X509_F_X509_REQ_TO_X509, ERR_R_MALLOC_FAILURE);
-    return NULL;
+    return ERR_R_MALLOC_FAILURE;
   }
 
   /* duplicate the request */
-  xi = ret->cert_info;
+  X509_set_version(ret, 2);
 
-  if (sk_X509_ATTRIBUTE_num(r->req_info->attributes) != 0)
-  {
-    if ((xi->version = M_ASN1_INTEGER_new()) == NULL)
-      goto err;
-    if (!ASN1_INTEGER_set(xi->version, 2))
-      goto err;
-    /*-     xi->extensions=ri->attributes; <- bad, should not ever be done
-    ri->attributes=NULL; */
-  }
+  serial = ASN1_INTEGER_new();
+  if (serial == NULL)
+    return ERR_R_MALLOC_FAILURE;
+
+  if ( (res = ASN1_INTEGER_set(serial, 0xca)) != 1 ||
+    (res = X509_set_serialNumber(ret, serial)) != 1)
+    goto err;
+  ASN1_INTEGER_free(serial);
+  serial = NULL;
 
   xn = X509_REQ_get_subject_name(r);
-  if (X509_set_subject_name(ret, xn) == 0)
+  if ((res = X509_set_subject_name(ret, xn)) != 1)
     goto err;
-  if (X509_set_issuer_name(ret, xn) == 0)
+  if ((res = X509_set_issuer_name(ret, xn)) != 1)
     goto err;
 
-  if (X509_gmtime_adj(xi->validity->notBefore, 0) == NULL)
+  tm = time(NULL);
+  notBefore = ASN1_TIME_adj(NULL, tm, 0, 0);
+  if (notBefore == NULL)
+  {
+    res = ERR_R_MALLOC_FAILURE;
     goto err;
-  if (X509_gmtime_adj(xi->validity->notAfter, (long)60 * 60 * 24 * days) ==
-      NULL)
+  }
+
+  if ((res = X509_set_notBefore(ret, notBefore)) != 1)
+    goto err;
+  ASN1_TIME_free(notBefore);
+  notBefore = NULL;
+
+  notAfter = ASN1_TIME_adj(NULL, tm, days, 0);
+  if (notAfter == NULL)
+  {
+    res = ERR_R_MALLOC_FAILURE;
+    goto err;
+  }
+  if ((res = X509_set_notAfter(ret, notAfter)) != 1)
+    goto err;
+  ASN1_TIME_free(notAfter);
+  notAfter = NULL;
+
+  if ((res = copy_extensions(ret, r, 1))!=1)
     goto err;
 
   pubkey = X509_REQ_get_pubkey(r);
   res = X509_set_pubkey(ret, pubkey);
   EVP_PKEY_free(pubkey);
+  if (res != 1)
+    goto err;
 
-  if (!md)
+  if ((res = X509_sign(ret, pkey, md)) == 0)
     goto err;
-  if (!res || !X509_sign(ret, pkey, md))
-    goto err;
-  if (0)
-  {
+  res = 1;
+
+  *x = ret;
+  return res;
+
 err:
-    X509_free(ret);
-    ret = NULL;
-  }
-  return (ret);
+  X509_free(ret);
+  return (res);
 }
-#endif
 
 /***
 openssl.x509_req object
@@ -194,31 +255,21 @@ static LUA_FUNCTION(openssl_csr_to_x509)
   EVP_PKEY * pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
   int days = luaL_optint(L, 3, 365);
   const EVP_MD* md = get_digest(L, 4, "sha256");
-
   X509* cert = NULL;
+  int ret;
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
   /*
     X509_REQ_to_X509 default use EVP_md5() as digest method
     X509* cert = X509_REQ_to_X509(csr, days, pkey);
   */
-  cert = X509_REQ_to_X509_ex(csr, days, pkey, md);
-#else
-  cert = X509_REQ_to_X509(csr, days, pkey);
-  if (cert)
-  {
-    // do resign with digest
-    if (!X509_sign(cert, pkey, md))
-    {
-      X509_free(cert);
-      cert = NULL;
-    }
-  }
-#endif
+  ret = X509_REQ_to_X509_ex(csr, days, pkey, md, &cert);
 
-  if (cert)
+  if (ret == 1 && cert)
+  {
     PUSH_OBJECT(cert, "openssl.x509");
-  return cert ? 1 : openssl_pushresult(L, 0);
+  } else
+    ret = openssl_pushresult(L, ret);
+  return ret;
 }
 
 /***

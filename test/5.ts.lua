@@ -85,7 +85,30 @@ local function createTsa(self)
   ca.dn = {{commonName = 'CA'},  {C = 'CN'}}
   ca.pkey = assert(openssl.pkey.new())
   local subject = assert(openssl.x509.name.new(ca.dn))
-  ca.req = assert(csr.new(subject, ca.pkey))
+
+  local exts = {
+    openssl.x509.extension.new_extension(
+      {object = 'basicConstraints',  value = 'CA:TRUE'}),
+    openssl.x509.extension.new_extension(
+      {object = 'keyUsage',  value = 'cRLSign, keyCertSign'}),
+  }
+
+  local attrs = {
+    {
+      object = 'basicConstraints',
+      type = asn1.OCTET_STRING,
+      value = 'CA:TRUE'
+    }
+  }
+
+  ca.req = assert(csr.new(subject))
+  if (exts) then
+    ca.req:extensions(exts)
+  end
+  if (attrs) then
+    ca.req:attribute(attrs)
+  end
+  assert(ca.req:sign(ca.pkey))
   ca.cert = assert(ca.req:to_x509(ca.pkey))
 
   local extensions = {
