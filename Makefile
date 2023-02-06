@@ -168,8 +168,8 @@ endif
 valgrind: all
 	cd test && LUA_CPATH=$(shell pwd)/?.so \
 	valgrind --gen-suppressions=all --suppressions=../.github/lua-openssl.supp \
-	--error-exitcode=1 --leak-check=full --child-silent-after-fork=yes \
-	$(LUA) test.lua && cd ..
+	--error-exitcode=1 --leak-check=full --show-leak-kinds=all \
+	--child-silent-after-fork=yes $(LUA) test.lua && cd ..
 
 asan: all
 ifneq (, $(findstring apple, $(SYS)))
