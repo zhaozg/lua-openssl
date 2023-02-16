@@ -72,9 +72,9 @@ static LUA_FUNCTION(openssl_pkcs12_export)
    *                       int keytype);
    */
 
-  p12 = PKCS12_create(pass, (char*)friendly_name, priv_key, cert, ca, 0, 0, 0, 0, 0);
+  p12 = PKCS12_create(pass, (char*)friendly_name, priv_key, cert, ca, NID_aes_128_cbc, 0, 0, 0, 0);
   if (!p12)
-    luaL_error(L, "PKCS12_careate failed,pleases get more error info");
+    luaL_error(L, "PKCS12_create failed,pleases get more error info");
 
   bio_out = BIO_new(BIO_s_mem());
   if (i2d_PKCS12_bio(bio_out, p12))

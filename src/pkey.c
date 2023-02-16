@@ -751,7 +751,7 @@ export evp_pkey as pem/der string
 @function export
 @tparam[opt='pem'] string support export as 'pem' or 'der' format, default is 'pem'
 @tparam[opt=false] boolean raw true for export low layer key just rsa,dsa,ec
-@tparam[opt] string passphrase if given, export key will encrypt with des-cbc-ede,
+@tparam[opt] string passphrase if given, export key will encrypt with aes-128-cbc,
 only need when export private key
 @treturn string
 */
@@ -783,7 +783,7 @@ static LUA_FUNCTION(openssl_pkey_export)
 
   if (passphrase)
   {
-    cipher = (EVP_CIPHER *) EVP_des_ede3_cbc();
+    cipher = (EVP_CIPHER *) EVP_aes_128_cbc();
   }
   else
   {
@@ -1445,7 +1445,7 @@ static LUA_FUNCTION(openssl_seal)
   }
 
   data = luaL_checklstring(L, 2, &data_len);
-  cipher = get_cipher(L, 3, "rc4");
+  cipher = get_cipher(L, 3, "aes-128-cbc");
 
   pkeys = malloc(nkeys * sizeof(EVP_PKEY *));
   eksl = malloc(nkeys * sizeof(int));
@@ -1546,7 +1546,7 @@ static LUA_FUNCTION(openssl_open)
 
   const EVP_CIPHER *cipher = NULL;
 
-  cipher = get_cipher(L, 5, "rc4");
+  cipher = get_cipher(L, 5, "aes-128-cbc");
 
   if (cipher)
   {
@@ -1604,7 +1604,7 @@ static LUA_FUNCTION(openssl_seal_init)
     nkeys = 1;
   }
 
-  cipher = get_cipher(L, 2, "rc4");
+  cipher = get_cipher(L, 2, "aes-128-cbc");
 
   pkeys = malloc(nkeys * sizeof(*pkeys));
   eksl = malloc(nkeys * sizeof(*eksl));
@@ -1711,7 +1711,7 @@ static LUA_FUNCTION(openssl_open_init)
   const char *ekey = luaL_checklstring(L, 2, &ekey_len);
   const char *iv = luaL_checklstring(L, 3, &iv_len);
 
-  const EVP_CIPHER *cipher = get_cipher(L, 4, "rc4");
+  const EVP_CIPHER *cipher = get_cipher(L, 4, "aes-128-cbc");
   int ret = 0;
 
   if (cipher)

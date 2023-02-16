@@ -443,8 +443,8 @@ static int luaclose_openssl(lua_State *L)
 #if defined(OPENSSL_THREADS)
   CRYPTO_thread_cleanup();
 #endif
+  CRYPTO_THREADID_set_callback(NULL);
   CRYPTO_set_locking_callback(NULL);
-  CRYPTO_set_id_callback(NULL);
 
   CRYPTO_cleanup_all_ex_data();
   ERR_free_strings();

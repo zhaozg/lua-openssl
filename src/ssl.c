@@ -1163,8 +1163,17 @@ static int openssl_ssl_ctx_set_tmp(lua_State *L)
         rsa = PEM_read_bio_RSAPrivateKey(bio, NULL, NULL, NULL);
         BIO_free(bio);
       }
-      else{
-        rsa = RSA_generate_key(1024, RSA_F4, NULL, NULL);
+      else
+      {
+        BIGNUM *e = BN_new();
+        rsa = RSA_new();
+        BN_set_word(e, RSA_F4);
+        ret = RSA_generate_key_ex(rsa, 2048, e, NULL);
+        BN_free(e);
+        if (ret!=0) {
+          RSA_free(rsa);
+          rsa = NULL;
+        }
       }
 
       if (rsa)

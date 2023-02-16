@@ -69,7 +69,7 @@ veFd3yM=
 end
 
 function TestIssuer:test141()
-  local c = openssl.cipher.decrypt_new('bf-cbc', "secret_key", "iv")
+  local c = openssl.cipher.decrypt_new('aes-128-cbc', "secret_key", "iv")
   local out = c:update("msg")
   local final = c:final()
   assert(out or final)

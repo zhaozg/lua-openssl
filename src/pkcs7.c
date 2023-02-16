@@ -226,7 +226,7 @@ encrypt message with recipcerts certificates return encrypted pkcs7 object
 @function encrypt
 @tparam string|bio msg
 @tparam stack_of_x509 recipcerts
-@tparam[opt='rc4'] string|evp_cipher cipher
+@tparam[opt='aes-128-cbc'] string|evp_cipher cipher
 @tparam[opt] number flags
 */
 static LUA_FUNCTION(openssl_pkcs7_encrypt)
@@ -235,7 +235,7 @@ static LUA_FUNCTION(openssl_pkcs7_encrypt)
   PKCS7 * p7 = NULL;
   BIO *in = load_bio_object(L, 1);
   STACK_OF(X509) *recipcerts = openssl_sk_x509_fromtable(L, 2);
-  const EVP_CIPHER *cipher = get_cipher(L, 3, "des3");
+  const EVP_CIPHER *cipher = get_cipher(L, 3, "aes-128-cbc");
   long flags = luaL_optint(L, 4, 0);
 
   p7 = PKCS7_encrypt(recipcerts, in, cipher, flags);

@@ -8,7 +8,7 @@ TestCipherCompat = {}
 function TestCipherCompat:setUp()
   self.msg = 'abcdabcdabcdabcdabcdabcd'
   self.msg1 = 'abcd'
-  self.alg = 'des-ede-cbc'
+  self.alg = 'aes-128-cbc'
   self.key = string.char(01, 02, 03, 04, 05, 06, 07, 08, 09, 0x0a, 0x0b, 0x0c,
                          0x0d, 0x0e, 0x0f)
   self.key = self.key .. string.reverse(self.key)
@@ -93,7 +93,7 @@ TestCipherMY = {}
 function TestCipherMY:setUp()
   self.msg = 'abcdabcdabcdabcdabcdabcd'
   self.msg1 = 'abcd'
-  self.alg = 'des-ede-cbc'
+  self.alg = 'aes-128-cbc'
   self.key = string.char(01, 02, 03, 04, 05, 06, 07, 08, 09, 0x0a, 0x0b, 0x0c,
                          0x0d, 0x0e, 0x0f)
   self.key = self.key .. string.reverse(self.key)
@@ -109,7 +109,7 @@ function TestCipherMY:testList()
   t3 = cipher.list(false)
   assert(#t1 > #t3)
 
-  local C = cipher.get('des')
+  local C = cipher.get('aes-128-cbc')
 
   local a, b, aa, bb
   local obj, obj1

@@ -321,7 +321,7 @@ FV/lrqg=
       lu.assertStrContains(pem4, '-----BEGIN ' .. k .. ' PRIVATE KEY-----')
       lu.assertStrContains(pem4, '-----END ' .. k .. ' PRIVATE KEY-----')
       lu.assertStrContains(pem4, 'Proc-Type: 4,ENCRYPTED')
-      lu.assertStrContains(pem4, 'DEK-Info: DES-EDE3-CBC,')
+      lu.assertStrContains(pem4, 'DEK-Info: AES-128-CBC,')
 
       k2 = pkey.read(pem4, true, 'pem', 'secret')
       lu.assertEquals(pri:export(), k2:export())

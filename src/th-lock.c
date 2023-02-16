@@ -83,6 +83,12 @@
 void CRYPTO_thread_setup(void);
 void CRYPTO_thread_cleanup(void);
 
+static void irix_thread_id(CRYPTO_THREADID *tid);
+static void solaris_thread_id(CRYPTO_THREADID *tid);
+static void pthreads_thread_id(CRYPTO_THREADID *tid);
+static void netware_thread_id(CRYPTO_THREADID *tid);
+static void beos_thread_id(CRYPTO_THREADID *tid);
+
 /* usage:
  * CRYPTO_thread_setup();
  * application code
@@ -140,7 +146,6 @@ static void win32_locking_callback(int mode, int type, const char *file, int lin
 #ifdef SOLARIS
 
 static void solaris_locking_callback(int mode, int type, const char *file, int line);
-static unsigned long solaris_thread_id(void );
 
 #define USE_MUTEX
 
@@ -171,8 +176,8 @@ void CRYPTO_thread_setup(void)
 #endif
   }
 
-  CRYPTO_set_id_callback((unsigned long (*)())solaris_thread_id);
-  CRYPTO_set_locking_callback((void (*)())solaris_locking_callback);
+  CRYPTO_THREADID_set_callback(solaris_thread_id);
+  CRYPTO_set_locking_callback(solaris_locking_callback);
 }
 
 void CRYPTO_thread_cleanup(void)
@@ -229,19 +234,15 @@ static void solaris_locking_callback(int mode, int type, const char *file, int l
   }
 }
 
-unsigned long solaris_thread_id(void)
+void solaris_thread_id(CRYPTO_THREADID *tid)
 {
-  unsigned long ret;
-
-  ret = (unsigned long)thr_self();
-  return (ret);
+    CRYPTO_THREADID_set_numeric((unsigned long)thr_self());
 }
 #endif /* SOLARIS */
 
 #ifdef IRIX
 
 static void irix_locking_callback(int mode, int type, const char *file, int line);
-static unsigned long irix_thread_id(void );
 
 /* I don't think this works..... */
 
@@ -269,8 +270,8 @@ void CRYPTO_thread_setup(void)
     lock_cs[i] = usnewsema(arena, 1);
   }
 
-  CRYPTO_set_id_callback((unsigned long (*)())irix_thread_id);
-  CRYPTO_set_locking_callback((void (*)())irix_locking_callback);
+  CRYPTO_THREADID_set_callback(irix_thread_id);
+  CRYPTO_set_locking_callback(irix_locking_callback);
 }
 
 void CRYPTO_thread_cleanup(void)
@@ -303,10 +304,7 @@ static void irix_locking_callback(int mode, int type, char *file, int line)
 
 unsigned long irix_thread_id(void)
 {
-  unsigned long ret;
-
-  ret = (unsigned long)getpid();
-  return (ret);
+    CRYPTO_THREADID_set_numeric((unsigned long)getpid());
 }
 #endif /* IRIX */
 
@@ -355,12 +353,9 @@ static void pthreads_locking_callback(int mode, int type, const char *file, int 
   }
 }
 
-static unsigned long pthreads_thread_id(void)
+static void pthreads_thread_id(CRYPTO_THREADID *tid)
 {
-  unsigned long ret;
-
-  ret = (unsigned long)pthread_self();
-  return (ret);
+    CRYPTO_THREADID_set_numeric(tid, (unsigned long)pthread_self());
 }
 
 void CRYPTO_thread_setup(void)
@@ -375,7 +370,7 @@ void CRYPTO_thread_setup(void)
     pthread_mutex_init(&(lock_cs[i]), NULL);
   }
 
-  CRYPTO_set_id_callback(pthreads_thread_id);
+  CRYPTO_THREADID_set_callback(pthreads_thread_id);
   CRYPTO_set_locking_callback(pthreads_locking_callback);
 }
 #endif
