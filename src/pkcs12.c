@@ -18,6 +18,7 @@ create and export pkcs12 data
 @tparam string password
 @tparam[opt=nil] string friendlyname
 @tparam[opt] table|stak_of_x509 extracerts
+@tparam[opt] boolean keytype flag to private key used by MSIE, true for KEY_SIG, or KEY_EX
 @treturn string data
 */
 static LUA_FUNCTION(openssl_pkcs12_export)
@@ -25,6 +26,7 @@ static LUA_FUNCTION(openssl_pkcs12_export)
   X509 * cert = CHECK_OBJECT(1, X509, "openssl.x509");
   EVP_PKEY *priv_key = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
   char * pass = (char*)luaL_checkstring(L, 3);
+  int keytype = 0;
   int top = lua_gettop(L);
 
   BIO * bio_out = NULL;
@@ -49,6 +51,12 @@ static LUA_FUNCTION(openssl_pkcs12_export)
       ca = openssl_sk_x509_fromtable(L, idx);
       if (ca == NULL)
         luaL_argerror(L, idx, "must be table contians x509 object as cacets");
+      idx++;
+    }
+
+    if (lua_isboolean(L, idx))
+    {
+      keytype = lua_toboolean(L, idx) ? KEY_SIG : KEY_EX;
     }
   }
 
@@ -72,7 +80,7 @@ static LUA_FUNCTION(openssl_pkcs12_export)
    *                       int keytype);
    */
 
-  p12 = PKCS12_create(pass, (char*)friendly_name, priv_key, cert, ca, NID_aes_128_cbc, 0, 0, 0, 0);
+  p12 = PKCS12_create(pass, (char*)friendly_name, priv_key, cert, ca, NID_aes_128_cbc, 0, 0, 0, keytype);
   if (!p12)
     luaL_error(L, "PKCS12_create failed,pleases get more error info");
 
