@@ -5,8 +5,11 @@ NOW=$(git describe)
 
 PKG_CONFIG_PATH=$HOME/.usr/lib64/pkgconfig:$HOME/.usr/lib/pkgconfig
 
-if [[ "$RUNNER_OS" == "macOS" && -z "$SSL" ]]; then
-  PKG_CONFIG_PATH=/usr/local/opt/openssl/lib/pkgconfig:$PKG_CONFIG_PATH
+if [[ "$RUNNER_OS" == "macOS" ]]; then
+  brew install pkg-config
+  if [[ -z "$SSL" ]]; then
+    PKG_CONFIG_PATH=/usr/local/opt/openssl/lib/pkgconfig:$PKG_CONFIG_PATH
+  fi
 fi
 
 if [[ "$RUNNER_OS" == "Linux" && "$SSL" == "openssl-1.0.2u" ]]; then

@@ -9,6 +9,14 @@ x509.req module to mapping `X509_REQ` to lua object, creates and processes certi
 #include "openssl.h"
 #include "private.h"
 
+#if OPENSSL_VERSION_NUMBER < 0x1010000fL || \
+	(defined(LIBRESSL_VERSION_NUMBER) && (LIBRESSL_VERSION_NUMBER < 0x20700000L))
+#define X509_get0_notBefore X509_get_notBefore
+#define X509_get0_notAfter X509_get_notAfter
+#define X509_set1_notBefore X509_set_notBefore
+#define X509_set1_notAfter X509_set_notAfter
+#endif
+
 /***
 read x509_req from string or bio input
 @function read
@@ -198,7 +206,7 @@ static int X509_REQ_to_X509_ex(X509_REQ *r, int days, EVP_PKEY *pkey, const EVP_
     goto err;
   }
 
-  if ((res = X509_set_notBefore(ret, notBefore)) != 1)
+  if ((res = X509_set1_notBefore(ret, notBefore)) != 1)
     goto err;
   ASN1_TIME_free(notBefore);
   notBefore = NULL;
@@ -209,7 +217,7 @@ static int X509_REQ_to_X509_ex(X509_REQ *r, int days, EVP_PKEY *pkey, const EVP_
     res = ERR_R_MALLOC_FAILURE;
     goto err;
   }
-  if ((res = X509_set_notAfter(ret, notAfter)) != 1)
+  if ((res = X509_set1_notAfter(ret, notAfter)) != 1)
     goto err;
   ASN1_TIME_free(notAfter);
   notAfter = NULL;
