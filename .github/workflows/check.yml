@@ -5,7 +5,7 @@ on: [push, pull_request]
 jobs:
   Coverage:
     # look at https://github.com/eddyxu/cpp-coveralls
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     env:
       COVERALLS_GIT_BRANCH: "${{ github.ref }}"
       COVERALLS_REPO_TOKEN: "${{ secrets.COVERALLS_TOKEN }}"
@@ -48,7 +48,7 @@ jobs:
       with:
         submodules: recursive
     - name: depends
-      run: brew install openssl@1.1 llvm && brew install --HEAD luajit
+      run: brew install openssl@1.1 llvm && brew install --HEAD luajit && brew install pkg-config
     - name: run
       env:
         PKG_CONFIG_PATH: /usr/local/opt/openssl/lib/pkgconfig
