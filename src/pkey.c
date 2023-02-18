@@ -60,6 +60,9 @@ int openssl_pkey_is_private(EVP_PKEY* pkey)
 #endif
 #ifndef OPENSSL_NO_EC
   case EVP_PKEY_EC:
+#ifdef EVP_PKEY_SM2
+  case EVP_PKEY_SM2:
+#endif
   {
     EC_KEY *ec = EVP_PKEY_get0_EC_KEY(pkey);
     const BIGNUM *p = EC_KEY_get0_private_key(ec);
@@ -78,9 +81,15 @@ int openssl_pkey_is_private(EVP_PKEY* pkey)
 static int openssl_pkey_is_sm2(const EVP_PKEY *pkey)
 {
   int id;
+#if OPENSSL_VERSION_NUMBER > 0x30000000
+  id = EVP_PKEY_get_id(pkey);
+  if (id == NID_sm2)
+    return 1;
+#else
   id = EVP_PKEY_id(pkey);
   if (id == EVP_PKEY_SM2)
     return 1;
+#endif
 
   id = EVP_PKEY_base_id(pkey);
   if(id==EVP_PKEY_EC)
@@ -124,6 +133,7 @@ static int openssl_pkey_read(lua_State*L)
     {
       switch (type)
       {
+#ifndef OPENSSL_NO_RSA
       case EVP_PKEY_RSA:
       {
         RSA* rsa = PEM_read_bio_RSAPublicKey(in, NULL, NULL, NULL);
@@ -134,6 +144,8 @@ static int openssl_pkey_read(lua_State*L)
         }
         break;
       }
+#endif
+#ifndef OPENSSL_NO_DSA
       case EVP_PKEY_DSA:
       {
         DSA* dsa = PEM_read_bio_DSA_PUBKEY(in, NULL, NULL, NULL);
@@ -144,6 +156,8 @@ static int openssl_pkey_read(lua_State*L)
         }
         break;
       }
+#endif
+#ifndef OPENSSL_NO_EC
       case EVP_PKEY_EC:
       {
         EC_KEY *ec = PEM_read_bio_EC_PUBKEY(in, NULL, NULL, NULL);
@@ -154,6 +168,7 @@ static int openssl_pkey_read(lua_State*L)
         }
         break;
       }
+#endif
       default:
       {
         key = PEM_read_bio_PUBKEY(in, NULL, NULL, NULL);
@@ -166,6 +181,7 @@ static int openssl_pkey_read(lua_State*L)
     {
       switch (type)
       {
+#ifndef OPENSSL_NO_RSA
       case EVP_PKEY_RSA:
       {
         RSA *rsa = d2i_RSAPublicKey_bio(in, NULL);
@@ -176,6 +192,8 @@ static int openssl_pkey_read(lua_State*L)
         }
         break;
       }
+#endif
+#ifndef OPENSSL_NO_DSA
       case EVP_PKEY_DSA:
       {
         DSA *dsa = d2i_DSA_PUBKEY_bio(in, NULL);
@@ -186,6 +204,8 @@ static int openssl_pkey_read(lua_State*L)
         }
         break;
       }
+#endif
+#ifndef OPENSSL_NO_EC
       case EVP_PKEY_EC:
       {
         EC_KEY *ec = d2i_EC_PUBKEY_bio(in, NULL);
@@ -196,6 +216,7 @@ static int openssl_pkey_read(lua_State*L)
         }
         break;
       }
+#endif
       default:
         key = d2i_PUBKEY_bio(in, NULL);
         break;
@@ -214,6 +235,7 @@ static int openssl_pkey_read(lua_State*L)
     {
       switch (type)
       {
+#ifndef OPENSSL_NO_RSA
       case EVP_PKEY_RSA:
       {
         RSA *rsa = d2i_RSAPrivateKey_bio(in, NULL);
@@ -224,6 +246,8 @@ static int openssl_pkey_read(lua_State*L)
         }
         break;
       }
+#endif
+#ifndef OPENSSL_NO_DSA
       case EVP_PKEY_DSA:
       {
         DSA *dsa = d2i_DSAPrivateKey_bio(in, NULL);
@@ -234,6 +258,8 @@ static int openssl_pkey_read(lua_State*L)
         }
         break;
       }
+#endif
+#ifndef OPENSSL_NO_EC
       case EVP_PKEY_EC:
       {
         EC_KEY *ec = d2i_ECPrivateKey_bio(in, NULL);
@@ -244,6 +270,7 @@ static int openssl_pkey_read(lua_State*L)
         }
         break;
       }
+#endif
       default:
       {
         if (passphrase)
@@ -263,6 +290,7 @@ static int openssl_pkey_read(lua_State*L)
   return key ? 1 : openssl_pushresult(L, 0);
 }
 
+#ifndef OPENSSL_NO_EC
 static int EC_KEY_generate_key_part(EC_KEY *eckey)
 {
   int ok = 0;
@@ -306,7 +334,7 @@ err:
 
   return (ok);
 }
-
+#endif
 
 #define EC_GET_FIELD(_name)        {                                                  \
   lua_getfield(L, -1, #_name);                                                        \
@@ -365,6 +393,7 @@ static LUA_FUNCTION(openssl_pkey_new)
   if (lua_isnoneornil(L, 1) || lua_isstring(L, 1))
   {
     alg = luaL_optstring(L, 1, alg);
+#ifndef OPENSSL_NO_RSA
     if (strcasecmp(alg, "rsa") == 0)
     {
       int bits = luaL_optint(L, 2, 2048);
@@ -384,7 +413,10 @@ static LUA_FUNCTION(openssl_pkey_new)
 
       BN_free(E);
     }
-    else if (strcasecmp(alg, "dsa") == 0)
+    else
+#endif
+#ifndef OPENSSL_NO_DSA
+    if (strcasecmp(alg, "dsa") == 0)
     {
       int bits = luaL_optint(L, 2, 1024);
       size_t seed_len = 0;
@@ -401,14 +433,17 @@ static LUA_FUNCTION(openssl_pkey_new)
       else
         DSA_free(dsa);
     }
-    else if (strcasecmp(alg, "dh") == 0)
+    else
+#endif
+#ifndef OPENSSL_NO_DH
+    if (strcasecmp(alg, "dh") == 0)
     {
       int bits = luaL_optint(L, 2, 1024);
       int generator = luaL_optint(L, 3, 2);
       ENGINE *eng = lua_isnoneornil(L, 4) ? NULL : CHECK_OBJECT(4, ENGINE, "openssl.engine");
 
 #if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
-      EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new_id(EVP_PKEY_DH, eng);
+      EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new_from_name(NULL, "DH", NULL);
       if (ctx)
       {
         int ret = EVP_PKEY_paramgen_init(ctx);
@@ -448,8 +483,10 @@ static LUA_FUNCTION(openssl_pkey_new)
         DH_free(dh);
 #endif
     }
+    else
+#endif
 #ifndef OPENSSL_NO_EC
-    else if (strcasecmp(alg, "ec") == 0)
+    if (strcasecmp(alg, "ec") == 0)
     {
       EC_GROUP *group = openssl_get_ec_group(L, 2, 3, 4);
       if (!group) luaL_error(L, "failed to get ec_group object");
@@ -482,6 +519,7 @@ static LUA_FUNCTION(openssl_pkey_new)
     lua_getfield(L, 1, "alg");
     alg = luaL_optstring(L, -1, alg);
     lua_pop(L, 1);
+#ifndef OPENSSL_NO_RSA
     if (strcasecmp(alg, "rsa") == 0)
     {
       pkey = EVP_PKEY_new();
@@ -546,7 +584,10 @@ static LUA_FUNCTION(openssl_pkey_new)
         }
       }
     }
-    else if (strcasecmp(alg, "dsa") == 0)
+    else
+#endif
+#ifndef OPENSSL_NO_DSA
+    if (strcasecmp(alg, "dsa") == 0)
     {
       pkey = EVP_PKEY_new();
       if (pkey)
@@ -597,9 +638,11 @@ static LUA_FUNCTION(openssl_pkey_new)
         }
       }
     }
-    else if (strcasecmp(alg, "dh") == 0)
+    else
+#endif
+#ifndef OPENSSL_NO_DH
+    if (strcasecmp(alg, "dh") == 0)
     {
-
       pkey = EVP_PKEY_new();
       if (pkey)
       {
@@ -650,7 +693,10 @@ static LUA_FUNCTION(openssl_pkey_new)
         }
       }
     }
-    else if (strcasecmp(alg, "ec") == 0)
+    else
+#endif
+#ifndef OPENSSL_NO_EC
+    if (strcasecmp(alg, "ec") == 0)
     {
       BIGNUM *d = NULL;
       BIGNUM *x = NULL;
@@ -706,31 +752,44 @@ static LUA_FUNCTION(openssl_pkey_new)
       }
       EC_GROUP_free(group);
     }
+#endif
   }
-  else if (auxiliar_getclassudata(L, "openssl.rsa", 1))
+  else
+#ifndef OPENSSL_NO_RSA
+  if (auxiliar_getclassudata(L, "openssl.rsa", 1))
   {
     RSA* rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");
     pkey = EVP_PKEY_new();
     EVP_PKEY_set1_RSA(pkey, rsa);
   }
-  else if (auxiliar_getclassudata(L, "openssl.ec_key", 1))
+  else
+#endif
+#ifndef OPENSSL_NO_EC
+  if (auxiliar_getclassudata(L, "openssl.ec_key", 1))
   {
     EC_KEY* ec = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
     pkey = EVP_PKEY_new();
     EVP_PKEY_set1_EC_KEY(pkey, ec);
   }
-  else if (auxiliar_getclassudata(L, "openssl.dh", 1))
+  else
+#endif
+#ifndef OPENSSL_NO_DH
+  if (auxiliar_getclassudata(L, "openssl.dh", 1))
   {
     DH *dh= CHECK_OBJECT(1, DH, "openssl.dh");
     pkey = EVP_PKEY_new();
     EVP_PKEY_set1_DH(pkey, dh);
   }
-  else if (auxiliar_getclassudata(L, "openssl.dsa", 1))
+  else
+#endif
+#ifndef OPENSSL_NO_DSA
+  if (auxiliar_getclassudata(L, "openssl.dsa", 1))
   {
     DSA *dsa = CHECK_OBJECT(1, DSA, "openssl.dsa");
     pkey = EVP_PKEY_new();
     EVP_PKEY_set1_DSA(pkey, dsa);
   }
+#endif
 
   if (pkey && EVP_PKEY_id(pkey) != NID_undef)
   {
@@ -809,20 +868,45 @@ static LUA_FUNCTION(openssl_pkey_export)
       /* export raw key format */
       switch (EVP_PKEY_type(EVP_PKEY_id(key)))
       {
+#ifndef OPENSSL_NO_RSA
       case EVP_PKEY_RSA:
-        ret = ispriv ? PEM_write_bio_RSAPrivateKey(bio_out, EVP_PKEY_get0_RSA(key), cipher, (unsigned char *)passphrase, passphrase_len, NULL, NULL)
-              : PEM_write_bio_RSAPublicKey(bio_out, EVP_PKEY_get0_RSA(key));
+        ret = ispriv
+            ? PEM_write_bio_RSAPrivateKey(bio_out,
+                                          EVP_PKEY_get0_RSA(key),
+                                          cipher,
+                                          (unsigned char *)passphrase,
+                                          passphrase_len,
+                                          NULL,
+                                          NULL)
+            : PEM_write_bio_RSAPublicKey(bio_out, EVP_PKEY_get0_RSA(key));
         break;
+#endif
+#ifndef OPENSSL_NO_DSA
       case EVP_PKEY_DSA:
       {
-        ret = ispriv ? PEM_write_bio_DSAPrivateKey(bio_out, EVP_PKEY_get0_DSA(key), cipher, (unsigned char *)passphrase, passphrase_len, NULL, NULL)
-              : PEM_write_bio_DSA_PUBKEY(bio_out, EVP_PKEY_get0_DSA(key));
+        ret = ispriv
+            ? PEM_write_bio_DSAPrivateKey(bio_out,
+                                          EVP_PKEY_get0_DSA(key),
+                                          cipher,
+                                          (unsigned char *)passphrase,
+                                          passphrase_len,
+                                          NULL,
+                                          NULL)
+            : PEM_write_bio_DSA_PUBKEY(bio_out, EVP_PKEY_get0_DSA(key));
       }
       break;
+#endif
 #ifndef OPENSSL_NO_EC
       case EVP_PKEY_EC:
-        ret = ispriv ? PEM_write_bio_ECPrivateKey(bio_out, EVP_PKEY_get0_EC_KEY(key), cipher, (unsigned char *)passphrase, passphrase_len, NULL, NULL)
-              : PEM_write_bio_EC_PUBKEY(bio_out, EVP_PKEY_get0_EC_KEY(key));
+        ret = ispriv
+            ? PEM_write_bio_ECPrivateKey(bio_out,
+                                         EVP_PKEY_get0_EC_KEY(key),
+                                         cipher,
+                                         (unsigned char *)passphrase,
+                                         passphrase_len,
+                                         NULL,
+                                         NULL)
+            : PEM_write_bio_EC_PUBKEY(bio_out, EVP_PKEY_get0_EC_KEY(key));
         break;
 #endif
       default:
@@ -835,26 +919,36 @@ static LUA_FUNCTION(openssl_pkey_export)
     /* out put der */
     if (exraw == 0)
     {
-      ret = ispriv ?
-            (passphrase == NULL ? i2d_PrivateKey_bio(bio_out, key) :
-             i2d_PKCS8PrivateKey_bio(bio_out, key, cipher, (char *)passphrase, passphrase_len, NULL, NULL))
-            : i2d_PUBKEY_bio(bio_out, key);
+      ret = ispriv ? ( passphrase == NULL
+                     ? i2d_PrivateKey_bio(bio_out, key)
+                     : i2d_PKCS8PrivateKey_bio(bio_out, key,
+                                               cipher,
+                                               (char *)passphrase,
+                                               passphrase_len,
+                                               NULL,
+                                               NULL)
+                    )
+                  : i2d_PUBKEY_bio(bio_out, key);
     }
     else
     {
       /* output raw key, rsa, ec, dh, dsa */
       switch (EVP_PKEY_type(EVP_PKEY_id(key)))
       {
+#ifndef OPENSSL_NO_RSA
       case EVP_PKEY_RSA:
         ret = ispriv ? i2d_RSAPrivateKey_bio(bio_out, EVP_PKEY_get0_RSA(key))
                      : i2d_RSAPublicKey_bio(bio_out, EVP_PKEY_get0_RSA(key));
         break;
+#endif
+#ifndef OPENSSL_NO_DSA
       case EVP_PKEY_DSA:
       {
         ret = ispriv ? i2d_DSAPrivateKey_bio(bio_out, EVP_PKEY_get0_DSA(key))
                      : i2d_DSA_PUBKEY_bio(bio_out, EVP_PKEY_get0_DSA(key));
       }
       break;
+#endif
 #ifndef OPENSSL_NO_EC
       case EVP_PKEY_EC:
         ret = ispriv ? i2d_ECPrivateKey_bio(bio_out, EVP_PKEY_get0_EC_KEY(key))
@@ -914,11 +1008,15 @@ typedef struct ossl_item_st
 #endif
 static const OSSL_ITEM standard_name2type[] =
 {
+#ifdef EVP_PKEY_RSA
   { EVP_PKEY_RSA,     "RSA" },
+#endif
 #ifdef EVP_PKEY_RSA_PSS
   { EVP_PKEY_RSA_PSS, "RSA-PSS" },
 #endif
+#ifdef EVP_PKEY_EC
   { EVP_PKEY_EC,      "EC" },
+#endif
 #ifdef EVP_PKEY_ED25519
   { EVP_PKEY_ED25519, "ED25519" },
 #endif
@@ -988,7 +1086,7 @@ get key details as table
 static LUA_FUNCTION(openssl_pkey_parse)
 {
   EVP_PKEY *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
-  int typ = EVP_PKEY_type(EVP_PKEY_id(pkey));
+  int typ = EVP_PKEY_id(pkey);
 
   lua_newtable(L);
 
@@ -998,6 +1096,7 @@ static LUA_FUNCTION(openssl_pkey_parse)
 
   switch (typ)
   {
+#ifndef OPENSSL_NO_RSA
   case EVP_PKEY_RSA:
   {
     RSA* rsa = EVP_PKEY_get1_RSA(pkey);
@@ -1005,7 +1104,8 @@ static LUA_FUNCTION(openssl_pkey_parse)
     lua_setfield(L, -2, "rsa");
   }
   break;
-
+#endif
+#ifndef OPENSSL_NO_DSA
   case EVP_PKEY_DSA:
   {
     DSA* dsa = EVP_PKEY_get1_DSA(pkey);
@@ -1013,7 +1113,8 @@ static LUA_FUNCTION(openssl_pkey_parse)
     lua_setfield(L, -2, "dsa");
   }
   break;
-
+#endif
+#ifndef OPENSSL_NO_DH
   case EVP_PKEY_DH:
   {
     DH* dh = EVP_PKEY_get1_DH(pkey);
@@ -1021,11 +1122,24 @@ static LUA_FUNCTION(openssl_pkey_parse)
     lua_setfield(L, -2, "dh");
   }
   break;
-
+#endif
+#if OPENSSL_VERSION_NUMBER > 0x30000000
+#ifndef OPENSSL_NO_SM2
+  case EVP_PKEY_SM2:
+  {
+    const EC_KEY* ec = EVP_PKEY_get1_EC_KEY(pkey);
+    PUSH_OBJECT(ec, "openssl.ec_key");
+    lua_setfield(L, -2, "sm2");
+  }
+  break;
+#endif
+#endif
 #ifndef OPENSSL_NO_EC
   case EVP_PKEY_EC:
+#if OPENSSL_VERSION_NUMBER < 0x30000000
 #ifdef EVP_PKEY_SM2
   case EVP_PKEY_SM2:
+#endif
 #endif
   {
     const EC_KEY* ec = EVP_PKEY_get1_EC_KEY(pkey);
@@ -1160,7 +1274,7 @@ static LUA_FUNCTION(openssl_pkey_get_public)
   EVP_PKEY *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
   int ret = 0;
 
-  int len = i2d_PUBKEY(pkey, NULL);
+  size_t len = i2d_PUBKEY(pkey, NULL);
   if (len > 0)
   {
     unsigned char *buf = OPENSSL_malloc(len);
@@ -1202,11 +1316,23 @@ static LUA_FUNCTION(openssl_derive)
   EVP_PKEY_CTX *ctx;
   int ptype = EVP_PKEY_type(EVP_PKEY_id(pkey));
 
+#if !defined(OPENSSL_NO_DH) && !defined(OPENSSL_NO_EC)
   luaL_argcheck(L,
                 (ptype == EVP_PKEY_DH && EVP_PKEY_get0_DH(pkey)!=NULL ||
                  ptype == EVP_PKEY_EC && EVP_PKEY_get0_EC_KEY(pkey)!=NULL),
                 1,
                 "only support DH or EC private key");
+#elif !defined(OPENSSL_NO_DH)
+  luaL_argcheck(L,
+                ptype == EVP_PKEY_DH && EVP_PKEY_get0_DH(pkey)!=NULL,
+                1,
+                "only support DH or EC private key");
+#elif !defined(OPENSSL_NO_EC)
+  luaL_argcheck(L,
+                ptype == EVP_PKEY_EC && EVP_PKEY_get0_EC_KEY(pkey)!=NULL,
+                1,
+                "only support DH or EC private key");
+#endif
 
   luaL_argcheck(L,
                 ptype == EVP_PKEY_type(EVP_PKEY_id(peer)),
@@ -1291,8 +1417,11 @@ static LUA_FUNCTION(openssl_sign)
     size_t idlen = 0;
 
     const char* userId = luaL_optlstring (L, 4, SM2_DEFAULT_USERID, &idlen);
-
+#if OPENSSL_VERSION_NUMBER > 0x30000000
+    pctx = EVP_PKEY_CTX_new_from_name(NULL, "sm2", NULL);
+#else
     pctx = EVP_PKEY_CTX_new(pkey, NULL);
+#endif
     EVP_PKEY_CTX_set1_id(pctx, userId, idlen);
     EVP_MD_CTX_set_pkey_ctx(ctx, pctx);
   }
@@ -1375,7 +1504,11 @@ static LUA_FUNCTION(openssl_verify)
 
     const char* userId = luaL_optlstring (L, 5, SM2_DEFAULT_USERID, &idlen);
 
+#if OPENSSL_VERSION_NUMBER > 0x30000000
+    pctx = EVP_PKEY_CTX_new_from_name(NULL, "sm2", NULL);
+#else
     pctx = EVP_PKEY_CTX_new(pkey, NULL);
+#endif
     EVP_PKEY_CTX_set1_id(pctx, userId, idlen);
     EVP_MD_CTX_set_pkey_ctx(ctx, pctx);
   }
@@ -1833,7 +1966,7 @@ static int openssl_pkey_set_engine(lua_State *L)
   return 1;
 }
 
-#if defined(OPENSSL_SUPPORT_SM2) && OPENSSL_VERSION_NUMBER < 0x30000000L
+#if defined(OPENSSL_SUPPORT_SM2) && OPENSSL_VERSION_NUMBER < 0x30000000
 static int openssl_pkey_as_sm2(lua_State *L)
 {
   EVP_PKEY *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
@@ -1879,7 +2012,7 @@ static luaL_Reg pkey_funcs[] =
 
   {"derive",        openssl_derive},
 
-#if defined(OPENSSL_SUPPORT_SM2) && OPENSSL_VERSION_NUMBER < 0x30000000L
+#if defined(OPENSSL_SUPPORT_SM2) && OPENSSL_VERSION_NUMBER < 0x30000000
   {"as_sm2",        openssl_pkey_as_sm2},
 #endif
 
@@ -1916,7 +2049,7 @@ static const luaL_Reg R[] =
   {"verify",        openssl_verify},
   {"derive",        openssl_derive},
 
-#if defined(OPENSSL_SUPPORT_SM2) && OPENSSL_VERSION_NUMBER < 0x30000000L
+#if defined(OPENSSL_SUPPORT_SM2) && OPENSSL_VERSION_NUMBER < 0x30000000
   {"as_sm2",        openssl_pkey_as_sm2},
 #endif
 

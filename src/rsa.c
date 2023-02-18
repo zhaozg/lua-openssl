@@ -9,6 +9,7 @@
 #include <openssl/rsa.h>
 #include <openssl/engine.h>
 
+#if !defined(OPENSSL_NO_RSA)
 static LUA_FUNCTION(openssl_rsa_free)
 {
   RSA* rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");
@@ -437,3 +438,4 @@ int luaopen_rsa(lua_State *L)
 
   return 1;
 }
+#endif

@@ -73,7 +73,7 @@ function TestDigestMY:testList()
   assert(type(t)=='string')
   assert(#t==20)
 
-  if not helper.openssl3 then
+  if not helper.openssl3 then --FIXME: digest ctx copy
   local ctx1 = md:new()
   t1 = ctx1:info()
   assert(ctx1:update('ab'))

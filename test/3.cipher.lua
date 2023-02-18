@@ -59,10 +59,8 @@ function TestCipherCompat:testObject()
   assert(info.flags)
   assert(info.mode)
 
-  if helper.openssl3 then
-    assert(obj:ctrl(openssl.cipher.EVP_CTRL_INIT))
-  else
-    obj:ctrl(openssl.cipher.EVP_CTRL_INIT)
+  if helper.openss3 then
+  assert(obj:ctrl(openssl.cipher.EVP_CTRL_INIT))
   end
 
   obj:init(self.key, self.iv, true)

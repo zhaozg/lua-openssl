@@ -9,6 +9,7 @@
 #include <openssl/dh.h>
 #include <openssl/engine.h>
 
+#if !defined(OPENSSL_NO_DH)
 static LUA_FUNCTION(openssl_dh_free)
 {
   DH* dh = CHECK_OBJECT(1, DH, "openssl.dh");
@@ -190,3 +191,4 @@ int luaopen_dh(lua_State *L)
 
   return 1;
 }
+#endif

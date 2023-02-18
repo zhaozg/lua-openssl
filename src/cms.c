@@ -855,7 +855,9 @@ static luaL_Reg cms_ctx_funs[] =
 int luaopen_cms(lua_State *L)
 {
 #ifndef OPENSSL_NO_CMS
+#if OPENSSL_VERSION_NUMBER < 0x30000000
   ERR_load_CMS_strings();
+#endif
 
   auxiliar_newclass(L, "openssl.cms",  cms_ctx_funs);
 

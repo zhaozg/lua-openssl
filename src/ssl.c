@@ -15,6 +15,14 @@ ssl modules to create SSL/TLS server or client, send and recv data over SSL chan
 #include <openssl/ec.h>
 #include <openssl/dh.h>
 
+#if OPENSSL_VERSION_NUMBER > 0x30000000
+#ifndef SSL_get_peer_certificate
+#define SSL_get_peer_certificate SSL_get1_peer_certificate
+#endif
+#ifndef SSL_DEFAULT_CIPHER_LIST
+#define SSL_DEFAULT_CIPHER_LIST OSSL_default_cipher_list()
+#endif
+#endif
 
 /***
 create ssl_ctx object, which mapping to SSL_CTX in openssl.

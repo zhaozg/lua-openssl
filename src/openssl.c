@@ -516,8 +516,11 @@ LUALIB_API int luaopen_openssl(lua_State*L)
     OPENSSL_init_ssl(OPENSSL_INIT_ENGINE_ALL_BUILTIN
                     |OPENSSL_INIT_LOAD_CONFIG, NULL);
 #endif
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
     ENGINE_load_builtin_engines();
 #endif
+#endif
+
 #ifdef LOAD_ENGINE_CUSTOM
     LOAD_ENGINE_CUSTOM
 #endif

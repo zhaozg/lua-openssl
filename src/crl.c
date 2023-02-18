@@ -766,7 +766,13 @@ static LUA_FUNCTION(openssl_crl_parse)
   /* hash as used in CA directories to lookup cert by subject name */
   {
     char buf[32];
-    snprintf(buf, sizeof(buf), "%08lx", X509_NAME_hash(X509_CRL_get_issuer(crl)));
+#if OPENSSL_VERSION_NUMBER > 0x30000000
+    snprintf(buf, sizeof(buf), "%08lx",
+             X509_NAME_hash_ex(X509_CRL_get_issuer(crl), NULL, NULL, NULL));
+#else
+    snprintf(buf, sizeof(buf), "%08lx",
+             X509_NAME_hash(X509_CRL_get_issuer(crl)));
+#endif
     AUXILIAR_SET(L, -1, "hash", buf, string);
   }
 

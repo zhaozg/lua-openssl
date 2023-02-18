@@ -9,6 +9,7 @@
 #include <openssl/dsa.h>
 #include <openssl/engine.h>
 
+#if !defined(OPENSSL_NO_DSA)
 static LUA_FUNCTION(openssl_dsa_free)
 {
   DSA* dsa = CHECK_OBJECT(1, DSA, "openssl.dsa");
@@ -98,3 +99,4 @@ int luaopen_dsa(lua_State *L)
 
   return 1;
 }
+#endif

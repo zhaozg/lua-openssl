@@ -63,7 +63,7 @@ function TestPKCS7:testNew()
   der = assert(p7:export())
   assert(openssl.pkcs7.read(der, 'auto'))
 
-  if not helper.openssl3 then
+  if not helper.openssl3 then -- FIXME: pkcs7 export
   p7 = openssl.pkcs7.new()
   p7:add(ca.cacert)
   p7:add(cert)

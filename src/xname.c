@@ -180,7 +180,11 @@ get hash code of x509_name
 static int openssl_xname_hash(lua_State*L)
 {
   X509_NAME* xname = CHECK_OBJECT(1, X509_NAME, "openssl.x509_name");
+#if OPENSSL_VERSION_NUMBER < 0x30000000
   unsigned long hash = X509_NAME_hash(xname);
+#else
+  unsigned long hash = X509_NAME_hash_ex(xname, NULL, NULL, NULL);
+#endif
   lua_pushnumber(L, hash);
   return 1;
 };

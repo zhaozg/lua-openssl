@@ -7,7 +7,7 @@ ec module to create EC keys and do EC key processes.
 #include "private.h"
 #include <openssl/engine.h>
 
-#ifndef OPENSSL_NO_EC
+#if !defined(OPENSSL_NO_EC)
 
 static int openssl_push_group_asn1_flag(lua_State *L, int flag);
 static int openssl_push_point_conversion_form(lua_State *L, point_conversion_form_t form);

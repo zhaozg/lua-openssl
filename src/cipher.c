@@ -764,16 +764,21 @@ get infomation of evp_cipher_ctx object
 static LUA_FUNCTION(openssl_cipher_ctx_info)
 {
   EVP_CIPHER_CTX *ctx = CHECK_OBJECT(1, EVP_CIPHER_CTX, "openssl.evp_cipher_ctx");
+#if OPENSSL_VERSION_NUMBER > 0x30000000
+  const EVP_CIPHER *cipher = EVP_CIPHER_CTX_get0_cipher(ctx);
+#else
+  const EVP_CIPHER *cipher = EVP_CIPHER_CTX_cipher(ctx);
+#endif
   lua_newtable(L);
   AUXILIAR_SET(L, -1, "block_size", EVP_CIPHER_CTX_block_size(ctx), integer);
   AUXILIAR_SET(L, -1, "key_length", EVP_CIPHER_CTX_key_length(ctx), integer);
   AUXILIAR_SET(L, -1, "iv_length", EVP_CIPHER_CTX_iv_length(ctx), integer);
-  AUXILIAR_SET(L, -1, "flags", EVP_CIPHER_flags(EVP_CIPHER_CTX_cipher(ctx)), integer);
+  AUXILIAR_SET(L, -1, "flags", EVP_CIPHER_flags(cipher), integer);
   AUXILIAR_SET(L, -1, "nid", EVP_CIPHER_CTX_nid(ctx), integer);
   AUXILIAR_SET(L, -1, "type", EVP_CIPHER_CTX_mode(ctx), integer);
   AUXILIAR_SET(L, -1, "mode", EVP_CIPHER_CTX_type(ctx), integer);
 
-  AUXILIAR_SETOBJECT(L, EVP_CIPHER_CTX_cipher(ctx), "openssl.evp_cipher", -1, "cipher");
+  AUXILIAR_SETOBJECT(L, cipher, "openssl.evp_cipher", -1, "cipher");
   return 1;
 }
 

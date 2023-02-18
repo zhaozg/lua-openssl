@@ -483,7 +483,9 @@ static const luaL_Reg R[] =
 
 int luaopen_bn(lua_State *L)
 {
+#if OPENSSL_VERSION_NUMBER < 0x30000000
   ERR_load_BN_strings();
+#endif
   RAND_seed(MYVERSION, sizeof(MYVERSION));
 
   luaL_newmetatable(L, MYTYPE);

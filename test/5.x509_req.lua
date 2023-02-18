@@ -165,16 +165,16 @@ function TestCSR:testNew()
 
   openssl.errors()
 
-  -- FIXME: lua-openssl
-  if not helper.openssl3 then
+  if not helper.openssl3 then -- FIXME: lua-openssl, avoid foreign key dup
     req1 = assert(req2:dup())
     assert(req1:export()==req2:export())
   end
 
-  -- FIXME: memleaks
-  -- local tosign = assert(req1:sign())
-  -- local sig = assert(pkey:sign(tosign, 'sha256'))
-  -- assert(req1:sign(sig, 'sha256')==true)
+  --[[ FIXME: memleaks
+  local tosign = assert(req1:sign())
+  local sig = assert(pkey:sign(tosign, 'sha256'))
+  assert(req1:sign(sig, 'sha256')==true)
+  --]]
 end
 
 function TestCSR:testIO()

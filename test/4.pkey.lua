@@ -20,7 +20,7 @@ function TestPKEYMY:setUp()
     {'rsa',  2048,  3},  -- create rsa with give bits length and e
     {'ec',  'prime256v1'}
   }
-  if not helper.openssl3 then
+  if not helper.openssl3 then --FIXME: dsa, dh key generate
     self.genalg[#self.genalg+1] = {'dsa',  1024}
     self.genalg[#self.genalg+1] = {'dh',  1024}
   end

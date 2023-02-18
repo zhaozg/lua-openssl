@@ -6,18 +6,26 @@ local helper = require'helper'
 
 local _,_,opensslv = openssl.version(true)
 if opensslv >= 0x10101007 and (not helper.libressl) then
-  if helper.openssl3 then
+  if helper.openssl3 then --FIXME: get public key, sign, verify
     print('Support SM2, but bugs, skip')
     return
   else
     print('Support SM2')
   end
+
   testSM2 = {}
 
     function testSM2:testSM2()
         local nec =  {'ec','SM2'}
         local ec = pkey.new(unpack(nec))
-        local t = ec:parse().ec:parse(true) --make basic table
+        local t = ec:parse()
+        if helper.openssl3 then
+          lu.assertEquals(t.type, 'SM2')
+          t = t.sm2:parse(true) --make basic table
+        else
+          lu.assertEquals(t.type, 'EC')
+          t = t.ec:parse(true) --make basic table
+        end
         lu.assertEquals(type(t.curve_name), 'number')
         lu.assertStrContains(t.x.version, 'bn library')
         lu.assertStrContains(t.y.version, 'bn library')
@@ -77,10 +85,15 @@ if opensslv >= 0x10101007 and (not helper.libressl) then
         local nec =  {'ec','SM2'}
         local pri = pkey.new(unpack(nec))
         local pub = pri:get_public()
-        local msg = openssl.random(33)
+        local msg = openssl.random(32)
 
+        if helper.openssl3 then -- FIXME: sign with sm3
+          local sig = assert(pri:sign(msg, 'sm3'))
+          assert(pub:verify(msg, sig, 'sm3'))
+        else
         local sig = assert(pri:sign(msg, 'sha256'))
         assert(pub:verify(msg, sig, 'sha256'))
+        end
     end
 
     function testSM2:testSM2_SignVerify()
@@ -94,8 +107,8 @@ if opensslv >= 0x10101007 and (not helper.libressl) then
             assert(pub:as_sm2())
         end
 
-        local sig = assert(pri:sign(msg))
-        assert(pub:verify(msg, sig))
+        local sig = assert(pri:sign(msg, 'sm3'))
+        assert(pub:verify(msg, sig, 'sm3'))
     end
 else
   print('Skip SM2')
