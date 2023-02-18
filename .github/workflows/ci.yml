@@ -45,7 +45,7 @@ jobs:
       matrix:
         luarocks_version: [3.8.0]
         lua_version: [lua5.4]
-        openssl_version: [libressl-3.2.7, libressl-3.3.5, libressl-3.4.2]
+        openssl_version: [libressl-3.3.6, libressl-3.4.3, libressl-3.6.2]
     env:
       MACOSX_DEPLOYMENT_TARGET: 10.12
       LUAROCKS: ${{ matrix.luarocks_version }}

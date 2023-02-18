@@ -1585,7 +1585,7 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_set_time_cb)
   arg->cb_arg = luaL_ref(L, LUA_REGISTRYINDEX);
 
   openssl_valueset(L, ctx, time_cb_key);
-#if defined(LIBRESSL_VERSION_NUMBER)
+#if defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x3060000fL
   ctx->time_cb = openssl_time_cb;
   ctx->time_cb_data = L;
 #else
@@ -1734,7 +1734,7 @@ static LUA_FUNCTION(openssl_ts_verify_ctx_gc)
 {
   TS_VERIFY_CTX *ctx = CHECK_OBJECT(1, TS_VERIFY_CTX, "openssl.ts_verify_ctx");
   /* hack openssl bugs */
-#if OPENSSL_VERSION_NUMBER < 0x10002000L || defined(LIBRESSL_VERSION_NUMBER)
+#if defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x3050000fL
   if (ctx->store->references > 1)
     CRYPTO_add(&ctx->store->references, -1, CRYPTO_LOCK_X509_STORE);
   ctx->store = NULL;

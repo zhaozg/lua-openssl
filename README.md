@@ -30,7 +30,7 @@ The goal is to fully support openssl, include:
 
 This lua-openssl toolkit works with [Lua](https://www.lua.org/) 5.1/5.2/5.3/5.4
 or [luajit](http://luajit.org/) 2.0/2.1, and [OpenSSL](https://www.openssl.org/)
-0.9.8 or above 1.0.0 or [LibreSSL](https://www.libressl.org/).
+above 1.0.0 or [LibreSSL](https://www.libressl.org/) v3.3.6
 
 It is recommended to use the most up-to-date OpenSSL version because of the
 recent security fixes.

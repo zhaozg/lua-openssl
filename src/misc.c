@@ -212,9 +212,7 @@ static const char* sPadding[] =
   "no",
   "oaep",
   "x931",
-#if OPENSSL_VERSION_NUMBER > 0x10000000L
   "pss",
-#endif
   NULL,
 };
 
@@ -229,9 +227,7 @@ static int iPadding[] =
   RSA_NO_PADDING,
   RSA_PKCS1_OAEP_PADDING,
   RSA_X931_PADDING,
-#if OPENSSL_VERSION_NUMBER > 0x10000000L
   RSA_PKCS1_PSS_PADDING
-#endif
 };
 
 int openssl_get_padding(lua_State *L, int idx, const char *defval)

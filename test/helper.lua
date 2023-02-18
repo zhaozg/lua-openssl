@@ -4,6 +4,7 @@ local ca = require("utils.ca")
 local M = {}
 
 M.luaopensslv, M.luav, M.opensslv = openssl.version()
+M._luaopensslv, M._luav, M._opensslv = openssl.version(true)
 M.libressl = M.opensslv:find("^LibreSSL")
 M.openssl3 = M.opensslv:find("^OpenSSL 3")
 

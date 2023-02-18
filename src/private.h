@@ -156,14 +156,8 @@ unsigned char *TS_VERIFY_CTX_set_imprint(TS_VERIFY_CTX *ctx,
     unsigned char *hexstr,
     long len);
 
-#if OPENSSL_VERSION_NUMBER < 0x10002000L || defined(LIBRESSL_VERSION_NUMBER)
+#if defined(LIBRESSL_VERSION_NUMBER)
 int i2d_re_X509_tbs(X509 *x, unsigned char **pp);
-#endif
-#if OPENSSL_VERSION_NUMBER < 0x10002000L
-void X509_get0_signature(CONSTIFY_X509_get0 ASN1_BIT_STRING **psig,
-                         CONSTIFY_X509_get0 X509_ALGOR **palg,
-                         const X509 *x);
-int X509_get_signature_nid(const X509 *x);
 #endif
 
 const unsigned char *ASN1_STRING_get0_data(const ASN1_STRING *x);

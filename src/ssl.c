@@ -59,13 +59,6 @@ typedef enum{
   SSL_CTX_MAX_IDX
 }SSL_CTX_INDEX;
 
-#if OPENSSL_VERSION_NUMBER < 0x10002000L
-static int SSL_is_server(const SSL *s)
-{
-  return s->server;
-}
-#endif
-
 static int openssl_ssl_ctx_new(lua_State*L)
 {
   const char* meth = luaL_optstring(L, 1, DEFAULT_PROTOCOL);
@@ -2590,7 +2583,6 @@ static int openssl_ssl_set_debug(lua_State*L)
 #endif
 #endif
 
-#if OPENSSL_VERSION_NUMBER >= 0x0090819fL
 /***
 get ssl_ctx associate with current ssl
 @function ctx
@@ -2615,7 +2607,6 @@ static int openssl_ssl_ctx(lua_State*L)
   openssl_valueget(L, s, "ctx");
   return 1;
 }
-#endif
 
 /***
 get ssl session
@@ -2697,9 +2688,7 @@ static luaL_Reg ssl_funcs[] =
   {"session",    openssl_ssl_session},
 
   {"dup",       openssl_ssl_dup},
-#if OPENSSL_VERSION_NUMBER >= 0x0090819fL
   {"ctx",       openssl_ssl_ctx},
-#endif
   {"clear",     openssl_ssl_clear},
   {"want",      openssl_ssl_want},
   {"pending",   openssl_ssl_pending},
