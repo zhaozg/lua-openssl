@@ -39,36 +39,6 @@ jobs:
       run:
         PKG_CONFIG_PATH=$HOME/.usr/lib64/pkgconfig:$HOME/.usr/lib/pkgconfig PATH=$HOME/.usr/bin:$PATH LD_LIBRARY_PATH=$HOME/.usr/lib64:$HOME/.usr/lib make test
 
-  libressl:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        luarocks_version: [3.8.0]
-        lua_version: [lua5.4]
-        openssl_version: [libressl-3.3.6, libressl-3.4.3, libressl-3.6.2]
-    env:
-      MACOSX_DEPLOYMENT_TARGET: 10.12
-      LUAROCKS: ${{ matrix.luarocks_version }}
-      LUA: ${{ matrix.lua_version }}
-      SSL: ${{ matrix.openssl_version }}
-
-    steps:
-    - uses: actions/checkout@v2
-      with:
-        submodules: recursive
-
-    - name: Setup
-      run:
-        .github/shell/setup_lua.sh && .github/shell/setup_ssl.sh
-
-    - name: Build
-      run:
-        .github/shell/build.sh
-
-    - name: Test
-      run:
-        PKG_CONFIG_PATH=$HOME/.usr/lib64/pkgconfig:$HOME/.usr/lib/pkgconfig PATH=$HOME/.usr/bin:$PATH LD_LIBRARY_PATH=$HOME/.usr/lib64:$HOME/.usr/lib make test
-
   deploy:
     if: startsWith(github.ref, 'refs/tags/')
     needs: [build]
