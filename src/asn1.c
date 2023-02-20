@@ -397,7 +397,11 @@ static int openssl_asn1utctime_new(lua_State* L)
   else if (lua_isstring(L, 1))
     ret = ASN1_TIME_set_string(a, lua_tostring(L, 1));
   else if (lua_isnone(L, 1))
+  {
+    time_t t = time(NULL);
+    ASN1_TIME_set(a, t);
     ret = 1;
+  }
 
   if (ret == 1) PUSH_OBJECT(a, "openssl.asn1_time"); else ASN1_UTCTIME_free(a);
 
