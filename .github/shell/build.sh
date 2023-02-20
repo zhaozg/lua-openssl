@@ -1,8 +1,5 @@
 #!/bin/bash
 
-TAG=$(git describe --abbrev=0)
-NOW=$(git describe)
-
 PKG_CONFIG_PATH=$HOME/.usr/lib64/pkgconfig:$HOME/.usr/lib/pkgconfig
 
 if [[ "$RUNNER_OS" == "macOS" ]]; then

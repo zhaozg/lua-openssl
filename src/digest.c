@@ -458,6 +458,14 @@ static LUA_FUNCTION(openssl_digest_ctx_data)
   ret = 1;
 
 #else
+
+#if defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER > 0x3050000fL
+  lua_pushnil(L);
+  lua_pushstring(L, "NYI");
+  (void)ctx;
+
+  ret = 2;
+#else
   /* TODO: https://github.com/openssl/openssl/issues/14222#issuecomment-871151001 */
 #if OPENSSL_VERSION_NUMBER < 0x30000000
   const EVP_MD *md = EVP_MD_CTX_md(ctx);
@@ -466,12 +474,6 @@ static LUA_FUNCTION(openssl_digest_ctx_data)
 #endif
   size_t ctx_size;
 
-#if LIBRESSL_VERSION_NUMBER > 0x3050000fL
-  lua_pushnil(L);
-  lua_pushstring(L, "NYI");
-
-  ret = 2;
-#else
   if (lua_isnone(L, 2))
   {
     ctx_size = (size_t)EVP_MD_meth_get_app_datasize(md);
