@@ -836,7 +836,8 @@ static LUA_FUNCTION(openssl_bio_tell)
   return 1;
 }
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
+#if OPENSSL_VERSION_NUMBER < 0x10100000L \
+    || defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x3050000fL
 void BIO_info_callback(BIO *bio, int cmd, const char *argp,
                        int argi, long argl, long ret)
 {
@@ -965,7 +966,9 @@ static luaL_Reg bio_funs[] =
   {"reset", openssl_bio_reset},
   {"retry", openssl_bio_retry},
   {"pending", openssl_bio_pending},
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000L \
+    || defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x3050000fL
   {"set_callback", openssl_bio_set_callback},
 #endif
 

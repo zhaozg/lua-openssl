@@ -1318,8 +1318,8 @@ static LUA_FUNCTION(openssl_derive)
 
 #if !defined(OPENSSL_NO_DH) && !defined(OPENSSL_NO_EC)
   luaL_argcheck(L,
-                (ptype == EVP_PKEY_DH && EVP_PKEY_get0_DH(pkey)!=NULL ||
-                 ptype == EVP_PKEY_EC && EVP_PKEY_get0_EC_KEY(pkey)!=NULL),
+                (ptype == EVP_PKEY_DH && EVP_PKEY_get0_DH(pkey)!=NULL) ||
+                (ptype == EVP_PKEY_EC && EVP_PKEY_get0_EC_KEY(pkey)!=NULL),
                 1,
                 "only support DH or EC private key");
 #elif !defined(OPENSSL_NO_DH)
