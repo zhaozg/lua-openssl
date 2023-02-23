@@ -1,7 +1,7 @@
 lua-openssl toolkit - A free, MIT-licensed OpenSSL binding for Lua.
 
 [![CI](https://github.com/zhaozg/lua-openssl/actions/workflows/ci.yml/badge.svg)](https://github.com/zhaozg/lua-openssl/actions/workflows/ci.yml)
-[![Build status](https://ci.appveyor.com/api/projects/status/f8xchhlj035yqq88/branch/master?svg=true)](https://ci.appveyor.com/project/zhaozg/lua-openssl/branch/master)
+[![LibreSSL](https://github.com/zhaozg/lua-openssl/actions/workflows/libressl.yml/badge.svg)](https://github.com/zhaozg/lua-openssl/actions/workflows/libressl.yml)
 [![Coverage Status](https://coveralls.io/repos/github/zhaozg/lua-openssl/badge.svg?branch=master)](https://coveralls.io/github/zhaozg/lua-openssl?branch=master)
 [![luarocks](https://img.shields.io/luarocks/v/zhaozg/openssl)](https://luarocks.org/modules/zhaozg/openssl)
 
