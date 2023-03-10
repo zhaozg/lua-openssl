@@ -12,11 +12,6 @@ Openssl binding for Lua, provide openssl full function in lua.
 #include <openssl/engine.h>
 #include <openssl/opensslconf.h>
 #include "private.h"
-#if defined(__APPLE__)
-#include <stdatomic.h>
-#else
-#include "stdatomic.h"
-#endif
 
 /***
 get lua-openssl version
@@ -409,18 +404,8 @@ void CRYPTO_thread_setup(void);
 void CRYPTO_thread_cleanup(void);
 #endif
 
-static atomic_uint init =
-#ifdef _MSC_VER
-{ 0 };
-#else
-  ATOMIC_VAR_INIT(0);
-#endif
-
-static int luaclose_openssl(lua_State *L)
+static void openssl_finalize()
 {
-  if(atomic_fetch_sub(&init, 1) > 1)
-    return 0;
-
 #if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
 #if !defined(LIBRESSL_VERSION_NUMBER) && (OPENSSL_VERSION_NUMBER < 0x30000000L)
   FIPS_mode_set(0);
@@ -477,7 +462,6 @@ static int luaclose_openssl(lua_State *L)
 #endif /* OPENSSL_NO_STDIO or OPENSSL_NO_FP_API */
 #endif /* OPENSSL_NO_CRYPTO_MDEBUG */
 #endif /* OPENSSL_VERSION_NUMBER < 0x10100000L or defined(LIBRESSL_VERSION_NUMBER) */
-  return 0;
 }
 
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L
@@ -493,51 +477,69 @@ void openssl_atexit()
 }
 #endif
 
-LUALIB_API int luaopen_openssl(lua_State*L)
-{
-  if (atomic_fetch_add(&init, 1) == 0)
-  {
+static void openssl_initialize() {
 #if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
 #if defined(OPENSSL_THREADS)
-    CRYPTO_thread_setup();
+  CRYPTO_thread_setup();
 #endif
 
-    OpenSSL_add_all_ciphers();
-    OpenSSL_add_all_digests();
-    SSL_library_init();
+  OpenSSL_add_all_ciphers();
+  OpenSSL_add_all_digests();
+  SSL_library_init();
 
-    ERR_load_ERR_strings();
-    ERR_load_EVP_strings();
-    ERR_load_crypto_strings();
-    ERR_load_SSL_strings();
+  ERR_load_ERR_strings();
+  ERR_load_EVP_strings();
+  ERR_load_crypto_strings();
+  ERR_load_SSL_strings();
 #endif
 
 #ifndef OPENSSL_NO_ENGINE
 #if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
-    ENGINE_load_openssl();
+  ENGINE_load_openssl();
 #else
-    OPENSSL_init_crypto(OPENSSL_INIT_ENGINE_OPENSSL, NULL);
-    OPENSSL_init_ssl(OPENSSL_INIT_ENGINE_ALL_BUILTIN
-                    |OPENSSL_INIT_LOAD_CONFIG, NULL);
+  OPENSSL_init_crypto(OPENSSL_INIT_ENGINE_OPENSSL, NULL);
+  OPENSSL_init_ssl(OPENSSL_INIT_ENGINE_ALL_BUILTIN
+                  |OPENSSL_INIT_LOAD_CONFIG, NULL);
 #endif
 #if OPENSSL_VERSION_NUMBER < 0x30000000L
-    ENGINE_load_builtin_engines();
+  ENGINE_load_builtin_engines();
 #endif
 #endif
 
 #ifdef LOAD_ENGINE_CUSTOM
-    LOAD_ENGINE_CUSTOM
-#endif
-#if defined(OPENSSL_SYS_WINDOWS) && OPENSSL_VERSION_NUMBER < 0x10100000L
-    RAND_screen();
+  LOAD_ENGINE_CUSTOM
 #endif
 
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L
-    legacy = OSSL_PROVIDER_load(NULL, "legacy");
-    openssl = OSSL_PROVIDER_load(NULL, "default");
-    atexit(openssl_atexit);
+  legacy = OSSL_PROVIDER_load(NULL, "legacy");
+  openssl = OSSL_PROVIDER_load(NULL, "default");
+  atexit(openssl_atexit);
 #endif
-  }
+}
+
+#if defined(OPENSSL_THREADS) && !defined(OPENSSL_SYS_WIN32)
+#include <pthread.h>
+static pthread_once_t openssl_is_initialized = PTHREAD_ONCE_INIT;
+static pthread_once_t openssl_is_finalized = PTHREAD_ONCE_INIT;
+#endif
+
+static int luaclose_openssl(lua_State *L)
+{
+#if defined(OPENSSL_THREADS) && !defined(OPENSSL_SYS_WIN32)
+  (void) pthread_once(&openssl_is_finalized, openssl_finalize);
+#else
+  openssl_finalize();
+#endif
+  return 0;
+}
+
+LUALIB_API int luaopen_openssl(lua_State*L)
+{
+#if defined(OPENSSL_THREADS) && !defined(OPENSSL_SYS_WIN32)
+  (void) pthread_once(&openssl_is_initialized, openssl_initialize);
+#else
+  openssl_initialize();
+#endif
 
   lua_newtable(L);
 
