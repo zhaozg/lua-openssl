@@ -60,25 +60,34 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <openssl/opensslconf.h>
 #include <openssl/crypto.h>
 #ifdef OPENSSL_SYS_WIN32
 #include <windows.h>
+#else
+#define PTHREADS
+#endif
+
+#ifdef LINUX
+#include <typedefs.h>
 #endif
 #ifdef SOLARIS
 #include <synch.h>
 #include <thread.h>
+#undef PTHREADS
 #endif
 #ifdef IRIX
 #include <ulocks.h>
 #include <sys/prctl.h>
-#endif
-#ifdef PTHREADS
-#ifndef OPENSSL_SYS_WIN32
-#include <pthread.h>
-#endif
+#undef PTHREADS
 #endif
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
+#ifdef PTHREADS
+#include <pthread.h>
+#endif
+
+#if defined(OPENSSL_THREADS) && \
+  (OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER))
 
 void CRYPTO_thread_setup(void);
 void CRYPTO_thread_cleanup(void);
@@ -309,8 +318,7 @@ unsigned long irix_thread_id(void)
 #endif /* IRIX */
 
 /* Linux and a few others */
-#ifdef PTHREADS
-#if !defined(OPENSSL_SYS_WIN32) && (OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER))
+#if defined(PTHREADS) && (OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER))
 static pthread_mutex_t *lock_cs;
 static long *lock_count;
 
@@ -374,6 +382,5 @@ void CRYPTO_thread_setup(void)
   CRYPTO_set_locking_callback(pthreads_locking_callback);
 }
 #endif
-#endif /* PTHREADS */
 
 #endif

@@ -72,7 +72,7 @@ build = {
         "src/xstore.c"
       },
       incdirs = {"$(OPENSSL_DIR)/include", "deps/auxiliar", "deps/lua-compat/c-api"},
-      defines = {"PTHREADS"},
+      defines = {},
       libraries = {"ssl", "crypto"},
     }
   },
