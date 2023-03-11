@@ -8,10 +8,6 @@ cipher module do encrypt or decrypt base on OpenSSL EVP API.
 #include "openssl.h"
 #include "private.h"
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-#define EVP_CIPHER_CTX_reset EVP_CIPHER_CTX_init
-#endif
-
 /***
 list all support cipher algs
 

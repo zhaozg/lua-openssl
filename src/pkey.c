@@ -12,10 +12,6 @@ pkey module to create and process public or private key, do asymmetric key opera
 #include <openssl/dsa.h>
 #include <openssl/engine.h>
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
-#define EVP_CIPHER_CTX_reset EVP_CIPHER_CTX_init
-#endif
-
 static int evp_pkey_name2type(const char *name);
 static const char *evp_pkey_type2name(int type);
 
