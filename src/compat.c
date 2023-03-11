@@ -401,6 +401,16 @@ int DH_set0_pqg(DH *dh, BIGNUM *p, BIGNUM *q, BIGNUM *g)
 }
 #endif
 
+int EVP_CIPHER_CTX_reset(EVP_CIPHER_CTX *ctx)
+{
+  int ret;
+
+  ret = EVP_CIPHER_CTX_cleanup(ctx);
+  if (!ret)
+    EVP_CIPHER_CTX_init(ctx);
+  return ret;
+}
+
 EVP_MD_CTX *EVP_MD_CTX_new(void)
 {
   return OPENSSL_malloc(sizeof(EVP_MD_CTX));
