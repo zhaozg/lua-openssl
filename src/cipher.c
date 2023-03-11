@@ -97,8 +97,9 @@ static LUA_FUNCTION(openssl_evp_encrypt)
       memcpy(evp_iv, iv, iv_len);
     }
 
-    EVP_CIPHER_CTX_reset(c);
-    ret = EVP_EncryptInit_ex(c, cipher, e, (const byte*)evp_key, iv_len > 0 ? (const byte*)evp_iv : NULL);
+    ret = EVP_EncryptInit_ex(c, cipher, e,
+                             (const byte*)evp_key,
+                             iv_len > 0 ? (const byte*)evp_iv : NULL);
     if (ret == 1)
     {
       ret = EVP_CIPHER_CTX_set_padding(c, pad);
@@ -171,8 +172,9 @@ static LUA_FUNCTION(openssl_evp_decrypt)
       memcpy(evp_iv, iv, iv_len);
     }
 
-    EVP_CIPHER_CTX_reset(c);
-    ret = EVP_DecryptInit_ex(c, cipher, e, key ? (const byte*)evp_key : NULL, iv_len > 0 ? (const byte*)evp_iv : NULL);
+    ret = EVP_DecryptInit_ex(c, cipher, e,
+                             key ? (const byte*)evp_key : NULL,
+                             iv_len > 0 ? (const byte*)evp_iv : NULL);
     if (ret == 1)
     {
       ret = EVP_CIPHER_CTX_set_padding(c, pad);
@@ -254,8 +256,10 @@ static LUA_FUNCTION(openssl_evp_cipher)
       memcpy(evp_iv, iv, iv_len);
     }
 
-    EVP_CIPHER_CTX_reset(c);
-    ret = EVP_CipherInit_ex(c, cipher, e, (const byte*)evp_key, iv_len > 0 ? (const byte*)evp_iv : NULL, enc);
+    ret = EVP_CipherInit_ex(c, cipher, e,
+                            (const byte*)evp_key,
+                            iv_len > 0 ? (const byte*)evp_iv : NULL,
+                            enc);
     if (ret == 1)
     {
       ret = EVP_CIPHER_CTX_set_padding(c, pad);
@@ -337,8 +341,10 @@ static LUA_FUNCTION(openssl_cipher_new)
       memcpy(evp_iv, iv, iv_len);
     }
     c = EVP_CIPHER_CTX_new();
-    EVP_CIPHER_CTX_reset(c);
-    if (!EVP_CipherInit_ex(c, cipher, e, key ? (const byte*)evp_key : NULL, iv_len > 0 ? (const byte*)evp_iv : NULL, enc))
+    if (!EVP_CipherInit_ex(c, cipher, e,
+                           key ? (const byte*)evp_key : NULL,
+                           iv_len > 0 ? (const byte*)evp_iv : NULL,
+                           enc))
     {
       luaL_error(L, "EVP_CipherInit_ex failed, please check openssl error");
     }
@@ -392,7 +398,6 @@ static LUA_FUNCTION(openssl_cipher_encrypt_new)
       memcpy(evp_iv, iv, iv_len);
     }
     c = EVP_CIPHER_CTX_new();
-    EVP_CIPHER_CTX_reset(c);
     ret = EVP_EncryptInit_ex(c, cipher, e,
                              key ? (const byte*)evp_key : NULL,
                              iv_len > 0 ? (const byte*)evp_iv : NULL);
@@ -452,7 +457,6 @@ static LUA_FUNCTION(openssl_cipher_decrypt_new)
       memcpy(evp_iv, iv, iv_len);
     }
     c = EVP_CIPHER_CTX_new();
-    EVP_CIPHER_CTX_reset(c);
     ret = EVP_DecryptInit_ex(c, cipher, e,
                              key ? (const byte*)evp_key : NULL,
                              iv_len > 0 ? (const byte*)evp_iv : NULL);
