@@ -51,7 +51,7 @@ function TestOCSP:testAll()
   local der = assert(oreq:export(false))
   assert(type(der)=='string')
 
-  -- avoid resign a ocsp request object, or memleaks
+  -- avoid resign a ocsp request object
   oreq = assert(ocsp.request_read(der, false))
   assert(oreq:sign(ocert, okey))
   oreq = assert(ocsp.request_read(der, false))

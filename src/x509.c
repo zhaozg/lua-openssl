@@ -374,7 +374,7 @@ int openssl_push_general_name(lua_State*L, const GENERAL_NAME* general_name)
     lua_setfield(L, -2, "type");
     break;
   case GEN_X400:
-#if OPENSSL_VERSION_NUMBER >= 0x1010114fL && !defined(LIBRESSL_VERSION_NUMBER)
+#if OPENSSL_VERSION_NUMBER >= 0x1010100fL && !defined(LIBRESSL_VERSION_NUMBER)
     PUSH_ASN1_STRING(L, general_name->d.x400Address);
 #else
     openssl_push_asn1type(L, general_name->d.x400Address);
