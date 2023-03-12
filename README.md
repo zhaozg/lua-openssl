@@ -160,6 +160,11 @@ I try to use [luaunit](https://github.com/bluebird75/luaunit) to write unit
     make install
     make clean
 
+If you want to make lua-openssl static link with openssl, please given
+`OPENSSL_STATIC` flags, default will do dynamic link.
+
+    make OPENSSL_STAITC=1
+
 ### Howto 2: Build on Windows with MSVC.
 
 Before building, please change the setting in the config.win file.

@@ -45,7 +45,12 @@ endif
 
 #OpenSSL auto detect
 OPENSSL_CFLAGS	?= $(shell $(PKG_CONFIG) openssl --cflags)
+ifeq (${OPENSSL_STATIC},)
 OPENSSL_LIBS	?= $(shell $(PKG_CONFIG) openssl --static --libs)
+else
+OPENSSL_LIBDIR  ?= $(shell $(PKG_CONFIG) openssl --variable=libdir)
+OPENSSL_LIBS    ?= $(OPENSSL_LIBDIR)/libcrypto.a $(OPENSSL_LIBDIR)/libssl.a
+endif
 
 TARGET  = $(MAKECMDGOALS)
 ifeq (coveralls, ${TARGET})
