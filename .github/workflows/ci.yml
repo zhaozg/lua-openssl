@@ -79,7 +79,8 @@ jobs:
     - name: Luarocks Release
       # lua-cjson is required for luarocks upload
       run: |
-        $HOME/.usr/bin/luarocks install lua-cjson
-        $HOME/.usr/bin/luarocks build
-        $HOME/.usr/bin/luarocks test
-        $HOME/.usr/bin/luarocks upload openssl-${{ steps.get_version.outputs.VERSION }}.rockspec --api-key=${{ secrets.LUAROCKS_TOKEN }}
+        export PATH=$HOME/.usr/bin:$PATH
+        luarocks install lua-cjson
+        luarocks build
+        luarocks test
+        luarocks upload openssl-${{ steps.get_version.outputs.VERSION }}.rockspec --api-key=${{ secrets.LUAROCKS_TOKEN }}
