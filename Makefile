@@ -178,14 +178,16 @@ valgrind: all
 
 asan: all
 ifneq (, $(findstring apple, $(SYS)))
-	export ASAN_LIB=$(ASAN_LIB) && \
 	cd test && LUA_CPATH=$(shell pwd)/?.so \
+	ASAN_LIB=$(ASAN_LIB) \
+	LSAN_OPTIONS=suppressions=${shell pwd}/.github/asan.supp \
 	DYLD_INSERT_LIBRARIES=$(ASAN_LIB) \
 	$(LUA) test.lua && cd ..
 endif
 ifneq (, $(findstring linux, $(SYS)))
-	export ASAN_LIB=$(ASAN_LIB) && \
 	cd test && LUA_CPATH=$(shell pwd)/?.so \
+	ASAN_LIB=$(ASAN_LIB) \
+	LSAN_OPTIONS=suppressions=${shell pwd}/.github/asan.supp \
 	LD_PRELOAD=$(ASAN_LIB) \
 	$(LUA) test.lua && cd ..
 endif

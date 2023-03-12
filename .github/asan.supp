@@ -5,3 +5,4 @@ leak:DSA_generate_parameters_ex
 # MacOS
 leak:_objc_init
 leak:localtime_r
+leak:pthread_once
