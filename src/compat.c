@@ -413,7 +413,10 @@ int EVP_CIPHER_CTX_reset(EVP_CIPHER_CTX *ctx)
 
 EVP_MD_CTX *EVP_MD_CTX_new(void)
 {
-  return OPENSSL_malloc(sizeof(EVP_MD_CTX));
+  EVP_MD_CTX *ctx = OPENSSL_malloc(sizeof(EVP_MD_CTX));
+  if (ctx)
+    memset(ctx, 0, sizeof(*ctx));
+  return ctx;
 }
 
 int EVP_MD_CTX_reset(EVP_MD_CTX *ctx)
