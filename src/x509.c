@@ -1511,7 +1511,7 @@ int luaopen_x509(lua_State *L)
   openssl_register_xname(L);
   lua_setfield(L, -2, "name");
   openssl_register_xattribute(L);
-  lua_setfield(L, -2, "attribute");
+  lua_setfield(L, -2, "attr");
   openssl_register_xextension(L);
   lua_setfield(L, -2, "extension");
   openssl_register_xstore(L);
