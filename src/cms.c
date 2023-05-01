@@ -749,7 +749,6 @@ static int openssl_cms_data(lua_State *L)
   CMS_ContentInfo *cms = CHECK_OBJECT(1, CMS_ContentInfo, "openssl.cms");
   unsigned int flags = luaL_optint(L, 2, 0);
   BIO *out = BIO_new(BIO_s_mem());
-  /* TODO: check type is data */
 
   int ret = CMS_data(cms, out, flags);
   if (ret==1)
