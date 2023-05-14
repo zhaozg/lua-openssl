@@ -517,29 +517,21 @@ static void openssl_initialize() {
 #endif
 }
 
-#if defined(OPENSSL_THREADS) && !defined(OPENSSL_SYS_WIN32)
-#include <pthread.h>
-static pthread_once_t openssl_is_initialized = PTHREAD_ONCE_INIT;
-static pthread_once_t openssl_is_finalized = PTHREAD_ONCE_INIT;
-#endif
+static int _guard = 0;
 
 static int luaclose_openssl(lua_State *L)
 {
-#if defined(OPENSSL_THREADS) && !defined(OPENSSL_SYS_WIN32)
-  (void) pthread_once(&openssl_is_finalized, openssl_finalize);
-#else
+  if(--_guard)
+    return 0;
   openssl_finalize();
-#endif
   return 0;
 }
 
 LUALIB_API int luaopen_openssl(lua_State*L)
 {
-#if defined(OPENSSL_THREADS) && !defined(OPENSSL_SYS_WIN32)
-  (void) pthread_once(&openssl_is_initialized, openssl_initialize);
-#else
-  openssl_initialize();
-#endif
+  if(_guard++ == 0) {
+    openssl_initialize();
+  }
 
   lua_newtable(L);
 
