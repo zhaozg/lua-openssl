@@ -1,9 +1,9 @@
 /***
-x509.attr module to mapping X509_ATTRIBUTE to lua object.
+x509.attribute module to mapping X509_ATTRIBUTE to lua object.
 
-@module x509.attr
+@module x509.attribute
 @usage
-  attr = require('openssl').x509.attr
+  attr = require('openssl').x509.attribute
 */
 #include "openssl.h"
 #include "private.h"
