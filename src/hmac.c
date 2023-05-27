@@ -138,6 +138,52 @@ const OSSL_PARAM *EVP_MAC_settable_ctx_params(const EVP_MAC *mac);
 
 #endif
 
+const EVP_MD *is_digest(lua_State *L, int idx)
+{
+  const EVP_MD *md = NULL;
+  switch (lua_type(L, idx))
+  {
+  case LUA_TSTRING:
+    md = EVP_get_digestbyname(lua_tostring(L, idx));
+    break;
+  case LUA_TNUMBER:
+    md = EVP_get_digestbynid(lua_tointeger(L, idx));
+    break;
+  case LUA_TUSERDATA:
+    if (auxiliar_getclassudata(L, "openssl.asn1_object", idx))
+      md = EVP_get_digestbyobj(
+        CHECK_OBJECT(idx, ASN1_OBJECT, "openssl.asn1_object"));
+    else if (auxiliar_getclassudata(L, "openssl.evp_digest", idx))
+      md = CHECK_OBJECT(idx, EVP_MD, "openssl.evp_digest");
+    break; 
+  }
+  return md;
+}
+
+const EVP_CIPHER *is_cipher(lua_State *L, int idx)
+{
+  const EVP_CIPHER *cipher = NULL;
+
+  switch (lua_type(L, idx))
+  {
+  case LUA_TSTRING:
+    cipher = EVP_get_cipherbyname(lua_tostring(L, idx));
+    break;
+  case LUA_TNUMBER:
+    cipher = EVP_get_cipherbynid(lua_tointeger(L, idx));
+    break;
+  case LUA_TUSERDATA:
+    if (auxiliar_getclassudata(L, "openssl.asn1_object", idx))
+      cipher = EVP_get_cipherbyobj(
+        CHECK_OBJECT(idx, ASN1_OBJECT, "openssl.asn1_object"));
+    else if (auxiliar_getclassudata(L, "openssl.evp_cipher", idx))
+      cipher = CHECK_OBJECT(idx, EVP_CIPHER, "openssl.evp_cipher");
+    break;
+  }
+
+  return cipher;
+}
+
 /***
 get hamc_ctx object
 
@@ -156,16 +202,42 @@ static int openssl_hmac_ctx_new(lua_State *L)
   OSSL_PARAM params[2];
   size_t params_n = 0;
   size_t l;
+  EVP_MAC *mac = NULL;  
+  const EVP_CIPHER *type_c = NULL;
 
-  const EVP_MD *type = get_digest(L, 1, NULL);
+  const EVP_MD *type_md = is_digest(L, 1);
+  if (NULL == type_md)
+  {
+    type_c = is_cipher(L, 1);
+    if (NULL == type_c)
+    {
+      luaL_argerror(
+        L, 1,
+        "must be a string, NID number or asn1_object identity digest/cipher method");
+    }
+  }
   const char *k = luaL_checklstring(L, 2, &l);
   ENGINE* e = lua_isnoneornil(L, 3) ? NULL : CHECK_OBJECT(3, ENGINE, "openssl.engine");
-  EVP_MAC *mac = EVP_MAC_fetch(NULL, "hmac", NULL);
+  if (NULL != type_md)
+  {
+    mac = EVP_MAC_fetch(NULL, "hmac", NULL);
+  }
+  else
+  {
+    mac = EVP_MAC_fetch(NULL, "cmac", NULL);
+  }
   EVP_MAC_CTX *c = EVP_MAC_CTX_new(mac);
   (void)e;
-
-  params[params_n++] =
-    OSSL_PARAM_construct_utf8_string("digest", (char*)EVP_MD_name(type), 0);
+  if (NULL != type_md)
+  {
+    params[params_n++] =
+      OSSL_PARAM_construct_utf8_string("digest", (char *)EVP_MD_name(type_md), 0);
+  }
+  else
+  {
+    params[params_n++] = 
+      OSSL_PARAM_construct_utf8_string("cipher", (char *)EVP_CIPHER_name(type_c), 0);
+  }
   params[params_n] = OSSL_PARAM_construct_end();
 
   ret = EVP_MAC_init(c, k, l, params);
