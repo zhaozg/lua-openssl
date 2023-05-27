@@ -155,7 +155,7 @@ const EVP_MD *is_digest(lua_State *L, int idx)
         CHECK_OBJECT(idx, ASN1_OBJECT, "openssl.asn1_object"));
     else if (auxiliar_getclassudata(L, "openssl.evp_digest", idx))
       md = CHECK_OBJECT(idx, EVP_MD, "openssl.evp_digest");
-    break; 
+    break;
   }
   return md;
 }
@@ -202,49 +202,47 @@ static int openssl_hmac_ctx_new(lua_State *L)
   OSSL_PARAM params[2];
   size_t params_n = 0;
   size_t l;
-  EVP_MAC *mac = NULL;  
-  const EVP_CIPHER *type_c = NULL;
+  const char *k;
+  const EVP_MD *type_md;
+  const EVP_CIPHER *type_c;
+  EVP_MAC *mac;
+  EVP_MAC_CTX *ctx;
 
-  const EVP_MD *type_md = is_digest(L, 1);
-  if (NULL == type_md)
+  type_md = is_digest(L, 1);
+  type_c = is_cipher(L, 1);
+
+  if (type_md == NULL && type_c == NULL)
   {
-    type_c = is_cipher(L, 1);
-    if (NULL == type_c)
-    {
-      luaL_argerror(
-        L, 1,
-        "must be a string, NID number or asn1_object identity digest/cipher method");
-    }
+    luaL_argerror(
+      L, 1,
+      "must be a string, NID number or asn1_object identity digest/cipher method");
   }
-  const char *k = luaL_checklstring(L, 2, &l);
-  ENGINE* e = lua_isnoneornil(L, 3) ? NULL : CHECK_OBJECT(3, ENGINE, "openssl.engine");
-  if (NULL != type_md)
+
+  k = luaL_checklstring(L, 2, &l);
+
+  if (type_md)
   {
     mac = EVP_MAC_fetch(NULL, "hmac", NULL);
-  }
-  else
-  {
-    mac = EVP_MAC_fetch(NULL, "cmac", NULL);
-  }
-  EVP_MAC_CTX *c = EVP_MAC_CTX_new(mac);
-  (void)e;
-  if (NULL != type_md)
-  {
     params[params_n++] =
       OSSL_PARAM_construct_utf8_string("digest", (char *)EVP_MD_name(type_md), 0);
   }
   else
   {
-    params[params_n++] = 
+    mac = EVP_MAC_fetch(NULL, "cmac", NULL);
+    params[params_n++] =
       OSSL_PARAM_construct_utf8_string("cipher", (char *)EVP_CIPHER_name(type_c), 0);
   }
   params[params_n] = OSSL_PARAM_construct_end();
 
-  ret = EVP_MAC_init(c, k, l, params);
+  ctx= EVP_MAC_CTX_new(mac);
+  ret = EVP_MAC_init(ctx, k, l, params);
   if (ret==1)
-    PUSH_OBJECT(c, "openssl.mac_ctx");
+    PUSH_OBJECT(ctx, "openssl.mac_ctx");
   else
+  {
     ret = openssl_pushresult(L, ret);
+    EVP_MAC_CTX_free(ctx);
+  }
   EVP_MAC_free(mac);
 #else
   const EVP_MD *type = get_digest(L, 1, NULL);

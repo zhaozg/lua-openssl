@@ -2,6 +2,9 @@ local lu = require 'luaunit'
 
 local openssl = require 'openssl'
 local hmac = require'openssl'.hmac
+if not hmac.mac then
+  return
+end
 
 TestCMACCompat = {}
 function TestCMACCompat:setUp()
