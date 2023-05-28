@@ -1,25 +1,25 @@
 local lu = require 'luaunit'
 
 local openssl = require 'openssl'
-local hmac = require'openssl'.hmac
-if not hmac.mac then
+local mac = require'openssl'.mac
+if not mac then
   return
 end
 
-TestCMACCompat = {}
-function TestCMACCompat:setUp()
+TestMAC = {}
+function TestMAC:setUp()
   self.msg = '\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F'
   self.alg = 'aes-128-cbc'
   self.key = '\x0F\x0E\x0D\x0C\x0B\x0A\x00\x08\x07\x06\x05\x04\x03\x02\x01\x00'
 end
 
-function TestCMACCompat:tearDown()
+function TestMAC:tearDown()
 end
 
-function TestCMACCompat:testMac()
+function TestMAC:testCMAC()
   local a, b ,c
 
-  a = assert(hmac.new(self.alg, self.key))
+  a = assert(mac.ctx(self.alg, self.key))
   b = a:final(self.msg)
   lu.assertEquals(b, '21a805600f5a650854142d7ec00a4224')
 
