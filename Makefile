@@ -58,6 +58,8 @@ ifeq (coveralls, ${TARGET})
   LDFLAGS	+=-g -fprofile-arcs
 endif
 
+# asan {{{
+
 ifeq (asan, ${TARGET})
 ifneq (, $(findstring apple, $(SYS)))
   ASAN_LIB       = $(shell dirname $(shell dirname $(shell clang -print-libgcc-file-name)))/darwin/libclang_rt.asan_osx_dynamic.dylib
@@ -67,10 +69,31 @@ ifneq (, $(findstring linux, $(SYS)))
   ASAN_LIB       = $(shell dirname $(shell cc -print-libgcc-file-name))/libasan.so
   LDFLAGS       +=-g -fsanitize=address -lubsan
 endif
-  CC            ?= clang
-  LD            ?= clang
-  CFLAGS	+=-g -O0 -fsanitize=address,undefined
+CC            ?= clang
+LD            ?= clang
+CFLAGS	+=-g -O0 -fsanitize=address,undefined
 endif
+
+# asan }}}
+
+# tsan {{{
+
+ifeq (tsan, ${TARGET})
+ifneq (, $(findstring apple, $(SYS)))
+  ASAN_LIB       = $(shell dirname $(shell dirname $(shell clang -print-libgcc-file-name)))/darwin/libclang_rt.tsan_osx_dynamic.dylib
+  LDFLAGS       +=-g -fsanitize=thread
+endif
+
+ifneq (, $(findstring linux, $(SYS)))
+  ASAN_LIB       = $(shell dirname $(shell cc -print-libgcc-file-name))/libtsan.so
+  LDFLAGS       +=-g -fsanitize=thread -lubsan -ltsan
+endif
+CC            ?= clang
+LD            ?= clang
+CFLAGS	+=-g -O0 -fsanitize=thread
+endif
+
+# tsan }}}
 
 ifeq (debug, ${TARGET})
   CFLAGS	+=-g -Og
@@ -177,6 +200,22 @@ valgrind: all
 	--child-silent-after-fork=yes $(LUA) test.lua && cd ..
 
 asan: all
+ifneq (, $(findstring apple, $(SYS)))
+	cd test && LUA_CPATH=$(shell pwd)/?.so \
+	ASAN_LIB=$(ASAN_LIB) \
+	LSAN_OPTIONS=suppressions=${shell pwd}/.github/asan.supp \
+	DYLD_INSERT_LIBRARIES=$(ASAN_LIB) \
+	$(LUA) test.lua && cd ..
+endif
+ifneq (, $(findstring linux, $(SYS)))
+	cd test && LUA_CPATH=$(shell pwd)/?.so \
+	ASAN_LIB=$(ASAN_LIB) \
+	LSAN_OPTIONS=suppressions=${shell pwd}/.github/asan.supp \
+	LD_PRELOAD=$(ASAN_LIB) \
+	$(LUA) test.lua && cd ..
+endif
+
+tsan: all
 ifneq (, $(findstring apple, $(SYS)))
 	cd test && LUA_CPATH=$(shell pwd)/?.so \
 	ASAN_LIB=$(ASAN_LIB) \
