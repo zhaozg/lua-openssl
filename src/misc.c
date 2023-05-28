@@ -46,7 +46,7 @@ int  bio_is_der(BIO* bio)
   return 0;
 }
 
-const EVP_MD* get_digest(lua_State* L, int idx, const char* def_alg)
+const EVP_MD* opt_digest(lua_State* L, int idx, const char* alg)
 {
   const EVP_MD* md = NULL;
   switch (lua_type(L, idx))
@@ -65,12 +65,12 @@ const EVP_MD* get_digest(lua_State* L, int idx, const char* def_alg)
     break;
   case LUA_TNONE:
   case LUA_TNIL:
-    if (def_alg != NULL)
-      md = EVP_get_digestbyname(def_alg);
+    if (alg != NULL)
+      md = EVP_get_digestbyname(alg);
     break;
   }
 
-  if (md==NULL)
+  if (alg != NULL && md==NULL)
   {
     luaL_argerror(L, idx, "must be a string, NID number or asn1_object identity digest method");
   }
@@ -78,7 +78,15 @@ const EVP_MD* get_digest(lua_State* L, int idx, const char* def_alg)
   return md;
 }
 
-const EVP_CIPHER* get_cipher(lua_State*L, int idx, const char* def_alg)
+const EVP_MD* get_digest(lua_State* L, int idx, const char* alg)
+{
+  const EVP_MD* md = opt_digest(L, idx, alg);
+  if (md== NULL)
+    luaL_argerror(L, idx, "must be a string, NID number or asn1_object identity digest method");
+  return md;
+}
+
+const EVP_CIPHER* opt_cipher(lua_State*L, int idx, const char* alg)
 {
   const EVP_CIPHER* cipher = NULL;
 
@@ -98,15 +106,23 @@ const EVP_CIPHER* get_cipher(lua_State*L, int idx, const char* def_alg)
     break;
   case LUA_TNONE:
   case LUA_TNIL:
-    if (def_alg != NULL)
-      cipher = EVP_get_cipherbyname(def_alg);
+    if (alg != NULL)
+      cipher = EVP_get_cipherbyname(alg);
     break;
   }
 
-  if (cipher==NULL)
+  if (alg != NULL && cipher==NULL)
     luaL_argerror(L, idx, "must be a string, NID number or asn1_object identity cipher method");
 
   return cipher;
+}
+
+const EVP_CIPHER* get_cipher(lua_State*L, int idx, const char* alg)
+{
+  const EVP_CIPHER* c = opt_cipher(L, idx, alg);
+  if (c==NULL)
+    luaL_argerror(L, idx, "must be a string, NID number or asn1_object identity cipher method");
+  return c;
 }
 
 BIGNUM *BN_get(lua_State *L, int i)

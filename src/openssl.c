@@ -561,8 +561,10 @@ LUALIB_API int luaopen_openssl(lua_State*L)
   luaopen_hmac(L);
   lua_setfield(L, -2, "hmac");
 
-  luaopen_hmac(L);
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
+  luaopen_mac(L);
   lua_setfield(L, -2, "mac");
+#endif
 
   luaopen_pkey(L);
   lua_setfield(L, -2, "pkey");
