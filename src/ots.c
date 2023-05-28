@@ -1734,7 +1734,7 @@ static LUA_FUNCTION(openssl_ts_verify_ctx_gc)
 {
   TS_VERIFY_CTX *ctx = CHECK_OBJECT(1, TS_VERIFY_CTX, "openssl.ts_verify_ctx");
 #if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
-  if (ctx->store != NULLL && ctx->store->references > 1)
+  if (ctx->store != NULL && ctx->store->references > 1)
     CRYPTO_add(&ctx->store->references, -1, CRYPTO_LOCK_X509_STORE);
   X509_STORE_free(ctx->store);
   ctx->store = NULL;
