@@ -1733,10 +1733,10 @@ static int openssl_ts_verify_ctx_imprint(lua_State*L)
 static LUA_FUNCTION(openssl_ts_verify_ctx_gc)
 {
   TS_VERIFY_CTX *ctx = CHECK_OBJECT(1, TS_VERIFY_CTX, "openssl.ts_verify_ctx");
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || \
+  (defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x3060000fL)
   if (ctx->store != NULL && ctx->store->references > 1)
     CRYPTO_add(&ctx->store->references, -1, CRYPTO_LOCK_X509_STORE);
-  X509_STORE_free(ctx->store);
   ctx->store = NULL;
 #endif
   TS_VERIFY_CTX_cleanup(ctx);
