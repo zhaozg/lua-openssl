@@ -12,8 +12,16 @@ if not ok then
 end
 
 TestSSL = {}
-local LUA = arg and arg[-1] or nil
-assert(LUA)
+local LUA
+if arg then
+  local i = 0
+  repeat
+    LUA = arg[i]
+    print(i, LUA)
+    i = i - 1
+  until not arg[i]
+  assert(LUA)
+end
 
 if uv then
 

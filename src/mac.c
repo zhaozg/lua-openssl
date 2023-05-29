@@ -159,8 +159,11 @@ static int openssl_mac_ctx_new(lua_State *L)
   EVP_MAC *mac;
   EVP_MAC_CTX *ctx;
 
-  type_md = opt_digest(L, 1, NULL);
   type_c = opt_cipher(L, 1, NULL);
+  if (type_c)
+    type_md = NULL;
+  else
+    type_md = opt_digest(L, 1, NULL);
 
   if (type_md == NULL && type_c == NULL)
   {
