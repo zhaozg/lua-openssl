@@ -49,6 +49,7 @@ build = {
         "src/dsa.c",
         "src/ec.c",
         "src/engine.c",
+        "src/mac.c",
         "src/hmac.c",
         "src/lbn.c",
         "src/lhash.c",
