@@ -14,16 +14,26 @@ TestCMS = {}
 
 function TestCMS:testCompress()
   local msg = openssl.random(1000)
-  local cs = cms.compress(msg)
-  if cs then
-    local ret = assert(cms.uncompress(cs))
-    lu.assertEquals(msg, ret)
+
+  for i = 1, #cms.compression do
+    local comp_alg = cms.compression[i]
+    local cs, err, code = cms.compress(msg, comp_alg)
+    if cs then
+      local ret = assert(cms.uncompress(cs))
+      lu.assertEquals(msg, ret)
+    else
+      local tips = "WARNING: %d:%s, maybe openssl without compress support"
+      print(string.format(tips, code, err))
+    end
   end
 
-  local cs = cms.compress(msg, 'zlib')
+  local cs, err, code = cms.compress(msg)
   if cs then
     local ret = assert(cms.uncompress(cs))
     lu.assertEquals(msg, ret)
+  else
+    local tips = "WARNING: %d:%s, maybe openssl without compress support"
+    print(string.format(tips, code, err))
   end
 end
 

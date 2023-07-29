@@ -190,7 +190,7 @@ static int openssl_compress_nid[] = {
 #ifdef NID_rle_compression
   NID_rle_compression,
 #endif
-  0
+  NID_undef
 };
 
 /***
@@ -216,9 +216,9 @@ static int openssl_cms_compress(lua_State *L)
   };
   CMS_ContentInfo *cms;
 
-  nid = lua_isnoneornil(L, 2) ? -1 : luaL_checkoption(L, 2, "zlib", compress_options);
+  nid = luaL_checkoption(L, 2, "zlib", compress_options);
   flags = luaL_optint(L, 3, 0);
-  if (nid != -1) nid = openssl_compress_nid[nid];
+  nid = openssl_compress_nid[nid];
 
   cms = CMS_compress(in, nid, flags);
   BIO_free(in);
@@ -228,6 +228,9 @@ static int openssl_cms_compress(lua_State *L)
     PUSH_OBJECT(cms, "openssl.cms");
     ret = 1;
   }
+  else
+    ret = openssl_pushresult(L, 0);
+
   return ret;
 }
 
@@ -862,6 +865,17 @@ int luaopen_cms(lua_State *L)
 
   lua_newtable(L);
   luaL_setfuncs(L, R, 0);
+
+#if !defined(OPENSSL_NO_COMP)
+  lua_newtable(L);
+  lua_pushliteral(L, "zlib");
+  lua_rawseti(L, -2, 1);
+#ifdef NID_rle_compression
+  lua_pushliteral(L, "rle");
+  lua_rawseti(L, -2, 1);
+#endif
+  lua_setfield(L, -2, "compression");
+#endif
 
   auxiliar_enumerate(L, -1, cms_flags);
 #else
