@@ -23,6 +23,10 @@ function M.sslProtocol(srv, protocol)
   assert(nil)
 end
 
+function M.supportTLSv1_3()
+  return M._opensslv > 0x10100000
+end
+
 function M.get_ca()
   if not M.ca then
     M.ca = ca:new()
