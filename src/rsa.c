@@ -242,12 +242,28 @@ static int openssl_pading_result(lua_State*L, unsigned long val)
   return ret;
 }
 
+static int openssl_rsa_bytes_len(lua_State *L, int i)
+{
+  int n;
+  if (lua_isnumber(L, i))
+  {
+    n = luaL_checkinteger(L, i);
+    luaL_argcheck(L, n > 0, i, "n must be positive");
+  }
+  else
+  {
+    RSA* rsa = CHECK_OBJECT(i, RSA, "openssl.rsa");
+    n = RSA_size(rsa);
+  }
+  return n;
+}
+
 static int openssl_padding_add(lua_State *L)
 {
   size_t l;
   const unsigned char* from = (const unsigned char *) luaL_checklstring(L, 1, &l);
   int padding = openssl_get_padding(L, 2, NULL);
-  int sz = luaL_checkinteger(L, 3);
+  int sz = openssl_rsa_bytes_len(L, 3);
   unsigned char* to = OPENSSL_malloc(sz);
   int ret = 0;
 
@@ -298,8 +314,19 @@ static int openssl_padding_add(lua_State *L)
     break;
   }
   case RSA_X931_PADDING:
+    ret = RSA_padding_add_X931(to, sz, from, l);
+    break;
 #if OPENSSL_VERSION_NUMBER > 0x10000000L
   case RSA_PKCS1_PSS_PADDING:
+  {
+    RSA* rsa = CHECK_OBJECT(3, RSA, "openssl.rsa");
+    const EVP_MD *md = get_digest(L, 4, NULL);
+    const EVP_MD *mgf1md = lua_isnone(L, 5) ? NULL : get_digest(L, 5, NULL);
+    int saltlen = luaL_optinteger(L, 6, -2);
+    luaL_argcheck(L, l == EVP_MD_size(md), 4, "data length to pad mismatch with digest size");
+
+    ret = RSA_padding_add_PKCS1_PSS_mgf1(rsa, to, from, md, mgf1md, saltlen);
+  }
 #endif
   default:
     break;
@@ -321,7 +348,7 @@ static int openssl_padding_check(lua_State *L)
   size_t l;
   const unsigned char* from = (const unsigned char *) luaL_checklstring(L, 1, &l);
   int padding = openssl_get_padding(L, 2, NULL);
-  int sz = luaL_checkinteger(L, 3);
+  int sz = openssl_rsa_bytes_len(L, 3);
   unsigned char* to = OPENSSL_malloc(sz);
   int ret = 0;
 
@@ -371,15 +398,36 @@ static int openssl_padding_check(lua_State *L)
     ret = RSA_padding_check_none(to, sz, from, l, sz);
     break;
   case RSA_X931_PADDING:
+    ret = RSA_padding_check_X931(to, sz, from, l, sz);
+    break;
 #if OPENSSL_VERSION_NUMBER > 0x10000000L
   case RSA_PKCS1_PSS_PADDING:
+  {
+    RSA* rsa = CHECK_OBJECT(3, RSA, "openssl.rsa");
+    const EVP_MD *md, *mgf1md;
+    int saltlen;
+
+    luaL_argcheck(L, sz == RSA_size(rsa), 3, "padded data length mismatch with RSA size");
+    OPENSSL_free(to);
+    to = luaL_checklstring(L, 4, &l);
+
+    md = get_digest(L, 5, NULL);
+    mgf1md = lua_isnone(L, 6) ? NULL : get_digest(L, 6, NULL);
+    saltlen = luaL_optinteger(L, 7, -2);
+    luaL_argcheck(L, l == EVP_MD_size(md), 4, "unpadded data length mismatch with digest size");
+    ret = RSA_verify_PKCS1_PSS_mgf1(rsa, to, md, mgf1md, from, saltlen);
+    to = NULL;
+  }
 #endif
   default:
     break;
   }
   if (ret>0)
   {
-    lua_pushlstring(L, (const char*)to, ret);
+    if (to)
+      lua_pushlstring(L, (const char*)to, ret);
+    else
+      lua_pushboolean(L, 1);
     ret = 1;
   }
   else
