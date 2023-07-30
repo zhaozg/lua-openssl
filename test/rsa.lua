@@ -44,7 +44,6 @@ function TestRSA:TestRSA()
       "sslv23",
       "pkcs1",
       'x931',
-      'pss',
       "oaep",
       "no"
     }
@@ -56,7 +55,7 @@ function TestRSA:TestRSA()
       local msg = string.char(0) .. openssl.random(pad=='no' and 255 or 200)
 
       local out, raw
-      if pad~='oaep' and pad~='sslv23' and pad~='pss' then
+      if pad~='oaep' and pad~='sslv23' then
         local n = openssl.bn.text(msg)
         assert(n:bits() <  t.n:bits())
         out = assert(rsa.encrypt(k, msg, pad, true), pad)
@@ -64,7 +63,7 @@ function TestRSA:TestRSA()
         assert(msg == raw)
       end
 
-      if pad~='sslv23' and pad~='x931' and pad~='pss' then
+      if pad~='sslv23' and pad~='x931' then
         out = assert(rsa.encrypt(k,msg, pad, false), pad)
         raw = assert(k:decrypt(out, pad, true))
         assert(msg == raw)
@@ -96,6 +95,13 @@ function TestRSA:TestPad_pkcs1()
 
   padded = rsa.padding_add(msg,'pkcs1', 256, false)
   raw = rsa.padding_check(padded, 'pkcs1', 256, false)
+  assert(msg==raw)
+end
+
+function TestRSA:TestPad_x931()
+  local msg = openssl.random(128)
+  local padded = rsa.padding_add(msg,'x931', 256)
+  local raw = rsa.padding_check(padded, 'x931', 256)
   assert(msg==raw)
 end
 
@@ -142,5 +148,23 @@ function TestRSA:TestOAEP_encrypt()
   assert(plain==padded)
   local raw = rsa.padding_check(padded, 'oaep', 256)
   assert(msg==raw)
+end
 
+function TestRSA:TestPSS_sign()
+  local k = rsa.generate_key(2048)
+  assert(k:isprivate())
+
+  local t = k:parse()
+  assert(t.bits == 2048)
+  assert(t.size == 256)
+
+  local msg = openssl.random(20)
+  local padded = assert(rsa.padding_add(msg,'pss', k, 'sha1'))
+  local raw = assert(rsa.padding_check(padded, 'pss', k, msg, 'sha1'))
+  assert(raw==true)
+
+  local signed = assert(rsa.encrypt(k, padded, 'no', false)) -- Private Encrypt
+  local plain = assert(k:decrypt(signed, 'no', true))        -- Public Decrypt
+
+  assert(rsa.padding_check(plain, 'pss', k, msg, 'sha1'))
 end
