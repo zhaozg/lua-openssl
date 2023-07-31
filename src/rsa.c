@@ -409,7 +409,7 @@ static int openssl_padding_check(lua_State *L)
 
     luaL_argcheck(L, sz == RSA_size(rsa), 3, "padded data length mismatch with RSA size");
     OPENSSL_free(to);
-    to = luaL_checklstring(L, 4, &l);
+    to = (unsigned char*)luaL_checklstring(L, 4, &l);
 
     md = get_digest(L, 5, NULL);
     mgf1md = lua_isnone(L, 6) ? NULL : get_digest(L, 6, NULL);

@@ -1379,9 +1379,10 @@ static LUA_FUNCTION(openssl_pkey_ctx_decrypt_init)
   EVP_PKEY_CTX *ctx = CHECK_OBJECT(1, EVP_PKEY_CTX, "openssl.evp_pkey_ctx");
 
   if (EVP_PKEY_decrypt_init(ctx) <= 0)
-    luaL_error(L, "error");
+    return openssl_pushresult(L, 0);
 
-  return 0;
+  lua_pushvalue(L, 1);
+  return 1;
 }
 
 static LUA_FUNCTION(openssl_pkey_ctx_encrypt_init)
@@ -1389,9 +1390,10 @@ static LUA_FUNCTION(openssl_pkey_ctx_encrypt_init)
   EVP_PKEY_CTX *ctx = CHECK_OBJECT(1, EVP_PKEY_CTX, "openssl.evp_pkey_ctx");
 
   if (EVP_PKEY_encrypt_init(ctx) <= 0)
-    luaL_error(L, "error");
+    return openssl_pushresult(L, 0);
 
-  return 0;
+  lua_pushvalue(L, 1);
+  return 1;
 }
 
 static LUA_FUNCTION(openssl_pkey_ctx_verify_init)
@@ -1399,9 +1401,10 @@ static LUA_FUNCTION(openssl_pkey_ctx_verify_init)
   EVP_PKEY_CTX *ctx = CHECK_OBJECT(1, EVP_PKEY_CTX, "openssl.evp_pkey_ctx");
 
   if (EVP_PKEY_verify_init(ctx) <= 0)
-    luaL_error(L, "error");
+    return openssl_pushresult(L, 0);
 
-  return 0;
+  lua_pushvalue(L, 1);
+  return 1;
 }
 
 static LUA_FUNCTION(openssl_pkey_ctx_sign_init)
@@ -1409,9 +1412,10 @@ static LUA_FUNCTION(openssl_pkey_ctx_sign_init)
   EVP_PKEY_CTX *ctx = CHECK_OBJECT(1, EVP_PKEY_CTX, "openssl.evp_pkey_ctx");
 
   if (EVP_PKEY_sign_init(ctx) <= 0)
-    luaL_error(L, "error");
+    return openssl_pushresult(L, 0);
 
-  return 0;
+  lua_pushvalue(L, 1);
+  return 1;
 }
 
 static LUA_FUNCTION(openssl_pkey_ctx_decrypt)
@@ -1442,10 +1446,10 @@ static LUA_FUNCTION(openssl_pkey_ctx_encrypt)
   size_t buf_len = 0;
   byte* buf = NULL;
 
-  if (EVP_PKEY_encrypt(ctx, NULL, &buf_len, in, in_len) > 0)
+  if (EVP_PKEY_encrypt(ctx, NULL, &buf_len, (const unsigned char*)in, in_len) > 0)
   {
     buf = malloc(buf_len);
-    if (EVP_PKEY_encrypt(ctx, buf, &buf_len, in, in_len) > 0)
+    if (EVP_PKEY_encrypt(ctx, buf, &buf_len, (const unsigned char*)in, in_len) > 0)
     {
       lua_pushlstring(L, (const char*)buf, buf_len);
       ret = 1;
@@ -1464,7 +1468,9 @@ static LUA_FUNCTION(openssl_pkey_ctx_verify)
   size_t slen = 0;
   const char *sign = luaL_checklstring(L, 3, &slen);
 
-  int ret = EVP_PKEY_verify(pCtx, data, dlen, sign, slen);
+  int ret = EVP_PKEY_verify(pCtx,
+                            (const unsigned char*)data, dlen,
+                            (const unsigned char*)sign, slen);
   lua_pushboolean(L, ret > 0);
 
   return 1;
@@ -1477,13 +1483,13 @@ static LUA_FUNCTION(openssl_pkey_ctx_sign)
   size_t digest_len = 0;
   const char *digest = luaL_checklstring(L, 2, &digest_len);
   size_t sig_len = 0;
-  char* sig = NULL;
+  unsigned char* sig = NULL;
   int ret = 0;
 
-  if (EVP_PKEY_sign(pCtx, NULL, &sig_len, digest, digest_len) > 0)
+  if (EVP_PKEY_sign(pCtx, NULL, &sig_len, (const unsigned char*)digest, digest_len) > 0)
   {
     sig = malloc(sig_len);
-    if (EVP_PKEY_sign(pCtx, sig, &sig_len, digest, digest_len) > 0)
+    if (EVP_PKEY_sign(pCtx, sig, &sig_len, (const unsigned char*)digest, digest_len) > 0)
     {
       lua_pushlstring(L, (const char*)sig, sig_len);
       ret = 1;
