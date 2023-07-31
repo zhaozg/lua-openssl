@@ -131,7 +131,7 @@ end
 
 function TestDigestOneShotSignVry_ED25519()
   local pkey = openssl.pkey
-  if pkey.ED25519 then
+  if pkey.ED25519 and not helper.libressl then
     local ctx = assert(pkey.ctx_new('ED25519'))
     local k = assert(ctx:keygen())
     local msg = 'abcd'
@@ -146,7 +146,7 @@ end
 
 function TestDigestOneShotSignVry_ED448()
   local pkey = openssl.pkey
-  if pkey.ED448 then
+  if pkey.ED448 and not helper.libressl then
     local ctx = assert(pkey.ctx_new('ED448'))
     local k = assert(ctx:keygen())
     local msg = 'abcd'
