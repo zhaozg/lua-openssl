@@ -1310,11 +1310,56 @@ static LUA_FUNCTION(openssl_pkey_ctx)
   return 1;
 }
 
+static LUA_FUNCTION(openssl_pkey_ctx_new)
+{
+  int nid = lua_isnumber(L, 1) ? lua_tointeger(L, 1) : OBJ_txt2nid(luaL_checkstring(L, 1));
+  ENGINE *eng = lua_isnoneornil(L, 2) ? NULL : CHECK_OBJECT(2, ENGINE, "openssl.engine");
+  EVP_PKEY_CTX *pctx;
+
+  luaL_argcheck(L, nid > 0, 1, "invalid public key algorithm");
+
+  pctx = EVP_PKEY_CTX_new_id(nid, eng);
+  if (pctx)
+  {
+    PUSH_OBJECT(pctx, "openssl.evp_pkey_ctx");
+    return 1;
+  }
+  return openssl_pushresult(L, 0);
+}
+
 static LUA_FUNCTION(openssl_pkey_ctx_free)
 {
   EVP_PKEY_CTX *ctx = CHECK_OBJECT(1, EVP_PKEY_CTX, "openssl.evp_pkey_ctx");
   EVP_PKEY_CTX_free(ctx);
   return 0;
+}
+
+static LUA_FUNCTION(openssl_pkey_ctx_keygen)
+{
+  EVP_PKEY_CTX *ctx = CHECK_OBJECT(1, EVP_PKEY_CTX, "openssl.evp_pkey_ctx");
+  int bits = luaL_optinteger(L, 2, 0);
+  EVP_PKEY *pkey = NULL;
+
+  int ret = EVP_PKEY_keygen_init(ctx);
+  if (ret==1)
+  {
+    ret = EVP_PKEY_keygen(ctx, &pkey);
+  }
+  if (ret==1)
+  {
+    PUSH_OBJECT(pkey, "openssl.evp_pkey");
+  }
+  else if (ret==-2)
+  {
+    lua_pushnil(L);
+    lua_pushstring(L, "NOT_SUPPORT");
+    ret = 2;
+  }
+  else
+    ret = openssl_pushresult(L, ret);
+
+  (void)bits;
+  return ret;
 }
 
 static LUA_FUNCTION(openssl_pkey_ctx_ctrl)
@@ -2184,6 +2229,8 @@ static luaL_Reg pkey_ctx_funcs[] =
 
   {"ctrl",          openssl_pkey_ctx_ctrl},
 
+  {"keygen",        openssl_pkey_ctx_keygen},
+
   {"decrypt",       openssl_pkey_ctx_decrypt},
   {"encrypt",       openssl_pkey_ctx_encrypt},
 
@@ -2201,6 +2248,7 @@ static const luaL_Reg R[] =
 {
   {"read",          openssl_pkey_read},
   {"new",           openssl_pkey_new},
+  {"ctx_new",       openssl_pkey_ctx_new},
 
   {"seal",          openssl_seal},
   {"seal_init",     openssl_seal_init},
@@ -2233,11 +2281,20 @@ static const luaL_Reg R[] =
 
 int luaopen_pkey(lua_State *L)
 {
+  size_t i;
+
   auxiliar_newclass(L, "openssl.evp_pkey", pkey_funcs);
   auxiliar_newclass(L, "openssl.evp_pkey_ctx", pkey_ctx_funcs);
 
   lua_newtable(L);
   luaL_setfuncs(L, R, 0);
+
+  for (i = 0; i < OSSL_NELEM(standard_name2type); i++)
+  {
+    lua_pushstring(L, standard_name2type[i].ptr);
+    lua_pushinteger(L, standard_name2type[i].id);
+    lua_rawset(L, -3);
+  }
 
   return 1;
 }

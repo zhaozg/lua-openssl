@@ -126,7 +126,7 @@ create digest object for sign
 */
 static LUA_FUNCTION(openssl_signInit)
 {
-  const EVP_MD *md = get_digest(L, 1, NULL);
+  const EVP_MD *md = lua_isnil(L, 1) ? NULL: get_digest(L, 1, NULL);
   EVP_PKEY* pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
   ENGINE*     e = lua_gettop(L) > 2 ? CHECK_OBJECT(3, ENGINE, "openssl.engine") : NULL;
   EVP_MD_CTX *ctx = EVP_MD_CTX_create();
@@ -156,7 +156,7 @@ create digest object for verify
 */
 static LUA_FUNCTION(openssl_verifyInit)
 {
-  const EVP_MD *md = get_digest(L, 1, NULL);
+  const EVP_MD *md = lua_isnil(L, 1) ? NULL: get_digest(L, 1, NULL);
   EVP_PKEY* pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
   ENGINE*     e = lua_gettop(L) > 2 ? CHECK_OBJECT(3, ENGINE, "openssl.engine") : NULL;
   EVP_PKEY_CTX *pctx = 0;
@@ -550,7 +550,7 @@ static LUA_FUNCTION(openssl_signFinal)
     {
       lua_pushlstring(L, (char *)sigbuf, siglen);
     }
-    free(sigbuf);
+    OPENSSL_free(sigbuf);
     EVP_MD_CTX_reset(ctx);
   }
   return ret == 1 ? 1 : openssl_pushresult(L, ret);
@@ -588,6 +588,70 @@ static luaL_Reg digest_funs[] =
   {NULL, NULL}
 };
 
+
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L && !defined (LIBRESSL_VERSION_NUMBER) \
+   || LIBRESSL_VERSION_NUMBER > 0x3050000fL
+/***
+get result of oneshot sign
+
+@function sign
+@tparam evp_digest_ctx
+@tparam string data to sign
+@treturn[1] string singed result
+@treturn[2] nil followd by error message
+*/
+static LUA_FUNCTION(openssl_oneshot_sign)
+{
+  EVP_MD_CTX *ctx = CHECK_OBJECT(1, EVP_MD_CTX, "openssl.evp_digest_ctx");
+  size_t tbslen;
+  const uint8_t *tbs = (const uint8_t*) luaL_checklstring(L, 2, &tbslen);
+  size_t siglen = 0;
+
+  int ret = EVP_DigestSign(ctx, NULL, &siglen, tbs, tbslen);
+  if (ret == 1)
+  {
+    unsigned char *sigbuf = OPENSSL_malloc(siglen);
+    ret = EVP_DigestSign(ctx, sigbuf, &siglen, tbs, tbslen);
+    if (ret == 1)
+    {
+      lua_pushlstring(L, (const char *)sigbuf, siglen);
+    }
+    OPENSSL_free(sigbuf);
+    EVP_MD_CTX_reset(ctx);
+  }
+  return ret == 1 ? 1 : openssl_pushresult(L, ret);
+}
+
+/***
+get result of oneshot verify
+
+@function verify
+@tparam evp_digest_ctx
+@tparam string signature to verify
+@tparam data to verify
+@treturn[1] string singed result
+@treturn[2] nil followd by error message
+@tparam string signature
+@treturn boolean result, true for verify pass
+*/
+static LUA_FUNCTION(openssl_oneshot_verify)
+{
+  EVP_MD_CTX *ctx = CHECK_OBJECT(1, EVP_MD_CTX, "openssl.evp_digest_ctx");
+  size_t siglen;
+  const uint8_t* sig = (const uint8_t*)luaL_checklstring(L, 2, &siglen);
+  size_t tbslen;
+  const uint8_t *tbs = (const uint8_t*) luaL_checklstring(L, 3, &tbslen);
+
+  int ret = EVP_DigestVerify(ctx, sig, siglen, tbs, tbslen);
+  EVP_MD_CTX_reset(ctx);
+
+  if (ret < 0)
+    return openssl_pushresult(L, ret);
+  lua_pushboolean(L, ret);
+  return ret;
+}
+#endif
+
 static luaL_Reg digest_ctx_funs[] =
 {
   {"update",      openssl_evp_digest_update},
@@ -602,6 +666,12 @@ static luaL_Reg digest_ctx_funs[] =
   {"signFinal",   openssl_signFinal},
   {"verifyUpdate",openssl_verifyUpdate},
   {"verifyFinal", openssl_verifyFinal},
+
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L && !defined (LIBRESSL_VERSION_NUMBER) \
+   || LIBRESSL_VERSION_NUMBER > 0x3050000fL
+  {"sign",        openssl_oneshot_sign},
+  {"verify",      openssl_oneshot_verify},
+#endif
 
   {"__tostring",  auxiliar_tostring},
   {"__gc",        openssl_digest_ctx_free},

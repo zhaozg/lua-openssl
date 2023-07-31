@@ -81,7 +81,7 @@ const EVP_MD* opt_digest(lua_State* L, int idx, const char* alg)
 const EVP_MD* get_digest(lua_State* L, int idx, const char* alg)
 {
   const EVP_MD* md = opt_digest(L, idx, alg);
-  if (md== NULL)
+  if (md == NULL)
     luaL_argerror(L, idx, "must be a string, NID number or asn1_object identity digest method");
   return md;
 }

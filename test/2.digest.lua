@@ -128,3 +128,34 @@ function TestDigestSignVry:testSignVry1()
   assert(vctx:verifyUpdate(self.msg))
   assert(vctx:verifyFinal(sig))
 end
+
+function TestDigestOneShotSignVry_ED25519()
+  local pkey = openssl.pkey
+  if pkey.ED25519 then
+    local ctx = assert(pkey.ctx_new('ED25519'))
+    local k = assert(ctx:keygen())
+    local msg = 'abcd'
+
+    local sctx = assert(digest.signInit(nil, k));
+    local sig = assert(sctx:sign(msg))
+
+    local vctx = digest.verifyInit(nil, k)
+    assert(vctx:verify(sig, msg))
+  end
+end
+
+function TestDigestOneShotSignVry_ED448()
+  local pkey = openssl.pkey
+  if pkey.ED448 then
+    local ctx = assert(pkey.ctx_new('ED448'))
+    local k = assert(ctx:keygen())
+    local msg = 'abcd'
+
+    local sctx = assert(digest.signInit(nil, k));
+    local sig = assert(sctx:sign(msg))
+
+    local vctx = digest.verifyInit(nil, k)
+    assert(vctx:verify(sig, msg))
+  end
+end
+
