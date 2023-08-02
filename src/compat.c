@@ -5,7 +5,7 @@
 #include "openssl.h"
 #include "private.h"
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L && !defined(LIBRESSL_VERSION_NUMBER)
+#if OPENSSLV_LESS(0x10100000L)
 
 int BIO_up_ref(BIO *b)
 {
@@ -461,29 +461,29 @@ const ASN1_TIME *X509_CRL_get0_nextUpdate(const X509_CRL *crl)
 #endif /* OPENSSL_VERSION_NUMBER < 0x10100000L &&
           !defined(LIBRESSL_VERSION_NUMBER) */
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
+#if OPENSSLV_LESS(0x10100000L) || IS_LIBRESSL()
 
 X509_PUBKEY *X509_REQ_get_X509_PUBKEY(X509_REQ *req)
 {
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || \
-    (defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x3050000fL)
+#if OPENSSLV_LESS(0x10100000L) || LIBRESSLV_LESS(0x3050000fL)
   return req->req_info->pubkey;
 #else
   return NULL;
 #endif
 }
 
-#if !defined(LIBRESSL_VERSION_NUMBER) || \
-  (defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x3050000fL)
-const unsigned char *ASN1_STRING_get0_data(const ASN1_STRING *x)
-{
-  return x->data;
-}
+#if !IS_LIBRESSL() || LIBRESSLV_LESS(0x3050000fL)
 
 int i2d_re_X509_REQ_tbs(X509_REQ *req, unsigned char **pp)
 {
   req->req_info->enc.modified = 1;
   return i2d_X509_REQ_INFO(req->req_info, pp);
+}
+
+#if !IS_LIBRESSL() || LIBRESSLV_LESS(0x3030000fL)
+const unsigned char *ASN1_STRING_get0_data(const ASN1_STRING *x)
+{
+  return x->data;
 }
 
 const ASN1_INTEGER *X509_get0_serialNumber(const X509 *a)
@@ -515,12 +515,16 @@ const STACK_OF(X509_EXTENSION) *X509_CRL_get0_extensions(const X509_CRL *crl)
 {
   return crl->crl->extensions;
 }
+#endif /* !IS_LIBRESSL() || LIBRESSLV_LESS(0x3030000fL) */
 
 #ifndef OPENSSL_NO_OCSP
+
+#if !IS_LIBRESSL() || LIBRESSLV_LESS(0x3030000fL)
 const OCSP_CERTID *OCSP_SINGLERESP_get0_id(const OCSP_SINGLERESP *single)
 {
     return single->certId;
 }
+#endif /* !IS_LIBRESSL() || LIBRESSLV_LESS(0x3030000fL) */
 
 const ASN1_GENERALIZEDTIME *OCSP_resp_get0_produced_at(const OCSP_BASICRESP* bs)
 {
@@ -561,13 +565,11 @@ const X509_ALGOR *OCSP_resp_get0_tbs_sigalg(const OCSP_BASICRESP *bs)
 }
 #endif /* OPENSSL_NO_OCSP */
 
-#endif /* !defined(LIBRESSL_VERSION_NUMBER) || \
-          (defined(LIBRESSL_VERSION_NUMBER) && \
-           LIBRESSL_VERSION_NUMBER < 0x3050000fL) */
+#endif /* !IS_LIBRESSL() || LIBRESSLV_LESS(0x3030000fL) */
 
 #ifndef OPENSSL_NO_TS
-#if !defined(LIBRESSL_VERSION_NUMBER) || \
-    (defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x3060000fL)
+
+#if !IS_LIBRESSL() || LIBRESSLV_LESS(0x3060000fL)
 
 const ASN1_INTEGER *TS_STATUS_INFO_get0_status(const TS_STATUS_INFO *a)
 {
@@ -622,16 +624,13 @@ unsigned char *TS_VERIFY_CTX_set_imprint(TS_VERIFY_CTX *ctx,
   ctx->imprint_len = len;
   return ctx->imprint;
 }
-#endif /* !defined(LIBRESSL_VERSION_NUMBER) || \
-          (defined(LIBRESSL_VERSION_NUMBER) && \
-           LIBRESSL_VERSION_NUMBER < 0x3060000fL) */
+#endif /* !IS_LIBRESSL() || LIBRESSLV_LESS(0x3060000fL) */
 #endif /* OPENSSL_NO_TS */
 
-#endif /* OPENSSL_VERSION_NUMBER < 0x10100000L ||
-          defined(LIBRESSL_VERSION_NUMBER) */
+#endif /* OPENSSLV_LESS(0x10100000L) || IS_LIBRESSL() */
 
 
-#if defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x3050000fL
+#if IS_LIBRESSL() && LIBRESSLV_LESS(0x3050000fL)
 #ifndef OPENSSL_NO_DSA
 int DSA_bits(const DSA *dsa)
 {
@@ -644,5 +643,4 @@ int i2d_re_X509_tbs(X509 *x, unsigned char **pp)
   x->cert_info->enc.modified = 1;
   return i2d_X509_CINF(x->cert_info, pp);
 }
-#endif /* defined(LIBRESSL_VERSION_NUMBER) &&
-          LIBRESSL_VERSION_NUMBER < 0x3050000fL */
+#endif /* IS_LIBRESSL() && LIBRESSLV_LESS(0x3050000fL)*/
