@@ -34,13 +34,20 @@ if [ ! -d "$HOME/opt/$SSL" ]; then
         cd "$SSL" || exit 1
         export OPENSSL_DIR=$HOME/.usr
         if [ "$RUNNER_OS" == "Linux" ]; then
-                ./config shared --prefix="$OPENSSL_DIR" || exit 1
+                case "$SSL" in
+                openssl-1.0*)
+                        FLAGS=shared
+                        ;;
+                *)
+                        FLAGS=no-shared
+                esac
+                ./config no-tests $FLAGS --prefix="$OPENSSL_DIR" || exit 1
         fi
         if [ "$RUNNER_OS" == "macOS" ]; then
                 if [ -z "$LIBRESSL" ]; then
-                        ./Configure darwin64-x86_64-cc shared --prefix="$OPENSSL_DIR" || exit 1
+                        ./Configure darwin64-x86_64-cc no-tests no-shared --prefix="$OPENSSL_DIR" || exit 1
                 else
-                        ./config --prefix="$OPENSSL_DIR" || exit 1
+                        ./config no-tests no-shared --prefix="$OPENSSL_DIR" || exit 1
                 fi
         fi
         make && make install_sw || {
