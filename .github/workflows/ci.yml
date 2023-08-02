@@ -17,7 +17,7 @@ jobs:
         os: [macos-latest, ubuntu-latest]
         luarocks_version: [3.8.0]
         lua_version: [luajit2.1, lua5.1, lua5.2, lua5.3, lua5.4]
-        openssl_version: [openssl-1.0.2u, openssl-1.1.1u, openssl-3.0.9]
+        openssl_version: [openssl-1.0.2u, openssl-1.1.1v, openssl-3.0.10, openssl-3.1.2]
     env:
       MACOSX_DEPLOYMENT_TARGET: 10.12
       LUAROCKS: ${{ matrix.luarocks_version }}
