@@ -370,6 +370,19 @@ static int openssl_push_pkcs7_signer_info(lua_State *L, PKCS7_SIGNER_INFO *info)
     EVP_PKEY_up_ref(info->pkey);
     AUXILIAR_SETOBJECT(L, info->pkey, "openssl.evp_pkey", -1, "pkey");
   }
+
+  if (info->auth_attr)
+  {
+    openssl_sk_x509_attribute_totable(L, info->auth_attr);
+    lua_setfield(L, -2, "auth_attr");
+  }
+
+  if (info->unauth_attr)
+  {
+    openssl_sk_x509_attribute_totable(L, info->unauth_attr);
+    lua_setfield(L, -2, "unauth_attr");
+  }
+
   return 1;
 }
 
