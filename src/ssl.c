@@ -156,7 +156,7 @@ static int openssl_ssl_ctx_new(lua_State*L)
 
   ciphers = luaL_optstring(L, 2, SSL_DEFAULT_CIPHER_LIST);
 #if OPENSSL_VERSION_NUMBER > 0x10100000L && !defined(LIBRESSL_VERSION_NUMBER)
-  if(!SSL_set_ciphersuites(ctx, ciphers) &&
+  if(!SSL_CTX_set_ciphersuites(ctx, ciphers) &&
      !SSL_CTX_set_cipher_list(ctx, ciphers))
 #else
   if(!SSL_CTX_set_cipher_list(ctx, ciphers))

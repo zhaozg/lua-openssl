@@ -26,7 +26,7 @@ int openssl_pkey_is_private(EVP_PKEY* pkey)
 #ifndef OPENSSL_NO_RSA
   case EVP_PKEY_RSA:
   {
-    RSA *rsa = EVP_PKEY_get0_RSA(pkey);
+    RSA *rsa = (RSA*) EVP_PKEY_get0_RSA(pkey);
     const BIGNUM *d = NULL;
 
     RSA_get0_key(rsa, NULL, NULL, &d);
@@ -37,7 +37,7 @@ int openssl_pkey_is_private(EVP_PKEY* pkey)
 #ifndef OPENSSL_NO_DSA
   case EVP_PKEY_DSA:
   {
-    DSA *dsa = EVP_PKEY_get0_DSA(pkey);
+    DSA *dsa = (DSA*) EVP_PKEY_get0_DSA(pkey);
     const BIGNUM *p = NULL;
     DSA_get0_key(dsa, NULL, &p);
     ret = p != NULL;
@@ -47,7 +47,7 @@ int openssl_pkey_is_private(EVP_PKEY* pkey)
 #ifndef OPENSSL_NO_DH
   case EVP_PKEY_DH:
   {
-    DH *dh = EVP_PKEY_get0_DH(pkey);
+    DH *dh = (DH*) EVP_PKEY_get0_DH(pkey);
     const BIGNUM *p = NULL;
     DH_get0_key(dh, NULL, &p);
     ret = p != NULL;
@@ -60,7 +60,7 @@ int openssl_pkey_is_private(EVP_PKEY* pkey)
   case EVP_PKEY_SM2:
 #endif
   {
-    EC_KEY *ec = EVP_PKEY_get0_EC_KEY(pkey);
+    EC_KEY *ec = (EC_KEY*) EVP_PKEY_get0_EC_KEY(pkey);
     const BIGNUM *p = EC_KEY_get0_private_key(ec);
     ret = p != NULL;
     break;
@@ -2118,7 +2118,7 @@ static int openssl_pkey_set_engine(lua_State *L)
 #ifndef OPENSSL_NO_RSA
   case EVP_PKEY_RSA:
   {
-    RSA *rsa = EVP_PKEY_get0_RSA(pkey);
+    RSA *rsa = (RSA*) EVP_PKEY_get0_RSA(pkey);
     const RSA_METHOD *m = ENGINE_get_RSA(eng);
     if (m!=NULL)
       ret = RSA_set_method(rsa, m);
@@ -2128,7 +2128,7 @@ static int openssl_pkey_set_engine(lua_State *L)
 #ifndef OPENSSL_NO_DSA
   case EVP_PKEY_DSA:
   {
-    DSA *dsa = EVP_PKEY_get0_DSA(pkey);
+    DSA *dsa = (DSA*) EVP_PKEY_get0_DSA(pkey);
     const DSA_METHOD *m = ENGINE_get_DSA(eng);
     if (m!=NULL)
       ret = DSA_set_method(dsa, m);
@@ -2138,7 +2138,7 @@ static int openssl_pkey_set_engine(lua_State *L)
 #ifndef OPENSSL_NO_DH
   case EVP_PKEY_DH:
   {
-    DH *dh = EVP_PKEY_get0_DH(pkey);
+    DH *dh = (DH*) EVP_PKEY_get0_DH(pkey);
     const DH_METHOD *m = ENGINE_get_DH(eng);
     if (m!=NULL)
       ret = DH_set_method(dh, m);
@@ -2148,7 +2148,7 @@ static int openssl_pkey_set_engine(lua_State *L)
 #ifndef OPENSSL_NO_EC
   case EVP_PKEY_EC:
   {
-    EC_KEY *ec = EVP_PKEY_get0_EC_KEY(pkey);
+    EC_KEY *ec = (EC_KEY*) EVP_PKEY_get0_EC_KEY(pkey);
 #if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
     const ECDSA_METHOD *m = ENGINE_get_ECDSA(eng);
     if (m!=NULL)
