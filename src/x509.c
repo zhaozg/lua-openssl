@@ -1212,18 +1212,24 @@ static int openssl_x509_extensions(lua_State* L)
     sk_X509_EXTENSION_pop_free(self->cert_info->extensions, X509_EXTENSION_free);
     self->cert_info->extensions = others;
 #else
-    int i;
-    int n = sk_X509_EXTENSION_num(exts);
-    for (i = n - 1; i >= 0; i--)
-      sk_X509_EXTENSION_delete(exts, i);
-    n = sk_X509_EXTENSION_num(others);
-    for (i = 0; i < n; i++)
+    int i, n;
+    X509_EXTENSION* ext;
+
+    if (exts != NULL)
     {
-      X509_EXTENSION* ext = sk_X509_EXTENSION_value(others, i);
-      if (exts!=NULL)
-        sk_X509_EXTENSION_push(exts, ext);
-      else
-        X509_add_ext(self, ext, -1);
+      for (n = sk_X509_EXTENSION_num(exts), i = n - 1; i >= 0; i--)
+      {
+        ext = sk_X509_EXTENSION_value(exts, i);
+        X509_EXTENSION_free(ext);
+        sk_X509_EXTENSION_delete(exts, i);
+      }
+      sk_X509_zero(exts);
+    }
+
+    for (i = 0, n = sk_X509_EXTENSION_num(others); i < n; i++)
+    {
+      ext = sk_X509_EXTENSION_value(others, i);
+      X509_add_ext(self, ext, -1);
     }
     sk_X509_EXTENSION_pop_free(others, X509_EXTENSION_free);
 #endif
