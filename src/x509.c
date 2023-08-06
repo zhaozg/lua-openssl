@@ -1223,7 +1223,7 @@ static int openssl_x509_extensions(lua_State* L)
         X509_EXTENSION_free(ext);
         sk_X509_EXTENSION_delete(exts, i);
       }
-      sk_X509_zero(exts);
+      sk_X509_EXTENSION_zero(exts);
     }
 
     for (i = 0, n = sk_X509_EXTENSION_num(others); i < n; i++)
