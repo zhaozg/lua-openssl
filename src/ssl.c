@@ -94,11 +94,11 @@ static int openssl_ssl_ctx_new(lua_State*L)
 
 #ifndef OPENSSL_NO_DTLS1_2_METHOD
   else if (strcmp(meth, "DTLSv1_2") == 0)
-    method = DTLSv1_method();
+    method = DTLSv1_2_method();
   else if (strcmp(meth, "DTLSv1_2_server") == 0)
-    method = DTLSv1_server_method();
+    method = DTLSv1_2_server_method();
   else if (strcmp(meth, "DTLSv1_2_client") == 0)
-    method = DTLSv1_client_method();
+    method = DTLSv1_2_client_method();
 #endif
 
 #ifndef OPENSSL_NO_DTLS1_METHOD
