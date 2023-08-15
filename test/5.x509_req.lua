@@ -8,7 +8,6 @@ local helper = require'helper'
 TestCSR = {}
 
 function TestCSR:setUp()
-  self.digest = 'sha256'
   self.subject = openssl.x509.name.new({
     {C = 'CN'},  {O = 'kkhub.com'},  {CN = 'zhaozg'}
   })
@@ -45,18 +44,32 @@ function TestCSR:setUp()
 
   self.extensions = self.exts
   self.attributes = self.attrs
+
+  self.algs = {
+    default = {},
+    rsa = {
+      type = 'rsa',
+      digest = 'sha256',
+      sign = 'sha256WithRSAEncryption'
+    }
+  }
 end
 
-function TestCSR:testNew()
-  local pkey = assert(openssl.pkey.new())
+local function _test_req(self, alg, params)
+
+  local pkey = assert(openssl.pkey.new(params.type))
   local req1, req2
-  req1 = assert(csr.new())
+  if params.type == nil then
+    req1 = assert(csr.new())
+  else
+    req1 = assert(csr.new(pkey))
+  end
   req2 = assert(csr.new(pkey))
   local t = req1:parse()
   lu.assertIsTable(t)
   t = req2:parse()
   lu.assertIsTable(t)
-  assert(req1:verify() == false);
+  assert(req1:verify() == (params.type ~= nil));
   assert(req2:verify())
 
   req1 = assert(csr.new(self.subject))
@@ -71,7 +84,11 @@ function TestCSR:testNew()
 
   req1 = assert(csr.new(self.subject))
   req2 = assert(csr.new(self.subject))
-  assert(req2:sign(pkey, 'sha1WithRSAEncryption'))
+  if (params.sign) then
+    assert(req2:sign(pkey, params.sign))
+  else
+    assert(req2:sign(pkey))
+  end
   t = req1:parse()
   lu.assertIsTable(t)
   t = req2:parse()
@@ -105,7 +122,7 @@ function TestCSR:testNew()
   req2 = assert(csr.new(self.subject))
   req2:attribute(self.attributes)
   req2:extensions(self.extensions)
-  assert(req2:sign(pkey, self.digest))
+  assert(req2:sign(pkey, params.digest))
 
   t = req1:parse()
   lu.assertIsTable(t)
@@ -117,7 +134,7 @@ function TestCSR:testNew()
 
   local pem = req2:export('pem')
   lu.assertIsString(pem)
-  local req2 = assert(csr.read(pem, 'pem'))
+  req2 = assert(csr.read(pem, 'pem'))
   lu.assertIsNil(csr.read(pem, 'der'))
   req2 = assert(csr.read(pem, 'auto'))
 
@@ -176,11 +193,15 @@ function TestCSR:testNew()
     assert(req1:export()==req2:export())
   end
 
-  --[[ FIXME: memleaks
   local tosign = assert(req1:sign())
-  local sig = assert(pkey:sign(tosign, 'sha256'))
-  assert(req1:sign(sig, 'sha256')==true)
-  --]]
+  local sig = assert(pkey:sign(tosign, params.digest))
+  assert(req1:sign(sig, params.digest)==true)
+end
+
+function TestCSR:testNew()
+  for k, v in pairs(self.algs) do
+    _test_req(self, k, v)
+  end
 end
 
 function TestCSR:testIO()

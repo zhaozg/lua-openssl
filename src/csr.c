@@ -426,7 +426,7 @@ static LUA_FUNCTION(openssl_csr_sign)
   {
     size_t siglen;
     unsigned char* sigdata = (unsigned char*)luaL_checklstring(L, 2, &siglen);
-    const EVP_MD* md = get_digest(L, 3, NULL);
+    const EVP_MD* md = get_digest(L, 3, "sha256");
     ASN1_BIT_STRING *sig = NULL;
     X509_ALGOR *alg = NULL;
 
