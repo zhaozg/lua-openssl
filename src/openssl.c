@@ -399,52 +399,59 @@ static const luaL_Reg eay_functions[] =
   {NULL, NULL}
 };
 
-#if defined(OPENSSL_THREADS)
+#if defined(OPENSSL_THREADS) && \
+  (OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER))
 void CRYPTO_thread_setup(void);
 void CRYPTO_thread_cleanup(void);
 #endif
 
-static void openssl_finalize()
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+static OSSL_PROVIDER* legacy = NULL;
+static OSSL_PROVIDER* openssl= NULL;
+#endif
+
+static int _guard = 0;
+
+static void openssl_finalize(void)
 {
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
-#if !defined(LIBRESSL_VERSION_NUMBER) && (OPENSSL_VERSION_NUMBER < 0x30000000L)
+  if (!_guard) return;
+  _guard = 0;
+
+#if (OPENSSL_VERSION_NUMBER > 0x10100000L && !IS_LIBRESSL()) || \
+  LIBRESSL_VERSION_NUMBER > 0x30600000L
+#if !IS_LIBRESSL()
+  OPENSSL_thread_stop();
+#endif
+  OPENSSL_cleanup();
+#else
+
+#if !defined(LIBRESSL_VERSION_NUMBER)
   FIPS_mode_set(0);
 #endif
 
+  CONF_modules_unload(1);
   OBJ_cleanup();
   EVP_cleanup();
+#  ifndef OPENSSL_NO_ENGINE
   ENGINE_cleanup();
-  RAND_cleanup();
-
-#if OPENSSL_VERSION_NUMBER >= 0x10002000L && !defined(LIBRESSL_VERSION_NUMBER)
-  SSL_COMP_free_compression_methods();
 #endif
-#if !defined(OPENSSL_NO_COMP)
+  CRYPTO_cleanup_all_ex_data();
+  ERR_remove_thread_state(NULL);
+  RAND_cleanup();
+  ERR_free_strings();
+#if !defined(OPENSSL_NO_COMP) && !defined(LIBRESSL_VERSION_NUMBER)
   COMP_zlib_cleanup();
 #endif
 
-
-#if OPENSSL_VERSION_NUMBER < 0x10000000L
-  ERR_remove_state(0);
-#elif OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
-  ERR_remove_thread_state(NULL);
-#endif
-#if defined(OPENSSL_THREADS)
-  CRYPTO_thread_cleanup();
-#endif
   CRYPTO_THREADID_set_callback(NULL);
   CRYPTO_set_locking_callback(NULL);
 
-  CRYPTO_cleanup_all_ex_data();
-  ERR_free_strings();
+#if defined(OPENSSL_THREADS) && \
+  (OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER))
+  CRYPTO_thread_cleanup();
+#endif
 
   CONF_modules_free();
-  CONF_modules_unload(1);
-
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L
-  OSSL_PROVIDER_unload("legacy");
-  OSSL_PROVIDER_unload("default");
-#endif
 
 #ifndef OPENSSL_NO_CRYPTO_MDEBUG
 #if !(defined(OPENSSL_NO_STDIO) || defined(OPENSSL_NO_FP_API))
@@ -459,30 +466,24 @@ static void openssl_finalize()
             "\n\tThank You.");
   }
 #endif
+
 #endif /* OPENSSL_NO_STDIO or OPENSSL_NO_FP_API */
 #endif /* OPENSSL_NO_CRYPTO_MDEBUG */
-#endif /* OPENSSL_VERSION_NUMBER < 0x10100000L or defined(LIBRESSL_VERSION_NUMBER) */
+#endif /* OPENSSL_VERSION_NUMBER > 0x10100000L && !IS_LIBRESSL() */
 }
-
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L
-static OSSL_PROVIDER* legacy = NULL;
-static OSSL_PROVIDER* openssl= NULL;
-
-void openssl_atexit()
-{
-  if (legacy)
-    OSSL_PROVIDER_unload(legacy);
-  if (openssl)
-    OSSL_PROVIDER_unload(openssl);
-}
-#endif
 
 static void openssl_initialize() {
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
-#if defined(OPENSSL_THREADS)
+  if (_guard) return;
+  _guard = 1;
+
+  atexit(openssl_finalize);
+
+#if defined(OPENSSL_THREADS) && \
+  (OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER))
   CRYPTO_thread_setup();
 #endif
 
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER))
   OpenSSL_add_all_ciphers();
   OpenSSL_add_all_digests();
   SSL_library_init();
@@ -513,32 +514,14 @@ static void openssl_initialize() {
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L
   legacy = OSSL_PROVIDER_load(NULL, "legacy");
   openssl = OSSL_PROVIDER_load(NULL, "default");
-  atexit(openssl_atexit);
 #endif
-}
-
-static int _guard = 0;
-
-static int luaclose_openssl(lua_State *L)
-{
-  if(--_guard)
-    return 0;
-  openssl_finalize();
-  return 0;
 }
 
 LUALIB_API int luaopen_openssl(lua_State*L)
 {
-  if(_guard++ == 0) {
-    openssl_initialize();
-  }
+  openssl_initialize();
 
   lua_newtable(L);
-
-  luaL_newmetatable(L, "openssl");
-  lua_pushcfunction(L, luaclose_openssl);
-  lua_setfield(L, -2, "__gc");
-  lua_setmetatable(L, -2);
 
   luaL_setfuncs(L, eay_functions, 0);
 
