@@ -80,6 +80,8 @@ extern "C" {
 #endif
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
+int BN_bn2binpad(const BIGNUM *a, unsigned char *to, int tolen);
+
 int BIO_up_ref(BIO *b);
 int X509_up_ref(X509 *x);
 int X509_STORE_up_ref(X509_STORE *s);

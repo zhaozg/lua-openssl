@@ -90,11 +90,14 @@ static int Btohex(lua_State *L)     /** tohex(x) */
 static int Btotext(lua_State *L)    /** totext(x) */
 {
   BIGNUM *a = Bget(L, 1);
-  int n = BN_num_bytes(a);
+  int n = luaL_optinteger(L, 2, BN_num_bytes(a));
   void *s = malloc(n);
   if (s == NULL) return 0;
-  BN_bn2bin(a, s);
-  lua_pushlstring(L, s, n);
+  n = BN_bn2binpad(a, s, n);
+  if ( n>0 )
+    lua_pushlstring(L, s, n);
+  else
+    lua_pushnil(L);
   free(s);
   return 1;
 }

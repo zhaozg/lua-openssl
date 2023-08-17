@@ -480,6 +480,22 @@ int i2d_re_X509_REQ_tbs(X509_REQ *req, unsigned char **pp)
   return i2d_X509_REQ_INFO(req->req_info, pp);
 }
 
+#if !IS_LIBRESSL() || LIBRESSLV_LESS(0x3040100fL)
+int BN_bn2binpad(const BIGNUM *a, unsigned char *to, int tolen)
+{
+  int ret;
+  int sz = BN_num_bytes(a);
+  if (sz > tolen)
+    return -1;
+
+  memset(to, 0, tolen);
+  ret = BN_bn2bin(a, to + tolen - sz);
+  if (ret>=0)
+    return ret + (tolen-sz);
+  return ret;
+}
+#endif
+
 #if !IS_LIBRESSL() || LIBRESSLV_LESS(0x3030000fL)
 const unsigned char *ASN1_STRING_get0_data(const ASN1_STRING *x)
 {

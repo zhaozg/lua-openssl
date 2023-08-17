@@ -88,8 +88,8 @@ function TestIssuer:test166()
   local ec_jwk = {
     kty = "EC",
     crv = "P-521",
-    x = openssl.base64(x:totext(x)),
-    y = openssl.base64(y:totext(y))
+    x = openssl.base64(x:totext()),
+    y = openssl.base64(y:totext())
   }
 
   local factor = {
