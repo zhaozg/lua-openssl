@@ -547,6 +547,10 @@ LUALIB_API int luaopen_openssl(lua_State*L)
 #if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
   luaopen_mac(L);
   lua_setfield(L, -2, "mac");
+  luaopen_param(L);
+  lua_setfield(L, -2, "param");
+  luaopen_kdf(L);
+  lua_setfield(L, -2, "kdf");
 #endif
 
   luaopen_pkey(L);

@@ -154,6 +154,7 @@ OBJS=src/asn1.o deps/auxiliar/auxiliar.o src/bio.o src/cipher.o src/cms.o src/co
      src/hmac.o src/lbn.o src/lhash.o src/misc.o src/ocsp.o src/openssl.o src/ots.o    \
      src/pkcs12.o src/pkcs7.o src/pkey.o src/rsa.o src/ssl.o src/th-lock.o src/util.o  \
      src/x509.o src/xattrs.o src/xexts.o src/xname.o src/xstore.o src/xalgor.o         \
+     src/param.o src/kdf.o                                                             \
      src/callback.o src/srp.o src/mac.o deps/auxiliar/subsidiar.o
 
 .PHONY: all install test info doc coveralls asan

@@ -313,6 +313,11 @@ int openssl_pushargerror (lua_State *L, int arg, const char *extramsg);
 #endif
 #endif
 
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
+int openssl_pushparams(lua_State *L, const OSSL_PARAM* params);
+OSSL_PARAM* openssl_toparams(lua_State *L, int idx);
+#endif
+
 #if defined(__cplusplus)
 }
 #endif
