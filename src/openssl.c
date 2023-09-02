@@ -420,8 +420,10 @@ static void openssl_finalize(void)
 #if (OPENSSL_VERSION_NUMBER > 0x10100000L && !IS_LIBRESSL()) || \
   LIBRESSL_VERSION_NUMBER > 0x30600000L
 #if !IS_LIBRESSL()
+  /* This will be called automatically by the library when the thread exits. */
   OPENSSL_thread_stop();
 #endif
+  /* This is initiated automatically on application exit */
   OPENSSL_cleanup();
 #else
 
@@ -476,7 +478,11 @@ static void openssl_initialize() {
   if (_guard) return;
   _guard = 1;
 
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L || \
+    (IS_LIBRESSL() && LIBRESSL_VERSION_NUMBER < 0x30600000L))
+  /* Automatically do thread and resources cleanup above OpenSSL v1.1.1 */
   atexit(openssl_finalize);
+#endif
 
 #if defined(OPENSSL_THREADS) && \
   (OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER))
