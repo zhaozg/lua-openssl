@@ -595,7 +595,7 @@ static luaL_Reg digest_funs[] =
 get result of oneshot sign
 
 @function sign
-@tparam evp_digest_ctx
+@tparam evp_digest_ctx ctx
 @tparam string data to sign
 @treturn[1] string singed result
 @treturn[2] nil followd by error message
@@ -626,7 +626,7 @@ static LUA_FUNCTION(openssl_oneshot_sign)
 get result of oneshot verify
 
 @function verify
-@tparam evp_digest_ctx
+@tparam evp_digest_ctx ctx
 @tparam string signature to verify
 @tparam data to verify
 @treturn[1] string singed result

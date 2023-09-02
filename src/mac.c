@@ -144,8 +144,6 @@ get mac_ctx object
 @tparam string key secret key
 @tparam[opt] engine engine, nothing with default engine
 @treturn mac_ctx object mapping MAC_CTX in openssl
-
-@see mac_ctx
 */
 static int openssl_mac_ctx_new(lua_State *L)
 {

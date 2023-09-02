@@ -1,5 +1,4 @@
 /***
- *
 kdf module perform EVP_KDF operations.
 It base on EVP_KDF in OpenSSL v3.
 
@@ -16,17 +15,6 @@ It base on EVP_KDF in OpenSSL v3.
 #if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
 #include <openssl/kdf.h>
 #include <openssl/core_names.h>
-/***
-get kdf_ctx object
-
-@function new
-@tparam string|integer|asn1_object alg name, nid or object identity
-@tparam string key secret key
-@tparam[opt] engine engine, nothing with default engine
-@treturn kdf_ctx object mapping EVP_KDF_CTX in openssl
-
-@see hmac_ctx
-*/
 
 static EVP_KDF* get_kdf(lua_State* L, int idx)
 {
@@ -65,7 +53,7 @@ traverses all openssl.kdf, and calls fn with each openssl.kdf
 
 @function iterator
 @tparam function cb(openssl.kdf)
-@treturn boolean
+@treturn none
 */
 static void kdf_iterator_cb(EVP_KDF *kdf, void *data)
 {
@@ -91,6 +79,13 @@ static int openssl_kdf_iterator_kdf(lua_State *L)
   return 0;
 }
 
+/***
+fetch openssl.kdf object by name
+
+@function fetch
+@tparam string name
+@treturn openssl.kdf
+*/
 static int openssl_kdf_fetch(lua_State *L)
 {
   const char* name = luaL_checkstring(L, 1);
@@ -100,32 +95,8 @@ static int openssl_kdf_fetch(lua_State *L)
   return 1;
 }
 
-
-static int openssl_kdf_ctx_new(lua_State *L)
-{
-  EVP_KDF *type = get_kdf(L, 1);
-  EVP_KDF_CTX *c = EVP_KDF_CTX_new(type);
-  int ret = 1;
-  if (c)
-    PUSH_OBJECT(c, "openssl.kdf_ctx");
-  else
-    ret = openssl_pushresult(L, 0);
-  return ret;
-}
-
-
-static int openssl_kdf_ctx_free(lua_State *L)
-{
-  EVP_KDF_CTX *c = CHECK_OBJECT(1, EVP_KDF_CTX, "openssl.kdf_ctx");
-  if(!c) return 0;
-  EVP_KDF_CTX_free(c);
-
-  FREE_OBJECT(1);
-  return 0;
-}
-
 /***
-compute KDF delive, in module openssl.kdf
+compute KDF delive
 
 @function deilver
 @tparam evp_kdf|string kdf
@@ -164,7 +135,7 @@ openssl.kdf_ctx object
 duplicate kdf_ctx object
 
 @function dup
-@treturn openssl.kdf_ctx
+@treturn openssl.kdf_ctx|fail
 */
 static int openssl_kdf_ctx_dup(lua_State *L)
 {
@@ -195,6 +166,7 @@ static int openssl_kdf_ctx_reset(lua_State *L)
 derive the key
 
 @function derive
+@tparam table paramaters, settable paramaters can be get by `kdf:settable_ctx_params()`
 @treturn string|fail
 */
 static int openssl_kdf_ctx_derive(lua_State *L)
@@ -247,7 +219,7 @@ static int openssl_kdf_ctx_kdf(lua_State *L)
 }
 
 /***
-get array that describes the retrievable and settable parameters.
+get array with parameters that describes the retrievable parameters.
 
 @function gettable_params
 @treturn table
@@ -260,9 +232,9 @@ static int openssl_kdf_ctx_gettable_params(lua_State *L)
 }
 
 /***
-get array with parameters that can be set to the algorithm.
+get array with parameters that describes the settable parameters.
 
-@function settable_ctx_params
+@function settable_params
 @treturn table
 */
 static int openssl_kdf_ctx_settable_params(lua_State *L)
@@ -276,7 +248,7 @@ static int openssl_kdf_ctx_settable_params(lua_State *L)
 retrieves parameters
 
 @function get_params
-@tparam table
+@tparam table parameters to retrieves
 @treturn table
 */
 static int openssl_kdf_ctx_get_params(lua_State *L)
@@ -299,7 +271,7 @@ static int openssl_kdf_ctx_get_params(lua_State *L)
 set parameters
 
 @function set_params
-@tparam table
+@tparam table parameters
 @treturn boolean
 */
 static int openssl_kdf_ctx_set_params(lua_State *L)
@@ -315,6 +287,42 @@ static int openssl_kdf_ctx_set_params(lua_State *L)
 openssl.kdf object
 @type openssl.kdf
 */
+
+/***
+compute KDF delive
+
+@function deilver
+@tparam table array of paramaters
+@treturn string result binary string
+*/
+
+/***
+create new openssl.kdf_ctx object
+
+@function fetch
+@treturn openssl.kdf_ctx|fail
+*/
+static int openssl_kdf_ctx_new(lua_State *L)
+{
+  EVP_KDF *type = get_kdf(L, 1);
+  EVP_KDF_CTX *c = EVP_KDF_CTX_new(type);
+  int ret = 1;
+  if (c)
+    PUSH_OBJECT(c, "openssl.kdf_ctx");
+  else
+    ret = openssl_pushresult(L, 0);
+  return ret;
+}
+
+static int openssl_kdf_ctx_free(lua_State *L)
+{
+  EVP_KDF_CTX *c = CHECK_OBJECT(1, EVP_KDF_CTX, "openssl.kdf_ctx");
+  if(!c) return 0;
+  EVP_KDF_CTX_free(c);
+
+  FREE_OBJECT(1);
+  return 0;
+}
 
 /***
 get description
@@ -333,7 +341,7 @@ static int openssl_kdf_description(lua_State *L)
 get description
 
 @function name
-@treturn openssl.kdf_ctx
+@treturn string|nil
 */
 static int openssl_kdf_name(lua_State *L)
 {
@@ -346,7 +354,7 @@ static int openssl_kdf_name(lua_State *L)
 get provider
 
 @function provider
-@treturn openssl.kdf_ctx
+@treturn lightuserdata
 */
 static int openssl_kdf_provider(lua_State *L)
 {
@@ -406,7 +414,7 @@ static int openssl_kdf_iterator(lua_State *L)
 }
 
 /***
-get array that describes the retrievable and settable parameters.
+get array that describes the retrievable parameters.
 
 @function gettable_params
 @treturn table
@@ -419,7 +427,7 @@ static int openssl_kdf_gettable_params(lua_State *L)
 }
 
 /***
-get array with parameters that can be retrieved from the algorithm.
+get array with parameters that can be retrieved from an openssl.kdf_ctx.
 
 @function gettable_ctx_params
 @treturn table
@@ -432,7 +440,7 @@ static int openssl_kdf_gettable_ctx_params(lua_State *L)
 }
 
 /***
-get array with parameters that can be set to the algorithm.
+get array with parameters that can be set to an openssl.kdf_ctx.
 
 @function settable_ctx_params
 @treturn table
@@ -447,7 +455,7 @@ static int openssl_kdf_settable_ctx_params(lua_State *L)
 /***
 retrieves details about the implementation kdf.
 
-@function settable_ctx_params
+@function get_params
 @treturn table
 */
 static int openssl_kdf_get_params(lua_State *L)
@@ -495,6 +503,7 @@ static luaL_Reg kdf_funs[] =
   {"derive",      openssl_kdf_derive},
   {"new",         openssl_kdf_ctx_new},
 
+  {"gettable_params",     openssl_kdf_gettable_params},
   {"settable_ctx_params", openssl_kdf_settable_ctx_params},
   {"gettable_ctx_params", openssl_kdf_gettable_ctx_params},
   {"get_params", openssl_kdf_get_params},
