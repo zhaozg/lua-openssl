@@ -41,6 +41,23 @@ jobs:
     - name: run
       run: make valgrind
 
+  Document:
+    runs-on: ubuntu-latest
+    env:
+      WITH_LUA_ENGINE: LuaJIT
+      LUA: luajit2.1
+      LUAROCKS: 3.8.0
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+    - name: run
+      run: |
+        .github/shell/setup_lua.sh
+        export PATH=$HOME/.usr/bin:$PATH
+        $HOME/.usr/bin/luarocks install ldoc
+        make doc
+
   clang-asan:
     runs-on: ubuntu-latest
     env:
