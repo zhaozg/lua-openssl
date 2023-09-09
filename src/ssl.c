@@ -981,6 +981,130 @@ static int openssl_ssl_ctx_set_cert_verify(lua_State*L)
   return 0;
 }
 
+#if OPENSSL_VERSION_NUMBER >= 0x10002000L
+/***
+set the list of ALPN protocols available to be negotiated
+@function set_alpn_protos
+@tparam[opt] table protos the prototypes list
+*/
+static int openssl_ssl_ctx_set_alpn_protos(lua_State*L)
+{
+  SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
+
+  if (lua_istable(L, 2))
+  {
+    size_t proto_list_len = 0;
+    size_t proto_list_size = 1024;
+    unsigned char* proto_list = malloc(proto_list_size);
+    size_t proto_len;
+    const char* proto;
+    int i;
+    int l = lua_rawlen(L, 2);
+
+    for (i = 1; i <= l; i++) {
+      lua_rawgeti(L, 2, i);
+      proto = lua_tolstring(L, -1, &proto_len);
+      lua_pop(L, 1);
+      if ((proto != NULL) && (proto_list_len + proto_len < proto_list_size))
+      {
+        proto_list[proto_list_len++] = proto_len;
+        memcpy(proto_list + proto_list_len, proto, proto_len);
+        proto_list_len += proto_len;
+      }
+    }
+    i = SSL_CTX_set_alpn_protos(ctx, proto_list, proto_list_len);
+    free(proto_list);
+    if (i != 0)
+      return luaL_error(L, "fail to set ALPN protocols");
+  }
+  else
+    return luaL_error(L, "table expected");
+
+  return 0;
+}
+
+static int openssl_mem_search(const unsigned char* mem, int memsize, const unsigned char* part, int partsize)
+{
+  int mempos, partpos;
+  for (mempos = 0; mempos <= memsize - partsize; mempos++)
+  {
+    for (partpos = 0; partpos < partsize; partpos++)
+      if (mem[mempos + partpos] != part[partpos])
+        break;
+    if (partpos == partsize)
+      return mempos;
+  }
+  return -1;
+}
+
+static int openssl_alpn_select_cb(SSL *ssl, const unsigned char **out, unsigned char *outlen, const unsigned char *in, unsigned int inlen, void *arg)
+{
+  lua_State* L = (lua_State*)arg;
+  int result = SSL_TLSEXT_ERR_ALERT_FATAL;
+  SSL_CTX* ctx = SSL_get_SSL_CTX(ssl);
+
+  if (L)
+  {
+    openssl_valueget(L, ctx, "alpn_select_cb");
+    if (lua_isfunction(L, -1))
+    {
+      int index = 1;
+      int pos = 0;
+      // the function is on the stack, adding the table of protocols to be selected
+      lua_newtable(L);
+      while (pos < inlen)
+      {
+        int len = in[pos++];
+        lua_pushlstring(L, in + pos, len);
+        lua_rawseti(L, -2, index++);
+        pos += len;
+      }
+      if (lua_pcall(L, 1, 1, 0) == 0)
+      {
+        size_t sellen;
+        const char* selected = lua_tolstring(L, -1, &sellen);
+        if (selected)
+        {
+          pos = openssl_mem_search(in, inlen, selected, sellen);
+          if (pos != -1) {
+            *out = in + pos;
+            *outlen = sellen;
+            result = SSL_TLSEXT_ERR_OK;
+          }
+        }
+      }
+      else
+      {
+        fprintf(stderr, "alpn select callback error: %s\n", lua_tostring(L, -1));
+      }
+      lua_pop(L, 1);
+    }
+  }
+	return result;
+}
+
+/***
+set ALPN protocol selection callback
+@function set_alpn_select_cb
+@tparam[opt] function alpn_select_cb callback that receive the prototype list as a table and return the one selected as a string
+*/
+static int openssl_ssl_ctx_set_alpn_select_cb(lua_State*L)
+{
+  SSL_CTX* ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
+
+  if (lua_isfunction(L, 2))
+  {
+    lua_pushvalue(L, 2);
+    openssl_valueset(L, ctx, "alpn_select_cb");
+    SSL_CTX_set_alpn_select_cb(ctx, openssl_alpn_select_cb, L);
+  }
+  else
+    SSL_CTX_set_alpn_select_cb(ctx, NULL, NULL);
+
+  return 0;
+}
+#endif
+
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
 static DH *tmp_dh_callback(SSL *ssl, int is_export, int keylength)
 {
@@ -1676,6 +1800,10 @@ static luaL_Reg ssl_ctx_funcs[] =
 #endif
   {"verify_mode",     openssl_ssl_ctx_verify_mode},
   {"set_cert_verify", openssl_ssl_ctx_set_cert_verify},
+#if OPENSSL_VERSION_NUMBER >= 0x10002000L
+  {"set_alpn_protos",    openssl_ssl_ctx_set_alpn_protos},
+  {"set_alpn_select_cb", openssl_ssl_ctx_set_alpn_select_cb},
+#endif
 
   {"verify_depth",    openssl_ssl_ctx_verify_depth},
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
@@ -2726,6 +2854,26 @@ static int openssl_ssl_tostring(lua_State*L)
   return 1;
 }
 
+#if OPENSSL_VERSION_NUMBER >= 0x10002000L
+/***
+get the ALPN protocol selected
+@treturn the ALPN protocol selected or nil
+@function get0_alpn_selected
+*/
+static int openssl_ssl_get0_alpn_selected(lua_State*L)
+{
+  SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
+	const unsigned char *data;
+	unsigned len = 0;
+	SSL_get0_alpn_selected(s, &data, &len);
+	if (len == 0)
+		lua_pushnil(L);
+  else
+		lua_pushlstring(L, (const char *)data, len);
+	return 1;
+}
+#endif
+
 static luaL_Reg ssl_funcs[] =
 {
   {"set",       openssl_ssl_set},
@@ -2769,6 +2917,9 @@ static luaL_Reg ssl_funcs[] =
   {"renegotiate_pending",   openssl_ssl_renegotiate_pending},
   {"set_connect_state",     openssl_ssl_set_connect_state},
   {"set_accept_state",      openssl_ssl_set_accept_state},
+#if OPENSSL_VERSION_NUMBER >= 0x10002000L
+  {"get0_alpn_selected",    openssl_ssl_get0_alpn_selected },
+#endif
 
   {"__gc",          openssl_ssl_gc},
   {"__tostring",    openssl_ssl_tostring},
