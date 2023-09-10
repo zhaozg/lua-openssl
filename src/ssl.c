@@ -985,7 +985,7 @@ static int openssl_ssl_ctx_set_cert_verify(lua_State*L)
 /***
 set the list of ALPN protocols available to be negotiated
 @function set_alpn_protos
-@tparam[opt] table protos the prototypes list
+@tparam[opt] table protos the protocol list
 */
 static int openssl_ssl_ctx_set_alpn_protos(lua_State*L)
 {
@@ -1090,7 +1090,7 @@ static int openssl_alpn_select_cb(SSL *ssl, const unsigned char **out, unsigned 
       lua_pop(L, 1);
     }
   }
-	return result;
+  return result;
 }
 
 /***
@@ -2873,14 +2873,14 @@ get the ALPN protocol selected
 static int openssl_ssl_get0_alpn_selected(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
-	const unsigned char *data;
-	unsigned len = 0;
-	SSL_get0_alpn_selected(s, &data, &len);
-	if (len == 0)
-		lua_pushnil(L);
+  const unsigned char *data;
+  unsigned len = 0;
+  SSL_get0_alpn_selected(s, &data, &len);
+  if (len == 0)
+    lua_pushnil(L);
   else
-		lua_pushlstring(L, (const char *)data, len);
-	return 1;
+    lua_pushlstring(L, (const char *)data, len);
+  return 1;
 }
 #endif
 
