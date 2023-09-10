@@ -994,7 +994,7 @@ static int openssl_ssl_ctx_set_alpn_protos(lua_State*L)
   if (lua_istable(L, 2))
   {
     size_t proto_list_len = 0;
-    size_t proto_list_size = 1024;
+    size_t proto_list_size = 256;
     unsigned char* proto_list = malloc(proto_list_size);
     size_t proto_len;
     const char* proto;
@@ -1005,8 +1005,18 @@ static int openssl_ssl_ctx_set_alpn_protos(lua_State*L)
       lua_rawgeti(L, 2, i);
       proto = lua_tolstring(L, -1, &proto_len);
       lua_pop(L, 1);
-      if ((proto != NULL) && (proto_list_len + proto_len < proto_list_size))
+      if (proto != NULL)
       {
+        if (proto_list_len + proto_len >= proto_list_size)
+        {
+          proto_list_size = proto_list_size * 2;
+          proto_list = realloc(proto_list, proto_list_size);
+        }
+        if (proto_list == NULL)
+        {
+          proto_list_size = 0;
+          break;
+        }
         proto_list[proto_list_len++] = proto_len;
         memcpy(proto_list + proto_list_len, proto, proto_len);
         proto_list_len += proto_len;
