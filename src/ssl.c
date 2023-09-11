@@ -985,7 +985,7 @@ static int openssl_ssl_ctx_set_cert_verify(lua_State*L)
 /***
 set the list of ALPN protocols available to be negotiated
 @function set_alpn_protos
-@tparam[opt] table protos the protocol list
+@tparam table protos the protocol list
 */
 static int openssl_ssl_ctx_set_alpn_protos(lua_State*L)
 {
@@ -1094,7 +1094,7 @@ static int openssl_alpn_select_cb(SSL *ssl, const unsigned char **out, unsigned 
 }
 
 /***
-set ALPN protocol selection callback
+set ALPN protocol selection callback to select which protocol to use for the incoming connection
 @function set_alpn_select_cb
 @tparam[opt] function alpn_select_cb callback that receive the prototype list as a table and return the one selected as a string
 */
@@ -2868,9 +2868,9 @@ static int openssl_ssl_tostring(lua_State*L)
 /***
 get the ALPN protocol selected
 @treturn the ALPN protocol selected or nil
-@function get0_alpn_selected
+@function get_alpn_selected
 */
-static int openssl_ssl_get0_alpn_selected(lua_State*L)
+static int openssl_ssl_get_alpn_selected(lua_State*L)
 {
   SSL* s = CHECK_OBJECT(1, SSL, "openssl.ssl");
   const unsigned char *data;
@@ -2928,7 +2928,7 @@ static luaL_Reg ssl_funcs[] =
   {"set_connect_state",     openssl_ssl_set_connect_state},
   {"set_accept_state",      openssl_ssl_set_accept_state},
 #if OPENSSL_VERSION_NUMBER >= 0x10002000L
-  {"get0_alpn_selected",    openssl_ssl_get0_alpn_selected },
+  {"get_alpn_selected",    openssl_ssl_get_alpn_selected },
 #endif
 
   {"__gc",          openssl_ssl_gc},
