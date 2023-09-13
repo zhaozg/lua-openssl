@@ -983,7 +983,7 @@ static int openssl_ssl_ctx_set_cert_verify(lua_State*L)
 
 #if OPENSSL_VERSION_NUMBER >= 0x10002000L
 /***
-set the list of ALPN protocols available to be negotiated
+set the list of client ALPN protocols available to be negotiated by the server
 @function set_alpn_protos
 @tparam table protos the protocol list
 */
@@ -1000,32 +1000,50 @@ static int openssl_ssl_ctx_set_alpn_protos(lua_State*L)
     const char* proto;
     int i;
     int l = lua_rawlen(L, 2);
+    char* err = NULL;
 
     for (i = 1; i <= l; i++) {
       lua_rawgeti(L, 2, i);
       proto = lua_tolstring(L, -1, &proto_len);
       lua_pop(L, 1);
-      if (proto != NULL)
+      if (proto == NULL)
       {
-        if (proto_list_len + proto_len >= proto_list_size)
+        err = "invalid protocol value";
+        break;
+      }
+      if (proto_len > 255)
+      {
+        err = "too long protocol value";
+        break;
+      }
+      if (proto_list_len + proto_len >= proto_list_size)
+      {
+        do
         {
           proto_list_size = proto_list_size * 2;
-          proto_list = realloc(proto_list, proto_list_size);
         }
-        if (proto_list == NULL)
-        {
-          proto_list_size = 0;
-          break;
-        }
-        proto_list[proto_list_len++] = proto_len;
-        memcpy(proto_list + proto_list_len, proto, proto_len);
-        proto_list_len += proto_len;
+        while (proto_list_len + proto_len >= proto_list_size);
+        proto_list = realloc(proto_list, proto_list_size);
+      }
+      if (proto_list == NULL)
+      {
+        err = "fail to allocate protocol list";
+        break;
+      }
+      proto_list[proto_list_len++] = proto_len;
+      memcpy(proto_list + proto_list_len, proto, proto_len);
+      proto_list_len += proto_len;
+    }
+    if (err == NULL)
+    {
+      if (SSL_CTX_set_alpn_protos(ctx, proto_list, proto_list_len) != 0)
+      {
+        err = "fail to set ALPN protocols";
       }
     }
-    i = SSL_CTX_set_alpn_protos(ctx, proto_list, proto_list_len);
     free(proto_list);
-    if (i != 0)
-      return luaL_error(L, "fail to set ALPN protocols");
+    if (err != NULL)
+      return luaL_error(L, err);
   }
   else
     return luaL_error(L, "table expected");
@@ -1075,7 +1093,7 @@ static int openssl_alpn_select_cb(SSL *ssl, const unsigned char **out, unsigned 
         const char* selected = lua_tolstring(L, -1, &sellen);
         if (selected)
         {
-          pos = openssl_mem_search(in, inlen, selected, sellen);
+          pos = openssl_mem_search(in, inlen, (const unsigned char *)selected, sellen);
           if (pos != -1) {
             *out = in + pos;
             *outlen = sellen;
@@ -1094,7 +1112,7 @@ static int openssl_alpn_select_cb(SSL *ssl, const unsigned char **out, unsigned 
 }
 
 /***
-set ALPN protocol selection callback to select which protocol to use for the incoming connection
+set ALPN server protocol selection callback to select which protocol to use for the incoming connection
 @function set_alpn_select_cb
 @tparam[opt] function alpn_select_cb callback that receive the prototype list as a table and return the one selected as a string
 */
