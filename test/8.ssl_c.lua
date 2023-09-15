@@ -49,7 +49,9 @@ local function mk_connection(_host, _port, i)
     --]]
     return true -- return false will fail ssh handshake
   end)
-  ctx:set_alpn_protos({"http/1.1", "h2"})
+  if opensslv >= 0x10002000 then
+    ctx:set_alpn_protos({"http/1.1", "h2"})
+  end
 
   local cli = assert(bio.connect(_host .. ":" .. _port, true))
   if cli then
@@ -62,7 +64,9 @@ local function mk_connection(_host, _port, i)
     else
       assert(S:connect())
     end
-    assert(S:get_alpn_selected() == "http/1.1")
+    if opensslv >= 0x10002000 then
+      assert(S:get_alpn_selected() == "http/1.1")
+    end
     local succ, errs = S:getpeerverification()
     if type(errs) == "table" then
       for i, err in pairs(errs) do
