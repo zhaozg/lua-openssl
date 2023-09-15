@@ -50,10 +50,12 @@ local function ssl_mode()
      --]]
     return true -- return false will fail ssh handshake
   end)
-  ctx:set_alpn_select_cb(function(protos)
-    --print('protos', table.concat(protos, ', '))
-    return protos[1]
-  end)
+  if opensslv >= 0x10002000 then
+    ctx:set_alpn_select_cb(function(protos)
+      --print('protos', table.concat(protos, ', '))
+      return protos[1]
+    end)
+  end
 
   print(string.format("Listen at %s:%s SSL", host, port))
   local srv = assert(bio.accept(host .. ":" .. port))
