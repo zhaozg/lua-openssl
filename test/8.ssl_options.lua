@@ -51,3 +51,11 @@ function TestSSLOptions:testCiphersuites()
     local ctx = openssl.ssl.ctx_new('TLS', 'TLS_AES_128_GCM_SHA256:ECDHE-RSA-AES128-SHA256')
   end
 end
+
+function TestSSLOptions:testAlpn()
+  self.ctx:set_alpn_protos({'h2'})
+  assert(not pcall(self.ctx.set_alpn_protos, self.ctx, {string.rep('p', 257)}))
+  assert(not pcall(self.ctx.set_alpn_protos, self.ctx, nil))
+  self.ctx:set_alpn_select_cb()
+  self.ctx:set_alpn_select_cb(function(_) end)
+end
