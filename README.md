@@ -68,20 +68,20 @@ _Notice_: Document quality is low and stale, feel free to make a PR to improve i
 
 The following are some important lua-openssl object types:
 
-```
-	openssl.bio,
-	openssl.x509,
-	openssl.stack_of_x509,
-	openssl.x509_req,
-	openssl.evp_pkey,
-	openssl.evp_digest,
-	openssl.evp_cipher,
-	openssl.engine,
-	openssl.pkcs7,
-	openssl.cms,
-	openssl.evp_cipher_ctx,
-	openssl.evp_digest_ctx
-	...
+```text
+  openssl.bio,
+  openssl.x509,
+  openssl.stack_of_x509,
+  openssl.x509_req,
+  openssl.evp_pkey,
+  openssl.evp_digest,
+  openssl.evp_cipher,
+  openssl.engine,
+  openssl.pkcs7,
+  openssl.cms,
+  openssl.evp_cipher_ctx,
+  openssl.evp_digest_ctx
+  ...
 ```
 
 They are shortened as bio, x509, sk_x509, csr, pkey, digest, cipher,
@@ -94,20 +94,20 @@ engine, cipher_ctx, and digest_ctx.
 openssl.bn is a big-number library for Lua 5.1. It handles only integers and is
 suitable for number-theoretical and cryptographic applications. It is based
 on the bn subsystem of OpenSSL cryptographic library:
-https://github.com/openssl/openssl/blob/OpenSSL_1_0_2-stable/crypto/bn/bn.h
+[bn.h](https://github.com/openssl/openssl/blob/OpenSSL_1_0_2-stable/crypto/bn/bn.h)
 If you're running Unix, you probably already have OpenSSL installed.
 
 To try the library, just edit Makefile to reflect your installation of Lua and
 then run make. This will build the library and run a simple test. For detailed
 installation instructions, see
-http://webserver2.tecgraf.puc-rio.br/~lhf/ftp/lua/index.html#lbn
+[lbn](http://webserver2.tecgraf.puc-rio.br/~lhf/ftp/lua/index.html#lbn)
 
 There is no manual but the library is simple and intuitive; see the summary
 below.
 
 bn library:
 
-```
+```text
  __add(x,y)        compare(x,y)          pow(x,y)
  __div(x,y)        div(x,y)              powmod(x,y,m)
  __eq(x,y)         divmod(x,y)           random(bits)
@@ -152,41 +152,51 @@ I try to use [luaunit](https://github.com/bluebird75/luaunit) to write unit
 
 ## Howto
 
-### Howto 1: Build on Linux/Unix System.
+### Howto 1: Build on Linux/Unix System
 
+```bash
     git clone --recurse https://github.com/zhaozg/lua-openssl.git lua-openssl
     cd lua-openssl
     make
     make install
     make clean
+```
 
 If you want to make lua-openssl static link with openssl, please given
 `OPENSSL_STATIC` flags, default will do dynamic link.
 
+```bash
     make OPENSSL_STAITC=1
+```
 
-### Howto 2: Build on Windows with MSVC.
+### Howto 2: Build on Windows with MSVC
 
 Before building, please change the setting in the config.win file.
 Works with Lua5.1 (should support Lua5.2 by updating the config.win file).
 
+```bash
     git clone --recurse https://github.com/zhaozg/lua-openssl.git lua-openssl
     cd lua-openssl
     nmake -f makefile.win
     nmake -f makefile.win install
     nmake -f makefile.win clean
+```
 
-### Howto 3: Build on Windows with mingw.
+### Howto 3: Build on Windows with mingw
 
+```bash
     git clone --recurse https://github.com/zhaozg/lua-openssl.git lua-openssl
     cd lua-openssl
     make
     make install
     make clean
+```
 
-### Howto 4: Install using luarocks.
+### Howto 4: Install using luarocks
 
+```bash
     luarocks install openssl
+```
 
 ### Howto 5: Build with CMake
 
@@ -213,7 +223,7 @@ SSL connection closed, other numbers means you should do some SSL operation.
 Please remember that when lua-openssl function or methods fail without an
 error code, you can get the last error by openssl.error(), and repeat call
 openssl.error() will walk through error stacks of current threads.
-openssl.errors(true) will also clear error stacks after return all errors,
+openssl.errors() will return all error strings and clear error queue,
 this is very useful to free memory when lua-openssl repeat calls or run long times.
 
 ## Example usage
@@ -260,7 +270,7 @@ hmac.hmac(alg, msg, key, false) -- hex output
 ```lua
 n = #sk
 for i=1, n do
-	x = sk:get(i)
+  x = sk:get(i)
 end
 ```
 
@@ -270,23 +280,23 @@ end
 local openssl = require('openssl')
 
 function dump(t,i)
-	for k,v in pairs(t) do
-		if(type(v)=='table') then
-			print( string.rep('\t',i),k..'={')
-			dump(v,i+1)
-			print( string.rep('\t',i),k..'=}')
-		else
-			print( string.rep('\t',i),k..'='..tostring(v))
-		end
-	end
+  for k,v in pairs(t) do
+    if(type(v)=='table') then
+      print( string.rep('\t',i),k..'={')
+      dump(v,i+1)
+      print( string.rep('\t',i),k..'=}')
+    else
+      print( string.rep('\t',i),k..'='..tostring(v))
+    end
+  end
 end
 
 function test_x509()
-	local x = openssl.x509.read(certasstring)
-	print(x)
-	t = x:parse()
-	dump(t,0)
-	print(t)
+  local x = openssl.x509.read(certasstring)
+  print(x)
+  t = x:parse()
+  dump(t,0)
+  print(t)
 end
 
 test_x509()
@@ -314,7 +324,7 @@ while 1 do
         print(s)
         assert(cli:write(s))
     end
-    print(openssl.error(true))
+    print(openssl.errors())
 end
 ```
 
@@ -338,7 +348,7 @@ local cli = assert(bio.connect(host..':'..port,true))
             assert(#s==#ss)
         end
     end
-    print(openssl.error(true))
+    print(openssl.errors())
 ```
 
 For more examples, please see test lua script file.
