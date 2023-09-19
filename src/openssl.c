@@ -166,11 +166,11 @@ _code_ can pass to openssl.error() to get more error information.
 
 @function error
 @tparam[opt] number error, default use ERR_get_error() return value
-@treturn number errcode
 @treturn string reason
 @treturn string library name
-@treturn string function name
-@treturn boolean is this is fatal error
+@treturn number errcode
+@treturn string function name if available
+@treturn boolean indicates whether a given error code is a fatal error
 */
 static LUA_FUNCTION(openssl_error_string)
 {
@@ -199,12 +199,21 @@ static LUA_FUNCTION(openssl_error_string)
   return 5;
 }
 
+/***
+Empties the current thread's error queue, helps reduce memory usage.
+@function clear_error
+*/
 static LUA_FUNCTION(openssl_clear_error)
 {
   ERR_clear_error();
   return 0;
 }
 
+/***
+Fetch all error strings from current thread's error queue, and empty the error queue.
+@function errors
+@treturn string
+*/
 static LUA_FUNCTION(openssl_errors)
 {
   int ret = 0;
