@@ -1083,7 +1083,7 @@ static int openssl_alpn_select_cb(SSL *ssl, const unsigned char **out, unsigned 
       while (pos < inlen)
       {
         int len = in[pos++];
-        lua_pushlstring(L, in + pos, len);
+        lua_pushlstring(L, (const char*)in + pos, len);
         lua_rawseti(L, -2, index++);
         pos += len;
       }

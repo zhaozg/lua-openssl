@@ -185,7 +185,7 @@ static int openssl_ocsp_request_read(lua_State *L)
 
 #if defined(__clang__)
 #pragma clang diagnostic push
-#pragma clang diagnostic ignored"-Wincompatible-function-pointer-types"
+#pragma clang diagnostic ignored "-Wincompatible-pointer-types"
 #endif
   OCSP_REQUEST *req = pem ? PEM_read_bio_OCSP_REQUEST(bio, NULL, NULL)
                           : d2i_OCSP_REQUEST_bio(bio, NULL);
@@ -361,7 +361,7 @@ static int openssl_ocsp_response_read(lua_State *L)
 
 #if defined(__clang__)
 #pragma clang diagnostic push
-#pragma clang diagnostic ignored"-Wincompatible-function-pointer-types"
+#pragma clang diagnostic ignored "-Wincompatible-pointer-types"
 #endif
   OCSP_RESPONSE *res = pem ? PEM_read_bio_OCSP_RESPONSE(bio, NULL, NULL)
                            : d2i_OCSP_RESPONSE_bio(bio, NULL);
