@@ -1475,23 +1475,33 @@ static int tlsext_servername_callback(SSL *ssl, int *ad, void *arg)
   if (lua_istable(L, -1))
   {
     lua_getfield(L, -1, name);
-    if (auxiliar_getclassudata(L, "openssl.ssl_ctx", -1))
+    newctx = GET_OBJECT(-1, SSL_CTX, "openssl.ssl_ctx");
+    lua_pop(L, 2);
+  }
+  else
+  {
+    lua_pushstring(L, name);
+    if (lua_pcall(L, 1, 1, 0) == 0)
     {
-      newctx = CHECK_OBJECT(-1, SSL_CTX, "openssl.ssl_ctx");
-      SSL_set_SSL_CTX(ssl, newctx);
-      lua_pop(L, 2);
-      return SSL_TLSEXT_ERR_OK;
+      newctx = GET_OBJECT(-1, SSL_CTX, "openssl.ssl_ctx");
     }
+    else
+      return lua_error(L);
+  }
+  if (newctx)
+  {
+    SSL_set_SSL_CTX(ssl, newctx);
+    return SSL_TLSEXT_ERR_OK;
   }
 
-  lua_pop(L, 1);
   return SSL_TLSEXT_ERR_ALERT_FATAL;
 }
 
 /***
 set servername callback
-@function set_servefrname_callback
-@todo
+@function set_servername_callback
+@tparam table|function info `function(name) return ctx end` or table
+@treturn ssl_ctx|fail
 */
 static int openssl_ssl_ctx_set_servername_callback(lua_State*L)
 {

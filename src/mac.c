@@ -69,13 +69,17 @@ static int openssl_mac_provider(lua_State *L)
 static int openssl_mac_get_params(lua_State *L)
 {
   EVP_MAC *mac = CHECK_OBJECT(1, EVP_MAC, "openssl.mac");
-  (void)mac;
-  /* TODO:
-  int EVP_MAC_get_params(EVP_MAC *mac, OSSL_PARAM params[])
-  */
-  lua_pushnil(L);
-  lua_pushstring(L, "NYI");
-  return 2;
+  OSSL_PARAM* params = openssl_toparams(L, 2);
+  int ret = EVP_MAC_get_params(mac, params);
+  if (ret == 1)
+    ret = openssl_pushparams(L, params);
+  else
+  {
+    ret = openssl_pushparams(L, params);
+    ret += openssl_pushresult(L, ret);
+  }
+  OPENSSL_free(params);
+  return ret;
 }
 
 static int openssl_mac_ctx_gc(lua_State *L)

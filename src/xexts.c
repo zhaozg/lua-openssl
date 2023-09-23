@@ -17,8 +17,8 @@ x509_extension contrust param table.
 
 @table x509_extension_param_table
 @tfield boolean critical true set critical
-@tfield asn1_string value of x509_extension
-@tfield string|asn1_object object, object of extension
+@tfield string|asn1_string value value of x509_extension
+@tfield string|asn1_object object object of extension
 
 @usage
 xattr = x509.attrextension.new_extension {
@@ -287,11 +287,11 @@ openssl.x509_extension object
 
 /***
 x509_extension infomation table
-@todo double check
+
 @table x509_extension_info_table
-@tfield asn1_object|object object of x509_extension
-@tfield boolean|critical true for critical value
-@tfield string|value as octet string
+@tfield asn1_object object object of x509_extension
+@tfield boolean critical true for critical value
+@tfield string value octet string
 */
 static int openssl_xext_totable(lua_State* L, X509_EXTENSION *x)
 {

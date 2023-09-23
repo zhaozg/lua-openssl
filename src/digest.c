@@ -434,7 +434,6 @@ restore md data
 */
 static LUA_FUNCTION(openssl_digest_ctx_data)
 {
-  int ret = 0;
   EVP_MD_CTX *ctx = CHECK_OBJECT(1, EVP_MD_CTX, "openssl.evp_digest_ctx");
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L || \
@@ -455,18 +454,8 @@ static LUA_FUNCTION(openssl_digest_ctx_data)
     memcpy(ctx->md_data, d, l);
     lua_pushboolean(L, 1);
   }
-  ret = 1;
-
 #else
 
-#if defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER > 0x3050000fL
-  lua_pushnil(L);
-  lua_pushstring(L, "NYI");
-  (void)ctx;
-
-  ret = 2;
-#else
-  /* TODO: https://github.com/openssl/openssl/issues/14222#issuecomment-871151001 */
 #if OPENSSL_VERSION_NUMBER < 0x30000000
   const EVP_MD *md = EVP_MD_CTX_md(ctx);
 #else
@@ -489,11 +478,9 @@ static LUA_FUNCTION(openssl_digest_ctx_data)
     memcpy(EVP_MD_CTX_md_data(ctx), d, ctx_size);
     lua_pushboolean(L, 1);
   }
-  ret = 1;
-#endif
 
 #endif
-  return ret;
+  return 1;
 }
 
 /***
