@@ -127,7 +127,7 @@ function TestCMS:testDigest()
   c1 = assert(cms.digest(self.msg, "sha1"))
   smime = assert(cms.export(c1))
   assert(smime)
-  msg = assert(c1:verify())
+  msg = assert(c1:digest_verify())
   lu.assertEquals(msg, self.msg)
 end
 

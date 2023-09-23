@@ -776,8 +776,6 @@ static int openssl_cms_final(lua_State*L)
   return openssl_pushresult(L, ret);
 }
 
-/*
- * FIXME: fix and enable this
 static int openssl_cms_sign_receipt(lua_State*L)
 {
   CMS_ContentInfo *cms = CHECK_OBJECT(1, CMS_ContentInfo, "openssl.cms");
@@ -814,7 +812,6 @@ static int openssl_cms_verify_receipt(lua_State*L)
   lua_pushboolean(L, ret>0);
   return 1;
 }
-*/
 
 static int openssl_cms_free(lua_State *L)
 {
@@ -832,17 +829,13 @@ static luaL_Reg cms_ctx_funs[] =
   {"detached",      openssl_cms_detached},
   {"export",        openssl_cms_export},
 
-  /* data */
   {"data",          openssl_cms_data},
-  /* digest */
-  {"verify",        openssl_cms_digest_verify},
+  {"digest_verify", openssl_cms_digest_verify},
 
   {"signers",       openssl_cms_get_signers},
 
-/*
   {"sign_receipt",  openssl_cms_sign_receipt},
   {"verify_receipt",openssl_cms_verify_receipt},
-*/
 
   {"final",         openssl_cms_final},
 
