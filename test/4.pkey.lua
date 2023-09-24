@@ -21,7 +21,8 @@ function TestPKEYMY:setUp()
     {'ec',  'prime256v1'},
     {'dh',  1024}
   }
-  if not helper.openssl3 then --FIXME: dsa, dh key generate
+  if not helper.openssl3 then
+    --FIXME: dsa key generate
     self.genalg[#self.genalg+1] = {'dsa',  1024}
   end
 end
@@ -35,6 +36,7 @@ function TestPKEYMY:testBasic()
     if v[1]~='dh' then
       k:set_engine(eng)
     end
+    assert(not k:missing_paramaters())
     local k1 = assert(pkey.get_public(k), v[1])
     assert(not k1:is_private())
 

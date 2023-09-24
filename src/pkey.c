@@ -2174,6 +2174,14 @@ static int openssl_pkey_as_sm2(lua_State *L)
 }
 #endif
 
+static int openssl_pkey_mssing_parameters(lua_State *L)
+{
+  EVP_PKEY *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
+  int ret = EVP_PKEY_missing_parameters(pkey);
+  lua_pushboolean(L, ret == 1);
+  return 1;
+}
+
 static luaL_Reg pkey_funcs[] =
 {
   {"is_private",    openssl_pkey_is_private1},
@@ -2198,6 +2206,7 @@ static luaL_Reg pkey_funcs[] =
 #if defined(OPENSSL_SUPPORT_SM2) && OPENSSL_VERSION_NUMBER < 0x30000000
   {"as_sm2",        openssl_pkey_as_sm2},
 #endif
+  {"missing_paramaters", openssl_pkey_mssing_parameters},
 
   {"__gc",          openssl_pkey_free},
   {"__tostring",    auxiliar_tostring},

@@ -188,7 +188,8 @@ local function _test_req(self, alg, params)
 
   openssl.errors()
 
-  if not helper.openssl3 then -- FIXME: lua-openssl, avoid foreign key dup
+  if not helper.openssl3 then
+    -- FIXME: lua-openssl, avoid foreign key dup
     req1 = assert(req2:dup())
     assert(req1:export()==req2:export())
   end
