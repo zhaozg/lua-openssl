@@ -467,6 +467,9 @@ static LUA_FUNCTION(openssl_pkey_new)
         EC_GROUP_free(group);
         if (EC_KEY_generate_key(ec))
         {
+#if OPENSSL_VERSION_NUMBER > 0x30000000L
+          EC_KEY_generate_key_part(ec);
+#endif
           pkey = EVP_PKEY_new();
           EVP_PKEY_assign_EC_KEY(pkey, ec);
         }
@@ -1241,22 +1244,35 @@ static LUA_FUNCTION(openssl_pkey_get_public)
 {
   EVP_PKEY *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
   int ret = 0;
-  size_t len = i2d_PUBKEY(pkey, NULL);
+  size_t len;
+
+#if OPENSSL_VERSION_NUMBER > 0x30100000L && !defined(LIBRESSL_VERSION_NUMBER)
+  if(EVP_PKEY_id(pkey) == EVP_PKEY_SM2)
+  {
+    /* NOTES: bugs in openssl3 for SM2, ugly hack */
+    EC_KEY *ec = EVP_PKEY_get0_EC_KEY(pkey);
+    ec = EC_KEY_dup(ec);
+    EC_KEY_set_private_key(ec, NULL);
+    pkey = EVP_PKEY_new();
+    EVP_PKEY_assign_EC_KEY(pkey, ec);
+    PUSH_OBJECT(pkey, "openssl.evp_pkey");
+    return 1;
+  }
+#endif
+
+  len = i2d_PUBKEY(pkey, NULL);
+
   if (len > 0)
   {
     unsigned char *buf = OPENSSL_malloc(len);
-    EVP_PKEY *pub = EVP_PKEY_new();
-#if OPENSSL_VERSION_NUMBER > 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
-    if (pub != NULL && EVP_PKEY_copy_parameters(pub, pkey) <= 0)
-    {
-      EVP_PKEY_free(pub);
-      pub = NULL;
-    }
-#endif
 
     if (buf != NULL)
     {
       unsigned char *p = buf;
+      EVP_PKEY *pub = EVP_PKEY_new();
+#if OPENSSL_VERSION_NUMBER > 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
+      EVP_PKEY_copy_parameters(pub, pkey);
+#endif
       len = i2d_PUBKEY(pkey, &p);
       p = buf;
       pub = d2i_PUBKEY(&pub, (const unsigned char **)&p, len);
@@ -1599,11 +1615,7 @@ static LUA_FUNCTION(openssl_sign)
     size_t idlen = 0;
 
     const char* userId = luaL_optlstring (L, 4, SM2_DEFAULT_USERID, &idlen);
-#if OPENSSL_VERSION_NUMBER > 0x30000000
-    pctx = EVP_PKEY_CTX_new_from_name(NULL, "sm2", NULL);
-#else
     pctx = EVP_PKEY_CTX_new(pkey, NULL);
-#endif
     EVP_PKEY_CTX_set1_id(pctx, userId, idlen);
     EVP_MD_CTX_set_pkey_ctx(ctx, pctx);
   }
@@ -1686,11 +1698,7 @@ static LUA_FUNCTION(openssl_verify)
 
     const char* userId = luaL_optlstring (L, 5, SM2_DEFAULT_USERID, &idlen);
 
-#if OPENSSL_VERSION_NUMBER > 0x30000000
-    pctx = EVP_PKEY_CTX_new_from_name(NULL, "sm2", NULL);
-#else
     pctx = EVP_PKEY_CTX_new(pkey, NULL);
-#endif
     EVP_PKEY_CTX_set1_id(pctx, userId, idlen);
     EVP_MD_CTX_set_pkey_ctx(ctx, pctx);
   }

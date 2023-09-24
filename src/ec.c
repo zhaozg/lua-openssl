@@ -640,10 +640,13 @@ static int openssl_ec_key_parse(lua_State*L)
     BIGNUM* x = BN_new();
     BIGNUM* y = BN_new();
 
-    priv = BN_dup(priv);
-    AUXILIAR_SETOBJECT(L, priv, "openssl.bn", -1, "d");
+    if (priv != NULL)
+    {
+      priv = BN_dup(priv);
+      AUXILIAR_SETOBJECT(L, priv, "openssl.bn", -1, "d");
+    }
 
-    if (EC_POINT_get_affine_coordinates(group, point, x, y, NULL) == 1)
+    if (point && EC_POINT_get_affine_coordinates(group, point, x, y, NULL) == 1)
     {
       AUXILIAR_SETOBJECT(L, x, "openssl.bn", -1, "x");
       AUXILIAR_SETOBJECT(L, y, "openssl.bn", -1, "y");
