@@ -437,33 +437,6 @@ static LUA_FUNCTION(openssl_pkey_new)
       int bits = luaL_optint(L, 2, 1024);
       int generator = luaL_optint(L, 3, 2);
       ENGINE *eng = lua_isnoneornil(L, 4) ? NULL : CHECK_OBJECT(4, ENGINE, "openssl.engine");
-
-#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
-      EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new_from_name(NULL, "DH", NULL);
-      if (ctx)
-      {
-        int ret = EVP_PKEY_paramgen_init(ctx);
-        if (ret == 1)
-        {
-          ret = EVP_PKEY_keygen_init(ctx);
-          if ( ret == 1)
-          {
-            ret = EVP_PKEY_CTX_set_dh_paramgen_prime_len(ctx, bits);
-            if ( ret == 1)
-            {
-              ret = EVP_PKEY_CTX_set_dh_paramgen_generator(ctx, generator);
-              if(ret == 1)
-              {
-                ret = EVP_PKEY_keygen(ctx, &pkey);
-                if (ret == 1)
-                  EVP_PKEY_set_type(pkey, EVP_PKEY_DH);
-              }
-            }
-          }
-        }
-        EVP_PKEY_CTX_free(ctx);
-      }
-#else
       DH* dh = eng ? DH_new_method(eng) : DH_new();
       if (DH_generate_parameters_ex(dh, bits, generator, NULL))
       {
@@ -477,7 +450,6 @@ static LUA_FUNCTION(openssl_pkey_new)
       }
       else
         DH_free(dh);
-#endif
     }
     else
 #endif

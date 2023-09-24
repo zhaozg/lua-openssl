@@ -22,9 +22,6 @@ function TestDH:testDH()
   assert(t.priv_key)
   assert(k:check(t.pub_key))
 
-  if helper.openssl3 then -- FIXME: openssl3 DH generate
-    return
-  end
   dh = assert(pkey.new('dh',  bits))
 
   local k1 = pkey.get_public(dh)

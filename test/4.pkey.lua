@@ -17,12 +17,12 @@ TestPKEYMY = {}
 function TestPKEYMY:setUp()
   self.genalg = {
     {nil},  -- default to create rsa 1024 bits with 65537
-    {'rsa',  2048,  3},  -- create rsa with give bits length and e
-    {'ec',  'prime256v1'}
+    {'rsa',  2048,  3},   -- create rsa with give bits length and e
+    {'ec',  'prime256v1'},
+    {'dh',  1024}
   }
   if not helper.openssl3 then --FIXME: dsa, dh key generate
     self.genalg[#self.genalg+1] = {'dsa',  1024}
-    self.genalg[#self.genalg+1] = {'dh',  1024}
   end
 end
 
@@ -33,7 +33,6 @@ function TestPKEYMY:testBasic()
     local k = mk_key(v)
     assert(k:is_private())
     if v[1]~='dh' then
-      --FIXME: avoid bug when dh
       k:set_engine(eng)
     end
     local k1 = assert(pkey.get_public(k), v[1])
