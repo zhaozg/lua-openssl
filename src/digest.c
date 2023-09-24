@@ -456,16 +456,22 @@ static LUA_FUNCTION(openssl_digest_ctx_data)
   }
 #else
 
+#if defined(LIBRESSL_VERSION_NUMBER)
+  /* without EVP_MD_meth_get_app_datasize */
+  return 0;
+#else
+
 #if OPENSSL_VERSION_NUMBER < 0x30000000
   const EVP_MD *md = EVP_MD_CTX_md(ctx);
 #else
   const EVP_MD *md = EVP_MD_CTX_get0_md(ctx);
 #endif
-  size_t ctx_size;
+  size_t ctx_size = (size_t)EVP_MD_meth_get_app_datasize(md);
+  if (ctx_size == 0)
+    return 0;
 
   if (lua_isnone(L, 2))
   {
-    ctx_size = (size_t)EVP_MD_meth_get_app_datasize(md);
     lua_pushlstring(L, EVP_MD_CTX_md_data(ctx), ctx_size);
   }
   else
@@ -478,6 +484,7 @@ static LUA_FUNCTION(openssl_digest_ctx_data)
     memcpy(EVP_MD_CTX_md_data(ctx), d, ctx_size);
     lua_pushboolean(L, 1);
   }
+#endif
 
 #endif
   return 1;

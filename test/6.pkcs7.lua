@@ -63,7 +63,16 @@ function TestPKCS7:testNew()
   der = assert(p7:export())
   assert(openssl.pkcs7.read(der, 'auto'))
 
-  if not helper.openssl3 then -- FIXME: pkcs7 export
+  if helper.openssl3 then
+  --p7 = openssl.pkcs7.create({
+  --    ca.cacert,
+  --    cert
+  --  }, {ca.crl})
+  --assert(p7:parse())
+  --assert(p7:export())
+
+  --assert(p7:export('der'))
+  else
   p7 = openssl.pkcs7.new()
   p7:add(ca.cacert)
   p7:add(cert)
@@ -71,11 +80,10 @@ function TestPKCS7:testNew()
   assert(p7:parse())
   assert(p7:export())
 
-  der = p7:export('der')
-  assert(der)
+  assert(p7:export('der'))
+  end
 
   local ln, sn = p7:type()
   assert(ln)
   assert(sn)
-  end
 end

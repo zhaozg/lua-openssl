@@ -993,7 +993,7 @@ static int openssl_asn1group_set(lua_State *L)
     }
     else if (lua_isstring(L, 2))
     {
-      ret = ASN1_UTCTIME_set_string(a, lua_tostring(L, 2));
+      ret = ASN1_TIME_set_string(a, lua_tostring(L, 2));
     }
     else
       luaL_error(L, "only accpet number or string");

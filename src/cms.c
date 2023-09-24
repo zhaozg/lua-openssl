@@ -649,7 +649,6 @@ static const luaL_Reg R[] =
   {"encrypt",               openssl_cms_encrypt},
   {"decrypt",               openssl_cms_decrypt},
 
-  {"digest",                openssl_cms_digest_create},
   {"digest_create",         openssl_cms_digest_create},
   {"digest_verify",         openssl_cms_digest_verify},
 

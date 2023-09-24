@@ -1269,18 +1269,25 @@ static LUA_FUNCTION(openssl_pkey_get_public)
 {
   EVP_PKEY *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
   int ret = 0;
-
   size_t len = i2d_PUBKEY(pkey, NULL);
   if (len > 0)
   {
     unsigned char *buf = OPENSSL_malloc(len);
+    EVP_PKEY *pub = EVP_PKEY_new();
+#if OPENSSL_VERSION_NUMBER > 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
+    if (pub != NULL && EVP_PKEY_copy_parameters(pub, pkey) <= 0)
+    {
+      EVP_PKEY_free(pub);
+      pub = NULL;
+    }
+#endif
+
     if (buf != NULL)
     {
       unsigned char *p = buf;
-      EVP_PKEY *pub;
       len = i2d_PUBKEY(pkey, &p);
       p = buf;
-      pub = d2i_PUBKEY(NULL, (const unsigned char **)&p, len);
+      pub = d2i_PUBKEY(&pub, (const unsigned char **)&p, len);
       if (pub)
       {
         PUSH_OBJECT(pub, "openssl.evp_pkey");

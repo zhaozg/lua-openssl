@@ -1461,11 +1461,11 @@ static int openssl_ssl_ctx_set_tmp(lua_State *L)
 static int tlsext_servername_callback(SSL *ssl, int *ad, void *arg)
 {
   SSL_CTX *newctx = NULL;
-  SSL_CTX *ctx = SSL_get_SSL_CTX(ssl);
+  SSL_CTX *ctx = arg;
   lua_State *L = SSL_CTX_get_app_data(ctx);
   const char *name = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
   (void) ad;
-  (void) arg;
+
   /* No name, use default context */
   if (!name)
     return SSL_TLSEXT_ERR_NOACK;
@@ -1511,6 +1511,8 @@ static int openssl_ssl_ctx_set_servername_callback(lua_State*L)
   lua_pushvalue(L, 2);
   openssl_valueset(L, ctx, "tlsext_servername");
   SSL_CTX_set_tlsext_servername_callback(ctx, tlsext_servername_callback);
+  SSL_CTX_set_tlsext_servername_arg(ctx, ctx);
+
   return 0;
 }
 

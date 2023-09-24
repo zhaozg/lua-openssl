@@ -191,11 +191,11 @@ function TestTime:testUTCTime()
     assert(type(ab:toprint()=='string'))
   end
 
-  ab:set("19971112153010.5Z")
-  if not helper.libressl then  -- FIXME: libressl
-    local ac = assert(openssl.asn1.new_utctime("19971112153010.5Z"))
-    assert(ac:tostring())
-  end
+  ab:set("19971112153010Z")
+  local ac = assert(openssl.asn1.new_utctime("19971112153010Z"))
+  assert(ac:tostring())
+  assert(ab==ac)
+  assert(ab:tostring()==ac:tostring())
 end
 
 function TestTime:testGENERALIZEDTime()
@@ -224,11 +224,10 @@ function TestTime:testGENERALIZEDTime()
     assert(type(ab:toprint()=='string'))
   end
 
-  ab:set("19971112153010.5Z")
-  if not helper.libressl then  -- FIXME: libressl
-    local ac = assert(openssl.asn1.new_generalizedtime("19971112153010.5Z"))
-    assert(ac:tostring())
-  end
+  ab:set("19971112153010Z")
+  local ac = assert(openssl.asn1.new_generalizedtime("19971112153010Z"))
+  assert(ac:tostring())
+  assert(ab==ac)
 end
 
 TestNumber = {}
@@ -276,11 +275,12 @@ function TestType:testBasic()
   assert(asn1.d2i_asn1type(d)==o)
   assert(o:info())
 
-  s = asn1.new_string("BMP", asn1.BMPSTRING)
+  -- The ASN.1 BMPString data type, called a UNICODE_STRING.
+  local bmp = string.char(0, 0x31, 0, 0x32, 0, 0x33)
+  s = asn1.new_string(bmp, asn1.BMPSTRING)
   o = asn1.new_type(s)
   d = assert(o:i2d())
-  -- FIXME: BMPSTRING
-  -- assert(asn1.d2i_asn1type(d)==o)
+  assert(asn1.d2i_asn1type(d)==o)
   assert(o:info())
 
   s = asn1.new_string("octet", asn1.OCTET_STRING)

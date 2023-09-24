@@ -361,6 +361,17 @@ static int openssl_padding_check(lua_State *L)
     pri = lua_toboolean(L, 4);
 
     /* true for private, false for public */
+#ifdef LIBRESSL_VERSION_NUMBER
+    /* NOTE: iibressl not compat with openssl */
+    if (pri)
+    {
+      ret = RSA_padding_check_PKCS1_type_1(to, sz, from + 1, l - 1, sz);
+    }
+    else
+    {
+      ret = RSA_padding_check_PKCS1_type_2(to, sz, from + 1, l - 1, sz);
+    }
+#else
     if (pri)
     {
       ret = RSA_padding_check_PKCS1_type_1(to, sz, from, l, sz);
@@ -369,6 +380,7 @@ static int openssl_padding_check(lua_State *L)
     {
       ret = RSA_padding_check_PKCS1_type_2(to, sz, from, l, sz);
     }
+#endif
     break;
   }
 #ifdef RSA_SSLV23_PADDING

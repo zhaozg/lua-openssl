@@ -68,7 +68,7 @@ static LUA_FUNCTION(openssl_pkcs7_read)
 
 #if OPENSSL_VERSION_NUMBER > 0x10000000L
 /***
-create new empty pkcs7 object, which support flexble sign methods.
+create new empty pkcs7 object, which support flexible sign methods.
 
 @function new
 @tparam[opt=NID_pkcs7_signed] int oid given pkcs7 type
@@ -93,10 +93,57 @@ static LUA_FUNCTION(openssl_pkcs7_new)
       }
     }
 
-    if (ret==0) PKCS7_free(p7);
+    if (ret==0)
+      PKCS7_free(p7);
   }
 
   return ret;
+}
+
+static LUA_FUNCTION(openssl_pkcs7_create)
+{
+  PKCS7 *p7 = NULL;
+  PKCS7_SIGNED *p7s = NULL;
+
+  STACK_OF(X509) *certs = openssl_sk_x509_fromtable(L, 1);
+  STACK_OF(X509_CRL) *crls = lua_isnoneornil(L, 2) ? NULL:
+    openssl_sk_x509_crl_fromtable(L, 2);
+
+  p7 = PKCS7_new();
+  p7s = PKCS7_SIGNED_new();
+  if (p7 != NULL && p7s != NULL)
+  {
+    p7->type = OBJ_nid2obj(NID_pkcs7_signed);
+    p7->d.sign = p7s;
+    p7s->contents->type = OBJ_nid2obj(NID_pkcs7_data);
+
+    ASN1_INTEGER_set(p7s->version, 1);
+    p7s->crl = crls;
+    p7s->cert = certs;
+
+    PUSH_OBJECT(p7, "openssl.pkcs7");
+    return 1;
+  }
+  PKCS7_free(p7);
+  PKCS7_SIGNED_free(p7s);
+
+  return 0;
+}
+
+
+static LUA_FUNCTION(openssl_pkcs7_set_content)
+{
+  PKCS7 *p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
+  PKCS7 *content = CHECK_OBJECT(2, PKCS7, "openssl.pkcs7");
+
+  int ret = PKCS7_set_content(p7, content);
+  if (ret == 1)
+  {
+    lua_pushvalue(L, 1);
+    lua_pushvalue(L, 2);
+    lua_rawset(L, LUA_REGISTRYINDEX);
+  }
+  return openssl_pushresult(L, ret);
 }
 
 static LUA_FUNCTION(openssl_pkcs7_add)
@@ -542,6 +589,7 @@ static luaL_Reg pkcs7_funcs[] =
 #if OPENSSL_VERSION_NUMBER > 0x10000000L
   {"add",           openssl_pkcs7_add},
 #endif
+  {"set_content",   openssl_pkcs7_set_content},
 
   {"__gc",          openssl_pkcs7_gc},
   {"__tostring",    auxiliar_tostring},
@@ -554,6 +602,7 @@ static const luaL_Reg R[] =
 #if OPENSSL_VERSION_NUMBER > 0x10000000L
   {"new",         openssl_pkcs7_new},
 #endif
+  {"create",      openssl_pkcs7_create},
   {"read",        openssl_pkcs7_read},
   {"sign",        openssl_pkcs7_sign},
   {"verify",      openssl_pkcs7_verify},
@@ -581,6 +630,13 @@ static LuaL_Enumeration pkcs7_const[] =
   {"NOCRL",        PKCS7_NOCRL},
   {"PARTIAL",      PKCS7_PARTIAL},
   {"REUSE_DIGEST", PKCS7_REUSE_DIGEST},
+
+  {"data",                NID_pkcs7_data},
+  {"signed",              NID_pkcs7_signed},
+  {"enveloped",           NID_pkcs7_enveloped},
+  {"signedAndEnveloped",  NID_pkcs7_signedAndEnveloped},
+  {"digest",              NID_pkcs7_digest},
+  {"encrypted",           NID_pkcs7_encrypted},
 
   {NULL,           0}
 };

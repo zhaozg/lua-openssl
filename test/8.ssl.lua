@@ -287,7 +287,7 @@ function TestSSL:testSNI()
       certs[#certs + 1] = cert
     end
     if ctx.version then
-      ctx:version(0x303, 0x303)
+      ctx:version(0x301, 0x303)
     end
     ctx:set_session_callback(
       function(s, ss)
@@ -302,9 +302,7 @@ function TestSSL:testSNI()
         -- get
         assert(tostring(s):match('openssl.ssl '))
         assert(type(id)=='string')
-        local ss = session_cache[id]
-        print(ss)
-        return ss
+        return assert(session_cache[id])
       end,
       function(id)
         session_cache[id] = nil
@@ -318,12 +316,21 @@ function TestSSL:testSNI()
     return ctx
   end
 
-  local function create_srv_ctx()
+  local function create_srv_ctx(tab)
     local ctx = create_ctx({{CN = "server"},  {C = "CN"}})
-    ctx:set_servername_callback({
+    local sni_ctx = {
       ["serverA"] = create_ctx {{CN = "serverA"},  {C = "CN"}},
       ["serverB"] = create_ctx {{CN = "serverB"},  {C = "CN"}}
-    })
+    }
+    if tab then
+      ctx:set_servername_callback(sni_ctx)
+    else
+      local sni_cb = function(name)
+        return sni_ctx[name]
+      end
+      ctx:set_servername_callback(sni_cb)
+    end
+
     if store then ctx:cert_store(store) end
 
     ctx:set_cert_verify()
@@ -377,6 +384,7 @@ function TestSSL:testSNI()
   bs:close()
   bc:close()
 
+  -- SSL session reuse, sni not change servername
   bs, bc = bio.pair()
   srv = assert(srv_ctx:ssl(bs, true))
   cli = assert(cli_ctx:ssl(bc, false))
@@ -388,12 +396,30 @@ function TestSSL:testSNI()
   until (rs and cs) or (rs == nil or cs == nil)
   assert(rs and cs)
   peer = cli:peer()
-  -- FIXME: libressl sni hostname
-  if not helper.libressl then
-    assert(peer:subject():oneline() == "/CN=server/C=CN")
+  if helper.libressl then
+    assert(peer:subject():oneline()=="/CN=serverB/C=CN")
   else
-    assert(peer:subject():oneline() == "/CN=serverB/C=CN")
+    assert(peer:subject():oneline()=="/CN=server/C=CN")
   end
+  cli:shutdown()
+  srv:shutdown()
+  bs:close()
+  bc:close()
+
+  -- SSL session not reuse, sni change servername
+  srv_ctx = create_srv_ctx(true)
+  bs, bc = bio.pair()
+  srv = assert(srv_ctx:ssl(bs, true))
+  cli = assert(cli_ctx:ssl(bc, false))
+  cli:set('hostname', 'serverB')
+  repeat
+    cs, ec = cli:handshake()
+    rs, es = srv:handshake()
+  until (rs and cs) or (rs == nil or cs == nil)
+  assert(rs and cs)
+  peer = cli:peer()
+  assert(peer:subject():oneline() == "/CN=serverB/C=CN")
+
   if not helper.libressl then
     rc, ec = cli:renegotiate()
     rs, es = srv:renegotiate_abbreviated()
