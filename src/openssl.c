@@ -347,7 +347,6 @@ static int openssl_fips_mode(lua_State *L)
   int ret =0;
 #if !defined(LIBRESSL_VERSION_NUMBER) && (OPENSSL_VERSION_NUMBER < 0x30000000L)
   int on = 0;
-  FIPS_mode_set(0);
   if(lua_isnone(L, 1))
   {
     lua_pushboolean(L, FIPS_mode());
