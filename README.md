@@ -302,7 +302,7 @@ end
 test_x509()
 ```
 
-### Example 5: bio network handle(TCP)
+### Example 6: bio network handle(TCP)
 
 - server
 
@@ -352,6 +352,50 @@ local cli = assert(bio.connect(host..':'..port,true))
 ```
 
 For more examples, please see test lua script file.
+
+### Example 7: aes-128-gcm
+
+```lua
+local openssl = require('openssl')
+
+local evp = openssl.cipher.get('aes-128-gcm')
+local info = evp:info()
+
+-- get cipher info
+local key = openssl.random(info.key_length)
+local msg = openssl.random(info.key_length)
+local iv = openssl.random(info.iv_length)
+local tn = 16 -- tag length
+
+--do encrypt
+local e = evp:encrypt_new()
+assert(e:ctrl(openssl.cipher.EVP_CTRL_GCM_SET_IVLEN, #iv))
+assert(e:init(key, iv))
+e:padding(false)
+
+--- get cipher
+local c = assert(e:update(msg))
+c = c .. e:final()
+assert(#c==#msg)
+
+--- Get the tag
+local tag = assert(e:ctrl(openssl.cipher.EVP_CTRL_GCM_GET_TAG, tn))
+assert(#tag==tn)
+
+--do decrypt
+e = evp:decrypt_new()
+assert(e:ctrl(openssl.cipher.EVP_CTRL_GCM_SET_IVLEN, #iv))
+assert(e:init(key, iv))
+e:padding(false)
+
+local r = assert(e:update(c))
+assert(e:ctrl(openssl.cipher.EVP_CTRL_GCM_SET_TAG, tag))
+r = r .. assert(e:final())
+assert(#r==#c)
+
+assert(r==msg)
+print('Done')
+```
 
 ---
 
