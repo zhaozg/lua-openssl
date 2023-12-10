@@ -29,6 +29,7 @@ libressl-*)
 esac
 
 if [ ! -d "$HOME/opt/$SSL" ]; then
+	echo "Downloading... $SSLURL"
         wget "$SSLURL" || exit 1
         tar -xzf "$SSL.tar.gz" || exit 1
         cd "$SSL" || exit 1
