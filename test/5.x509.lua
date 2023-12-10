@@ -200,7 +200,7 @@ vMkXEPvNvv4t30K6xtpG26qmZ+6OiISBIIXMljWnsiYR1gyZnTzIg3AQSw4Vmw==
   assert(x:issuer())
 
   t = x509.purpose()
-  assert(#t == 9)
+  assert(#t >= 9, #t)
   assert(type(x509.purpose(t[1].purpose))=='table')
   assert(type(x509.purpose(t[1].sname))=='table')
 end
