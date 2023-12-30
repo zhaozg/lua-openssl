@@ -141,8 +141,8 @@ LUA_FUNCTION(luaopen_dh);
 #if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
 LUA_FUNCTION(luaopen_mac);
 LUA_FUNCTION(luaopen_param);
-LUA_FUNCTION(luaopen_kdf);
 #endif
+LUA_FUNCTION(luaopen_kdf);
 
 void openssl_add_method_or_alias(const OBJ_NAME *name, void *arg) ;
 void openssl_add_method(const OBJ_NAME *name, void *arg);

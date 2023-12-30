@@ -563,9 +563,9 @@ LUALIB_API int luaopen_openssl(lua_State*L)
   lua_setfield(L, -2, "mac");
   luaopen_param(L);
   lua_setfield(L, -2, "param");
+#endif
   luaopen_kdf(L);
   lua_setfield(L, -2, "kdf");
-#endif
 
   luaopen_pkey(L);
   lua_setfield(L, -2, "pkey");

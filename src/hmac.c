@@ -54,6 +54,7 @@ compute hmac one step, in module openssl.hamc
 @tparam evp_digest|string|nid digest digest alg identity
 @tparam string message
 @tparam string key
+@tparam(opt=false) boolean raw
 @treturn string result binary string
 */
 static int openssl_hmac(lua_State *L)

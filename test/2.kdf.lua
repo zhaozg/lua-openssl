@@ -2,13 +2,25 @@ local lu = require 'luaunit'
 
 local openssl = require 'openssl'
 local kdf = require'openssl'.kdf
-if not kdf then
-  return
-end
 
 TestKDF = {}
 
+function TestKDF:testDerive()
+  if kdf.iterator then return end
+  local pwd = "1234567890"
+  local salt = "0987654321"
+  local md = 'sha256'
+  local iter = 4096
+  local keylen = 32
+
+  local key = assert(kdf.derive(pwd, salt, md, iter, keylen))
+  print('key', key)
+  assert(key)
+  assert(#key == 32)
+end
+
 function TestKDF:testBasic()
+  if not kdf.iterator then return end
   kdf.iterator(function(k)
     assert(k:name())
     assert(k)
@@ -25,8 +37,10 @@ function TestKDF:testBasic()
 end
 
 function TestKDF:testPBKDF2()
+  if not kdf.fetch then return end
+
   local pwd = "1234567890";
-  local salt = "0987654321" -- <D-s>getSalt(pwd)
+  local salt = "0987654321" -- getSalt(pwd)
   local pbkdf2 = kdf.fetch('PBKDF2')
   local t = assert(pbkdf2:settable_ctx_params())
   local key = assert(pbkdf2:derive({
@@ -59,8 +73,10 @@ function TestKDF:testPBKDF2()
 end
 
 function TestKDF:testPBKDF2CTX()
+  if not kdf.fetch then return end
+
   local pwd = "1234567890";
-  local salt = "0987654321" -- <D-s>getSalt(pwd)
+  local salt = "0987654321" -- getSalt(pwd)
   local pbkdf2 = kdf.fetch('PBKDF2')
   local ctx = assert(pbkdf2:new())
 

@@ -94,17 +94,31 @@ static int openssl_kdf_fetch(lua_State *L)
 
   return 1;
 }
+#endif
 
 /***
-compute KDF delive
+compute KDF delive, openssl version >= v3
 
 @function deilver
 @tparam evp_kdf|string kdf
 @tparam table array of paramaters
 @treturn string result binary string
 */
+
+/***
+compute KDF delive, openssl version < v3
+
+@function deilver
+@tparam string pass
+@tparam string salt
+@tparam string|object|nid digest
+@tparam[opt=1000] number iterator
+@tparam[opt=32] number keylen
+@treturn string deilved result binary string
+*/
 static int openssl_kdf_derive(lua_State *L)
 {
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
   EVP_KDF *kdf = get_kdf(L, 1);
   OSSL_PARAM *params = openssl_toparams(L, 2);
   unsigned char key[64] = {0};
@@ -124,8 +138,35 @@ static int openssl_kdf_derive(lua_State *L)
   EVP_KDF_CTX_free(ctx);
   OPENSSL_free(params);
   return ret;
+#else
+  size_t passlen, saltlen;
+  const char* pass = luaL_checklstring (L, 1, &passlen);
+  const char* salt = luaL_checklstring (L, 2, &saltlen);
+  const EVP_MD* md = get_digest(L, 3, NULL);
+  int iter = luaL_optinteger(L, 4, 1000);
+  int keylen = luaL_optinteger(L, 5, 32);
+  unsigned char key[256] = {0};
+
+  luaL_argcheck(L, keylen <= sizeof(key), 5,
+                "out of support range, limited to 256");
+
+  int ret = PKCS5_PBKDF2_HMAC(pass, (int)passlen,
+                              salt, (int)saltlen,
+                              iter,
+                              md,
+                              keylen,
+                              key);
+  if (ret==1)
+  {
+    lua_pushlstring(L, key, keylen);
+  } else
+    ret = openssl_pushresult(L, ret);
+
+  return ret;
+#endif
 }
 
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
 /***
 openssl.kdf_ctx object
 @type kdf_ctx
@@ -512,11 +553,14 @@ static luaL_Reg kdf_funs[] =
 
   {NULL,  NULL}
 };
+#endif
 
 static const luaL_Reg kdf_R[] =
 {
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
   {"fetch",     openssl_kdf_fetch},
   {"iterator",  openssl_kdf_iterator_kdf},
+#endif
   {"derive",    openssl_kdf_derive},
 
   {NULL,  NULL}
@@ -524,12 +568,15 @@ static const luaL_Reg kdf_R[] =
 
 int luaopen_kdf(lua_State *L)
 {
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
   auxiliar_newclass(L, "openssl.kdf", kdf_funs);
   auxiliar_newclass(L, "openssl.kdf_ctx", kdf_ctx_funs);
+#endif
 
   lua_newtable(L);
   luaL_setfuncs(L, kdf_R, 0);
 
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
   lua_pushliteral(L, "names");
   lua_newtable(L);
 
@@ -550,7 +597,7 @@ int luaopen_kdf(lua_State *L)
 #endif
 
   lua_rawset(L, -3);
+#endif
 
   return 1;
 }
-#endif
