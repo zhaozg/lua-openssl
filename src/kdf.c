@@ -151,14 +151,14 @@ static int openssl_kdf_derive(lua_State *L)
                 "out of support range, limited to 256");
 
   int ret = PKCS5_PBKDF2_HMAC(pass, (int)passlen,
-                              salt, (int)saltlen,
+                              (const unsigned char*)salt, (int)saltlen,
                               iter,
                               md,
                               keylen,
                               key);
   if (ret==1)
   {
-    lua_pushlstring(L, key, keylen);
+    lua_pushlstring(L, (const char*)key, keylen);
   } else
     ret = openssl_pushresult(L, ret);
 
