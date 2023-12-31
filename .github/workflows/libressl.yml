@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        luarocks_version: [3.8.0]
+        luarocks_version: [3.9.2]
         lua_version: [luajit2.1]
         openssl_version:
         - libressl-3.3.6
@@ -28,7 +28,7 @@ jobs:
       SSL: ${{ matrix.openssl_version }}
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: recursive
 
