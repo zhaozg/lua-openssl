@@ -14,13 +14,13 @@ jobs:
       COVERALLS_REPO_TOKEN: "${{ secrets.COVERALLS_TOKEN }}"
       WITH_LUA_ENGINE: LuaJIT
       LUA: luajit2.1
-      LUAROCKS: 3.8.0
+      LUAROCKS: 3.9.2
       SSL: ${{ matrix.openssl_version }}
       COVERALLS_PARALLEL: ON
       COVERALLS_SERVICE_NAME: github
       TRAVIS_JOB_ID: ${{ github.run_id }}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: recursive
     - name: cpp-coveralls
@@ -53,7 +53,7 @@ jobs:
   Valgrind:
     runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: recursive
     - name: depends
@@ -66,9 +66,9 @@ jobs:
     env:
       WITH_LUA_ENGINE: LuaJIT
       LUA: luajit2.1
-      LUAROCKS: 3.8.0
+      LUAROCKS: 3.9.2
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: recursive
     - name: run
@@ -86,7 +86,7 @@ jobs:
       CC: clang
       CXX: clang++
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: recursive
     - name: depends
@@ -101,7 +101,7 @@ jobs:
       CXX: clang++
       TSAN_OPTIONS: atexit_sleep_ms=2000 flush_memory_ms=2000
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: recursive
     - name: depends
