@@ -2092,6 +2092,7 @@ static int openssl_pkey_bits(lua_State *L)
   return  1;
 };
 
+#ifndef OPENSSL_NO_ENGINE
 static int openssl_pkey_set_engine(lua_State *L)
 {
   EVP_PKEY *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
@@ -2155,6 +2156,7 @@ static int openssl_pkey_set_engine(lua_State *L)
   lua_pushboolean(L, ret==1);
   return 1;
 }
+#endif
 
 #if defined(OPENSSL_SUPPORT_SM2) && OPENSSL_VERSION_NUMBER < 0x30000000
 static int openssl_pkey_as_sm2(lua_State *L)
@@ -2194,7 +2196,9 @@ static luaL_Reg pkey_funcs[] =
 {
   {"is_private",    openssl_pkey_is_private1},
   {"get_public",    openssl_pkey_get_public},
+#ifndef OPENSSL_NO_ENGINE
   {"set_engine",    openssl_pkey_set_engine},
+#endif
 
   {"export",        openssl_pkey_export},
   {"parse",         openssl_pkey_parse},
@@ -2262,7 +2266,9 @@ static const luaL_Reg R[] =
   {"open_final",    openssl_open_final},
 
   {"get_public",    openssl_pkey_get_public},
+#ifndef OPENSSL_NO_ENGINE
   {"set_engine",    openssl_pkey_set_engine},
+#endif
   {"is_private",    openssl_pkey_is_private1},
   {"export",        openssl_pkey_export},
   {"parse",         openssl_pkey_parse},

@@ -33,7 +33,7 @@ function TestPKEYMY:testBasic()
   for _, v in ipairs(self.genalg) do
     local k = mk_key(v)
     assert(k:is_private())
-    if v[1]~='dh' then
+    if v[1]~='dh' and k.set_engine then
       k:set_engine(eng)
     end
     assert(not k:missing_paramaters())
