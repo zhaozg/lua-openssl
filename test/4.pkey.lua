@@ -28,12 +28,14 @@ function TestPKEYMY:setUp()
 end
 
 function TestPKEYMY:testBasic()
-  local eng = openssl.engine('openssl')
-  assert(eng)
+  local eng
+  if openssl.engine then
+    eng = assert(openssl.engine('openssl'))
+  end
   for _, v in ipairs(self.genalg) do
     local k = mk_key(v)
     assert(k:is_private())
-    if v[1]~='dh' and k.set_engine then
+    if v[1]~='dh' and eng then
       k:set_engine(eng)
     end
     assert(not k:missing_paramaters())

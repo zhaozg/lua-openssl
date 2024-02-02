@@ -313,9 +313,11 @@ static int openssl_padding_add(lua_State *L)
     }
     break;
   }
+#if !defined(LIBRESSL_VERSION_NUMBER) || LIBRESSL_VERSION_NUMBER < 0x30800000L
   case RSA_X931_PADDING:
     ret = RSA_padding_add_X931(to, sz, from, l);
     break;
+#endif
 #if OPENSSL_VERSION_NUMBER > 0x10000000L
   case RSA_PKCS1_PSS_PADDING:
   {
@@ -409,9 +411,11 @@ static int openssl_padding_check(lua_State *L)
   case RSA_NO_PADDING:
     ret = RSA_padding_check_none(to, sz, from, l, sz);
     break;
+#if !defined(LIBRESSL_VERSION_NUMBER) || LIBRESSL_VERSION_NUMBER < 0x30800000L
   case RSA_X931_PADDING:
     ret = RSA_padding_check_X931(to, sz, from, l, sz);
     break;
+#endif
 #if OPENSSL_VERSION_NUMBER > 0x10000000L
   case RSA_PKCS1_PSS_PADDING:
   {

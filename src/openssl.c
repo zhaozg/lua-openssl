@@ -401,7 +401,9 @@ static const luaL_Reg eay_functions[] =
   {"clear_error", openssl_clear_error},
   {"error",       openssl_error_string},
   {"errors",      openssl_errors},
+#ifndef OPENSSL_NO_ENGINE
   {"engine",      openssl_engine},
+#endif
   {"FIPS_mode",   openssl_fips_mode},
 
   {NULL, NULL}
@@ -555,7 +557,9 @@ LUALIB_API int luaopen_openssl(lua_State*L)
   luaL_setfuncs(L, eay_functions, 0);
 
   openssl_register_lhash(L);
+#ifndef OPENSSL_NO_ENGINE
   openssl_register_engine(L);
+#endif
 
   luaopen_bio(L);
   lua_setfield(L, -2, "bio");
