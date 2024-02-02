@@ -418,12 +418,22 @@ static OSSL_PROVIDER* legacy = NULL;
 static OSSL_PROVIDER* openssl= NULL;
 #endif
 
-static int _guard = 0;
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+#include <stdatomic.h>
+static atomic_int _guard = 0;
+#else
+static volatile int _guard = 0;
+#endif
 
 static void openssl_finalize(void)
 {
-  if (!_guard) return;
-  _guard = 0;
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+  if (atomic_fetch_add_explicit(&_guard, -1, memory_order_relaxed) != 1)
+    return;
+#else
+  if (--_guard == 1)
+    return;
+#endif
 
 #if (OPENSSL_VERSION_NUMBER > 0x10100000L && !IS_LIBRESSL()) || \
   LIBRESSL_VERSION_NUMBER > 0x30600000L
@@ -483,8 +493,13 @@ static void openssl_finalize(void)
 }
 
 static void openssl_initialize() {
-  if (_guard) return;
-  _guard = 1;
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+  if (atomic_fetch_add_explicit(&_guard, 1, memory_order_relaxed) > 0)
+    return;
+#else
+  if (++_guard > 0)
+    return;
+#endif
 
 #if (OPENSSL_VERSION_NUMBER < 0x10100000L || \
     (IS_LIBRESSL() && LIBRESSL_VERSION_NUMBER < 0x30600000L))
