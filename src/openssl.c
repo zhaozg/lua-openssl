@@ -12,6 +12,9 @@ Openssl binding for Lua, provide openssl full function in lua.
 #include <openssl/engine.h>
 #include <openssl/opensslconf.h>
 #include "private.h"
+#ifndef OPENSSL_NO_CMS
+#include <openssl/cms.h>
+#endif
 
 /***
 get lua-openssl version
@@ -524,6 +527,14 @@ static void openssl_initialize() {
   ERR_load_crypto_strings();
   ERR_load_SSL_strings();
 #endif
+#if OPENSSL_VERSION_NUMBER < 0x30000000
+  ERR_load_BN_strings();
+#endif
+#ifndef OPENSSL_NO_CMS
+#if OPENSSL_VERSION_NUMBER < 0x30000000
+  ERR_load_CMS_strings();
+#endif
+#endif
 
 #ifndef OPENSSL_NO_ENGINE
 #if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
@@ -536,6 +547,11 @@ static void openssl_initialize() {
 #if OPENSSL_VERSION_NUMBER < 0x30000000L
   ENGINE_load_builtin_engines();
 #endif
+#endif
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
+  RAND_seed(LOPENSSL_VERSION LUA_VERSION OPENSSL_VERSION_TEXT,
+    sizeof(LOPENSSL_VERSION LUA_VERSION OPENSSL_VERSION_TEXT));
 #endif
 
 #ifdef LOAD_ENGINE_CUSTOM
