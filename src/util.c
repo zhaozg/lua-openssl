@@ -5,15 +5,10 @@ int openssl_newvalue(lua_State*L,const void*p)
   lua_rawgetp(L, LUA_REGISTRYINDEX, p);
   if (lua_isnil(L, -1))
   {
-    lua_pop(L, 1);
     lua_newtable(L);
     lua_rawsetp(L, LUA_REGISTRYINDEX, p);
   }
-  else
-  {
-
-    lua_pop(L, 1);
-  }
+  lua_pop(L, 1);
   return 0;
 }
 
