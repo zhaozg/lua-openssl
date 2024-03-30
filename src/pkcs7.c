@@ -136,13 +136,7 @@ static LUA_FUNCTION(openssl_pkcs7_set_content)
   PKCS7 *p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
   PKCS7 *content = CHECK_OBJECT(2, PKCS7, "openssl.pkcs7");
 
-  int ret = PKCS7_set_content(p7, content);
-  if (ret == 1)
-  {
-    lua_pushvalue(L, 1);
-    lua_pushvalue(L, 2);
-    lua_rawset(L, LUA_REGISTRYINDEX);
-  }
+  int ret = PKCS7_set_content(p7, PKCS7_dup(content));
   return openssl_pushresult(L, ret);
 }
 
