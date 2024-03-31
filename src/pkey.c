@@ -20,6 +20,7 @@ int openssl_pkey_is_private(EVP_PKEY* pkey)
   int ret = 0;
   int typ;
   assert(pkey != NULL);
+
   typ = EVP_PKEY_type(EVP_PKEY_id(pkey));
   switch (typ)
   {
@@ -67,6 +68,14 @@ int openssl_pkey_is_private(EVP_PKEY* pkey)
   }
 #endif
   default:
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
+  {
+    EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new_from_pkey(NULL, pkey, NULL);
+    if (EVP_PKEY_private_check(ctx))
+      ret = 1;
+    EVP_PKEY_CTX_free(ctx);
+  }
+#endif
     break;
   }
 

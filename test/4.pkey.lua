@@ -109,6 +109,16 @@ function TestPKEYMY:testBasic()
   end
 end
 
+if helper.openssl3 then
+  function testED25519()
+    local key = openssl.pkey.ctx_new('ED25519'):keygen()
+    assert(key:is_private())
+    local pem = key:export('pem')
+    key = openssl.pkey.read(pem, true, 'pem')
+    assert(key:is_private())
+  end
+end
+
 function testRSA()
   local nrsa = {'rsa',  1024,  3}
   local rsa = pkey.new(unpack(nrsa))
