@@ -267,6 +267,29 @@ if luv then
   end
 end
 
+function TestSSL:testCTX()
+  local protocols = {
+    "TLS", "DTLS", "SSLv23", "DTLSv1_2", "DTLSv1", "TLSv1_2", "TLSv1_1",
+    "TLSv1", "SSLv3"
+  }
+  local mode = {"client", "server", ""}
+  local num = 0
+  for _, v in pairs(protocols) do
+    for _, m in pairs(mode) do
+      local ctx
+
+      if #m > 0 then
+        v = string.format('%s_%s', v, m)
+      end
+      ctx = pcall(ssl.ctx_new, v)
+      if ctx then
+        num = num + 1
+      end
+    end
+  end
+  assert(num > 0)
+end
+
 function TestSSL:testSNI()
   local ca = helper.get_ca()
   local store = ca:get_store()
@@ -351,6 +374,9 @@ function TestSSL:testSNI()
   local srv_ctx = create_srv_ctx()
   local ss = assert(srv_ctx:ssl())
   assert(ss:dup())
+  local sbio = bio.filter('ssl', ss, 0)
+  sbio:close()
+
   local cli_ctx = create_cli_ctx()
   local srv = assert(srv_ctx:ssl(bs, bs, true))
   local cli = assert(cli_ctx:ssl(bc, bc, false))
@@ -383,6 +409,7 @@ function TestSSL:testSNI()
   sess = cli:session()
   cli:shutdown()
   srv:shutdown()
+  bs:destroy_pair()
   bs:close()
   bc:close()
 
@@ -405,6 +432,7 @@ function TestSSL:testSNI()
   end
   cli:shutdown()
   srv:shutdown()
+  bs:destroy_pair()
   bs:close()
   bc:close()
 
@@ -447,6 +475,7 @@ function TestSSL:testSNI()
   cli:shutdown(false)
   local oneline = peer:subject():oneline()
   assert(oneline == "/CN=server/C=CN" or oneline == "/CN=serverB/C=CN")
+  bs:destroy_pair()
   bs:close()
   bc:close()
 
@@ -557,7 +586,7 @@ function TestSSL:testSNI()
   local old = srv_ctx:session_cache_mode()
 
   srv_ctx:session_cache_mode(0)
-  local t = srv_ctx:session_cache_mode()
+  t = srv_ctx:session_cache_mode()
   assert(#t==1 and t[1]=='off')
 
   srv_ctx:session_cache_mode('client', 'no_internal_lookup')
@@ -582,6 +611,7 @@ function TestSSL:testSNI()
   cli:clear()
   cli:shutdown()
 
+  bs:destroy_pair()
   bs:close()
   bc:close()
 
@@ -601,13 +631,10 @@ function TestSSL:testSNI()
     srv:want()
   until (rs and cs) or (rs == nil or cs == nil)
 
-  -- FIXME: bio ssl filter
-  local sbio = bio.filter('ssl', cli, 0)
-
   cli:clear()
   cli:shutdown()
 
-  sbio:close()
+  bs:destroy_pair()
   bs:close()
   bc:close()
 

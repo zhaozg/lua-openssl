@@ -316,7 +316,7 @@ function TestType:testAll()
       local s = assert(asn1.new_string("octet", i))
       local o = assert(asn1.new_type(s))
       local d = assert(assert(o:i2d()))
-      assert(asn1.d2i_asn1type(d) == o)
+      assert(asn1.d2i_asn1type(d) == o, i)
 
       assert(o:info())
     end
