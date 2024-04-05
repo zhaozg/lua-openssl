@@ -260,3 +260,37 @@
    obj:/usr/lib/x86_64-linux-gnu/libcrypto.so.1.1
    fun:BN_bin2bn
 }
+
+{
+   BIO_new_bio_pair
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   fun:malloc
+   fun:CRYPTO_zalloc
+   obj:/usr/lib/x86_64-linux-gnu/libcrypto.so.1.1
+   fun:BIO_new
+   fun:BIO_new_bio_pair
+   obj:*
+}
+
+{
+   BIO_new_bio_pair
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   fun:malloc
+   obj:/usr/lib/x86_64-linux-gnu/libcrypto.so.1.1
+   fun:BIO_ctrl
+   fun:BIO_new_bio_pair
+   obj:*
+}
+
+{
+   BIO_new_bio_pair
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:CRYPTO_zalloc
+   fun:BIO_new
+   fun:BIO_new_bio_pair
+   obj:*
+}
