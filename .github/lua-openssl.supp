@@ -190,3 +190,16 @@
    fun:_dl_catch_error
    fun:_dlerror_run
 }
+
+# OpenSSL 1.1.1
+{
+   asn1.c ASN1_TYPE_set1 in openssl_asn1type_new
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   fun:malloc
+   fun:ASN1_STRING_set
+   fun:ASN1_STRING_copy
+   fun:ASN1_STRING_dup
+   fun:ASN1_TYPE_set1
+   obj:*
+}
