@@ -587,4 +587,27 @@ function TestSSL:testSNI()
 
   sess = ssl.session_new()
   sess:id(id)
+
+  bs, bc = bio.pair()
+  srv = assert(srv_ctx:ssl(bs))
+  srv:set_accept_state()
+  cli = assert(cli_ctx:ssl(bc))
+  cli:use(cert, pkey)
+  cli:set_connect_state()
+  cli:set('hostname', 'serverB')
+  repeat
+    cs, ec = cli:handshake()
+    rs, es = srv:handshake()
+    srv:want()
+  until (rs and cs) or (rs == nil or cs == nil)
+
+  local sbio = bio.filter('ssl', ssl)
+  sbio:close()
+
+  cli:clear()
+  cli:shutdown()
+
+  bs:close()
+  bc:close()
+
 end
