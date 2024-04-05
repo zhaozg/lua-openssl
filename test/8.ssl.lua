@@ -601,12 +601,13 @@ function TestSSL:testSNI()
     srv:want()
   until (rs and cs) or (rs == nil or cs == nil)
 
-  local sbio = bio.filter('ssl', ssl)
-  sbio:close()
+  -- FIXME: bio ssl filter
+  local sbio = bio.filter('ssl', cli, 0)
 
   cli:clear()
   cli:shutdown()
 
+  sbio:close()
   bs:close()
   bc:close()
 
