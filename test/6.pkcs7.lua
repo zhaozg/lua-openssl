@@ -63,7 +63,7 @@ function TestPKCS7:testNew()
   der = assert(p7:export())
   assert(openssl.pkcs7.read(der, 'auto'))
 
-  local p = openssl.pkcs7.new()
+  local p = openssl.pkcs7.new('signed', 'data')
   p:add(ca.cacert)
   p:add(cert)
   p:add(ca.crl)
@@ -92,3 +92,21 @@ function TestPKCS7:testNew()
   assert(sn)
 
 end
+
+function TestPKCS7:testData()
+  local p = openssl.pkcs7.new('signed', 'data')
+  assert(p:final('content'))
+  local conent = p:parse().contents:parse()
+
+  assert('content' == conent.data:tostring())
+end
+
+function TestPKCS7:testDigest()
+  local p = openssl.pkcs7.new('signed', 'data')
+  assert(p:set_digest('sha256'))
+  assert(p:final('content'))
+  local conent = p:parse().contents:parse()
+
+  assert('content' == conent.data:tostring())
+end
+

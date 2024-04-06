@@ -570,6 +570,29 @@ static LUA_FUNCTION(openssl_pkcs7_parse)
   return 1;
 }
 
+static LUA_FUNCTION(openssl_pkcs7_set_digest)
+{
+  PKCS7 *p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
+  const EVP_MD *md = get_digest(L, 2, NULL);
+
+  int ret = PKCS7_set_digest(p7, md);
+  openssl_pushresult(L, ret);
+
+  return 1;
+}
+
+static LUA_FUNCTION(openssl_pkcs7_final)
+{
+  PKCS7 * p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
+  BIO* data = load_bio_object(L, 2);
+  int flags = luaL_optint(L, 3, 0);
+
+  int ret = PKCS7_final(p7, data, flags);
+  openssl_pushresult(L, ret);
+
+  return 1;
+}
+
 /***
 verify pkcs7 object, and return msg content or verify result
 
@@ -600,6 +623,8 @@ static luaL_Reg pkcs7_funcs[] =
   {"verify",        openssl_pkcs7_verify},
   {"add",           openssl_pkcs7_add},
   {"set_content",   openssl_pkcs7_set_content},
+  {"set_digest",    openssl_pkcs7_set_digest},
+  {"final",         openssl_pkcs7_final},
 
   {"__gc",          openssl_pkcs7_gc},
   {"__tostring",    auxiliar_tostring},
