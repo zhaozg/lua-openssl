@@ -66,7 +66,6 @@ static LUA_FUNCTION(openssl_pkcs7_read)
   return ret;
 }
 
-#if OPENSSL_VERSION_NUMBER > 0x10000000L
 /***
 create new empty pkcs7 object, which support flexible sign methods.
 
@@ -192,7 +191,6 @@ static LUA_FUNCTION(openssl_pkcs7_add)
   return openssl_pushresult(L, ret);
 }
 
-#endif
 
 /***
 sign message with signcert and signpkey to create pkcs7 object
@@ -600,9 +598,7 @@ static luaL_Reg pkcs7_funcs[] =
   {"export",        openssl_pkcs7_export},
   {"decrypt",       openssl_pkcs7_decrypt},
   {"verify",        openssl_pkcs7_verify},
-#if OPENSSL_VERSION_NUMBER > 0x10000000L
   {"add",           openssl_pkcs7_add},
-#endif
   {"set_content",   openssl_pkcs7_set_content},
 
   {"__gc",          openssl_pkcs7_gc},
@@ -613,9 +609,7 @@ static luaL_Reg pkcs7_funcs[] =
 
 static const luaL_Reg R[] =
 {
-#if OPENSSL_VERSION_NUMBER > 0x10000000L
   {"new",         openssl_pkcs7_new},
-#endif
   {"create",      openssl_pkcs7_create},
   {"read",        openssl_pkcs7_read},
   {"sign",        openssl_pkcs7_sign},
