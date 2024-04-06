@@ -54,6 +54,7 @@ static LuaL_Enumeration cms_flags[] =
   {"reuse_digest",          0x8000},
   {"use_keyid",             0x10000},
   {"debug_decrypt",         0x20000},
+  {"key_param",             0x40000},
   {NULL,                    -1}
 };
 
@@ -238,14 +239,14 @@ static int openssl_cms_compress(lua_State *L)
 uncompress cms object
 @function uncompress
 @tparam cms cms
-@tparam bio input
+@tparam[dcont=nil] bio the compressed content is detached.
 @tparam[opt=0] number flags
 @treturn string
 */
 static int openssl_cms_uncompress(lua_State *L)
 {
   CMS_ContentInfo *cms = CHECK_OBJECT(1, CMS_ContentInfo, "openssl.cms");
-  BIO *in = load_bio_object(L, 2);
+  BIO *in = lua_isnoneornil(L, 2) ? NULL : load_bio_object(L, 2);
   int flags = luaL_optint(L, 3, 0);
   BIO *out = BIO_new(BIO_s_mem());
 
@@ -543,7 +544,7 @@ static int openssl_cms_encrypt(lua_State *L)
 
     if (ret)
     {
-      if (!(flags & CMS_STREAM))
+      if (flags & (CMS_STREAM|CMS_PARTIAL))
         ret = CMS_final(cms, in, NULL, flags);
     }
   }
@@ -865,7 +866,9 @@ int luaopen_cms(lua_State *L)
   lua_setfield(L, -2, "compression");
 #endif
 
+  lua_newtable(L);
   auxiliar_enumerate(L, -1, cms_flags);
+  lua_setfield(L, -2, "flags");
 #else
   lua_pushnil(L);
 #endif

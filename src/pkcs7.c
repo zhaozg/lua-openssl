@@ -77,8 +77,28 @@ create new empty pkcs7 object, which support flexible sign methods.
 */
 static LUA_FUNCTION(openssl_pkcs7_new)
 {
-  int type = luaL_optint(L, 1, NID_pkcs7_signed);
-  int content_nid = luaL_optint(L, 2, NID_pkcs7_data);
+  const char *options[] = {
+    "data",
+    "signed",
+    "enveloped",
+    "signedAndEnveloped",
+    "digest",
+    "encrypted",
+    NULL
+  };
+
+  const int opt[] = {
+    NID_pkcs7_data,
+    NID_pkcs7_signed,
+    NID_pkcs7_enveloped,
+    NID_pkcs7_signedAndEnveloped,
+    NID_pkcs7_digest,
+    NID_pkcs7_encrypted,
+    NID_undef
+  };
+
+  int type = auxiliar_checkoption(L, 1, "signed", options, opt);
+  int content_nid = auxiliar_checkoption(L, 2, "data", options, opt);
   int ret = 0;
 
   PKCS7 *p7 = PKCS7_new();
@@ -624,13 +644,6 @@ static LuaL_Enumeration pkcs7_const[] =
   {"NOCRL",        PKCS7_NOCRL},
   {"PARTIAL",      PKCS7_PARTIAL},
   {"REUSE_DIGEST", PKCS7_REUSE_DIGEST},
-
-  {"data",                NID_pkcs7_data},
-  {"signed",              NID_pkcs7_signed},
-  {"enveloped",           NID_pkcs7_enveloped},
-  {"signedAndEnveloped",  NID_pkcs7_signedAndEnveloped},
-  {"digest",              NID_pkcs7_digest},
-  {"encrypted",           NID_pkcs7_encrypted},
 
   {NULL,           0}
 };
