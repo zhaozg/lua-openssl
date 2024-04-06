@@ -1,4 +1,5 @@
 local openssl = require 'openssl'
+local helper = require 'helper'
 local lu = require 'luaunit'
 
 local asn1 = openssl.asn1
@@ -310,6 +311,12 @@ function TestType:testAll()
     [asn1.BMPSTRING] = true,
     [asn1.UNIVERSALSTRING] = true
   }
+  -- FIXME: libressl
+  if helper.libressl then
+    skip[asn1.UTCTIME] = true
+    skip[asn1.GENERALIZEDTIME] = true
+  end
+
   for i = asn1.BOOLEAN, asn1.BMPSTRING do
     if not skip[i] then
 
