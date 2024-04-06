@@ -308,6 +308,7 @@ function TestType:testAll()
     [asn1.OBJECT] = true,
     [asn1.SEQUENCE] = true,
     [asn1.SET] = true,
+    [asn1.NULL] = true,
     [asn1.BMPSTRING] = true,
     [asn1.UNIVERSALSTRING] = true
   }
