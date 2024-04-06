@@ -589,6 +589,7 @@ static LUA_FUNCTION(openssl_pkcs7_final)
 
   int ret = PKCS7_final(p7, data, flags);
   openssl_pushresult(L, ret);
+  BIO_free(data);
 
   return 1;
 }
