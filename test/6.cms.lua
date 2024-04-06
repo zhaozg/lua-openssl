@@ -18,7 +18,7 @@ function TestCMS:testCompress()
   if cms.compression then
     for i = 1, #cms.compression do
       local comp_alg = cms.compression[i]
-      local cs, err, code = cms.compress(msg, comp_alg)
+      local cs, err, code = cms.compress(msg, comp_alg, cms.flags.binary)
       if cs then
         local ret = assert(cms.uncompress(cs))
         lu.assertEquals(msg, ret)
@@ -29,6 +29,7 @@ function TestCMS:testCompress()
     end
   end
 
+  msg = "hello world"
   local cs, err, code = cms.compress(msg)
   if cs then
     local ret = assert(cms.uncompress(cs))
@@ -155,7 +156,7 @@ function TestCMS:testData()
   d = assert(c:export("data", 0, "der"))
   assert(d)
 
-  c = assert(cms.data("data", cms.stream + cms.partial))
+  c = assert(cms.data("data", cms.flags.stream + cms.flags.partial))
   assert(c:final('aaaa'))
   assert(c:data()=='aaaa')
 end
