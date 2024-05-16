@@ -239,7 +239,7 @@ static int openssl_cms_compress(lua_State *L)
 uncompress cms object
 @function uncompress
 @tparam cms cms
-@tparam[dcont=nil] bio the compressed content is detached.
+@tparam[opt=nil] bio dcent default nil for normal, in the rare case where the compressed content is detached.
 @tparam[opt=0] number flags
 @treturn string
 */

@@ -84,7 +84,7 @@ base64 encode or decode
 @function base64
 @tparam string|bio input
 @tparam[opt=true] boolean encode true to encoed, false to decode
-@tparam[opt=true] boolean NO_NL true with newline, false without newline
+@tparam[opt=true] boolean NO_NL default true without newline, false with newline
 @treturn string
 */
 static LUA_FUNCTION(openssl_base64)
