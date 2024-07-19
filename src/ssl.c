@@ -92,7 +92,7 @@ static int openssl_ssl_ctx_new(lua_State*L)
     method = DTLS_client_method();
 #endif
 
-#ifndef OPENSSL_NO_DTLS1_2_METHOD
+#if !defined(OPENSSL_NO_DEPRECATED) && !defined(OPENSSL_NO_DTLS1_2_METHOD)
   else if (strcmp(meth, "DTLSv1_2") == 0)
     method = DTLSv1_2_method();
   else if (strcmp(meth, "DTLSv1_2_server") == 0)
@@ -101,7 +101,7 @@ static int openssl_ssl_ctx_new(lua_State*L)
     method = DTLSv1_2_client_method();
 #endif
 
-#ifndef OPENSSL_NO_DTLS1_METHOD
+#if !defined(OPENSSL_NO_DEPRECATED) && !defined(OPENSSL_NO_DTLS1_METHOD)
   else if (strcmp(meth, "DTLSv1") == 0)
     method = DTLSv1_method();
   else if (strcmp(meth, "DTLSv1_server") == 0)
@@ -110,7 +110,7 @@ static int openssl_ssl_ctx_new(lua_State*L)
     method = DTLSv1_client_method();
 #endif
 
-#ifndef OPENSSL_NO_TLS1_2_METHOD
+#if !defined(OPENSSL_NO_DEPRECATED) && !defined(OPENSSL_NO_TLS1_2_METHOD)
   else if (strcmp(meth, "TLSv1_2") == 0)
     method = TLSv1_2_method();
   else if (strcmp(meth, "TLSv1_2_server") == 0)
@@ -119,7 +119,7 @@ static int openssl_ssl_ctx_new(lua_State*L)
     method = TLSv1_2_client_method();
 #endif
 
-#ifndef OPENSSL_NO_TLS1_1_METHOD
+#if !defined(OPENSSL_NO_DEPRECATED) && !defined(OPENSSL_NO_TLS1_1_METHOD)
   else if (strcmp(meth, "TLSv1_1") == 0)
     method = TLSv1_1_method();
   else if (strcmp(meth, "TLSv1_1_server") == 0)
@@ -128,7 +128,7 @@ static int openssl_ssl_ctx_new(lua_State*L)
     method = TLSv1_1_client_method();
 #endif
 
-#ifndef OPENSSL_NO_TLS1_METHOD
+#if !defined(OPENSSL_NO_DEPRECATED) && !defined(OPENSSL_NO_TLS1_METHOD)
   else if (strcmp(meth, "TLSv1") == 0)
     method = TLSv1_method();
   else if (strcmp(meth, "TLSv1_server") == 0)
