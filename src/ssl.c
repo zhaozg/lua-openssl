@@ -2973,5 +2973,8 @@ int luaopen_ssl(lua_State *L)
   lua_pushstring(L, DEFAULT_PROTOCOL);
   lua_setfield(L, -2, "default");
 
+  lua_pushstring(L, SSL_DEFAULT_CIPHER_LIST);
+  lua_setfield(L, -2, "DEFAULT_CIPHER_LIST");
+
   return 1;
 }
