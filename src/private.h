@@ -219,7 +219,7 @@ const X509_ALGOR *OCSP_resp_get0_tbs_sigalg(const OCSP_BASICRESP *bs);
   lua_pop(L,1);                                             \
 }
 
-#if defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER >= 0x40000000L
+#if defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER >= 0x30900000L
 #if !defined(OPENSSL_NO_CRYPTO_MDEBUG)
 #define OPENSSL_NO_CRYPTO_MDEBUG
 #endif

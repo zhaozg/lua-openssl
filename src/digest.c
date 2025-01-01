@@ -458,6 +458,7 @@ static LUA_FUNCTION(openssl_digest_ctx_data)
 
 #if defined(LIBRESSL_VERSION_NUMBER)
   /* without EVP_MD_meth_get_app_datasize */
+  (void)ctx;
   return 0;
 #else
 

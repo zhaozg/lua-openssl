@@ -26,7 +26,7 @@ static int openssl_push_purpose(lua_State*L, const X509_PURPOSE* purpose)
 
   AUXILIAR_SET(L, -1, "purpose", X509_PURPOSE_get_id(purpose), integer);
 
-#if !defined(LIBRESSL_VERSION_NUMBER) || LIBRESSL_VERSION_NUMBER < 0x40000000L
+#if !defined(LIBRESSL_VERSION_NUMBER) || LIBRESSL_VERSION_NUMBER < 0x30900000L
   AUXILIAR_SET(L, -1, "trust", X509_PURPOSE_get_trust(purpose), integer);
   AUXILIAR_SET(L, -1, "flags", purpose->flags, integer);
 #endif

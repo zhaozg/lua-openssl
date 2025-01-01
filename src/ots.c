@@ -36,7 +36,7 @@ static int openssl_ts_msg_imprint_new(lua_State *L)
   if (ret == 1)
   {
     X509_ALGOR* alg = X509_ALGOR_new();
-#if defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER >= 0x40000000L
+#if defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER >= 0x30900000L
     X509_ALGOR_set0(alg, OBJ_nid2obj(EVP_MD_type(md)), V_ASN1_NULL, NULL);
 #else
     X509_ALGOR_set_md(alg, md);

@@ -30,7 +30,7 @@ static void table2data(lua_State*L, int idx, BIO* bio)
 }
 #endif
 
-#if !defined(LIBRESSL_VERSION_NUMBER) || LIBRESSL_VERSION_NUMBER < 0x40000000L
+#if !defined(LIBRESSL_VERSION_NUMBER) || LIBRESSL_VERSION_NUMBER < 0x30900000L
 static LUA_FUNCTION(openssl_lhash_read)
 {
   long eline = -1;
