@@ -9,11 +9,11 @@ on:
 
 jobs:
   build:
-    runs-on: macos-12
+    runs-on: macos-13
     strategy:
       fail-fast: false
       matrix:
-        luarocks_version: [3.9.2]
+        luarocks_version: [3.11.1]
         lua_version: [luajit2.1]
         openssl_version:
         - libressl-3.3.6
@@ -21,7 +21,9 @@ jobs:
         - libressl-3.5.4
         - libressl-3.6.3
         - libressl-3.7.3
-        - libressl-3.8.2
+        - libressl-3.8.4
+        - libressl-3.9.2
+        - libressl-4.0.0
     env:
       MACOSX_DEPLOYMENT_TARGET: 10.12
       LUAROCKS: ${{ matrix.luarocks_version }}

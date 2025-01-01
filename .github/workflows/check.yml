@@ -8,13 +8,13 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        openssl_version: [openssl-1.0.2u, openssl-1.1.1w, openssl-3.1.5]
+        openssl_version: [openssl-1.0.2u, openssl-1.1.1w, openssl-3.1.7]
     env:
       COVERALLS_GIT_BRANCH: "${{ github.ref }}"
       COVERALLS_REPO_TOKEN: "${{ secrets.COVERALLS_TOKEN }}"
       WITH_LUA_ENGINE: LuaJIT
       LUA: luajit2.1
-      LUAROCKS: 3.9.2
+      LUAROCKS: 3.11.1
       SSL: ${{ matrix.openssl_version }}
       COVERALLS_PARALLEL: ON
       COVERALLS_SERVICE_NAME: github
@@ -66,7 +66,7 @@ jobs:
     env:
       WITH_LUA_ENGINE: LuaJIT
       LUA: luajit2.1
-      LUAROCKS: 3.9.2
+      LUAROCKS: 3.11.1
     steps:
     - uses: actions/checkout@v4
       with:
