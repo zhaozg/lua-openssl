@@ -78,6 +78,8 @@ function testAll()
     local data = f:read('*a')
     f:close()
 
+    if not openssl.lhash_read then return end
+
     local conf = assert(openssl.lhash_read(data))
     local t = conf:parse(false)
     lu.assertIsTable(t)

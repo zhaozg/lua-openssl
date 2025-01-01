@@ -162,8 +162,8 @@ local function _test_req(self, alg, params)
   lu.assertEquals(req1:attr_count(), cnt)
 
   lu.assertEquals(req1:version(), 0)
-  lu.assertEquals(req1:version(1), true)
-  lu.assertEquals(req1:version(), 1)
+  lu.assertEquals(req1:version(0), true)
+  lu.assertEquals(req1:version(), 0)
   assert(req1:version(0))
 
   lu.assertEquals(req1:subject():tostring(), self.subject:tostring())

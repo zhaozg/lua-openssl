@@ -219,6 +219,12 @@ const X509_ALGOR *OCSP_resp_get0_tbs_sigalg(const OCSP_BASICRESP *bs);
   lua_pop(L,1);                                             \
 }
 
+#if defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER >= 0x40000000L
+#if !defined(OPENSSL_NO_CRYPTO_MDEBUG)
+#define OPENSSL_NO_CRYPTO_MDEBUG
+#endif
+#endif
+
 size_t posrelat(ptrdiff_t pos, size_t len);
 int hex2bin(const char * src, unsigned char *dst, int len);
 int bin2hex(const unsigned char * src, char *dst, int len);

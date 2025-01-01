@@ -150,10 +150,21 @@ static LUA_FUNCTION(openssl_list)
   {
     OBJ_NAME_TYPE_MD_METH,
     OBJ_NAME_TYPE_CIPHER_METH,
+#if !defined(LIBRESSL_VERSION_NUMBER) || LIBRESSL_VERSION_NUMBER < 0x40000000L
+    /* NOTE: libressl 4.0.0 */
     OBJ_NAME_TYPE_PKEY_METH,
     OBJ_NAME_TYPE_COMP_METH
+#endif
   };
-  static const char *names[] = {"digests", "ciphers", "pkeys", "comps", NULL};
+  static const char *names[] = {
+    "digests",
+    "ciphers",
+#if !defined(LIBRESSL_VERSION_NUMBER) || LIBRESSL_VERSION_NUMBER < 0x40000000L
+    "pkeys",
+    "comps",
+#endif
+    NULL
+  };
   int type = auxiliar_checkoption (L, 1, NULL, names, options);
   lua_createtable(L, 0, 0);
   OBJ_NAME_do_all_sorted(type, list_callback, L);
@@ -572,7 +583,11 @@ LUALIB_API int luaopen_openssl(lua_State*L)
 
   luaL_setfuncs(L, eay_functions, 0);
 
+#if !defined(LIBRESSL_VERSION_NUMBER) || LIBRESSL_VERSION_NUMBER < 0x40000000L
+  /* NOTE: refact lhash/conf module */
   openssl_register_lhash(L);
+#endif
+
 #ifndef OPENSSL_NO_ENGINE
   openssl_register_engine(L);
 #endif

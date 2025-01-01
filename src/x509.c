@@ -20,16 +20,19 @@ x509 modules to create, parse, process X509 objects, sign CSR.
 #define X509_set1_notAfter X509_set_notAfter
 #endif
 
-static int openssl_push_purpose(lua_State*L, X509_PURPOSE* purpose)
+static int openssl_push_purpose(lua_State*L, const X509_PURPOSE* purpose)
 {
   lua_newtable(L);
 
-  AUXILIAR_SET(L, -1, "purpose", purpose->purpose, integer);
-  AUXILIAR_SET(L, -1, "trust", purpose->trust, integer);
-  AUXILIAR_SET(L, -1, "flags", purpose->flags, integer);
+  AUXILIAR_SET(L, -1, "purpose", X509_PURPOSE_get_id(purpose), integer);
 
-  AUXILIAR_SET(L, -1, "name", purpose->name, string);
-  AUXILIAR_SET(L, -1, "sname", purpose->sname, string);
+#if !defined(LIBRESSL_VERSION_NUMBER) || LIBRESSL_VERSION_NUMBER < 0x40000000L
+  AUXILIAR_SET(L, -1, "trust", X509_PURPOSE_get_trust(purpose), integer);
+  AUXILIAR_SET(L, -1, "flags", purpose->flags, integer);
+#endif
+
+  AUXILIAR_SET(L, -1, "name", X509_PURPOSE_get0_name(purpose), string);
+  AUXILIAR_SET(L, -1, "sname", X509_PURPOSE_get0_sname(purpose), string);
 
   return 1;
 };
@@ -62,7 +65,7 @@ static int openssl_x509_purpose(lua_State*L)
     lua_newtable(L);
     for (i = 0; i < count; i++)
     {
-      X509_PURPOSE* purpose = X509_PURPOSE_get0(i);
+      const X509_PURPOSE* purpose = X509_PURPOSE_get0(i);
       openssl_push_purpose(L, purpose);
       lua_rawseti(L, -2, i + 1);
     }
@@ -70,10 +73,10 @@ static int openssl_x509_purpose(lua_State*L)
   }
   else if (lua_isnumber(L, 1))
   {
-    int idx = X509_PURPOSE_get_by_id(lua_tointeger(L, 1));
-    if (idx >= 0)
+    int n = lua_tointeger(L, 1);
+    if (n >= X509_PURPOSE_MIN && n <= X509_PURPOSE_MAX)
     {
-      X509_PURPOSE* purpose = X509_PURPOSE_get0(idx);
+      const X509_PURPOSE* purpose = X509_PURPOSE_get0(n - X509_PURPOSE_MIN);
       openssl_push_purpose(L, purpose);
       ret = 1;
     }
@@ -84,7 +87,7 @@ static int openssl_x509_purpose(lua_State*L)
     int idx = X509_PURPOSE_get_by_sname(name);
     if (idx >= 0)
     {
-      X509_PURPOSE* purpose = X509_PURPOSE_get0(idx);
+      const X509_PURPOSE* purpose = X509_PURPOSE_get0(idx);
       openssl_push_purpose(L, purpose);
       ret = 1;
     }
@@ -338,6 +341,9 @@ static luaL_Reg R[] =
 
 int openssl_push_general_name(lua_State*L, const GENERAL_NAME* general_name)
 {
+  int type = 0;
+  void *val;
+
   if (general_name == NULL)
   {
     lua_pushnil(L);
@@ -345,11 +351,13 @@ int openssl_push_general_name(lua_State*L, const GENERAL_NAME* general_name)
   }
   lua_newtable(L);
 
-  switch (general_name->type)
+  val = GENERAL_NAME_get0_value((GENERAL_NAME*)general_name, &type);
+
+  switch (type)
   {
   case GEN_OTHERNAME:
   {
-    OTHERNAME *otherName = general_name->d.otherName;
+    OTHERNAME *otherName = val;
     lua_newtable(L);
     openssl_push_asn1object(L, otherName->type_id);
     PUSH_ASN1_STRING(L, otherName->value->value.asn1_string);
@@ -361,31 +369,41 @@ int openssl_push_general_name(lua_State*L, const GENERAL_NAME* general_name)
     break;
   }
   case GEN_EMAIL:
-    PUSH_ASN1_STRING(L, general_name->d.rfc822Name);
+  {
+    ASN1_IA5STRING *s = val;
+    PUSH_ASN1_STRING(L, s);
     lua_setfield(L, -2, "rfc822Name");
 
     lua_pushstring(L, "rfc822Name");
     lua_setfield(L, -2, "type");
     break;
+  }
   case GEN_DNS:
-    PUSH_ASN1_STRING(L, general_name->d.dNSName);
+  {
+    ASN1_IA5STRING *s = val;
+    PUSH_ASN1_STRING(L, s);
     lua_setfield(L, -2, "dNSName");
     lua_pushstring(L, "dNSName");
     lua_setfield(L, -2, "type");
     break;
+  }
   case GEN_X400:
+  {
 #if OPENSSL_VERSION_NUMBER >= 0x1010100fL && !defined(LIBRESSL_VERSION_NUMBER)
-    PUSH_ASN1_STRING(L, general_name->d.x400Address);
+    ASN1_STRING *s = val;
+    PUSH_ASN1_STRING(L, s);
 #else
-    openssl_push_asn1type(L, general_name->d.x400Address);
+    ASN1_TYPE  *type = val;
+    openssl_push_asn1type(L, type);
 #endif
     lua_setfield(L, -2, "x400Address");
     lua_pushstring(L, "x400Address");
     lua_setfield(L, -2, "type");
     break;
+  }
   case GEN_DIRNAME:
   {
-    X509_NAME* xn = general_name->d.directoryName;
+    X509_NAME* xn = val;
     openssl_push_xname_asobject(L, xn);
     lua_setfield(L, -2, "directoryName");
     lua_pushstring(L, "directoryName");
@@ -393,34 +411,45 @@ int openssl_push_general_name(lua_State*L, const GENERAL_NAME* general_name)
   }
   break;
   case GEN_URI:
-    PUSH_ASN1_STRING(L, general_name->d.uniformResourceIdentifier);
+  {
+    ASN1_IA5STRING *s = val;
+    PUSH_ASN1_STRING(L, s);
     lua_setfield(L, -2, "uniformResourceIdentifier");
     lua_pushstring(L, "uniformResourceIdentifier");
     lua_setfield(L, -2, "type");
     break;
+  }
   case GEN_IPADD:
+  {
     PUSH_ASN1_OCTET_STRING(L, general_name->d.iPAddress);
     lua_setfield(L, -2, "iPAddress");
     lua_pushstring(L, "iPAddress");
     lua_setfield(L, -2, "type");
     break;
+  }
   case GEN_EDIPARTY:
+  {
+    EDIPARTYNAME *name = val;
     lua_newtable(L);
-    PUSH_ASN1_STRING(L, general_name->d.ediPartyName->nameAssigner);
+    PUSH_ASN1_STRING(L, name->nameAssigner);
     lua_setfield(L, -2, "nameAssigner");
-    PUSH_ASN1_STRING(L, general_name->d.ediPartyName->partyName);
+    PUSH_ASN1_STRING(L, name->partyName);
     lua_setfield(L, -2, "partyName");
     lua_setfield(L, -2, "ediPartyName");
 
     lua_pushstring(L, "ediPartyName");
     lua_setfield(L, -2, "type");
     break;
+  }
   case GEN_RID:
-    openssl_push_asn1object(L, general_name->d.registeredID);
+  {
+    ASN1_OBJECT *o = val;
+    openssl_push_asn1object(L, o);
     lua_setfield(L, -2, "registeredID");
     lua_pushstring(L, "registeredID");
     lua_setfield(L, -2, "type");
     break;
+  }
   default:
     lua_pushstring(L, "unsupport");
     lua_setfield(L, -2, "type");
@@ -571,12 +600,11 @@ static LUA_FUNCTION(openssl_x509_parse)
   lua_newtable(L);
   for (i = 0; i < X509_PURPOSE_get_count(); i++)
   {
-    int set;
-    X509_PURPOSE *purp = X509_PURPOSE_get0(i);
+    const X509_PURPOSE *purp = X509_PURPOSE_get0(i);
     int id = X509_PURPOSE_get_id(purp);
     const char * pname = X509_PURPOSE_get0_sname(purp);
 
-    set = X509_check_purpose(cert, id, ca);
+    int set = X509_check_purpose(cert, id, ca);
     if (set)
     {
       AUXILIAR_SET(L, -1, pname, 1, boolean);
@@ -711,8 +739,9 @@ static LUA_FUNCTION(openssl_x509_check)
       int purpose_id = X509_PURPOSE_get_by_sname((char*)luaL_optstring(L, 4, "any"));
       if (purpose_id >= 0)
       {
-        X509_PURPOSE* ppurpose = X509_PURPOSE_get0(purpose_id);
-        if (ppurpose) purpose = ppurpose->purpose;
+        const X509_PURPOSE* ppurpose = X509_PURPOSE_get0(purpose_id);
+        if (ppurpose)
+          purpose = X509_PURPOSE_get_id(ppurpose);
       }
     }
 #if 0

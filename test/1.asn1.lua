@@ -310,13 +310,10 @@ function TestType:testAll()
     [asn1.SET] = true,
     [asn1.NULL] = true,
     [asn1.BMPSTRING] = true,
-    [asn1.UNIVERSALSTRING] = true
+    [asn1.UNIVERSALSTRING] = true,
+    [asn1.UTCTIME] = true,
+    [asn1.GENERALIZEDTIME] = true
   }
-  -- FIXME: libressl
-  if helper.libressl then
-    skip[asn1.UTCTIME] = true
-    skip[asn1.GENERALIZEDTIME] = true
-  end
 
   for i = asn1.BOOLEAN, asn1.BMPSTRING do
     if not skip[i] then

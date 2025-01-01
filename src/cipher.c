@@ -757,7 +757,10 @@ static LUA_FUNCTION(openssl_cipher_ctx_ctrl)
     ret = EVP_CIPHER_CTX_ctrl(ctx, type, 0, NULL);
     ret = openssl_pushresult(L, ret);
     break;
+#if defined(EVP_CTRL_SET_KEY_LENGTH)
+  /* NOTE: libressl 4.0.0 without EVP_CTRL_SET_KEY_LENGTH */
   case EVP_CTRL_SET_KEY_LENGTH:
+#endif
   case EVP_CTRL_SET_RC2_KEY_BITS:
   case EVP_CTRL_SET_RC5_ROUNDS:
   case EVP_CTRL_GCM_SET_IVLEN:  //EVP_CTRL_CCM_SET_IVLEN
@@ -890,7 +893,9 @@ static const luaL_Reg R[] =
 static LuaL_Enumeration evp_ctrls_code[] =
 {
   {"EVP_CTRL_INIT",                           EVP_CTRL_INIT},
+#if defined(EVP_CTRL_SET_KEY_LENGTH)
   {"EVP_CTRL_SET_KEY_LENGTH",                 EVP_CTRL_SET_KEY_LENGTH},
+#endif
   {"EVP_CTRL_GET_RC2_KEY_BITS",               EVP_CTRL_GET_RC2_KEY_BITS},
   {"EVP_CTRL_SET_RC2_KEY_BITS",               EVP_CTRL_SET_RC2_KEY_BITS},
   {"EVP_CTRL_GET_RC5_ROUNDS",                 EVP_CTRL_GET_RC5_ROUNDS},
