@@ -544,7 +544,7 @@ do EC sign
 @function sign
 @tparam ec_key eckey
 @tparam string digest result of digest to be signed
-@tparam evp_md|string|nid digest digest alg identity, default is sm3
+@tparam evp_md|string|nid md digest alg identity, default is sm3
 @treturn string signature
 */
 static LUA_FUNCTION(openssl_ecdsa_sign)
@@ -576,7 +576,7 @@ do EC verify, input msg is digest result
 @tparam ec_key eckey
 @tparam string digest result of digest to be signed
 @tparam string signature
-@tparam evp_md|string|nid digest digest alg identity
+@tparam evp_md|string|nid md digest alg identity
 @treturn boolean true for verified, false for invalid signature
 @return nil for error, and followed by error message
 */
