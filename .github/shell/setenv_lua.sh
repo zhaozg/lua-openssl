@@ -10,7 +10,7 @@ if [ "$PLATFORM" == "macosx" ]; then
     export LD_LIBRARY_PATH=/usr/local/opt/openssl/lib:$LD_LIBRARY_PATH
   fi
 fi
-if [[ "$PLATFORM" == "linux" && "$SSL" =~ ^libressl ]]; then
+if [[ "$PLATFORM" == "linux" ]]; then
   sudo apt-get -y update
   sudo apt install -y valgrind
 fi

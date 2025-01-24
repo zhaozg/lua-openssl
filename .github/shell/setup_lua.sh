@@ -62,8 +62,13 @@ else
     curl https://www.lua.org/ftp/lua-5.3.6.tar.gz | tar xz
     cd lua-5.3.6
   elif [ "$LUA" == "lua5.4" ]; then
-    curl https://www.lua.org/ftp/lua-5.4.6.tar.gz | tar xz
-    cd lua-5.4.6
+    curl https://www.lua.org/ftp/lua-5.4.7.tar.gz | tar xz
+    cd lua-5.4.7
+  fi
+
+  if [ "$PLATFORM" == "linux" ]; then
+    sudo apt-get -y update
+    sudo apt install -y libreadline-dev
   fi
 
   # Build Lua without backwards compatibility for testing
@@ -109,5 +114,5 @@ elif [ "$LUA" == "lua5.2" ]; then
 elif [ "$LUA" == "lua5.3" ]; then
   rm -rf lua-5.3.6
 elif [ "$LUA" == "lua5.4" ]; then
-  rm -rf lua-5.4.3
+  rm -rf lua-5.4.7
 fi
