@@ -166,7 +166,7 @@ If you want to make lua-openssl static link with openssl, please given
 `OPENSSL_STATIC` flags, default will do dynamic link.
 
 ```bash
-    make OPENSSL_STAITC=1
+    make OPENSSL_STATIC=1
 ```
 
 ### Howto 2: Build on Windows with MSVC
