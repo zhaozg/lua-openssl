@@ -1,3 +1,11 @@
+/***
+srp module to handle secure remote password.
+Provide srp_gn as lua object.
+
+@module srp
+@usage
+  srp = require('openssl').srp
+*/
 #include "openssl.h"
 #include "private.h"
 
@@ -5,7 +13,55 @@
 #include <openssl/srp.h>
 #include <openssl/bn.h>
 
-/* server side */
+/***
+Gets the default SRP_gN object.
+@function get_default_gN
+@tparam string id SRP_gN ID
+@treturn openssl.srp_gn GN SRP_gN object
+*/
+static int openssl_srp_get_default_gN(lua_State *L)
+{
+  const char *id = luaL_checkstring(L, 1);
+  SRP_gN *GN = SRP_get_default_gN(id);
+  if(GN)
+    PUSH_OBJECT(GN, "openssl.srp_gn");
+  else
+    lua_pushnil(L);
+  return 1;
+}
+
+/***
+Calculates the x value.
+@function calc_x
+@tparam openssl.bn s Salt
+@tparam string username Username
+@tparam string password Password
+@treturn openssl.bn x Value
+*/
+static int openssl_srp_calc_x(lua_State *L)
+{
+  BIGNUM *s = CHECK_OBJECT(1, BIGNUM, "openssl.bn");
+  const char *username = luaL_checkstring(L, 2);
+  const char *password = luaL_checkstring(L, 3);
+
+  BIGNUM *x = SRP_Calc_x(s, username, password);
+  PUSH_OBJECT(x, "openssl.bn");
+  return 1;
+}
+
+/***
+openssl.srp_gn class.
+@type srp_gn
+*/
+
+/***
+Creates an SRP verifier.
+@function create_verifier
+@tparam string username Username
+@tparam string servpass Service password
+@treturn openssl.bn salt Salt
+@treturn openssl.bn verifier Verifier
+*/
 static int openssl_srp_create_verifier(lua_State *L)
 {
   const SRP_gN *GN = CHECK_OBJECT(1, SRP_gN, "openssl.srp_gn");
@@ -29,6 +85,14 @@ static int openssl_srp_create_verifier(lua_State *L)
 #define BN_RAND_BOTTOM_ANY 0
 #endif
 
+/***
+Calculates the server's B value.
+@function calc_b
+@tparam openssl.bn v Verifier
+@tparam[opt] int bits Number of random bits, default is 256
+@treturn openssl.bn Bpub Server public key
+@treturn openssl.bn Brnd Server random number
+*/
 static int openssl_srp_calc_b(lua_State *L)
 {
   int ret = 0;
@@ -61,6 +125,15 @@ static int openssl_srp_calc_b(lua_State *L)
   return ret;
 }
 
+/***
+Calculates the server's key.
+@function calc_server_key
+@tparam openssl.bn Apub Client public key
+@tparam openssl.bn v Verifier
+@tparam openssl.bn u Random number u
+@tparam openssl.bn Brnd Server random number
+@treturn openssl.bn Kserver Server key
+*/
 static int openssl_srp_calc_server_key(lua_State *L)
 {
   const SRP_gN *GN = CHECK_OBJECT(1, SRP_gN, "openssl.srp_gn");
@@ -76,6 +149,13 @@ static int openssl_srp_calc_server_key(lua_State *L)
 }
 
 /* client side */
+/***
+Calculates the client's A value.
+@function calc_a
+@tparam[opt] int bits Number of random bits, default is 256
+@treturn openssl.bn Apub Client public key
+@treturn openssl.bn Arnd Client random number
+***/
 static int openssl_srp_calc_a(lua_State *L)
 {
   int ret = 0;
@@ -107,17 +187,36 @@ static int openssl_srp_calc_a(lua_State *L)
   return ret;
 }
 
-static int openssl_srp_calc_x(lua_State *L)
+/* close https://github.com/zhaozg/lua-openssl/issues/312 */
+/***
+Calculates the x value.
+@function calc_x
+@tparam openssl.bn s Salt
+@tparam string username Username
+@tparam string password Password
+@treturn openssl.bn x Value
+*/
+static int openssl_srp_calc_X(lua_State *L)
 {
-  BIGNUM *s = CHECK_OBJECT(1, BIGNUM, "openssl.bn");
-  const char *username = luaL_checkstring(L, 2);
-  const char *password = luaL_checkstring(L, 3);
+  const SRP_gN *GN = CHECK_OBJECT(1, SRP_gN, "openssl.srp_gn");
+  BIGNUM *s = CHECK_OBJECT(2, BIGNUM, "openssl.bn");
+  const char *username = luaL_checkstring(L, 3);
+  const char *password = luaL_checkstring(L, 4);
 
   BIGNUM *x = SRP_Calc_x(s, username, password);
   PUSH_OBJECT(x, "openssl.bn");
   return 1;
 }
 
+/***
+Calculates the client's key.
+@function calc_client_key
+@tparam openssl.bn Bpub Server public key
+@tparam openssl.bn x x Value
+@tparam openssl.bn Arnd Client random number
+@tparam openssl.bn u Random number u
+@treturn openssl.bn Kclient Client key
+*/
 static int openssl_srp_calc_client_key(lua_State *L)
 {
   const SRP_gN *GN = CHECK_OBJECT(1, SRP_gN, "openssl.srp_gn");
@@ -132,18 +231,13 @@ static int openssl_srp_calc_client_key(lua_State *L)
   return 1;
 }
 
-/* both side */
-static int openssl_srp_get_default_gN(lua_State *L)
-{
-  const char *id = luaL_checkstring(L, 1);
-  SRP_gN *GN = SRP_get_default_gN(id);
-  if(GN)
-    PUSH_OBJECT(GN, "openssl.srp_gn");
-  else
-    lua_pushnil(L);
-  return 1;
-}
-
+/***
+Calculates the u value.
+@function calc_u
+@tparam openssl.bn Apub Client public key
+@tparam openssl.bn Bpub Server public key
+@treturn openssl.bn u Value
+*/
 static int openssl_srp_calc_u(lua_State *L)
 {
   const SRP_gN *GN = CHECK_OBJECT(1, SRP_gN, "openssl.srp_gn");
@@ -163,7 +257,7 @@ static luaL_Reg srp_funs[] =
 
   /* client side */
   {"calc_a",          openssl_srp_calc_a},
-  {"calc_x",          openssl_srp_calc_x},
+  {"calc_x",          openssl_srp_calc_X},
   {"calc_client_key", openssl_srp_calc_client_key},
 
   /* server side */
@@ -180,6 +274,7 @@ static luaL_Reg srp_funs[] =
 static luaL_Reg R[] =
 {
   {"get_default_gN",  openssl_srp_get_default_gN},
+  {"calc_x",          openssl_srp_calc_x},
 
   {NULL,  NULL}
 };

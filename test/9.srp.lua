@@ -40,7 +40,7 @@ function TestSRP:test_4_Calc_u()
 end
 
 function TestSRP:test_5_cli_key()
-  local x = assert(GN.calc_x(self.salt, self.user, self.pass))
+  local x = assert(GN:calc_x(self.salt, self.user, self.pass))
   self.Kclient = assert(GN:calc_client_key(self.Bpub, x, self.Arnd, self.u))
 end
 
@@ -51,7 +51,7 @@ function TestSRP:test_6_srv_key()
 end
 
 function TestSRP:test_7_cli_key()
-  local x = assert(GN.calc_x(self.salt, self.user, self.pass .. '1'))
+  local x = assert(srp.calc_x(self.salt, self.user, self.pass .. '1'))
   self.Kclient = assert(GN:calc_client_key(self.Bpub, x, self.Arnd, self.u))
 end
 
@@ -60,4 +60,3 @@ function TestSRP:test_8_srv_key()
                                                self.Brnd))
   assert(Kserver ~= self.Kclient)
 end
-
