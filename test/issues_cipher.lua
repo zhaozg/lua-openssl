@@ -142,3 +142,43 @@ function testAESMode()
       end
   end
 end
+
+-- close https://github.com/zhaozg/lua-openssl/issues/315
+function testGCMWithAAD()
+  local key = "1234567890123456"
+  local msg = "hello world"
+  local iv = '123456789012'
+  local tn = 16 -- tag length
+  local aad = 'ba9876543210'
+
+  local evp = openssl.cipher.get('aes-128-gcm')
+  local info = evp:info()
+  --[[
+  {
+    block_size = 1,
+    flags = 3150966,
+    iv_length = 12,
+    key_length = 16,
+    mode = 6,
+    name = "id-aes128-GCM"
+  }
+  --]]
+  assert(info.iv_length == 12, "iv_length")
+  assert(info.key_length == 16, "key_length")
+  assert(info.block_size == 1, "block_size")
+
+  local e = evp:encrypt_new()
+  -- see: https://docs.openssl.org/1.0.2/man3/EVP_EncryptInit/#gcm-mode
+  e:ctrl(openssl.cipher.EVP_CTRL_GCM_SET_IVLEN, #iv)
+  e:init(key, iv)
+
+  -- Indicate that the AAD setting is set
+  local r = e:update(aad, true)
+  assert(r=="")
+  local c = e:update(msg)
+  local d = e:final()
+  local f = c .. d
+  assert(openssl.hex(f) == "d91402c4b7b12367d59d7f")
+  local tag = e:ctrl(openssl.cipher.EVP_CTRL_GCM_GET_TAG, tn)
+  assert(openssl.hex(tag) == "62827da0f8cb620f3f66e206232f9891")
+end

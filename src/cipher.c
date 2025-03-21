@@ -623,11 +623,12 @@ static LUA_FUNCTION(openssl_evp_cipher_init)
 }
 
 /***
-feed data to do cipher
+feed data or set AAD to do cipher
 
 @function update
-@tparam string msg data
-@treturn string result parture result
+@tparam string data message or AAD
+@tparam[opt=false] boolean isAAD indicate to set AAD
+@treturn string partial results, and "" when set AAD
 */
 static LUA_FUNCTION(openssl_evp_cipher_update)
 {
@@ -636,15 +637,13 @@ static LUA_FUNCTION(openssl_evp_cipher_update)
   int outl;
   char *out;
   CIPHER_MODE mode;
-  int ret, type;
+  int ret, type, isAAD = 0;
 
   EVP_CIPHER_CTX* c = CHECK_OBJECT(1, EVP_CIPHER_CTX, "openssl.evp_cipher_ctx");
-  type = lua_type(L, 2);
-  luaL_argcheck(L, type==LUA_TNUMBER || type==LUA_TSTRING, 2, "expect integer or string");
-
   in = luaL_checklstring(L, 2, &inl);
-  outl = inl + EVP_MAX_BLOCK_LENGTH;
-  out = OPENSSL_malloc(outl);
+  isAAD = lua_isnoneornil(L, 3) ? 0 : lua_toboolean(L, 3);
+  outl = isAAD ? 0 : inl + EVP_MAX_BLOCK_LENGTH;
+  out = isAAD ? 0 : OPENSSL_malloc(outl);
 
   lua_rawgetp(L, LUA_REGISTRYINDEX, c);
   mode = lua_tointeger(L, -1);
@@ -660,8 +659,12 @@ static LUA_FUNCTION(openssl_evp_cipher_update)
   else
     luaL_error(L, "never go here");
 
-  if (ret == 1)
-    lua_pushlstring(L, out, outl);
+  if (ret == 1) {
+    if (isAAD)
+      lua_pushliteral(L, "");
+    else
+      lua_pushlstring(L, out, outl);
+  }
   else
     ret = openssl_pushresult(L, ret);
 
