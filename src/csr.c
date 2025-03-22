@@ -183,8 +183,10 @@ static int X509_REQ_to_X509_ex(X509_REQ *r, int days, EVP_PKEY *pkey, const EVP_
   X509_set_version(ret, 2);
 
   serial = ASN1_INTEGER_new();
-  if (serial == NULL)
+  if (serial == NULL) {
+    X509_free(ret);
     return ERR_R_MALLOC_FAILURE;
+  }
 
   if ( (res = ASN1_INTEGER_set(serial, 0xca)) != 1 ||
     (res = X509_set_serialNumber(ret, serial)) != 1)
@@ -378,6 +380,25 @@ static LUA_FUNCTION(openssl_csr_verify)
   return 1;
 };
 
+
+static int set_csr_pubkey(X509_REQ *csr, EVP_PKEY *pkey)
+{
+  BIO* bio = BIO_new(BIO_s_mem());
+  int ret = i2d_PUBKEY_bio(bio, pkey);
+  if (ret == 1)
+  {
+    EVP_PKEY *pubkey = d2i_PUBKEY_bio(bio, NULL);
+    if (pubkey)
+    {
+      ret = X509_REQ_set_pubkey(csr, pubkey);
+      EVP_PKEY_free(pubkey);
+    } else
+      ret = 0;
+  }
+  BIO_free(bio);
+  return ret;
+}
+
 /***
 sign x509_req object
 
@@ -395,29 +416,17 @@ static LUA_FUNCTION(openssl_csr_sign)
   {
     EVP_PKEY *pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
     const EVP_MD* md = get_digest(L, 3, "sha256");
-    int ret = 0;
+    int ret = 1;
 
     if (pubkey == NULL)
     {
-      BIO* bio = BIO_new(BIO_s_mem());
-      ret = i2d_PUBKEY_bio(bio, pkey);
-      if (ret == 1)
-      {
-        ret = 0;
-        pubkey = d2i_PUBKEY_bio(bio, NULL);
-        if (pubkey)
-        {
-          ret = X509_REQ_set_pubkey(csr, pubkey);
-          EVP_PKEY_free(pubkey);
-        }
-      }
-
-      BIO_free(bio);
+      ret = set_csr_pubkey(csr, pkey);
     }
     else
     {
       EVP_PKEY_free(pubkey);
     }
+
     if (ret == 1)
       ret = X509_REQ_sign(csr, pkey, md);
     return openssl_pushresult(L, ret);

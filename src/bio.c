@@ -64,6 +64,11 @@ static LUA_FUNCTION(openssl_bio_new_mem)
 {
   size_t l = 0;
   BIO *bio = BIO_new(BIO_s_mem());
+  if (!bio) {
+    luaL_error(L, "Failed to create memory BIO");
+    return 0;
+  }
+
   if (lua_isnumber(L, 1))
   {
     l = lua_tointeger(L, 1);
@@ -371,6 +376,10 @@ static LUA_FUNCTION(openssl_bio_read)
 
   len = len > 0 ? len : 4096;
   buf = malloc(len);
+  if (!buf) {
+      luaL_error(L, "Memory allocation failed");
+      return 0;
+  }
   len = BIO_read(bio, buf, len);
 
   if (len > 0)

@@ -408,7 +408,7 @@ add name entry
 @function add_entry
 @tparam string|integer|asn1_object identid for asn1_object
 @tparam string data to add
-@tparam[opt] boolean utf8 true for use utf8 default
+@tparam[opt=true] boolean utf8 true use utf8 encode, or use ascii encode
 @treturn boolean result true for success or follow by error message
 */
 static int openssl_xname_add_entry(lua_State*L)

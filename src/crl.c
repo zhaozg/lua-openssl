@@ -60,19 +60,20 @@ const char* openssl_i2s_revoke_reason(int reason)
   else
     return reason_flags[i].sname;
 }
+
 int openssl_s2i_revoke_reason(const char*s)
 {
-  int reason = -1;
   int i;
   for (i = 0; i < reason_num; i++)
   {
-    if (strcasecmp(s, reason_flags[i].lname) == 0 || strcasecmp(s, reason_flags[i].sname) == 0)
+    if (strcasecmp(s, reason_flags[i].lname) == 0
+      || strcasecmp(s, reason_flags[i].sname) == 0)
     {
-      reason = reason_flags[i].bitnum;
+      return reason_flags[i].bitnum;
       break;
     }
   }
-  return reason;
+  return -1;
 }
 
 static int reason_get(lua_State*L, int reasonidx)
@@ -174,12 +175,24 @@ static LUA_FUNCTION(openssl_crl_new)
 {
   int i;
   int n = lua_gettop(L);
-  X509_CRL * crl = X509_CRL_new();
-  int ret = X509_CRL_set_version(crl, 0);
+  X509_CRL * crl;
+  int ret;
   X509* cacert = NULL;
   EVP_PKEY* capkey = NULL;
   const EVP_MD* md = NULL;
   int step;
+
+  crl = X509_CRL_new();
+  if (!crl) {
+    luaL_error(L, "Failed to create X509_CRL object");
+    return 0;
+  }
+  ret = X509_CRL_set_version(crl, 0);
+  if (ret != 1) {
+    X509_CRL_free(crl);
+    luaL_error(L, "Failed to set X509_CRL version");
+    return 0;
+  }
 
   for (i = 1; ret == 1 && i <= n; i++)
   {
