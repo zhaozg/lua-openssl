@@ -146,7 +146,7 @@ function TestRSA:TestOAEP_encrypt()
   local padded = rsa.padding_add(msg, "oaep", 256)
 
   local encrypted = assert(rsa.encrypt(k, padded, "no", false)) -- Public Encrypt
-  local plain = assert(k:decrypt(encrypted, "no", true))        -- Private Decrypt
+  local plain = assert(k:decrypt(encrypted, "no", true)) -- Private Decrypt
 
   assert(plain == padded)
   local raw = rsa.padding_check(padded, "oaep", 256)
@@ -167,7 +167,7 @@ function TestRSA:TestPSS_sign()
   assert(raw == true)
 
   local signed = assert(rsa.encrypt(k, padded, "no", false)) -- Private Encrypt
-  local plain = assert(k:decrypt(signed, "no", true))        -- Public Decrypt
+  local plain = assert(k:decrypt(signed, "no", true)) -- Public Decrypt
 
   assert(rsa.padding_check(plain, "pss", k, msg, "sha1"))
 end

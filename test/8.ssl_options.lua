@@ -1,14 +1,16 @@
 -- Testcase
-local lu = require 'luaunit'
-local openssl = require 'openssl'
+local lu = require("luaunit")
+local openssl = require("openssl")
 local ssl = openssl.ssl
-local helper = require 'helper'
+local helper = require("helper")
 
 local proto = helper.sslProtocol()
 
 local SET = function(t)
   local s = {}
-  for _, k in ipairs(t) do s[k] = true end
+  for _, k in ipairs(t) do
+    s[k] = true
+  end
   return s
 end
 local libressl = helper.libressl
