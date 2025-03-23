@@ -112,4 +112,3 @@ static LuaL_Enumeration ssl_options[] =
 };
 
 #endif
-

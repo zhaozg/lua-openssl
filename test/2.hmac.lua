@@ -1,17 +1,16 @@
-local lu = require 'luaunit'
+local lu = require("luaunit")
 
-local openssl = require 'openssl'
-local hmac = require'openssl'.hmac
+local openssl = require("openssl")
+local hmac = require("openssl").hmac
 
 TestHMACCompat = {}
 function TestHMACCompat:setUp()
-  self.msg = 'abcd'
-  self.alg = 'sha1'
-  self.key = 'abcdefg'
+  self.msg = "abcd"
+  self.alg = "sha1"
+  self.key = "abcdefg"
 end
 
-function TestHMACCompat:tearDown()
-end
+function TestHMACCompat:tearDown() end
 
 function TestHMACCompat:testDigest()
   local a, b, c
@@ -23,7 +22,7 @@ function TestHMACCompat:testDigest()
   lu.assertEquals(openssl.hex(a):lower(), b)
 
   a = assert(hmac.new(self.alg, self.key))
-  assert(a:size()>0)
+  assert(a:size() > 0)
   a:update(self.msg)
   c = a:final()
   lu.assertEquals(c, b)

@@ -1,28 +1,28 @@
-local lu = require 'luaunit'
-local openssl = require 'openssl'
+local lu = require("luaunit")
+local openssl = require("openssl")
 
 local csr, x509 = openssl.x509.req, openssl.x509
 
-local helper = require('helper')
+local helper = require("helper")
 
 TestX509 = {}
 function TestX509:setUp()
-  self.alg = 'sha1'
+  self.alg = "sha1"
 
-  self.dn = {{commonName = 'DEMO'},  {C = 'CN'}}
+  self.dn = { { commonName = "DEMO" }, { C = "CN" } }
 
-  self.digest = 'sha1WithRSAEncryption'
+  self.digest = "sha1WithRSAEncryption"
 end
 
 function TestX509:testX509()
   local t = x509.certtypes("standard")
-  assert(type(t)=='table')
+  assert(type(t) == "table")
   t = x509.certtypes("netscape")
-  assert(type(t)=='table')
+  assert(type(t) == "table")
   t = x509.certtypes("extend")
-  assert(type(t)=='table')
+  assert(type(t) == "table")
   t = x509.verify_cert_error_string(1)
-  assert(type(t)=='string')
+  assert(type(t) == "string")
 end
 
 function TestX509:testNew()
@@ -33,27 +33,27 @@ function TestX509:testNew()
   assert(x509.new(subject))
 
   lu.assertEquals(ca.cacert:subject(), cert:issuer())
-  assert(ca.cacert:parse().ca, 'invalid ca certificate')
+  assert(ca.cacert:parse().ca, "invalid ca certificate")
 
-  local c = cert:pubkey():encrypt('abcd')
+  local c = cert:pubkey():encrypt("abcd")
   local d = pkey:decrypt(c)
-  assert(d == 'abcd')
-  assert(cert:check(pkey), 'self sign check failed')
+  assert(d == "abcd")
+  assert(cert:check(pkey), "self sign check failed")
   local store = assert(ca:get_store())
   assert(cert:check(store))
   assert(cert:verify(ca.cacert:pubkey()))
 
   local x, t = cert:verify()
   assert(x)
-  assert(type(t)=='table')
+  assert(type(t) == "table")
 
-  local s = cert:export('der')
-  x = x509.read(s, 'der')
-  assert(x==cert)
+  local s = cert:export("der")
+  x = x509.read(s, "der")
+  assert(x == cert)
 
-  s = cert:export('pem')
-  x = x509.read(s, 'pem')
-  assert(x==cert)
+  s = cert:export("pem")
+  x = x509.read(s, "pem")
+  assert(x == cert)
 
   assert(cert:pubkey(assert(cert:pubkey())))
   assert(cert:subject(assert(cert:subject())))
@@ -67,58 +67,58 @@ function TestX509:testNew()
 
   local extensions = {
     {
-      object = 'subjectAltName',
-      value = 'email:123@abc.com'
-    }
+      object = "subjectAltName",
+      value = "email:123@abc.com",
+    },
   }
 
   cert = assert(helper.sign(self.dn, extensions))
-  assert(cert:check_email('123@abc.com'))
+  assert(cert:check_email("123@abc.com"))
 
   extensions = {
     {
-      object = 'subjectAltName',
-      value = 'DNS:abc.xyz'
-    }
+      object = "subjectAltName",
+      value = "DNS:abc.xyz",
+    },
   }
 
   cert = assert(helper.sign(self.dn, extensions))
-  assert(cert:check_host('abc.xyz'))
+  assert(cert:check_host("abc.xyz"))
 
   extensions = {
     {
-      object = 'subjectAltName',
-      value = 'IP:192.168.1.1'
-    }
+      object = "subjectAltName",
+      value = "IP:192.168.1.1",
+    },
   }
 
   cert = assert(helper.sign(self.dn, extensions))
-  assert(cert:check_ip_asc('192.168.1.1'))
+  assert(cert:check_ip_asc("192.168.1.1"))
 
   extensions = {
     {
-      object = 'subjectAltName',
-      value = 'IP:192.168.1.1,RID:1.2.3.4'
+      object = "subjectAltName",
+      value = "IP:192.168.1.1,RID:1.2.3.4",
     },
     {
-      object = 'subjectAltName',
-      value = 'IP:192.168.1.1'
+      object = "subjectAltName",
+      value = "IP:192.168.1.1",
     },
     {
-      object = 'subjectAltName',
-      value = 'DNS:abc.xyz'
+      object = "subjectAltName",
+      value = "DNS:abc.xyz",
     },
     {
-      object = 'subjectAltName',
-      value = 'URI:http://my.url.here/'
+      object = "subjectAltName",
+      value = "URI:http://my.url.here/",
     },
     {
-      object = 'subjectAltName',
-      value = 'otherName:1.2.3.4;UTF8:some other identifier'
+      object = "subjectAltName",
+      value = "otherName:1.2.3.4;UTF8:some other identifier",
     },
     {
-      object = 'subjectAltName',
-      value = 'email:123@abc.com'
+      object = "subjectAltName",
+      value = "email:123@abc.com",
     },
     --{
     --  object = 'subjectAltName',
@@ -136,16 +136,16 @@ function TestX509:testNew()
 
   cert = assert(helper.sign(self.dn, extensions))
   local info = cert:parse()
-  for i=1, #info.extensions do
-    assert(type(info.extensions[i]:info())=='table')
+  for i = 1, #info.extensions do
+    assert(type(info.extensions[i]:info()) == "table")
   end
   cert:notbefore("Jan 16 05:19:30 2002 GMT")
   cert:notafter("Jan 16 05:19:30 2022 GMT")
   --advance
   s = cert:sign()
-  assert(type(s)=='string')
+  assert(type(s) == "string")
   s = ca.pkey:sign(s)
-  local o  = openssl.asn1.new_object('sha1WithRSAEncryption')
+  local o = openssl.asn1.new_object("sha1WithRSAEncryption")
   assert(cert:sign(s, o))
 end
 
@@ -187,7 +187,7 @@ vMkXEPvNvv4t30K6xtpG26qmZ+6OiISBIIXMljWnsiYR1gyZnTzIg3AQSw4Vmw==
   local x = assert(x509.read(raw_data))
 
   local t = x:parse()
-  lu.assertEquals(type(t), 'table')
+  lu.assertEquals(type(t), "table")
   assert(x:pubkey())
 
   lu.assertEquals(x:version(), 2)
@@ -201,6 +201,6 @@ vMkXEPvNvv4t30K6xtpG26qmZ+6OiISBIIXMljWnsiYR1gyZnTzIg3AQSw4Vmw==
 
   t = x509.purpose()
   assert(#t >= 9, #t)
-  assert(type(x509.purpose(t[1].purpose))=='table')
-  assert(type(x509.purpose(t[1].sname))=='table')
+  assert(type(x509.purpose(t[1].purpose)) == "table")
+  assert(type(x509.purpose(t[1].sname)) == "table")
 end

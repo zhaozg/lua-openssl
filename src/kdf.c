@@ -7,20 +7,20 @@ It base on EVP_KDF in OpenSSL v3.
 @usage
   hamc = require('openssl').kdf
 */
+#include "auxiliar.h"
 #include "lua.h"
 #include "openssl.h"
 #include "private.h"
-#include "auxiliar.h"
 
 #if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
-#include <openssl/kdf.h>
 #include <openssl/core_names.h>
+#include <openssl/kdf.h>
 
-static EVP_KDF* get_kdf(lua_State* L, int idx)
+static EVP_KDF *
+get_kdf(lua_State *L, int idx)
 {
-  EVP_KDF* kdf = NULL;
-  switch (lua_type(L, idx))
-  {
+  EVP_KDF *kdf = NULL;
+  switch (lua_type(L, idx)) {
   case LUA_TSTRING:
     kdf = EVP_KDF_fetch(NULL, lua_tostring(L, idx), NULL);
     break;
@@ -40,8 +40,7 @@ static EVP_KDF* get_kdf(lua_State* L, int idx)
     break;
   }
 
-  if (kdf==NULL)
-  {
+  if (kdf == NULL) {
     luaL_argerror(L, idx, "must be a string for KDF method name");
   }
 
@@ -55,27 +54,28 @@ traverses all openssl.kdf, and calls fn with each openssl.kdf
 @tparam function cb(openssl.kdf)
 @treturn none
 */
-static void kdf_iterator_cb(EVP_KDF *kdf, void *data)
+static void
+kdf_iterator_cb(EVP_KDF *kdf, void *data)
 {
   lua_State *L = (lua_State *)data;
-  int typ = lua_rawgetp(L, LUA_REGISTRYINDEX, (void*)kdf_iterator_cb);
+  int        typ = lua_rawgetp(L, LUA_REGISTRYINDEX, (void *)kdf_iterator_cb);
   assert(typ == LUA_TFUNCTION);
 
   PUSH_OBJECT(kdf, "openssl.kdf");
-  if (lua_pcall(L, 1, 1, 0) != 0)
-    luaL_error(L, lua_tostring(L, -1));
+  if (lua_pcall(L, 1, 1, 0) != 0) luaL_error(L, lua_tostring(L, -1));
 }
 
-static int openssl_kdf_iterator_kdf(lua_State *L)
+static int
+openssl_kdf_iterator_kdf(lua_State *L)
 {
   luaL_checktype(L, 1, LUA_TFUNCTION);
 
   lua_pushvalue(L, 1);
-  lua_rawsetp(L, LUA_REGISTRYINDEX, (void*)kdf_iterator_cb);
+  lua_rawsetp(L, LUA_REGISTRYINDEX, (void *)kdf_iterator_cb);
 
   EVP_KDF_do_all_provided(NULL, kdf_iterator_cb, L);
   lua_pushnil(L);
-  lua_rawsetp(L, LUA_REGISTRYINDEX, (void*)kdf_iterator_cb);
+  lua_rawsetp(L, LUA_REGISTRYINDEX, (void *)kdf_iterator_cb);
   return 0;
 }
 
@@ -86,10 +86,11 @@ fetch openssl.kdf object by name
 @tparam string name
 @treturn openssl.kdf
 */
-static int openssl_kdf_fetch(lua_State *L)
+static int
+openssl_kdf_fetch(lua_State *L)
 {
-  const char* name = luaL_checkstring(L, 1);
-  EVP_KDF* kdf = EVP_KDF_fetch(NULL, name, NULL);
+  const char *name = luaL_checkstring(L, 1);
+  EVP_KDF    *kdf = EVP_KDF_fetch(NULL, name, NULL);
   PUSH_OBJECT(kdf, "openssl.kdf");
 
   return 1;
@@ -116,21 +117,21 @@ compute KDF delive, openssl version < v3
 @tparam[opt=32] number keylen
 @treturn string deilved result binary string
 */
-static int openssl_kdf_derive(lua_State *L)
+static int
+openssl_kdf_derive(lua_State *L)
 {
 #if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
-  EVP_KDF *kdf = get_kdf(L, 1);
-  OSSL_PARAM *params = openssl_toparams(L, 2);
-  unsigned char key[64] = {0};
-  size_t sz = luaL_optinteger(L, 3, 16);
+  EVP_KDF      *kdf = get_kdf(L, 1);
+  OSSL_PARAM   *params = openssl_toparams(L, 2);
+  unsigned char key[64] = { 0 };
+  size_t        sz = luaL_optinteger(L, 3, 16);
   luaL_argcheck(L, sz <= sizeof(key), 3, "out of support range, limited to 64");
 
   EVP_KDF_CTX *ctx = EVP_KDF_CTX_new(kdf);
 
   int ret = EVP_KDF_derive(ctx, key, sz, params);
-  if (ret > 0)
-  {
-    lua_pushlstring(L, (const char*)key, sz);
+  if (ret > 0) {
+    lua_pushlstring(L, (const char *)key, sz);
     ret = 1;
   } else {
     ret = openssl_pushresult(L, ret);
@@ -139,26 +140,20 @@ static int openssl_kdf_derive(lua_State *L)
   OPENSSL_free(params);
   return ret;
 #else
-  size_t passlen, saltlen;
-  const char* pass = luaL_checklstring (L, 1, &passlen);
-  const char* salt = luaL_checklstring (L, 2, &saltlen);
-  const EVP_MD* md = get_digest(L, 3, NULL);
-  int iter = luaL_optinteger(L, 4, 1000);
-  int keylen = luaL_optinteger(L, 5, 32);
-  unsigned char key[256] = {0};
+  size_t        passlen, saltlen;
+  const char   *pass = luaL_checklstring(L, 1, &passlen);
+  const char   *salt = luaL_checklstring(L, 2, &saltlen);
+  const EVP_MD *md = get_digest(L, 3, NULL);
+  int           iter = luaL_optinteger(L, 4, 1000);
+  int           keylen = luaL_optinteger(L, 5, 32);
+  unsigned char key[256] = { 0 };
 
-  luaL_argcheck(L, keylen <= sizeof(key), 5,
-                "out of support range, limited to 256");
+  luaL_argcheck(L, keylen <= sizeof(key), 5, "out of support range, limited to 256");
 
-  int ret = PKCS5_PBKDF2_HMAC(pass, (int)passlen,
-                              (const unsigned char*)salt, (int)saltlen,
-                              iter,
-                              md,
-                              keylen,
-                              key);
-  if (ret==1)
-  {
-    lua_pushlstring(L, (const char*)key, keylen);
+  int ret = PKCS5_PBKDF2_HMAC(
+    pass, (int)passlen, (const unsigned char *)salt, (int)saltlen, iter, md, keylen, key);
+  if (ret == 1) {
+    lua_pushlstring(L, (const char *)key, keylen);
   } else
     ret = openssl_pushresult(L, ret);
 
@@ -178,7 +173,8 @@ duplicate kdf_ctx object
 @function dup
 @treturn openssl.kdf_ctx|fail
 */
-static int openssl_kdf_ctx_dup(lua_State *L)
+static int
+openssl_kdf_ctx_dup(lua_State *L)
 {
   EVP_KDF_CTX *c = CHECK_OBJECT(1, EVP_KDF_CTX, "openssl.kdf_ctx");
   c = EVP_KDF_CTX_dup(c);
@@ -195,7 +191,8 @@ reset kdf_ctx object
 @function reset
 @treturn openssl.kdf_ctx
 */
-static int openssl_kdf_ctx_reset(lua_State *L)
+static int
+openssl_kdf_ctx_reset(lua_State *L)
 {
   EVP_KDF_CTX *c = CHECK_OBJECT(1, EVP_KDF_CTX, "openssl.kdf_ctx");
   EVP_KDF_CTX_reset(c);
@@ -210,18 +207,18 @@ derive the key
 @tparam table paramaters, settable paramaters can be get by `kdf:settable_ctx_params()`
 @treturn string|fail
 */
-static int openssl_kdf_ctx_derive(lua_State *L)
+static int
+openssl_kdf_ctx_derive(lua_State *L)
 {
-  EVP_KDF_CTX *c = CHECK_OBJECT(1, EVP_KDF_CTX, "openssl.kdf_ctx");
-  OSSL_PARAM* params = openssl_toparams(L, 2);
-  unsigned char key[64] = {0};
-  size_t sz = luaL_optinteger(L, 3, 16);
+  EVP_KDF_CTX  *c = CHECK_OBJECT(1, EVP_KDF_CTX, "openssl.kdf_ctx");
+  OSSL_PARAM   *params = openssl_toparams(L, 2);
+  unsigned char key[64] = { 0 };
+  size_t        sz = luaL_optinteger(L, 3, 16);
   luaL_argcheck(L, sz <= sizeof(key), 3, "out of support range, limited to 64");
 
   int ret = EVP_KDF_derive(c, key, sz, params);
-  if (ret > 0)
-  {
-    lua_pushlstring(L, (const char*)key, sz);
+  if (ret > 0) {
+    lua_pushlstring(L, (const char *)key, sz);
     ret = 1;
   } else {
     ret = openssl_pushresult(L, ret);
@@ -236,7 +233,8 @@ get size of openssl.kdf_ctx
 @function size
 @treturn number
 */
-static int openssl_kdf_ctx_size(lua_State *L)
+static int
+openssl_kdf_ctx_size(lua_State *L)
 {
   EVP_KDF_CTX *c = CHECK_OBJECT(1, EVP_KDF_CTX, "openssl.kdf_ctx");
   lua_pushinteger(L, EVP_KDF_CTX_get_kdf_size(c));
@@ -250,9 +248,10 @@ get openssl.kdf of openssl.kdf_ctx
 @function kdf
 @treturn openssl.kdf
 */
-static int openssl_kdf_ctx_kdf(lua_State *L)
+static int
+openssl_kdf_ctx_kdf(lua_State *L)
 {
-  EVP_KDF_CTX *c = CHECK_OBJECT(1, EVP_KDF_CTX, "openssl.kdf_ctx");
+  EVP_KDF_CTX   *c = CHECK_OBJECT(1, EVP_KDF_CTX, "openssl.kdf_ctx");
   const EVP_KDF *kdf = EVP_KDF_CTX_kdf(c);
   PUSH_OBJECT(kdf, "openssl.kdf");
 
@@ -265,9 +264,10 @@ get array with parameters that describes the retrievable parameters.
 @function gettable_params
 @treturn table
 */
-static int openssl_kdf_ctx_gettable_params(lua_State *L)
+static int
+openssl_kdf_ctx_gettable_params(lua_State *L)
 {
-  EVP_KDF_CTX *ctx = CHECK_OBJECT(1, EVP_KDF_CTX, "openssl.kdf_ctx");
+  EVP_KDF_CTX      *ctx = CHECK_OBJECT(1, EVP_KDF_CTX, "openssl.kdf_ctx");
   const OSSL_PARAM *params = EVP_KDF_CTX_gettable_params(ctx);
   return openssl_pushparams(L, params);
 }
@@ -278,9 +278,10 @@ get array with parameters that describes the settable parameters.
 @function settable_params
 @treturn table
 */
-static int openssl_kdf_ctx_settable_params(lua_State *L)
+static int
+openssl_kdf_ctx_settable_params(lua_State *L)
 {
-  EVP_KDF_CTX *ctx = CHECK_OBJECT(1, EVP_KDF_CTX, "openssl.kdf_ctx");
+  EVP_KDF_CTX      *ctx = CHECK_OBJECT(1, EVP_KDF_CTX, "openssl.kdf_ctx");
   const OSSL_PARAM *params = EVP_KDF_CTX_settable_params(ctx);
   return openssl_pushparams(L, params);
 }
@@ -292,15 +293,15 @@ retrieves parameters
 @tparam table parameters to retrieves
 @treturn table
 */
-static int openssl_kdf_ctx_get_params(lua_State *L)
+static int
+openssl_kdf_ctx_get_params(lua_State *L)
 {
   EVP_KDF_CTX *ctx = CHECK_OBJECT(1, EVP_KDF_CTX, "openssl.kdf_ctx");
-  OSSL_PARAM* params = openssl_toparams(L, 2);
-  int ret = EVP_KDF_CTX_get_params(ctx, params);
-  if (ret==1)
+  OSSL_PARAM  *params = openssl_toparams(L, 2);
+  int          ret = EVP_KDF_CTX_get_params(ctx, params);
+  if (ret == 1)
     ret = openssl_pushparams(L, params);
-  else
-  {
+  else {
     ret = openssl_pushparams(L, params);
     ret += openssl_pushresult(L, ret);
   }
@@ -315,11 +316,12 @@ set parameters
 @tparam table parameters
 @treturn boolean
 */
-static int openssl_kdf_ctx_set_params(lua_State *L)
+static int
+openssl_kdf_ctx_set_params(lua_State *L)
 {
   EVP_KDF_CTX *ctx = CHECK_OBJECT(1, EVP_KDF_CTX, "openssl.kdf_ctx");
-  OSSL_PARAM* params = openssl_toparams(L, 2);
-  int ret = EVP_KDF_CTX_set_params(ctx, params);
+  OSSL_PARAM  *params = openssl_toparams(L, 2);
+  int          ret = EVP_KDF_CTX_set_params(ctx, params);
   OPENSSL_free(params);
   return openssl_pushresult(L, ret);
 }
@@ -343,11 +345,12 @@ create new openssl.kdf_ctx object
 @function fetch
 @treturn openssl.kdf_ctx|fail
 */
-static int openssl_kdf_ctx_new(lua_State *L)
+static int
+openssl_kdf_ctx_new(lua_State *L)
 {
-  EVP_KDF *type = get_kdf(L, 1);
+  EVP_KDF     *type = get_kdf(L, 1);
   EVP_KDF_CTX *c = EVP_KDF_CTX_new(type);
-  int ret = 1;
+  int          ret = 1;
   if (c)
     PUSH_OBJECT(c, "openssl.kdf_ctx");
   else
@@ -355,10 +358,11 @@ static int openssl_kdf_ctx_new(lua_State *L)
   return ret;
 }
 
-static int openssl_kdf_ctx_free(lua_State *L)
+static int
+openssl_kdf_ctx_free(lua_State *L)
 {
   EVP_KDF_CTX *c = CHECK_OBJECT(1, EVP_KDF_CTX, "openssl.kdf_ctx");
-  if(!c) return 0;
+  if (!c) return 0;
   EVP_KDF_CTX_free(c);
 
   FREE_OBJECT(1);
@@ -371,7 +375,8 @@ get description
 @function description
 @treturn openssl.kdf_ctx
 */
-static int openssl_kdf_description(lua_State *L)
+static int
+openssl_kdf_description(lua_State *L)
 {
   const EVP_KDF *kdf = CHECK_OBJECT(1, EVP_KDF, "openssl.kdf");
   lua_pushstring(L, EVP_KDF_get0_description(kdf));
@@ -384,7 +389,8 @@ get description
 @function name
 @treturn string|nil
 */
-static int openssl_kdf_name(lua_State *L)
+static int
+openssl_kdf_name(lua_State *L)
 {
   const EVP_KDF *kdf = CHECK_OBJECT(1, EVP_KDF, "openssl.kdf");
   lua_pushstring(L, EVP_KDF_get0_name(kdf));
@@ -397,10 +403,11 @@ get provider
 @function provider
 @treturn lightuserdata
 */
-static int openssl_kdf_provider(lua_State *L)
+static int
+openssl_kdf_provider(lua_State *L)
 {
   const EVP_KDF *kdf = CHECK_OBJECT(1, EVP_KDF, "openssl.kdf");
-  lua_pushlightuserdata(L, (void*)EVP_KDF_get0_provider(kdf));
+  lua_pushlightuserdata(L, (void *)EVP_KDF_get0_provider(kdf));
   return 1;
 }
 
@@ -411,14 +418,14 @@ check kdf is an implementation of an algorithm that's identifiable with name
 @tparam string name an algorithm that's identifiable with name
 @treturn boolean
 */
-static int openssl_kdf_is_a(lua_State *L)
+static int
+openssl_kdf_is_a(lua_State *L)
 {
-  EVP_KDF *kdf = CHECK_OBJECT(1, EVP_KDF, "openssl.kdf");
-  const char* name = luaL_checkstring(L, 2);
+  EVP_KDF    *kdf = CHECK_OBJECT(1, EVP_KDF, "openssl.kdf");
+  const char *name = luaL_checkstring(L, 2);
   lua_pushboolean(L, EVP_KDF_is_a(kdf, name));
   return 1;
 }
-
 
 /***
 traverses all names for kdf, and calls fn with each name
@@ -427,30 +434,31 @@ traverses all names for kdf, and calls fn with each name
 @tparam function cb(name)
 @treturn boolean
 */
-static void iterator_cb(const char *name, void *data)
+static void
+iterator_cb(const char *name, void *data)
 {
   lua_State *L = (lua_State *)data;
-  int typ = lua_rawgetp(L, LUA_REGISTRYINDEX, (void*)iterator_cb);
+  int        typ = lua_rawgetp(L, LUA_REGISTRYINDEX, (void *)iterator_cb);
   assert(typ == LUA_TFUNCTION);
 
   lua_pushstring(L, name);
-  if (lua_pcall(L, 1, 1, 0) != 0)
-    luaL_error(L, lua_tostring(L, -1));
+  if (lua_pcall(L, 1, 1, 0) != 0) luaL_error(L, lua_tostring(L, -1));
 }
 
-static int openssl_kdf_iterator(lua_State *L)
+static int
+openssl_kdf_iterator(lua_State *L)
 {
-  int ret;
+  int      ret;
   EVP_KDF *kdf = CHECK_OBJECT(1, EVP_KDF, "openssl.kdf");
   luaL_checktype(L, 2, LUA_TFUNCTION);
 
   lua_pushvalue(L, 2);
-  lua_rawsetp(L, LUA_REGISTRYINDEX, (void*)iterator_cb);
+  lua_rawsetp(L, LUA_REGISTRYINDEX, (void *)iterator_cb);
 
   ret = EVP_KDF_names_do_all(kdf, iterator_cb, L);
   lua_pushboolean(L, ret);
   lua_pushnil(L);
-  lua_rawsetp(L, LUA_REGISTRYINDEX, (void*)iterator_cb);
+  lua_rawsetp(L, LUA_REGISTRYINDEX, (void *)iterator_cb);
   return 1;
 }
 
@@ -460,9 +468,10 @@ get array that describes the retrievable parameters.
 @function gettable_params
 @treturn table
 */
-static int openssl_kdf_gettable_params(lua_State *L)
+static int
+openssl_kdf_gettable_params(lua_State *L)
 {
-  EVP_KDF *kdf = CHECK_OBJECT(1, EVP_KDF, "openssl.kdf");
+  EVP_KDF          *kdf = CHECK_OBJECT(1, EVP_KDF, "openssl.kdf");
   const OSSL_PARAM *params = EVP_KDF_gettable_params(kdf);
   return openssl_pushparams(L, params);
 }
@@ -473,9 +482,10 @@ get array with parameters that can be retrieved from an openssl.kdf_ctx.
 @function gettable_ctx_params
 @treturn table
 */
-static int openssl_kdf_gettable_ctx_params(lua_State *L)
+static int
+openssl_kdf_gettable_ctx_params(lua_State *L)
 {
-  EVP_KDF *kdf = CHECK_OBJECT(1, EVP_KDF, "openssl.kdf");
+  EVP_KDF          *kdf = CHECK_OBJECT(1, EVP_KDF, "openssl.kdf");
   const OSSL_PARAM *params = EVP_KDF_gettable_ctx_params(kdf);
   return openssl_pushparams(L, params);
 }
@@ -486,9 +496,10 @@ get array with parameters that can be set to an openssl.kdf_ctx.
 @function settable_ctx_params
 @treturn table
 */
-static int openssl_kdf_settable_ctx_params(lua_State *L)
+static int
+openssl_kdf_settable_ctx_params(lua_State *L)
 {
-  EVP_KDF *kdf = CHECK_OBJECT(1, EVP_KDF, "openssl.kdf");
+  EVP_KDF          *kdf = CHECK_OBJECT(1, EVP_KDF, "openssl.kdf");
   const OSSL_PARAM *params = EVP_KDF_settable_ctx_params(kdf);
   return openssl_pushparams(L, params);
 }
@@ -499,15 +510,15 @@ retrieves details about the implementation kdf.
 @function get_params
 @treturn table
 */
-static int openssl_kdf_get_params(lua_State *L)
+static int
+openssl_kdf_get_params(lua_State *L)
 {
-  EVP_KDF *kdf = CHECK_OBJECT(1, EVP_KDF, "openssl.kdf");
-  OSSL_PARAM* params = openssl_toparams(L, 2);
-  int ret = EVP_KDF_get_params(kdf, params);
+  EVP_KDF    *kdf = CHECK_OBJECT(1, EVP_KDF, "openssl.kdf");
+  OSSL_PARAM *params = openssl_toparams(L, 2);
+  int         ret = EVP_KDF_get_params(kdf, params);
   if (ret == 1)
     ret = openssl_pushparams(L, params);
-  else
-  {
+  else {
     ret = openssl_pushparams(L, params);
     ret += openssl_pushresult(L, ret);
   }
@@ -515,58 +526,56 @@ static int openssl_kdf_get_params(lua_State *L)
   return ret;
 }
 
-static luaL_Reg kdf_ctx_funs[] =
-{
-  {"dup",         openssl_kdf_ctx_dup},
-  {"reset",       openssl_kdf_ctx_reset},
-  {"derive",      openssl_kdf_ctx_derive},
-  {"size",        openssl_kdf_ctx_size},
-  {"kdf",         openssl_kdf_ctx_kdf},
+static luaL_Reg kdf_ctx_funs[] = {
+  { "dup",             openssl_kdf_ctx_dup             },
+  { "reset",           openssl_kdf_ctx_reset           },
+  { "derive",          openssl_kdf_ctx_derive          },
+  { "size",            openssl_kdf_ctx_size            },
+  { "kdf",             openssl_kdf_ctx_kdf             },
 
-  {"gettable_params", openssl_kdf_ctx_gettable_params},
-  {"settable_params", openssl_kdf_ctx_settable_params},
-  {"get_params",      openssl_kdf_ctx_get_params},
-  {"set_params",      openssl_kdf_ctx_set_params},
+  { "gettable_params", openssl_kdf_ctx_gettable_params },
+  { "settable_params", openssl_kdf_ctx_settable_params },
+  { "get_params",      openssl_kdf_ctx_get_params      },
+  { "set_params",      openssl_kdf_ctx_set_params      },
 
-  {"__tostring",  auxiliar_tostring},
-  {"__gc",        openssl_kdf_ctx_free},
+  { "__tostring",      auxiliar_tostring               },
+  { "__gc",            openssl_kdf_ctx_free            },
 
-  {NULL, NULL}
+  { NULL,              NULL                            }
 };
 
-static luaL_Reg kdf_funs[] =
-{
-  {"description", openssl_kdf_description},
-  {"name",        openssl_kdf_name},
-  {"provider",    openssl_kdf_provider},
-  {"is_a",        openssl_kdf_is_a},
-  {"iterator",    openssl_kdf_iterator},
-  {"derive",      openssl_kdf_derive},
-  {"new",         openssl_kdf_ctx_new},
+static luaL_Reg kdf_funs[] = {
+  { "description",         openssl_kdf_description         },
+  { "name",                openssl_kdf_name                },
+  { "provider",            openssl_kdf_provider            },
+  { "is_a",                openssl_kdf_is_a                },
+  { "iterator",            openssl_kdf_iterator            },
+  { "derive",              openssl_kdf_derive              },
+  { "new",                 openssl_kdf_ctx_new             },
 
-  {"gettable_params",     openssl_kdf_gettable_params},
-  {"settable_ctx_params", openssl_kdf_settable_ctx_params},
-  {"gettable_ctx_params", openssl_kdf_gettable_ctx_params},
-  {"get_params", openssl_kdf_get_params},
+  { "gettable_params",     openssl_kdf_gettable_params     },
+  { "settable_ctx_params", openssl_kdf_settable_ctx_params },
+  { "gettable_ctx_params", openssl_kdf_gettable_ctx_params },
+  { "get_params",          openssl_kdf_get_params          },
 
-  {"__tostring",  auxiliar_tostring},
+  { "__tostring",          auxiliar_tostring               },
 
-  {NULL,  NULL}
+  { NULL,                  NULL                            }
 };
 #endif
 
-static const luaL_Reg kdf_R[] =
-{
+static const luaL_Reg kdf_R[] = {
 #if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
-  {"fetch",     openssl_kdf_fetch},
-  {"iterator",  openssl_kdf_iterator_kdf},
+  { "fetch",    openssl_kdf_fetch        },
+  { "iterator", openssl_kdf_iterator_kdf },
 #endif
-  {"derive",    openssl_kdf_derive},
+  { "derive",   openssl_kdf_derive       },
 
-  {NULL,  NULL}
+  { NULL,       NULL                     }
 };
 
-int luaopen_kdf(lua_State *L)
+int
+luaopen_kdf(lua_State *L)
 {
 #if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
   auxiliar_newclass(L, "openssl.kdf", kdf_funs);

@@ -1,6 +1,6 @@
-local openssl = require 'openssl'
-local dsa = require'openssl'.dsa
-local helper = require'helper'
+local openssl = require("openssl")
+local dsa = require("openssl").dsa
+local helper = require("helper")
 
 TestDSA = {}
 function TestDSA:Testdsa()
@@ -10,6 +10,6 @@ function TestDSA:Testdsa()
   assert(t.bits == 1024)
 
   if openssl.engine then
-    k:set_engine(openssl.engine('openssl'))
+    k:set_engine(openssl.engine("openssl"))
   end
 end

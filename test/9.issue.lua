@@ -1,41 +1,41 @@
-local lu = require 'luaunit'
-local openssl = require 'openssl'
+local lu = require("luaunit")
+local openssl = require("openssl")
 local unpack = unpack or table.unpack
 
 TestIssuer = {}
 local function dump(t, i)
   i = i or 0
   for k, v in pairs(t) do
-    if type(v) == 'table' then
-      print(string.rep('\t', i), k .. '={')
+    if type(v) == "table" then
+      print(string.rep("\t", i), k .. "={")
       dump(v, i + 1)
-      print(string.rep('\t', i), '}')
-    elseif type(v) == 'userdata' then
+      print(string.rep("\t", i), "}")
+    elseif type(v) == "userdata" then
       local s = tostring(v)
-      if s:match('^openssl.asn1_') then
-        if type(k) == 'userdata' and tostring(k):match('^openssl.asn1_object') then
-          print(string.rep('\t', i), k:sn() .. '=' .. v:data())
-        elseif s:match('^openssl.asn1_integer') then
-          print(string.rep('\t', i), tostring(k) .. '=' .. tostring(v), v:bn())
+      if s:match("^openssl.asn1_") then
+        if type(k) == "userdata" and tostring(k):match("^openssl.asn1_object") then
+          print(string.rep("\t", i), k:sn() .. "=" .. v:data())
+        elseif s:match("^openssl.asn1_integer") then
+          print(string.rep("\t", i), tostring(k) .. "=" .. tostring(v), v:bn())
         else
-          print(string.rep('\t', i), tostring(k) .. '=' .. tostring(v), v:data())
+          print(string.rep("\t", i), tostring(k) .. "=" .. tostring(v), v:data())
         end
-      elseif s:match('^openssl.x509_name') then
-        print(string.rep('\t', i), k .. '=' .. v:oneline())
-        print(string.rep('\t', i), k .. '={')
+      elseif s:match("^openssl.x509_name") then
+        print(string.rep("\t", i), k .. "=" .. v:oneline())
+        print(string.rep("\t", i), k .. "={")
         dump(v:info(true), i + 1)
-        print(string.rep('\t', i), k .. '=}')
-      elseif s:match('^openssl.x509_extension') then
-        print(string.rep('\t', i), k .. '={')
+        print(string.rep("\t", i), k .. "=}")
+      elseif s:match("^openssl.x509_extension") then
+        print(string.rep("\t", i), k .. "={")
         dump(v:info(true), i + 1)
-        print(string.rep('\t', i), '}')
-      elseif s:match('^openssl.x509_algor') then
-        print(string.rep('\t', i), k .. '=' .. v:tostring())
+        print(string.rep("\t", i), "}")
+      elseif s:match("^openssl.x509_algor") then
+        print(string.rep("\t", i), k .. "=" .. v:tostring())
       else
-        print(string.rep('\t', i), k .. '=' .. v)
+        print(string.rep("\t", i), k .. "=" .. v)
       end
     else
-      print(string.rep('\t', i), k .. '=' .. tostring(v))
+      print(string.rep("\t", i), k .. "=" .. tostring(v))
     end
   end
 end
@@ -64,12 +64,12 @@ veFd3yM=
 ]]
   local x = openssl.x509.read(certasstring)
   local t = x:parse()
-  assert(type(t) == 'table')
+  assert(type(t) == "table")
   -- dump(t,0)
 end
 
 function TestIssuer:test141()
-  local c = openssl.cipher.decrypt_new('aes-128-cbc', "secret_key", "iv")
+  local c = openssl.cipher.decrypt_new("aes-128-cbc", "secret_key", "iv")
   local out = c:update("msg")
   local final = c:final()
   assert(out or final)
@@ -79,7 +79,7 @@ end
 
 function TestIssuer:test166()
   local pkey = openssl.pkey
-  local ec_key = pkey.new(unpack({"EC",  "secp521r1"}))
+  local ec_key = pkey.new(unpack({ "EC", "secp521r1" }))
   local public_key = pkey.get_public(ec_key)
 
   local key_details = public_key:parse().ec:parse()
@@ -89,14 +89,14 @@ function TestIssuer:test166()
     kty = "EC",
     crv = "P-521",
     x = openssl.base64(x:totext()),
-    y = openssl.base64(y:totext())
+    y = openssl.base64(y:totext()),
   }
 
   local factor = {
     alg = "EC",
     ec_name = 716,
     x = assert(openssl.base64(ec_jwk.x, false)),
-    y = assert(openssl.base64(ec_jwk.y, false))
+    y = assert(openssl.base64(ec_jwk.y, false)),
   }
 
   local pub = assert(pkey.new(factor))

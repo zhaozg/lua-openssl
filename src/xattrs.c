@@ -43,7 +43,8 @@ Create x509_attribute object
 
 @see x509_attribute_param_table
 */
-static int openssl_xattr_new(lua_State*L)
+static int
+openssl_xattr_new(lua_State *L)
 {
   X509_ATTRIBUTE *x = NULL;
   luaL_checktable(L, 1);
@@ -53,11 +54,10 @@ static int openssl_xattr_new(lua_State*L)
   return 1;
 }
 
-static luaL_Reg R[] =
-{
-  {"new_attribute",         openssl_xattr_new},
+static luaL_Reg R[] = {
+  { "new_attribute", openssl_xattr_new },
 
-  {NULL,          NULL},
+  { NULL,            NULL              },
 };
 
 /***
@@ -68,7 +68,8 @@ x509_attribute infomation table
 @tfield boolean single  true for single value
 @tfield table value  if single, value is asn1_type or array have asn1_type node table
 */
-static int openssl_xattr_totable(lua_State*L, X509_ATTRIBUTE *attr)
+static int
+openssl_xattr_totable(lua_State *L, X509_ATTRIBUTE *attr)
 {
   int i, c;
 
@@ -77,12 +78,10 @@ static int openssl_xattr_totable(lua_State*L, X509_ATTRIBUTE *attr)
   lua_setfield(L, -2, "object");
 
   c = X509_ATTRIBUTE_count(attr);
-  if (c > 0)
-  {
+  if (c > 0) {
     lua_newtable(L);
-    for (i = 0; i < c; i++)
-    {
-      ASN1_TYPE* t = X509_ATTRIBUTE_get0_type(attr, i);
+    for (i = 0; i < c; i++) {
+      ASN1_TYPE *t = X509_ATTRIBUTE_get0_type(attr, i);
       openssl_push_asn1type(L, t);
       lua_rawseti(L, -2, i + 1);
     }
@@ -90,9 +89,7 @@ static int openssl_xattr_totable(lua_State*L, X509_ATTRIBUTE *attr)
   }
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
-  if (attr->single)
-  {
-
+  if (attr->single) {
     openssl_push_asn1type(L, attr->value.single);
     lua_setfield(L, -2, "value");
   }
@@ -113,9 +110,10 @@ get infomation table of x509_attribute.
 @treturn[1] table info,  x509_attribute infomation as table
 @see x509_attribute_info_table
 */
-static int openssl_xattr_info(lua_State*L)
+static int
+openssl_xattr_info(lua_State *L)
 {
-  X509_ATTRIBUTE* attr = CHECK_OBJECT(1, X509_ATTRIBUTE, "openssl.x509_attribute");
+  X509_ATTRIBUTE *attr = CHECK_OBJECT(1, X509_ATTRIBUTE, "openssl.x509_attribute");
   return openssl_xattr_totable(L, attr);
 }
 
@@ -125,17 +123,19 @@ clone then asn1_attribute
 @function dup
 @treturn x509_attribute attr clone of x509_attribute
 */
-static int openssl_xattr_dup(lua_State*L)
+static int
+openssl_xattr_dup(lua_State *L)
 {
-  X509_ATTRIBUTE* attr = CHECK_OBJECT(1, X509_ATTRIBUTE, "openssl.x509_attribute");
-  X509_ATTRIBUTE* dup = X509_ATTRIBUTE_dup(attr);
+  X509_ATTRIBUTE *attr = CHECK_OBJECT(1, X509_ATTRIBUTE, "openssl.x509_attribute");
+  X509_ATTRIBUTE *dup = X509_ATTRIBUTE_dup(attr);
   PUSH_OBJECT(dup, "openssl.x509_attribute");
   return 1;
 }
 
-static int openssl_xattr_free(lua_State*L)
+static int
+openssl_xattr_free(lua_State *L)
 {
-  X509_ATTRIBUTE* attr = CHECK_OBJECT(1, X509_ATTRIBUTE, "openssl.x509_attribute");
+  X509_ATTRIBUTE *attr = CHECK_OBJECT(1, X509_ATTRIBUTE, "openssl.x509_attribute");
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
   sk_ASN1_TYPE_pop_free(attr->value.set, ASN1_TYPE_free);
@@ -162,14 +162,14 @@ set type of x509_attribute
 @tparam string data set to asn1_attr
 @treturn boolean result true for success and others for fail
 */
-static int openssl_xattr_data(lua_State*L)
+static int
+openssl_xattr_data(lua_State *L)
 {
-  X509_ATTRIBUTE* attr = CHECK_OBJECT(1, X509_ATTRIBUTE, "openssl.x509_attribute");
-  if (lua_type(L, 3) == LUA_TSTRING)
-  {
-    int attrtype = luaL_checkint(L, 2);
-    size_t size;
-    int ret;
+  X509_ATTRIBUTE *attr = CHECK_OBJECT(1, X509_ATTRIBUTE, "openssl.x509_attribute");
+  if (lua_type(L, 3) == LUA_TSTRING) {
+    int         attrtype = luaL_checkint(L, 2);
+    size_t      size;
+    int         ret;
     const char *data = luaL_checklstring(L, 3, &size);
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
     sk_ASN1_TYPE_pop_free(attr->value.set, ASN1_TYPE_free);
@@ -177,11 +177,9 @@ static int openssl_xattr_data(lua_State*L)
 #endif
     ret = X509_ATTRIBUTE_set1_data(attr, attrtype, data, size);
     return openssl_pushresult(L, ret);
-  }
-  else
-  {
-    int idx = luaL_checkint(L, 2);
-    int attrtype = luaL_checkint(L, 3);
+  } else {
+    int          idx = luaL_checkint(L, 2);
+    int          attrtype = luaL_checkint(L, 3);
     ASN1_STRING *as = (ASN1_STRING *)X509_ATTRIBUTE_get0_data(attr, idx, attrtype, NULL);
     PUSH_ASN1_STRING(L, as);
     return 1;
@@ -197,13 +195,13 @@ get type of x509_attribute.
 @treturn nil nil, fail return nothing
 @see asn1_type_table
 */
-static int openssl_xattr_type(lua_State*L)
+static int
+openssl_xattr_type(lua_State *L)
 {
-  X509_ATTRIBUTE* attr = CHECK_OBJECT(1, X509_ATTRIBUTE, "openssl.x509_attribute");
-  int loc = luaL_optint(L, 2, 0);
-  ASN1_TYPE *type = X509_ATTRIBUTE_get0_type(attr, loc);
-  if (type)
-  {
+  X509_ATTRIBUTE *attr = CHECK_OBJECT(1, X509_ATTRIBUTE, "openssl.x509_attribute");
+  int             loc = luaL_optint(L, 2, 0);
+  ASN1_TYPE      *type = X509_ATTRIBUTE_get0_type(attr, loc);
+  if (type) {
     openssl_push_asn1type(L, type);
     return 1;
   }
@@ -224,49 +222,47 @@ set asn1_object for x509_attribute.
 @treturn boolean true for success
 @return nil when occure error, and followed by error message
 */
-static int openssl_xattr_object(lua_State*L)
+static int
+openssl_xattr_object(lua_State *L)
 {
-  X509_ATTRIBUTE* attr = CHECK_OBJECT(1, X509_ATTRIBUTE, "openssl.x509_attribute");
-  if (lua_isnone(L, 2))
-  {
-    ASN1_OBJECT* obj = X509_ATTRIBUTE_get0_object(attr);
+  X509_ATTRIBUTE *attr = CHECK_OBJECT(1, X509_ATTRIBUTE, "openssl.x509_attribute");
+  if (lua_isnone(L, 2)) {
+    ASN1_OBJECT *obj = X509_ATTRIBUTE_get0_object(attr);
     openssl_push_asn1object(L, obj);
     return 1;
-  }
-  else
-  {
+  } else {
     ASN1_OBJECT *obj = openssl_get_asn1object(L, 2, 0);
-    int ret = X509_ATTRIBUTE_set1_object(attr, obj);
+    int          ret = X509_ATTRIBUTE_set1_object(attr, obj);
     ASN1_OBJECT_free(obj);
     return openssl_pushresult(L, ret);
   }
 }
 
-static luaL_Reg x509_attribute_funs[] =
-{
-  {"info",          openssl_xattr_info},
-  {"dup",           openssl_xattr_dup},
+static luaL_Reg x509_attribute_funs[] = {
+  { "info",       openssl_xattr_info   },
+  { "dup",        openssl_xattr_dup    },
   /* set or get */
-  {"data",          openssl_xattr_data},
-  {"type",          openssl_xattr_type},
-  {"object",        openssl_xattr_object},
+  { "data",       openssl_xattr_data   },
+  { "type",       openssl_xattr_type   },
+  { "object",     openssl_xattr_object },
 
-  {"__gc",          openssl_xattr_free},
-  {"__tostring",    auxiliar_tostring},
+  { "__gc",       openssl_xattr_free   },
+  { "__tostring", auxiliar_tostring    },
 
-  { NULL, NULL }
+  { NULL,         NULL                 }
 };
 
-X509_ATTRIBUTE* openssl_new_xattribute(lua_State*L, X509_ATTRIBUTE** a, int idx)
+X509_ATTRIBUTE *
+openssl_new_xattribute(lua_State *L, X509_ATTRIBUTE **a, int idx)
 {
-  int arttype;
-  size_t len = 0;
-  const char* data = NULL;
+  int          arttype;
+  size_t       len = 0;
+  const char  *data = NULL;
   ASN1_STRING *s = NULL;
   ASN1_OBJECT *obj = NULL;
 
   lua_getfield(L, idx, "object");
-  obj  = openssl_get_asn1object(L, -1, 1);
+  obj = openssl_get_asn1object(L, -1, 1);
   lua_pop(L, 1);
 
   lua_getfield(L, idx, "type");
@@ -274,27 +270,23 @@ X509_ATTRIBUTE* openssl_new_xattribute(lua_State*L, X509_ATTRIBUTE** a, int idx)
   lua_pop(L, 1);
 
   lua_getfield(L, idx, "value");
-  if (lua_isstring(L, -1))
-  {
+  if (lua_isstring(L, -1)) {
     data = lua_tolstring(L, -1, &len);
-  }
-  else if ((s = GET_GROUP(-1, ASN1_STRING, "openssl.asn1group")) != NULL)
-  {
+  } else if ((s = GET_GROUP(-1, ASN1_STRING, "openssl.asn1group")) != NULL) {
     data = (const char *)ASN1_STRING_get0_data(s);
-    len  = ASN1_STRING_length(s);
+    len = ASN1_STRING_length(s);
   }
   lua_pop(L, 1);
-  if (data)
-    return X509_ATTRIBUTE_create_by_OBJ(a, obj, arttype, data, len);
+  if (data) return X509_ATTRIBUTE_create_by_OBJ(a, obj, arttype, data, len);
   ASN1_OBJECT_free(obj);
 
   return 0;
 }
 
-
 IMP_LUA_SK(X509_ATTRIBUTE, x509_attribute)
 
-int openssl_register_xattribute(lua_State*L)
+int
+openssl_register_xattribute(lua_State *L)
 {
   auxiliar_newclass(L, "openssl.x509_attribute", x509_attribute_funs);
   lua_newtable(L);

@@ -56,12 +56,13 @@
  * [including the GNU Public Licence.]
  */
 
+#include <openssl/crypto.h>
+#include <openssl/opensslconf.h>
+
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <errno.h>
-#include <openssl/opensslconf.h>
-#include <openssl/crypto.h>
 #ifdef OPENSSL_SYS_WIN32
 #include <windows.h>
 #else
@@ -79,8 +80,8 @@
 #undef PTHREADS
 #endif
 #ifdef IRIX
-#include <ulocks.h>
 #include <sys/prctl.h>
+#include <ulocks.h>
 #undef PTHREADS
 #endif
 
@@ -88,8 +89,8 @@
 #include <pthread.h>
 #endif
 
-#if defined(OPENSSL_THREADS) && \
-  (OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER))
+#if defined(OPENSSL_THREADS)                                                                       \
+  && (OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER))
 
 void CRYPTO_thread_setup(void);
 void CRYPTO_thread_cleanup(void);
@@ -106,7 +107,7 @@ static void beos_thread_id(CRYPTO_THREADID *tid);
  * CRYPTO_thread_cleanup();
  */
 
-#define THREAD_STACK_SIZE (16*1024)
+#define THREAD_STACK_SIZE (16 * 1024)
 
 #ifdef OPENSSL_SYS_WIN32
 
@@ -114,13 +115,13 @@ static void win32_locking_callback(int mode, int type, const char *file, int lin
 
 static HANDLE *lock_cs;
 
-void CRYPTO_thread_setup(void)
+void
+CRYPTO_thread_setup(void)
 {
   int i;
 
   lock_cs = OPENSSL_malloc(CRYPTO_num_locks() * sizeof(HANDLE));
-  for (i = 0; i < CRYPTO_num_locks(); i++)
-  {
+  for (i = 0; i < CRYPTO_num_locks(); i++) {
     lock_cs[i] = CreateMutex(NULL, FALSE, NULL);
   }
 
@@ -128,26 +129,24 @@ void CRYPTO_thread_setup(void)
   /* id callback defined */
 }
 
-void CRYPTO_thread_cleanup(void)
+void
+CRYPTO_thread_cleanup(void)
 {
   int i;
 
   CRYPTO_set_locking_callback(NULL);
-  for (i = 0; i < CRYPTO_num_locks(); i++)
-    CloseHandle(lock_cs[i]);
+  for (i = 0; i < CRYPTO_num_locks(); i++) CloseHandle(lock_cs[i]);
   OPENSSL_free(lock_cs);
 }
 
-static void win32_locking_callback(int mode, int type, const char *file, int line)
+static void
+win32_locking_callback(int mode, int type, const char *file, int line)
 {
-  (void) file;
-  (void) line;
-  if (mode & CRYPTO_LOCK)
-  {
+  (void)file;
+  (void)line;
+  if (mode & CRYPTO_LOCK) {
     WaitForSingleObject(lock_cs[type], INFINITE);
-  }
-  else
-  {
+  } else {
     ReleaseMutex(lock_cs[type]);
   }
 }
@@ -167,7 +166,8 @@ static rwlock_t *lock_cs;
 #endif
 static long *lock_count;
 
-void CRYPTO_thread_setup(void)
+void
+CRYPTO_thread_setup(void)
 {
   int i;
 
@@ -177,8 +177,7 @@ void CRYPTO_thread_setup(void)
   lock_cs = OPENSSL_malloc(CRYPTO_num_locks() * sizeof(rwlock_t));
 #endif
   lock_count = OPENSSL_malloc(CRYPTO_num_locks() * sizeof(long));
-  for (i = 0; i < CRYPTO_num_locks(); i++)
-  {
+  for (i = 0; i < CRYPTO_num_locks(); i++) {
     lock_count[i] = 0;
 #ifdef USE_MUTEX
     mutex_init(&(lock_cs[i]), USYNC_THREAD, NULL);
@@ -191,13 +190,13 @@ void CRYPTO_thread_setup(void)
   CRYPTO_set_locking_callback(solaris_locking_callback);
 }
 
-void CRYPTO_thread_cleanup(void)
+void
+CRYPTO_thread_cleanup(void)
 {
   int i;
 
   CRYPTO_set_locking_callback(NULL);
-  for (i = 0; i < CRYPTO_num_locks(); i++)
-  {
+  for (i = 0; i < CRYPTO_num_locks(); i++) {
 #ifdef USE_MUTEX
     mutex_destroy(&(lock_cs[i]));
 #else
@@ -208,7 +207,8 @@ void CRYPTO_thread_cleanup(void)
   OPENSSL_free(lock_count);
 }
 
-static void solaris_locking_callback(int mode, int type, const char *file, int line)
+static void
+solaris_locking_callback(int mode, int type, const char *file, int line)
 {
 #if 0
   fprintf(stderr, "thread=%4d mode=%s lock=%s %s:%d\n",
@@ -223,8 +223,7 @@ static void solaris_locking_callback(int mode, int type, const char *file, int l
             CRYPTO_thread_id(),
             mode, file, line);
 #endif
-  if (mode & CRYPTO_LOCK)
-  {
+  if (mode & CRYPTO_LOCK) {
 #ifdef USE_MUTEX
     mutex_lock(&(lock_cs[type]));
 #else
@@ -234,9 +233,7 @@ static void solaris_locking_callback(int mode, int type, const char *file, int l
       rw_wrlock(&(lock_cs[type]));
 #endif
     lock_count[type]++;
-  }
-  else
-  {
+  } else {
 #ifdef USE_MUTEX
     mutex_unlock(&(lock_cs[type]));
 #else
@@ -245,9 +242,10 @@ static void solaris_locking_callback(int mode, int type, const char *file, int l
   }
 }
 
-void solaris_thread_id(CRYPTO_THREADID *tid)
+void
+solaris_thread_id(CRYPTO_THREADID *tid)
 {
-    CRYPTO_THREADID_set_numeric((unsigned long)thr_self());
+  CRYPTO_THREADID_set_numeric((unsigned long)thr_self());
 }
 #endif /* SOLARIS */
 
@@ -257,12 +255,13 @@ static void irix_locking_callback(int mode, int type, const char *file, int line
 
 /* I don't think this works..... */
 
-static usptr_t *arena;
+static usptr_t  *arena;
 static usema_t **lock_cs;
 
-void CRYPTO_thread_setup(void)
+void
+CRYPTO_thread_setup(void)
 {
-  int i;
+  int  i;
   char filename[20];
 
   strcpy(filename, "/tmp/mttest.XXXXXX");
@@ -276,8 +275,7 @@ void CRYPTO_thread_setup(void)
   unlink(filename);
 
   lock_cs = OPENSSL_malloc(CRYPTO_num_locks() * sizeof(usema_t *));
-  for (i = 0; i < CRYPTO_num_locks(); i++)
-  {
+  for (i = 0; i < CRYPTO_num_locks(); i++) {
     lock_cs[i] = usnewsema(arena, 1);
   }
 
@@ -285,13 +283,13 @@ void CRYPTO_thread_setup(void)
   CRYPTO_set_locking_callback(irix_locking_callback);
 }
 
-void CRYPTO_thread_cleanup(void)
+void
+CRYPTO_thread_cleanup(void)
 {
   int i;
 
   CRYPTO_set_locking_callback(NULL);
-  for (i = 0; i < CRYPTO_num_locks(); i++)
-  {
+  for (i = 0; i < CRYPTO_num_locks(); i++) {
     char buf[10];
 
     sprintf(buf, "%2d:", i);
@@ -301,44 +299,43 @@ void CRYPTO_thread_cleanup(void)
   OPENSSL_free(lock_cs);
 }
 
-static void irix_locking_callback(int mode, int type, char *file, int line)
+static void
+irix_locking_callback(int mode, int type, char *file, int line)
 {
-  if (mode & CRYPTO_LOCK)
-  {
+  if (mode & CRYPTO_LOCK) {
     uspsema(lock_cs[type]);
-  }
-  else
-  {
+  } else {
     usvsema(lock_cs[type]);
   }
 }
 
-unsigned long irix_thread_id(void)
+unsigned long
+irix_thread_id(void)
 {
-    CRYPTO_THREADID_set_numeric((unsigned long)getpid());
+  CRYPTO_THREADID_set_numeric((unsigned long)getpid());
 }
 #endif /* IRIX */
 
 /* Linux and a few others */
 #if defined(PTHREADS) && (OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER))
 static pthread_mutex_t *lock_cs;
-static long *lock_count;
+static long            *lock_count;
 
-
-void CRYPTO_thread_cleanup(void)
+void
+CRYPTO_thread_cleanup(void)
 {
   int i;
 
   CRYPTO_set_locking_callback(NULL);
-  for (i = 0; i < CRYPTO_num_locks(); i++)
-  {
+  for (i = 0; i < CRYPTO_num_locks(); i++) {
     pthread_mutex_destroy(&(lock_cs[i]));
   }
   OPENSSL_free(lock_cs);
   OPENSSL_free(lock_count);
 }
 
-static void pthreads_locking_callback(int mode, int type, const char *file, int line)
+static void
+pthreads_locking_callback(int mode, int type, const char *file, int line)
 {
 #if 0
   fprintf(stderr, "thread=%4d mode=%s lock=%s %s:%d\n",
@@ -352,30 +349,28 @@ static void pthreads_locking_callback(int mode, int type, const char *file, int 
             CRYPTO_thread_id(),
             mode, file, line);
 #endif
-  if (mode & CRYPTO_LOCK)
-  {
+  if (mode & CRYPTO_LOCK) {
     pthread_mutex_lock(&(lock_cs[type]));
     lock_count[type]++;
-  }
-  else
-  {
+  } else {
     pthread_mutex_unlock(&(lock_cs[type]));
   }
 }
 
-static void pthreads_thread_id(CRYPTO_THREADID *tid)
+static void
+pthreads_thread_id(CRYPTO_THREADID *tid)
 {
-    CRYPTO_THREADID_set_numeric(tid, (unsigned long)pthread_self());
+  CRYPTO_THREADID_set_numeric(tid, (unsigned long)pthread_self());
 }
 
-void CRYPTO_thread_setup(void)
+void
+CRYPTO_thread_setup(void)
 {
   int i;
 
   lock_cs = OPENSSL_malloc(CRYPTO_num_locks() * sizeof(pthread_mutex_t));
   lock_count = OPENSSL_malloc(CRYPTO_num_locks() * sizeof(long));
-  for (i = 0; i < CRYPTO_num_locks(); i++)
-  {
+  for (i = 0; i < CRYPTO_num_locks(); i++) {
     lock_count[i] = 0;
     pthread_mutex_init(&(lock_cs[i]), NULL);
   }

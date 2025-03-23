@@ -23,45 +23,39 @@ create and export pkcs12 data
 */
 static LUA_FUNCTION(openssl_pkcs12_export)
 {
-  X509 * cert = CHECK_OBJECT(1, X509, "openssl.x509");
+  X509     *cert = CHECK_OBJECT(1, X509, "openssl.x509");
   EVP_PKEY *priv_key = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
-  char * pass = (char*)luaL_checkstring(L, 3);
-  int keytype = 0;
-  int top = lua_gettop(L);
+  char     *pass = (char *)luaL_checkstring(L, 3);
+  int       keytype = 0;
+  int       top = lua_gettop(L);
 
-  BIO * bio_out = NULL;
-  PKCS12 * p12 = NULL;
-  const char * friendly_name = NULL;
+  BIO        *bio_out = NULL;
+  PKCS12     *p12 = NULL;
+  const char *friendly_name = NULL;
   STACK_OF(X509) *ca = NULL;
   int ret = 0;
 
   luaL_argcheck(L, openssl_pkey_is_private(priv_key), 2, "must be private key");
 
-  if (top > 3)
-  {
+  if (top > 3) {
     int idx = 4;
-    if (lua_isstring(L, idx))
-    {
+    if (lua_isstring(L, idx)) {
       friendly_name = lua_tostring(L, idx);
       idx++;
     }
 
-    if (lua_istable(L, idx))
-    {
+    if (lua_istable(L, idx)) {
       ca = openssl_sk_x509_fromtable(L, idx);
-      if (ca == NULL)
-        luaL_argerror(L, idx, "must be table contians x509 object as cacets");
+      if (ca == NULL) luaL_argerror(L, idx, "must be table contians x509 object as cacets");
       idx++;
     }
 
-    if (lua_isboolean(L, idx))
-    {
+    if (lua_isboolean(L, idx)) {
       keytype = lua_toboolean(L, idx) ? KEY_SIG : KEY_EX;
     }
   }
 
-  if (cert && !X509_check_private_key(cert, priv_key))
-  {
+  if (cert && !X509_check_private_key(cert, priv_key)) {
     luaL_error(L, "private key does not correspond to cert");
   }
 
@@ -80,21 +74,19 @@ static LUA_FUNCTION(openssl_pkcs12_export)
    *                       int keytype);
    */
 
-  p12 = PKCS12_create(pass, (char*)friendly_name, priv_key, cert, ca, NID_aes_128_cbc, 0, 0, 0, keytype);
-  if (!p12)
-    luaL_error(L, "PKCS12_create failed,pleases get more error info");
+  p12 = PKCS12_create(
+    pass, (char *)friendly_name, priv_key, cert, ca, NID_aes_128_cbc, 0, 0, 0, keytype);
+  if (!p12) luaL_error(L, "PKCS12_create failed,pleases get more error info");
 
   bio_out = BIO_new(BIO_s_mem());
-  if (i2d_PKCS12_bio(bio_out, p12))
-  {
+  if (i2d_PKCS12_bio(bio_out, p12)) {
     BUF_MEM *bio_buf;
 
     BIO_get_mem_ptr(bio_out, &bio_buf);
     lua_pushlstring(L, bio_buf->data, bio_buf->length);
     ret = 1;
   }
-  if (ca!=NULL)
-    sk_X509_pop_free(ca, X509_free);
+  if (ca != NULL) sk_X509_pop_free(ca, X509_free);
   BIO_free(bio_out);
   PKCS12_free(p12);
 
@@ -111,17 +103,16 @@ parse pkcs12 data as lua table
 */
 static LUA_FUNCTION(openssl_pkcs12_read)
 {
-  PKCS12 * p12 = NULL;
-  EVP_PKEY * pkey = NULL;
-  X509 * cert = NULL;
-  STACK_OF(X509) * ca = NULL;
+  PKCS12   *p12 = NULL;
+  EVP_PKEY *pkey = NULL;
+  X509     *cert = NULL;
+  STACK_OF(X509) *ca = NULL;
   int ret = 0;
 
-  BIO * bio_in = load_bio_object(L, 1);
+  BIO        *bio_in = load_bio_object(L, 1);
   const char *pass = luaL_checkstring(L, 2);
 
-  if (d2i_PKCS12_bio(bio_in, &p12) && PKCS12_parse(p12, pass, &pkey, &cert, &ca))
-  {
+  if (d2i_PKCS12_bio(bio_in, &p12) && PKCS12_parse(p12, pass, &pkey, &cert, &ca)) {
     lua_newtable(L);
 
     AUXILIAR_SETOBJECT(L, cert, "openssl.x509", -1, "cert");
@@ -140,15 +131,15 @@ static LUA_FUNCTION(openssl_pkcs12_read)
   return ret;
 }
 
-static luaL_Reg R[] =
-{
-  {"read",    openssl_pkcs12_read },
-  {"export",  openssl_pkcs12_export },
+static luaL_Reg R[] = {
+  { "read",   openssl_pkcs12_read   },
+  { "export", openssl_pkcs12_export },
 
-  {NULL,    NULL}
+  { NULL,     NULL                  }
 };
 
-int luaopen_pkcs12(lua_State *L)
+int
+luaopen_pkcs12(lua_State *L)
 {
   lua_newtable(L);
   luaL_setfuncs(L, R, 0);

@@ -50,7 +50,7 @@ local function mk_connection(_host, _port, i)
     return true -- return false will fail ssh handshake
   end)
   if opensslv >= 0x10002000 then
-    ctx:set_alpn_protos({"http/1.1", "h2"})
+    ctx:set_alpn_protos({ "http/1.1", "h2" })
   end
 
   local cli = assert(bio.connect(_host .. ":" .. _port, true))

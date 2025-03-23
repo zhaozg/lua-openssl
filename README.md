@@ -139,8 +139,8 @@ lua_openssl_version, lua_version, openssl_version = openssl.version(true)
 
 ### Style
 
-Source code of lua-openssl tidy with [astyle](http://astyle.sourceforge.net/)
-`--style=allman --indent=spaces=2`
+Source code of lua-openssl tidy with [ClangFormat](https://clang.llvm.org/docs/ClangFormat.html)
+`clang-format --style=file src/*.c`
 
 ### Bugs
 

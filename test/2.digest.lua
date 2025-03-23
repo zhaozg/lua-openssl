@@ -1,17 +1,16 @@
-local lu = require 'luaunit'
-local openssl = require 'openssl'
-local digest = require'openssl'.digest
-local helper = require'helper'
+local lu = require("luaunit")
+local openssl = require("openssl")
+local digest = require("openssl").digest
+local helper = require("helper")
 local unpack = unpack or table.unpack
 
 TestDigestCompat = {}
 function TestDigestCompat:setUp()
-  self.msg = 'abcd'
-  self.alg = 'sha1'
+  self.msg = "abcd"
+  self.alg = "sha1"
 end
 
-function TestDigestCompat:tearDown()
-end
+function TestDigestCompat:tearDown() end
 
 function TestDigestCompat:testDigest()
   local a, b, c
@@ -25,7 +24,7 @@ function TestDigestCompat:testDigest()
   lu.assertEquals(#c, 20)
 
   local o = openssl.asn1.new_object(self.alg)
-  assert(type(o:nid())=='number')
+  assert(type(o:nid()) == "number")
 
   c = digest.digest(o:nid(), self.msg, true)
   lu.assertEquals(#c, 20)
@@ -66,31 +65,35 @@ function TestDigestMY:testList()
   assert(#t1 == #t2)
   t3 = digest.list(false)
   assert(#t1 > #t3)
-  local md = digest.get('sha1')
+  local md = digest.get("sha1")
   t = md:info()
   assert(t.size == 20)
-  t = md:digest('abcd')
-  assert(type(t)=='string')
-  assert(#t==20)
+  t = md:digest("abcd")
+  assert(type(t) == "string")
+  assert(#t == 20)
 
   local ctx1 = md:new()
   t1 = ctx1:info()
-  assert(ctx1:update('ab'))
+  assert(ctx1:update("ab"))
   local dat = ctx1:data()
   if dat then
-    local ctx = digest.new('sha1')
+    local ctx = digest.new("sha1")
     t2 = ctx:info()
-    for k, _ in pairs(t1) do if (k ~= 'digest') then assert(t1[k] == t2[k]) end end
+    for k, _ in pairs(t1) do
+      if k ~= "digest" then
+        assert(t1[k] == t2[k])
+      end
+    end
     assert(ctx:data(dat))
     assert(t1.size == 20)
-    assert(ctx:update('cd'))
+    assert(ctx:update("cd"))
     t2 = ctx:final(true)
-    assert(t==t2)
+    assert(t == t2)
   end
 end
 
 local function mk_key(args)
-  assert(type(args), 'table')
+  assert(type(args), "table")
 
   local k = assert(openssl.pkey.new(unpack(args)))
   return k
@@ -98,14 +101,14 @@ end
 
 TestDigestSignVry = {}
 function TestDigestSignVry:setUp()
-  self.msg = 'abcd'
-  self.alg = 'sha1'
-  self.prik = mk_key({'rsa',  2048,  3})
+  self.msg = "abcd"
+  self.alg = "sha1"
+  self.prik = mk_key({ "rsa", 2048, 3 })
   self.pubk = assert(openssl.pkey.get_public(self.prik))
 end
 function TestDigestSignVry:testSignVry()
   local md = assert(digest.get(self.alg))
-  local sctx = digest.signInit(md, self.prik);
+  local sctx = digest.signInit(md, self.prik)
   assert(sctx:signUpdate(self.msg))
   assert(sctx:signUpdate(self.msg))
   local sig = sctx:signFinal()
@@ -117,7 +120,7 @@ function TestDigestSignVry:testSignVry()
 end
 function TestDigestSignVry:testSignVry1()
   local md = digest.get(self.alg)
-  local sctx = md:signInit(self.prik);
+  local sctx = md:signInit(self.prik)
   assert(sctx:signUpdate(self.msg))
   assert(sctx:signUpdate(self.msg))
   local sig = sctx:signFinal()
@@ -131,11 +134,11 @@ end
 function TestDigestOneShotSignVry_ED25519()
   local pkey = openssl.pkey
   if pkey.ED25519 and not helper.libressl then
-    local ctx = assert(pkey.ctx_new('ED25519'))
+    local ctx = assert(pkey.ctx_new("ED25519"))
     local k = assert(ctx:keygen())
-    local msg = 'abcd'
+    local msg = "abcd"
 
-    local sctx = assert(digest.signInit(nil, k));
+    local sctx = assert(digest.signInit(nil, k))
     local sig = assert(sctx:sign(msg))
 
     local vctx = digest.verifyInit(nil, k)
@@ -146,15 +149,14 @@ end
 function TestDigestOneShotSignVry_ED448()
   local pkey = openssl.pkey
   if pkey.ED448 and not helper.libressl then
-    local ctx = assert(pkey.ctx_new('ED448'))
+    local ctx = assert(pkey.ctx_new("ED448"))
     local k = assert(ctx:keygen())
-    local msg = 'abcd'
+    local msg = "abcd"
 
-    local sctx = assert(digest.signInit(nil, k));
+    local sctx = assert(digest.signInit(nil, k))
     local sig = assert(sctx:sign(msg))
 
     local vctx = digest.verifyInit(nil, k)
     assert(vctx:verify(sig, msg))
   end
 end
-

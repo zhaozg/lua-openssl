@@ -1,24 +1,22 @@
-local lu = require 'luaunit'
-local openssl = require 'openssl'
-local cipher = require'openssl'.cipher
-local helper = require'helper'
+local lu = require("luaunit")
+local openssl = require("openssl")
+local cipher = require("openssl").cipher
+local helper = require("helper")
 
 TestCipherCompat = {}
 
 function TestCipherCompat:setUp()
-  self.msg = 'abcdabcdabcdabcdabcdabcd'
-  self.msg1 = 'abcd'
-  self.alg = 'aes-128-cbc'
-  self.key = string.char(01, 02, 03, 04, 05, 06, 07, 08, 09, 0x0a, 0x0b, 0x0c,
-                         0x0d, 0x0e, 0x0f)
+  self.msg = "abcdabcdabcdabcdabcdabcd"
+  self.msg1 = "abcd"
+  self.alg = "aes-128-cbc"
+  self.key = string.char(01, 02, 03, 04, 05, 06, 07, 08, 09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f)
   self.key = self.key .. string.reverse(self.key)
   self.iv = string.rep(string.char(00), 32)
 
-  lu.assertEquals('nil', type(getmetatable(cipher)))
+  lu.assertEquals("nil", type(getmetatable(cipher)))
 end
 
-function TestCipherCompat:tearDown()
-end
+function TestCipherCompat:tearDown() end
 
 function TestCipherCompat:testCipher()
   local a, b, c, d
@@ -34,7 +32,7 @@ function TestCipherCompat:testCipher()
   lu.assertEquals(d, self.msg)
 
   local o = openssl.asn1.new_object(self.alg)
-  assert(type(o:nid())=='number')
+  assert(type(o:nid()) == "number")
 
   c = cipher.encrypt(o, self.msg, self.key, self.iv)
   lu.assertEquals(c, a)
@@ -60,13 +58,13 @@ function TestCipherCompat:testObject()
   assert(info.mode)
 
   if helper.openss3 then
-  assert(obj:ctrl(openssl.cipher.EVP_CTRL_INIT))
+    assert(obj:ctrl(openssl.cipher.EVP_CTRL_INIT))
   end
 
   obj:init(self.key, self.iv, true)
   b = assert(obj:update(self.msg))
   b = b .. obj:final()
-  assert(a==b)
+  assert(a == b)
 
   obj1 = cipher.new(self.alg, false, self.key, self.iv)
   b = assert(obj1:update(a))
@@ -89,17 +87,15 @@ end
 TestCipherMY = {}
 
 function TestCipherMY:setUp()
-  self.msg = 'abcdabcdabcdabcdabcdabcd'
-  self.msg1 = 'abcd'
-  self.alg = 'aes-128-cbc'
-  self.key = string.char(01, 02, 03, 04, 05, 06, 07, 08, 09, 0x0a, 0x0b, 0x0c,
-                         0x0d, 0x0e, 0x0f)
+  self.msg = "abcdabcdabcdabcdabcdabcd"
+  self.msg1 = "abcd"
+  self.alg = "aes-128-cbc"
+  self.key = string.char(01, 02, 03, 04, 05, 06, 07, 08, 09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f)
   self.key = self.key .. string.reverse(self.key)
   self.iv = string.rep(string.char(00), 32)
 end
 
 function TestCipherMY:testList()
-
   local t1, t2, t3
   t1 = cipher.list(true)
   t2 = cipher.list()
@@ -107,7 +103,7 @@ function TestCipherMY:testList()
   t3 = cipher.list(false)
   assert(#t1 > #t3)
 
-  local C = cipher.get('aes-128-cbc')
+  local C = cipher.get("aes-128-cbc")
 
   local a, b, aa, bb
   local obj, obj1
@@ -144,9 +140,8 @@ function TestCipherMY:testList()
 end
 
 function TestCipherMY:testAesCTR()
-
-  local C = cipher.get('aes-128-ctr')
-  assert(type(C:info())=='table')
+  local C = cipher.get("aes-128-ctr")
+  assert(type(C:info()) == "table")
 
   local a, b, aa, bb, cc
   local obj, obj1
@@ -158,7 +153,7 @@ function TestCipherMY:testAesCTR()
   assert(obj:init(self.key, self.iv, true))
   b = assert(obj:update(self.msg))
   b = b .. obj:final()
-  assert(a==b)
+  assert(a == b)
 
   obj1 = C:new(false, self.key, self.iv)
   b = assert(obj1:update(a))
@@ -179,7 +174,7 @@ function TestCipherMY:testAesCTR()
   assert(obj:init(self.key, self.iv))
   bb = assert(obj:update(self.msg))
   bb = bb .. assert(obj:final())
-  assert(aa==bb)
+  assert(aa == bb)
 
   obj1 = C:decrypt_new(self.key, self.iv)
   bb = assert(obj1:update(aa))
@@ -193,4 +188,3 @@ function TestCipherMY:testAesCTR()
   lu.assertEquals(self.msg, bb)
   assert(#self.msg <= #aa)
 end
-

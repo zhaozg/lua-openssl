@@ -4,9 +4,10 @@
 *
 * Author:  george zhao <zhaozg(at)gmail.com>
 \*=========================================================================*/
+#include <openssl/conf.h>
+
 #include "openssl.h"
 #include "private.h"
-#include <openssl/conf.h>
 
 #if 0
 static void table2data(lua_State*L, int idx, BIO* bio)
@@ -33,34 +34,29 @@ static void table2data(lua_State*L, int idx, BIO* bio)
 #if !defined(LIBRESSL_VERSION_NUMBER) || LIBRESSL_VERSION_NUMBER < 0x30900000L
 static LUA_FUNCTION(openssl_lhash_read)
 {
-  long eline = -1;
-  BIO* bio = load_bio_object(L, 1);
-  LHASH* lhash = CONF_load_bio(NULL, bio, &eline);
+  long   eline = -1;
+  BIO   *bio = load_bio_object(L, 1);
+  LHASH *lhash = CONF_load_bio(NULL, bio, &eline);
   BIO_free(bio);
-  if (lhash)
-  {
+  if (lhash) {
     PUSH_OBJECT(lhash, "openssl.lhash");
     return 1;
-  }
-  else
-  {
+  } else {
     lua_pushfstring(L, "ERROR at LINE %d", eline);
     return luaL_argerror(L, 1, lua_tostring(L, -1));
   }
 }
 
-
 static LUA_FUNCTION(openssl_lhash_load)
 {
-  long eline = -1;
-  const char* conf = luaL_checkstring(L, 1);
-  BIO* bio = BIO_new_file(conf, "r");
-  LHASH* lhash = CONF_load_bio(NULL, bio, &eline);
+  long        eline = -1;
+  const char *conf = luaL_checkstring(L, 1);
+  BIO        *bio = BIO_new_file(conf, "r");
+  LHASH      *lhash = CONF_load_bio(NULL, bio, &eline);
   BIO_free(bio);
   if (lhash)
     PUSH_OBJECT(lhash, "openssl.lhash");
-  else
-  {
+  else {
     lua_pushfstring(L, "ERROR at LINE %d", eline);
     return luaL_argerror(L, 1, lua_tostring(L, -1));
   }
@@ -70,38 +66,36 @@ static LUA_FUNCTION(openssl_lhash_load)
 
 LUA_FUNCTION(openssl_lhash_gc)
 {
-  LHASH* lhash = CHECK_OBJECT(1, LHASH, "openssl.lhash");
+  LHASH *lhash = CHECK_OBJECT(1, LHASH, "openssl.lhash");
   CONF_free(lhash);
   return 0;
 }
 
 LUA_FUNCTION(openssl_lhash_get_number)
 {
-  LHASH* lhash = CHECK_OBJECT(1, LHASH, "openssl.lhash");
-  const char* group = luaL_checkstring(L, 2);
-  const char* name = luaL_checkstring(L, 3);
+  LHASH      *lhash = CHECK_OBJECT(1, LHASH, "openssl.lhash");
+  const char *group = luaL_checkstring(L, 2);
+  const char *name = luaL_checkstring(L, 3);
   lua_pushinteger(L, CONF_get_number(lhash, group, name));
   return 1;
 }
 
-
 LUA_FUNCTION(openssl_lhash_get_string)
 {
-  LHASH* lhash = CHECK_OBJECT(1, LHASH, "openssl.lhash");
-  const char* group = luaL_checkstring(L, 2);
-  const char* name = luaL_checkstring(L, 3);
+  LHASH      *lhash = CHECK_OBJECT(1, LHASH, "openssl.lhash");
+  const char *group = luaL_checkstring(L, 2);
+  const char *name = luaL_checkstring(L, 3);
   lua_pushstring(L, CONF_get_string(lhash, group, name));
 
   return 1;
 }
 
-static void dump_value_doall_arg(CONF_VALUE const *a, lua_State *L)
+static void
+dump_value_doall_arg(CONF_VALUE const *a, lua_State *L)
 {
-  if (a->name)
-  {
+  if (a->name) {
     lua_getfield(L, -1, a->section);
-    if (!lua_istable(L, -1))
-    {
+    if (!lua_istable(L, -1)) {
       lua_pop(L, 1);
       lua_newtable(L);
       lua_setfield(L, -2, a->section);
@@ -109,44 +103,37 @@ static void dump_value_doall_arg(CONF_VALUE const *a, lua_State *L)
     }
     AUXILIAR_SET(L, -1, a->name, a->value, string);
     lua_pop(L, 1);
-  }
-  else
-  {
-    if (a->section)
-    {
+  } else {
+    if (a->section) {
       lua_getfield(L, -1, a->section);
-      if (lua_isnil(L, -1))
-      {
+      if (lua_isnil(L, -1)) {
         lua_pop(L, 1);
         lua_newtable(L);
         lua_setfield(L, -2, a->section);
-      }
-      else
+      } else
         lua_pop(L, 1);
-    }
-    else
-    {
+    } else {
       AUXILIAR_SET(L, -1, a->name, a->value, string);
     }
   }
 }
 
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L && defined(LIBRESSL_VERSION_NUMBER)==0
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && defined(LIBRESSL_VERSION_NUMBER) == 0
 IMPLEMENT_LHASH_DOALL_ARG_CONST(CONF_VALUE, lua_State);
 #elif OPENSSL_VERSION_NUMBER >= 0x10000002L
 static IMPLEMENT_LHASH_DOALL_ARG_FN(dump_value, CONF_VALUE, lua_State)
 #endif
-#if defined(LIBRESSL_VERSION_NUMBER)==0
-#define LHM_lh_doall_arg(type, lh, fn, arg_type, arg) \
+#if defined(LIBRESSL_VERSION_NUMBER) == 0
+#define LHM_lh_doall_arg(type, lh, fn, arg_type, arg)                                              \
   lh_doall_arg(CHECKED_LHASH_OF(type, lh), fn, CHECKED_PTR_OF(arg_type, arg))
 #endif
 
 static LUA_FUNCTION(openssl_lhash_parse)
 {
-  LHASH* lhash = CHECK_OBJECT(1, LHASH, "openssl.lhash");
+  LHASH *lhash = CHECK_OBJECT(1, LHASH, "openssl.lhash");
 
   lua_newtable(L);
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L && defined(LIBRESSL_VERSION_NUMBER)==0
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && defined(LIBRESSL_VERSION_NUMBER) == 0
   lh_CONF_VALUE_doall_lua_State(lhash, dump_value_doall_arg, L);
 #elif OPENSSL_VERSION_NUMBER >= 0x10000002L
   lh_CONF_VALUE_doall_arg(lhash, LHASH_DOALL_ARG_FN(dump_value), lua_State, L);
@@ -157,12 +144,11 @@ static LUA_FUNCTION(openssl_lhash_parse)
   return 1;
 }
 
-
 static LUA_FUNCTION(openssl_lhash_export)
 {
-  LHASH* lhash = CHECK_OBJECT(1, LHASH, "openssl.lhash");
+  LHASH *lhash = CHECK_OBJECT(1, LHASH, "openssl.lhash");
 
-  BIO *bio = BIO_new(BIO_s_mem());
+  BIO     *bio = BIO_new(BIO_s_mem());
   BUF_MEM *bptr = NULL;
 
   CONF_dump_bio(lhash, bio);
@@ -174,20 +160,20 @@ static LUA_FUNCTION(openssl_lhash_export)
   return 1;
 }
 
-static luaL_Reg lhash_funs[] =
-{
-  {"__tostring", auxiliar_tostring},
-  {"__gc", openssl_lhash_gc},
+static luaL_Reg lhash_funs[] = {
+  { "__tostring", auxiliar_tostring        },
+  { "__gc",       openssl_lhash_gc         },
 
-  {"parse", openssl_lhash_parse},
-  {"export", openssl_lhash_export},
-  {"get_string", openssl_lhash_get_string},
-  {"get_number", openssl_lhash_get_number},
+  { "parse",      openssl_lhash_parse      },
+  { "export",     openssl_lhash_export     },
+  { "get_string", openssl_lhash_get_string },
+  { "get_number", openssl_lhash_get_number },
 
-  { NULL, NULL }
+  { NULL,         NULL                     }
 };
 
-int openssl_register_lhash(lua_State* L)
+int
+openssl_register_lhash(lua_State *L)
 {
   auxiliar_newclass(L, "openssl.lhash", lhash_funs);
   AUXILIAR_SET(L, -1, "lhash_read", openssl_lhash_read, cfunction);

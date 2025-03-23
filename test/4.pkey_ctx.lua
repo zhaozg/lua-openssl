@@ -1,8 +1,7 @@
-local lu = require 'luaunit'
-local openssl = require 'openssl'
+local lu = require("luaunit")
+local openssl = require("openssl")
 
-local pem_key =
-[[
+local pem_key = [[
 -----BEGIN PRIVATE KEY-----
 MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDujoQuDvHO5wZ3
 rZTiLw0TNeShJw389wd4POfqp8GjbQcjdIHpBH5W77sBiif06JV/3pWMNdFfz630
@@ -58,16 +57,15 @@ V9IMMQ3Nh7izMksvtMrC7TQqakjPC96D+0mFUJJOnL8Ca0vJYWA8KG7XuwbMPeJm
 -----END CERTIFICATE-----
 ]]
 
-local pri = openssl.pkey.read(pem_key, true, 'pem')
+local pri = openssl.pkey.read(pem_key, true, "pem")
 local cert = openssl.x509.read(pem_cert, "pem")
 
 TestEvpPkeyCtx = {}
-function TestEvpPkeyCtx:setUp()
-end
+function TestEvpPkeyCtx:setUp() end
 
 function TestEvpPkeyCtx:test_RsaPkcs15Sha1_sign()
   local msg = "msg"
-  local sha256 = openssl.digest.new('sha1')
+  local sha256 = openssl.digest.new("sha1")
   sha256:update(msg)
   local sum = sha256:final(true)
 
@@ -91,7 +89,7 @@ end
 
 function TestEvpPkeyCtx:test_RsaPssSha256_sign()
   local msg = "msg"
-  local sha256 = openssl.digest.new('sha256')
+  local sha256 = openssl.digest.new("sha256")
   sha256:update(msg)
   local sum = sha256:final(true)
 
@@ -117,7 +115,7 @@ end
 
 function TestEvpPkeyCtx:test_Pkcs15Sha256_sign()
   local msg = "msg"
-  local sha256 = openssl.digest.new('sha256')
+  local sha256 = openssl.digest.new("sha256")
   sha256:update(msg)
   local sum = sha256:final(true)
 

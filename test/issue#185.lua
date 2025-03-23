@@ -34,7 +34,7 @@ dgIhAPEBU53+71sigZYYn5CEM7+Np9dR+2iKFBTh47OpL1TIAAAAAAAA
 
 function testIssue185()
   local store = assert(x509.store.new({
-    assert(x509.read(console_public_key_data, "pem"))
+    assert(x509.read(console_public_key_data, "pem")),
   }))
   local i = 0
   collectgarbage()
@@ -42,7 +42,7 @@ function testIssue185()
   collectgarbage()
   local b = collectgarbage("count")
   local box = assert(cms.read(ver_blob, "pem"))
-  while i<10 do
+  while i < 10 do
     assert(cms.verify(box, {}, store))
     i = i + 1
   end
@@ -50,5 +50,5 @@ function testIssue185()
   collectgarbage()
   collectgarbage()
   local e = collectgarbage("count")
-  assert(e-b <= 0.2, "Memleaks ".. tostring(e-b))
+  assert(e - b <= 0.2, "Memleaks " .. tostring(e - b))
 end

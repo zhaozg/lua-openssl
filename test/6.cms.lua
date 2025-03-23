@@ -1,10 +1,10 @@
-local lu = require 'luaunit'
+local lu = require("luaunit")
 
-local openssl = require 'openssl'
+local openssl = require("openssl")
 local cms, csr = openssl.cms, openssl.x509.req
-local helper = require 'helper'
+local helper = require("helper")
 if not cms then
-  print('Skip cms test')
+  print("Skip cms test")
   return
 end
 
@@ -41,10 +41,10 @@ function TestCMS:testCompress()
 end
 
 function TestCMS:setUp()
-  self.alg = 'sha1'
-  self.cadn = {{commonName = 'CA'},  {C = 'CN'}}
-  self.alicedn = {{commonName = 'Alice'},  {C = 'CN'}}
-  self.bobdn = {{commonName = 'Bob'},  {C = 'CN'}}
+  self.alg = "sha1"
+  self.cadn = { { commonName = "CA" }, { C = "CN" } }
+  self.alicedn = { { commonName = "Alice" }, { C = "CN" } }
+  self.bobdn = { { commonName = "Bob" }, { C = "CN" } }
 
   local ca = helper.get_ca()
 
@@ -52,13 +52,13 @@ function TestCMS:setUp()
 
   local req, pkey = helper.new_req(self.alicedn)
   local cert = ca:sign(req)
-  self.alice = {key = pkey,  cert = cert}
+  self.alice = { key = pkey, cert = cert }
 
   cert, pkey = assert(helper.sign(self.bobdn))
-  self.bob = {key = pkey,  cert = cert}
+  self.bob = { key = pkey, cert = cert }
 
   self.msg = openssl.hex(openssl.random(128))
-  self.digest = 'sha1WithRSAEncryption'
+  self.digest = "sha1WithRSAEncryption"
   self.castore = assert(ca:get_store())
 
   local c = cms.new()
@@ -70,37 +70,31 @@ function TestCMS:testEncrypt()
     self.alice.cert,
     key = "1234567890abcdef",
     keyid = "aes-128-cbc",
-    password = 'secret'
+    password = "secret",
   }
   local msg = assert(cms.encrypt(self.msg, opts))
   local smime = assert(cms.export(msg))
-  local ss = assert(cms.read(smime, 'smime'))
+  local ss = assert(cms.read(smime, "smime"))
   local raw = assert(cms.decrypt(ss, self.alice.key, self.alice.cert, nil, 0, opts))
   lu.assertEquals(raw, self.msg)
 end
 
 function TestCMS:testSign()
-  local c1 = assert(cms.sign(
-    self.bob.cert, self.bob.key, self.msg, {}))
+  local c1 = assert(cms.sign(self.bob.cert, self.bob.key, self.msg, {}))
   assert(cms.export(c1))
-  local msg = assert(cms.verify(c1, {self.bob.cert}, self.castore))
+  local msg = assert(cms.verify(c1, { self.bob.cert }, self.castore))
   lu.assertEquals(msg, self.msg)
   msg = assert(cms.verify(c1, {}, self.castore))
   lu.assertEquals(msg, self.msg)
-  assert(c1:get_signers()[1]==self.bob.cert)
+  assert(c1:get_signers()[1] == self.bob.cert)
 end
 
 function TestCMS:testSignReceipt()
-  local c1 = assert(cms.sign(
-    self.bob.cert, self.bob.key, self.msg, {self.ca.cert}))
-  assert(c1:add_receipt({"alice"}, {"bob"}))
+  local c1 = assert(cms.sign(self.bob.cert, self.bob.key, self.msg, { self.ca.cert }))
+  assert(c1:add_receipt({ "alice" }, { "bob" }))
 
-  local rc = assert(c1:sign_receipt(
-    self.alice.cert,
-    self.alice.key,
-    {self.ca.cert},
-    0))
-  assert(rc:verify_receipt(c1, {self.bob.cert}, self.castore, 0))
+  local rc = assert(c1:sign_receipt(self.alice.cert, self.alice.key, { self.ca.cert }, 0))
+  assert(rc:verify_receipt(c1, { self.bob.cert }, self.castore, 0))
 end
 
 function TestCMS:testEncryptedData()
@@ -130,20 +124,20 @@ end
 function TestCMS:testData()
   local c = cms.data("data")
   assert(c)
-  assert(c:detached()==false)
+  assert(c:detached() == false)
   assert(c:type())
-  assert(c:data()=='data')
-  assert(c:content()=='data')
+  assert(c:data() == "data")
+  assert(c:content() == "data")
 
   local d = assert(c:export("data", 0, "der"))
-  assert(cms.read(d, 'auto'))
-  d = cms.read(d, 'der')
+  assert(cms.read(d, "auto"))
+  d = cms.read(d, "der")
   assert(d)
   d = assert(c:export("data", 0, "pem"))
-  d = cms.read(d, 'pem')
+  d = cms.read(d, "pem")
   assert(d)
   d = assert(c:export("data", 0, "smime"))
-  d = cms.read(d, 'smime')
+  d = cms.read(d, "smime")
   assert(d)
 
   assert(c:detached(true))
@@ -152,7 +146,6 @@ function TestCMS:testData()
   assert(d)
 
   c = assert(cms.data("data", cms.flags.stream + cms.flags.partial))
-  assert(c:final('aaaa'))
-  assert(c:data()=='aaaa')
+  assert(c:final("aaaa"))
+  assert(c:data() == "aaaa")
 end
-

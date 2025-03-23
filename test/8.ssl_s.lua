@@ -67,7 +67,7 @@ local function ssl_mode()
       io.flush()
       while i < loop do
         local cli = assert(srv:accept()) -- bio tcp
-        io.write('+')
+        io.write("+")
         io.flush()
         local s = ctx:ssl(cli, true)
         if i % 2 == 0 then

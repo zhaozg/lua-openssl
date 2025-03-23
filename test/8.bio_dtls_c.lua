@@ -24,8 +24,8 @@ if opensslv > 0x10002000 then
   end
 end
 
-local ctx = assert(sslctx.new(params, 'DTLS'))
-ctx = assert(sslctx.new(params, 'DTLS_client'))
+local ctx = assert(sslctx.new(params, "DTLS"))
+ctx = assert(sslctx.new(params, "DTLS_client"))
 if certstore then
   ctx:cert_store(certstore)
 end

@@ -1,21 +1,20 @@
-local lu = require 'luaunit'
-local openssl = require 'openssl'
+local lu = require("luaunit")
+local openssl = require("openssl")
 local srp = openssl.srp
 if srp == nil then
-  print('Skip test srp')
+  print("Skip test srp")
   return
 end
 
-local GN = assert(srp.get_default_gN('1024'));
+local GN = assert(srp.get_default_gN("1024"))
 
 TestSRP = {}
 function TestSRP:setUp()
-  self.user = 'zhaozg'
-  self.pass = 'password'
+  self.user = "zhaozg"
+  self.pass = "password"
 end
 
-function TestSRP:tearDown()
-end
+function TestSRP:tearDown() end
 
 function TestSRP:test_1_SRV_CreateVerifier()
   self.salt, self.verifier = GN:create_verifier(self.user, self.pass)
@@ -45,18 +44,16 @@ function TestSRP:test_5_cli_key()
 end
 
 function TestSRP:test_6_srv_key()
-  local Kserver = assert(GN:calc_server_key(self.Apub, self.verifier, self.u,
-                                               self.Brnd))
+  local Kserver = assert(GN:calc_server_key(self.Apub, self.verifier, self.u, self.Brnd))
   assert(Kserver == self.Kclient)
 end
 
 function TestSRP:test_7_cli_key()
-  local x = assert(srp.calc_x(self.salt, self.user, self.pass .. '1'))
+  local x = assert(srp.calc_x(self.salt, self.user, self.pass .. "1"))
   self.Kclient = assert(GN:calc_client_key(self.Bpub, x, self.Arnd, self.u))
 end
 
 function TestSRP:test_8_srv_key()
-  local Kserver = assert(GN:calc_server_key(self.Apub, self.verifier, self.u,
-                                               self.Brnd))
+  local Kserver = assert(GN:calc_server_key(self.Apub, self.verifier, self.u, self.Brnd))
   assert(Kserver ~= self.Kclient)
 end

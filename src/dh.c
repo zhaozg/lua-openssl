@@ -4,15 +4,16 @@
 *
 * Author:  george zhao <zhaozg(at)gmail.com>
 \*=========================================================================*/
-#include "openssl.h"
-#include "private.h"
 #include <openssl/dh.h>
 #include <openssl/engine.h>
+
+#include "openssl.h"
+#include "private.h"
 
 #if !defined(OPENSSL_NO_DH)
 static LUA_FUNCTION(openssl_dh_free)
 {
-  DH* dh = CHECK_OBJECT(1, DH, "openssl.dh");
+  DH *dh = CHECK_OBJECT(1, DH, "openssl.dh");
   DH_free(dh);
   return 0;
 };
@@ -20,7 +21,7 @@ static LUA_FUNCTION(openssl_dh_free)
 static LUA_FUNCTION(openssl_dh_parse)
 {
   const BIGNUM *p = NULL, *q = NULL, *g = NULL, *pub = NULL, *pri = NULL;
-  DH* dh = CHECK_OBJECT(1, DH, "openssl.dh");
+  DH           *dh = CHECK_OBJECT(1, DH, "openssl.dh");
   lua_newtable(L);
 
   lua_pushinteger(L, DH_size(dh));
@@ -43,13 +44,12 @@ static LUA_FUNCTION(openssl_dh_parse)
 
 static LUA_FUNCTION(openssl_dh_check)
 {
-  const DH* dh = CHECK_OBJECT(1, DH, "openssl.dh");
-  int ret = 0;
-  int codes = 0;
+  const DH *dh = CHECK_OBJECT(1, DH, "openssl.dh");
+  int       ret = 0;
+  int       codes = 0;
 
-  if (lua_isuserdata(L, 2))
-  {
-    const BIGNUM* pub = CHECK_OBJECT(2, BIGNUM, "openssl.bn");
+  if (lua_isuserdata(L, 2)) {
+    const BIGNUM *pub = CHECK_OBJECT(2, BIGNUM, "openssl.bn");
     ret = DH_check_pub_key(dh, pub, &codes);
   } else
     ret = DH_check(dh, &codes);
@@ -59,18 +59,18 @@ static LUA_FUNCTION(openssl_dh_check)
   return 2;
 }
 
-static int openssl_dh_generate_parameters(lua_State *L)
+static int
+openssl_dh_generate_parameters(lua_State *L)
 {
-  int bits = luaL_optint(L, 1, 1024);
-  int generator = luaL_optint(L, 2, 2);
+  int     bits = luaL_optint(L, 1, 1024);
+  int     generator = luaL_optint(L, 2, 2);
   ENGINE *eng = lua_isnoneornil(L, 3) ? NULL : CHECK_OBJECT(3, ENGINE, "openssl.engine");
-  int ret = 0;
+  int     ret = 0;
 
   DH *dh = eng ? DH_new_method(eng) : DH_new();
   ret = DH_generate_parameters_ex(dh, bits, generator, NULL);
 
-  if (ret == 1)
-  {
+  if (ret == 1) {
     PUSH_OBJECT(dh, "openssl.dh");
     return 1;
   }
@@ -78,14 +78,14 @@ static int openssl_dh_generate_parameters(lua_State *L)
   return openssl_pushresult(L, ret);
 }
 
-static int openssl_dh_generate_key(lua_State *L)
+static int
+openssl_dh_generate_key(lua_State *L)
 {
-  DH* dhparamater = CHECK_OBJECT(1, DH, "openssl.dh");
+  DH *dhparamater = CHECK_OBJECT(1, DH, "openssl.dh");
   DH *dh = DHparams_dup(dhparamater);
 
   int ret = DH_generate_key(dh);
-  if (ret == 1)
-  {
+  if (ret == 1) {
     PUSH_OBJECT(dh, "openssl.dh");
     return 1;
   }
@@ -93,63 +93,62 @@ static int openssl_dh_generate_key(lua_State *L)
   return openssl_pushresult(L, ret);
 }
 
-static luaL_Reg dh_funs[] =
-{
-  {"generate_key",  openssl_dh_generate_key},
-  {"parse",         openssl_dh_parse},
-  {"check",         openssl_dh_check},
+static luaL_Reg dh_funs[] = {
+  { "generate_key", openssl_dh_generate_key },
+  { "parse",        openssl_dh_parse        },
+  { "check",        openssl_dh_check        },
 
-  {"__gc",          openssl_dh_free},
-  {"__tostring",    auxiliar_tostring},
+  { "__gc",         openssl_dh_free         },
+  { "__tostring",   auxiliar_tostring       },
 
-  { NULL, NULL }
+  { NULL,           NULL                    }
 };
 
-static LuaL_Enumeration dh_problems[] =
-{
-  {"DH_CHECK_P_NOT_PRIME",         DH_CHECK_P_NOT_PRIME},
-  {"DH_CHECK_P_NOT_SAFE_PRIME",    DH_CHECK_P_NOT_SAFE_PRIME},
-  {"DH_UNABLE_TO_CHECK_GENERATOR", DH_UNABLE_TO_CHECK_GENERATOR},
-  {"DH_NOT_SUITABLE_GENERATOR",    DH_NOT_SUITABLE_GENERATOR},
+static LuaL_Enumeration dh_problems[] = {
+  { "DH_CHECK_P_NOT_PRIME",         DH_CHECK_P_NOT_PRIME         },
+  { "DH_CHECK_P_NOT_SAFE_PRIME",    DH_CHECK_P_NOT_SAFE_PRIME    },
+  { "DH_UNABLE_TO_CHECK_GENERATOR", DH_UNABLE_TO_CHECK_GENERATOR },
+  { "DH_NOT_SUITABLE_GENERATOR",    DH_NOT_SUITABLE_GENERATOR    },
 #ifdef DH_CHECK_Q_NOT_PRIME
-  {"DH_CHECK_Q_NOT_PRIME",         DH_CHECK_Q_NOT_PRIME},
+  { "DH_CHECK_Q_NOT_PRIME",         DH_CHECK_Q_NOT_PRIME         },
 #endif
 #ifdef DH_CHECK_INVALID_Q_VALUE
-  {"DH_CHECK_INVALID_Q_VALUE",     DH_CHECK_INVALID_Q_VALUE},
+  { "DH_CHECK_INVALID_Q_VALUE",     DH_CHECK_INVALID_Q_VALUE     },
 #endif
 #ifdef DH_CHECK_INVALID_J_VALUE
-  {"DH_CHECK_INVALID_J_VALUE",     DH_CHECK_INVALID_J_VALUE},
+  { "DH_CHECK_INVALID_J_VALUE",     DH_CHECK_INVALID_J_VALUE     },
 #endif
 
-  {"DH_CHECK_PUBKEY_TOO_SMALL",    DH_CHECK_PUBKEY_TOO_SMALL},
-  {"DH_CHECK_PUBKEY_TOO_LARGE",    DH_CHECK_PUBKEY_TOO_LARGE},
+  { "DH_CHECK_PUBKEY_TOO_SMALL",    DH_CHECK_PUBKEY_TOO_SMALL    },
+  { "DH_CHECK_PUBKEY_TOO_LARGE",    DH_CHECK_PUBKEY_TOO_LARGE    },
 #ifdef DH_CHECK_PUBKEY_INVALID
-  {"DH_CHECK_PUBKEY_INVALID",      DH_CHECK_PUBKEY_INVALID},
+  { "DH_CHECK_PUBKEY_INVALID",      DH_CHECK_PUBKEY_INVALID      },
 #endif
 
-  {NULL,                           -1}
+  { NULL,                           -1                           }
 };
 
-static int openssl_dh_problems(lua_State *L)
+static int
+openssl_dh_problems(lua_State *L)
 {
   int reason = luaL_checkint(L, 1);
   int pub = lua_toboolean(L, 2);
   int i = 1;
 
-#define VAL(r, v)  if(r & DH_##v) \
-  { lua_pushliteral(L, #v);  lua_rawseti(L, -2, i++); }
+#define VAL(r, v)                                                                                  \
+  if (r & DH_##v) {                                                                                \
+    lua_pushliteral(L, #v);                                                                        \
+    lua_rawseti(L, -2, i++);                                                                       \
+  }
 
   lua_newtable(L);
-  if (pub)
-  {
+  if (pub) {
     VAL(reason, CHECK_PUBKEY_TOO_SMALL);
     VAL(reason, CHECK_PUBKEY_TOO_LARGE);
 #ifdef DH_CHECK_PUBKEY_INVALID
     VAL(reason, CHECK_PUBKEY_INVALID);
 #endif
-  }
-  else
-  {
+  } else {
     VAL(reason, CHECK_P_NOT_PRIME);
     VAL(reason, CHECK_PUBKEY_TOO_SMALL);
     VAL(reason, UNABLE_TO_CHECK_GENERATOR);
@@ -171,18 +170,17 @@ static int openssl_dh_problems(lua_State *L)
   return 1;
 }
 
-static luaL_Reg R[] =
-{
-  {"generate_parameters", openssl_dh_generate_parameters},
-  {"problems",            openssl_dh_problems},
+static luaL_Reg R[] = {
+  { "generate_parameters", openssl_dh_generate_parameters },
+  { "problems",            openssl_dh_problems            },
 
-  {NULL, NULL}
+  { NULL,                  NULL                           }
 };
 
-
-int luaopen_dh(lua_State *L)
+int
+luaopen_dh(lua_State *L)
 {
-  auxiliar_newclass(L, "openssl.dh",     dh_funs);
+  auxiliar_newclass(L, "openssl.dh", dh_funs);
 
   lua_newtable(L);
   luaL_setfuncs(L, R, 0);

@@ -10,8 +10,8 @@ M.openssl3 = M.opensslv:find("^OpenSSL 3")
 
 function M.sslProtocol(srv, protocol)
   protocol = protocol or openssl.ssl.default
-  if M.opensslv:match('1.0.2') then
-    protocol = protocol:gsub('DTLS', 'DTLSv1_2')
+  if M.opensslv:match("1.0.2") then
+    protocol = protocol:gsub("DTLS", "DTLSv1_2")
   end
   if srv == true then
     return protocol .. "_server"
@@ -40,10 +40,10 @@ function M.new_req(subject, exts, attrs)
     subject = openssl.x509.name.new(subject)
   end
   local req = assert(openssl.x509.req.new(subject))
-  if (exts) then
+  if exts then
     req:extensions(exts)
   end
-  if (attrs) then
+  if attrs then
     req:attributes(attrs)
   end
   assert(req:sign(pkey))
@@ -63,33 +63,33 @@ end
 function M.spawn(cmd, args, pattern, after_start, after_close, env)
   local uv = require("luv")
   env = env or {}
-  if os.getenv('ASAN_LIB') then
-    env[#env+1] = 'DYLD_INSERT_LIBRARIES=' .. os.getenv('ASAN_LIB')
+  if os.getenv("ASAN_LIB") then
+    env[#env + 1] = "DYLD_INSERT_LIBRARIES=" .. os.getenv("ASAN_LIB")
   end
-  env[#env+1] = 'LUA_CPATH=' .. package.cpath
-  env[#env+1] = 'LUA_PATH=' .. package.path
+  env[#env + 1] = "LUA_CPATH=" .. package.cpath
+  env[#env + 1] = "LUA_PATH=" .. package.path
 
   local function stderr_read(err, chunk)
     assert(not err, err)
-    if (chunk) then
+    if chunk then
       io.write(chunk)
       io.flush()
     end
   end
 
-  local resutls = ''
+  local resutls = ""
   local function stdout_read(err, chunk)
     assert(not err, err)
-    if (chunk) then
+    if chunk then
       io.write(chunk)
       io.flush()
       resutls = resutls .. chunk
       if pattern and resutls:match(pattern) then
-        print('matched.ing')
+        print("matched.ing")
         if after_start then
           after_start()
         end
-        resutls=''
+        resutls = ""
       end
     end
   end
@@ -99,21 +99,17 @@ function M.spawn(cmd, args, pattern, after_start, after_close, env)
   local stderr = uv.new_pipe(false)
 
   local handle, pid
-  handle, pid = assert(uv.spawn(
-    cmd,
-    {
-      args = args,
-      env = env,
-      cwd = uv.cwd(),
-      stdio = { stdin, stdout, stderr },
-    },
-    function(code, signal)
-      uv.close(handle)
-      if after_close then
-        after_close(code, signal)
-      end
+  handle, pid = assert(uv.spawn(cmd, {
+    args = args,
+    env = env,
+    cwd = uv.cwd(),
+    stdio = { stdin, stdout, stderr },
+  }, function(code, signal)
+    uv.close(handle)
+    if after_close then
+      after_close(code, signal)
     end
-  ))
+  end))
   uv.read_start(stdout, stdout_read)
   uv.read_start(stderr, stderr_read)
   return handle, pid

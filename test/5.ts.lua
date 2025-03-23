@@ -1,23 +1,24 @@
-local lu = require 'luaunit'
-local openssl = require 'openssl'
-local helper = require 'helper'
+local lu = require("luaunit")
+local openssl = require("openssl")
+local helper = require("helper")
 
 local asn1, ts, csr = openssl.asn1, openssl.ts, openssl.x509.req
 
-local policy_oid = '1.2.3.4.100'
+local policy_oid = "1.2.3.4.100"
 local policy_obj = assert(asn1.new_object(policy_oid))
 local policies = {
-  assert(asn1.new_object('1.1.3')),  assert(asn1.new_object('1.1.4'))
+  assert(asn1.new_object("1.1.3")),
+  assert(asn1.new_object("1.1.4")),
 }
 local obja = assert(asn1.new_object({
-  oid = '1.2.3.4.5.6',
-  sn = '1.2.3.4.5.6_sn',
-  ln = '1.2.3.4.5.6_ln'
+  oid = "1.2.3.4.5.6",
+  sn = "1.2.3.4.5.6_sn",
+  ln = "1.2.3.4.5.6_ln",
 }))
 local objb = assert(asn1.new_object({
-  oid = '1.2.3.4.5.7',
-  sn = '1.2.3.4.5.7_sn',
-  ln = '1.2.3.4.5.7_ln'
+  oid = "1.2.3.4.5.7",
+  sn = "1.2.3.4.5.7_sn",
+  ln = "1.2.3.4.5.7_ln",
 }))
 assert(policies)
 assert(obja)
@@ -45,15 +46,21 @@ local function createQuery(self, policy_id, nonce, cert_req, extensions)
   ano = openssl.ts.ts_msg_imprint_read(ano)
   assert(req:msg_imprint(msg))
   local m = req:msg_imprint()
-  assert(msg:export()==m:export())
+  assert(msg:export() == m:export())
   if cert_req ~= nil then
     assert(req:cert_req(cert_req))
   else
     cert_req = false
   end
-  if policy_id then assert(req:policy_id(policy_id)) end
-  if nonce then assert(req:nonce(nonce)) end
-  if extensions then assert(req:extensions(extensions)) end
+  if policy_id then
+    assert(req:policy_id(policy_id))
+  end
+  if nonce then
+    assert(req:nonce(nonce))
+  end
+  if extensions then
+    assert(req:extensions(extensions))
+  end
 
   local der = assert(req:export())
   local ano = assert(ts.req_read(der))
@@ -74,7 +81,9 @@ local function createQuery(self, policy_id, nonce, cert_req, extensions)
     assert(policy_id:data(), t.policy_id:data())
     assert(ano:policy_id():data(), t.policy_id:data())
   end
-  if extensions then assert(req:extensions()) end
+  if extensions then
+    assert(req:extensions())
+  end
   return req
 end
 
@@ -82,58 +91,55 @@ local function createTsa(self)
   -- setUp private key and certificate
   local ca = {}
   self.ca = ca
-  ca.dn = {{commonName = 'CA'},  {C = 'CN'}}
+  ca.dn = { { commonName = "CA" }, { C = "CN" } }
   ca.pkey = assert(openssl.pkey.new())
   local subject = assert(openssl.x509.name.new(ca.dn))
 
   local exts = {
-    openssl.x509.extension.new_extension(
-      {object = 'basicConstraints',  value = 'CA:TRUE'}),
-    openssl.x509.extension.new_extension(
-      {object = 'keyUsage',  value = 'cRLSign, keyCertSign'}),
+    openssl.x509.extension.new_extension({ object = "basicConstraints", value = "CA:TRUE" }),
+    openssl.x509.extension.new_extension({ object = "keyUsage", value = "cRLSign, keyCertSign" }),
   }
 
   local attrs = {
     {
-      object = 'basicConstraints',
+      object = "basicConstraints",
       type = asn1.OCTET_STRING,
-      value = 'CA:TRUE'
-    }
+      value = "CA:TRUE",
+    },
   }
 
   ca.req = assert(csr.new(subject))
-  if (exts) then
+  if exts then
     ca.req:extensions(exts)
   end
-  if (attrs) then
+  if attrs then
     ca.req:attribute(attrs)
   end
   assert(ca.req:sign(ca.pkey))
   ca.cert = assert(ca.req:to_x509(ca.pkey))
 
   local extensions = {
-    openssl.x509.extension.new_extension(
-      {object = 'extendedKeyUsage',  value = 'timeStamping',  critical = true})
+    openssl.x509.extension.new_extension({ object = "extendedKeyUsage", value = "timeStamping", critical = true }),
   }
 
   local tsa = {}
   self.tsa = tsa
-  tsa.dn = {{commonName = 'tsa'},  {C = 'CN'}}
+  tsa.dn = { { commonName = "tsa" }, { C = "CN" } }
   tsa.pkey = assert(openssl.pkey.new())
   subject = openssl.x509.name.new(tsa.dn)
 
   tsa.req = csr.new(subject, tsa.pkey)
-  lu.assertEquals(type(tsa.req:parse()), 'table')
+  lu.assertEquals(type(tsa.req:parse()), "table")
 
   tsa.cert = openssl.x509.new(1, tsa.req)
   assert(tsa.cert:validat(os.time(), os.time() + 3600 * 24 * 365))
   assert(tsa.cert:extensions(extensions))
   assert(tsa.cert:sign(ca.pkey, ca.cert))
 
-  lu.assertEquals(type(tsa.cert:parse()), 'table')
+  lu.assertEquals(type(tsa.cert:parse()), "table")
 
-  ca.store = openssl.x509.store.new({ca.cert})
-  assert(tsa.cert:check(ca.store, nil, 'timestamp_sign'))
+  ca.store = openssl.x509.store.new({ ca.cert })
+  assert(tsa.cert:check(ca.store, nil, "timestamp_sign"))
   self.tsa = tsa
   return tsa
 end
@@ -141,12 +147,16 @@ end
 local function createRespCtx(self, serial_cb, time_cb)
   local tsa = self.tsa
   local req_ctx = assert(ts.resp_ctx_new(tsa.cert, tsa.pkey, self.policy_id))
-  assert(req_ctx:md({'md5',  'sha1'}))
+  assert(req_ctx:md({ "md5", "sha1" }))
 
-  if serial_cb then req_ctx:set_serial_cb(serial_cb, self) end
+  if serial_cb then
+    req_ctx:set_serial_cb(serial_cb, self)
+  end
 
-  if time_cb then req_ctx:set_time_cb(time_cb, self) end
-  assert(req_ctx:md('sha256')==true)
+  if time_cb then
+    req_ctx:set_time_cb(time_cb, self)
+  end
+  assert(req_ctx:md("sha256") == true)
   assert(req_ctx:accuracy(1, 1, 1))
   return req_ctx
 end
@@ -159,11 +169,11 @@ local function signReq(self, req_ctx, req, sn, now)
   local status = t.status:tonumber()
   if status ~= 0 then
     assert(t.failure_info or helper.libressl)
-    assert(#t>0)
+    assert(#t > 0)
     return
   end
 
-  assert(t.status:tostring() == '0')
+  assert(t.status:tostring() == "0")
   assert(#t == 0)
   assert(not t.failure_info)
 
@@ -173,7 +183,7 @@ local function signReq(self, req_ctx, req, sn, now)
   local tst = res:tst_info()
   lu.assertIsUserdata(tst)
 
-  sn = sn or '01'
+  sn = sn or "01"
   lu.assertEquals(sn, tst:serial():tohex())
   lu.assertEquals(1, tst:version())
   lu.assertEquals(tst:ordering(), false)
@@ -182,7 +192,7 @@ local function signReq(self, req_ctx, req, sn, now)
   if not now then
     now = os.time()
     local timezone = get_timezone()
-    now = os.date('%Y%m%d%H%M%SZ', now - timezone + 1)
+    now = os.date("%Y%m%d%H%M%SZ", now - timezone + 1)
   end
   assert(notAfter(tst:time():tostring(), now))
 
@@ -193,12 +203,12 @@ local function signReq(self, req_ctx, req, sn, now)
 
   res = res:dup()
   res = assert(openssl.ts.resp_read(res:export()))
-  assert(type(res:tst_info())=='userdata')
+  assert(type(res:tst_info()) == "userdata")
   local vry = assert(req:to_verify_ctx())
   vry:store(self.ca.store)
   local flags = vry:flags(0, true)
   assert(vry:flags(9))
-  assert(9==vry:flags(0, true))
+  assert(9 == vry:flags(0, true))
   vry:flags(flags)
   assert(vry:verify(res:token()))
 
@@ -238,11 +248,11 @@ TestTS = {}
 function TestTS:setUp()
   math.randomseed(os.time())
   self.msg = openssl.random(32)
-  self.alg = 'sha1'
+  self.alg = "sha1"
   self.hash = assert(openssl.digest.digest(self.alg, self.msg, true))
   self.nonce = openssl.bn.text(openssl.random(16))
-  self.digest = 'sha1WithRSAEncryption'
-  self.md = openssl.digest.get('sha1WithRSAEncryption')
+  self.digest = "sha1WithRSAEncryption"
+  self.md = openssl.digest.get("sha1WithRSAEncryption")
   self.policy_id = policy_obj
 
   local der = policy_obj:i2d()
@@ -251,9 +261,9 @@ function TestTS:setUp()
   assert(ano:d2i(der))
   assert(ano:equals(policy_obj))
 
-  local timeStamping = asn1.new_type('timeStamping')
+  local timeStamping = asn1.new_type("timeStamping")
   self.timeStamping = timeStamping:i2d()
-  self.cafalse = openssl.asn1.new_string('CA:FALSE', asn1.OCTET_STRING)
+  self.cafalse = openssl.asn1.new_string("CA:FALSE", asn1.OCTET_STRING)
 
   self.dat = openssl.random(256)
   assert(createTsa(self))
@@ -262,8 +272,8 @@ end
 function TestTS:testBasic()
   local req = createQuery(self)
   assert(req:add_ext(openssl.x509.extension.new_extension({
-    object = 'subjectAltName',
-    value = "IP:192.168.0.1"
+    object = "subjectAltName",
+    value = "IP:192.168.0.1",
   })))
   assert(req:msg_imprint())
   req = assert(req:dup())
@@ -272,7 +282,7 @@ function TestTS:testBasic()
   local res = req_ctx:sign(req:export())
   assert(res)
   assert(req_ctx:signer(self.tsa.cert, self.tsa.pkey))
-  assert(req_ctx:certs({self.ca.cert, self.tsa.cert}))
+  assert(req_ctx:certs({ self.ca.cert, self.tsa.cert }))
   assert(req_ctx:default_policy(policy_obj))
   assert(req_ctx:policies(policies))
   assert(req_ctx:accuracy(1, 1, 1))
@@ -286,9 +296,9 @@ function TestTS:testBasic()
   lu.assertEquals(false, req:cert_req())
 
   signReq(self, req_ctx, req)
-  assert(req:dup():export()==req:export())
+  assert(req:dup():export() == req:export())
   assert(req:version(2))
-  assert(req:version()==2)
+  assert(req:version() == 2)
 end
 
 function TestTS:testPloicyId()
@@ -322,25 +332,25 @@ function TestTS:testSerialCallback()
   local req = createQuery(self)
 
   local serial_cb = function(this)
-    self.sn = 0x7fffffff;
+    self.sn = 0x7fffffff
     return this.sn
   end
   local req_ctx = createRespCtx(self, serial_cb)
-  signReq(self, req_ctx, req, '7FFFFFFF')
+  signReq(self, req_ctx, req, "7FFFFFFF")
 end
 
 function TestTS:testAccuracy()
   local sec, mil, mic = 100000, 10, 1
   local accuracy = openssl.ts.ts_accuracy_new(sec, mil, mic)
-  assert(accuracy:seconds()==sec)
-  assert(accuracy:seconds(sec+1))
-  assert(accuracy:seconds()==sec+1)
-  assert(accuracy:millis()==mil)
-  assert(accuracy:millis(mil+1))
-  assert(accuracy:millis()==mil+1)
-  assert(accuracy:micros()==mic)
-  assert(accuracy:micros(mic+1))
-  assert(accuracy:micros()==mic+1)
+  assert(accuracy:seconds() == sec)
+  assert(accuracy:seconds(sec + 1))
+  assert(accuracy:seconds() == sec + 1)
+  assert(accuracy:millis() == mil)
+  assert(accuracy:millis(mil + 1))
+  assert(accuracy:millis() == mil + 1)
+  assert(accuracy:micros() == mic)
+  assert(accuracy:micros(mic + 1))
+  assert(accuracy:micros() == mic + 1)
   local dup = assert(accuracy:dup())
   local ano = assert(dup:export())
   ano = assert(openssl.ts.ts_accuracy_read(ano))
@@ -348,35 +358,35 @@ function TestTS:testAccuracy()
   lu.assertEquals(dup, ano)
   accuracy = openssl.ts.ts_accuracy_new(sec)
   accuracy = accuracy:totable()
-  lu.assertEquals(accuracy, {seconds=sec, millis=0, micros=0})
+  lu.assertEquals(accuracy, { seconds = sec, millis = 0, micros = 0 })
 end
 
 function TestTS:testTimeCallback()
   local req = createQuery(self)
 
   local time_cb = function(this)
-    self.time = 0x7fffffff;
+    self.time = 0x7fffffff
     return this.time
   end
   local req_ctx = createRespCtx(self, nil, time_cb)
-  local res = signReq(self, req_ctx, req, nil, '20380119031407Z')
+  local res = signReq(self, req_ctx, req, nil, "20380119031407Z")
   local t = assert(res:status_info())
   lu.assertIsTable(t)
 
-  assert(t.status:tostring() == '0')
+  assert(t.status:tostring() == "0")
   assert(#t == 0)
   assert(not t.failure_info)
-  assert(res:dup():export()==res:export())
+  assert(res:dup():export() == res:export())
 
   local tst = res:tst_info()
-  assert(tst:version()==1)
+  assert(tst:version() == 1)
   assert(tst.policy_id)
-  assert(tst:policy_id():txt()=="1.2.3.4.100")
+  assert(tst:policy_id():txt() == "1.2.3.4.100")
   assert(tst:msg_imprint())
   assert(tst:serial():tostring())
   assert(tst:time():tostring())
   assert(tst:accuracy())
-  assert(tst:ordering()==false)
+  assert(tst:ordering() == false)
   local sec, mil, mic = 100000, 10, 1
   local accuracy = openssl.ts.ts_accuracy_new(sec, mil, mic)
   tst:accuracy(accuracy)
@@ -384,6 +394,4 @@ function TestTS:testTimeCallback()
   tst:nonce()
   tst:tsa()
   tst:extensions()
-
 end
-

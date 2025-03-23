@@ -48,6 +48,6 @@ end
 
 function TestSSLOptions:testCiphersuites()
   if helper.supportTLSv1_3() then
-    local ctx = openssl.ssl.ctx_new('TLS', 'TLS_AES_128_GCM_SHA256:ECDHE-RSA-AES128-SHA256')
+    local ctx = openssl.ssl.ctx_new("TLS", "TLS_AES_128_GCM_SHA256:ECDHE-RSA-AES128-SHA256")
   end
 end

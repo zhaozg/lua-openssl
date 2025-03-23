@@ -1,16 +1,16 @@
-local openssl = require 'openssl'
-local helper = require'helper'
+local openssl = require("openssl")
+local helper = require("helper")
 if not openssl.engine then
   return
 end
 
 TestEngine = {}
 function TestEngine:testAll()
-  local eng = assert(openssl.engine('openssl'))
-  assert(eng:id() == 'openssl')
-  assert(eng:id('openssl'))
-  assert(eng:set_default('RSA'))
-  local v= eng:name()
+  local eng = assert(openssl.engine("openssl"))
+  assert(eng:id() == "openssl")
+  assert(eng:id("openssl"))
+  assert(eng:set_default("RSA"))
+  local v = eng:name()
   assert(eng:name(v))
   v = eng:flags()
   assert(eng:flags(v))
@@ -19,22 +19,22 @@ function TestEngine:testAll()
   local _, sslv
   _, _, sslv = openssl.version(true)
   if sslv >= 0x10100000 and not helper.libressl then
-    assert(eng:set_default('EC'))
+    assert(eng:set_default("EC"))
   else
-    assert(eng:set_default('ECDSA'))
+    assert(eng:set_default("ECDSA"))
   end
   assert(eng:remove())
   assert(eng:add())
-  assert(eng:id()=='openssl')
+  assert(eng:id() == "openssl")
 
-  local list ={
+  local list = {
     "RSA",
     "DSA",
     "DH",
     "RAND",
     "ciphers",
     "digests",
-    "complete"
+    "complete",
   }
   if sslv >= 0x10100000 and not helper.libressl then
     table.insert(list, 2, "EC")
@@ -50,12 +50,9 @@ function TestEngine:testAll()
     eng:register(false, v)
     eng:register(true, v)
   end
-  for i= #list, 1, -1 do
+  for i = #list, 1, -1 do
     local v = list[i]
-    if (v=='STORE'
-        or v=='PKEY'
-        or v=='ASN1'
-        or v=="complete") then
+    if v == "STORE" or v == "PKEY" or v == "ASN1" or v == "complete" then
       table.remove(list, i)
     end
   end
@@ -74,9 +71,9 @@ function TestEngine:testAll()
   num = 11
   val = eng:ctrl(num, 0)
 
-  val = eng:ctrl('CMD', 0)
-  val = eng:ctrl('CMD', 0, eng)
-  val = eng:ctrl('CMD', '', 0)
+  val = eng:ctrl("CMD", 0)
+  val = eng:ctrl("CMD", 0, eng)
+  val = eng:ctrl("CMD", "", 0)
   openssl.errors()
 end
 
