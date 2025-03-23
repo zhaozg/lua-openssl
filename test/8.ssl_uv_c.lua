@@ -53,9 +53,11 @@ function new_connection(i)
   function scli:onend()
     self:close()
   end
+
   function scli:onclose()
     count = count - 1
   end
+
   return scli
 end
 

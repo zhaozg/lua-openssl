@@ -27,10 +27,10 @@ local params = {
 }
 --]]
   protocol = protocol
-    or (
-      params.protocol and string.upper(string.sub(params.protocol, 1, 3)) .. string.sub(params.protocol, 4, -1)
-      or helper.sslProtocol()
-    )
+      or (
+        params.protocol and string.upper(string.sub(params.protocol, 1, 3)) .. string.sub(params.protocol, 4, -1)
+        or helper.sslProtocol()
+      )
   local ctx = ssl.ctx_new(protocol, params.ciphers)
   local xkey = nil
   if type(params.password) == "nil" then

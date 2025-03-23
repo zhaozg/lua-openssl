@@ -1,3 +1,5 @@
+/* vim: set filetype=c : */
+
 #ifndef OPENSSL_PRIVATE_H
 #define OPENSSL_PRIVATE_H
 

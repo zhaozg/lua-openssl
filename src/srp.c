@@ -205,6 +205,8 @@ openssl_srp_calc_X(lua_State *L)
 
   BIGNUM *x = SRP_Calc_x(s, username, password);
   PUSH_OBJECT(x, "openssl.bn");
+
+  (void)GN;
   return 1;
 }
 

@@ -53,6 +53,7 @@ server = create_server(address.address, address.port, function(client)
   function scli:ondata(chunk)
     self:close()
   end
+
   function scli:onerror(err)
     print("onerr", err, ssl.error())
   end

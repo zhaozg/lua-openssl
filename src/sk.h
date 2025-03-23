@@ -1,3 +1,5 @@
+/* vim: set filetype=c : */
+
 /*
 STACK\_OF(CTYPE) object just like STACK\_OF(X509) are high frequency used,
 in x509, pkcs7, pkcs12 and others module, and it has complex APIs in openssl.

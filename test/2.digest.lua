@@ -106,6 +106,7 @@ function TestDigestSignVry:setUp()
   self.prik = mk_key({ "rsa", 2048, 3 })
   self.pubk = assert(openssl.pkey.get_public(self.prik))
 end
+
 function TestDigestSignVry:testSignVry()
   local md = assert(digest.get(self.alg))
   local sctx = digest.signInit(md, self.prik)
@@ -118,6 +119,7 @@ function TestDigestSignVry:testSignVry()
   assert(vctx:verifyUpdate(self.msg))
   assert(vctx:verifyFinal(sig))
 end
+
 function TestDigestSignVry:testSignVry1()
   local md = digest.get(self.alg)
   local sctx = md:signInit(self.prik)
