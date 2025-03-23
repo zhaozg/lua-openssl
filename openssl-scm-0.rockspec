@@ -112,5 +112,5 @@ build = {
 
 test = {
   type = "command",
-  command = "LUA=`luarocks config deploy_bin_dir`/`luarocks config LUA` && cd test && $LUA test.lua"
+  command = "LUA=`luarocks config LUA` && cd test && $LUA test.lua"
 }
