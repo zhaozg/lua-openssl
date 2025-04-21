@@ -73,7 +73,7 @@ openssl_kdf_iterator_kdf(lua_State *L)
   lua_pushvalue(L, 1);
   lua_rawsetp(L, LUA_REGISTRYINDEX, (void *)kdf_iterator_cb);
 
-  EVP_KDF_do_all_provided(NULL, kdf_iterator_cb, L);
+  EVP_KDF_do_all_provided(NULL, kdf_iterator_cb, openssl_mainthread(L));
   lua_pushnil(L);
   lua_rawsetp(L, LUA_REGISTRYINDEX, (void *)kdf_iterator_cb);
   return 0;

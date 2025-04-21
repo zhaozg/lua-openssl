@@ -1430,7 +1430,7 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_set_serial_cb)
   arg->cb_arg = luaL_ref(L, LUA_REGISTRYINDEX);
 
   openssl_valueset(L, ctx, serial_cb_key);
-  TS_RESP_CTX_set_serial_cb(ctx, openssl_serial_cb, L);
+  TS_RESP_CTX_set_serial_cb(ctx, openssl_serial_cb, openssl_mainthread(L));
   return 0;
 };
 
@@ -1504,7 +1504,7 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_set_time_cb)
   ctx->time_cb = openssl_time_cb;
   ctx->time_cb_data = L;
 #else
-  TS_RESP_CTX_set_time_cb(ctx, openssl_time_cb, L);
+  TS_RESP_CTX_set_time_cb(ctx, openssl_time_cb, openssl_mainthread(L));
 #endif
   return 0;
 }

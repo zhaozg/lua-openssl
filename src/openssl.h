@@ -180,6 +180,8 @@ static inline void* openssl_getgroup(lua_State *L, const char* name, int idx)
 int openssl_register_lhash(lua_State* L);
 int openssl_register_engine(lua_State* L);
 
+lua_State *openssl_mainthread(lua_State *L);
+
 LUA_FUNCTION(luaopen_srp);
 
 #endif

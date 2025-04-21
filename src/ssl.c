@@ -169,7 +169,7 @@ openssl_ssl_ctx_new(lua_State *L)
     luaL_argerror(L, 2, "Error to set cipher list");
 
   PUSH_OBJECT(ctx, "openssl.ssl_ctx");
-  SSL_CTX_set_app_data(ctx, L);
+  SSL_CTX_set_app_data(ctx, openssl_mainthread(L));
   openssl_newvalue(L, ctx);
 
   return 1;
@@ -916,11 +916,11 @@ openssl_ssl_ctx_set_cert_verify(lua_State *L)
   if (lua_istable(L, 2)) {
     lua_pushvalue(L, 2);
     openssl_valueset(L, ctx, "verify_cb_flags");
-    SSL_CTX_set_cert_verify_callback(ctx, openssl_cert_verify_cb, L);
+    SSL_CTX_set_cert_verify_callback(ctx, openssl_cert_verify_cb, openssl_mainthread(L));
   } else if (lua_isfunction(L, 2)) {
     lua_pushvalue(L, 2);
     openssl_valueset(L, ctx, "cert_verify_cb");
-    SSL_CTX_set_cert_verify_callback(ctx, openssl_cert_verify_cb, L);
+    SSL_CTX_set_cert_verify_callback(ctx, openssl_cert_verify_cb, openssl_mainthread(L));
   } else
     SSL_CTX_set_cert_verify_callback(ctx, NULL, NULL);
   return 0;
@@ -1058,7 +1058,7 @@ openssl_ssl_ctx_set_alpn_select_cb(lua_State *L)
   if (lua_isfunction(L, 2)) {
     lua_pushvalue(L, 2);
     openssl_valueset(L, ctx, "alpn_select_cb");
-    SSL_CTX_set_alpn_select_cb(ctx, openssl_alpn_select_cb, L);
+    SSL_CTX_set_alpn_select_cb(ctx, openssl_alpn_select_cb, openssl_mainthread(L));
   } else
     SSL_CTX_set_alpn_select_cb(ctx, NULL, NULL);
 

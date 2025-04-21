@@ -557,6 +557,17 @@ openssl_initialize()
 #endif
 }
 
+#ifndef LUA_RIDX_MAINTHREAD
+#define LUA_RIDX_MAINTHREAD 1
+#endif
+lua_State *openssl_mainthread(lua_State *L)
+{
+  lua_rawgeti(L, LUA_REGISTRYINDEX, LUA_RIDX_MAINTHREAD);
+  lua_State *mainL = lua_tothread(L, -1);
+  lua_pop(L, 1);
+  return mainL ? mainL : L;
+}
+
 LUALIB_API int
 luaopen_openssl(lua_State *L)
 {
