@@ -5,7 +5,7 @@ on: [push, pull_request]
 jobs:
   Coverage:
     # look at https://github.com/eddyxu/cpp-coveralls
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         openssl_version: [openssl-1.0.2u, openssl-1.1.1w, openssl-3.1.7]
@@ -51,7 +51,7 @@ jobs:
           parallel-finished: true
 
   Valgrind:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
       with:
@@ -95,7 +95,7 @@ jobs:
       run: make asan
 
   clang-tsan:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     env:
       CC: clang
       CXX: clang++
