@@ -414,16 +414,16 @@ void CRYPTO_thread_setup(void);
 void CRYPTO_thread_cleanup(void);
 #endif
 
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L
-static OSSL_PROVIDER *legacy = NULL;
-static OSSL_PROVIDER *openssl = NULL;
-#endif
-
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
 #include <stdatomic.h>
 static atomic_int _guard = 0;
 #else
 static volatile int _guard = 0;
+#endif
+
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+static OSSL_PROVIDER *legacy = NULL;
+static OSSL_PROVIDER *openssl = NULL;
 #endif
 
 static void
@@ -440,6 +440,9 @@ openssl_finalize(void)
 #if !IS_LIBRESSL()
   /* This will be called automatically by the library when the thread exits. */
   OPENSSL_thread_stop();
+
+  OSSL_PROVIDER_unload(openssl);
+  OSSL_PROVIDER_unload(legacy);
 #endif
   /* This is initiated automatically on application exit */
   OPENSSL_cleanup();
@@ -500,11 +503,8 @@ openssl_initialize()
   if (++_guard > 0) return;
 #endif
 
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L                                                          \
-     || (IS_LIBRESSL() && LIBRESSL_VERSION_NUMBER < 0x30600000L))
-  /* Automatically do thread and resources cleanup above OpenSSL v1.1.1 */
+  /* Automatically do thread and resources cleanup */
   atexit(openssl_finalize);
-#endif
 
 #if defined(OPENSSL_THREADS)                                                                       \
   && (OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER))

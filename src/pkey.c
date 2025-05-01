@@ -1466,7 +1466,7 @@ static LUA_FUNCTION(openssl_sign)
     }
   }
 
-  EVP_MD_CTX_destroy(ctx);
+  EVP_MD_CTX_free(ctx);
 #if defined(OPENSSL_SUPPORT_SM2)
   if (pctx) EVP_PKEY_CTX_free(pctx);
 #endif
@@ -1534,7 +1534,7 @@ static LUA_FUNCTION(openssl_verify)
     }
   }
 
-  EVP_MD_CTX_destroy(ctx);
+  EVP_MD_CTX_free(ctx);
 #if defined(OPENSSL_SUPPORT_SM2)
   if (pctx) EVP_PKEY_CTX_free(pctx);
 #endif

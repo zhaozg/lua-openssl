@@ -294,3 +294,63 @@
    fun:BIO_new_bio_pair
    obj:*
 }
+
+# OpenSSL-3
+{
+   openssl_dl_operations
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:calloc
+   fun:strdup
+   fun:*dl_open*
+   fun:_dl_*
+   fun:dlclose
+   obj:/usr/lib/libc.so.*
+   obj:/usr/lib/libcrypto.so.3
+}
+
+{
+   openssl_provider_leaks
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   fun:malloc
+   fun:CRYPTO_*
+   fun:OSSL_PROVIDER_try_load_ex
+   obj:/usr/lib/libcrypto.so.3
+}
+
+{
+   openssl_evp_kdf_leaks
+   Memcheck:Leak
+   match-leak-kinds: definite,indirect
+   fun:malloc
+   fun:CRYPTO_*
+   fun:EVP_KDF_fetch
+   fun:EVP_KEYMGMT_do_all_provided
+   obj:/usr/lib/libcrypto.so.3
+}
+
+{
+   openssl_core_leaks
+   Memcheck:Leak
+   match-leak-kinds: indirect,reachable
+   fun:malloc
+   fun:CRYPTO_*
+   fun:ASN1_item_*
+   fun:BN_*
+   fun:CRYPTO_THREAD_*
+   obj:/usr/lib/libcrypto.so.3
+}
+
+{
+   openssl_init_leaks
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:CRYPTO_*
+   fun:OPENSSL_init_crypto
+   fun:EVP_*_meth_new
+   fun:ENGINE_register_*
+   obj:/usr/lib/libcrypto.so.3
+}
