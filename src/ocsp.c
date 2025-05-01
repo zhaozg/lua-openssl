@@ -295,19 +295,20 @@ openssl_ocsp_request_add_ext(lua_State *L)
   int             ret = OCSP_REQUEST_add_ext(req, x, loc);
   return openssl_pushresult(L, ret);
 }
-// 在 openssl.h 或代码头部添加宏重定义
+
 #ifdef PEM_write_bio_OCSP_REQUEST
 #undef PEM_write_bio_OCSP_REQUEST
 #endif
-#  define PEM_write_bio_OCSP_REQUEST(bp,o) \
-    PEM_ASN1_write_bio((int (*)(const void *, unsigned char **))i2d_OCSP_REQUEST,PEM_STRING_OCSP_REQUEST,\
-                        bp,(char *)(o), NULL,NULL,0,NULL,NULL)
+#define PEM_write_bio_OCSP_REQUEST(bp,o) PEM_ASN1_write_bio(             \
+  (int (*)(CONSTIFY_OPENSSL void *, unsigned char **))i2d_OCSP_REQUEST,  \
+  PEM_STRING_OCSP_REQUEST, bp,(char *)(o), NULL,NULL,0,NULL,NULL)
 #ifdef PEM_write_bio_OCSP_RESPONSE
 #undef PEM_write_bio_OCSP_RESPONSE
 #endif
-#  define PEM_write_bio_OCSP_RESPONSE(bp,o) \
-    PEM_ASN1_write_bio((int (*)(const void *, unsigned char **))i2d_OCSP_RESPONSE,PEM_STRING_OCSP_RESPONSE,\
-                        bp,(char *)(o), NULL,NULL,0,NULL,NULL)
+#define PEM_write_bio_OCSP_RESPONSE(bp,o) PEM_ASN1_write_bio(            \
+  (int (*)(CONSTIFY_OPENSSL void *, unsigned char **))i2d_OCSP_RESPONSE, \
+  PEM_STRING_OCSP_RESPONSE, bp,(char *)(o), NULL,NULL,0,NULL,NULL)
+
 /***
 export a ocsp_request object to encoded data
 @function export

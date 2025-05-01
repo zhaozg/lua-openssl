@@ -10,6 +10,15 @@ extern "C" {
 #include <lauxlib.h>
 #include <lualib.h>
 
+/* Common */
+#include <time.h>
+#ifndef MAX_PATH
+#define MAX_PATH 260
+#endif
+
+#include "auxiliar.h"
+#include "subsidiar.h"
+
 #if LUA_VERSION_NUM < 503
 #include "compat-5.3.h"
 #endif
@@ -17,6 +26,44 @@ extern "C" {
 #if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
 #include "openssl/provider.h"
 #endif
+
+typedef unsigned char byte;
+
+#define MULTI_LINE_MACRO_BEGIN do {
+#ifdef _MSC_VER
+#define MULTI_LINE_MACRO_END  \
+__pragma(warning(push))   \
+__pragma(warning(disable:4127)) \
+} while(0)      \
+__pragma(warning(pop))
+#else
+#define MULTI_LINE_MACRO_END \
+} while(0)
+#endif
+
+#ifdef WIN32
+#define snprintf _snprintf
+#ifndef strcasecmp
+#define strcasecmp stricmp
+#endif
+#endif
+
+#ifdef _MSC_VER
+# ifndef inline
+#  define inline __inline
+# endif
+#endif
+
+#if defined(_AIX)
+# ifndef inline
+#  define inline __inline
+# endif
+#endif
+
+#if defined(__STDC__) && !defined(__STDC_VERSION__)
+#  define inline __inline
+#endif
+
 
 #define luaL_checktable(L, n) luaL_checktype(L, n, LUA_TTABLE)
 
@@ -307,6 +354,42 @@ int openssl_sk_x509_name_totable(lua_State *L, const STACK_OF(X509_NAME)* sk);
 int openssl_sk_x509_attribute_totable(lua_State *L, const STACK_OF(X509_ATTRIBUTE)* sk);
 
 X509_ATTRIBUTE* openssl_new_xattribute(lua_State*L, X509_ATTRIBUTE** a, int idx);
+
+void openssl_add_method_or_alias(const OBJ_NAME *name, void *arg) ;
+void openssl_add_method(const OBJ_NAME *name, void *arg);
+
+#define CHECK_OBJECT(n,type,name) *(type**)auxiliar_checkclass(L,name,n)
+#define CHECK_GROUP(n,type,name)  *(type**)auxiliar_checkgroup(L,name,n)
+
+static inline void* openssl_getclass(lua_State *L, const char* name, int idx)
+{
+  void **p = (void**)auxiliar_getclassudata(L, name, idx);
+  return p!=NULL ? *p : NULL;
+}
+
+static inline void* openssl_getgroup(lua_State *L, const char* name, int idx)
+{
+  void **p = (void**)auxiliar_getgroupudata(L, name, idx);
+  return p!=NULL ? *p : NULL;
+}
+
+#define GET_OBJECT(n,type,name) ((type*)openssl_getclass(L,name,n))
+#define GET_GROUP(n,type,name)  ((type*)openssl_getgroup(L,name,n))
+
+#define PUSH_OBJECT(o, tname)                                   \
+  MULTI_LINE_MACRO_BEGIN                                        \
+  if(o) {                                                       \
+  *(void **)(lua_newuserdata(L, sizeof(void *))) = (void*)(o);  \
+  auxiliar_setclass(L,tname,-1);                                \
+  } else lua_pushnil(L);                                        \
+  MULTI_LINE_MACRO_END
+
+#define FREE_OBJECT(i)  (*(void**)lua_touserdata(L, i) = NULL)
+
+int openssl_register_lhash(lua_State* L);
+int openssl_register_engine(lua_State* L);
+
+lua_State *openssl_mainthread(lua_State *L);
 
 #ifdef HAVE_USER_CUSTOME
 #include HAVE_USER_CUSTOME
