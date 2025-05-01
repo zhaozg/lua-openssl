@@ -119,6 +119,11 @@ function TestCMS:testDigest()
   assert(smime)
   msg = assert(c1:digest_verify())
   lu.assertEquals(msg, self.msg)
+
+  assert(c1:detached(true))
+  assert(c1:detached() == true)
+  msg = assert(c1:digest_verify(self.msg))
+  lu.assertEquals(msg, self.msg)
 end
 
 function TestCMS:testData()
@@ -142,8 +147,9 @@ function TestCMS:testData()
 
   assert(c:detached(true))
   assert(c:detached() == true)
-  d = assert(c:export("data", 0, "der"))
-  assert(d)
+  -- NOTES: deatched not support data
+  -- d = assert(c:export("data", 0, "der"))
+  -- assert(d)
 
   c = assert(cms.data("data", cms.flags.stream + cms.flags.partial))
   assert(c:final("aaaa"))
