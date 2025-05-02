@@ -408,8 +408,7 @@ static const luaL_Reg eay_functions[] = {
   { NULL,          NULL                  }
 };
 
-#if defined(OPENSSL_THREADS)                                                                       \
-  && (OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER))
+#if defined(OPENSSL_THREADS)
 void CRYPTO_thread_setup(void);
 void CRYPTO_thread_cleanup(void);
 #endif
@@ -421,11 +420,6 @@ static atomic_int _guard = 0;
 static volatile int _guard = 0;
 #endif
 
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L
-static OSSL_PROVIDER *legacy = NULL;
-static OSSL_PROVIDER *openssl = NULL;
-#endif
-
 static void
 openssl_finalize(void)
 {
@@ -435,18 +429,7 @@ openssl_finalize(void)
   if (--_guard == 1) return;
 #endif
 
-#if (OPENSSL_VERSION_NUMBER > 0x10100000L && !IS_LIBRESSL())                                       \
-  || LIBRESSL_VERSION_NUMBER > 0x30600000L
-#if (OPENSSL_VERSION_NUMBER > 0x30000000L && !IS_LIBRESSL())
-  /* This will be called automatically by the library when the thread exits. */
-  OPENSSL_thread_stop();
-  OSSL_PROVIDER_unload(openssl);
-  OSSL_PROVIDER_unload(legacy);
-#endif
-  /* This is initiated automatically on application exit */
-  OPENSSL_cleanup();
-#else
-
+#if (OPENSSL_VERSION_NUMBER < 0x30000000L || defined(LIBRESSL_VERSION_NUMBER))
 #if !defined(LIBRESSL_VERSION_NUMBER)
   FIPS_mode_set(0);
 #endif
@@ -468,8 +451,7 @@ openssl_finalize(void)
   CRYPTO_THREADID_set_callback(NULL);
   CRYPTO_set_locking_callback(NULL);
 
-#if defined(OPENSSL_THREADS)                                                                       \
-  && (OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER))
+#if defined(OPENSSL_THREADS)
   CRYPTO_thread_cleanup();
 #endif
 
@@ -487,10 +469,15 @@ openssl_finalize(void)
             "\n\tThank You.");
   }
 #endif
-
 #endif /* OPENSSL_NO_STDIO or OPENSSL_NO_FP_API */
 #endif /* OPENSSL_NO_CRYPTO_MDEBUG */
-#endif /* OPENSSL_VERSION_NUMBER > 0x10100000L && !IS_LIBRESSL() */
+#else
+
+#if defined(OPENSSL_THREADS)
+  CRYPTO_thread_cleanup();
+#endif
+
+#endif
 }
 
 static void
@@ -502,15 +489,16 @@ openssl_initialize()
   if (++_guard > 0) return;
 #endif
 
+#if (OPENSSL_VERSION_NUMBER < 0x30000000L || defined(LIBRESSL_VERSION_NUMBER))
   /* Automatically do thread and resources cleanup */
   atexit(openssl_finalize);
+#endif
 
-#if defined(OPENSSL_THREADS)                                                                       \
-  && (OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER))
+#if defined(OPENSSL_THREADS)
   CRYPTO_thread_setup();
 #endif
 
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER))
+#if (OPENSSL_VERSION_NUMBER < 0x30000000L || defined(LIBRESSL_VERSION_NUMBER))
   OpenSSL_add_all_ciphers();
   OpenSSL_add_all_digests();
   SSL_library_init();
@@ -519,40 +507,29 @@ openssl_initialize()
   ERR_load_EVP_strings();
   ERR_load_crypto_strings();
   ERR_load_SSL_strings();
-#endif
-#if OPENSSL_VERSION_NUMBER < 0x30000000
   ERR_load_BN_strings();
-#endif
 #ifndef OPENSSL_NO_CMS
-#if OPENSSL_VERSION_NUMBER < 0x30000000
   ERR_load_CMS_strings();
 #endif
-#endif
-
 #ifndef OPENSSL_NO_ENGINE
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
   ENGINE_load_openssl();
-#else
-  OPENSSL_init_crypto(OPENSSL_INIT_ENGINE_OPENSSL, NULL);
-  OPENSSL_init_ssl(OPENSSL_INIT_ENGINE_ALL_BUILTIN | OPENSSL_INIT_LOAD_CONFIG, NULL);
 #endif
-#if OPENSSL_VERSION_NUMBER < 0x30000000L
   ENGINE_load_builtin_engines();
-#endif
-#endif
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
   RAND_seed(LOPENSSL_VERSION LUA_VERSION OPENSSL_VERSION_TEXT,
             sizeof(LOPENSSL_VERSION LUA_VERSION OPENSSL_VERSION_TEXT));
+#else
+  OPENSSL_init_ssl(OPENSSL_INIT_ENGINE_ALL_BUILTIN |
+                   OPENSSL_INIT_ENGINE_OPENSSL |
+                   OPENSSL_INIT_LOAD_CRYPTO_STRINGS |
+                   OPENSSL_INIT_LOAD_SSL_STRINGS |
+                   OPENSSL_INIT_ADD_ALL_CIPHERS |
+                   OPENSSL_INIT_ADD_ALL_DIGESTS,
+                   NULL);
 #endif
 
 #ifdef LOAD_ENGINE_CUSTOM
   LOAD_ENGINE_CUSTOM
-#endif
-
-#if (OPENSSL_VERSION_NUMBER >= 0x30000000L) && !IS_LIBRESSL()
-  legacy = OSSL_PROVIDER_load(NULL, "legacy");
-  openssl = OSSL_PROVIDER_load(NULL, "default");
 #endif
 }
 

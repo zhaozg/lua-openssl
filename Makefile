@@ -62,11 +62,11 @@ endif
 
 ifeq (asan, ${TARGET})
 ifneq (, $(findstring apple, $(SYS)))
-  ASAN_LIB       = $(shell dirname $(shell dirname $(shell clang -print-libgcc-file-name)))/darwin/libclang_rt.asan_osx_dynamic.dylib
+  ASAN_LIB      ?= $(shell dirname $(shell dirname $(shell clang -print-libgcc-file-name)))/darwin/libclang_rt.asan_osx_dynamic.dylib
   LDFLAGS       +=-g -fsanitize=address
 endif
 ifneq (, $(findstring linux, $(SYS)))
-  ASAN_LIB       = $(shell dirname $(shell cc -print-libgcc-file-name))/libasan.so
+  ASAN_LIB      ?= $(shell dirname $(shell cc -print-libgcc-file-name))/libasan.so
   LDFLAGS       +=-g -fsanitize=address -lubsan
 endif
 CC            ?= clang
@@ -80,12 +80,12 @@ endif
 
 ifeq (tsan, ${TARGET})
 ifneq (, $(findstring apple, $(SYS)))
-  ASAN_LIB       = $(shell dirname $(shell dirname $(shell clang -print-libgcc-file-name)))/darwin/libclang_rt.tsan_osx_dynamic.dylib
+  ASAN_LIB      ?= $(shell dirname $(shell dirname $(shell clang -print-libgcc-file-name)))/darwin/libclang_rt.tsan_osx_dynamic.dylib
   LDFLAGS       +=-g -fsanitize=thread
 endif
 
 ifneq (, $(findstring linux, $(SYS)))
-  ASAN_LIB       = $(shell dirname $(shell cc -print-libgcc-file-name))/libtsan.so
+  ASAN_LIB      ?= $(shell dirname $(shell cc -print-libgcc-file-name))/libtsan.so
   LDFLAGS       +=-g -fsanitize=thread -lubsan -ltsan
 endif
 CC            ?= clang
@@ -197,7 +197,7 @@ endif
 valgrind: all
 	cd test && LUA_CPATH=$(shell pwd)/?.so \
 	valgrind --gen-suppressions=all --suppressions=../.github/lua-openssl.supp \
-	--error-exitcode=1 --leak-check=full --show-leak-kinds=all \
+	--error-exitcode=1 --leak-check=full --show-leak-kinds=all --num-callers=64 \
 	--child-silent-after-fork=yes $(LUA) test.lua && cd ..
 
 asan: all

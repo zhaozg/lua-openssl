@@ -89,17 +89,10 @@
 #include <pthread.h>
 #endif
 
-#if defined(OPENSSL_THREADS)                                                                       \
-  && (OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER))
+#if defined(OPENSSL_THREADS)
 
 void CRYPTO_thread_setup(void);
 void CRYPTO_thread_cleanup(void);
-
-static void irix_thread_id(CRYPTO_THREADID *tid);
-static void solaris_thread_id(CRYPTO_THREADID *tid);
-static void pthreads_thread_id(CRYPTO_THREADID *tid);
-static void netware_thread_id(CRYPTO_THREADID *tid);
-static void beos_thread_id(CRYPTO_THREADID *tid);
 
 /* usage:
  * CRYPTO_thread_setup();
@@ -155,6 +148,7 @@ win32_locking_callback(int mode, int type, const char *file, int line)
 
 #ifdef SOLARIS
 
+static void solaris_thread_id(CRYPTO_THREADID *tid);
 static void solaris_locking_callback(int mode, int type, const char *file, int line);
 
 #define USE_MUTEX
@@ -251,6 +245,7 @@ solaris_thread_id(CRYPTO_THREADID *tid)
 
 #ifdef IRIX
 
+static void irix_thread_id(CRYPTO_THREADID *tid);
 static void irix_locking_callback(int mode, int type, const char *file, int line);
 
 /* I don't think this works..... */
@@ -317,9 +312,11 @@ irix_thread_id(void)
 #endif /* IRIX */
 
 /* Linux and a few others */
-#if defined(PTHREADS) && (OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER))
+#if defined(PTHREADS)
 static pthread_mutex_t *lock_cs;
 static long            *lock_count;
+
+static void pthreads_thread_id(CRYPTO_THREADID *tid);
 
 void
 CRYPTO_thread_cleanup(void)

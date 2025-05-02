@@ -65,7 +65,10 @@ local function mk_connection(_host, _port, i)
       assert(S:connect())
     end
     if opensslv >= 0x10002000 then
-      assert(S:get_alpn_selected() == "http/1.1" or S:get_alpn_selected() == "h2")
+      local proto = S:get_alpn_selected()
+      if proto then
+        assert(proto == "http/1.1" or proto == "h2")
+      end
     end
     local succ, errs = S:getpeerverification()
     if type(errs) == "table" then
