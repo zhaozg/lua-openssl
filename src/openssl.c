@@ -437,10 +437,9 @@ openssl_finalize(void)
 
 #if (OPENSSL_VERSION_NUMBER > 0x10100000L && !IS_LIBRESSL())                                       \
   || LIBRESSL_VERSION_NUMBER > 0x30600000L
-#if !IS_LIBRESSL()
+#if (OPENSSL_VERSION_NUMBER > 0x30000000L && !IS_LIBRESSL())
   /* This will be called automatically by the library when the thread exits. */
   OPENSSL_thread_stop();
-
   OSSL_PROVIDER_unload(openssl);
   OSSL_PROVIDER_unload(legacy);
 #endif
@@ -551,7 +550,7 @@ openssl_initialize()
   LOAD_ENGINE_CUSTOM
 #endif
 
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L) && !IS_LIBRESSL()
   legacy = OSSL_PROVIDER_load(NULL, "legacy");
   openssl = OSSL_PROVIDER_load(NULL, "default");
 #endif
