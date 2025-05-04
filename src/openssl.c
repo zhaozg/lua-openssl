@@ -441,7 +441,9 @@ openssl_finalize(void)
   ENGINE_cleanup();
 #endif
   CRYPTO_cleanup_all_ex_data();
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
   ERR_remove_thread_state(NULL);
+#endif
   RAND_cleanup();
   ERR_free_strings();
 #if !defined(OPENSSL_NO_COMP) && !defined(LIBRESSL_VERSION_NUMBER)
