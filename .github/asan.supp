@@ -1,8 +1,8 @@
 # OpenSSL v1.1
 leak:X509_REQ_dup
-# OpenSSL v3
-leak:DSA_generate_parameters_ex
-leak:d2i_X509_REQ_bio
+
+# github ci OpenSSL v3.0
+leak:OPENSSL_init_ssl
 
 ## MacOS
 #leak:_objc_init

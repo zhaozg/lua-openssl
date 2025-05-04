@@ -408,7 +408,8 @@ static const luaL_Reg eay_functions[] = {
   { NULL,          NULL                  }
 };
 
-#if defined(OPENSSL_THREADS)
+#if defined(OPENSSL_THREADS) && \
+    (OPENSSL_VERSION_NUMBER < 0x30000000L || defined(LIBRESSL_VERSION_NUMBER))
 void CRYPTO_thread_setup(void);
 void CRYPTO_thread_cleanup(void);
 #endif
@@ -475,9 +476,6 @@ openssl_finalize(void)
 #endif /* OPENSSL_NO_CRYPTO_MDEBUG */
 #else
 
-#if defined(OPENSSL_THREADS)
-  CRYPTO_thread_cleanup();
-#endif
 
 #endif
 }
@@ -491,15 +489,12 @@ openssl_initialize()
   if (++_guard > 0) return;
 #endif
 
-#ifndef __SANITIZE_THREAD__
-  atexit(openssl_finalize);
-#endif
-
-#if defined(OPENSSL_THREADS)
-  CRYPTO_thread_setup();
-#endif
 
 #if (OPENSSL_VERSION_NUMBER < 0x30000000L || defined(LIBRESSL_VERSION_NUMBER))
+  atexit(openssl_finalize);
+
+  CRYPTO_thread_setup();
+
   OpenSSL_add_all_ciphers();
   OpenSSL_add_all_digests();
   SSL_library_init();

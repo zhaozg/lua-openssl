@@ -89,8 +89,8 @@
 #include <pthread.h>
 #endif
 
-#if defined(OPENSSL_THREADS)
-
+#if defined(OPENSSL_THREADS) && \
+    (OPENSSL_VERSION_NUMBER < 0x30000000L || defined(LIBRESSL_VERSION_NUMBER))
 void CRYPTO_thread_setup(void);
 void CRYPTO_thread_cleanup(void);
 
