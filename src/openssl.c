@@ -489,7 +489,9 @@ openssl_initialize()
   if (++_guard > 0) return;
 #endif
 
+#ifndef __SANITIZE_THREAD__
   atexit(openssl_finalize);
+#endif
 
 #if defined(OPENSSL_THREADS)
   CRYPTO_thread_setup();

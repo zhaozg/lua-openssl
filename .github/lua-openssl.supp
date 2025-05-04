@@ -9,6 +9,228 @@
    fun:allocate_stack
 }
 
+# dlopen
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:strdup
+   fun:_dl_load_cache_lookup
+   fun:_dl_map_object
+   fun:openaux
+   fun:_dl_catch_exception
+   fun:_dl_map_object_deps
+   fun:dl_open_worker
+   fun:_dl_catch_exception
+   fun:_dl_open
+   fun:dlopen_doit
+   fun:_dl_catch_exception
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   fun:_dl_check_map_versions
+   fun:dl_open_worker
+   fun:_dl_catch_exception
+   fun:_dl_open
+   fun:dlopen_doit
+   fun:_dl_catch_exception
+   fun:_dl_catch_error
+   fun:_dlerror_run
+}
+{
+   dlopen_doit
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:_dl_new_object
+   fun:_dl_map_object_from_fd
+   fun:_dl_map_object
+   fun:openaux
+   fun:_dl_catch_exception
+   fun:_dl_map_object_deps
+   fun:dl_open_worker
+   fun:_dl_catch_exception
+   fun:_dl_open
+   fun:dlopen_doit
+   fun:_dl_catch_exception
+}
+
+{
+   dlopen_doit
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   fun:_dl_new_object
+   fun:_dl_map_object_from_fd
+   fun:_dl_map_object
+   fun:openaux
+   fun:_dl_catch_exception
+   fun:_dl_map_object_deps
+   fun:dl_open_worker
+   fun:_dl_catch_exception
+   fun:_dl_open
+   fun:dlopen_doit
+   fun:_dl_catch_exception
+}
+
+{
+   <_dl_open>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:malloc
+   fun:strdup
+   fun:_dl_map_object
+   fun:dl_open_worker_begin
+   fun:_dl_catch_exception
+   fun:dl_open_worker
+   fun:_dl_catch_exception
+   fun:_dl_open
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:malloc
+   fun:strdup
+   fun:_dl_load_cache_lookup
+   fun:_dl_map_object
+   fun:openaux
+   fun:_dl_catch_exception
+   fun:_dl_map_object_deps
+   fun:dl_open_worker_begin
+   fun:_dl_catch_exception
+   fun:dl_open_worker
+   fun:_dl_catch_exception
+   fun:_dl_open
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:malloc
+   fun:_dl_new_object
+   fun:_dl_map_object_from_fd
+   fun:_dl_map_object
+   fun:openaux
+   fun:_dl_catch_exception
+   fun:_dl_map_object_deps
+   fun:dl_open_worker_begin
+   fun:_dl_catch_exception
+   fun:dl_open_worker
+   fun:_dl_catch_exception
+   fun:_dl_open
+}
+
+{
+   <_dl_open>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:malloc
+   fun:_dl_new_object
+   fun:_dl_map_object_from_fd
+   fun:_dl_map_object
+   fun:dl_open_worker_begin
+   fun:_dl_catch_exception
+   fun:dl_open_worker
+   fun:_dl_catch_exception
+   fun:_dl_open
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   fun:calloc
+   fun:_dl_new_object
+   fun:_dl_map_object_from_fd
+   fun:_dl_map_object
+   fun:dl_open_worker_begin
+   fun:_dl_catch_exception
+   fun:dl_open_worker
+   fun:_dl_catch_exception
+   fun:_dl_open
+}
+
+{
+   <_dl_open>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   fun:calloc
+   fun:_dl_check_map_versions
+   fun:dl_open_worker_begin
+   fun:_dl_catch_exception
+   fun:dl_open_worker
+   fun:_dl_catch_exception
+   fun:_dl_open
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   fun:calloc
+   fun:_dl_new_object
+   fun:_dl_map_object_from_fd
+   fun:_dl_map_object
+   fun:openaux
+   fun:_dl_catch_exception
+   fun:_dl_map_object_deps
+   fun:dl_open_worker_begin
+   fun:_dl_catch_exception
+   fun:dl_open_worker
+   fun:_dl_catch_exception
+   fun:_dl_open
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:malloc
+   fun:_dl_close_worker*
+}
+
+{
+   <resolve_map>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   fun:calloc
+   fun:do_lookup_unique
+   fun:do_lookup_x
+   fun:_dl_lookup_symbol_x
+   fun:resolve_map
+}
+
+{
+   <_GLOBAL__sub_I_eh_alloc.cc>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:pool
+   fun:__static_initialization_and_destruction_0
+   fun:_GLOBAL__sub_I_eh_alloc.cc
+   fun:call_init
+   fun:call_init
+   fun:_dl_init
+}
+
 # LuaJIT-2.1
 {
    LuaJIT-2.1 lua_pushlstring noices
@@ -223,24 +445,6 @@
 {
    <insert_a_suppression_name_here>
    Memcheck:Leak
-   match-leak-kinds: reachable
-   fun:malloc
-   fun:strdup
-   fun:_dl_load_cache_lookup
-   fun:_dl_map_object
-   fun:openaux
-   fun:_dl_catch_exception
-   fun:_dl_map_object_deps
-   fun:dl_open_worker
-   fun:_dl_catch_exception
-   fun:_dl_open
-   fun:dlopen_doit
-   fun:_dl_catch_exception
-}
-
-{
-   <insert_a_suppression_name_here>
-   Memcheck:Leak
    match-leak-kinds: indirect
    fun:malloc
    fun:CRYPTO_zalloc
@@ -254,21 +458,6 @@
    fun:malloc
    fun:CRYPTO_zalloc
    fun:RSA_new_method
-}
-
-{
-   <insert_a_suppression_name_here>
-   Memcheck:Leak
-   match-leak-kinds: reachable
-   fun:calloc
-   fun:_dl_check_map_versions
-   fun:dl_open_worker
-   fun:_dl_catch_exception
-   fun:_dl_open
-   fun:dlopen_doit
-   fun:_dl_catch_exception
-   fun:_dl_catch_error
-   fun:_dlerror_run
 }
 
 {
@@ -293,42 +482,6 @@
    fun:ASN1_STRING_dup
    fun:ASN1_TYPE_set1
    obj:*
-}
-
-{
-   dlopen_doit
-   Memcheck:Leak
-   match-leak-kinds: reachable
-   fun:malloc
-   fun:_dl_new_object
-   fun:_dl_map_object_from_fd
-   fun:_dl_map_object
-   fun:openaux
-   fun:_dl_catch_exception
-   fun:_dl_map_object_deps
-   fun:dl_open_worker
-   fun:_dl_catch_exception
-   fun:_dl_open
-   fun:dlopen_doit
-   fun:_dl_catch_exception
-}
-
-{
-   dlopen_doit
-   Memcheck:Leak
-   match-leak-kinds: reachable
-   fun:calloc
-   fun:_dl_new_object
-   fun:_dl_map_object_from_fd
-   fun:_dl_map_object
-   fun:openaux
-   fun:_dl_catch_exception
-   fun:_dl_map_object_deps
-   fun:dl_open_worker
-   fun:_dl_catch_exception
-   fun:_dl_open
-   fun:dlopen_doit
-   fun:_dl_catch_exception
 }
 
 {
@@ -375,134 +528,6 @@
    obj:*
 }
 
-# dlopen, dlclose
-{
-   <_dl_open>
-   Memcheck:Leak
-   match-leak-kinds: reachable
-   fun:malloc
-   fun:malloc
-   fun:strdup
-   fun:_dl_map_object
-   fun:dl_open_worker_begin
-   fun:_dl_catch_exception
-   fun:dl_open_worker
-   fun:_dl_catch_exception
-   fun:_dl_open
-}
-
-{
-   <insert_a_suppression_name_here>
-   Memcheck:Leak
-   match-leak-kinds: reachable
-   fun:malloc
-   fun:malloc
-   fun:strdup
-   fun:_dl_load_cache_lookup
-   fun:_dl_map_object
-   fun:openaux
-   fun:_dl_catch_exception
-   fun:_dl_map_object_deps
-   fun:dl_open_worker_begin
-   fun:_dl_catch_exception
-   fun:dl_open_worker
-   fun:_dl_catch_exception
-   fun:_dl_open
-}
-
-{
-   <insert_a_suppression_name_here>
-   Memcheck:Leak
-   match-leak-kinds: reachable
-   fun:malloc
-   fun:malloc
-   fun:_dl_new_object
-   fun:_dl_map_object_from_fd
-   fun:_dl_map_object
-   fun:openaux
-   fun:_dl_catch_exception
-   fun:_dl_map_object_deps
-   fun:dl_open_worker_begin
-   fun:_dl_catch_exception
-   fun:dl_open_worker
-   fun:_dl_catch_exception
-   fun:_dl_open
-}
-
-{
-   <_dl_open>
-   Memcheck:Leak
-   match-leak-kinds: reachable
-   fun:malloc
-   fun:malloc
-   fun:_dl_new_object
-   fun:_dl_map_object_from_fd
-   fun:_dl_map_object
-   fun:dl_open_worker_begin
-   fun:_dl_catch_exception
-   fun:dl_open_worker
-   fun:_dl_catch_exception
-   fun:_dl_open
-}
-
-{
-   <insert_a_suppression_name_here>
-   Memcheck:Leak
-   match-leak-kinds: reachable
-   fun:calloc
-   fun:calloc
-   fun:_dl_new_object
-   fun:_dl_map_object_from_fd
-   fun:_dl_map_object
-   fun:dl_open_worker_begin
-   fun:_dl_catch_exception
-   fun:dl_open_worker
-   fun:_dl_catch_exception
-   fun:_dl_open
-}
-
-{
-   <_dl_open>
-   Memcheck:Leak
-   match-leak-kinds: reachable
-   fun:calloc
-   fun:calloc
-   fun:_dl_check_map_versions
-   fun:dl_open_worker_begin
-   fun:_dl_catch_exception
-   fun:dl_open_worker
-   fun:_dl_catch_exception
-   fun:_dl_open
-}
-
-{
-   <insert_a_suppression_name_here>
-   Memcheck:Leak
-   match-leak-kinds: reachable
-   fun:calloc
-   fun:calloc
-   fun:_dl_new_object
-   fun:_dl_map_object_from_fd
-   fun:_dl_map_object
-   fun:openaux
-   fun:_dl_catch_exception
-   fun:_dl_map_object_deps
-   fun:dl_open_worker_begin
-   fun:_dl_catch_exception
-   fun:dl_open_worker
-   fun:_dl_catch_exception
-   fun:_dl_open
-}
-
-{
-   <insert_a_suppression_name_here>
-   Memcheck:Leak
-   match-leak-kinds: reachable
-   fun:malloc
-   fun:malloc
-   fun:_dl_close_worker*
-}
-
 {
    <BIO_meth_new>
    Memcheck:Leak
@@ -540,6 +565,8 @@
    fun:CRYPTO_strdup
    fun:BIO_meth_new
 }
+
+# OpenSSL-3
 
 # BN_GENCB_call
 {
@@ -553,562 +580,15 @@
 {
    <OPENSSL_init_ssl>
    Memcheck:Leak
-   match-leak-kinds: reachable
-   fun:malloc
-   fun:CRYPTO_zalloc
-   obj:*/libcrypto.so.3
-   fun:EVP_CIPHER_meth_new
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   fun:ENGINE_register_ciphers
-   fun:ENGINE_register_complete
-   fun:ENGINE_register_all_complete
-   fun:OPENSSL_init_crypto
-   fun:OPENSSL_init_ssl
-}
-
-{
-   <EVP_KEYMGMT_do_all_provided>
-   Memcheck:Leak
-   match-leak-kinds: indirect
-   fun:malloc
-   fun:CRYPTO_malloc
-   fun:CRYPTO_strndup
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   fun:EVP_KEYMGMT_do_all_provided
-}
-
-{
-   <EVP_KEYMGMT_do_all_provided>
-   Memcheck:Leak
-   match-leak-kinds: indirect
-   fun:malloc
-   fun:CRYPTO_malloc
-   fun:CRYPTO_zalloc
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   fun:EVP_KEYMGMT_do_all_provided
-}
-
-{
-   <EVP_KEYMGMT_do_all_provided>
-   Memcheck:Leak
-   match-leak-kinds: indirect
-   fun:malloc
-   fun:CRYPTO_strndup
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   fun:EVP_KEYMGMT_do_all_provided
-}
-
-{
-   <OSSL_DECODER_do_all_provided>
-   Memcheck:Leak
-   match-leak-kinds: indirect
-   fun:realloc
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   fun:OSSL_DECODER_do_all_provided
-}
-
-{
-   <EVP_KEYMGMT_do_all_provided>
-   Memcheck:Leak
-   match-leak-kinds: indirect
-   fun:malloc
-   fun:CRYPTO_zalloc
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   fun:EVP_KEYMGMT_do_all_provided
-}
-
-{
-   <EVP_KDF_fetch>
-   Memcheck:Leak
-   match-leak-kinds: all
-   fun:malloc
-   fun:CRYPTO_malloc
-   fun:CRYPTO_strndup
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   fun:EVP_KDF_fetch
-}
-
-{
-   <EVP_KDF_fetch>
-   Memcheck:Leak
    match-leak-kinds: definite
    fun:malloc
-   fun:CRYPTO_malloc
-   fun:CRYPTO_zalloc
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   fun:EVP_KDF_fetch
-}
-
-{
-   <EVP_KDF_fetch>
-   Memcheck:Leak
-   match-leak-kinds: indirect
-   fun:malloc
-   fun:CRYPTO_strndup
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   fun:EVP_KDF_fetch
-}
-
-
-{
-   <EVP_KDF_fetch>
-   Memcheck:Leak
-   match-leak-kinds: definite
-   fun:malloc
-   fun:CRYPTO_zalloc
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   fun:EVP_KDF_fetch
-}
-
-{
-   <EVP_RAND_fetch>
-   Memcheck:Leak
-   match-leak-kinds: indirect
-   fun:malloc
-   fun:CRYPTO_zalloc
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   fun:EVP_RAND_fetch
-}
-
-{
-   <EVP_RAND_fetch>
-   Memcheck:Leak
-   match-leak-kinds: indirect
-   fun:malloc
-   fun:CRYPTO_malloc
-   fun:CRYPTO_zalloc
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   fun:EVP_RAND_fetch
-}
-
-{
-   <EVP_RAND_fetch>
-   Memcheck:Leak
-   match-leak-kinds: indirect
-   fun:malloc
-   fun:CRYPTO_strdup
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   fun:EVP_RAND_fetch
-}
-
-{
-   <EVP_RAND_fetch>
-   Memcheck:Leak
-   match-leak-kinds: indirect
-   fun:malloc
-   fun:CRYPTO_malloc
-   fun:CRYPTO_zalloc
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   fun:EVP_RAND_fetch
-}
-
-
-{
-   <EVP_RAND_fetch>
-   Memcheck:Leak
-   match-leak-kinds: indirect
-   fun:malloc
-   fun:CRYPTO_zalloc
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   fun:EVP_RAND_fetch
-}
-
-{
-   <OSSL_PROVIDER_try_load_ex>
-   Memcheck:Leak
-   match-leak-kinds: indirect
-   fun:malloc
-   fun:CRYPTO_malloc
-   fun:CRYPTO_strdup
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   fun:OSSL_PROVIDER_try_load_ex
-}
-
-{
-   <OPENSSL_sk_deep_copy>
-   Memcheck:Leak
-   match-leak-kinds: indirect
-   fun:malloc
-   fun:CRYPTO_malloc
-   fun:OPENSSL_sk_deep_copy
-}
-
-{
-    <OPENSSL_sk_deep_copy>
-    Memcheck:Leak
-    match-leak-kinds: indirect
-    fun:malloc
-    fun:OPENSSL_sk_deep_copy
-}
-
-{
-   <OSSL_PROVIDER_try_load_ex>
-   Memcheck:Leak
-   match-leak-kinds: indirect
-   fun:malloc
-   fun:CRYPTO_malloc
-   fun:CRYPTO_zalloc
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   fun:OSSL_PROVIDER_try_load_ex
-}
-
-{
-   <CRYPTO_THREAD_lock_new>
-   Memcheck:Leak
-   match-leak-kinds: indirect
-   fun:malloc
-   fun:CRYPTO_malloc
-   fun:CRYPTO_zalloc
-   fun:CRYPTO_THREAD_lock_new
-}
-
-{
-   <insert_a_suppression_name_here>
-   Memcheck:Leak
-   match-leak-kinds: indirect
-   fun:malloc
-   fun:CRYPTO_malloc
-   fun:CRYPTO_zalloc
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   fun:OSSL_PROVIDER_try_load_ex
-}
-
-{
-   <insert_a_suppression_name_here>
-   Memcheck:Leak
-   match-leak-kinds: indirect
-   fun:malloc
-   fun:CRYPTO_malloc
-   fun:CRYPTO_zalloc
-   fun:BN_new
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   fun:ASN1_item_d2i_ex
-}
-
-{
-   <insert_a_suppression_name_here>
-   Memcheck:Leak
-   match-leak-kinds: indirect
-   fun:malloc
-   fun:CRYPTO_malloc
-   fun:CRYPTO_zalloc
-   fun:CRYPTO_THREAD_lock_new
-}
-
-{
-   <insert_a_suppression_name_here>
-   Memcheck:Leak
-   match-leak-kinds: indirect
-   fun:malloc
-   fun:CRYPTO_malloc
-   fun:CRYPTO_zalloc
-   fun:CRYPTO_THREAD_lock_new
-}
-
-{
-   <insert_a_suppression_name_here>
-   Memcheck:Leak
-   match-leak-kinds: indirect
-   fun:malloc
-   fun:CRYPTO_malloc
    fun:CRYPTO_zalloc
    fun:ENGINE_new
    obj:*/libcrypto.so.3
-   obj:*/libc.so.6
-   fun:pthread_once
+   obj:*/libcrypto.so.3
+   fun:__pthread_once_slow
    fun:CRYPTO_THREAD_run_once
    fun:OPENSSL_init_crypto
-}
-
-{
-   <insert_a_suppression_name_here>
-   Memcheck:Leak
-   match-leak-kinds: reachable
-   fun:malloc
-   fun:CRYPTO_malloc
-   fun:CRYPTO_zalloc
-   fun:EVP_CIPHER_meth_new
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   fun:ENGINE_register_ciphers
-   fun:ENGINE_register_complete
-   fun:ENGINE_register_all_complete
-   fun:OPENSSL_init_crypto
-}
-
-{
-   <insert_a_suppression_name_here>
-   Memcheck:Leak
-   match-leak-kinds: reachable
-   fun:malloc
-   fun:CRYPTO_malloc
-   fun:CRYPTO_zalloc
-   fun:EVP_CIPHER_meth_new
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   fun:ENGINE_register_ciphers
-   fun:ENGINE_register_complete
-   fun:ENGINE_register_all_complete
-   fun:OPENSSL_init_crypto
-}
-
-{
-   <insert_a_suppression_name_here>
-   Memcheck:Leak
-   match-leak-kinds: indirect
-   fun:malloc
-   fun:CRYPTO_malloc
-   fun:CRYPTO_zalloc
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   fun:ASN1_item_d2i_ex
-}
-
-{
-   <insert_a_suppression_name_here>
-   Memcheck:Leak
-   match-leak-kinds: indirect
-   fun:malloc
-   fun:CRYPTO_malloc
-   fun:CRYPTO_zalloc
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   fun:ASN1_item_d2i_ex
-}
-
-
-{
-   <insert_a_suppression_name_here>
-   Memcheck:Leak
-   match-leak-kinds: definite
-   fun:malloc
-   fun:CRYPTO_malloc
-   fun:CRYPTO_zalloc
-   fun:EVP_PKEY_new
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   fun:OSSL_DECODER_from_bio
-}
-# CI
-{
-    <insert_a_suppression_name_here>
-    Memcheck:Leak
-    match-leak-kinds: indirect
-    fun:malloc
-    fun:CRYPTO_strdup
-    obj:*/libcrypto.so.*
-    obj:*/libcrypto.so.*
-    fun:OSSL_PROVIDER_try_load
-}
-
-{
-    <insert_a_suppression_name_here>
-    Memcheck:Leak
-    match-leak-kinds: indirect
-    fun:malloc
-    fun:CRYPTO_zalloc
-    obj:*/libcrypto.so.*
-    obj:*/libcrypto.so.*
-    obj:*/libcrypto.so.*
-    fun:OSSL_PROVIDER_try_load
-}
-
-{
-    <insert_a_suppression_name_here>
-    Memcheck:Leak
-    match-leak-kinds: reachable
-    fun:malloc
-    fun:CRYPTO_zalloc
-    fun:CRYPTO_THREAD_lock_new
-}
-
-
-{
-   <openaux>
-   Memcheck:Leak
-   match-leak-kinds: reachable
-   fun:malloc
-   fun:malloc
-   fun:decompose_rpath
-   fun:_dl_map_object
-   fun:openaux
-}
-
-{
-   <openaux>
-   Memcheck:Leak
-   match-leak-kinds: reachable
-   fun:malloc
-   fun:malloc
-   fun:open_path
-   fun:_dl_map_object
-   fun:openaux
-}
-
-{
-   <__register_frame>
-   Memcheck:Leak
-   match-leak-kinds: reachable
-   fun:malloc
-   fun:__register_frame
-}
-
-{
-   <resolve_map>
-   Memcheck:Leak
-   match-leak-kinds: reachable
-   fun:malloc
-   fun:malloc
-   fun:add_dependency
-   fun:_dl_lookup_symbol_x
-   fun:resolve_map
-}
-
-{
-   <btree_allocate_node>
-   Memcheck:Leak
-   match-leak-kinds: reachable
-   fun:malloc
-   fun:btree_allocate_node
-   fun:btree_insert.isra.0
-}
-
-{
-   <resolve_map>
-   Memcheck:Leak
-   match-leak-kinds: reachable
-   fun:calloc
-   fun:calloc
-   fun:do_lookup_unique
-   fun:do_lookup_x
-   fun:_dl_lookup_symbol_x
-   fun:resolve_map
-}
-
-{
-   <_GLOBAL__sub_I_eh_alloc.cc>
-   Memcheck:Leak
-   match-leak-kinds: reachable
-   fun:malloc
-   fun:pool
-   fun:__static_initialization_and_destruction_0
-   fun:_GLOBAL__sub_I_eh_alloc.cc
-   fun:call_init
-   fun:call_init
-   fun:_dl_init
+   fun:OPENSSL_init_ssl
 }
 

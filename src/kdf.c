@@ -38,7 +38,7 @@ get_kdf(lua_State *L, int idx)
     if (auxiliar_getclassudata(L, "openssl.kdf", idx)) 
     {
       kdf = CHECK_OBJECT(idx, EVP_KDF, "openssl.kdf");
-      if (kdf == NULL) {
+      if (kdf) {
         EVP_KDF_up_ref(kdf);
       }
     }
@@ -106,7 +106,6 @@ static int
 openssl_kdf_free(lua_State *L)
 {
   EVP_KDF *kdf = CHECK_OBJECT(1, EVP_KDF, "openssl.kdf");
-  printf("%s(%p)\n", __FUNCTION__, kdf);
   EVP_KDF_free(kdf);
 
   return 0;

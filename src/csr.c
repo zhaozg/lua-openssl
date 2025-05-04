@@ -421,6 +421,7 @@ static LUA_FUNCTION(openssl_csr_sign)
     int            inl;
     unsigned char *tosign = NULL;
     luaL_argcheck(L, pubkey != NULL, 1, "has not set public key!!!");
+    EVP_PKEY_free(pubkey);
 
     inl = i2d_re_X509_REQ_tbs(csr, &tosign);
     if (inl > 0 && tosign) {
