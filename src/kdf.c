@@ -35,8 +35,13 @@ get_kdf(lua_State *L, int idx)
       kdf = EVP_get_digestbyobj(CHECK_OBJECT(idx, ASN1_OBJECT, "openssl.asn1_object"));
     else
 #endif
-    if (auxiliar_getclassudata(L, "openssl.kdf", idx))
+    if (auxiliar_getclassudata(L, "openssl.kdf", idx)) 
+    {
       kdf = CHECK_OBJECT(idx, EVP_KDF, "openssl.kdf");
+      if (kdf == NULL) {
+        EVP_KDF_up_ref(kdf);
+      }
+    }
     break;
   }
 
@@ -61,6 +66,7 @@ kdf_iterator_cb(EVP_KDF *kdf, void *data)
   int        typ = lua_rawgetp(L, LUA_REGISTRYINDEX, (void *)kdf_iterator_cb);
   assert(typ == LUA_TFUNCTION);
 
+  EVP_KDF_up_ref(kdf);
   PUSH_OBJECT(kdf, "openssl.kdf");
   if (lua_pcall(L, 1, 1, 0) != 0) luaL_error(L, lua_tostring(L, -1));
 }
@@ -94,6 +100,16 @@ openssl_kdf_fetch(lua_State *L)
   PUSH_OBJECT(kdf, "openssl.kdf");
 
   return 1;
+}
+
+static int
+openssl_kdf_free(lua_State *L)
+{
+  EVP_KDF *kdf = CHECK_OBJECT(1, EVP_KDF, "openssl.kdf");
+  printf("%s(%p)\n", __FUNCTION__, kdf);
+  EVP_KDF_free(kdf);
+
+  return 0;
 }
 #endif
 
@@ -136,6 +152,7 @@ openssl_kdf_derive(lua_State *L)
   } else {
     ret = openssl_pushresult(L, ret);
   }
+  EVP_KDF_free(kdf);
   EVP_KDF_CTX_free(ctx);
   OPENSSL_free(params);
   return ret;
@@ -355,6 +372,7 @@ openssl_kdf_ctx_new(lua_State *L)
     PUSH_OBJECT(c, "openssl.kdf_ctx");
   else
     ret = openssl_pushresult(L, 0);
+  EVP_KDF_free(type);
   return ret;
 }
 
@@ -559,6 +577,7 @@ static luaL_Reg kdf_funs[] = {
   { "get_params",          openssl_kdf_get_params          },
 
   { "__tostring",          auxiliar_tostring               },
+  { "__gc",                openssl_kdf_free                },
 
   { NULL,                  NULL                            }
 };

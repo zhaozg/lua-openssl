@@ -489,10 +489,7 @@ openssl_initialize()
   if (++_guard > 0) return;
 #endif
 
-#if (OPENSSL_VERSION_NUMBER < 0x30000000L || defined(LIBRESSL_VERSION_NUMBER))
-  /* Automatically do thread and resources cleanup */
   atexit(openssl_finalize);
-#endif
 
 #if defined(OPENSSL_THREADS)
   CRYPTO_thread_setup();
