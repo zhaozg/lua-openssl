@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.9)
+cmake_minimum_required(VERSION 3.10)
 project(lua-openssl C)
 
 set(CMAKE_MACOSX_RPATH 1)
@@ -94,11 +94,12 @@ target_link_libraries(lua-openssl PUBLIC
 if(BUILD_LINK_LUA_LIBRARIES)
     target_link_libraries(lua-openssl PUBLIC ${LUA_LIBRARIES})
     if(UNIX)
-      target_link_options(lua-openssl PUBLIC -Wl,--no-undefined)
+        target_link_options(lua-openssl PUBLIC -Wl,--no-undefined)
     endif()
 else()
     if(APPLE)
-        target_link_options(lua-openssl PUBLIC -bundle -undefined dynamic_lookup)
+        target_link_options(lua-openssl PUBLIC
+                                        -bundle -undefined dynamic_lookup)
     endif()
 endif()
 
