@@ -296,8 +296,6 @@ openssl_ocsp_request_add_ext(lua_State *L)
   return openssl_pushresult(L, ret);
 }
 
-#if OPENSSL_VERSION_NUMBER > 0x10100000L && !defined(LIBRESSL_VERSION_NUMBER)
-
 #if OPENSSL_VERSION_NUMBER < 0x30000000L
 #undef CONSTIFY_OPENSSL
 #define CONSTIFY_OPENSSL
@@ -315,7 +313,6 @@ openssl_ocsp_request_add_ext(lua_State *L)
 #define PEM_write_bio_OCSP_RESPONSE(bp,o) PEM_ASN1_write_bio(            \
   (int (*)(CONSTIFY_OPENSSL void *, unsigned char **))i2d_OCSP_RESPONSE, \
   PEM_STRING_OCSP_RESPONSE, bp,(char *)(o), NULL,NULL,0,NULL,NULL)
-#endif
 
 /***
 export a ocsp_request object to encoded data

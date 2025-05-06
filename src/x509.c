@@ -20,7 +20,7 @@ x509 modules to create, parse, process X509 objects, sign CSR.
 #define X509_set1_notAfter X509_set_notAfter
 #endif
 
-static int openssl_push_purpose(lua_State*L, const X509_PURPOSE* purpose)
+static int openssl_push_purpose(lua_State*L, CONSTIFY_OPENSSL X509_PURPOSE* purpose)
 {
   lua_newtable(L);
 
@@ -65,7 +65,7 @@ static int openssl_x509_purpose(lua_State*L)
     lua_newtable(L);
     for (i = 0; i < count; i++)
     {
-      const X509_PURPOSE* purpose = X509_PURPOSE_get0(i);
+      CONSTIFY_OPENSSL X509_PURPOSE* purpose = X509_PURPOSE_get0(i);
       openssl_push_purpose(L, purpose);
       lua_rawseti(L, -2, i + 1);
     }
@@ -76,7 +76,7 @@ static int openssl_x509_purpose(lua_State*L)
     int n = lua_tointeger(L, 1);
     if (n >= X509_PURPOSE_MIN && n <= X509_PURPOSE_MAX)
     {
-      const X509_PURPOSE* purpose = X509_PURPOSE_get0(n - X509_PURPOSE_MIN);
+      CONSTIFY_OPENSSL X509_PURPOSE* purpose = X509_PURPOSE_get0(n - X509_PURPOSE_MIN);
       openssl_push_purpose(L, purpose);
       ret = 1;
     }
@@ -87,7 +87,7 @@ static int openssl_x509_purpose(lua_State*L)
     int idx = X509_PURPOSE_get_by_sname(name);
     if (idx >= 0)
     {
-      const X509_PURPOSE* purpose = X509_PURPOSE_get0(idx);
+      CONSTIFY_OPENSSL X509_PURPOSE* purpose = X509_PURPOSE_get0(idx);
       openssl_push_purpose(L, purpose);
       ret = 1;
     }
@@ -600,7 +600,7 @@ static LUA_FUNCTION(openssl_x509_parse)
   lua_newtable(L);
   for (i = 0; i < X509_PURPOSE_get_count(); i++)
   {
-    const X509_PURPOSE *purp = X509_PURPOSE_get0(i);
+    CONSTIFY_OPENSSL X509_PURPOSE *purp = X509_PURPOSE_get0(i);
     int id = X509_PURPOSE_get_id(purp);
     const char * pname = X509_PURPOSE_get0_sname(purp);
 
@@ -739,7 +739,7 @@ static LUA_FUNCTION(openssl_x509_check)
       int purpose_id = X509_PURPOSE_get_by_sname((char*)luaL_optstring(L, 4, "any"));
       if (purpose_id >= 0)
       {
-        const X509_PURPOSE* ppurpose = X509_PURPOSE_get0(purpose_id);
+        CONSTIFY_OPENSSL X509_PURPOSE* ppurpose = X509_PURPOSE_get0(purpose_id);
         if (ppurpose)
           purpose = X509_PURPOSE_get_id(ppurpose);
       }
