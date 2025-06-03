@@ -353,6 +353,7 @@ static LUA_FUNCTION(openssl_bio_read)
   char *buf = NULL;
   int   ret = 1;
 
+  luaL_argcheck(L, bio, 1, "Already closed");
   len = len > 0 ? len : 4096;
   buf = malloc(len);
   if (!buf) {
@@ -390,6 +391,7 @@ static LUA_FUNCTION(openssl_bio_gets)
   int   ret = 1;
   len = len > 0 ? len : 1024;
 
+  luaL_argcheck(L, bio, 1, "Already closed");
   buf = malloc(len);
   len = BIO_gets(bio, buf, len);
   if (len > 0) {
@@ -421,6 +423,7 @@ static LUA_FUNCTION(openssl_bio_write)
   int         ret = 1;
   int         len = luaL_optint(L, 3, size);
 
+  luaL_argcheck(L, bio, 1, "Already closed");
   len = BIO_write(bio, d, len);
   if (len > 0) {
     lua_pushinteger(L, len);
@@ -449,6 +452,7 @@ static LUA_FUNCTION(openssl_bio_puts)
   int         ret = 1;
   int         len = BIO_puts(bio, s);
 
+  luaL_argcheck(L, bio, 1, "Already closed");
   if (len > 0) {
     lua_pushinteger(L, len);
     ret = 1;
@@ -470,8 +474,11 @@ flush buffer of bio object
 */
 static LUA_FUNCTION(openssl_bio_flush)
 {
+  int  ret;
   BIO *bio = CHECK_OBJECT(1, BIO, "openssl.bio");
-  int  ret = BIO_flush(bio);
+  luaL_argcheck(L, bio, 1, "Already closed");
+
+  ret = BIO_flush(bio);
   lua_pushinteger(L, ret);
   return 1;
 }
@@ -501,6 +508,8 @@ get type of bio
 static LUA_FUNCTION(openssl_bio_type)
 {
   BIO *bio = CHECK_OBJECT(1, BIO, "openssl.bio");
+  luaL_argcheck(L, bio, 1, "Already closed");
+
   lua_pushstring(L, BIO_method_name(bio));
   return 1;
 }
@@ -515,14 +524,20 @@ static LUA_FUNCTION(openssl_bio_nbio)
 {
   BIO *bio = CHECK_OBJECT(1, BIO, "openssl.bio");
   int  nbio = lua_toboolean(L, 2);
-  int  ret = BIO_set_nbio(bio, nbio);
+  int  ret;
+
+  luaL_argcheck(L, bio, 1, "Already closed");
+  ret = BIO_set_nbio(bio, nbio);
   return openssl_pushresult(L, ret);
 }
 
 static LUA_FUNCTION(openssl_bio_retry)
 {
   BIO *bio = CHECK_OBJECT(1, BIO, "openssl.bio");
-  int  retry = BIO_should_retry(bio);
+  int  retry;
+  luaL_argcheck(L, bio, 1, "Already closed");
+
+  retry = BIO_should_retry(bio);
   if (retry) {
     lua_pushboolean(L, 1);
     lua_pushboolean(L, BIO_should_read(bio));
@@ -541,6 +556,8 @@ reset bio
 static LUA_FUNCTION(openssl_bio_reset)
 {
   BIO *bio = CHECK_OBJECT(1, BIO, "openssl.bio");
+  luaL_argcheck(L, bio, 1, "Already closed");
+
   (void)BIO_reset(bio);
   return 0;
 }
@@ -556,6 +573,9 @@ static LUA_FUNCTION(openssl_bio_push)
 {
   BIO *bio = CHECK_OBJECT(1, BIO, "openssl.bio");
   BIO *append = CHECK_OBJECT(2, BIO, "openssl.bio");
+  luaL_argcheck(L, bio, 1, "Already closed");
+  luaL_argcheck(L, append, 2, "Already closed");
+
   bio = BIO_push(bio, append);
   if (bio) {
     lua_pushvalue(L, 1);
@@ -572,7 +592,10 @@ remove bio from chain
 static LUA_FUNCTION(openssl_bio_pop)
 {
   BIO *bio = CHECK_OBJECT(1, BIO, "openssl.bio");
-  BIO *end = BIO_pop(bio);
+  BIO *end;
+  luaL_argcheck(L, bio, 1, "Already closed");
+
+  end = BIO_pop(bio);
   if (end == NULL) {
     lua_pushnil(L);
   } else {
@@ -592,7 +615,10 @@ static LUA_FUNCTION(openssl_bio_get_mem)
 {
   BUF_MEM *mem;
   BIO     *bio = CHECK_OBJECT(1, BIO, "openssl.bio");
-  int      ret = BIO_get_mem_ptr(bio, &mem);
+  int      ret;
+
+  luaL_argcheck(L, bio, 1, "Already closed");
+  ret = BIO_get_mem_ptr(bio, &mem);
   if (ret == 1) {
     lua_pushlstring(L, mem->data, mem->length);
   }
@@ -601,9 +627,11 @@ static LUA_FUNCTION(openssl_bio_get_mem)
 
 static LUA_FUNCTION(openssl_bio_get_md)
 {
+  int  ret = 0;
   BIO *bio = CHECK_OBJECT(1, BIO, "openssl.bio");
+
+  luaL_argcheck(L, bio, 1, "Already closed");
   bio = BIO_find_type(bio, BIO_TYPE_MD);
-  int ret = 0;
 
   if (bio) {
     EVP_MD *md;
@@ -619,6 +647,8 @@ static LUA_FUNCTION(openssl_bio_get_md)
 static LUA_FUNCTION(openssl_bio_next)
 {
   BIO *bio = CHECK_OBJECT(1, BIO, "openssl.bio");
+
+  luaL_argcheck(L, bio, 1, "Already closed");
   bio = BIO_next(bio);
   if (bio) {
     PUSH_OBJECT(bio, "openssl.bio");
@@ -630,6 +660,8 @@ static LUA_FUNCTION(openssl_bio_next)
 static LUA_FUNCTION(openssl_bio_cipher_status)
 {
   BIO *bio = CHECK_OBJECT(1, BIO, "openssl.bio");
+
+  luaL_argcheck(L, bio, 1, "Already closed");
   lua_pushboolean(L, BIO_get_cipher_status(bio));
   return 1;
 }
@@ -644,9 +676,12 @@ setup ready and accept client connect
 */
 static LUA_FUNCTION(openssl_bio_accept)
 {
+  int  ret;
   BIO *bio = CHECK_OBJECT(1, BIO, "openssl.bio");
   int  first = lua_isnone(L, 2) ? 0 : lua_toboolean(L, 2);
-  int  ret = BIO_do_accept(bio);
+
+  luaL_argcheck(L, bio, 1, "Already closed");
+  ret = BIO_do_accept(bio);
   if (ret == 1) {
     if (!first) {
       BIO *nb = BIO_pop(bio);
@@ -666,6 +701,7 @@ static LUA_FUNCTION(openssl_bio_shutdown)
 {
   BIO *bio = CHECK_OBJECT(1, BIO, "openssl.bio");
 
+  luaL_argcheck(L, bio, 1, "Already closed");
   luaL_argcheck(L,
                 BIO_method_type(bio) & (BIO_TYPE_SSL | BIO_TYPE_SOCKET | BIO_TYPE_FD),
                 1,
@@ -674,7 +710,7 @@ static LUA_FUNCTION(openssl_bio_shutdown)
   if (BIO_method_type(bio) & BIO_TYPE_SSL) {
     BIO_ssl_shutdown(bio);
   } else if (BIO_method_type(bio) & (BIO_TYPE_SOCKET | BIO_TYPE_FD)) {
-    BIO_shutdown_wr(bio);
+    (void)BIO_shutdown_wr(bio);
   }
 
   lua_pushvalue(L, 1);
@@ -690,7 +726,10 @@ static LUA_FUNCTION(openssl_bio_get_ssl)
 {
   BIO *bio = CHECK_OBJECT(1, BIO, "openssl.bio");
   SSL *ssl = NULL;
-  int  ret = BIO_get_ssl(bio, &ssl);
+  int  ret;
+
+  luaL_argcheck(L, bio, 1, "Already closed");
+  ret = BIO_get_ssl(bio, &ssl);
   if (ret == 1) {
     PUSH_OBJECT(ssl, "openssl.ssl");
     SSL_up_ref(ssl);
@@ -707,7 +746,10 @@ do TCP or SSL connect
 static LUA_FUNCTION(openssl_bio_connect)
 {
   BIO *bio = CHECK_OBJECT(1, BIO, "openssl.bio");
-  int  ret = BIO_do_connect(bio);
+  int  ret;
+
+  luaL_argcheck(L, bio, 1, "Already closed");
+  ret = BIO_do_connect(bio);
   return openssl_pushresult(L, ret);
 }
 
@@ -719,7 +761,10 @@ do handshake of TCP or SSL connection
 static LUA_FUNCTION(openssl_bio_handshake)
 {
   BIO *bio = CHECK_OBJECT(1, BIO, "openssl.bio");
-  int  ret = BIO_do_handshake(bio);
+  int  ret;
+
+  luaL_argcheck(L, bio, 1, "Already closed");
+  ret = BIO_do_handshake(bio);
   return openssl_pushresult(L, ret);
 }
 
@@ -737,12 +782,16 @@ set fd of bio object
 static LUA_FUNCTION(openssl_bio_fd)
 {
   BIO *bio = CHECK_OBJECT(1, BIO, "openssl.bio");
-  int  type = BIO_method_type(bio);
+  int  type;
+
+  luaL_argcheck(L, bio, 1, "Already closed");
+  type = BIO_method_type(bio);
   luaL_argcheck(
     L,
     type & (BIO_TYPE_FD | BIO_TYPE_CONNECT | BIO_TYPE_ACCEPT | BIO_TYPE_DGRAM | BIO_TYPE_SOCKET),
     1,
     "not a supported BIO type");
+
   if (!lua_isnone(L, 2)) {
     int fd = luaL_checkint(L, 2);
     BIO_set_fd(bio, fd, BIO_NOCLOSE);
@@ -760,9 +809,12 @@ static LUA_FUNCTION(openssl_bio_fd)
 static LUA_FUNCTION(openssl_bio_seek)
 {
   BIO *bio = CHECK_OBJECT(1, BIO, "openssl.bio");
-  int  type = BIO_method_type(bio);
-  int  ofs, ret;
+  int  type, ofs, ret;
+
+  luaL_argcheck(L, bio, 1, "Already closed");
+  type = BIO_method_type(bio);
   luaL_argcheck(L, type & (BIO_TYPE_FD | BIO_TYPE_FILE), 1, "not a fd or file BIO type");
+
   ofs = luaL_checkint(L, 2);
   ret = BIO_seek(bio, ofs);
   if (ret < 0) return openssl_pushresult(L, ret);
@@ -773,9 +825,12 @@ static LUA_FUNCTION(openssl_bio_seek)
 static LUA_FUNCTION(openssl_bio_tell)
 {
   BIO *bio = CHECK_OBJECT(1, BIO, "openssl.bio");
-  int  type = BIO_method_type(bio);
-  int  ret;
+  int  type, ret;
+
+  luaL_argcheck(L, bio, 1, "Already closed");
+  type = BIO_method_type(bio);
   luaL_argcheck(L, type & (BIO_TYPE_FD | BIO_TYPE_FILE), 1, "not a fd or file BIO type");
+
   ret = BIO_tell(bio);
   if (ret < 0) return openssl_pushresult(L, ret);
   lua_pushinteger(L, ret);
@@ -898,10 +953,9 @@ static LUA_FUNCTION(openssl_bio_pending)
 {
   BIO *bio = CHECK_OBJECT(1, BIO, "openssl.bio");
 
-  int pending = BIO_pending(bio);
-  int wpending = BIO_wpending(bio);
-  lua_pushinteger(L, pending);
-  lua_pushinteger(L, wpending);
+  luaL_argcheck(L, bio, 1, "Already closed");
+  lua_pushinteger(L, BIO_pending(bio));
+  lua_pushinteger(L, BIO_wpending(bio));
   return 2;
 }
 
