@@ -6,23 +6,19 @@ if [ -z "$SSL" ]; then
 fi
 
 case "$SSL" in
-openssl-0.9.*)
-        SSLURL=https://www.openssl.org/source/old/0.9.x/$SSL.tar.gz
-        ;;
-openssl-1.0.0*)
-        SSLURL=https://www.openssl.org/source/old/1.0.0/$SSL.tar.gz
-        ;;
-openssl-1.0.1*)
-        SSLURL=https://www.openssl.org/source/old/1.0.1/$SSL.tar.gz
-        ;;
-openssl-1.0.2*)
-        SSLURL=https://www.openssl.org/source/old/1.0.2/$SSL.tar.gz
-        ;;
-openssl-1.1.1*)
-        SSLURL=https://www.openssl.org/source/old/1.1.1/$SSL.tar.gz
-        ;;
 openssl-*)
-        SSLURL=https://www.openssl.org/source/$SSL.tar.gz
+	# Remove prefix and suffix
+	version="${SSL#openssl-}"
+	version="${version%.tar.gz}"
+	case "$version" in
+		0.9.*|1.0.0*|1.0.1*|1.0.2*|1.1.1*)
+			converted="${version//./_}"
+			SSLURL=https://github.com/openssl/openssl/releases/download/OpenSSL_$converted/$SSL.tar.gz
+			;;
+		*)
+			SSLURL=https://github.com/openssl/openssl/releases/download/$SSL/$SSL.tar.gz
+			;;
+	esac
         ;;
 libressl-*)
         SSLURL=https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/$SSL.tar.gz
