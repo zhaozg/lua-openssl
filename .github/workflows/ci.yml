@@ -15,7 +15,7 @@ jobs:
     strategy:
       matrix:
         os: [macos-13, ubuntu-latest]
-        luarocks_version: [3.11.1]
+        luarocks_version: [3.12.1]
         lua_version: [luajit2.1, lua5.1, lua5.2, lua5.3, lua5.4]
         openssl_version: [openssl-1.0.2u, openssl-1.1.1w, openssl-3.0.16, openssl-3.5.0]
     env:
@@ -48,7 +48,7 @@ jobs:
     env:
       WITH_LUA_ENGINE: LuaJIT
       LUA: luajit2.1
-      LUAROCKS: 3.11.1
+      LUAROCKS: 3.12.0
     steps:
     - uses: actions/checkout@v4
       with:

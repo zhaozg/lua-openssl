@@ -114,5 +114,5 @@ elif [ "$LUA" == "lua5.2" ]; then
 elif [ "$LUA" == "lua5.3" ]; then
   rm -rf lua-5.3.6
 elif [ "$LUA" == "lua5.4" ]; then
-  rm -rf lua-5.4.7
+  rm -rf lua-5.4.8
 fi
