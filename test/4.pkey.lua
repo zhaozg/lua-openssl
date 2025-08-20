@@ -164,6 +164,14 @@ function testEC()
 
   local r2 = assert(pkey.new(r))
   assert(r2:is_private())
+
+  t = r:parse(true)
+  t.alg = 'ec'
+  r2 = assert(pkey.new(t))
+  assert(r2:is_private())
+  t.d = nil
+  r2 = assert(pkey.new(t))
+  assert(not r2:is_private())
 end
 
 function testDSA()

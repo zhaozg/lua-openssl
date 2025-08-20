@@ -343,11 +343,13 @@ generate a new keypair
 create a new keypair by factors of keypair or get public key only
 @function new
 @tparam table factors to create private/public key, key alg only accept accept 'rsa','dsa','dh','ec'
-and must exist</br> when arg is rsa, table may with key n,e,d,p,q,dmp1,dmq1,iqmp, both are binary
-string or openssl.bn<br> when arg is dsa, table may with key p,q,g,priv_key,pub_key, both are binary
-string or openssl.bn<br> when arg is dh, table may with key p,g,priv_key,pub_key, both are binary
-string or openssl.bn<br> when arg is ec, table may with D,X,Y,Z,both are binary string or
-openssl.bn<br>
+and must exist</br>
+when arg is rsa, table may with key n,e,d,p,q,dmp1,dmq1,iqmp, both are binary string or openssl.bn<br>
+when arg is dsa, table may with key p,q,g,priv_key,pub_key, both are binary string or openssl.bn<br>
+when arg is dh, table may with key p,g,priv_key,pub_key, both are binary string or openssl.bn<br>
+when arg is ec, table may with d,x,y,z,both are binary string or openssl.bn, and with curve_name,
+enc_flag, conv_form<br>
+
 @treturn evp_pkey object with mapping to EVP_PKEY in openssl
 @usage
  --create rsa public key
@@ -608,7 +610,15 @@ static LUA_FUNCTION(openssl_pkey_new)
       EC_GROUP *group = NULL;
 
       lua_getfield(L, -1, "ec_name");
+      if (lua_isnil(L, -1)) {
+        lua_pop(L, 1);
+        lua_getfield(L, -1, "curve_name");
+      }
       lua_getfield(L, -2, "param_enc");
+      if (lua_isnil(L, -1)) {
+        lua_pop(L, 1);
+        lua_getfield(L, -2, "enc_flag");
+      }
       lua_getfield(L, -3, "conv_form");
       group = openssl_get_ec_group(L, -3, -2, -1);
       lua_pop(L, 3);
@@ -635,7 +645,8 @@ static LUA_FUNCTION(openssl_pkey_new)
           } else
             EC_KEY_generate_key_part(ec);
 
-          if (EC_KEY_check_key(ec) == 0 || EVP_PKEY_assign_EC_KEY(pkey, ec) == 0) {
+          if ((d != NULL && EC_KEY_check_key(ec) == 0)
+            || EVP_PKEY_assign_EC_KEY(pkey, ec) == 0)  {
             EC_KEY_free(ec);
             EVP_PKEY_free(pkey);
             pkey = NULL;
