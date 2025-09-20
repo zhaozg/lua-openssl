@@ -8,9 +8,10 @@ lua-openssl toolkit - A free, MIT-licensed OpenSSL binding for Lua.
 # Index
 
 1. [Introduction](#introduction)
-2. [Documentation](#documentation)
-3. [Howto](#howto)
-4. [Examples](#example-usage)
+2. [Quick Start](#quick-start)
+3. [Documentation](#documentation)
+4. [Howto](#howto)
+5. [Examples](#example-usage)
 
 ## Introduction
 
@@ -28,12 +29,31 @@ The goal is to fully support openssl, include:
 - PKCS7/CMS.
 - SSL/TLS.
 
-This lua-openssl toolkit works with [Lua](https://www.lua.org/) 5.1/5.2/5.3/5.4
-or [luajit](http://luajit.org/) 2.0/2.1, and [OpenSSL](https://www.openssl.org/)
-above 1.0.0 or [LibreSSL](https://www.libressl.org/) v3.3.6
+## Quick Start
+
+### Dependencies
+
+- Requires [Lua](https://www.lua.org/) 5.1/5.2/5.3/5.4 or [luajit](http://luajit.org/) 2.0/2.1.
+- Requires [OpenSSL](https://www.openssl.org/) >= 1.0.0 or [LibreSSL](https://www.libressl.org/) >= v3.3.6.
+- On MacOS, you can install dependencies via Homebrew:
+  ```bash
+  brew install openssl lua
+  luarocks install openssl
+  ```
 
 It is recommended to use the most up-to-date OpenSSL version because of the
 recent security fixes.
+
+### Quick Example
+
+```lua
+local openssl = require('openssl')
+local md = openssl.digest.get('sha256')
+local hash = md:digest('hello world')
+print(openssl.hex(hash))
+```
+
+See more examples in the \"Example usage\" section below.
 
 Most of the lua-openssl functions require a key or certificate as argument, to
 make things easy to use OpenSSL.
@@ -48,7 +68,14 @@ Similarly, you can also specify a public key as a key object returned from
 
 ### lua-openssl modules
 
-digest, cipher, x509, pkcs7, cms and so on, be write as modules.
+Module overview:
+- digest: message digest algorithms (md5, sha256, etc.)
+- cipher: symmetric encryption/decryption (aes, des, etc.)
+- x509: certificate parsing and manipulation
+- pkcs7/cms: PKCS7/CMS format handling
+- bio: memory/file/network data streams
+- ssl: SSL/TLS protocol support
+- hmac: HMAC authentication
 
 ```lua
    local digest = require'openssl'.digest
@@ -57,13 +84,14 @@ digest, cipher, x509, pkcs7, cms and so on, be write as modules.
 
 digest() equals with digest.digest(), same cipher() equals with cipher.cipher().
 
-## documentation
 ## Documentation
 
 Document please see [here](http://zhaozg.github.io/lua-openssl/index.html),
 that are generate by [LDoc](https://github.com/stevedonovan/LDoc).
 
-_Notice_: Document quality is low and stale, feel free to make a PR to improve it.
+Notice: Documentation quality is low and stale, feel free to make a PR to improve it.
+
+If documentation is missing, refer to the [source code](./src) or check the Lua test scripts in the test directory.
 
 ### lua-openssl Objects
 
@@ -427,6 +455,19 @@ print('Done')
 ```
 
 For more examples, please see test lua script file.
+
+---
+
+## Contributing & Community
+
+Contributions via PR or issues are welcome.
+- Coding style: please use clang-format.
+- Unit tests: recommended [luaunit](https://github.com/bluebird75/luaunit).
+- Issue tracker: [GitHub Issues](https://github.com/zhaozg/lua-openssl/issues/)
+
+## Security Notice
+
+This project involves cryptographic algorithms and is intended for learning and research purposes only. Do not use in production for security-sensitive scenarios. Always follow OpenSSL security advisories and keep dependencies up to date.
 
 ---
 
