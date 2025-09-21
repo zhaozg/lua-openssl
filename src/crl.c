@@ -939,6 +939,11 @@ static luaL_Reg crl_funcs[] = {
   { NULL,         NULL                     }
 };
 
+/***
+get detailed information about revoked certificate entry
+@function info
+@treturn table containing revoked certificate information
+*/
 static int
 openssl_revoked_info(lua_State *L)
 {
@@ -1015,6 +1020,12 @@ ASN1_GetTimeT(const ASN1_TIME *time)
   return mktime(&t);
 }
 
+/***
+get revocation date from revoked certificate entry
+@function revocationDate
+@treturn number revocation date as Unix timestamp
+@treturn asn1_time revocation date as ASN1_TIME object
+*/
 static int
 openssl_revoked_revocationDate(lua_State *L)
 {
@@ -1025,6 +1036,12 @@ openssl_revoked_revocationDate(lua_State *L)
   return 2;
 }
 
+/***
+get serial number from revoked certificate entry
+@function serialNumber
+@treturn bn serial number as bignum
+@treturn asn1_integer serial number as ASN1_INTEGER object
+*/
 static int
 openssl_revoked_serialNumber(lua_State *L)
 {
@@ -1036,6 +1053,11 @@ openssl_revoked_serialNumber(lua_State *L)
   return 2;
 }
 
+/***
+get extensions from revoked certificate entry
+@function extensions
+@treturn table|nil array of extensions or nil if no extensions
+*/
 static int
 openssl_revoked_extensions(lua_State *L)
 {
