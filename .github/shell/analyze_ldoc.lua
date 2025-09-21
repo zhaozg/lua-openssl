@@ -6,7 +6,7 @@ analyze_ldoc.lua - LDoc Comment Analyzer for lua-openssl
 This script analyzes LDoc comments in C source files to check their validity
 and provide feedback for documentation improvement.
 
-Usage: luajit .github/shell/analyze_ldoc.lua src
+Usage: luajit .github/shell/analyze_ldoc.lua [OPTIONS] [PATH]
 
 Dependencies: lpeg, lfs
 Author: GitHub Copilot Assistant
@@ -14,6 +14,72 @@ Author: GitHub Copilot Assistant
 
 local lpeg = require("lpeg")
 local lfs = require("lfs")
+
+-- LPEG pattern utilities  
+local P, R, S, V = lpeg.P, lpeg.R, lpeg.S, lpeg.V
+local C, Cc, Ct, Cs = lpeg.C, lpeg.Cc, lpeg.Ct, lpeg.Cs
+
+-- Configuration options
+local config = {
+    verbose = false,
+    max_issues_per_file = 50,
+    show_undocumented_list = true,
+    show_issues = true
+}
+
+-- Show help information
+local function show_help()
+    print("LDoc Documentation Analyzer")
+    print("Usage: analyze_ldoc.lua [OPTIONS] [PATH]")
+    print("")
+    print("Options:")
+    print("  -h, --help           Show this help message")
+    print("  -v, --verbose        Enable verbose output")
+    print("  --max-issues=N       Set maximum issues to show per file (default: 50)")
+    print("  --no-issues          Don't show individual issues")
+    print("  --no-undocumented    Don't show undocumented function lists")
+    print("")
+    print("PATH can be a directory (will analyze all .c files) or a specific .c file")
+    print("If no PATH is provided, defaults to 'src' directory")
+    print("")
+    print("Examples:")
+    print("  luajit analyze_ldoc.lua                    # Analyze src directory")
+    print("  luajit analyze_ldoc.lua src/cipher.c       # Analyze single file")
+    print("  luajit analyze_ldoc.lua -v src            # Verbose analysis")
+    print("  luajit analyze_ldoc.lua --max-issues=10 src # Limit issues shown")
+end
+
+-- Parse command line arguments
+local function parse_args(args)
+    local path = "src"  -- Default path
+    local i = 1
+
+    while i <= #args do
+        local arg = args[i]
+        if arg == "-h" or arg == "--help" then
+            show_help()
+            os.exit(0)
+        elseif arg == "-v" or arg == "--verbose" then
+            config.verbose = true
+        elseif arg == "--no-issues" then
+            config.show_issues = false
+        elseif arg == "--no-undocumented" then
+            config.show_undocumented_list = false
+        elseif arg:match("^--max%-issues=(%d+)$") then
+            config.max_issues_per_file = tonumber(arg:match("^--max%-issues=(%d+)$"))
+        elseif not arg:match("^%-") then
+            -- This is the path argument
+            path = arg
+        else
+            print("Unknown option: " .. arg)
+            show_help()
+            os.exit(1)
+        end
+        i = i + 1
+    end
+
+    return path
+end
 
 -- ANSI color codes for better output
 local colors = {
@@ -160,6 +226,10 @@ local function analyze_file(filepath)
     
     printf(colored("cyan", "\n=== Analyzing %s ==="), filepath)
     
+    if config.verbose then
+        printf("File size: %d bytes", #content)
+    end
+    
     local file_issues = {}
     local comment_count = 0
     local function_count = 0
@@ -257,6 +327,10 @@ local function analyze_file(filepath)
     printf("Found %d function definitions", function_count)
     stats.total_functions = stats.total_functions + function_count
     
+    if config.verbose then
+        printf("Starting comment validation...")
+    end
+    
     -- Analyze each comment
     for i, comment in ipairs(comments) do
         local parsed = parse_ldoc_comment(comment.text)
@@ -314,11 +388,17 @@ local function analyze_file(filepath)
         
         if valid and #comment_issues == 0 then
             stats.valid_comments = stats.valid_comments + 1
-            printf(colored("green", "✓ Comment at line %d: Valid"), comment.line_num)
+            if config.verbose then
+                printf(colored("green", "✓ Comment at line %d: Valid"), comment.line_num)
+            end
         else
-            printf(colored("yellow", "⚠ Comment at line %d: Issues found"), comment.line_num)
+            if config.verbose then
+                printf(colored("yellow", "⚠ Comment at line %d: Issues found"), comment.line_num)
+                for _, issue in ipairs(comment_issues) do
+                    printf(colored("yellow", "  - %s"), issue)
+                end
+            end
             for _, issue in ipairs(comment_issues) do
-                printf(colored("yellow", "  - %s"), issue)
                 table.insert(file_issues, string.format("Line %d: %s", comment.line_num, issue))
             end
         end
@@ -329,7 +409,9 @@ local function analyze_file(filepath)
     -- Report undocumented functions
     local undocumented = function_count - documented_function_count
     if undocumented > 0 then
-        printf(colored("red", "⚠ %d functions are undocumented"), undocumented)
+        if config.show_undocumented_list then
+            printf(colored("red", "⚠ %d functions are undocumented"), undocumented)
+        end
         table.insert(file_issues, string.format("%d undocumented functions", undocumented))
     end
     
@@ -344,34 +426,51 @@ local function analyze_file(filepath)
 end
 
 -- Main function to analyze directory
-local function analyze_directory(dir_path)
+-- Main function to analyze path (file or directory)
+local function analyze_path(path)
     printf(colored("bold", "LDoc Comment Analyzer for lua-openssl"))
-    printf("Analyzing directory: %s\n", dir_path)
     
-    -- Check if directory exists
-    local attr = lfs.attributes(dir_path)
-    if not attr or attr.mode ~= "directory" then
-        printf(colored("red", "Error: Directory %s does not exist"), dir_path)
+    -- Check if path exists
+    local attr = lfs.attributes(path)
+    if not attr then
+        printf(colored("red", "Error: Path %s does not exist"), path)
         os.exit(1)
     end
     
-    -- Scan for C files
     local c_files = {}
-    for file in lfs.dir(dir_path) do
-        if file:match("%.c$") then
-            local filepath = dir_path .. "/" .. file
-            table.insert(c_files, filepath)
+    
+    if attr.mode == "directory" then
+        printf("Analyzing directory: %s\n", path)
+        
+        -- Scan for C files in directory
+        for file in lfs.dir(path) do
+            if file:match("%.c$") then
+                local filepath = path .. "/" .. file
+                table.insert(c_files, filepath)
+            end
         end
+        
+        table.sort(c_files)
+        
+        if #c_files == 0 then
+            printf(colored("yellow", "No C files found in directory %s"), path)
+            return
+        end
+        
+    elseif attr.mode == "file" then
+        if not path:match("%.c$") then
+            printf(colored("red", "Error: %s is not a C source file"), path)
+            os.exit(1)
+        end
+        
+        printf("Analyzing file: %s\n", path)
+        table.insert(c_files, path)
+    else
+        printf(colored("red", "Error: %s is neither a file nor a directory"), path)
+        os.exit(1)
     end
     
-    table.sort(c_files)
-    
-    if #c_files == 0 then
-        printf(colored("yellow", "No C files found in directory %s"), dir_path)
-        return
-    end
-    
-    printf("Found %d C files to analyze\n", #c_files)
+    printf("Found %d C file%s to analyze\n", #c_files, #c_files == 1 and "" or "s")
     
     -- Analyze each file
     for _, filepath in ipairs(c_files) do
@@ -396,12 +495,22 @@ local function analyze_directory(dir_path)
     printf(colored("cyan", "Comment validity rate: %.1f%%"), comment_validity)
     
     -- Report issues by priority
-    if next(stats.issues) then
+    if config.show_issues and next(stats.issues) then
         printf(colored("yellow", "\nISSUES FOUND:"))
         for filepath, issues in pairs(stats.issues) do
             printf(colored("yellow", "\n%s:"), filepath)
+            local issue_count = 0
             for _, issue in ipairs(issues) do
-                printf(colored("yellow", "  • %s"), issue)
+                if issue_count < config.max_issues_per_file then
+                    printf(colored("yellow", "  • %s"), issue)
+                    issue_count = issue_count + 1
+                else
+                    local remaining = #issues - issue_count
+                    if remaining > 0 then
+                        printf(colored("yellow", "  • ... and %d more issues"), remaining)
+                    end
+                    break
+                end
             end
         end
     end
@@ -420,9 +529,14 @@ local function analyze_directory(dir_path)
     -- Identify files mentioned in TODO.md as needing attention
     local priority_files = {"cipher.c", "digest.c", "kdf.c", "crl.c"}
     for _, file in ipairs(priority_files) do
-        local filepath = dir_path .. "/" .. file
-        if stats.issues[filepath] then
-            printf(colored("red", "• High priority: Fix documentation in %s (mentioned in TODO.md)"), file)
+        -- Check if any analyzed file contains this priority file name
+        local found = false
+        for filepath, _ in pairs(stats.issues) do
+            if filepath:match(file .. "$") then
+                printf(colored("red", "• High priority: Fix documentation in %s (mentioned in TODO.md)"), file)
+                found = true
+                break
+            end
         end
     end
     
@@ -443,12 +557,6 @@ local function analyze_directory(dir_path)
     end
 end
 
--- Command line argument handling
-if #arg < 1 then
-    print("Usage: luajit analyze_ldoc.lua <source_directory>")
-    print("Example: luajit .github/shell/analyze_ldoc.lua src")
-    os.exit(1)
-end
-
-local source_dir = arg[1]
-analyze_directory(source_dir)
+-- Main execution
+local source_path = parse_args(arg)
+analyze_path(source_path)
