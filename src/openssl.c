@@ -50,7 +50,7 @@ hex encode or decode string
 @tparam[opt=true] boolean encode true to encoed, false to decode
 @treturn string
 */
-static LUA_FUNCTION(openssl_hex)
+static int openssl_hex(lua_State *L)
 {
   size_t      l = 0;
   const char *s = luaL_checklstring(L, 1, &l);
@@ -82,7 +82,7 @@ base64 encode or decode
 @tparam[opt=true] boolean NO_NL default true without newline, false with newline
 @treturn string
 */
-static LUA_FUNCTION(openssl_base64)
+static int openssl_base64(lua_State *L)
 {
   BIO     *inp = load_bio_object(L, 1);
   int      encode = lua_isnone(L, 2) ? 1 : lua_toboolean(L, 2);
@@ -135,7 +135,7 @@ get method names
 @tparam string type support 'cipher','digests','pkeys','comps'
 @treturn table as array
 */
-static LUA_FUNCTION(openssl_list)
+static int openssl_list(lua_State *L)
 {
   static int options[] = { OBJ_NAME_TYPE_MD_METH,
                            OBJ_NAME_TYPE_CIPHER_METH,
@@ -173,7 +173,7 @@ _code_ can pass to openssl.error() to get more error information.
 @treturn string function name if available
 @treturn boolean indicates whether a given error code is a fatal error
 */
-static LUA_FUNCTION(openssl_error_string)
+static int openssl_error_string(lua_State *L)
 {
   unsigned long val = ERR_get_error();
   if (val == 0) return 0;
@@ -203,7 +203,7 @@ static LUA_FUNCTION(openssl_error_string)
 Empties the current thread's error queue, helps reduce memory usage.
 @function clear_error
 */
-static LUA_FUNCTION(openssl_clear_error)
+static int openssl_clear_error(lua_State *L)
 {
   ERR_clear_error();
   return 0;
@@ -214,7 +214,7 @@ Fetch all error strings from current thread's error queue, and empty the error q
 @function errors
 @treturn string
 */
-static LUA_FUNCTION(openssl_errors)
+static int openssl_errors(lua_State *L)
 {
   int  ret = 0;
   BIO *out = BIO_new(BIO_s_mem());
@@ -313,7 +313,7 @@ get random bytes
 @tparam number length
 @treturn string
 */
-static LUA_FUNCTION(openssl_random_bytes)
+static int openssl_random_bytes(lua_State *L)
 {
   long length = luaL_checkint(L, 1);
 

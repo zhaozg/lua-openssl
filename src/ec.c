@@ -528,7 +528,7 @@ do EC sign
 @tparam evp_md|string|nid md digest alg identity, default is sm3
 @treturn string signature
 */
-static LUA_FUNCTION(openssl_ecdsa_sign)
+static int openssl_ecdsa_sign(lua_State *L)
 {
   int                  ret;
   EC_KEY              *eckey = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
@@ -559,7 +559,7 @@ do EC verify, input msg is digest result
 @treturn boolean true for verified, false for invalid signature
 @return nil for error, and followed by error message
 */
-static LUA_FUNCTION(openssl_ecdsa_verify)
+static int openssl_ecdsa_verify(lua_State *L)
 {
   int                  ret;
   EC_KEY              *eckey = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
@@ -842,7 +842,7 @@ list all available elliptic curve names
 @function list
 @treturn table array of curve names and descriptions
 */
-static LUA_FUNCTION(openssl_ec_list_curve_name)
+static int openssl_ec_list_curve_name(lua_State *L)
 {
   size_t            i = 0;
   size_t            crv_len = EC_get_builtin_curves(NULL, 0);

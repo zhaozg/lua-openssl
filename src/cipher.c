@@ -16,7 +16,7 @@ list all support cipher algs
 @tparam[opt] boolean alias include alias names for cipher alg, default true
 @treturn[table] all cipher methods
 */
-static LUA_FUNCTION(openssl_cipher_list)
+static int openssl_cipher_list(lua_State *L)
 {
   int alias = lua_isnone(L, 1) ? 1 : lua_toboolean(L, 1);
   lua_newtable(L);
@@ -34,7 +34,7 @@ get evp_cipher object
 
 @see evp_cipher
 */
-static LUA_FUNCTION(openssl_cipher_get)
+static int openssl_cipher_get(lua_State *L)
 {
   const EVP_CIPHER *cipher = get_cipher(L, 1, NULL);
 
@@ -72,7 +72,7 @@ quick encrypt
 @tparam[opt] engine engine custom crypto engine
 @treturn string result encrypt data
 */
-static LUA_FUNCTION(openssl_evp_encrypt)
+static int openssl_evp_encrypt(lua_State *L)
 {
   const EVP_CIPHER *cipher = get_cipher(L, 1, NULL);
   size_t            input_len = 0;
@@ -135,7 +135,7 @@ quick decrypt
 @tparam[opt] engine engine custom crypto engine
 @treturn string result decrypt data
 */
-static LUA_FUNCTION(openssl_evp_decrypt)
+static int openssl_evp_decrypt(lua_State *L)
 {
   const EVP_CIPHER *cipher = get_cipher(L, 1, NULL);
   size_t            input_len = 0;
@@ -200,7 +200,7 @@ quick encrypt or decrypt
 @tparam[opt] engine engine custom crypto engine
 @treturn string result
 */
-static LUA_FUNCTION(openssl_evp_cipher)
+static int openssl_evp_cipher(lua_State *L)
 {
   const EVP_CIPHER *cipher = get_cipher(L, 1, NULL);
   int               enc = lua_toboolean(L, 2);
@@ -275,7 +275,7 @@ get evp_cipher_ctx object for encrypt or decrypt
 @see evp_cipher_ctx
 */
 
-static LUA_FUNCTION(openssl_cipher_new)
+static int openssl_cipher_new(lua_State *L)
 {
   const EVP_CIPHER *cipher = get_cipher(L, 1, NULL);
   int               enc = lua_toboolean(L, 2);
@@ -327,7 +327,7 @@ get evp_cipher_ctx object for encrypt
 @see evp_cipher_ctx
 */
 
-static LUA_FUNCTION(openssl_cipher_encrypt_new)
+static int openssl_cipher_encrypt_new(lua_State *L)
 {
   const EVP_CIPHER *cipher = get_cipher(L, 1, NULL);
   int               ret;
@@ -375,7 +375,7 @@ get evp_cipher_ctx object for decrypt
 @see evp_cipher_ctx
 */
 
-static LUA_FUNCTION(openssl_cipher_decrypt_new)
+static int openssl_cipher_decrypt_new(lua_State *L)
 {
   const EVP_CIPHER *cipher = get_cipher(L, 1, NULL);
   size_t            key_len = 0;
@@ -418,7 +418,7 @@ get infomation of evp_cipher object
 @function info
 @treturn table info keys include name,block_size,key_length,iv_length,flags,mode
 */
-static LUA_FUNCTION(openssl_cipher_info)
+static int openssl_cipher_info(lua_State *L)
 {
   EVP_CIPHER *cipher = CHECK_OBJECT(1, EVP_CIPHER, "openssl.evp_cipher");
   lua_newtable(L);
@@ -441,7 +441,7 @@ derive key
 @treturn string key
 @treturn string iv
 */
-static LUA_FUNCTION(openssl_evp_BytesToKey)
+static int openssl_evp_BytesToKey(lua_State *L)
 {
   EVP_CIPHER   *c = CHECK_OBJECT(1, EVP_CIPHER, "openssl.evp_cipher");
   size_t        lsalt, lk;
@@ -563,7 +563,7 @@ init encrypt/decrypt cipher ctx
 @treturn boolean result and followd by error reason
 */
 
-static LUA_FUNCTION(openssl_evp_cipher_init)
+static int openssl_evp_cipher_init(lua_State *L)
 {
   EVP_CIPHER_CTX *c = CHECK_OBJECT(1, EVP_CIPHER_CTX, "openssl.evp_cipher_ctx");
   int             ret;
@@ -612,7 +612,7 @@ feed data or set AAD to do cipher
 @tparam[opt=false] boolean isAAD indicate to set AAD
 @treturn string partial results, and "" when set AAD
 */
-static LUA_FUNCTION(openssl_evp_cipher_update)
+static int openssl_evp_cipher_update(lua_State *L)
 {
   size_t      inl;
   const char *in;
@@ -660,7 +660,7 @@ get result of cipher
 @function final
 @treturn string result last result
 */
-static LUA_FUNCTION(openssl_evp_cipher_final)
+static int openssl_evp_cipher_final(lua_State *L)
 {
   EVP_CIPHER_CTX *c = CHECK_OBJECT(1, EVP_CIPHER_CTX, "openssl.evp_cipher_ctx");
   char            out[EVP_MAX_BLOCK_LENGTH];
@@ -694,7 +694,7 @@ get infomation of evp_cipher_ctx object
 @function info
 @treturn table info keys include block_size,key_length,iv_length,flags,mode,nid,type, evp_cipher
 */
-static LUA_FUNCTION(openssl_cipher_ctx_info)
+static int openssl_cipher_ctx_info(lua_State *L)
 {
   EVP_CIPHER_CTX *ctx = CHECK_OBJECT(1, EVP_CIPHER_CTX, "openssl.evp_cipher_ctx");
 #if OPENSSL_VERSION_NUMBER > 0x30000000
@@ -720,7 +720,7 @@ set padding mode for cipher context
 @function padding
 @tparam boolean pad true to enable padding, false to disable
 */
-static LUA_FUNCTION(openssl_cipher_ctx_padding)
+static int openssl_cipher_ctx_padding(lua_State *L)
 {
   int             pad;
   EVP_CIPHER_CTX *ctx = CHECK_OBJECT(1, EVP_CIPHER_CTX, "openssl.evp_cipher_ctx");
@@ -738,7 +738,7 @@ control cipher context with various parameters
 @tparam number|string arg control argument
 @treturn boolean|string result depends on control type
 */
-static LUA_FUNCTION(openssl_cipher_ctx_ctrl)
+static int openssl_cipher_ctx_ctrl(lua_State *L)
 {
   int             ret = 0;
   EVP_CIPHER_CTX *ctx = CHECK_OBJECT(1, EVP_CIPHER_CTX, "openssl.evp_cipher_ctx");
@@ -823,7 +823,7 @@ release cipher context resources
 @function __gc
 @treturn number 0 
 */
-static LUA_FUNCTION(openssl_cipher_ctx_free)
+static int openssl_cipher_ctx_free(lua_State *L)
 {
   EVP_CIPHER_CTX *ctx = CHECK_OBJECT(1, EVP_CIPHER_CTX, "openssl.evp_cipher_ctx");
   if (!ctx) return 0;

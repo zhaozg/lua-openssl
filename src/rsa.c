@@ -23,7 +23,7 @@ RSA key generation, encryption, decryption, signing and signature verification.
 #include "private.h"
 
 #if !defined(OPENSSL_NO_RSA)
-static LUA_FUNCTION(openssl_rsa_free)
+static int openssl_rsa_free(lua_State *L)
 {
   RSA *rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");
   RSA_free(rsa);
@@ -43,7 +43,7 @@ check if RSA key contains private key components
 @function isprivate
 @treturn boolean true if RSA key is private, false if public only
 */
-static LUA_FUNCTION(openssl_rsa_isprivate)
+static int openssl_rsa_isprivate(lua_State *L)
 {
   RSA *rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");
   lua_pushboolean(L, is_private(rsa));
@@ -55,7 +55,7 @@ get RSA key size in bytes
 @function size
 @treturn number key size in bytes
 */
-static LUA_FUNCTION(openssl_rsa_size)
+static int openssl_rsa_size(lua_State *L)
 {
   RSA *rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");
   lua_pushinteger(L, RSA_size(rsa));
@@ -70,7 +70,7 @@ encrypt data using RSA key
 @tparam[opt] boolean use_private true to use private key for encryption
 @treturn string|nil encrypted data or nil on error
 */
-static LUA_FUNCTION(openssl_rsa_encrypt)
+static int openssl_rsa_encrypt(lua_State *L)
 {
   RSA                 *rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");
   size_t               l;
@@ -98,7 +98,7 @@ decrypt data using RSA private key
 @tparam[opt] boolean use_private true to use private key for decryption
 @treturn string|nil decrypted data or nil on error
 */
-static LUA_FUNCTION(openssl_rsa_decrypt)
+static int openssl_rsa_decrypt(lua_State *L)
 {
   RSA                 *rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");
   size_t               l;
@@ -125,7 +125,7 @@ create digital signature using RSA private key
 @tparam[opt="sha256"] string|evp_md digest algorithm to use
 @treturn string|nil signature or nil on error
 */
-static LUA_FUNCTION(openssl_rsa_sign)
+static int openssl_rsa_sign(lua_State *L)
 {
   RSA                 *rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");
   size_t               l;
@@ -151,7 +151,7 @@ verify RSA signature using public key
 @tparam[opt="sha256"] string|evp_md digest algorithm used for signing
 @treturn boolean true if signature is valid, false otherwise
 */
-static LUA_FUNCTION(openssl_rsa_verify)
+static int openssl_rsa_verify(lua_State *L)
 {
   RSA                 *rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");
   size_t               l;
@@ -172,7 +172,7 @@ parse RSA key components and parameters
 @function parse
 @treturn table RSA key parameters including bits, n, e, d, p, q, and CRT parameters
 */
-static LUA_FUNCTION(openssl_rsa_parse)
+static int openssl_rsa_parse(lua_State *L)
 {
   const BIGNUM *n = NULL, *e = NULL, *d = NULL;
   const BIGNUM *p = NULL, *q = NULL;
@@ -206,7 +206,7 @@ read RSA key from DER/PEM data
 @tparam[opt=true] boolean private true to read private key, false for public key
 @treturn rsa|nil RSA key object or nil on error
 */
-static LUA_FUNCTION(openssl_rsa_read)
+static int openssl_rsa_read(lua_State *L)
 {
   size_t               l;
   const char          *data = luaL_checklstring(L, 1, &l);
@@ -228,7 +228,7 @@ export RSA key to DER format
 @tparam[opt] boolean private true to export private key, false for public key
 @treturn string|nil DER-encoded RSA key or nil on error
 */
-static LUA_FUNCTION(openssl_rsa_export)
+static int openssl_rsa_export(lua_State *L)
 {
   RSA *rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");
   int  ispriv = lua_isnone(L, 2) ? is_private(rsa) : lua_toboolean(L, 2);

@@ -70,37 +70,37 @@
 #define LHASH LHASH_OF(CONF_VALUE)
 #endif
 
-#define LUA_FUNCTION(X) int X(lua_State *L)
+
 
 int openssl_s2i_revoke_reason(const char*s);
 
-LUALIB_API LUA_FUNCTION(luaopen_openssl);
-LUA_FUNCTION(luaopen_digest);
-LUA_FUNCTION(luaopen_hmac);
-LUA_FUNCTION(luaopen_cipher);
-LUA_FUNCTION(luaopen_bn);
-LUA_FUNCTION(luaopen_pkey);
-LUA_FUNCTION(luaopen_x509);
-LUA_FUNCTION(luaopen_pkcs7);
-LUA_FUNCTION(luaopen_pkcs12);
-LUA_FUNCTION(luaopen_bio);
-LUA_FUNCTION(luaopen_asn1);
+LUALIB_API int luaopen_openssl(lua_State *L);
+int luaopen_digest(lua_State *L);
+int luaopen_hmac(lua_State *L);
+int luaopen_cipher(lua_State *L);
+int luaopen_bn(lua_State *L);
+int luaopen_pkey(lua_State *L);
+int luaopen_x509(lua_State *L);
+int luaopen_pkcs7(lua_State *L);
+int luaopen_pkcs12(lua_State *L);
+int luaopen_bio(lua_State *L);
+int luaopen_asn1(lua_State *L);
 
-LUA_FUNCTION(luaopen_ts);
-LUA_FUNCTION(luaopen_x509_req);
-LUA_FUNCTION(luaopen_x509_crl);
-LUA_FUNCTION(luaopen_ocsp);
-LUA_FUNCTION(luaopen_cms);
-LUA_FUNCTION(luaopen_ssl);
-LUA_FUNCTION(luaopen_ec);
-LUA_FUNCTION(luaopen_rsa);
-LUA_FUNCTION(luaopen_dsa);
-LUA_FUNCTION(luaopen_dh);
+int luaopen_ts(lua_State *L);
+int luaopen_x509_req(lua_State *L);
+int luaopen_x509_crl(lua_State *L);
+int luaopen_ocsp(lua_State *L);
+int luaopen_cms(lua_State *L);
+int luaopen_ssl(lua_State *L);
+int luaopen_ec(lua_State *L);
+int luaopen_rsa(lua_State *L);
+int luaopen_dsa(lua_State *L);
+int luaopen_dh(lua_State *L);
 #if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
-LUA_FUNCTION(luaopen_mac);
-LUA_FUNCTION(luaopen_param);
+int luaopen_mac(lua_State *L);
+int luaopen_param(lua_State *L);
 #endif
-LUA_FUNCTION(luaopen_kdf);
-LUA_FUNCTION(luaopen_srp);
+int luaopen_kdf(lua_State *L);
+int luaopen_srp(lua_State *L);
 
 #endif

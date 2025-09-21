@@ -221,7 +221,7 @@ read x509 from string or bio input
 @tparam[opt='auto'] string format support 'auto','pem','der'
 @treturn x509 certificate object
 */
-static LUA_FUNCTION(openssl_x509_read)
+static int openssl_x509_read(lua_State *L)
 {
   X509 *cert = NULL;
   BIO *in = load_bio_object(L, 1);
@@ -515,7 +515,7 @@ export x509_req to string
 @tparam[opt='pem'] string format, 'der' or 'pem' default
 @treturn string
 */
-static LUA_FUNCTION(openssl_x509_export)
+static int openssl_x509_export(lua_State *L)
 {
   X509 *cert = CHECK_OBJECT(1, X509, "openssl.x509");
   int fmt = luaL_checkoption(L, 2, "pem", format);
@@ -544,7 +544,7 @@ parse x509 object as table
 @tparam[opt=true] shortname default will use short object name
 @treturn table result which all x509 information
 */
-static LUA_FUNCTION(openssl_x509_parse)
+static int openssl_x509_parse(lua_State *L)
 {
   int i;
   X509 * cert = CHECK_OBJECT(1, X509, "openssl.x509");
@@ -633,7 +633,7 @@ static LUA_FUNCTION(openssl_x509_parse)
   return 1;
 }
 
-static LUA_FUNCTION(openssl_x509_free)
+static int openssl_x509_free(lua_State *L)
 {
   X509 *cert = CHECK_OBJECT(1, X509, "openssl.x509");
   X509_free(cert);
@@ -651,7 +651,7 @@ set public key of x509
 @tparam evp_pkey pubkey public key set to x509
 @treturn boolean result, true for success
 */
-static LUA_FUNCTION(openssl_x509_public_key)
+static int openssl_x509_public_key(lua_State *L)
 {
   X509 *cert = CHECK_OBJECT(1, X509, "openssl.x509");
   if (lua_isnone(L, 2))
@@ -719,7 +719,7 @@ check x509 with evp_pkey
 @tparam evp_pkey pkey private key witch match with x509 pubkey
 @treturn boolean result true for check pass
 */
-static LUA_FUNCTION(openssl_x509_check)
+static int openssl_x509_check(lua_State *L)
 {
   X509 * cert = CHECK_OBJECT(1, X509, "openssl.x509");
   if (auxiliar_getclassudata(L, "openssl.evp_pkey", 2))
@@ -803,7 +803,7 @@ check x509 for host (only for openssl 1.0.2 or greater)
 @tparam string host hostname to check for match match with x509 subject
 @treturn boolean result true if host is present and matches the certificate
 */
-static LUA_FUNCTION(openssl_x509_check_host)
+static int openssl_x509_check_host(lua_State *L)
 {
   X509 * cert = CHECK_OBJECT(1, X509, "openssl.x509");
   size_t sz;
@@ -823,7 +823,7 @@ check x509 for email address (only for openssl 1.0.2 or greater)
 @treturn boolean result true if host is present and matches the certificate
 @function check_email
 */
-static LUA_FUNCTION(openssl_x509_check_email)
+static int openssl_x509_check_email(lua_State *L)
 {
   X509 * cert = CHECK_OBJECT(1, X509, "openssl.x509");
   size_t sz;
@@ -839,7 +839,7 @@ check x509 for ip address (ipv4 or ipv6, only for openssl 1.0.2 or greater)
 @tparam string ip to check for match match with x509 subject
 @treturn boolean result true if host is present and matches the certificate
 */
-static LUA_FUNCTION(openssl_x509_check_ip)
+static int openssl_x509_check_ip(lua_State *L)
 {
   X509 * cert = CHECK_OBJECT(1, X509, "openssl.x509");
   const char *ip = luaL_checkstring(L, 2);

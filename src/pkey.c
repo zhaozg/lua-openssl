@@ -357,7 +357,7 @@ enc_flag, conv_form<br>
  --create new rsa
    rsa = new({alg='rsa',n=...,q=...,e=...,...}
 */
-static LUA_FUNCTION(openssl_pkey_new)
+static int openssl_pkey_new(lua_State *L)
 {
   EVP_PKEY   *pkey = NULL;
   const char *alg = "rsa";
@@ -716,7 +716,7 @@ export evp_pkey as pem/der string
 only need when export private key
 @treturn string
 */
-static LUA_FUNCTION(openssl_pkey_export)
+static int openssl_pkey_export(lua_State *L)
 {
   EVP_PKEY         *key;
   int               ispriv = 0;
@@ -846,7 +846,7 @@ static LUA_FUNCTION(openssl_pkey_export)
   return ret;
 }
 
-static LUA_FUNCTION(openssl_pkey_free)
+static int openssl_pkey_free(lua_State *L)
 {
   EVP_PKEY *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
   EVP_PKEY_free(pkey);
@@ -949,7 +949,7 @@ get key details as table
 @treturn table infos with key bits,pkey,type, pkey may be rsa,dh,dsa, show as table with factor hex
 encoded bignum
 */
-static LUA_FUNCTION(openssl_pkey_parse)
+static int openssl_pkey_parse(lua_State *L)
 {
   EVP_PKEY *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
   int       typ = EVP_PKEY_id(pkey);
@@ -1020,7 +1020,7 @@ supports 6 padding modes. They are: pkcs1, sslv23, no, oaep, x931, pss.
 @tparam string[opt='pkcs1'] string padding padding mode
 @treturn string encrypted message
 */
-static LUA_FUNCTION(openssl_pkey_encrypt)
+static int openssl_pkey_encrypt(lua_State *L)
 {
   size_t        dlen = 0;
   EVP_PKEY     *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
@@ -1060,7 +1060,7 @@ pair with encrypt
 @treturn[1] string result
 @treturn[2] nil
 */
-static LUA_FUNCTION(openssl_pkey_decrypt)
+static int openssl_pkey_decrypt(lua_State *L)
 {
   size_t        dlen = 0;
   EVP_PKEY     *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
@@ -1097,7 +1097,7 @@ return key is private or not
 @function is_private
 @treturn boolean ture is private or public key
 */
-LUA_FUNCTION(openssl_pkey_is_private1)
+int openssl_pkey_is_private1(lua_State *L)
 {
   EVP_PKEY *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
   int private = openssl_pkey_is_private(pkey);
@@ -1112,7 +1112,7 @@ return public key
 @function get_public
 @treturn evp_pkey pub
 */
-static LUA_FUNCTION(openssl_pkey_get_public)
+static int openssl_pkey_get_public(lua_State *L)
 {
   EVP_PKEY *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
   int       ret = 0;
@@ -1162,7 +1162,7 @@ create EVP_PKEY_CTX context for public key operations
 @tparam[opt] engine engine optional engine for hardware acceleration
 @treturn evp_pkey_ctx public key context object for RSA operations
 */
-static LUA_FUNCTION(openssl_pkey_ctx)
+static int openssl_pkey_ctx(lua_State *L)
 {
   EVP_PKEY     *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
   ENGINE       *engine = lua_isnoneornil(L, 2) ? NULL : CHECK_OBJECT(2, ENGINE, "openssl.engine");
@@ -1184,7 +1184,7 @@ create new EVP_PKEY_CTX by algorithm identifier
 @tparam[opt] engine engine optional engine for hardware acceleration
 @treturn evp_pkey_ctx|nil new context object or nil on error
 */
-static LUA_FUNCTION(openssl_pkey_ctx_new)
+static int openssl_pkey_ctx_new(lua_State *L)
 {
   int     nid = lua_isnumber(L, 1) ? lua_tointeger(L, 1) : OBJ_txt2nid(luaL_checkstring(L, 1));
   ENGINE *eng = lua_isnoneornil(L, 2) ? NULL : CHECK_OBJECT(2, ENGINE, "openssl.engine");
@@ -1200,14 +1200,14 @@ static LUA_FUNCTION(openssl_pkey_ctx_new)
   return openssl_pushresult(L, 0);
 }
 
-static LUA_FUNCTION(openssl_pkey_ctx_free)
+static int openssl_pkey_ctx_free(lua_State *L)
 {
   EVP_PKEY_CTX *ctx = CHECK_OBJECT(1, EVP_PKEY_CTX, "openssl.evp_pkey_ctx");
   EVP_PKEY_CTX_free(ctx);
   return 0;
 }
 
-static LUA_FUNCTION(openssl_pkey_ctx_keygen)
+static int openssl_pkey_ctx_keygen(lua_State *L)
 {
   EVP_PKEY_CTX *ctx = CHECK_OBJECT(1, EVP_PKEY_CTX, "openssl.evp_pkey_ctx");
   int           bits = luaL_optinteger(L, 2, 0);
@@ -1230,7 +1230,7 @@ static LUA_FUNCTION(openssl_pkey_ctx_keygen)
   return ret;
 }
 
-static LUA_FUNCTION(openssl_pkey_ctx_ctrl)
+static int openssl_pkey_ctx_ctrl(lua_State *L)
 {
   EVP_PKEY_CTX *ctx = CHECK_OBJECT(1, EVP_PKEY_CTX, "openssl.evp_pkey_ctx");
   size_t        dlen = 0;
@@ -1247,7 +1247,7 @@ initialize EVP_PKEY_CTX for decryption operations
 @function decrypt_init
 @treturn evp_pkey_ctx context object ready for decryption
 */
-static LUA_FUNCTION(openssl_pkey_ctx_decrypt_init)
+static int openssl_pkey_ctx_decrypt_init(lua_State *L)
 {
   EVP_PKEY_CTX *ctx = CHECK_OBJECT(1, EVP_PKEY_CTX, "openssl.evp_pkey_ctx");
 
@@ -1262,7 +1262,7 @@ initialize EVP_PKEY_CTX for encryption operations
 @function encrypt_init
 @treturn evp_pkey_ctx context object ready for encryption
 */
-static LUA_FUNCTION(openssl_pkey_ctx_encrypt_init)
+static int openssl_pkey_ctx_encrypt_init(lua_State *L)
 {
   EVP_PKEY_CTX *ctx = CHECK_OBJECT(1, EVP_PKEY_CTX, "openssl.evp_pkey_ctx");
 
@@ -1277,7 +1277,7 @@ initialize EVP_PKEY_CTX for verification operations
 @function verify_init
 @treturn evp_pkey_ctx context object ready for verification
 */
-static LUA_FUNCTION(openssl_pkey_ctx_verify_init)
+static int openssl_pkey_ctx_verify_init(lua_State *L)
 {
   EVP_PKEY_CTX *ctx = CHECK_OBJECT(1, EVP_PKEY_CTX, "openssl.evp_pkey_ctx");
 
@@ -1292,7 +1292,7 @@ initialize EVP_PKEY_CTX for signing operations
 @function sign_init
 @treturn evp_pkey_ctx context object ready for signing
 */
-static LUA_FUNCTION(openssl_pkey_ctx_sign_init)
+static int openssl_pkey_ctx_sign_init(lua_State *L)
 {
   EVP_PKEY_CTX *ctx = CHECK_OBJECT(1, EVP_PKEY_CTX, "openssl.evp_pkey_ctx");
 
@@ -1308,7 +1308,7 @@ decrypt data using private key context
 @tparam string data encrypted data to decrypt
 @treturn string|nil decrypted data or nil on error
 */
-static LUA_FUNCTION(openssl_pkey_ctx_decrypt)
+static int openssl_pkey_ctx_decrypt(lua_State *L)
 {
   EVP_PKEY_CTX *ctx = CHECK_OBJECT(1, EVP_PKEY_CTX, "openssl.evp_pkey_ctx");
   size_t        dlen = 0;
@@ -1332,7 +1332,7 @@ encrypt data using public key context
 @tparam string data data to encrypt
 @treturn string|nil encrypted data or nil on error
 */
-static LUA_FUNCTION(openssl_pkey_ctx_encrypt)
+static int openssl_pkey_ctx_encrypt(lua_State *L)
 {
   EVP_PKEY_CTX *ctx = CHECK_OBJECT(1, EVP_PKEY_CTX, "openssl.evp_pkey_ctx");
   size_t        in_len = 0;
@@ -1360,7 +1360,7 @@ verify signature using EVP_PKEY_CTX
 @tparam string signature signature to verify
 @treturn boolean true if signature is valid, false otherwise
 */
-static LUA_FUNCTION(openssl_pkey_ctx_verify)
+static int openssl_pkey_ctx_verify(lua_State *L)
 {
   EVP_PKEY_CTX *pCtx = CHECK_OBJECT(1, EVP_PKEY_CTX, "openssl.evp_pkey_ctx");
   size_t        dlen = 0;
@@ -1381,7 +1381,7 @@ create digital signature using EVP_PKEY_CTX
 @tparam string digest message digest to sign
 @treturn string|nil digital signature or nil on error
 */
-static LUA_FUNCTION(openssl_pkey_ctx_sign)
+static int openssl_pkey_ctx_sign(lua_State *L)
 {
   EVP_PKEY_CTX  *pCtx = CHECK_OBJECT(1, EVP_PKEY_CTX, "openssl.evp_pkey_ctx");
   size_t         digest_len = 0;
@@ -1411,7 +1411,7 @@ Derive public key algorithm shared secret
 @tparam[opt] engine eng
 @treturn string
 */
-static LUA_FUNCTION(openssl_derive)
+static int openssl_derive(lua_State *L)
 {
   int ret = 0;
 
@@ -1475,7 +1475,7 @@ sign message with private key
 @tparam[opt='1234567812345678'] string userId used when pkey is SM2 type
 @treturn string signed message
 */
-static LUA_FUNCTION(openssl_sign)
+static int openssl_sign(lua_State *L)
 {
   int           ret = 0;
   size_t        data_len;
@@ -1552,7 +1552,7 @@ verify signed message with public key
 @tparam[opt='1234567812345678'] string userId used when pkey is SM2 type
 @treturn boolean true for pass verify
 */
-static LUA_FUNCTION(openssl_verify)
+static int openssl_verify(lua_State *L)
 {
   int           ret = 0;
   size_t        data_len, signature_len;
@@ -1621,7 +1621,7 @@ data be encrypt with secret key, secret key be encrypt with public key
 @treturn string skey secret key encrypted by public key
 @treturn string iv
 */
-static LUA_FUNCTION(openssl_seal)
+static int openssl_seal(lua_State *L)
 {
   int         i, ret = 0, nkeys = 0;
   size_t      data_len;
@@ -1723,7 +1723,7 @@ open and ecrypted seal data with private key
 @tparam[opt='RC4'] evp_cipher|string md_alg
 @treturn string data decrypted message or nil on failure
 */
-static LUA_FUNCTION(openssl_open)
+static int openssl_open(lua_State *L)
 {
   EVP_PKEY   *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
   size_t      data_len, ekey_len, iv_len;
@@ -1775,7 +1775,7 @@ initialize envelope encryption (sealing) context
 @treturn table|nil encrypted keys for each recipient
 @treturn string|nil initialization vector
 */
-static LUA_FUNCTION(openssl_seal_init)
+static int openssl_seal_init(lua_State *L)
 {
   int             i, ret = 0, nkeys = 0;
   EVP_PKEY      **pkeys;
@@ -1861,7 +1861,7 @@ update envelope encryption with data
 @tparam string data data to encrypt
 @treturn string|nil encrypted data or nil on error
 */
-static LUA_FUNCTION(openssl_seal_update)
+static int openssl_seal_update(lua_State *L)
 {
   EVP_CIPHER_CTX *ctx = CHECK_OBJECT(1, EVP_CIPHER_CTX, "openssl.evp_cipher_ctx");
   size_t          data_len;
@@ -1884,7 +1884,7 @@ finalize envelope encryption
 @tparam evp_cipher_ctx context encryption context from seal_init
 @treturn string|nil final encrypted data or nil on error
 */
-static LUA_FUNCTION(openssl_seal_final)
+static int openssl_seal_final(lua_State *L)
 {
   EVP_CIPHER_CTX *ctx = CHECK_OBJECT(1, EVP_CIPHER_CTX, "openssl.evp_cipher_ctx");
   int             len = EVP_CIPHER_CTX_block_size(ctx);
@@ -1907,7 +1907,7 @@ initialize envelope decryption (opening) context
 @tparam[opt] string|evp_cipher cipher decryption cipher to use
 @treturn evp_cipher_ctx|nil decryption context or nil on error
 */
-static LUA_FUNCTION(openssl_open_init)
+static int openssl_open_init(lua_State *L)
 {
   EVP_PKEY   *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
   size_t      ekey_len, iv_len;
@@ -1938,7 +1938,7 @@ update envelope decryption with encrypted data
 @tparam string data encrypted data to decrypt
 @treturn string|nil decrypted data or nil on error
 */
-static LUA_FUNCTION(openssl_open_update)
+static int openssl_open_update(lua_State *L)
 {
   EVP_CIPHER_CTX *ctx = CHECK_OBJECT(1, EVP_CIPHER_CTX, "openssl.evp_cipher_ctx");
   size_t          data_len;
@@ -1961,7 +1961,7 @@ finalize envelope decryption
 @tparam evp_cipher_ctx context decryption context from open_init
 @treturn string|nil final decrypted data or nil on error
 */
-static LUA_FUNCTION(openssl_open_final)
+static int openssl_open_final(lua_State *L)
 {
   EVP_CIPHER_CTX *ctx = CHECK_OBJECT(1, EVP_CIPHER_CTX, "openssl.evp_cipher_ctx");
   int             len = EVP_CIPHER_CTX_block_size(ctx);

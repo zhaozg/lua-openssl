@@ -24,7 +24,7 @@ generation, signature creation and verification.
 #include "private.h"
 
 #if !defined(OPENSSL_NO_DSA)
-static LUA_FUNCTION(openssl_dsa_free)
+static int openssl_dsa_free(lua_State *L)
 {
   DSA *dsa = CHECK_OBJECT(1, DSA, "openssl.dsa");
   DSA_free(dsa);
@@ -36,7 +36,7 @@ parse DSA key parameters and components
 @function parse
 @treturn table DSA parameters including bits, p, q, g, public key, and private key (if present)
 */
-static LUA_FUNCTION(openssl_dsa_parse)
+static int openssl_dsa_parse(lua_State *L)
 {
   const BIGNUM *p = NULL, *q = NULL, *g = NULL, *pub = NULL, *pri = NULL;
   DSA          *dsa = CHECK_OBJECT(1, DSA, "openssl.dsa");

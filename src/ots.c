@@ -557,7 +557,7 @@ create a new ts_req object.
 @treturn ts_req timestamp sign request object
 @see ts_req
 */
-static LUA_FUNCTION(openssl_ts_req_new)
+static int openssl_ts_req_new(lua_State *L)
 {
   TS_REQ *ts_req = TS_REQ_new();
   long    version = luaL_optinteger(L, 1, 1);
@@ -578,7 +578,7 @@ read ts_req object from string or bio data
 @treturn ts_req timestamp sign request object
 @see ts_req
 */
-static LUA_FUNCTION(openssl_ts_req_read)
+static int openssl_ts_req_read(lua_State *L)
 {
   BIO    *in = load_bio_object(L, 1);
   TS_REQ *ts_req = d2i_TS_REQ_bio(in, NULL);
@@ -596,7 +596,7 @@ read ts_resp object from string or bio input
 @tparam string|bio input
 @treturn ts_resp object
 */
-static LUA_FUNCTION(openssl_ts_resp_read)
+static int openssl_ts_resp_read(lua_State *L)
 {
   BIO     *in = load_bio_object(L, 1);
   TS_RESP *res = d2i_TS_RESP_bio(in, NULL);
@@ -616,7 +616,7 @@ create ts_resp_ctx object
 @tparam asn1_object|string|nid identity for default policy object
 @treturn ts_resp_ctx object
 */
-static LUA_FUNCTION(openssl_ts_resp_ctx_new)
+static int openssl_ts_resp_ctx_new(lua_State *L)
 {
   TS_RESP_CTX *ctx = NULL;
   X509        *signer = NULL;
@@ -664,7 +664,7 @@ create ts_verify_ctx object
 @tparam[opt=nil] string|ts_req reqdata
 @treturn ts_verify_ctx object
 */
-static LUA_FUNCTION(openssl_ts_verify_ctx_new)
+static int openssl_ts_verify_ctx_new(lua_State *L)
 {
   TS_VERIFY_CTX *ctx = NULL;
   if (lua_isnone(L, 1)) {
@@ -868,7 +868,7 @@ create ts_verify_ctx from ts_req object
 @function to_verify_ctx
 @treturn ts_verify_ctx object
 */
-static LUA_FUNCTION(openssl_ts_req_to_verify_ctx)
+static int openssl_ts_req_to_verify_ctx(lua_State *L)
 {
   TS_REQ        *req = CHECK_OBJECT(1, TS_REQ, "openssl.ts_req");
   TS_VERIFY_CTX *ctx = TS_REQ_to_TS_VERIFY_CTX(req, NULL);
@@ -881,7 +881,7 @@ export ts_req to string
 @function export
 @treturn string
 */
-static LUA_FUNCTION(openssl_ts_req_export)
+static int openssl_ts_req_export(lua_State *L)
 {
   TS_REQ        *ts_req = CHECK_OBJECT(1, TS_REQ, "openssl.ts_req");
   unsigned char *data = NULL;
@@ -901,7 +901,7 @@ add X509 extension to timestamp request
 @tparam[opt] number location position to insert extension
 @treturn boolean true on success, false on failure
 */
-static LUA_FUNCTION(openssl_ts_req_add_ext)
+static int openssl_ts_req_add_ext(lua_State *L)
 {
   TS_REQ         *ts_req = CHECK_OBJECT(1, TS_REQ, "openssl.ts_req");
   X509_EXTENSION *x = CHECK_OBJECT(2, X509_EXTENSION, "openssl.x509_extension");
@@ -917,7 +917,7 @@ get info as table
 @function info
 @treturn table
 */
-static LUA_FUNCTION(openssl_ts_req_info)
+static int openssl_ts_req_info(lua_State *L)
 {
   TS_REQ *req = CHECK_OBJECT(1, TS_REQ, "openssl.ts_req");
 
@@ -958,7 +958,7 @@ static LUA_FUNCTION(openssl_ts_req_info)
   return 1;
 }
 
-static LUA_FUNCTION(openssl_ts_req_gc)
+static int openssl_ts_req_gc(lua_State *L)
 {
   TS_REQ *req = CHECK_OBJECT(1, TS_REQ, "openssl.ts_req");
   TS_REQ_free(req);
@@ -988,7 +988,7 @@ static luaL_Reg ts_req_funs[] = {
 openssl.ts_resp object
 @type ts_resp
 */
-static LUA_FUNCTION(openssl_ts_resp_gc)
+static int openssl_ts_resp_gc(lua_State *L)
 {
   TS_RESP *res = CHECK_OBJECT(1, TS_RESP, "openssl.ts_resp");
   TS_RESP_free(res);
@@ -1000,7 +1000,7 @@ duplicate ts_resp object
 @function dup
 @treturn ts_resp object
 */
-static LUA_FUNCTION(openssl_ts_resp_dup)
+static int openssl_ts_resp_dup(lua_State *L)
 {
   TS_RESP *res = CHECK_OBJECT(1, TS_RESP, "openssl.ts_resp");
   res = TS_RESP_dup(res);
@@ -1013,7 +1013,7 @@ export ts_resp to string
 @function export
 @treturn string
 */
-static LUA_FUNCTION(openssl_ts_resp_export)
+static int openssl_ts_resp_export(lua_State *L)
 {
   int      ret = 0;
   TS_RESP *res = CHECK_OBJECT(1, TS_RESP, "openssl.ts_resp");
@@ -1034,7 +1034,7 @@ get tst_info as table or tst_info filed value
 @tparam[opt] string field
 @return tst_info table or feild value
 */
-static LUA_FUNCTION(openssl_ts_resp_tst_info)
+static int openssl_ts_resp_tst_info(lua_State *L)
 {
   TS_RESP     *resp = CHECK_OBJECT(1, TS_RESP, "openssl.ts_resp");
   TS_TST_INFO *info = TS_RESP_get_tst_info(resp);
@@ -1053,7 +1053,7 @@ get status_info as table
 @function status_info
 @treturn table
 */
-static LUA_FUNCTION(openssl_ts_resp_status_info)
+static int openssl_ts_resp_status_info(lua_State *L)
 {
   TS_RESP        *res = CHECK_OBJECT(1, TS_RESP, "openssl.ts_resp");
   TS_STATUS_INFO *si = TS_RESP_get_status_info(res);
@@ -1131,7 +1131,7 @@ sign ts_req and get ts_resp, alias of create_response
 @tparam string|bio|ts_req data support string,bio ts_req content or ts_req object
 @treturn ts_resp result
 */
-static LUA_FUNCTION(openssl_ts_create_response)
+static int openssl_ts_create_response(lua_State *L)
 {
   TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
   BIO         *bio = load_bio_object(L, 2);
@@ -1158,7 +1158,7 @@ set signer cert and pkey
 @tparam evp_pkey pkey signer pkey
 @treturn boolean result
 */
-static LUA_FUNCTION(openssl_ts_resp_ctx_signer)
+static int openssl_ts_resp_ctx_signer(lua_State *L)
 {
   TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
   X509        *signer = CHECK_OBJECT(2, X509, "openssl.x509");
@@ -1178,7 +1178,7 @@ set additional certs
 @tparam table certs array of certificates
 @treturn boolean success
 */
-static LUA_FUNCTION(openssl_ts_resp_ctx_certs)
+static int openssl_ts_resp_ctx_certs(lua_State *L)
 {
   int          ret;
   TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
@@ -1194,7 +1194,7 @@ set default policy
 @tparam asn1_object|integer|string policy
 @treturn boolean success
 */
-static LUA_FUNCTION(openssl_ts_resp_ctx_default_policy)
+static int openssl_ts_resp_ctx_default_policy(lua_State *L)
 {
   TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
   ASN1_OBJECT *obj = openssl_get_asn1object(L, 2, 0);
@@ -1209,7 +1209,7 @@ set policies
 @tparam asn1_object|integer|string|stack_of_asn1_object|table policies
 @treturn boolean success
 */
-static LUA_FUNCTION(openssl_ts_resp_ctx_policies)
+static int openssl_ts_resp_ctx_policies(lua_State *L)
 {
   TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
   ASN1_OBJECT *obj = NULL;
@@ -1253,7 +1253,7 @@ set accuracy
 @tparam integer micros
 @treturn boolean result
 */
-static LUA_FUNCTION(openssl_ts_resp_ctx_accuracy)
+static int openssl_ts_resp_ctx_accuracy(lua_State *L)
 {
   TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
   int          seconds = luaL_checkint(L, 2);
@@ -1274,7 +1274,7 @@ set clock_precision_digits
 @tparam integer clock_precision_digits
 @treturn boolean result
 */
-static LUA_FUNCTION(openssl_ts_resp_ctx_clock_precision_digits)
+static int openssl_ts_resp_ctx_clock_precision_digits(lua_State *L)
 {
   TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
   int          ret;
@@ -1290,7 +1290,7 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_clock_precision_digits)
 get flags
 @function flags
 */
-static LUA_FUNCTION(openssl_ts_resp_ctx_add_flags)
+static int openssl_ts_resp_ctx_add_flags(lua_State *L)
 {
   TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
   int          flags = luaL_checkint(L, 2);
@@ -1310,7 +1310,7 @@ add digest
 @tparam string|evp_digest md_alg
 @treturn boolean result
 */
-static LUA_FUNCTION(openssl_ts_resp_ctx_md)
+static int openssl_ts_resp_ctx_md(lua_State *L)
 {
   TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
   if (lua_istable(L, 2)) {
@@ -1344,7 +1344,7 @@ get tst_info as table
 @tparam[opt] string field
 @return tst_info table or feild value
 */
-static LUA_FUNCTION(openssl_ts_resp_ctx_tst_info)
+static int openssl_ts_resp_ctx_tst_info(lua_State *L)
 {
   TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
   TS_TST_INFO *info = TS_RESP_CTX_get_tst_info(ctx);
@@ -1363,7 +1363,7 @@ get ts_req object
 @function request
 @treturn rs_req
 */
-static LUA_FUNCTION(openssl_ts_resp_ctx_request)
+static int openssl_ts_resp_ctx_request(lua_State *L)
 {
   TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
   TS_REQ      *req = TS_RESP_CTX_get_request(ctx);
@@ -1437,7 +1437,7 @@ set serial generate callback function
   local arg = {}
   ts_resp_ctx:set_serial_cb(serial_cb, arg)
 */
-static LUA_FUNCTION(openssl_ts_resp_ctx_set_serial_cb)
+static int openssl_ts_resp_ctx_set_serial_cb(lua_State *L)
 {
   TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
   TS_CB_ARG   *arg = NULL;
@@ -1508,7 +1508,7 @@ set time callback function
   local arg = {}
   ts_resp_ctx:set_time_cb(time_cb, arg)
 */
-static LUA_FUNCTION(openssl_ts_resp_ctx_set_time_cb)
+static int openssl_ts_resp_ctx_set_time_cb(lua_State *L)
 {
   TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
   TS_CB_ARG   *arg = NULL;
@@ -1534,7 +1534,7 @@ static LUA_FUNCTION(openssl_ts_resp_ctx_set_time_cb)
   return 0;
 }
 
-static LUA_FUNCTION(openssl_ts_resp_ctx_gc)
+static int openssl_ts_resp_ctx_gc(lua_State *L)
 {
   TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
   openssl_valueget(L, ctx, time_cb_key);
@@ -1670,7 +1670,7 @@ openssl_ts_verify_ctx_imprint(lua_State *L)
   return 0;
 }
 
-static LUA_FUNCTION(openssl_ts_verify_ctx_gc)
+static int openssl_ts_verify_ctx_gc(lua_State *L)
 {
   TS_VERIFY_CTX *ctx = CHECK_OBJECT(1, TS_VERIFY_CTX, "openssl.ts_verify_ctx");
 #if OPENSSL_VERSION_NUMBER < 0x10100000L                                                           \
@@ -1690,7 +1690,7 @@ verify ts_resp object, pkcs7 token or ts_resp data
 @tparam ts_resp|pkcs7|string data
 @treturn boolean result
 */
-static LUA_FUNCTION(openssl_ts_verify_ctx_verify)
+static int openssl_ts_verify_ctx_verify(lua_State *L)
 {
   TS_VERIFY_CTX *ctx = CHECK_OBJECT(1, TS_VERIFY_CTX, "openssl.ts_verify_ctx");
   int            ret = 0;

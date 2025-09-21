@@ -172,7 +172,7 @@ object.
 @treturn x509_crl object
 @see x509_crl
 */
-static LUA_FUNCTION(openssl_crl_new)
+static int openssl_crl_new(lua_State *L)
 {
   int           i;
   int           n = lua_gettop(L);
@@ -275,7 +275,7 @@ read x509_crl from string or bio input
 @treturn x509_crl certificate sign request object
 @see x509_crl
 */
-static LUA_FUNCTION(openssl_crl_read)
+static int openssl_crl_read(lua_State *L)
 {
   int       ret = 0;
   BIO      *in = load_bio_object(L, 1);
@@ -338,7 +338,7 @@ set version key
 @tparam integer version
 @treturn boolean result
 */
-static LUA_FUNCTION(openssl_crl_version)
+static int openssl_crl_version(lua_State *L)
 {
   X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
   if (lua_isnone(L, 2)) {
@@ -359,7 +359,7 @@ add revoked entry to x509_crl object
 @tparam[opt=0] number|string reason
 @treturn boolean result true for add success
 */
-static LUA_FUNCTION(openssl_crl_add_revocked)
+static int openssl_crl_add_revocked(lua_State *L)
 {
   X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
   BIGNUM   *sn = BN_get(L, 2);
@@ -421,7 +421,7 @@ set issuer x509_name object
 @tparam x509_name|x509 issuer
 @treturn boolean result
 */
-static LUA_FUNCTION(openssl_crl_issuer)
+static int openssl_crl_issuer(lua_State *L)
 {
   int        ret = 0;
   X509_CRL  *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
@@ -456,7 +456,7 @@ set lastUpdate time
 @tparam number lastUpdate
 @treturn boolean result
 */
-static LUA_FUNCTION(openssl_crl_lastUpdate)
+static int openssl_crl_lastUpdate(lua_State *L)
 {
   X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
   if (lua_isnone(L, 2)) {
@@ -486,7 +486,7 @@ set nextUpdate time
 @tparam number nextUpdate
 @treturn boolean result
 */
-static LUA_FUNCTION(openssl_crl_nextUpdate)
+static int openssl_crl_nextUpdate(lua_State *L)
 {
   X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
   if (lua_isnone(L, 2)) {
@@ -518,7 +518,7 @@ set updateTime time
 @tparam number period period how long time(seconds)
 @treturn boolean result
 */
-static LUA_FUNCTION(openssl_crl_updateTime)
+static int openssl_crl_updateTime(lua_State *L)
 {
   X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
   if (lua_isnone(L, 2)) {
@@ -561,7 +561,7 @@ sore crl entry in x509_crl object
 @function sort
 @treturn boolean result true for success and others for fail
 */
-static LUA_FUNCTION(openssl_crl_sort)
+static int openssl_crl_sort(lua_State *L)
 {
   X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
   int       ret = X509_CRL_sort(crl);
@@ -574,7 +574,7 @@ verify x509_crl object signature
 @tparam x509|evp_pkey key ca cert or public to verify signature
 @treturn boolean result true for success and others for fail
 */
-static LUA_FUNCTION(openssl_crl_verify)
+static int openssl_crl_verify(lua_State *L)
 {
   X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
   EVP_PKEY *pub = NULL;
@@ -605,7 +605,7 @@ sign x509_crl
 @tparam[opt='sha256WithRSAEncryption'] string|md_digest md_alg
 @treturn boolean result true for check pass
 */
-LUA_FUNCTION(openssl_crl_sign)
+int openssl_crl_sign(lua_State *L)
 {
   X509_CRL     *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
   EVP_PKEY     *key = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
@@ -646,7 +646,7 @@ get digest of x509_crl
 @tparam[opt='sha256'] evp_md|string md_alg default use sha256
 @treturn string digest result
 */
-static LUA_FUNCTION(openssl_crl_digest)
+static int openssl_crl_digest(lua_State *L)
 {
   X509_CRL     *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
   byte          buf[EVP_MAX_MD_SIZE];
@@ -668,7 +668,7 @@ compare with other x509_crl object
 @usage
   x:cmp(y) == (x==y)
 */
-static LUA_FUNCTION(openssl_crl_cmp)
+static int openssl_crl_cmp(lua_State *L)
 {
   X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
   X509_CRL *oth = CHECK_OBJECT(2, X509_CRL, "openssl.x509_crl");
@@ -687,7 +687,7 @@ make a delta x509_crl object
 @tparam[opt=0] integer flags
 @treturn x509_crl delta result x509_crl object
 */
-static LUA_FUNCTION(openssl_crl_diff)
+static int openssl_crl_diff(lua_State *L)
 {
   X509_CRL     *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
   X509_CRL     *newer = CHECK_OBJECT(2, X509_CRL, "openssl.x509_crl");
@@ -711,7 +711,7 @@ parse x509_crl object as table
 @tparam[opt=true] shortname default will use short object name
 @treturn table result
 */
-static LUA_FUNCTION(openssl_crl_parse)
+static int openssl_crl_parse(lua_State *L)
 {
   X509_CRL         *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
   int               num, i;
@@ -802,7 +802,7 @@ static LUA_FUNCTION(openssl_crl_parse)
   return 1;
 }
 
-static LUA_FUNCTION(openssl_crl_free)
+static int openssl_crl_free(lua_State *L)
 {
   X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
   X509_CRL_free(crl);
@@ -815,7 +815,7 @@ export x509_crl to string
 @tparam[opt='pem'] string format
 @treturn string
 */
-static LUA_FUNCTION(openssl_crl_export)
+static int openssl_crl_export(lua_State *L)
 {
   X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
   int       fmt = luaL_checkoption(L, 2, "pem", format);
@@ -852,7 +852,7 @@ get count of revoked entry
 @usage
   assert(#crl==crl:count())
 */
-static LUA_FUNCTION(openssl_crl_count)
+static int openssl_crl_count(lua_State *L)
 {
   X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
   STACK_OF(X509_REVOKED) *revokeds = X509_CRL_get_REVOKED(crl);
@@ -867,7 +867,7 @@ get revoekd entry
 @tparam number index
 @treturn table revoekd
 */
-static LUA_FUNCTION(openssl_crl_get)
+static int openssl_crl_get(lua_State *L)
 {
   X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");
   STACK_OF(X509_REVOKED) *revokeds = X509_CRL_get_REVOKED(crl);
