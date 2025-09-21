@@ -15,7 +15,7 @@ Author: GitHub Copilot Assistant
 local lpeg = require("lpeg")
 local lfs = require("lfs")
 
--- LPEG pattern utilities  
+-- LPEG pattern utilities
 local P, R, S, V = lpeg.P, lpeg.R, lpeg.S, lpeg.V
 local C, Cc, Ct, Cs = lpeg.C, lpeg.Cc, lpeg.Ct, lpeg.Cs
 
@@ -128,7 +128,7 @@ local comment_end = P("*/")
 
 -- LPEG patterns for function detection
 local static_kw = P("static") * wsp
-local return_types = P("int") + P("void") + P("char") + P("const") + identifier
+local return_types = P("int") + identifier
 local pointer = P("*")
 local lparen = P("(")
 local rparen = P(")")
@@ -151,16 +151,9 @@ local at_function = P("@function") * ws * C((1 - nl - P("@"))^0)
 -- LPEG pattern for any @tag
 local at_tag = P("@") * C(identifier) * ws * C((1 - nl - P("@"))^0)
 
--- LPEG pattern for skipping non-function patterns
-local skip_prefixes = P("lua_") + P("luaL_") + P("EVP_") + P("OPENSSL_") + P("BIO_") + 
-                     P("X509_") + P("ASN1_") + P("CONF_") + P("OBJ_") + P("SSL_") + 
-                     P("CRYPTO_") + P("ENGINE_") + P("RSA_") + P("DSA_") + P("EC_") + 
-                     P("DH_") + P("HMAC_") + P("auxiliar_") + P("AUXILIAR_") + 
-                     P("CHECK_") + P("PUSH_")
-
 -- Pattern for lines to skip entirely
-local skip_line_patterns = ws * (P("#") + P("//") + P("*") + P("/") + P("return") + 
-                                P("if") * ws * lparen + P("while") * ws * lparen + 
+local skip_line_patterns = ws * (P("#") + P("//") + P("*") + P("/") + P("return") +
+                                P("if") * ws * lparen + P("while") * ws * lparen +
                                 P("for") * ws * lparen)
 
 -- LDoc tag patterns
@@ -169,7 +162,7 @@ local function tag_pattern(tagname)
 end
 
 local ldoc_tags = {
-    "module", "function", "tparam", "param", "treturn", "return", 
+    "module", "function", "tparam", "param", "treturn", "return",
     "usage", "see", "author", "since", "deprecated", "local"
 }
 
@@ -178,7 +171,7 @@ local function parse_ldoc_comment(comment_text)
     local tags = {}
     local description = ""
     local lines = {}
-    
+
     -- Split into lines and clean them
     for line in comment_text:gmatch("[^\r\n]+") do
         -- Remove leading * and whitespace using LPEG pattern
@@ -190,11 +183,11 @@ local function parse_ldoc_comment(comment_text)
             table.insert(lines, line:trim())
         end
     end
-    
+
     local in_description = true
     local current_tag = nil
     local current_content = {}
-    
+
     for _, line in ipairs(lines) do
         -- Use LPEG to match @tag patterns
         local tag_name, tag_content = at_tag:match(line)
@@ -207,7 +200,7 @@ local function parse_ldoc_comment(comment_text)
                 table.insert(tags[current_tag], table.concat(current_content, " "):trim())
                 current_content = {}
             end
-            
+
             in_description = false
             current_tag = tag_name
             if tag_content and tag_content:trim() ~= "" then
@@ -225,7 +218,7 @@ local function parse_ldoc_comment(comment_text)
             description = description .. line
         end
     end
-    
+
     -- Don't forget the last tag
     if current_tag then
         if not tags[current_tag] then
@@ -233,7 +226,7 @@ local function parse_ldoc_comment(comment_text)
         end
         table.insert(tags[current_tag], table.concat(current_content, " "):trim())
     end
-    
+
     return {
         description = description,
         tags = tags,
@@ -253,31 +246,31 @@ local function analyze_file(filepath)
         printf(colored("red", "Error: Cannot open file %s"), filepath)
         return
     end
-    
+
     local content = file:read("*a")
     file:close()
-    
+
     stats.total_files = stats.total_files + 1
     stats.analyzed_files = stats.analyzed_files + 1
-    
+
     printf(colored("cyan", "\n=== Analyzing %s ==="), filepath)
-    
+
     if config.verbose then
         printf("File size: %d bytes", #content)
     end
-    
+
     local file_issues = {}
     local comment_count = 0
     local function_count = 0
     local documented_function_count = 0
-    
+
     -- Find all LDoc comments
     local comments = {}
     local pos = 1
     while pos <= #content do
         local start_pos, end_pos = content:find("/***.-*/", pos)
         if not start_pos then break end
-        
+
         local comment_text = content:sub(start_pos + 4, end_pos - 2) -- Remove /*** and */
         table.insert(comments, {
             text = comment_text,
@@ -285,42 +278,42 @@ local function analyze_file(filepath)
             end_pos = end_pos,
             line_num = select(2, content:sub(1, start_pos):gsub('\n', '\n')) + 1
         })
-        
+
         comment_count = comment_count + 1
         pos = end_pos + 1
     end
-    
+
     printf("Found %d LDoc comment blocks", comment_count)
     stats.total_comments = stats.total_comments + comment_count
-    
+
     -- Find all function definitions using LPEG patterns
     local functions = {}
-    
+
     -- Split content into lines for easier processing
     local lines = {}
     for line in content:gmatch("[^\r\n]+") do
         table.insert(lines, line)
     end
-    
+
     -- Process each line using LPEG patterns
     for i = 1, #lines do
         local line = lines[i]
         local next_line = lines[i + 1] or ""
-        
+
         -- Skip lines that match skip patterns using LPEG
         if skip_line_patterns:match(line) then
             goto continue
         end
-        
+
         local func_name = nil
         local is_function_def = false
-        
+
         -- Pattern 1: Single-line function definition using LPEG
         func_name = single_line_func:match(line)
         if func_name then
             is_function_def = true
         end
-        
+
         -- Pattern 2: Multi-line function definition using LPEG
         if not is_function_def and multiline_return_type:match(line) then
             func_name = multiline_func_name:match(next_line)
@@ -328,27 +321,22 @@ local function analyze_file(filepath)
                 is_function_def = true
             end
         end
-        
+
         -- Apply LPEG-based filtering for function names
         if is_function_def and func_name then
             local skip = false
-            
-            -- Use LPEG pattern to check if function name starts with skip_prefixes
-            if skip_prefixes:match(func_name) then
-                skip = true
-            end
-            
+
             -- Skip all-caps names (macros) using LPEG
             local all_caps_pattern = (R("AZ") + P("_"))^1 * P(-1)
             if all_caps_pattern:match(func_name) then
                 skip = true
             end
-            
+
             -- Skip single-letter or number-starting names
             if #func_name == 1 or func_name:match("^%d") then
                 skip = true
             end
-            
+
             if not skip then
                 table.insert(functions, {
                     name = func_name,
@@ -358,29 +346,29 @@ local function analyze_file(filepath)
                 function_count = function_count + 1
             end
         end
-        
+
         ::continue::
     end
-    
+
     printf("Found %d function definitions", function_count)
     stats.total_functions = stats.total_functions + function_count
-    
+
     if config.verbose then
         printf("Starting comment validation...")
     end
-    
+
     -- Analyze each comment
     for i, comment in ipairs(comments) do
         local parsed = parse_ldoc_comment(comment.text)
         local valid = true
         local comment_issues = {}
-        
+
         -- Check for required elements
         if not parsed.description or parsed.description:trim() == "" then
             table.insert(comment_issues, "Missing or empty description")
             valid = false
         end
-        
+
         -- Check for function documentation
         if parsed.tags.module then
             -- Module documentation - should have usage
@@ -391,11 +379,11 @@ local function analyze_file(filepath)
         elseif parsed.tags["function"] then
             -- Function documentation
             documented_function_count = documented_function_count + 1
-            
+
             -- Check parameters and return values
             local has_params = parsed.tags.tparam or parsed.tags.param
             local has_return = parsed.tags.treturn or parsed.tags["return"]
-            
+
             -- Find corresponding function
             local next_func = nil
             for _, func in ipairs(functions) do
@@ -404,7 +392,7 @@ local function analyze_file(filepath)
                     break
                 end
             end
-            
+
             if next_func then
                 -- Basic validation for function documentation
                 if not has_return then
@@ -413,7 +401,7 @@ local function analyze_file(filepath)
                 end
             end
         end
-        
+
         -- Check for common LDoc tag issues
         for tag, values in pairs(parsed.tags) do
             for _, value in ipairs(values) do
@@ -423,7 +411,7 @@ local function analyze_file(filepath)
                 end
             end
         end
-        
+
         if valid and #comment_issues == 0 then
             stats.valid_comments = stats.valid_comments + 1
             if config.verbose then
@@ -441,9 +429,9 @@ local function analyze_file(filepath)
             end
         end
     end
-    
+
     stats.documented_functions = stats.documented_functions + documented_function_count
-    
+
     -- Report undocumented functions - but only count functions that should be documented
     -- According to @zhaozg feedback: API coverage should only count functions with @function tags
     -- This means we compare documented_function_count against functions that should be documented,
@@ -455,12 +443,12 @@ local function analyze_file(filepath)
         end
         table.insert(file_issues, string.format("%d undocumented functions", undocumented))
     end
-    
+
     -- Store file issues
     if #file_issues > 0 then
         stats.issues[filepath] = file_issues
     end
-    
+
     -- Summary for this file - Updated approach for API coverage calculation
     -- Only count functions that are intended for API documentation (with @function tags)
     -- as per @zhaozg's feedback
@@ -469,7 +457,7 @@ local function analyze_file(filepath)
         -- When we have documented functions, coverage is 100% for those functions
         -- The undocumented count shows how many more need @function tags
         api_coverage_percentage = 100
-        printf("API documentation coverage: %.1f%% (%d functions with @function tags)", 
+        printf("API documentation coverage: %.1f%% (%d functions with @function tags)",
                api_coverage_percentage, documented_function_count)
         if undocumented > 0 then
             printf("Additional functions detected: %d (candidates for @function documentation)", undocumented)
@@ -484,19 +472,19 @@ end
 -- Main function to analyze path (file or directory)
 local function analyze_path(path)
     printf(colored("bold", "LDoc Comment Analyzer for lua-openssl"))
-    
+
     -- Check if path exists
     local attr = lfs.attributes(path)
     if not attr then
         printf(colored("red", "Error: Path %s does not exist"), path)
         os.exit(1)
     end
-    
+
     local c_files = {}
-    
+
     if attr.mode == "directory" then
         printf("Analyzing directory: %s\n", path)
-        
+
         -- Scan for C files in directory
         for file in lfs.dir(path) do
             if file:match("%.c$") then
@@ -504,59 +492,59 @@ local function analyze_path(path)
                 table.insert(c_files, filepath)
             end
         end
-        
+
         table.sort(c_files)
-        
+
         if #c_files == 0 then
             printf(colored("yellow", "No C files found in directory %s"), path)
             return
         end
-        
+
     elseif attr.mode == "file" then
         if not path:match("%.c$") then
             printf(colored("red", "Error: %s is not a C source file"), path)
             os.exit(1)
         end
-        
+
         printf("Analyzing file: %s\n", path)
         table.insert(c_files, path)
     else
         printf(colored("red", "Error: %s is neither a file nor a directory"), path)
         os.exit(1)
     end
-    
+
     printf("Found %d C file%s to analyze\n", #c_files, #c_files == 1 and "" or "s")
-    
+
     -- Analyze each file
     for _, filepath in ipairs(c_files) do
         analyze_file(filepath)
     end
-    
+
     -- Print overall summary
     printf(colored("bold", "\n" .. string.rep("=", 60)))
     printf(colored("bold", "ANALYSIS SUMMARY"))
     printf(colored("bold", string.rep("=", 60)))
-    
+
     printf("Files analyzed: %d", stats.analyzed_files)
     printf("Total functions detected: %d", stats.total_functions)
     printf("Functions with @function tags: %d", stats.documented_functions)
     printf("Total LDoc comments: %d", stats.total_comments)
     printf("Valid LDoc comments: %d", stats.valid_comments)
-    
+
     -- Updated API coverage calculation as per @zhaozg feedback
     -- Only count functions with @function tags in API coverage
     local api_coverage = stats.documented_functions > 0 and 100 or 0
     local comment_validity = stats.total_comments > 0 and (stats.valid_comments / stats.total_comments * 100) or 0
     local potential_api_functions = stats.total_functions - stats.documented_functions
-    
-    printf(colored("cyan", "API documentation coverage: %.1f%% (%d functions with @function tags)"), 
+
+    printf(colored("cyan", "API documentation coverage: %.1f%% (%d functions with @function tags)"),
            api_coverage, stats.documented_functions)
     if potential_api_functions > 0 then
-        printf(colored("yellow", "Potential API functions: %d (candidates for @function documentation)"), 
+        printf(colored("yellow", "Potential API functions: %d (candidates for @function documentation)"),
                potential_api_functions)
     end
     printf(colored("cyan", "Comment validity rate: %.1f%%"), comment_validity)
-    
+
     -- Report issues by priority
     if config.show_issues and next(stats.issues) then
         printf(colored("yellow", "\nISSUES FOUND:"))
@@ -577,36 +565,22 @@ local function analyze_path(path)
             end
         end
     end
-    
+
     -- Recommendations - Updated for new API coverage approach
     printf(colored("bold", "\nRECOMMENDATIONS:"))
-    
+
     if potential_api_functions > 0 then
         printf(colored("yellow", "• Consider adding @function documentation for %d detected functions"), potential_api_functions)
     end
-    
+
     if comment_validity < 90 then
         printf(colored("red", "• Improve LDoc comment quality (%.1f%% valid). Target: 90%%+"), comment_validity)
     end
-    
-    -- Identify files mentioned in TODO.md as needing attention
-    local priority_files = {"cipher.c", "digest.c", "kdf.c", "crl.c"}
-    for _, file in ipairs(priority_files) do
-        -- Check if any analyzed file contains this priority file name
-        local found = false
-        for filepath, _ in pairs(stats.issues) do
-            if filepath:match(file .. "$") then
-                printf(colored("red", "• High priority: Fix documentation in %s (mentioned in TODO.md)"), file)
-                found = true
-                break
-            end
-        end
-    end
-    
+
     printf(colored("green", "• Use consistent LDoc tags: @module, @function, @tparam, @treturn"))
     printf(colored("green", "• Add @usage examples for all modules"))
     printf(colored("green", "• Ensure all public functions have complete documentation"))
-    
+
     -- Exit with appropriate code based on comment validity and documentation presence
     if comment_validity < 70 or stats.documented_functions == 0 then
         printf(colored("red", "\nDocumentation quality needs significant improvement!"))

@@ -7,11 +7,6 @@
 ### 文档质量改进 (Documentation Quality Improvement)
 - [ ] **文档过时和质量低下** - README明确指出"Documentation quality is low and stale"
   - [ ] 更新和完善[在线文档](http://zhaozg.github.io/lua-openssl/index.html)
-  - [ ] 改进LDoc注释，特别是以下模块文档函数数量较少：
-    - cipher.c (24个函数)
-    - digest.c (24个函数) 
-    - kdf.c (25个函数)
-    - crl.c (27个函数)
   - [ ] 添加更多实用示例和教程
   - [ ] 建立统一的API文档标准
 
@@ -53,7 +48,7 @@
   - [ ] 实施持续集成中的覆盖率报告
   - [ ] 增加跨平台兼容性测试
 
-### 构建系统现代化 (Build System Modernization)  
+### 构建系统现代化 (Build System Modernization)
 - [ ] **构建工具优化**
   - [ ] 简化Makefile和CMake配置
   - [ ] 改进依赖检测和错误报告
@@ -106,7 +101,7 @@
 2. 安全问题修复 - 替换不安全C函数
 3. 测试覆盖率基线建立
 
-### Phase 2 (6个月)  
+### Phase 2 (6个月)
 1. OpenSSL 3.0+ API完整支持
 2. 内存管理优化
 3. CI/CD增强
@@ -123,7 +118,7 @@
 - 大型源文件 (ssl.c, pkey.c)
 - 过时的文档
 
-### 中等技术债务区域  
+### 中等技术债务区域
 - 错误处理不一致
 - 测试覆盖率不均匀
 - 构建系统复杂性
@@ -136,4 +131,4 @@
 ---
 
 *注：此TODO基于对26k+行代码、57个测试文件、120+版本兼容代码块的深度分析*
-*最后更新：2024年*
+*最后更新：2026年*

@@ -77,7 +77,7 @@ jobs:
         export PATH=$HOME/.usr/bin:$PATH
         $HOME/.usr/bin/luarocks install lpeg
         $HOME/.usr/bin/luarocks install ldoc
-        luajit .github/shell/analyze_ldoc.lua src
+        $HOME/.usr/bin/luajit .github/shell/analyze_ldoc.lua src
         make doc
 
   clang-asan:
