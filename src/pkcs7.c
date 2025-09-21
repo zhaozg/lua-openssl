@@ -404,6 +404,12 @@ openssl_push_pkcs7_signer_info(lua_State *L, PKCS7_SIGNER_INFO *info)
   return 1;
 }
 
+/***
+get PKCS7 object type information
+@function type
+@treturn string short name of PKCS7 type
+@treturn string long name of PKCS7 type
+*/
 static LUA_FUNCTION(openssl_pkcs7_type)
 {
   PKCS7 *p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");

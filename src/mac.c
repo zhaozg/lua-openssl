@@ -33,6 +33,12 @@ openssl_mac_gc(lua_State *L)
   return 0;
 }
 
+/***
+check if MAC algorithm supports a specific name
+@function is_a
+@tparam string name algorithm name to check
+@treturn boolean true if MAC supports the given name
+*/
 static int
 openssl_mac_is_a(lua_State *L)
 {
@@ -51,6 +57,11 @@ openssl_mac_names_do(const char *name, void *data)
   lua_rawseti(L, -2, len + 1);
 }
 
+/***
+get all names supported by this MAC algorithm
+@function names
+@treturn table array of supported algorithm names
+*/
 static int
 openssl_mac_names(lua_State *L)
 {
@@ -61,6 +72,11 @@ openssl_mac_names(lua_State *L)
   return 1;
 }
 
+/***
+get provider name for this MAC algorithm
+@function provider
+@treturn string name of the provider implementing this MAC
+*/
 static int
 openssl_mac_provider(lua_State *L)
 {

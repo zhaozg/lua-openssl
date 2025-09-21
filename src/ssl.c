@@ -231,6 +231,11 @@ openssl_ssl_alert_desc(lua_State *L)
   return 1;
 }
 
+/***
+create new SSL session object
+@function session_new
+@treturn ssl_session new SSL session object
+*/
 static int
 openssl_ssl_session_new(lua_State *L)
 {
@@ -239,6 +244,12 @@ openssl_ssl_session_new(lua_State *L)
   return 1;
 }
 
+/***
+read SSL session from BIO or string data
+@function session_read
+@tparam bio|string input BIO object or string containing session data (PEM or DER format)
+@treturn ssl_session|nil SSL session object or nil on error
+*/
 static int
 openssl_ssl_session_read(lua_State *L)
 {

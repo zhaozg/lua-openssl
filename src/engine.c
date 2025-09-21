@@ -94,6 +94,11 @@ openssl_engine(lua_State *L)
   return 1;
 }
 
+/***
+get next engine in the list
+@function next
+@treturn engine|nil next engine object or nil if none
+*/
 static int
 openssl_engine_next(lua_State *L)
 {
@@ -244,6 +249,13 @@ openssl_engine_register(lua_State *L)
   return 0;
 };
 
+/***
+control engine operations and settings
+@function ctrl
+@tparam number|string cmd control command (number) or command string
+@tparam[opt] any arg command argument (varies by command)
+@treturn boolean|any result depends on command type
+*/
 static int
 openssl_engine_ctrl(lua_State *L)
 {
@@ -293,6 +305,12 @@ openssl_engine_gc(lua_State *L)
   return 0;
 }
 
+/***
+get or set engine identifier
+@function id
+@tparam[opt] string id new engine ID to set
+@treturn string|boolean engine ID (if getting) or success status (if setting)
+*/
 static int
 openssl_engine_id(lua_State *L)
 {
@@ -308,6 +326,12 @@ openssl_engine_id(lua_State *L)
   return 1;
 }
 
+/***
+get or set engine name
+@function name
+@tparam[opt] string name new engine name to set
+@treturn string|boolean engine name (if getting) or success status (if setting)
+*/
 static int
 openssl_engine_name(lua_State *L)
 {
@@ -323,6 +347,12 @@ openssl_engine_name(lua_State *L)
   return 1;
 }
 
+/***
+get or set engine flags
+@function flags
+@tparam[opt] number flags new engine flags to set
+@treturn number|boolean engine flags (if getting) or success status (if setting)
+*/
 static int
 openssl_engine_flags(lua_State *L)
 {

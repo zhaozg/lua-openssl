@@ -126,6 +126,11 @@ static LUA_FUNCTION(openssl_rsa_verify)
   return 1;
 };
 
+/***
+parse RSA key components and parameters
+@function parse
+@treturn table RSA key parameters including bits, n, e, d, p, q, and CRT parameters
+*/
 static LUA_FUNCTION(openssl_rsa_parse)
 {
   const BIGNUM *n = NULL, *e = NULL, *d = NULL;
@@ -207,6 +212,14 @@ openssl_rsa_set_engine(lua_State *L)
   return ret;
 }
 
+/***
+generate RSA key pair
+@function generate_key
+@tparam[opt=2048] number bits key size in bits
+@tparam[opt=65537] number e public exponent (typically 65537)
+@tparam[opt] engine eng engine to use for key generation
+@treturn rsa|nil generated RSA key pair or nil on error
+*/
 static int
 openssl_rsa_generate_key(lua_State *L)
 {
