@@ -1815,6 +1815,13 @@ openssl_ssl_session_peer(lua_State *L)
   return 1;
 }
 
+/***
+get or set SSL session ID
+@function id
+@tparam[opt] string id optional session ID to set
+@treturn string current session ID when called without parameters
+@treturn boolean true when setting session ID successfully (OpenSSL 1.1.0+)
+*/
 static int
 openssl_ssl_session_id(lua_State *L)
 {
@@ -1848,6 +1855,12 @@ openssl_ssl_session_compress_id(lua_State *L)
   return 1;
 }
 
+/***
+export SSL session to PEM or DER format
+@function export
+@tparam[opt=true] boolean pem true for PEM format, false for DER format
+@treturn string exported session data in specified format
+*/
 static int
 openssl_ssl_session_export(lua_State *L)
 {
