@@ -317,6 +317,13 @@ openssl_ec_point_oct2point(lua_State *L)
   return ret;
 }
 
+/***
+convert EC point to octet string
+@function point2oct
+@tparam ec_group group the EC group
+@tparam[opt] string form point conversion form ("compressed", "uncompressed", or "hybrid")
+@treturn string octet string representation of the point
+*/
 static int
 openssl_ec_point_point2oct(lua_State *L)
 {
@@ -339,6 +346,13 @@ openssl_ec_point_point2oct(lua_State *L)
   return 0;
 }
 
+/***
+convert bignum to EC point 
+@function bn2point
+@tparam ec_group group the EC group
+@tparam bignum bn the bignum to convert to point
+@treturn ec_point|nil the resulting EC point or nil on failure
+*/
 static int
 openssl_ec_point_bn2point(lua_State *L)
 {
@@ -352,6 +366,13 @@ openssl_ec_point_bn2point(lua_State *L)
   return 1;
 }
 
+/***
+convert EC point to bignum
+@function point2bn
+@tparam ec_group group the EC group
+@tparam[opt] string form point conversion form ("compressed", "uncompressed", or "hybrid")
+@treturn bn|nil the resulting bignum representation or nil on failure
+*/
 static int
 openssl_ec_point_point2bn(lua_State *L)
 {
