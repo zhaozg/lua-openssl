@@ -544,6 +544,11 @@ static luaL_Reg R[] = {
   { NULL,                  NULL                            }
 };
 
+/***
+get the ASN.1 type tag number
+@function type
+@treturn number the ASN.1 type tag number
+*/
 static int
 openssl_asn1type_type(lua_State *L)
 {
@@ -552,6 +557,13 @@ openssl_asn1type_type(lua_State *L)
   return 1;
 }
 
+/***
+get or set octet string data for asn1_type object
+@function octet
+@tparam[opt] string data optional octet string data to set
+@treturn string current octet string data when called without parameters
+@treturn boolean true when setting data successfully
+*/
 static int
 openssl_asn1type_octet(lua_State *L)
 {
@@ -576,6 +588,12 @@ openssl_asn1type_octet(lua_State *L)
   }
 }
 
+/***
+compare two asn1_type objects
+@function cmp
+@tparam asn1_type other another asn1_type object to compare with
+@treturn boolean true if both asn1_type objects are equal, false otherwise
+*/
 static int
 openssl_asn1type_cmp(lua_State *L)
 {
@@ -594,6 +612,11 @@ openssl_asn1type_free(lua_State *L)
   return 0;
 }
 
+/***
+convert asn1_type to asn1_string object
+@function asn1string
+@treturn asn1_string|nil asn1_string object or nil if conversion is not supported
+*/
 static int
 openssl_asn1type_asn1string(lua_State *L)
 {
@@ -607,6 +630,11 @@ openssl_asn1type_asn1string(lua_State *L)
   return ret;
 }
 
+/***
+serialize asn1_type object to DER encoded string
+@function i2d
+@treturn string DER encoded representation of the asn1_type object
+*/
 static int
 openssl_asn1type_i2d(lua_State *L)
 {
@@ -684,6 +712,11 @@ openssl_push_asn1type(lua_State *L, const ASN1_TYPE *type)
   return 1;
 }
 
+/***
+get detailed information about asn1_type object
+@function info
+@treturn table containing type information and data
+*/
 static int
 openssl_asn1type_info(lua_State *L)
 {
@@ -1420,6 +1453,11 @@ openssl_asn1group_dup(lua_State *L)
   return 1;
 }
 
+/***
+check if asn1_time object is valid
+@function check
+@treturn boolean true if asn1_time is valid, false otherwise
+*/
 static int
 openssl_asn1time_check(lua_State *L)
 {
@@ -1428,6 +1466,14 @@ openssl_asn1time_check(lua_State *L)
   return openssl_pushresult(L, ret);
 }
 
+/***
+adjust asn1_time by specified offset
+@function adj
+@tparam number time base time as Unix timestamp
+@tparam[opt=0] number offset_day offset in days
+@tparam[opt=0] number offset_sec offset in seconds
+@treturn asn1_time adjusted asn1_time object (self)
+*/
 static int
 openssl_asn1time_adj(lua_State *L)
 {
@@ -1453,6 +1499,14 @@ openssl_asn1time_adj(lua_State *L)
 }
 
 #if !defined(LIBRESSL_VERSION_NUMBER)
+/***
+calculate difference between two asn1_time objects
+@function diff
+@tparam asn1_time to target time to compare with
+@treturn[1] number difference in days
+@treturn[1] number difference in seconds
+@treturn[2] nil when comparison fails
+*/
 static int
 openssl_asn1time_diff(lua_State *L)
 {

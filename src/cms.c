@@ -733,6 +733,12 @@ openssl_cms_get_signers(lua_State *L)
   return ret;
 }
 
+/***
+extract the data content from CMS object
+@function data
+@tparam[opt=0] number flags optional flags for data extraction
+@treturn string extracted data content
+*/
 static int
 openssl_cms_data(lua_State *L)
 {
@@ -751,6 +757,13 @@ openssl_cms_data(lua_State *L)
   return ret;
 }
 
+/***
+finalize CMS object processing with provided input
+@function final
+@tparam string|bio input data to finalize the CMS with
+@tparam[opt=CMS_STREAM] number flags optional flags for finalization
+@treturn boolean true on success, false on failure
+*/
 static int
 openssl_cms_final(lua_State *L)
 {
