@@ -357,6 +357,11 @@ err:
   return ret;
 }
 
+/***
+free digest context resources
+@function close
+@treturn number 0
+*/
 static LUA_FUNCTION(openssl_digest_ctx_free)
 {
   EVP_MD_CTX *ctx = CHECK_OBJECT(1, EVP_MD_CTX, "openssl.evp_digest_ctx");

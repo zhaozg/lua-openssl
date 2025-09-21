@@ -101,6 +101,13 @@ static LUA_FUNCTION(openssl_pkcs7_new)
   return ret;
 }
 
+/***
+create PKCS7 structure with certificates and CRLs
+@function create
+@tparam table certs array of X509 certificates
+@tparam[opt] table crls array of X509 CRLs
+@treturn pkcs7|nil new PKCS7 object or nil on error
+*/
 static LUA_FUNCTION(openssl_pkcs7_create)
 {
   PKCS7        *p7 = NULL;
@@ -129,6 +136,12 @@ static LUA_FUNCTION(openssl_pkcs7_create)
   return 0;
 }
 
+/***
+set content for PKCS7 structure
+@function set_content
+@tparam pkcs7 content PKCS7 content to set
+@treturn boolean true on success, false on failure
+*/
 static LUA_FUNCTION(openssl_pkcs7_set_content)
 {
   PKCS7 *p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
@@ -138,6 +151,12 @@ static LUA_FUNCTION(openssl_pkcs7_set_content)
   return openssl_pushresult(L, ret);
 }
 
+/***
+add certificates or CRLs to PKCS7 structure
+@function add
+@tparam x509|x509_crl... objects one or more X509 certificates or CRL objects to add
+@treturn boolean true on success, false on failure
+*/
 static LUA_FUNCTION(openssl_pkcs7_add)
 {
   PKCS7 *p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
@@ -521,6 +540,12 @@ static LUA_FUNCTION(openssl_pkcs7_parse)
   return 1;
 }
 
+/***
+set digest algorithm for PKCS7 structure
+@function set_digest
+@tparam string|evp_md digest algorithm name or digest object
+@treturn boolean true on success, false on failure
+*/
 static LUA_FUNCTION(openssl_pkcs7_set_digest)
 {
   PKCS7        *p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
@@ -532,6 +557,14 @@ static LUA_FUNCTION(openssl_pkcs7_set_digest)
   return 1;
 }
 
+/***
+finalize PKCS7 structure with data
+@function final
+@tparam pkcs7 p7 PKCS7 object to finalize
+@tparam bio|string data data to finalize with
+@tparam[opt=0] number flags finalization flags
+@treturn boolean true on success, false on failure
+*/
 static LUA_FUNCTION(openssl_pkcs7_final)
 {
   PKCS7 *p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
