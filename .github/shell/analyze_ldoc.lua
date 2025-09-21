@@ -88,22 +88,48 @@ local function parse_ldoc_comment(comment_text)
     end
     
     local in_description = true
+    local current_tag = nil
+    local current_content = {}
+    
     for _, line in ipairs(lines) do
+        line = line:trim()
         if line:match("^@") then
+            -- Save previous tag if any
+            if current_tag then
+                if not tags[current_tag] then
+                    tags[current_tag] = {}
+                end
+                table.insert(tags[current_tag], table.concat(current_content, " "):trim())
+                current_content = {}
+            end
+            
             in_description = false
             local tag, content = line:match("^@(%w+)%s*(.*)")
             if tag then
-                if not tags[tag] then
-                    tags[tag] = {}
+                current_tag = tag
+                if content and content:trim() ~= "" then
+                    table.insert(current_content, content)
                 end
-                table.insert(tags[tag], content or "")
             end
-        elseif in_description and line:trim() ~= "" then
+        elseif current_tag then
+            -- Continue collecting content for current tag
+            if line ~= "" and not line:match("^[-=]+$") then
+                table.insert(current_content, line)
+            end
+        elseif in_description and line ~= "" and not line:match("^[-=]+$") then
             if description ~= "" then
                 description = description .. " "
             end
             description = description .. line
         end
+    end
+    
+    -- Don't forget the last tag
+    if current_tag then
+        if not tags[current_tag] then
+            tags[current_tag] = {}
+        end
+        table.insert(tags[current_tag], table.concat(current_content, " "):trim())
     end
     
     return {
@@ -171,7 +197,22 @@ local function analyze_file(filepath)
         if line_text:match("^%s*#") or 
            line_text:match("^%s*//") or 
            line_text:match("^%s*%*") or
-           line_text:match("^%s*/") then
+           line_text:match("^%s*/") or
+           line_text:match("^%s*return") or
+           line_text:match("^%s*if%s*%(") or
+           line_text:match("^%s*while%s*%(") or
+           line_text:match("^%s*for%s*%(") then
+            return false
+        end
+        
+        -- Skip common non-function patterns
+        if func_name:match("^[A-Z_]+$") or -- All caps constants
+           func_name:match("^%d") or -- Starts with number
+           func_name == "return" or
+           func_name == "if" or
+           func_name == "while" or
+           func_name == "for" or
+           func_name == "switch" then
             return false
         end
         
@@ -192,7 +233,14 @@ local function analyze_file(filepath)
                 break
             end
         end
-        local line_text = content:sub(line_start, func_end)
+        local line_end = func_start
+        for i = func_start, #content do
+            if content:sub(i, i) == '\n' then
+                line_end = i - 1
+                break
+            end
+        end
+        local line_text = content:sub(line_start, line_end)
         
         if is_function_definition(line_text, func_name) then
             table.insert(functions, {
@@ -223,9 +271,10 @@ local function analyze_file(filepath)
         
         -- Check for function documentation
         if parsed.tags.module then
-            -- Module documentation
-            if not parsed.tags.usage then
+            -- Module documentation - should have usage
+            if not parsed.tags.usage or (parsed.tags.usage and #parsed.tags.usage > 0 and parsed.tags.usage[1]:trim() == "") then
                 table.insert(comment_issues, "Module missing @usage example")
+                valid = false
             end
         elseif parsed.tags["function"] then
             -- Function documentation
@@ -248,6 +297,7 @@ local function analyze_file(filepath)
                 -- Basic validation for function documentation
                 if not has_return then
                     table.insert(comment_issues, string.format("Function '%s' missing @treturn/@return documentation", next_func.name))
+                    valid = false
                 end
             end
         end
