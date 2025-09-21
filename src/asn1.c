@@ -231,6 +231,7 @@ make tag, class number to string
 @function tostring
 @tparam number clsortag which to string
 @tparam string range only accept 'class' or 'tag'
+@treturn string result
 */
 static int
 openssl_asn1_tostring(lua_State *L)
@@ -1013,6 +1014,7 @@ ASN1_TIME_get(ASN1_TIME *time, time_t off)
 
 /***
 @function get
+@treturn userdata object created
 */
 static int
 openssl_asn1group_get(lua_State *L)
@@ -1043,6 +1045,7 @@ openssl_asn1group_get(lua_State *L)
 
 /***
 @function i2d
+@treturn string result
 */
 static int
 openssl_asn1group_i2d(lua_State *L)
@@ -1123,6 +1126,7 @@ openssl_asn1group_i2d(lua_State *L)
 
 /***
 @function d2i
+@treturn boolean success status
 */
 static int
 openssl_asn1group_d2i(lua_State *L)

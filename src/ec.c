@@ -2,6 +2,8 @@
 ec module to create EC keys and do EC key processes.
 
 @module ec
+@usage
+  ec = require('openssl').ec
 */
 #include <openssl/engine.h>
 
