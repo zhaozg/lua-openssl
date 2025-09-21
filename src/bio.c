@@ -222,17 +222,29 @@ static LUA_FUNCTION(openssl_bio_new_accept)
 /***
 make tcp client socket
 @function connect
-@tparam string host_addr addrees like 'host:port'
-@tparam[opt=true] boolean connect default connect immediately
-@treturn bio
+@tparam string host_addr address like 'host:port' (e.g., 'kkhub.com:443')
+@tparam[opt=true] boolean connect default connect immediately, false to defer connection
+@treturn bio TCP client BIO object
 */
 
 /***
-make tcp client socket
+make tcp client socket with address table
 @function connect
-@tparam address table with hostname, ip, port filed
-@tparam[opt=true] boolean connect default connect immediately
-@treturn bio
+@tparam table address table with hostname, ip, port fields
+@tparam[opt=true] boolean connect default connect immediately, false to defer connection
+@treturn bio TCP client BIO object
+@usage
+  -- String format
+  local cli = bio.connect("kkhub.com:443")
+  
+  -- Table format
+  local cli = bio.connect({
+    hostname = "kkhub.com",
+    port = "12345"
+  })
+  
+  -- Deferred connection
+  local cli = bio.connect("host:port", false)
 */
 static int
 openssl_bio_new_connect(lua_State *L)
@@ -277,32 +289,35 @@ openssl_bio_new_connect(lua_State *L)
 make base64 or buffer bio, which can append to an io BIO object
 @function filter
 @tparam string mode support 'base64' or 'buffer'
-@treturn bio
+@treturn bio filter BIO object
 */
+
 /***
 make digest bio, which can append to an io BIO object
 @function filter
-@tparam string mode must be 'digest'
-@tparam evp_md|string md_alg
-@treturn bio
+@tparam string mode must be 'md' for message digest
+@tparam evp_md|string md_alg message digest algorithm name (e.g., 'sha1', 'sha256')
+@treturn bio filter BIO object for message digest operations
 */
+
 /***
 make ssl bio
 @function filter
 @tparam string mode must be 'ssl'
-@tparam ssl s
-@tparam[opt='noclose'] flag support 'close' or 'noclose' when close or gc
-@treturn bio
+@tparam ssl s SSL object to attach
+@tparam[opt='noclose'] string flag support 'close' or 'noclose' when close or gc
+@treturn bio SSL filter BIO object
 */
 
 /***
 make cipher filter bio object
 @function filter
 @tparam string mode must be 'cipher'
-@tparam string key
-@tparam string iv
-@tparam[opt=true] boolean encrypt
-@treturn bio
+@tparam string|evp_cipher alg cipher algorithm name (e.g., 'aes-128-ecb')
+@tparam string key encryption/decryption key
+@tparam string iv initialization vector
+@tparam[opt=true] boolean encrypt true for encryption, false for decryption
+@treturn bio cipher filter BIO object
 */
 static LUA_FUNCTION(openssl_bio_new_filter)
 {
@@ -550,6 +565,14 @@ static LUA_FUNCTION(openssl_bio_nbio)
   return openssl_pushresult(L, ret);
 }
 
+/***
+check if BIO operation should be retried
+@function retry
+@treturn boolean true if operation should be retried
+@treturn[opt] boolean true if should retry read operation  
+@treturn[opt] boolean true if should retry write operation
+@treturn[opt] boolean true if should retry special I/O operation
+*/
 static LUA_FUNCTION(openssl_bio_retry)
 {
   BIO *bio = CHECK_OBJECT(1, BIO, "openssl.bio");
@@ -569,8 +592,9 @@ static LUA_FUNCTION(openssl_bio_retry)
 }
 
 /***
-reset bio
+reset bio to initial state
 @function reset
+@treturn boolean true on success, false on failure
 */
 static LUA_FUNCTION(openssl_bio_reset)
 {

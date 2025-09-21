@@ -818,6 +818,11 @@ static LUA_FUNCTION(openssl_cipher_ctx_ctrl)
   return ret;
 }
 
+/***
+release cipher context resources
+@function __gc
+@treturn number 0 
+*/
 static LUA_FUNCTION(openssl_cipher_ctx_free)
 {
   EVP_CIPHER_CTX *ctx = CHECK_OBJECT(1, EVP_CIPHER_CTX, "openssl.evp_cipher_ctx");
