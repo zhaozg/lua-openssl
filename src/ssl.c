@@ -1748,6 +1748,12 @@ openssl_ssl_getpeerverification(lua_State *L)
   return 2;
 }
 
+/***
+get or set SSL session time
+@function time
+@tparam[opt] number time session time to set (Unix timestamp)
+@treturn number current session time (if getting) or previous time (if setting)
+*/
 static int
 openssl_ssl_session_time(lua_State *L)
 {
@@ -1764,6 +1770,12 @@ openssl_ssl_session_time(lua_State *L)
   return 1;
 }
 
+/***
+get or set SSL session timeout
+@function timeout
+@tparam[opt] number timeout session timeout in seconds to set
+@treturn number current session timeout (if getting) or previous timeout (if setting)
+*/
 static int
 openssl_ssl_session_timeout(lua_State *L)
 {
@@ -1963,6 +1975,11 @@ openssl_ssl_peer(lua_State *L)
   return 1;
 }
 
+/***
+free SSL object resources
+@function __gc
+@treturn number 0
+*/
 static int
 openssl_ssl_gc(lua_State *L)
 {

@@ -266,6 +266,13 @@ openssl_ts_accuracy_millis(lua_State *L)
   return ret;
 }
 
+/***
+get or set timestamp accuracy microseconds
+@function micros
+@tparam[opt] number micros microseconds value to set (if provided)
+@treturn number current microseconds value (if getting)
+@treturn boolean success status (if setting)
+*/
 static int
 openssl_ts_accuracy_micros(lua_State *L)
 {
@@ -331,6 +338,11 @@ openssl_ts_accuracy_read(lua_State *L)
   return 1;
 }
 
+/***
+convert timestamp accuracy to table representation
+@function totable
+@treturn table accuracy information with micros, millis, and seconds fields
+*/
 static int
 openssl_ts_accuracy_totable(lua_State *L)
 {
