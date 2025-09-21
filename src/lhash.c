@@ -76,6 +76,11 @@ static LUA_FUNCTION(openssl_lhash_load)
   return 1;
 }
 
+/***
+free LHASH object resources
+@function __gc
+@treturn number 0
+*/
 LUA_FUNCTION(openssl_lhash_gc)
 {
   LHASH *lhash = CHECK_OBJECT(1, LHASH, "openssl.lhash");
@@ -140,6 +145,11 @@ static IMPLEMENT_LHASH_DOALL_ARG_FN(dump_value, CONF_VALUE, lua_State)
   lh_doall_arg(CHECKED_LHASH_OF(type, lh), fn, CHECKED_PTR_OF(arg_type, arg))
 #endif
 
+/***
+parse LHASH configuration to table
+@function parse
+@treturn table configuration data as key-value pairs
+*/
 static LUA_FUNCTION(openssl_lhash_parse)
 {
   LHASH *lhash = CHECK_OBJECT(1, LHASH, "openssl.lhash");
@@ -156,6 +166,11 @@ static LUA_FUNCTION(openssl_lhash_parse)
   return 1;
 }
 
+/***
+export LHASH configuration to string
+@function export
+@treturn string configuration data in OpenSSL config format
+*/
 static LUA_FUNCTION(openssl_lhash_export)
 {
   LHASH *lhash = CHECK_OBJECT(1, LHASH, "openssl.lhash");

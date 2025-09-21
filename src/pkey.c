@@ -846,6 +846,11 @@ static LUA_FUNCTION(openssl_pkey_export)
   return ret;
 }
 
+/***
+free EVP_PKEY object resources
+@function __gc
+@treturn number 0
+*/
 static LUA_FUNCTION(openssl_pkey_free)
 {
   EVP_PKEY *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
@@ -1156,6 +1161,12 @@ static LUA_FUNCTION(openssl_pkey_get_public)
   return ret;
 }
 
+/***
+create EVP_PKEY_CTX context for public key operations  
+@function ctx
+@tparam[opt] engine engine optional engine for hardware acceleration
+@treturn evp_pkey_ctx public key context object for RSA operations
+*/
 static LUA_FUNCTION(openssl_pkey_ctx)
 {
   EVP_PKEY     *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
@@ -1229,6 +1240,11 @@ static LUA_FUNCTION(openssl_pkey_ctx_ctrl)
   return 1;
 }
 
+/***
+initialize EVP_PKEY_CTX for decryption operations
+@function decrypt_init
+@treturn evp_pkey_ctx context object ready for decryption
+*/
 static LUA_FUNCTION(openssl_pkey_ctx_decrypt_init)
 {
   EVP_PKEY_CTX *ctx = CHECK_OBJECT(1, EVP_PKEY_CTX, "openssl.evp_pkey_ctx");
@@ -1239,6 +1255,11 @@ static LUA_FUNCTION(openssl_pkey_ctx_decrypt_init)
   return 1;
 }
 
+/***
+initialize EVP_PKEY_CTX for encryption operations
+@function encrypt_init
+@treturn evp_pkey_ctx context object ready for encryption
+*/
 static LUA_FUNCTION(openssl_pkey_ctx_encrypt_init)
 {
   EVP_PKEY_CTX *ctx = CHECK_OBJECT(1, EVP_PKEY_CTX, "openssl.evp_pkey_ctx");
@@ -1269,6 +1290,12 @@ static LUA_FUNCTION(openssl_pkey_ctx_sign_init)
   return 1;
 }
 
+/***
+decrypt data using private key context
+@function decrypt
+@tparam string data encrypted data to decrypt
+@treturn string|nil decrypted data or nil on error
+*/
 static LUA_FUNCTION(openssl_pkey_ctx_decrypt)
 {
   EVP_PKEY_CTX *ctx = CHECK_OBJECT(1, EVP_PKEY_CTX, "openssl.evp_pkey_ctx");
@@ -1287,6 +1314,12 @@ static LUA_FUNCTION(openssl_pkey_ctx_decrypt)
   return ret;
 }
 
+/***
+encrypt data using public key context
+@function encrypt
+@tparam string data data to encrypt
+@treturn string|nil encrypted data or nil on error
+*/
 static LUA_FUNCTION(openssl_pkey_ctx_encrypt)
 {
   EVP_PKEY_CTX *ctx = CHECK_OBJECT(1, EVP_PKEY_CTX, "openssl.evp_pkey_ctx");

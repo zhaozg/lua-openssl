@@ -24,6 +24,11 @@ generation, signature creation and verification.
 #include "private.h"
 
 #if !defined(OPENSSL_NO_DSA)
+/***
+free DSA object resources
+@function __gc
+@treturn number 0
+*/
 static LUA_FUNCTION(openssl_dsa_free)
 {
   DSA *dsa = CHECK_OBJECT(1, DSA, "openssl.dsa");

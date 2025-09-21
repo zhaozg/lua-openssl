@@ -38,6 +38,11 @@ is_private(const RSA *rsa)
   return d != NULL && !BN_is_zero(d);
 };
 
+/***
+check if RSA key contains private key components
+@function isprivate
+@treturn boolean true if RSA key is private, false if public only
+*/
 static LUA_FUNCTION(openssl_rsa_isprivate)
 {
   RSA *rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");
@@ -52,6 +57,14 @@ static LUA_FUNCTION(openssl_rsa_size)
   return 1;
 };
 
+/***
+encrypt data using RSA key
+@function encrypt
+@tparam string data data to encrypt
+@tparam[opt="pkcs1"] string padding padding mode ("pkcs1", "oaep", "none")
+@tparam[opt] boolean use_private true to use private key for encryption
+@treturn string|nil encrypted data or nil on error
+*/
 static LUA_FUNCTION(openssl_rsa_encrypt)
 {
   RSA                 *rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");
@@ -174,6 +187,12 @@ static LUA_FUNCTION(openssl_rsa_read)
   return ret;
 }
 
+/***
+export RSA key to DER format
+@function export
+@tparam[opt] boolean private true to export private key, false for public key
+@treturn string|nil DER-encoded RSA key or nil on error
+*/
 static LUA_FUNCTION(openssl_rsa_export)
 {
   RSA *rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");

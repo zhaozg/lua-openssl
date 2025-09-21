@@ -517,6 +517,12 @@ static LUA_FUNCTION(openssl_bio_flush)
   return 1;
 }
 
+/***
+close and free BIO object
+@function close
+@tparam[opt=false] boolean free_all true to free entire BIO chain, false for single BIO
+@treturn number 0
+*/
 static LUA_FUNCTION(openssl_bio_free)
 {
   int  flags;
@@ -668,6 +674,12 @@ static LUA_FUNCTION(openssl_bio_get_mem)
   return ret == 1 ? 1 : openssl_pushresult(L, ret);
 }
 
+/***
+get message digest from BIO filter chain
+@function get_md
+@treturn evp_md|nil message digest object or nil if not found
+@treturn evp_md_ctx|nil message digest context or nil if not found
+*/
 static LUA_FUNCTION(openssl_bio_get_md)
 {
   int  ret = 0;
@@ -687,6 +699,11 @@ static LUA_FUNCTION(openssl_bio_get_md)
   return ret;
 }
 
+/***
+get next BIO in the filter chain
+@function next
+@treturn bio|nil next BIO object in chain or nil if none
+*/
 static LUA_FUNCTION(openssl_bio_next)
 {
   BIO *bio = CHECK_OBJECT(1, BIO, "openssl.bio");

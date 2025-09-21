@@ -23,6 +23,11 @@ for DH parameter generation, key generation and key agreement operations.
 #include "private.h"
 
 #if !defined(OPENSSL_NO_DH)
+/***
+free DH object resources
+@function __gc
+@treturn number 0
+*/
 static LUA_FUNCTION(openssl_dh_free)
 {
   DH *dh = CHECK_OBJECT(1, DH, "openssl.dh");
