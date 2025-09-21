@@ -226,6 +226,13 @@ openssl_ts_accuracy_new(lua_State *L)
   return ret;
 }
 
+/***
+get or set accuracy in seconds
+@function seconds
+@tparam[opt] number seconds optional seconds value to set
+@treturn number current seconds value when called without parameters
+@treturn boolean true when setting value successfully
+*/
 static int
 openssl_ts_accuracy_seconds(lua_State *L)
 {
@@ -246,6 +253,13 @@ openssl_ts_accuracy_seconds(lua_State *L)
   return ret;
 }
 
+/***
+get or set accuracy in milliseconds
+@function millis
+@tparam[opt] number millis optional milliseconds value to set
+@treturn number current milliseconds value when called without parameters
+@treturn boolean true when setting value successfully
+*/
 static int
 openssl_ts_accuracy_millis(lua_State *L)
 {
@@ -293,6 +307,11 @@ openssl_ts_accuracy_micros(lua_State *L)
   return ret;
 }
 
+/***
+duplicate timestamp accuracy object
+@function dup
+@treturn ts_accuracy new duplicated ts_accuracy object
+*/
 static int
 openssl_ts_accuracy_dup(lua_State *L)
 {
@@ -310,6 +329,11 @@ openssl_ts_accuracy_gc(lua_State *L)
   return 0;
 }
 
+/***
+export timestamp accuracy to DER encoded string
+@function export
+@treturn string DER encoded representation of ts_accuracy object
+*/
 static int
 openssl_ts_accuracy_export(lua_State *L)
 {

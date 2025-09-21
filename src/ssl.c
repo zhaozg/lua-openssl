@@ -1800,6 +1800,11 @@ openssl_ssl_session_gc(lua_State *L)
   return 0;
 }
 
+/***
+get peer certificate from SSL session
+@function peer
+@treturn x509 peer certificate from the session
+*/
 static int
 openssl_ssl_session_peer(lua_State *L)
 {
