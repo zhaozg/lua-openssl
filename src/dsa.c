@@ -4,6 +4,19 @@
 *
 * Author:  george zhao <zhaozg(at)gmail.com>
 \*=========================================================================*/
+
+/***
+dsa module for lua-openssl binding
+
+Digital Signature Algorithm (DSA) is a Federal Information Processing
+Standard for digital signatures. DSA is used for digital signing and
+signature verification. The module provides functionality for DSA key
+generation, signature creation and verification.
+
+@module dsa
+@usage
+  dsa = require('openssl').dsa
+*/
 #include <openssl/dsa.h>
 #include <openssl/engine.h>
 
@@ -18,6 +31,11 @@ static LUA_FUNCTION(openssl_dsa_free)
   return 0;
 };
 
+/***
+parse DSA key parameters and components
+@function parse
+@treturn table DSA parameters including bits, p, q, g, public key, and private key (if present)
+*/
 static LUA_FUNCTION(openssl_dsa_parse)
 {
   const BIGNUM *p = NULL, *q = NULL, *g = NULL, *pub = NULL, *pri = NULL;
@@ -53,6 +71,14 @@ openssl_dsa_set_engine(lua_State *L)
   return 0;
 }
 
+/***
+generate DSA key pair with specified parameters
+@function generate_key
+@tparam[opt=1024] number bits key size in bits
+@tparam[opt] string seed random seed for parameter generation
+@tparam[opt] engine eng engine to use for key generation
+@treturn dsa|nil generated DSA key pair or nil on error
+*/
 static int
 openssl_dsa_generate_key(lua_State *L)
 {

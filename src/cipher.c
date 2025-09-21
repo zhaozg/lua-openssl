@@ -4,6 +4,7 @@ cipher module do encrypt or decrypt base on OpenSSL EVP API.
 @module cipher
 @usage
   cipher = require('openssl').cipher
+@treturn various return value
 */
 #include "openssl.h"
 #include "private.h"
@@ -714,6 +715,11 @@ static LUA_FUNCTION(openssl_cipher_ctx_info)
   return 1;
 }
 
+/***
+set padding mode for cipher context
+@function padding
+@tparam boolean pad true to enable padding, false to disable
+*/
 static LUA_FUNCTION(openssl_cipher_ctx_padding)
 {
   int             pad;
@@ -725,6 +731,13 @@ static LUA_FUNCTION(openssl_cipher_ctx_padding)
   return 0;
 }
 
+/***
+control cipher context with various parameters
+@function ctrl
+@tparam number type control command type
+@tparam number|string arg control argument
+@treturn boolean|string result depends on control type
+*/
 static LUA_FUNCTION(openssl_cipher_ctx_ctrl)
 {
   int             ret = 0;
@@ -805,6 +818,11 @@ static LUA_FUNCTION(openssl_cipher_ctx_ctrl)
   return ret;
 }
 
+/***
+release cipher context resources
+@function __gc
+@treturn number 0 
+*/
 static LUA_FUNCTION(openssl_cipher_ctx_free)
 {
   EVP_CIPHER_CTX *ctx = CHECK_OBJECT(1, EVP_CIPHER_CTX, "openssl.evp_cipher_ctx");

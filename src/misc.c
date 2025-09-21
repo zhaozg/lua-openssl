@@ -4,6 +4,18 @@
 *
 * Author:  george zhao <zhaozg(at)gmail.com>
 \*=========================================================================*/
+
+/***
+misc module with utility functions for lua-openssl
+
+This module provides various utility functions and helpers that are
+used throughout the lua-openssl library for data conversion, 
+formatting, and common operations.
+
+@module misc
+@usage
+  misc = require('openssl').misc
+*/
 #include "openssl.h"
 #include "private.h"
 const char *format[] = { "auto", "der", "pem", "smime", NULL };

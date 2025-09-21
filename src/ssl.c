@@ -231,6 +231,11 @@ openssl_ssl_alert_desc(lua_State *L)
   return 1;
 }
 
+/***
+create new SSL session object
+@function session_new
+@treturn ssl_session new SSL session object
+*/
 static int
 openssl_ssl_session_new(lua_State *L)
 {
@@ -239,6 +244,12 @@ openssl_ssl_session_new(lua_State *L)
   return 1;
 }
 
+/***
+read SSL session from BIO or string data
+@function session_read
+@tparam bio|string input BIO object or string containing session data (PEM or DER format)
+@treturn ssl_session|nil SSL session object or nil on error
+*/
 static int
 openssl_ssl_session_read(lua_State *L)
 {
@@ -907,6 +918,7 @@ set certificate verify callback function
 @tparam[opt] function cert_verify_cb with boolean function(verifyargs) prototype, if nil or none
 will use openssl default callback verifyargs has field 'error',
 'error_string','error_depth','current_cert'
+@treturn various return value
 */
 /***
 set certificate verify options
@@ -940,6 +952,7 @@ openssl_ssl_ctx_set_cert_verify(lua_State *L)
 set the list of client ALPN protocols available to be negotiated by the server
 @function set_alpn_protos
 @tparam table protos the protocol list
+@treturn various return value
 */
 static int
 openssl_ssl_ctx_set_alpn_protos(lua_State *L)
@@ -1058,6 +1071,7 @@ connection
 @function set_alpn_select_cb
 @tparam[opt] function alpn_select_cb callback that receive the prototype list as a table and return
 the one selected as a string
+@treturn various return value
 */
 static int
 openssl_ssl_ctx_set_alpn_select_cb(lua_State *L)
@@ -1194,6 +1208,7 @@ set temp callback
 @tparam string keytype, 'dh','ecdh',or 'rsa'
 @tparam function tmp_cb
 @param[opt] vararg
+@treturn userdata object created
 */
 /***
 set tmp key content pem format
@@ -1402,6 +1417,7 @@ set session callback
 @tparam function new
 @tparam function get
 @tparam function remove
+@treturn various return value
 */
 
 static int
@@ -1515,6 +1531,7 @@ openssl_ssl_ctx_set_session_callback(lua_State *L)
 /***
 flush sessions
 @function flush
+@treturn various return value
 */
 static int
 openssl_ssl_ctx_flush_sessions(lua_State *L)
@@ -1528,6 +1545,7 @@ openssl_ssl_ctx_flush_sessions(lua_State *L)
 /***
 set ssl session
 @function sessions
+@treturn various return value
 */
 static int
 openssl_ssl_ctx_sessions(lua_State *L)
@@ -1730,6 +1748,12 @@ openssl_ssl_getpeerverification(lua_State *L)
   return 2;
 }
 
+/***
+get or set SSL session time
+@function time
+@tparam[opt] number time session time to set (Unix timestamp)
+@treturn number current session time (if getting) or previous time (if setting)
+*/
 static int
 openssl_ssl_session_time(lua_State *L)
 {
@@ -1746,6 +1770,12 @@ openssl_ssl_session_time(lua_State *L)
   return 1;
 }
 
+/***
+get or set SSL session timeout
+@function timeout
+@tparam[opt] number timeout session timeout in seconds to set
+@treturn number current session timeout (if getting) or previous timeout (if setting)
+*/
 static int
 openssl_ssl_session_timeout(lua_State *L)
 {
@@ -2498,6 +2528,7 @@ openssl_ssl_shutdown(lua_State *L)
 /***
 make ssl to client mode
 @function set_connect_state
+@treturn various return value
 */
 static int
 openssl_ssl_set_connect_state(lua_State *L)
@@ -2510,6 +2541,7 @@ openssl_ssl_set_connect_state(lua_State *L)
 /***
 make ssl to server mode
 @function set_accept_state
+@treturn various return value
 */
 static int
 openssl_ssl_set_accept_state(lua_State *L)
@@ -2548,6 +2580,7 @@ openssl_ssl_dup(lua_State *L)
 /***
 get ssl session resused
 @function session_reused
+@treturn boolean success status
 */
 static int
 openssl_ssl_session_reused(lua_State *L)

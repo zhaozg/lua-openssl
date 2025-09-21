@@ -4,6 +4,18 @@
 *
 * Author:  george zhao <zhaozg(at)gmail.com>
 \*=========================================================================*/
+
+/***
+rsa module for lua-openssl binding
+
+RSA (Rivest-Shamir-Adleman) is a public-key cryptosystem that is widely 
+used for secure data transmission. The module provides functionality for
+RSA key generation, encryption, decryption, signing and signature verification.
+
+@module rsa
+@usage
+  rsa = require('openssl').rsa
+*/
 #include <openssl/engine.h>
 #include <openssl/rsa.h>
 
@@ -26,6 +38,11 @@ is_private(const RSA *rsa)
   return d != NULL && !BN_is_zero(d);
 };
 
+/***
+check if RSA key contains private key components
+@function isprivate
+@treturn boolean true if RSA key is private, false if public only
+*/
 static LUA_FUNCTION(openssl_rsa_isprivate)
 {
   RSA *rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");
@@ -33,6 +50,11 @@ static LUA_FUNCTION(openssl_rsa_isprivate)
   return 1;
 };
 
+/***
+get RSA key size in bytes
+@function size
+@treturn number key size in bytes
+*/
 static LUA_FUNCTION(openssl_rsa_size)
 {
   RSA *rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");
@@ -40,6 +62,14 @@ static LUA_FUNCTION(openssl_rsa_size)
   return 1;
 };
 
+/***
+encrypt data using RSA key
+@function encrypt
+@tparam string data data to encrypt
+@tparam[opt="pkcs1"] string padding padding mode ("pkcs1", "oaep", "none")
+@tparam[opt] boolean use_private true to use private key for encryption
+@treturn string|nil encrypted data or nil on error
+*/
 static LUA_FUNCTION(openssl_rsa_encrypt)
 {
   RSA                 *rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");
@@ -60,6 +90,14 @@ static LUA_FUNCTION(openssl_rsa_encrypt)
   return flen == 1 ? flen : openssl_pushresult(L, flen);
 };
 
+/***
+decrypt data using RSA private key
+@function decrypt
+@tparam string data encrypted data to decrypt
+@tparam[opt="pkcs1"] string padding padding mode ("pkcs1", "oaep", "none")
+@tparam[opt] boolean use_private true to use private key for decryption
+@treturn string|nil decrypted data or nil on error
+*/
 static LUA_FUNCTION(openssl_rsa_decrypt)
 {
   RSA                 *rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");
@@ -80,6 +118,13 @@ static LUA_FUNCTION(openssl_rsa_decrypt)
   return flen == 1 ? flen : openssl_pushresult(L, flen);
 };
 
+/***
+create digital signature using RSA private key
+@function sign
+@tparam string message data to sign
+@tparam[opt="sha256"] string|evp_md digest algorithm to use
+@treturn string|nil signature or nil on error
+*/
 static LUA_FUNCTION(openssl_rsa_sign)
 {
   RSA                 *rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");
@@ -98,6 +143,14 @@ static LUA_FUNCTION(openssl_rsa_sign)
   return ret == 1 ? ret : openssl_pushresult(L, ret);
 };
 
+/***
+verify RSA signature using public key
+@function verify
+@tparam string message original data that was signed
+@tparam string signature signature to verify
+@tparam[opt="sha256"] string|evp_md digest algorithm used for signing
+@treturn boolean true if signature is valid, false otherwise
+*/
 static LUA_FUNCTION(openssl_rsa_verify)
 {
   RSA                 *rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");
@@ -114,6 +167,11 @@ static LUA_FUNCTION(openssl_rsa_verify)
   return 1;
 };
 
+/***
+parse RSA key components and parameters
+@function parse
+@treturn table RSA key parameters including bits, n, e, d, p, q, and CRT parameters
+*/
 static LUA_FUNCTION(openssl_rsa_parse)
 {
   const BIGNUM *n = NULL, *e = NULL, *d = NULL;
@@ -141,6 +199,13 @@ static LUA_FUNCTION(openssl_rsa_parse)
   return 1;
 }
 
+/***
+read RSA key from DER/PEM data
+@function read
+@tparam string data DER or PEM encoded RSA key data
+@tparam[opt=true] boolean private true to read private key, false for public key
+@treturn rsa|nil RSA key object or nil on error
+*/
 static LUA_FUNCTION(openssl_rsa_read)
 {
   size_t               l;
@@ -157,6 +222,12 @@ static LUA_FUNCTION(openssl_rsa_read)
   return ret;
 }
 
+/***
+export RSA key to DER format
+@function export
+@tparam[opt] boolean private true to export private key, false for public key
+@treturn string|nil DER-encoded RSA key or nil on error
+*/
 static LUA_FUNCTION(openssl_rsa_export)
 {
   RSA *rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");
@@ -195,6 +266,14 @@ openssl_rsa_set_engine(lua_State *L)
   return ret;
 }
 
+/***
+generate RSA key pair
+@function generate_key
+@tparam[opt=2048] number bits key size in bits
+@tparam[opt=65537] number e public exponent (typically 65537)
+@tparam[opt] engine eng engine to use for key generation
+@treturn rsa|nil generated RSA key pair or nil on error
+*/
 static int
 openssl_rsa_generate_key(lua_State *L)
 {

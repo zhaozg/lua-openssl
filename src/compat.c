@@ -1,3 +1,14 @@
+/***
+compat module for OpenSSL version compatibility
+
+This module provides compatibility functions for different versions
+of OpenSSL, ensuring that lua-openssl works across multiple OpenSSL
+versions by providing missing functions for older versions.
+
+@module compat
+@usage
+  -- Internal compatibility module
+*/
 #include "openssl.h"
 #include "private.h"
 

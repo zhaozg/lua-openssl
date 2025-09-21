@@ -50,6 +50,12 @@ openssl_ts_msg_imprint_new(lua_State *L)
   return ret;
 }
 
+/***
+read and parse ts_msg_imprint from DER encoded data
+@function ts_msg_imprint_read
+@tparam string data DER encoded ts_msg_imprint data
+@treturn ts_msg_imprint|nil parsed object or nil on error
+*/
 static int
 openssl_ts_msg_imprint_read(lua_State *L)
 {
@@ -260,6 +266,13 @@ openssl_ts_accuracy_millis(lua_State *L)
   return ret;
 }
 
+/***
+get or set timestamp accuracy microseconds
+@function micros
+@tparam[opt] number micros microseconds value to set (if provided)
+@treturn number current microseconds value (if getting)
+@treturn boolean success status (if setting)
+*/
 static int
 openssl_ts_accuracy_micros(lua_State *L)
 {
@@ -325,6 +338,11 @@ openssl_ts_accuracy_read(lua_State *L)
   return 1;
 }
 
+/***
+convert timestamp accuracy to table representation
+@function totable
+@treturn table accuracy information with micros, millis, and seconds fields
+*/
 static int
 openssl_ts_accuracy_totable(lua_State *L)
 {
@@ -876,6 +894,13 @@ static LUA_FUNCTION(openssl_ts_req_export)
   return 0;
 }
 
+/***
+add X509 extension to timestamp request
+@function add_ext
+@tparam x509_extension extension X509 extension to add
+@tparam[opt] number location position to insert extension
+@treturn boolean true on success, false on failure
+*/
 static LUA_FUNCTION(openssl_ts_req_add_ext)
 {
   TS_REQ         *ts_req = CHECK_OBJECT(1, TS_REQ, "openssl.ts_req");

@@ -1345,6 +1345,12 @@ static int openssl_x509_sign(lua_State*L)
   return ret;
 }
 
+/***
+verify X509 certificate signature
+@function verify
+@tparam[opt] evp_pkey|x509 key public key or CA certificate to verify with
+@treturn boolean true if verification succeeds, false otherwise
+*/
 static int openssl_x509_verify(lua_State*L)
 {
   X509* x = CHECK_OBJECT(1, X509, "openssl.x509");
@@ -1378,6 +1384,12 @@ static int openssl_x509_verify(lua_State*L)
   return ret;
 }
 
+/***
+compare two X509 certificates for equality
+@function equal
+@tparam x509 other X509 certificate to compare with
+@treturn boolean true if certificates are equal, false otherwise
+*/
 static int openssl_x509_equal(lua_State *L)
 {
   X509* x = CHECK_OBJECT(1, X509, "openssl.x509");

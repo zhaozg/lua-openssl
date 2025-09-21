@@ -4,6 +4,18 @@
 *
 * Author:  george zhao <zhaozg(at)gmail.com>
 \*=========================================================================*/
+
+/***
+dh module for lua-openssl binding
+
+Diffie-Hellman (DH) key exchange is a method of securely exchanging 
+cryptographic keys over a public channel. The module provides functionality
+for DH parameter generation, key generation and key agreement operations.
+
+@module dh
+@usage
+  dh = require('openssl').dh
+*/
 #include <openssl/dh.h>
 #include <openssl/engine.h>
 
@@ -18,6 +30,11 @@ static LUA_FUNCTION(openssl_dh_free)
   return 0;
 };
 
+/***
+parse DH key parameters and components
+@function parse
+@treturn table DH parameters including size, bits, p, q, g, public key, and private key (if present)
+*/
 static LUA_FUNCTION(openssl_dh_parse)
 {
   const BIGNUM *p = NULL, *q = NULL, *g = NULL, *pub = NULL, *pri = NULL;
@@ -42,6 +59,12 @@ static LUA_FUNCTION(openssl_dh_parse)
   return 1;
 }
 
+/***
+check DH parameters for validity
+@function check
+@treturn boolean true if parameters are valid
+@treturn[opt] table error codes if parameters are invalid
+*/
 static LUA_FUNCTION(openssl_dh_check)
 {
   const DH *dh = CHECK_OBJECT(1, DH, "openssl.dh");
@@ -59,6 +82,14 @@ static LUA_FUNCTION(openssl_dh_check)
   return 2;
 }
 
+/***
+generate DH parameters for key exchange
+@function generate_parameters
+@tparam[opt=1024] number bits parameter size in bits
+@tparam[opt=2] number generator generator value (typically 2 or 5)
+@tparam[opt] engine eng engine to use for parameter generation
+@treturn dh|nil generated DH parameters or nil on error
+*/
 static int
 openssl_dh_generate_parameters(lua_State *L)
 {

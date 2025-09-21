@@ -2,6 +2,8 @@
 ec module to create EC keys and do EC key processes.
 
 @module ec
+@usage
+  ec = require('openssl').ec
 */
 #include <openssl/engine.h>
 
@@ -417,6 +419,12 @@ openssl_ec_group_generate_key(lua_State *L)
   return 0;
 }
 
+/***
+check if two EC groups are equal
+@function equal
+@tparam ec_group other EC group to compare with
+@treturn boolean true if groups are equal, false otherwise
+*/
 static int
 openssl_ec_group_equal(lua_State *L)
 {
@@ -595,6 +603,12 @@ openssl_ec_key_free(lua_State *L)
   return 0;
 }
 
+/***
+parse EC key components and parameters
+@function parse
+@tparam[opt=false] boolean basic true for basic information only
+@treturn table EC key information including encoding flags, conversion form, group, and key components
+*/
 static int
 openssl_ec_key_parse(lua_State *L)
 {
@@ -823,6 +837,11 @@ static luaL_Reg ec_point_funs[] = {
   { NULL,         NULL                  }
 };
 
+/***
+list all available elliptic curve names
+@function list
+@treturn table array of curve names and descriptions
+*/
 static LUA_FUNCTION(openssl_ec_list_curve_name)
 {
   size_t            i = 0;

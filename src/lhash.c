@@ -4,6 +4,18 @@
 *
 * Author:  george zhao <zhaozg(at)gmail.com>
 \*=========================================================================*/
+
+/***
+lhash module for lua-openssl binding
+
+LHASH is OpenSSL's implementation of a hash table. It provides a
+generic hash table that can be used to store arbitrary data using
+string keys. This module provides Lua bindings for the LHASH functionality.
+
+@module lhash
+@usage
+  lhash = require('openssl').lhash
+*/
 #include <openssl/conf.h>
 
 #include "openssl.h"
@@ -71,6 +83,13 @@ LUA_FUNCTION(openssl_lhash_gc)
   return 0;
 }
 
+/***
+get number value from LHASH configuration
+@function get_number
+@tparam string group configuration group name
+@tparam string name configuration key name
+@treturn number configuration value as number
+*/
 LUA_FUNCTION(openssl_lhash_get_number)
 {
   LHASH      *lhash = CHECK_OBJECT(1, LHASH, "openssl.lhash");
@@ -80,6 +99,13 @@ LUA_FUNCTION(openssl_lhash_get_number)
   return 1;
 }
 
+/***
+get string value from LHASH configuration
+@function get_string
+@tparam string group configuration group name
+@tparam string name configuration key name
+@treturn string configuration value as string
+*/
 LUA_FUNCTION(openssl_lhash_get_string)
 {
   LHASH      *lhash = CHECK_OBJECT(1, LHASH, "openssl.lhash");
@@ -128,6 +154,11 @@ static IMPLEMENT_LHASH_DOALL_ARG_FN(dump_value, CONF_VALUE, lua_State)
   lh_doall_arg(CHECKED_LHASH_OF(type, lh), fn, CHECKED_PTR_OF(arg_type, arg))
 #endif
 
+/***
+parse LHASH configuration to table
+@function parse
+@treturn table configuration data as key-value pairs
+*/
 static LUA_FUNCTION(openssl_lhash_parse)
 {
   LHASH *lhash = CHECK_OBJECT(1, LHASH, "openssl.lhash");
@@ -144,6 +175,11 @@ static LUA_FUNCTION(openssl_lhash_parse)
   return 1;
 }
 
+/***
+export LHASH configuration to string
+@function export
+@treturn string configuration data in OpenSSL config format
+*/
 static LUA_FUNCTION(openssl_lhash_export)
 {
   LHASH *lhash = CHECK_OBJECT(1, LHASH, "openssl.lhash");

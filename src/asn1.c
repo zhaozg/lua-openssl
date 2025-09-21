@@ -74,6 +74,8 @@ static LuaL_Enumeration asn1_const[] = {
 /***
 create asn1_type object
 @function new_type
+@tparam boolean|number|string|asn1_string value value to create ASN1_TYPE from
+@treturn asn1_type|nil new ASN1_TYPE object or nil on error
 */
 static int
 openssl_asn1type_new(lua_State *L)
@@ -229,6 +231,7 @@ make tag, class number to string
 @function tostring
 @tparam number clsortag which to string
 @tparam string range only accept 'class' or 'tag'
+@treturn string result
 */
 static int
 openssl_asn1_tostring(lua_State *L)
@@ -404,31 +407,43 @@ openssl_txt2nid(lua_State *L)
 }
 
 /***
-create asn1_object object
+create asn1_object from string identifier
 
 @function new_object
-@tparam string name_or_oid  short name,long name or oid string
-@tparam[opt] boolean no_name  true for only oid string, default is false
-@treturn asn1_object mapping to ASN1_OBJECT in openssl
+@tparam string name_or_oid short name (e.g., "C"), long name (e.g., "countryName"), or OID string (e.g., "2.5.4.6")  
+@tparam[opt=false] boolean no_name true for only oid string parsing, false to allow names
+@treturn asn1_object|nil ASN1_OBJECT mapping or nil on error
 @see asn1_object
+@usage
+  local obj1 = asn1.new_object("C")           -- short name
+  local obj2 = asn1.new_object("countryName") -- long name  
+  local obj3 = asn1.new_object("2.5.4.6")     -- OID string
 */
 
 /***
-create asn1_object object
+create asn1_object from NID
 
 @function new_object
-@tparam integer nid ident to asn1_object
-@treturn asn1_object mapping to ASN1_OBJECT in openssl
+@tparam integer nid numeric identifier for the ASN1_OBJECT
+@treturn asn1_object|nil ASN1_OBJECT mapping or nil on error
 @see asn1_object
+@usage
+  local obj = asn1.new_object(14)  -- NID for countryName
 */
 
 /***
-create asn1_object object
+create asn1_object from table definition
 
 @function new_object
-@tparam table options have sn, ln, oid keys to create asn1_object
-@treturn asn1_object mapping to ASN1_OBJECT in openssl
+@tparam table options table with sn (short name), ln (long name), oid keys to create new asn1_object
+@treturn asn1_object|nil ASN1_OBJECT mapping or nil on error
 @see asn1_object
+@usage
+  local obj = asn1.new_object({
+    oid = "1.2.3.4.5.6",
+    sn = "myShortName", 
+    ln = "myLongName"
+  })
 */
 static int
 openssl_asn1object_new(lua_State *L)
@@ -1011,6 +1026,7 @@ ASN1_TIME_get(ASN1_TIME *time, time_t off)
 
 /***
 @function get
+@treturn userdata object created
 */
 static int
 openssl_asn1group_get(lua_State *L)
@@ -1041,6 +1057,7 @@ openssl_asn1group_get(lua_State *L)
 
 /***
 @function i2d
+@treturn string result
 */
 static int
 openssl_asn1group_i2d(lua_State *L)
@@ -1121,6 +1138,7 @@ openssl_asn1group_i2d(lua_State *L)
 
 /***
 @function d2i
+@treturn boolean success status
 */
 static int
 openssl_asn1group_d2i(lua_State *L)

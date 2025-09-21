@@ -82,6 +82,14 @@ static LUA_FUNCTION(openssl_bio_new_mem)
   return 1;
 }
 
+/***
+create a pair of connected BIOs
+@function pair
+@tparam[opt=0] number buffer1 buffer size for first BIO
+@tparam[opt=buffer1] number buffer2 buffer size for second BIO
+@treturn bio first BIO of the pair
+@treturn bio second BIO of the pair
+*/
 static LUA_FUNCTION(openssl_bio_new_pair)
 {
   size_t b1 = luaL_optint(L, 1, 0);
@@ -98,6 +106,12 @@ static LUA_FUNCTION(openssl_bio_new_pair)
   return ret > 0 ? ret : openssl_pushresult(L, ret);
 }
 
+/***
+destroy a BIO pair connection
+@function destroy_pair  
+@tparam bio bio BIO object that is part of a pair
+@treturn boolean true on success, false on failure
+*/
 static LUA_FUNCTION(openssl_bio_destroy_pair)
 {
   BIO *bio = CHECK_OBJECT(1, BIO, "openssl.bio");
@@ -105,6 +119,11 @@ static LUA_FUNCTION(openssl_bio_destroy_pair)
   return openssl_pushresult(L, ret);
 }
 
+/***
+create a null BIO that discards all data written to it
+@function null
+@treturn bio null BIO object
+*/
 static LUA_FUNCTION(openssl_bio_new_null)
 {
   BIO *bio = BIO_new(BIO_s_null());
@@ -203,17 +222,29 @@ static LUA_FUNCTION(openssl_bio_new_accept)
 /***
 make tcp client socket
 @function connect
-@tparam string host_addr addrees like 'host:port'
-@tparam[opt=true] boolean connect default connect immediately
-@treturn bio
+@tparam string host_addr address like 'host:port' (e.g., 'kkhub.com:443')
+@tparam[opt=true] boolean connect default connect immediately, false to defer connection
+@treturn bio TCP client BIO object
 */
 
 /***
-make tcp client socket
+make tcp client socket with address table
 @function connect
-@tparam address table with hostname, ip, port filed
-@tparam[opt=true] boolean connect default connect immediately
-@treturn bio
+@tparam table address table with hostname, ip, port fields
+@tparam[opt=true] boolean connect default connect immediately, false to defer connection
+@treturn bio TCP client BIO object
+@usage
+  -- String format
+  local cli = bio.connect("kkhub.com:443")
+  
+  -- Table format
+  local cli = bio.connect({
+    hostname = "kkhub.com",
+    port = "12345"
+  })
+  
+  -- Deferred connection
+  local cli = bio.connect("host:port", false)
 */
 static int
 openssl_bio_new_connect(lua_State *L)
@@ -258,32 +289,35 @@ openssl_bio_new_connect(lua_State *L)
 make base64 or buffer bio, which can append to an io BIO object
 @function filter
 @tparam string mode support 'base64' or 'buffer'
-@treturn bio
+@treturn bio filter BIO object
 */
+
 /***
 make digest bio, which can append to an io BIO object
 @function filter
-@tparam string mode must be 'digest'
-@tparam evp_md|string md_alg
-@treturn bio
+@tparam string mode must be 'md' for message digest
+@tparam evp_md|string md_alg message digest algorithm name (e.g., 'sha1', 'sha256')
+@treturn bio filter BIO object for message digest operations
 */
+
 /***
 make ssl bio
 @function filter
 @tparam string mode must be 'ssl'
-@tparam ssl s
-@tparam[opt='noclose'] flag support 'close' or 'noclose' when close or gc
-@treturn bio
+@tparam ssl s SSL object to attach
+@tparam[opt='noclose'] string flag support 'close' or 'noclose' when close or gc
+@treturn bio SSL filter BIO object
 */
 
 /***
 make cipher filter bio object
 @function filter
 @tparam string mode must be 'cipher'
-@tparam string key
-@tparam string iv
-@tparam[opt=true] boolean encrypt
-@treturn bio
+@tparam string|evp_cipher alg cipher algorithm name (e.g., 'aes-128-ecb')
+@tparam string key encryption/decryption key
+@tparam string iv initialization vector
+@tparam[opt=true] boolean encrypt true for encryption, false for decryption
+@treturn bio cipher filter BIO object
 */
 static LUA_FUNCTION(openssl_bio_new_filter)
 {
@@ -531,6 +565,14 @@ static LUA_FUNCTION(openssl_bio_nbio)
   return openssl_pushresult(L, ret);
 }
 
+/***
+check if BIO operation should be retried
+@function retry
+@treturn boolean true if operation should be retried
+@treturn[opt] boolean true if should retry read operation  
+@treturn[opt] boolean true if should retry write operation
+@treturn[opt] boolean true if should retry special I/O operation
+*/
 static LUA_FUNCTION(openssl_bio_retry)
 {
   BIO *bio = CHECK_OBJECT(1, BIO, "openssl.bio");
@@ -550,8 +592,9 @@ static LUA_FUNCTION(openssl_bio_retry)
 }
 
 /***
-reset bio
+reset bio to initial state
 @function reset
+@treturn boolean true on success, false on failure
 */
 static LUA_FUNCTION(openssl_bio_reset)
 {
@@ -625,6 +668,12 @@ static LUA_FUNCTION(openssl_bio_get_mem)
   return ret == 1 ? 1 : openssl_pushresult(L, ret);
 }
 
+/***
+get message digest from BIO filter chain
+@function get_md
+@treturn evp_md|nil message digest object or nil if not found
+@treturn evp_md_ctx|nil message digest context or nil if not found
+*/
 static LUA_FUNCTION(openssl_bio_get_md)
 {
   int  ret = 0;
@@ -644,6 +693,11 @@ static LUA_FUNCTION(openssl_bio_get_md)
   return ret;
 }
 
+/***
+get next BIO in the filter chain
+@function next
+@treturn bio|nil next BIO object in chain or nil if none
+*/
 static LUA_FUNCTION(openssl_bio_next)
 {
   BIO *bio = CHECK_OBJECT(1, BIO, "openssl.bio");

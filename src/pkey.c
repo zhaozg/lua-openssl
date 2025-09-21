@@ -1156,6 +1156,12 @@ static LUA_FUNCTION(openssl_pkey_get_public)
   return ret;
 }
 
+/***
+create EVP_PKEY_CTX context for public key operations  
+@function ctx
+@tparam[opt] engine engine optional engine for hardware acceleration
+@treturn evp_pkey_ctx public key context object for RSA operations
+*/
 static LUA_FUNCTION(openssl_pkey_ctx)
 {
   EVP_PKEY     *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
@@ -1171,6 +1177,13 @@ static LUA_FUNCTION(openssl_pkey_ctx)
   return 1;
 }
 
+/***
+create new EVP_PKEY_CTX by algorithm identifier
+@function ctx_new
+@tparam string|number algorithm algorithm name or NID
+@tparam[opt] engine engine optional engine for hardware acceleration
+@treturn evp_pkey_ctx|nil new context object or nil on error
+*/
 static LUA_FUNCTION(openssl_pkey_ctx_new)
 {
   int     nid = lua_isnumber(L, 1) ? lua_tointeger(L, 1) : OBJ_txt2nid(luaL_checkstring(L, 1));
@@ -1229,6 +1242,11 @@ static LUA_FUNCTION(openssl_pkey_ctx_ctrl)
   return 1;
 }
 
+/***
+initialize EVP_PKEY_CTX for decryption operations
+@function decrypt_init
+@treturn evp_pkey_ctx context object ready for decryption
+*/
 static LUA_FUNCTION(openssl_pkey_ctx_decrypt_init)
 {
   EVP_PKEY_CTX *ctx = CHECK_OBJECT(1, EVP_PKEY_CTX, "openssl.evp_pkey_ctx");
@@ -1239,6 +1257,11 @@ static LUA_FUNCTION(openssl_pkey_ctx_decrypt_init)
   return 1;
 }
 
+/***
+initialize EVP_PKEY_CTX for encryption operations
+@function encrypt_init
+@treturn evp_pkey_ctx context object ready for encryption
+*/
 static LUA_FUNCTION(openssl_pkey_ctx_encrypt_init)
 {
   EVP_PKEY_CTX *ctx = CHECK_OBJECT(1, EVP_PKEY_CTX, "openssl.evp_pkey_ctx");
@@ -1249,6 +1272,11 @@ static LUA_FUNCTION(openssl_pkey_ctx_encrypt_init)
   return 1;
 }
 
+/***
+initialize EVP_PKEY_CTX for verification operations
+@function verify_init
+@treturn evp_pkey_ctx context object ready for verification
+*/
 static LUA_FUNCTION(openssl_pkey_ctx_verify_init)
 {
   EVP_PKEY_CTX *ctx = CHECK_OBJECT(1, EVP_PKEY_CTX, "openssl.evp_pkey_ctx");
@@ -1259,6 +1287,11 @@ static LUA_FUNCTION(openssl_pkey_ctx_verify_init)
   return 1;
 }
 
+/***
+initialize EVP_PKEY_CTX for signing operations
+@function sign_init
+@treturn evp_pkey_ctx context object ready for signing
+*/
 static LUA_FUNCTION(openssl_pkey_ctx_sign_init)
 {
   EVP_PKEY_CTX *ctx = CHECK_OBJECT(1, EVP_PKEY_CTX, "openssl.evp_pkey_ctx");
@@ -1269,6 +1302,12 @@ static LUA_FUNCTION(openssl_pkey_ctx_sign_init)
   return 1;
 }
 
+/***
+decrypt data using private key context
+@function decrypt
+@tparam string data encrypted data to decrypt
+@treturn string|nil decrypted data or nil on error
+*/
 static LUA_FUNCTION(openssl_pkey_ctx_decrypt)
 {
   EVP_PKEY_CTX *ctx = CHECK_OBJECT(1, EVP_PKEY_CTX, "openssl.evp_pkey_ctx");
@@ -1287,6 +1326,12 @@ static LUA_FUNCTION(openssl_pkey_ctx_decrypt)
   return ret;
 }
 
+/***
+encrypt data using public key context
+@function encrypt
+@tparam string data data to encrypt
+@treturn string|nil encrypted data or nil on error
+*/
 static LUA_FUNCTION(openssl_pkey_ctx_encrypt)
 {
   EVP_PKEY_CTX *ctx = CHECK_OBJECT(1, EVP_PKEY_CTX, "openssl.evp_pkey_ctx");
@@ -1308,6 +1353,13 @@ static LUA_FUNCTION(openssl_pkey_ctx_encrypt)
   return ret;
 }
 
+/***
+verify signature using EVP_PKEY_CTX
+@function verify
+@tparam string data original data that was signed
+@tparam string signature signature to verify
+@treturn boolean true if signature is valid, false otherwise
+*/
 static LUA_FUNCTION(openssl_pkey_ctx_verify)
 {
   EVP_PKEY_CTX *pCtx = CHECK_OBJECT(1, EVP_PKEY_CTX, "openssl.evp_pkey_ctx");
@@ -1323,6 +1375,12 @@ static LUA_FUNCTION(openssl_pkey_ctx_verify)
   return 1;
 }
 
+/***
+create digital signature using EVP_PKEY_CTX
+@function sign
+@tparam string digest message digest to sign
+@treturn string|nil digital signature or nil on error
+*/
 static LUA_FUNCTION(openssl_pkey_ctx_sign)
 {
   EVP_PKEY_CTX  *pCtx = CHECK_OBJECT(1, EVP_PKEY_CTX, "openssl.evp_pkey_ctx");
@@ -1708,6 +1766,15 @@ static LUA_FUNCTION(openssl_open)
   return ret == 1 ? ret : openssl_pushresult(L, ret);
 }
 
+/***
+initialize envelope encryption (sealing) context
+@function seal_init
+@tparam string|evp_cipher cipher encryption cipher to use
+@tparam table public_keys array of public keys for recipients
+@treturn evp_cipher_ctx|nil encryption context or nil on error
+@treturn table|nil encrypted keys for each recipient
+@treturn string|nil initialization vector
+*/
 static LUA_FUNCTION(openssl_seal_init)
 {
   int             i, ret = 0, nkeys = 0;
@@ -1787,6 +1854,13 @@ static LUA_FUNCTION(openssl_seal_init)
   return ret == 1 ? 3 : 0;
 }
 
+/***
+update envelope encryption with data
+@function seal_update
+@tparam evp_cipher_ctx context encryption context from seal_init
+@tparam string data data to encrypt
+@treturn string|nil encrypted data or nil on error
+*/
 static LUA_FUNCTION(openssl_seal_update)
 {
   EVP_CIPHER_CTX *ctx = CHECK_OBJECT(1, EVP_CIPHER_CTX, "openssl.evp_cipher_ctx");
@@ -1804,6 +1878,12 @@ static LUA_FUNCTION(openssl_seal_update)
   return ret == 1 ? ret : openssl_pushresult(L, ret);
 }
 
+/***
+finalize envelope encryption
+@function seal_final
+@tparam evp_cipher_ctx context encryption context from seal_init
+@treturn string|nil final encrypted data or nil on error
+*/
 static LUA_FUNCTION(openssl_seal_final)
 {
   EVP_CIPHER_CTX *ctx = CHECK_OBJECT(1, EVP_CIPHER_CTX, "openssl.evp_cipher_ctx");
@@ -1818,6 +1898,15 @@ static LUA_FUNCTION(openssl_seal_final)
   return ret == 1 ? ret : openssl_pushresult(L, ret);
 }
 
+/***
+initialize envelope decryption (opening) context
+@function open_init
+@tparam evp_pkey private_key private key for decryption
+@tparam string encrypted_key encrypted symmetric key
+@tparam string iv initialization vector
+@tparam[opt] string|evp_cipher cipher decryption cipher to use
+@treturn evp_cipher_ctx|nil decryption context or nil on error
+*/
 static LUA_FUNCTION(openssl_open_init)
 {
   EVP_PKEY   *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
@@ -1842,6 +1931,13 @@ static LUA_FUNCTION(openssl_open_init)
   return ret == 1 ? ret : openssl_pushresult(L, ret);
 };
 
+/***
+update envelope decryption with encrypted data
+@function open_update
+@tparam evp_cipher_ctx context decryption context from open_init
+@tparam string data encrypted data to decrypt
+@treturn string|nil decrypted data or nil on error
+*/
 static LUA_FUNCTION(openssl_open_update)
 {
   EVP_CIPHER_CTX *ctx = CHECK_OBJECT(1, EVP_CIPHER_CTX, "openssl.evp_cipher_ctx");
@@ -1859,6 +1955,12 @@ static LUA_FUNCTION(openssl_open_update)
   return ret == 1 ? ret : openssl_pushresult(L, ret);
 }
 
+/***
+finalize envelope decryption
+@function open_final
+@tparam evp_cipher_ctx context decryption context from open_init
+@treturn string|nil final decrypted data or nil on error
+*/
 static LUA_FUNCTION(openssl_open_final)
 {
   EVP_CIPHER_CTX *ctx = CHECK_OBJECT(1, EVP_CIPHER_CTX, "openssl.evp_cipher_ctx");

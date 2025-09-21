@@ -946,6 +946,14 @@ openssl_revoked_info(lua_State *L)
   return openssl_revoked2table(L, revoked);
 };
 
+/***
+get or set revocation reason for X509 revoked entry
+@function reason
+@tparam[opt] number|string reason revocation reason code or name to set
+@treturn number reason code (if getting)
+@treturn string reason name (if getting)
+@treturn boolean success status (if setting)
+*/
 static int
 openssl_revoked_reason(lua_State *L)
 {
