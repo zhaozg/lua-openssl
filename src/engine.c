@@ -5,6 +5,18 @@
 * Author:  george zhao <zhaozg(at)gmail.com>
 \*=========================================================================*/
 
+/***
+engine module for lua-openssl binding
+
+OpenSSL engine support allows the use of alternative implementations
+of cryptographic algorithms. Engines can provide hardware acceleration
+or alternative software implementations of cryptographic operations.
+
+@module engine
+@usage
+  engine = require('openssl').engine
+*/
+
 #include <openssl/engine.h>
 #include <openssl/ssl.h>
 

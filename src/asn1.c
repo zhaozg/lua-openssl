@@ -74,6 +74,8 @@ static LuaL_Enumeration asn1_const[] = {
 /***
 create asn1_type object
 @function new_type
+@tparam boolean|number|string|asn1_string value value to create ASN1_TYPE from
+@treturn asn1_type|nil new ASN1_TYPE object or nil on error
 */
 static int
 openssl_asn1type_new(lua_State *L)

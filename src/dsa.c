@@ -4,6 +4,19 @@
 *
 * Author:  george zhao <zhaozg(at)gmail.com>
 \*=========================================================================*/
+
+/***
+dsa module for lua-openssl binding
+
+Digital Signature Algorithm (DSA) is a Federal Information Processing
+Standard for digital signatures. DSA is used for digital signing and
+signature verification. The module provides functionality for DSA key
+generation, signature creation and verification.
+
+@module dsa
+@usage
+  dsa = require('openssl').dsa
+*/
 #include <openssl/dsa.h>
 #include <openssl/engine.h>
 

@@ -4,6 +4,18 @@
 *
 * Author:  george zhao <zhaozg(at)gmail.com>
 \*=========================================================================*/
+
+/***
+callback module for lua-openssl binding
+
+This module provides callback functionality for SSL/TLS operations,
+including certificate verification callbacks and other SSL event handling.
+These callbacks allow customization of SSL/TLS behavior from Lua.
+
+@module callback
+@usage
+  -- Internal module used by SSL module
+*/
 #include <openssl/ssl.h>
 
 #include "openssl.h"

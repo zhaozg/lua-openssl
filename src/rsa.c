@@ -4,6 +4,18 @@
 *
 * Author:  george zhao <zhaozg(at)gmail.com>
 \*=========================================================================*/
+
+/***
+rsa module for lua-openssl binding
+
+RSA (Rivest-Shamir-Adleman) is a public-key cryptosystem that is widely 
+used for secure data transmission. The module provides functionality for
+RSA key generation, encryption, decryption, signing and signature verification.
+
+@module rsa
+@usage
+  rsa = require('openssl').rsa
+*/
 #include <openssl/engine.h>
 #include <openssl/rsa.h>
 

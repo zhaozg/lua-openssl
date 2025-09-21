@@ -82,6 +82,14 @@ static LUA_FUNCTION(openssl_bio_new_mem)
   return 1;
 }
 
+/***
+create a pair of connected BIOs
+@function pair
+@tparam[opt=0] number buffer1 buffer size for first BIO
+@tparam[opt=buffer1] number buffer2 buffer size for second BIO
+@treturn bio first BIO of the pair
+@treturn bio second BIO of the pair
+*/
 static LUA_FUNCTION(openssl_bio_new_pair)
 {
   size_t b1 = luaL_optint(L, 1, 0);
@@ -98,6 +106,12 @@ static LUA_FUNCTION(openssl_bio_new_pair)
   return ret > 0 ? ret : openssl_pushresult(L, ret);
 }
 
+/***
+destroy a BIO pair connection
+@function destroy_pair  
+@tparam bio bio BIO object that is part of a pair
+@treturn boolean true on success, false on failure
+*/
 static LUA_FUNCTION(openssl_bio_destroy_pair)
 {
   BIO *bio = CHECK_OBJECT(1, BIO, "openssl.bio");
@@ -105,6 +119,11 @@ static LUA_FUNCTION(openssl_bio_destroy_pair)
   return openssl_pushresult(L, ret);
 }
 
+/***
+create a null BIO that discards all data written to it
+@function null
+@treturn bio null BIO object
+*/
 static LUA_FUNCTION(openssl_bio_new_null)
 {
   BIO *bio = BIO_new(BIO_s_null());

@@ -89,6 +89,18 @@
 #include <pthread.h>
 #endif
 
+/***
+th-lock module for thread safety in lua-openssl
+
+This module provides thread locking functionality for OpenSSL operations
+in multi-threaded environments. It implements the required callbacks and
+mutex operations to ensure thread safety when using OpenSSL functions.
+
+@module th-lock
+@usage
+  -- Internal module for thread safety
+*/
+
 #if defined(OPENSSL_THREADS) && \
     (OPENSSL_VERSION_NUMBER < 0x30000000L || defined(LIBRESSL_VERSION_NUMBER))
 void CRYPTO_thread_setup(void);

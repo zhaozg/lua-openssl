@@ -50,6 +50,12 @@ openssl_ts_msg_imprint_new(lua_State *L)
   return ret;
 }
 
+/***
+read and parse ts_msg_imprint from DER encoded data
+@function ts_msg_imprint_read
+@tparam string data DER encoded ts_msg_imprint data
+@treturn ts_msg_imprint|nil parsed object or nil on error
+*/
 static int
 openssl_ts_msg_imprint_read(lua_State *L)
 {

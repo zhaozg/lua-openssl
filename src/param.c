@@ -1,3 +1,14 @@
+/***
+param module for OpenSSL 3.x parameter handling
+
+This module provides functionality for handling OpenSSL 3.x parameters
+used in cryptographic operations. It supports various parameter types
+including integers, strings, and big numbers.
+
+@module param
+@usage
+  param = require('openssl').param
+*/
 #include "lua.h"
 #include "openssl.h"
 #include "private.h"

@@ -4,6 +4,18 @@
 *
 * Author:  george zhao <zhaozg(at)gmail.com>
 \*=========================================================================*/
+
+/***
+dh module for lua-openssl binding
+
+Diffie-Hellman (DH) key exchange is a method of securely exchanging 
+cryptographic keys over a public channel. The module provides functionality
+for DH parameter generation, key generation and key agreement operations.
+
+@module dh
+@usage
+  dh = require('openssl').dh
+*/
 #include <openssl/dh.h>
 #include <openssl/engine.h>
 

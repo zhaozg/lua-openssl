@@ -4,6 +4,18 @@
 *
 * Author:  george zhao <zhaozg(at)gmail.com>
 \*=========================================================================*/
+
+/***
+lhash module for lua-openssl binding
+
+LHASH is OpenSSL's implementation of a hash table. It provides a
+generic hash table that can be used to store arbitrary data using
+string keys. This module provides Lua bindings for the LHASH functionality.
+
+@module lhash
+@usage
+  lhash = require('openssl').lhash
+*/
 #include <openssl/conf.h>
 
 #include "openssl.h"
