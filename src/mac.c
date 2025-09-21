@@ -11,6 +11,13 @@ It base on EVP_MAC in OpenSSL v3.
 #include "private.h"
 
 #if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
+/***
+create new MAC object
+@function new
+@tparam string algorithm MAC algorithm name (e.g., "HMAC", "CMAC", "GMAC")
+@tparam[opt] string properties optional properties string
+@treturn mac|nil new MAC object or nil on failure
+*/
 static int
 openssl_mac_new(lua_State *L)
 {
@@ -111,6 +118,11 @@ openssl_mac_ctx_gc(lua_State *L)
   return 0;
 }
 
+/***
+duplicate MAC context
+@function dup
+@treturn mac_ctx duplicated MAC context
+*/
 static int
 openssl_mac_ctx_dup(lua_State *L)
 {
@@ -120,6 +132,11 @@ openssl_mac_ctx_dup(lua_State *L)
   return 1;
 }
 
+/***
+get MAC object from MAC context
+@function mac
+@treturn mac the MAC object associated with this context
+*/
 static int
 openssl_mac_ctx_mac(lua_State *L)
 {
@@ -129,6 +146,12 @@ openssl_mac_ctx_mac(lua_State *L)
   return 1;
 }
 
+/***
+get or set MAC context parameters (not yet implemented)
+@function params
+@treturn nil always returns nil (NYI - Not Yet Implemented)
+@treturn string error message "NYI"
+*/
 static int
 openssl_mac_ctx_params(lua_State *L)
 {
@@ -229,6 +252,11 @@ openssl_mac_ctx_new(lua_State *L)
   return ret;
 }
 
+/***
+free MAC context resources
+@function free
+@treturn number always returns 0
+*/
 static int
 openssl_mac_ctx_free(lua_State *L)
 {

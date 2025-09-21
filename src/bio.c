@@ -517,6 +517,12 @@ static int openssl_bio_flush(lua_State *L)
   return 1;
 }
 
+/***
+free BIO object and associated resources
+@function free
+@tparam[opt=false] boolean free_all if true, free entire BIO chain; if false, free only this BIO
+@treturn number always returns 0
+*/
 static int openssl_bio_free(lua_State *L)
 {
   int  flags;
@@ -860,6 +866,12 @@ static int openssl_bio_fd(lua_State *L)
 # define BIO_get_fp(b,fpp)       BIO_ctrl(b,BIO_C_GET_FILE_PTR,0,(char *)fpp)
 */
 
+/***
+seek to position in BIO
+@function seek
+@tparam number offset position offset to seek to
+@treturn number new position after seek
+*/
 static int openssl_bio_seek(lua_State *L)
 {
   BIO *bio = CHECK_OBJECT(1, BIO, "openssl.bio");
@@ -876,6 +888,11 @@ static int openssl_bio_seek(lua_State *L)
   return 1;
 }
 
+/***
+get current position in BIO
+@function tell
+@treturn number current position in the BIO
+*/
 static int openssl_bio_tell(lua_State *L)
 {
   BIO *bio = CHECK_OBJECT(1, BIO, "openssl.bio");
