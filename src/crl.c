@@ -802,11 +802,6 @@ static LUA_FUNCTION(openssl_crl_parse)
   return 1;
 }
 
-/***
-free X509_CRL object resources
-@function __gc
-@treturn number 0
-*/
 static LUA_FUNCTION(openssl_crl_free)
 {
   X509_CRL *crl = CHECK_OBJECT(1, X509_CRL, "openssl.x509_crl");

@@ -587,11 +587,6 @@ openssl_ec_point_copy(lua_State *L)
   return openssl_pushresult(L, ret);
 }
 
-/***
-free EC point object resources
-@function __gc
-@treturn number 0
-*/
 static int
 openssl_ec_point_free(lua_State *L)
 {

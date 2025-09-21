@@ -633,11 +633,6 @@ static LUA_FUNCTION(openssl_x509_parse)
   return 1;
 }
 
-/***
-free X509 certificate object resources
-@function __gc
-@treturn number 0
-*/
 static LUA_FUNCTION(openssl_x509_free)
 {
   X509 *cert = CHECK_OBJECT(1, X509, "openssl.x509");

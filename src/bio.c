@@ -517,12 +517,6 @@ static LUA_FUNCTION(openssl_bio_flush)
   return 1;
 }
 
-/***
-close and free BIO object
-@function close
-@tparam[opt=false] boolean free_all true to free entire BIO chain, false for single BIO
-@treturn number 0
-*/
 static LUA_FUNCTION(openssl_bio_free)
 {
   int  flags;

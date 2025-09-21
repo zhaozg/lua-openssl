@@ -846,11 +846,6 @@ static LUA_FUNCTION(openssl_pkey_export)
   return ret;
 }
 
-/***
-free EVP_PKEY object resources
-@function __gc
-@treturn number 0
-*/
 static LUA_FUNCTION(openssl_pkey_free)
 {
   EVP_PKEY *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");

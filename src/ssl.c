@@ -1975,11 +1975,6 @@ openssl_ssl_peer(lua_State *L)
   return 1;
 }
 
-/***
-free SSL object resources
-@function __gc
-@treturn number 0
-*/
 static int
 openssl_ssl_gc(lua_State *L)
 {

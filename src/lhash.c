@@ -76,11 +76,6 @@ static LUA_FUNCTION(openssl_lhash_load)
   return 1;
 }
 
-/***
-free LHASH object resources
-@function __gc
-@treturn number 0
-*/
 LUA_FUNCTION(openssl_lhash_gc)
 {
   LHASH *lhash = CHECK_OBJECT(1, LHASH, "openssl.lhash");
