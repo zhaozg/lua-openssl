@@ -257,71 +257,101 @@ local function analyze_file(filepath)
     printf("Found %d LDoc comment blocks", comment_count)
     stats.total_comments = stats.total_comments + comment_count
     
-    -- Find all function definitions
+    -- Find all function definitions using a balanced approach
     local functions = {}
-    pos = 1
     
-    -- Pattern to match C function definitions more accurately
-    local function is_function_definition(line_text, func_name)
-        -- Skip preprocessor directives, comments, and function calls
-        if line_text:match("^%s*#") or 
-           line_text:match("^%s*//") or 
-           line_text:match("^%s*%*") or
-           line_text:match("^%s*/") or
-           line_text:match("^%s*return") or
-           line_text:match("^%s*if%s*%(") or
-           line_text:match("^%s*while%s*%(") or
-           line_text:match("^%s*for%s*%(") then
-            return false
-        end
-        
-        -- Skip common non-function patterns
-        if func_name:match("^[A-Z_]+$") or -- All caps constants
-           func_name:match("^%d") or -- Starts with number
-           func_name == "return" or
-           func_name == "if" or
-           func_name == "while" or
-           func_name == "for" or
-           func_name == "switch" then
-            return false
-        end
-        
-        -- Must look like a function definition with return type
-        return line_text:match("^%s*[%w_*%s]+%s+" .. func_name .. "%s*%(") or
-               line_text:match("^%s*static%s+[%w_*%s]+%s+" .. func_name .. "%s*%(")
+    -- Look for actual function definitions that would typically be documented
+    local lines = {}
+    for line in content:gmatch("[^\r\n]+") do
+        table.insert(lines, line)
     end
     
-    while pos <= #content do
-        local func_start, func_end, func_name = content:find("([%w_]+)%s*%(", pos)
-        if not func_start then break end
+    local i = 1
+    while i <= #lines do
+        local line = lines[i]
+        local next_line = lines[i + 1] or ""
+        local func_name = nil
+        local is_function = false
         
-        -- Get the line containing this function
-        local line_start = 1
-        for i = func_start, 1, -1 do
-            if content:sub(i, i) == '\n' then
-                line_start = i + 1
-                break
+        -- Skip comments and preprocessor directives
+        if line:match("^%s*//") or line:match("^%s*%*") or line:match("^%s*#") or line:match("^%s*/%*") then
+            i = i + 1
+            goto continue
+        end
+        
+        -- Pattern 1: Static function with lua_State (most common)
+        func_name = line:match("^%s*static%s+[%w_*%s]+%s+([%w_]+)%s*%(.*lua_State.*%)")
+        if func_name then
+            is_function = true
+        end
+        
+        -- Pattern 2: Static function without lua_State but looks like a definition
+        if not is_function then
+            func_name = line:match("^%s*static%s+[%w_*%s]+%s+([%w_]+)%s*%(.*%)%s*{?%s*$")
+            if func_name and not line:match("^%s*static%s+const") then
+                is_function = true
             end
         end
-        local line_end = func_start
-        for i = func_start, #content do
-            if content:sub(i, i) == '\n' then
-                line_end = i - 1
-                break
+        
+        -- Pattern 3: Multi-line static function
+        if not is_function then
+            if line:match("^%s*static%s+[%w_*%s]+%s*%*?%s*$") and next_line:match("^%s*[%w_]+%s*%(") then
+                func_name = next_line:match("^%s*([%w_]+)%s*%(")
+                if func_name then
+                    is_function = true
+                    i = i + 1  -- Skip the next line since we processed it
+                end
             end
         end
-        local line_text = content:sub(line_start, line_end)
         
-        if is_function_definition(line_text, func_name) then
-            table.insert(functions, {
-                name = func_name,
-                start_pos = func_start,
-                line_num = select(2, content:sub(1, func_start):gsub('\n', '\n')) + 1
-            })
-            function_count = function_count + 1
+        -- Pattern 4: Non-static function definition (like luaopen_xxx)
+        if not is_function then
+            func_name = line:match("^%s*([%w_]+)%s*%(.*lua_State.*%)")
+            if func_name and line:match("^%s*[%w_*]+%s+[%w_]+%s*%(") then
+                is_function = true
+            end
         end
         
-        pos = func_end + 1
+        if is_function and func_name then
+            -- Filter out obvious non-functions
+            local skip_patterns = {
+                "^[A-Z_][A-Z0-9_]*$", -- All caps (likely macros)
+                "^lua[A-Z_]", "^luaL_", -- Lua API calls (but not our functions starting with lua)
+                "^EVP_", "^OPENSSL_", "^BIO_", "^X509_", "^ASN1_", "^CONF_", "^OBJ_",
+                "^SSL_", "^CRYPTO_", "^ENGINE_", "^RSA_", "^DSA_", "^EC_", "^DH_", 
+                "^HMAC_", "^auxiliar_", "^AUXILIAR_", "^CHECK_", "^PUSH_",
+                "^if$", "^for$", "^while$", "^switch$", "^return$", "^main$"
+            }
+            
+            local skip = false
+            for _, pattern in ipairs(skip_patterns) do
+                if func_name:match(pattern) then
+                    skip = true
+                    break
+                end
+            end
+            
+            -- Additional check: skip some common utility functions that aren't usually documented
+            local common_utils = {"memcpy", "malloc", "free", "strlen", "strcmp", "printf", "fprintf", "sprintf", "snprintf"}
+            for _, util in ipairs(common_utils) do
+                if func_name == util then
+                    skip = true
+                    break
+                end
+            end
+            
+            if not skip then
+                table.insert(functions, {
+                    name = func_name,
+                    start_pos = 1,
+                    line_num = i
+                })
+                function_count = function_count + 1
+            end
+        end
+        
+        ::continue::
+        i = i + 1
     end
     
     printf("Found %d function definitions", function_count)
