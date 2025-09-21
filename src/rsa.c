@@ -50,6 +50,11 @@ static LUA_FUNCTION(openssl_rsa_isprivate)
   return 1;
 };
 
+/***
+get RSA key size in bytes
+@function size
+@treturn number key size in bytes
+*/
 static LUA_FUNCTION(openssl_rsa_size)
 {
   RSA *rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");
@@ -85,6 +90,14 @@ static LUA_FUNCTION(openssl_rsa_encrypt)
   return flen == 1 ? flen : openssl_pushresult(L, flen);
 };
 
+/***
+decrypt data using RSA private key
+@function decrypt
+@tparam string data encrypted data to decrypt
+@tparam[opt="pkcs1"] string padding padding mode ("pkcs1", "oaep", "none")
+@tparam[opt] boolean use_private true to use private key for decryption
+@treturn string|nil decrypted data or nil on error
+*/
 static LUA_FUNCTION(openssl_rsa_decrypt)
 {
   RSA                 *rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");
@@ -105,6 +118,13 @@ static LUA_FUNCTION(openssl_rsa_decrypt)
   return flen == 1 ? flen : openssl_pushresult(L, flen);
 };
 
+/***
+create digital signature using RSA private key
+@function sign
+@tparam string message data to sign
+@tparam[opt="sha256"] string|evp_md digest algorithm to use
+@treturn string|nil signature or nil on error
+*/
 static LUA_FUNCTION(openssl_rsa_sign)
 {
   RSA                 *rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");
@@ -123,6 +143,14 @@ static LUA_FUNCTION(openssl_rsa_sign)
   return ret == 1 ? ret : openssl_pushresult(L, ret);
 };
 
+/***
+verify RSA signature using public key
+@function verify
+@tparam string message original data that was signed
+@tparam string signature signature to verify
+@tparam[opt="sha256"] string|evp_md digest algorithm used for signing
+@treturn boolean true if signature is valid, false otherwise
+*/
 static LUA_FUNCTION(openssl_rsa_verify)
 {
   RSA                 *rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");
@@ -171,6 +199,13 @@ static LUA_FUNCTION(openssl_rsa_parse)
   return 1;
 }
 
+/***
+read RSA key from DER/PEM data
+@function read
+@tparam string data DER or PEM encoded RSA key data
+@tparam[opt=true] boolean private true to read private key, false for public key
+@treturn rsa|nil RSA key object or nil on error
+*/
 static LUA_FUNCTION(openssl_rsa_read)
 {
   size_t               l;

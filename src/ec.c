@@ -837,6 +837,11 @@ static luaL_Reg ec_point_funs[] = {
   { NULL,         NULL                  }
 };
 
+/***
+list all available elliptic curve names
+@function list
+@treturn table array of curve names and descriptions
+*/
 static LUA_FUNCTION(openssl_ec_list_curve_name)
 {
   size_t            i = 0;

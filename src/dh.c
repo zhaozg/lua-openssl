@@ -59,6 +59,12 @@ static LUA_FUNCTION(openssl_dh_parse)
   return 1;
 }
 
+/***
+check DH parameters for validity
+@function check
+@treturn boolean true if parameters are valid
+@treturn[opt] table error codes if parameters are invalid
+*/
 static LUA_FUNCTION(openssl_dh_check)
 {
   const DH *dh = CHECK_OBJECT(1, DH, "openssl.dh");

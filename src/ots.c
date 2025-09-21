@@ -894,6 +894,13 @@ static LUA_FUNCTION(openssl_ts_req_export)
   return 0;
 }
 
+/***
+add X509 extension to timestamp request
+@function add_ext
+@tparam x509_extension extension X509 extension to add
+@tparam[opt] number location position to insert extension
+@treturn boolean true on success, false on failure
+*/
 static LUA_FUNCTION(openssl_ts_req_add_ext)
 {
   TS_REQ         *ts_req = CHECK_OBJECT(1, TS_REQ, "openssl.ts_req");

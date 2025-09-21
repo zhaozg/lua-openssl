@@ -83,6 +83,13 @@ LUA_FUNCTION(openssl_lhash_gc)
   return 0;
 }
 
+/***
+get number value from LHASH configuration
+@function get_number
+@tparam string group configuration group name
+@tparam string name configuration key name
+@treturn number configuration value as number
+*/
 LUA_FUNCTION(openssl_lhash_get_number)
 {
   LHASH      *lhash = CHECK_OBJECT(1, LHASH, "openssl.lhash");
@@ -92,6 +99,13 @@ LUA_FUNCTION(openssl_lhash_get_number)
   return 1;
 }
 
+/***
+get string value from LHASH configuration
+@function get_string
+@tparam string group configuration group name
+@tparam string name configuration key name
+@treturn string configuration value as string
+*/
 LUA_FUNCTION(openssl_lhash_get_string)
 {
   LHASH      *lhash = CHECK_OBJECT(1, LHASH, "openssl.lhash");
