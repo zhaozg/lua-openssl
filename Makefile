@@ -174,6 +174,7 @@ lib$T.a: $(OBJS)
 install: all
 	mkdir -p $(LUA_LIBDIR)
 	cp $T.so $(LUA_LIBDIR)
+
 doc:
 	ldoc src -d doc
 

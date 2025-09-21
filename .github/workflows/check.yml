@@ -75,7 +75,9 @@ jobs:
       run: |
         .github/shell/setup_lua.sh
         export PATH=$HOME/.usr/bin:$PATH
+        $HOME/.usr/bin/luarocks install lpeg
         $HOME/.usr/bin/luarocks install ldoc
+        luajit .github/shell/analyze_ldoc.lua src
         make doc
 
   clang-asan:
