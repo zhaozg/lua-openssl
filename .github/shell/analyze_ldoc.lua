@@ -116,15 +116,24 @@ local stats = {
 local P, R, S, C, Ct, Cf, Cc = lpeg.P, lpeg.R, lpeg.S, lpeg.C, lpeg.Ct, lpeg.Cf, lpeg.Cc
 
 -- Define basic LPEG patterns
-local ws = S(" \t")^0
-local wsp = S(" \t")^1  -- required whitespace
 local nl = P("\n") + P("\r\n") + P("\r")
 local alpha = R("az", "AZ")
 local digit = R("09")
 local alnum = alpha + digit
-local identifier = (alpha + P("_")) * (alnum + P("_"))^0
 local comment_start = P("/***")
 local comment_end = P("*/")
+
+-- 优化后的 C API 函数定义模式
+
+-- 优化后的 C API 函数定义模式（支持多行和更宽松参数匹配）
+local ws = lpeg.S(" \t")^0
+local wsp = lpeg.S(" \t")^1
+local static_kw = lpeg.P("static") * wsp
+local int_kw = lpeg.P("int")
+local openssl_prefix = lpeg.P("openssl_")
+local identifier = (lpeg.R("az", "AZ") + lpeg.P("_")) * (lpeg.R("az", "AZ", "09") + lpeg.P("_"))^0
+local lparen = lpeg.P("(")
+-- 参数部分允许有换行和空格，只需包含 lua_State *L
 
 -- LPEG patterns for function detection
 local static_kw = P("static") * wsp
@@ -286,71 +295,38 @@ local function analyze_file(filepath)
     printf("Found %d LDoc comment blocks", comment_count)
     stats.total_comments = stats.total_comments + comment_count
 
-    -- Find all function definitions using LPEG patterns
-    local functions = {}
-
-    -- Split content into lines for easier processing
-    local lines = {}
-    for line in content:gmatch("[^\r\n]+") do
-        table.insert(lines, line)
+    -- 用字符串处理方式识别 API 函数定义，支持 static 可选和多行参数
+    local function find_api_functions(content)
+        local api_functions = {}
+        -- 合并多行函数头为一行，方便匹配
+        local merged = content:gsub("%s*\n%s*", " ")
+        -- 匹配 static int openssl_xxx(...)
+        for func_head, params in merged:gmatch("static%s*int%s*openssl_([%w_]+)%s*%((.-)%)") do
+            if params:find("lua_State%s*%*%s*L") then
+                -- 查找原始位置和行号
+                local pat = "static%s*int%s*openssl_" .. func_head .. "%s*%(" .. params .. "%)"
+                local s = content:find(pat, 1, true)
+                local line_num = s and (select(2, content:sub(1, s):gsub('\n', '\n')) + 1) or 1
+                table.insert(api_functions, { name = "openssl_" .. func_head, start_pos = s or 1, line_num = line_num })
+            end
+        end
+        -- 匹配 int openssl_xxx(...)
+        for func_head, params in merged:gmatch("int%s*openssl_([%w_]+)%s*%((.-)%)") do
+            if params:find("lua_State%s*%*%s*L") then
+                local pat = "int%s*openssl_" .. func_head .. "%s*%(" .. params .. "%)"
+                local s = content:find(pat, 1, true)
+                local line_num = s and (select(2, content:sub(1, s):gsub('\n', '\n')) + 1) or 1
+                table.insert(api_functions, { name = "openssl_" .. func_head, start_pos = s or 1, line_num = line_num })
+            end
+        end
+        return api_functions
     end
 
-    -- Process each line using LPEG patterns
-    for i = 1, #lines do
-        local line = lines[i]
-        local next_line = lines[i + 1] or ""
+    -- 找到所有 API 函数定义
+    local api_functions = find_api_functions(content)
+    local function_count = #api_functions
 
-        -- Skip lines that match skip patterns using LPEG
-        if skip_line_patterns:match(line) then
-            goto continue
-        end
-
-        local func_name = nil
-        local is_function_def = false
-
-        -- Pattern 1: Single-line function definition using LPEG
-        func_name = single_line_func:match(line)
-        if func_name then
-            is_function_def = true
-        end
-
-        -- Pattern 2: Multi-line function definition using LPEG
-        if not is_function_def and multiline_return_type:match(line) then
-            func_name = multiline_func_name:match(next_line)
-            if func_name then
-                is_function_def = true
-            end
-        end
-
-        -- Apply LPEG-based filtering for function names
-        if is_function_def and func_name then
-            local skip = false
-
-            -- Skip all-caps names (macros) using LPEG
-            local all_caps_pattern = (R("AZ") + P("_"))^1 * P(-1)
-            if all_caps_pattern:match(func_name) then
-                skip = true
-            end
-
-            -- Skip single-letter or number-starting names
-            if #func_name == 1 or func_name:match("^%d") then
-                skip = true
-            end
-
-            if not skip then
-                table.insert(functions, {
-                    name = func_name,
-                    start_pos = 1,
-                    line_num = i
-                })
-                function_count = function_count + 1
-            end
-        end
-
-        ::continue::
-    end
-
-    printf("Found %d function definitions", function_count)
+    printf("Found %d API function definitions", function_count)
     stats.total_functions = stats.total_functions + function_count
 
     if config.verbose then
@@ -384,9 +360,9 @@ local function analyze_file(filepath)
             local has_params = parsed.tags.tparam or parsed.tags.param
             local has_return = parsed.tags.treturn or parsed.tags["return"]
 
-            -- Find corresponding function
+            -- Find corresponding API function
             local next_func = nil
-            for _, func in ipairs(functions) do
+            for _, func in ipairs(api_functions) do
                 if func.start_pos > comment.end_pos then
                     next_func = func
                     break
@@ -415,7 +391,25 @@ local function analyze_file(filepath)
         if valid and #comment_issues == 0 then
             stats.valid_comments = stats.valid_comments + 1
             if config.verbose then
-                printf(colored("green", "✓ Comment at line %d: Valid"), comment.line_num)
+                local out_type, out_name = nil, nil
+                if parsed.tags.module and #parsed.tags.module > 0 then
+                    out_type = "Module"
+                    out_name = parsed.tags.module[1]
+                elseif parsed.tags["function"] and #parsed.tags["function"] > 0 then
+                    out_type = "Function"
+                    out_name = parsed.tags["function"][1]
+                elseif parsed.tags.type and #parsed.tags.type > 0 then
+                    out_type = "Type"
+                    out_name = parsed.tags.type[1]
+                elseif next_func and next_func.name then
+                    out_type = "Function"
+                    out_name = next_func.name
+                end
+                if out_type and out_name then
+                    printf(colored("green", "✓ %s %s at line %d: Valid"), out_type, out_name, comment.line_num)
+                else
+                    printf(colored("green", "✓ Comment at line %d: Valid"), comment.line_num)
+                end
             end
         else
             if config.verbose then
@@ -432,14 +426,45 @@ local function analyze_file(filepath)
 
     stats.documented_functions = stats.documented_functions + documented_function_count
 
-    -- Report undocumented functions - but only count functions that should be documented
-    -- According to @zhaozg feedback: API coverage should only count functions with @function tags
-    -- This means we compare documented_function_count against functions that should be documented,
-    -- not all detected functions
-    local undocumented = function_count - documented_function_count
+    -- 输出未文档化 API 的详细信息
+    local documented_names = {}
+    for i, comment in ipairs(comments) do
+        local parsed = parse_ldoc_comment(comment.text)
+        if parsed.tags["function"] and #parsed.tags["function"] > 0 then
+            for _, fname in ipairs(parsed.tags["function"]) do
+                documented_names[fname] = true
+            end
+        end
+    end
+    local undocumented_set = {}
+    local undocumented_list = {}
+    for _, func in ipairs(api_functions) do
+        -- 兼容不同前缀
+        local suffix = func.name:match("openssl_[%w]+_(.+)")
+        local key = func.name .. ":" .. tostring(func.line_num)
+        if suffix and documented_names[suffix] then
+            -- 已文档化
+        elseif not undocumented_set[key] then
+            local lua_api = ""
+            if suffix and documented_names[suffix] then
+                lua_api = string.format("(%s)", suffix)
+            elseif suffix and documented_names[suffix] == nil then
+                -- 如果 suffix 在所有 Lua API 列表中，依然显示
+                if documented_names[suffix] then
+                    lua_api = string.format("(%s)", suffix)
+                end
+            end
+            table.insert(undocumented_list, string.format("%s%s at line %d", func.name, lua_api, func.line_num))
+            undocumented_set[key] = true
+        end
+    end
+    local undocumented = #undocumented_list
     if undocumented > 0 then
         if config.show_undocumented_list then
             printf(colored("red", "⚠ %d functions are undocumented"), undocumented)
+            for _, info in ipairs(undocumented_list) do
+                printf(colored("red", "  • %s"), info)
+            end
         end
         table.insert(file_issues, string.format("%d undocumented functions", undocumented))
     end
