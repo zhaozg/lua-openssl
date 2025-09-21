@@ -15,6 +15,16 @@ ec module to create EC keys and do EC key processes.
 static int openssl_push_group_asn1_flag(lua_State *L, int flag);
 static int openssl_push_point_conversion_form(lua_State *L, point_conversion_form_t form);
 
+/***
+get or set affine coordinates of an elliptic curve point
+@function affine_coordinates
+@tparam ec_group group elliptic curve group
+@tparam ec_point point elliptic curve point
+@tparam[opt] bn x x coordinate (for setting)
+@tparam[opt] bn y y coordinate (for setting)
+@treturn bn x coordinate (when getting)
+@treturn bn y coordinate (when getting)
+*/
 static int
 openssl_ecpoint_affine_coordinates(lua_State *L)
 {
@@ -39,6 +49,13 @@ openssl_ecpoint_affine_coordinates(lua_State *L)
   return ret;
 }
 
+/***
+create EC group and generator point from curve specification
+@function group
+@tparam string|table|number curve curve specification (name, parameters, or NID)
+@treturn ec_group the elliptic curve group
+@treturn ec_point the generator point
+*/
 static int
 openssl_eckey_group(lua_State *L)
 {
@@ -53,6 +70,11 @@ openssl_eckey_group(lua_State *L)
   return 0;
 };
 
+/***
+parse elliptic curve group to extract detailed parameters
+@function parse
+@treturn table containing curve parameters (generator, order, cofactor, etc.)
+*/
 static int
 openssl_ec_group_parse(lua_State *L)
 {
@@ -136,6 +158,13 @@ openssl_push_group_asn1_flag(lua_State *L, int flag)
   return 1;
 }
 
+/***
+get or set ASN1 flag for elliptic curve group
+@function asn1_flag
+@tparam ec_group group elliptic curve group
+@tparam[opt] number|string flag ASN1 flag to set
+@treturn string|number current ASN1 flag (string name and number value)
+*/
 static int
 openssl_ec_group_asn1_flag(lua_State *L)
 {
@@ -186,6 +215,13 @@ openssl_push_point_conversion_form(lua_State *L, point_conversion_form_t form)
   return 1;
 }
 
+/***
+get or set point conversion form for elliptic curve group
+@function point_conversion_form
+@tparam ec_group group elliptic curve group
+@tparam[opt] number|string form point conversion form to set
+@treturn string|number current point conversion form (string name and number value)
+*/
 static int
 openssl_ec_group_point_conversion_form(lua_State *L)
 {
@@ -269,6 +305,12 @@ openssl_get_ec_group(lua_State *L, int ec_name_idx, int param_enc_idx, int conv_
   return g;
 }
 
+/***
+create new elliptic curve point for group
+@function point_new
+@tparam ec_group group elliptic curve group
+@treturn ec_point new elliptic curve point
+*/
 static int
 openssl_ec_group_point_new(lua_State *L)
 {
@@ -278,6 +320,13 @@ openssl_ec_group_point_new(lua_State *L)
   return 1;
 }
 
+/***
+duplicate an EC point
+@function point_dup
+@tparam ec_group group the EC group
+@tparam ec_point point the EC point to duplicate
+@treturn ec_point new EC point that is a copy of the input point
+*/
 static int
 openssl_ec_point_dup(lua_State *L)
 {
@@ -289,6 +338,14 @@ openssl_ec_point_dup(lua_State *L)
   return 1;
 }
 
+/***
+compare two EC points for equality
+@function point_equal
+@tparam ec_group group the EC group
+@tparam ec_point a first EC point to compare
+@tparam ec_point b second EC point to compare
+@treturn boolean true if points are equal, false otherwise
+*/
 static int
 openssl_ec_point_equal(lua_State *L)
 {
@@ -301,6 +358,13 @@ openssl_ec_point_equal(lua_State *L)
   return 1;
 }
 
+/***
+convert octet string to EC point
+@function oct2point
+@tparam ec_group group the EC group
+@tparam string oct octet string representation
+@treturn ec_point|nil the resulting EC point or nil on failure
+*/
 static int
 openssl_ec_point_oct2point(lua_State *L)
 {
@@ -317,6 +381,13 @@ openssl_ec_point_oct2point(lua_State *L)
   return ret;
 }
 
+/***
+convert EC point to octet string
+@function point2oct
+@tparam ec_group group the EC group
+@tparam[opt] string form point conversion form ("compressed", "uncompressed", or "hybrid")
+@treturn string octet string representation of the point
+*/
 static int
 openssl_ec_point_point2oct(lua_State *L)
 {
@@ -339,6 +410,13 @@ openssl_ec_point_point2oct(lua_State *L)
   return 0;
 }
 
+/***
+convert bignum to EC point
+@function bn2point
+@tparam ec_group group the EC group
+@tparam bn the bignum to convert to point
+@treturn ec_point|nil the resulting EC point or nil on failure
+*/
 static int
 openssl_ec_point_bn2point(lua_State *L)
 {
@@ -352,6 +430,13 @@ openssl_ec_point_bn2point(lua_State *L)
   return 1;
 }
 
+/***
+convert EC point to bignum
+@function point2bn
+@tparam ec_group group the EC group
+@tparam[opt] string form point conversion form ("compressed", "uncompressed", or "hybrid")
+@treturn bn|nil the resulting bignum representation or nil on failure
+*/
 static int
 openssl_ec_point_point2bn(lua_State *L)
 {
@@ -368,6 +453,13 @@ openssl_ec_point_point2bn(lua_State *L)
   return 1;
 }
 
+/***
+convert hexadecimal string to EC point
+@function hex2point
+@tparam ec_group group the EC group
+@tparam string hex hexadecimal string representation
+@treturn ec_point|nil the resulting EC point or nil on failure
+*/
 static int
 openssl_ec_point_hex2point(lua_State *L)
 {
@@ -382,6 +474,13 @@ openssl_ec_point_hex2point(lua_State *L)
   return 1;
 }
 
+/***
+convert EC point to hexadecimal string
+@function point2hex
+@tparam ec_group group the EC group
+@tparam[opt] string form point conversion form ("compressed", "uncompressed", or "hybrid")
+@treturn string|nil hexadecimal string representation or nil on failure
+*/
 static int
 openssl_ec_point_point2hex(lua_State *L)
 {
@@ -399,6 +498,11 @@ openssl_ec_point_point2hex(lua_State *L)
   return 1;
 }
 
+/***
+generate EC key pair from group
+@function generate_key
+@treturn ec_key generated EC key object or nil if failed
+*/
 static int
 openssl_ec_group_generate_key(lua_State *L)
 {
@@ -578,6 +682,12 @@ static int openssl_ecdsa_verify(lua_State *L)
 }
 
 /* ec_point */
+/***
+copy EC point
+@function copy
+@tparam ec_point from source EC point to copy from
+@treturn boolean true on success, false on failure
+*/
 static int
 openssl_ec_point_copy(lua_State *L)
 {
@@ -666,6 +776,13 @@ KDF1_SHA1(const void *in, size_t inlen, void *out, size_t *outlen)
 
 #define MAX_ECDH_SIZE 256
 
+/***
+compute ECDH shared key
+@function compute_key
+@tparam ec_key peer peer EC key for key exchange
+@tparam[opt] function kdf key derivation function
+@treturn string shared secret or nil if failed
+*/
 static int
 openssl_ecdh_compute_key(lua_State *L)
 {
@@ -688,6 +805,12 @@ openssl_ecdh_compute_key(lua_State *L)
   return 1;
 }
 
+/***
+set ECDSA signing method for EC key
+@function set_method
+@tparam engine engine engine providing the ECDSA method
+@treturn boolean result true for success
+*/
 static int
 openssl_ecdsa_set_method(lua_State *L)
 {
@@ -711,6 +834,11 @@ openssl_ecdsa_set_method(lua_State *L)
   return 0;
 }
 
+/***
+check if EC key is valid
+@function check
+@treturn boolean true if key is valid, false otherwise
+*/
 static int
 openssl_ec_key_check_key(lua_State *L)
 {
@@ -719,6 +847,11 @@ openssl_ec_key_check_key(lua_State *L)
   return 1;
 }
 
+/***
+export EC key to DER format
+@function export
+@treturn string DER encoded EC private key
+*/
 static int
 openssl_ec_key_export(lua_State *L)
 {
@@ -733,6 +866,13 @@ openssl_ec_key_export(lua_State *L)
   return 1;
 }
 
+/***
+get or set EC group for EC key
+@function group
+@tparam[opt] ec_group group optional EC group to set
+@treturn ec_group current EC group when called without parameters
+@treturn boolean true when setting group successfully
+*/
 static int
 openssl_ec_key_group(lua_State *L)
 {
@@ -749,6 +889,12 @@ openssl_ec_key_group(lua_State *L)
   }
 }
 
+/***
+read EC key from DER encoded data
+@function read
+@tparam string der DER encoded EC private key data
+@treturn ec_key|nil parsed EC key or nil on failure
+*/
 static int
 openssl_ec_key_read(lua_State *L)
 {
@@ -763,6 +909,14 @@ openssl_ec_key_read(lua_State *L)
   return 1;
 }
 
+/***
+get or set point conversion form for EC key
+@function conv_form
+@tparam[opt] string|number form point conversion form to set
+@treturn[1] string point conversion form name if getting
+@treturn[1] number point conversion form value if getting
+@treturn[2] boolean result true for success if setting
+*/
 static int
 openssl_ec_key_conv_form(lua_State *L)
 {
@@ -782,6 +936,14 @@ openssl_ec_key_conv_form(lua_State *L)
   return 1;
 }
 
+/***
+get or set encoding flags for EC key
+@function enc_flags
+@tparam[opt] string|number flags encoding flags to set
+@treturn[1] string encoding flags name if getting
+@treturn[1] number encoding flags value if getting
+@treturn[2] boolean result true for success if setting
+*/
 static int
 openssl_ec_key_enc_flags(lua_State *L)
 {

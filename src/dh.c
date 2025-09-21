@@ -8,7 +8,7 @@
 /***
 dh module for lua-openssl binding
 
-Diffie-Hellman (DH) key exchange is a method of securely exchanging 
+Diffie-Hellman (DH) key exchange is a method of securely exchanging
 cryptographic keys over a public channel. The module provides functionality
 for DH parameter generation, key generation and key agreement operations.
 
@@ -109,6 +109,11 @@ openssl_dh_generate_parameters(lua_State *L)
   return openssl_pushresult(L, ret);
 }
 
+/***
+generate a DH key pair from parameters
+@function generate_key
+@treturn dh new DH object with generated key pair on success
+*/
 static int
 openssl_dh_generate_key(lua_State *L)
 {
@@ -159,6 +164,13 @@ static LuaL_Enumeration dh_problems[] = {
   { NULL,                           -1                           }
 };
 
+/***
+interpret DH parameter check problems
+@function problems
+@tparam number reason the problem codes returned by check functions
+@tparam[opt=false] boolean pub whether to include public key problems
+@treturn table array of problem descriptions
+*/
 static int
 openssl_dh_problems(lua_State *L)
 {

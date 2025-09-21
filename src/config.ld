@@ -7,9 +7,3 @@ dir='doc'
 readme='README.md'
 style='!pale'
 kind_names={topic='Manual',module='Libraries'}
-sort_modules=true
-ignore={
-  'compat.c',
-  'th-lock.c',
-  'util.c'
-}

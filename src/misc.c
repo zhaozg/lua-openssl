@@ -9,7 +9,7 @@
 misc module with utility functions for lua-openssl
 
 This module provides various utility functions and helpers that are
-used throughout the lua-openssl library for data conversion, 
+used throughout the lua-openssl library for data conversion,
 formatting, and common operations.
 
 @module misc

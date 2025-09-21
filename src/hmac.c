@@ -99,6 +99,7 @@ feed data to do digest
 
 @function update
 @tparam string msg data
+@treturn boolean result true for success
 */
 static int
 openssl_mac_ctx_update(lua_State *L)
@@ -158,6 +159,7 @@ return size of mac value
 
 @function size
 @tparam string msg data
+@treturn number size of MAC value
 */
 static int
 openssl_mac_ctx_size(lua_State *L)

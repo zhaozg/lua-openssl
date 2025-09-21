@@ -219,9 +219,9 @@ static int openssl_digest_info(lua_State *L)
 }
 
 /***
-create new evp_digest_ctx
-
-@function new
+initialize digest context with message digest
+@function init
+@tparam evp_digest md message digest algorithm
 @tparam[opt] engine, eng
 @treturn evp_digest_ctx ctx
 @see evp_digest_ctx
@@ -370,6 +370,7 @@ static int openssl_digest_ctx_free(lua_State *L)
 reset evp_diget_ctx to reuse
 
 @function reset
+@treturn boolean true on success, false on failure
 */
 static int openssl_digest_ctx_reset(lua_State *L)
 {
@@ -397,14 +398,8 @@ static int openssl_digest_ctx_reset(lua_State *L)
 retrieve md data
 
 @function data
-@treturn string md_data
-*/
-
-/***
-restore md data
-
-@function data
-@tparam string md_data
+@tparam[opt] string md_data data to set (optional)
+@treturn string|boolean if no parameter given, returns current md_data; if parameter given, returns boolean success status
 */
 static int openssl_digest_ctx_data(lua_State *L)
 {
@@ -453,10 +448,10 @@ static int openssl_digest_ctx_data(lua_State *L)
 }
 
 /***
-feed data for sign to get signature
-
-@function verifyUpdate
-@tparam string data to be signed
+update digest context for signing operation
+@function signUpdate
+@tparam evp_digest_ctx ctx digest context
+@tparam string data data to sign
 @treturn boolean result
 */
 static int openssl_signUpdate(lua_State *L)

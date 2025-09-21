@@ -1157,7 +1157,7 @@ static int openssl_pkey_get_public(lua_State *L)
 }
 
 /***
-create EVP_PKEY_CTX context for public key operations  
+create EVP_PKEY_CTX context for public key operations
 @function ctx
 @tparam[opt] engine engine optional engine for hardware acceleration
 @treturn evp_pkey_ctx public key context object for RSA operations
@@ -1207,6 +1207,12 @@ static int openssl_pkey_ctx_free(lua_State *L)
   return 0;
 }
 
+/***
+generate a key pair using the context
+@function keygen
+@tparam[opt] number bits key size in bits (depends on key type)
+@treturn evp_pkey generated key pair on success
+*/
 static int openssl_pkey_ctx_keygen(lua_State *L)
 {
   EVP_PKEY_CTX *ctx = CHECK_OBJECT(1, EVP_PKEY_CTX, "openssl.evp_pkey_ctx");
@@ -1230,6 +1236,13 @@ static int openssl_pkey_ctx_keygen(lua_State *L)
   return ret;
 }
 
+/***
+control EVP_PKEY_CTX with string parameters
+@function ctrl
+@tparam string name control parameter name
+@tparam string value control parameter value
+@treturn boolean true on success, false on failure
+*/
 static int openssl_pkey_ctx_ctrl(lua_State *L)
 {
   EVP_PKEY_CTX *ctx = CHECK_OBJECT(1, EVP_PKEY_CTX, "openssl.evp_pkey_ctx");
@@ -1974,6 +1987,11 @@ static int openssl_open_final(lua_State *L)
   return ret == 1 ? ret : openssl_pushresult(L, ret);
 }
 
+/***
+get the number of bits in the key
+@function bits
+@treturn number number of bits in the key
+*/
 static int
 openssl_pkey_bits(lua_State *L)
 {
@@ -1984,6 +2002,12 @@ openssl_pkey_bits(lua_State *L)
 };
 
 #ifndef OPENSSL_NO_ENGINE
+/***
+set engine for the key
+@function set_engine
+@tparam engine eng engine object to use for this key
+@treturn boolean result true for success
+*/
 static int
 openssl_pkey_set_engine(lua_State *L)
 {
@@ -2041,6 +2065,11 @@ openssl_pkey_set_engine(lua_State *L)
 #endif
 
 #if defined(OPENSSL_SUPPORT_SM2) && OPENSSL_VERSION_NUMBER < 0x30000000
+/***
+convert EC key to SM2 key type
+@function as_sm2
+@treturn boolean result true if successfully converted to SM2
+*/
 static int
 openssl_pkey_as_sm2(lua_State *L)
 {
@@ -2065,6 +2094,11 @@ openssl_pkey_as_sm2(lua_State *L)
 }
 #endif
 
+/***
+check if key parameters are missing
+@function missing_paramaters
+@treturn boolean true if key is missing parameters
+*/
 static int
 openssl_pkey_mssing_parameters(lua_State *L)
 {

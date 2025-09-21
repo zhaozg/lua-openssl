@@ -8,7 +8,7 @@
 /***
 rsa module for lua-openssl binding
 
-RSA (Rivest-Shamir-Adleman) is a public-key cryptosystem that is widely 
+RSA (Rivest-Shamir-Adleman) is a public-key cryptosystem that is widely
 used for secure data transmission. The module provides functionality for
 RSA key generation, encryption, decryption, signing and signature verification.
 
@@ -250,6 +250,12 @@ static int openssl_rsa_export(lua_State *L)
   return ret;
 }
 
+/***
+set RSA engine for cryptographic operations
+@function set_engine
+@tparam engine engine ENGINE object to use for RSA operations
+@treturn boolean true on success, false on failure
+*/
 static int
 openssl_rsa_set_engine(lua_State *L)
 {
@@ -325,6 +331,15 @@ openssl_rsa_bytes_len(lua_State *L, int i)
   return n;
 }
 
+/***
+add padding to data for RSA operations
+@function padding_add
+@tparam string data input data to add padding to
+@tparam string padding padding scheme (e.g., "pkcs1", "oaep", "x931", "pss")
+@tparam number|rsa key_size RSA key size in bytes or RSA object
+@tparam boolean is_private true for private key padding, false for public key
+@treturn string data with padding added
+*/
 static int
 openssl_padding_add(lua_State *L)
 {
@@ -398,6 +413,14 @@ openssl_padding_add(lua_State *L)
   return ret;
 }
 
+/***
+check and remove padding from data
+@function padding_check
+@tparam string data padded data to check
+@tparam string padding padding mode to check
+@tparam number size expected output size
+@treturn string unpadded data or nil if padding check failed
+*/
 static int
 openssl_padding_check(lua_State *L)
 {

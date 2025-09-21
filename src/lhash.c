@@ -44,6 +44,12 @@ static void table2data(lua_State*L, int idx, BIO* bio)
 #endif
 
 #if !defined(LIBRESSL_VERSION_NUMBER) || LIBRESSL_VERSION_NUMBER < 0x30900000L
+/***
+read configuration hash from BIO object
+@function read
+@tparam bio bio BIO object to read from
+@treturn lhash configuration hash object
+*/
 static int openssl_lhash_read(lua_State *L)
 {
   long   eline = -1;
@@ -59,6 +65,12 @@ static int openssl_lhash_read(lua_State *L)
   }
 }
 
+/***
+load configuration hash from file
+@function load
+@tparam string conf_file path to configuration file
+@treturn lhash configuration hash object
+*/
 static int openssl_lhash_load(lua_State *L)
 {
   long        eline = -1;

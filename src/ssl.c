@@ -63,6 +63,12 @@ typedef enum
   SSL_CTX_MAX_IDX
 } SSL_CTX_INDEX;
 
+/***
+create a new SSL context object
+@function new
+@tparam[opt="TLS"] string method SSL/TLS protocol method ("TLS", "SSLv23", "TLSv1", "TLSv1_1", "TLSv1_2", etc.)
+@treturn ssl_ctx SSL context object
+*/
 static int
 openssl_ssl_ctx_new(lua_State *L)
 {
@@ -664,6 +670,12 @@ openssl_ssl_ctx_cert_store(lua_State *L)
 }
 
 #ifndef OPENSSL_NO_ENGINE
+/***
+set client certificate engine for SSL context
+@function set_engine
+@tparam engine eng engine object to use for client certificates
+@treturn boolean result true for success
+*/
 static int
 openssl_ssl_ctx_set_engine(lua_State *L)
 {
@@ -925,6 +937,7 @@ set certificate verify options
 @function set_cert_verify
 @tparam table verify_cb_flag support field always_continue with boolean value and verify_depth with
 number value.
+@treturn boolean result true for success
 */
 static int
 openssl_ssl_ctx_set_cert_verify(lua_State *L)
@@ -1215,6 +1228,7 @@ set tmp key content pem format
 @function set_tmp
 @tparam string keytype, 'dh','ecdh',or 'rsa'
 @tparam[opt] string private key file
+@treturn boolean result true for success
 */
 
 static int
@@ -1578,7 +1592,7 @@ get current session cache mode
 set session cache mode,and return old mode
 @function session_cache_mode
 @tparam string mode support 'no_auto_clear','server','client','both','off',
-'no_auto_clear' can be combine with others, so accept one or two param.
+@treturn table old modes as array
 */
 static int
 openssl_session_cache_mode(lua_State *L)
@@ -1657,6 +1671,12 @@ openssl_session_cache_mode(lua_State *L)
 }
 
 #if OPENSSL_VERSION_NUMBER > 0x1010100FL && !defined(LIBRESSL_VERSION_NUMBER)
+/***
+get or set number of TLS tickets
+@function num_tickets
+@tparam[opt] number num number of tickets to set
+@treturn number current number of tickets
+*/
 static int
 openssl_ssl_ctx_num_tickets(lua_State *L)
 {
@@ -1800,6 +1820,11 @@ openssl_ssl_session_gc(lua_State *L)
   return 0;
 }
 
+/***
+get peer certificate from SSL session
+@function peer
+@treturn x509 peer certificate from the session
+*/
 static int
 openssl_ssl_session_peer(lua_State *L)
 {
@@ -1810,6 +1835,13 @@ openssl_ssl_session_peer(lua_State *L)
   return 1;
 }
 
+/***
+get or set SSL session ID
+@function id
+@tparam[opt] string id optional session ID to set
+@treturn string current session ID when called without parameters
+@treturn boolean true when setting session ID successfully (OpenSSL 1.1.0+)
+*/
 static int
 openssl_ssl_session_id(lua_State *L)
 {
@@ -1843,6 +1875,12 @@ openssl_ssl_session_compress_id(lua_State *L)
   return 1;
 }
 
+/***
+export SSL session to PEM or DER format
+@function export
+@tparam[opt=true] boolean pem true for PEM format, false for DER format
+@treturn string exported session data in specified format
+*/
 static int
 openssl_ssl_session_export(lua_State *L)
 {
@@ -1863,6 +1901,11 @@ openssl_ssl_session_export(lua_State *L)
 }
 
 #if OPENSSL_VERSION_NUMBER > 0x10101000L && !defined(LIBRESSL_VERSION_NUMBER)
+/***
+check if SSL session is resumable
+@function is_resumable
+@treturn boolean true if session can be resumed
+*/
 static int
 openssl_ssl_session_is_resumable(lua_State *L)
 {
@@ -1874,6 +1917,11 @@ openssl_ssl_session_is_resumable(lua_State *L)
 #endif
 
 #if OPENSSL_VERSION_NUMBER > 0x10100000L
+/***
+check if SSL session has a ticket
+@function has_ticket
+@treturn boolean true if session has a ticket
+*/
 static int
 openssl_ssl_session_has_ticket(lua_State *L)
 {
@@ -2440,6 +2488,11 @@ openssl_ssl_renegotiate(lua_State *L)
   return openssl_ssl_pushresult(L, s, ret);
 }
 
+/***
+perform abbreviated SSL renegotiation
+@function renegotiate_abbreviated
+@treturn boolean result true for success
+*/
 static int
 openssl_ssl_renegotiate_abbreviated(lua_State *L)
 {
@@ -2478,6 +2531,7 @@ shutdown ssl connection with quite or noquite mode
 /***
 shutdown SSL connection
 @function shutdown
+@treturn boolean result true for success
 */
 /***
 shutdown ssl connect with special mode, disable read or write,
@@ -2591,6 +2645,11 @@ openssl_ssl_session_reused(lua_State *L)
   return 1;
 }
 
+/***
+check if SSL session was reused (cache hit)
+@function cache_hit
+@treturn boolean true if session was not reused (cache miss)
+*/
 static int
 openssl_ssl_cache_hit(lua_State *L)
 {
@@ -2600,6 +2659,12 @@ openssl_ssl_cache_hit(lua_State *L)
   return 1;
 }
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
+/***
+set debug level for SSL connection
+@function set_debug
+@tparam number debug debug level to set
+@treturn number always returns 0
+*/
 static int
 openssl_ssl_set_debug(lua_State *L)
 {
@@ -2682,6 +2747,11 @@ openssl_ssl_session(lua_State *L)
   return 1;
 }
 
+/***
+convert SSL object to string representation
+@function __tostring
+@treturn string string representation of SSL object
+*/
 static int
 openssl_ssl_tostring(lua_State *L)
 {

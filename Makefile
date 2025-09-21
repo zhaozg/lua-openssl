@@ -174,8 +174,9 @@ lib$T.a: $(OBJS)
 install: all
 	mkdir -p $(LUA_LIBDIR)
 	cp $T.so $(LUA_LIBDIR)
+
 doc:
-	ldoc src -d doc
+	ldoc src -d doc -s .ldoc.css
 
 info:
 	@echo "Target system: "$(SYS)
@@ -187,6 +188,9 @@ test:	all
 	cd test && LUA_CPATH=$(shell pwd)/?.so $(shell which $(LUA)) test.lua -v && cd ..
 
 debug: all
+
+check:
+	luajit .github/shell/analyze_ldoc.lua src
 
 coveralls: test
 ifeq ($(CI),)

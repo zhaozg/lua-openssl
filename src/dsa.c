@@ -56,6 +56,12 @@ static int openssl_dsa_parse(lua_State *L)
   return 1;
 }
 
+/***
+set engine for DSA operations
+@function set_engine
+@tparam engine engine the engine to use for DSA operations
+@treturn boolean true on success, false on failure
+*/
 static int
 openssl_dsa_set_engine(lua_State *L)
 {

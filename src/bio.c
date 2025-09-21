@@ -40,18 +40,6 @@ static const char* sMethods[] = {
   "buffer",
   NULL
 };
-
-static int openssl_bio_new(lua_State *L) {
-
-const char* f = luaL_checkstring(L,1);
-const char* m = luaL_optstring(L,2,"r");
-BIO *bio = BIO_new_file(f,m);
-BIO_f_base64()
-if(!bio)
-luaL_error(L, "error opening the file(%s) for mode (%s)", f, m);
-PUSH_OBJECT(bio,"openssl.bio");
-return 1;
-}
 */
 
 /***
@@ -108,7 +96,7 @@ static int openssl_bio_new_pair(lua_State *L)
 
 /***
 destroy a BIO pair connection
-@function destroy_pair  
+@function destroy_pair
 @tparam bio bio BIO object that is part of a pair
 @treturn boolean true on success, false on failure
 */
@@ -236,13 +224,13 @@ make tcp client socket with address table
 @usage
   -- String format
   local cli = bio.connect("kkhub.com:443")
-  
+
   -- Table format
   local cli = bio.connect({
     hostname = "kkhub.com",
     port = "12345"
   })
-  
+
   -- Deferred connection
   local cli = bio.connect("host:port", false)
 */
@@ -517,6 +505,12 @@ static int openssl_bio_flush(lua_State *L)
   return 1;
 }
 
+/***
+free BIO object and associated resources
+@function free
+@tparam[opt=false] boolean free_all if true, free entire BIO chain; if false, free only this BIO
+@treturn number always returns 0
+*/
 static int openssl_bio_free(lua_State *L)
 {
   int  flags;
@@ -569,7 +563,7 @@ static int openssl_bio_nbio(lua_State *L)
 check if BIO operation should be retried
 @function retry
 @treturn boolean true if operation should be retried
-@treturn[opt] boolean true if should retry read operation  
+@treturn[opt] boolean true if should retry read operation
 @treturn[opt] boolean true if should retry write operation
 @treturn[opt] boolean true if should retry special I/O operation
 */
@@ -711,6 +705,11 @@ static int openssl_bio_next(lua_State *L)
   return bio ? 1 : 0;
 }
 
+/***
+get cipher status for BIO
+@function cipher_status
+@treturn boolean cipher status
+*/
 static int openssl_bio_cipher_status(lua_State *L)
 {
   BIO *bio = CHECK_OBJECT(1, BIO, "openssl.bio");
@@ -860,6 +859,12 @@ static int openssl_bio_fd(lua_State *L)
 # define BIO_get_fp(b,fpp)       BIO_ctrl(b,BIO_C_GET_FILE_PTR,0,(char *)fpp)
 */
 
+/***
+seek to position in BIO
+@function seek
+@tparam number offset position offset to seek to
+@treturn number new position after seek
+*/
 static int openssl_bio_seek(lua_State *L)
 {
   BIO *bio = CHECK_OBJECT(1, BIO, "openssl.bio");
@@ -876,6 +881,11 @@ static int openssl_bio_seek(lua_State *L)
   return 1;
 }
 
+/***
+get current position in BIO
+@function tell
+@treturn number current position in the BIO
+*/
 static int openssl_bio_tell(lua_State *L)
 {
   BIO *bio = CHECK_OBJECT(1, BIO, "openssl.bio");

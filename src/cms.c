@@ -142,7 +142,7 @@ openssl_cms_export(lua_State *L)
 
 /***
 create empty cms object
-@function create
+@function new
 @treturn cms
 */
 
@@ -160,7 +160,7 @@ openssl_cms_new(lua_State *L)
 
 /***
 create cms object from string or bio object
-@function create
+@function data_create
 @tparam bio input
 @tparam[opt=0] number flags
 @treturn cms
@@ -638,7 +638,7 @@ openssl.cms object
 
 /***
 get type of cms object
-@function cms
+@function type
 @treturn asn1_object type of cms
 */
 static int
@@ -702,6 +702,14 @@ openssl_cms_content(lua_State *L)
   return ret;
 }
 
+/***
+add signers to CMS structure
+@function add_signers
+@tparam cms cms object to add signers to
+@tparam x509 signer certificate for signing
+@tparam evp_pkey pkey private key for signing
+@treturn boolean result
+*/
 static int
 openssl_cms_add_signers(lua_State *L)
 {
@@ -719,6 +727,12 @@ openssl_cms_add_signers(lua_State *L)
   return 1;
 }
 
+/***
+get signers from CMS structure
+@function get_signers
+@tparam cms cms object to get signers from
+@treturn table array of x509 certificates
+*/
 static int
 openssl_cms_get_signers(lua_State *L)
 {
@@ -733,6 +747,12 @@ openssl_cms_get_signers(lua_State *L)
   return ret;
 }
 
+/***
+extract the data content from CMS object
+@function data
+@tparam[opt=0] number flags optional flags for data extraction
+@treturn string extracted data content
+*/
 static int
 openssl_cms_data(lua_State *L)
 {
@@ -751,6 +771,13 @@ openssl_cms_data(lua_State *L)
   return ret;
 }
 
+/***
+finalize CMS object processing with provided input
+@function final
+@tparam string|bio input data to finalize the CMS with
+@tparam[opt=CMS_STREAM] number flags optional flags for finalization
+@treturn boolean true on success, false on failure
+*/
 static int
 openssl_cms_final(lua_State *L)
 {
@@ -812,6 +839,14 @@ err:
   return NULL;
 }
 
+/***
+add receipt request to CMS structure
+@function add_receipt
+@tparam[opt] table receipt_to array of recipient emails
+@tparam[opt] table receipt_from array of sender emails
+@tparam[opt] boolean all_or_first request receipt from all or first recipient
+@treturn boolean result true for success
+*/
 static int
 openssl_cms_add_receipt(lua_State *L)
 {
@@ -865,6 +900,15 @@ openssl_cms_add_receipt(lua_State *L)
   return openssl_pushresult(L, ret);
 }
 
+/***
+sign receipt for CMS message
+@function sign_receipt
+@tparam x509 signcert certificate to use for signing receipt
+@tparam evp_pkey pkey private key for signing
+@tparam[opt] table other additional certificates
+@tparam[opt] number flags signing flags
+@treturn cms signed receipt CMS object or nil if failed
+*/
 static int
 openssl_cms_sign_receipt(lua_State *L)
 {
@@ -888,6 +932,16 @@ openssl_cms_sign_receipt(lua_State *L)
   return openssl_pushresult(L, 0);
 }
 
+/***
+verify receipt for CMS message
+@function verify_receipt
+@tparam cms rcms receipt CMS object to verify
+@tparam cms cms original CMS object
+@tparam[opt] table other additional certificates
+@tparam x509_store store certificate store for verification
+@tparam[opt] number flags verification flags
+@treturn boolean result true if receipt is valid
+*/
 static int
 openssl_cms_verify_receipt(lua_State *L)
 {

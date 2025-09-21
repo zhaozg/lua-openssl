@@ -179,6 +179,14 @@ static luaL_Reg ts_msg_imprint_funcs[] = {
   { NULL,         NULL                           }
 };
 
+/***
+create new timestamp accuracy object
+@function ts_accuracy_new
+@tparam[opt] number seconds accuracy in seconds
+@tparam[opt] number millis accuracy in milliseconds
+@tparam[opt] number micros accuracy in microseconds
+@treturn ts_accuracy new timestamp accuracy object or nil on failure
+*/
 static int
 openssl_ts_accuracy_new(lua_State *L)
 {
@@ -226,6 +234,13 @@ openssl_ts_accuracy_new(lua_State *L)
   return ret;
 }
 
+/***
+get or set accuracy in seconds
+@function seconds
+@tparam[opt] number seconds optional seconds value to set
+@treturn number current seconds value when called without parameters
+@treturn boolean true when setting value successfully
+*/
 static int
 openssl_ts_accuracy_seconds(lua_State *L)
 {
@@ -246,6 +261,13 @@ openssl_ts_accuracy_seconds(lua_State *L)
   return ret;
 }
 
+/***
+get or set accuracy in milliseconds
+@function millis
+@tparam[opt] number millis optional milliseconds value to set
+@treturn number current milliseconds value when called without parameters
+@treturn boolean true when setting value successfully
+*/
 static int
 openssl_ts_accuracy_millis(lua_State *L)
 {
@@ -293,6 +315,11 @@ openssl_ts_accuracy_micros(lua_State *L)
   return ret;
 }
 
+/***
+duplicate timestamp accuracy object
+@function dup
+@treturn ts_accuracy new duplicated ts_accuracy object
+*/
 static int
 openssl_ts_accuracy_dup(lua_State *L)
 {
@@ -310,6 +337,11 @@ openssl_ts_accuracy_gc(lua_State *L)
   return 0;
 }
 
+/***
+export timestamp accuracy to DER encoded string
+@function export
+@treturn string DER encoded representation of ts_accuracy object
+*/
 static int
 openssl_ts_accuracy_export(lua_State *L)
 {
@@ -325,6 +357,12 @@ openssl_ts_accuracy_export(lua_State *L)
   return len;
 }
 
+/***
+read timestamp accuracy from DER data
+@function ts_accuracy_read
+@tparam string data DER encoded timestamp accuracy data
+@treturn ts_accuracy timestamp accuracy object or nil on failure
+*/
 static int
 openssl_ts_accuracy_read(lua_State *L)
 {
@@ -472,6 +510,11 @@ openssl_ts_info_accuracy(lua_State *L)
 get ordering of ts_tst_info object object
 @function ording
 @treturn table
+*/
+/***
+get ordering flag from timestamp info
+@function ordering
+@treturn boolean true if ordering is required
 */
 static int
 openssl_ts_info_ordering(lua_State *L)

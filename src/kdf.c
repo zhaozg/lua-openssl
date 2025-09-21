@@ -5,7 +5,7 @@ It base on EVP_KDF in OpenSSL v3.
 @module kdf
 @author  george zhao <zhaozg(at)gmail.com>
 @usage
-  hamc = require('openssl').kdf
+  kdf = require('openssl').kdf
 */
 #include "auxiliar.h"
 #include "lua.h"
@@ -35,7 +35,7 @@ get_kdf(lua_State *L, int idx)
       kdf = EVP_get_digestbyobj(CHECK_OBJECT(idx, ASN1_OBJECT, "openssl.asn1_object"));
     else
 #endif
-    if (auxiliar_getclassudata(L, "openssl.kdf", idx)) 
+    if (auxiliar_getclassudata(L, "openssl.kdf", idx))
     {
       kdf = CHECK_OBJECT(idx, EVP_KDF, "openssl.kdf");
       if (kdf) {
@@ -360,6 +360,12 @@ create new openssl.kdf_ctx object
 
 @function fetch
 @treturn openssl.kdf_ctx|fail
+*/
+/***
+create new KDF context
+@function new
+@tparam string algorithm KDF algorithm name
+@treturn kdf_ctx new KDF context object or nil if failed
 */
 static int
 openssl_kdf_ctx_new(lua_State *L)

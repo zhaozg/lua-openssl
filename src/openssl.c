@@ -363,6 +363,11 @@ openssl_fips_mode(lua_State *L)
 }
 
 #ifndef OPENSSL_NO_CRYPTO_MDEBUG
+/***
+get memory leak report
+@function mem_leaks
+@treturn string memory leak report from OpenSSL
+*/
 static int
 openssl_mem_leaks(lua_State *L)
 {

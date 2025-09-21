@@ -139,6 +139,12 @@ create_revoked(const BIGNUM *bn, time_t t, int reason)
   return revoked;
 }
 
+/***
+convert X509_REVOKED to lua table
+@function revoked2table
+@tparam userdata revoked X509_REVOKED object
+@treturn table table with revocation information
+*/
 static int
 openssl_revoked2table(lua_State *L, X509_REVOKED *revoked)
 {
@@ -352,11 +358,11 @@ static int openssl_crl_version(lua_State *L)
 }
 
 /***
-add revoked entry to x509_crl object
+add revoked certificate entry to CRL
 @function add
-@tparam string|number|bn serial
-@tparam number revokedtime
-@tparam[opt=0] number|string reason
+@tparam string|number|bn serial serial number of revoked certificate
+@tparam number revokedtime revocation time
+@tparam[opt=0] number|string reason revocation reason code
 @treturn boolean result true for add success
 */
 static int openssl_crl_add_revocked(lua_State *L)
@@ -939,6 +945,11 @@ static luaL_Reg crl_funcs[] = {
   { NULL,         NULL                     }
 };
 
+/***
+get detailed information about revoked certificate entry
+@function info
+@treturn table containing revoked certificate information
+*/
 static int
 openssl_revoked_info(lua_State *L)
 {
@@ -1015,6 +1026,12 @@ ASN1_GetTimeT(const ASN1_TIME *time)
   return mktime(&t);
 }
 
+/***
+get revocation date from revoked certificate entry
+@function revocationDate
+@treturn number revocation date as Unix timestamp
+@treturn asn1_time revocation date as ASN1_TIME object
+*/
 static int
 openssl_revoked_revocationDate(lua_State *L)
 {
@@ -1025,6 +1042,12 @@ openssl_revoked_revocationDate(lua_State *L)
   return 2;
 }
 
+/***
+get serial number from revoked certificate entry
+@function serialNumber
+@treturn bn serial number as bignum
+@treturn asn1_integer serial number as ASN1_INTEGER object
+*/
 static int
 openssl_revoked_serialNumber(lua_State *L)
 {
@@ -1036,6 +1059,11 @@ openssl_revoked_serialNumber(lua_State *L)
   return 2;
 }
 
+/***
+get extensions from revoked certificate entry
+@function extensions
+@treturn table|nil array of extensions or nil if no extensions
+*/
 static int
 openssl_revoked_extensions(lua_State *L)
 {
