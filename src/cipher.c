@@ -719,6 +719,7 @@ static int openssl_cipher_ctx_info(lua_State *L)
 set padding mode for cipher context
 @function padding
 @tparam boolean pad true to enable padding, false to disable
+@treturn nil no return value
 */
 static int openssl_cipher_ctx_padding(lua_State *L)
 {

@@ -370,6 +370,7 @@ static int openssl_digest_ctx_free(lua_State *L)
 reset evp_diget_ctx to reuse
 
 @function reset
+@treturn boolean true on success, false on failure
 */
 static int openssl_digest_ctx_reset(lua_State *L)
 {
@@ -397,14 +398,8 @@ static int openssl_digest_ctx_reset(lua_State *L)
 retrieve md data
 
 @function data
-@treturn string md_data
-*/
-
-/***
-restore md data
-
-@function data
-@tparam string md_data
+@tparam[opt] string md_data data to set (optional)
+@treturn string|boolean if no parameter given, returns current md_data; if parameter given, returns boolean success status
 */
 static int openssl_digest_ctx_data(lua_State *L)
 {

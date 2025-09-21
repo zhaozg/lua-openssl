@@ -5,7 +5,7 @@ It base on EVP_KDF in OpenSSL v3.
 @module kdf
 @author  george zhao <zhaozg(at)gmail.com>
 @usage
-  hamc = require('openssl').kdf
+  kdf = require('openssl').kdf
 */
 #include "auxiliar.h"
 #include "lua.h"

@@ -2,6 +2,8 @@
 big-number library for Lua 5.1 based on OpenSSL bn
 
 @module bn
+@usage
+  bn = require('openssl').bn
 @author Luiz Henrique de Figueiredo <lhf@tecgraf.puc-rio.br>
 @license This code is hereby placed in the public domain.
 @warning verson 11 Nov 2010 22:56:45
