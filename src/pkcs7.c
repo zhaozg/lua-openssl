@@ -26,7 +26,7 @@ read string or bio object, which include pkcs7 content
 @treturn pkcs7 object or nil
 @treturn string content exist only smime format
 */
-static LUA_FUNCTION(openssl_pkcs7_read)
+static int openssl_pkcs7_read(lua_State *L)
 {
   BIO   *bio = load_bio_object(L, 1);
   int    fmt = luaL_checkoption(L, 2, "auto", format);
@@ -69,7 +69,7 @@ create new empty pkcs7 object, which support flexible sign methods.
 @tparam[opt=NID_pkcs7_data] int content given pkcs7 content type
 @treturn pkcs7 object
 */
-static LUA_FUNCTION(openssl_pkcs7_new)
+static int openssl_pkcs7_new(lua_State *L)
 {
   const char *options[]
     = { "data", "signed", "enveloped", "signedAndEnveloped", "digest", "encrypted", NULL };
@@ -108,7 +108,7 @@ create PKCS7 structure with certificates and CRLs
 @tparam[opt] table crls array of X509 CRLs
 @treturn pkcs7|nil new PKCS7 object or nil on error
 */
-static LUA_FUNCTION(openssl_pkcs7_create)
+static int openssl_pkcs7_create(lua_State *L)
 {
   PKCS7        *p7 = NULL;
   PKCS7_SIGNED *p7s = NULL;
@@ -142,7 +142,7 @@ set content for PKCS7 structure
 @tparam pkcs7 content PKCS7 content to set
 @treturn boolean true on success, false on failure
 */
-static LUA_FUNCTION(openssl_pkcs7_set_content)
+static int openssl_pkcs7_set_content(lua_State *L)
 {
   PKCS7 *p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
   PKCS7 *content = CHECK_OBJECT(2, PKCS7, "openssl.pkcs7");
@@ -157,7 +157,7 @@ add certificates or CRLs to PKCS7 structure
 @tparam x509|x509_crl... objects one or more X509 certificates or CRL objects to add
 @treturn boolean true on success, false on failure
 */
-static LUA_FUNCTION(openssl_pkcs7_add)
+static int openssl_pkcs7_add(lua_State *L)
 {
   PKCS7 *p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
   int    n = lua_gettop(L);
@@ -196,7 +196,7 @@ sign message with signcert and signpkey to create pkcs7 object
 @tparam[opt=0] number flags
 @treturn pkcs7 object
 */
-static LUA_FUNCTION(openssl_pkcs7_sign)
+static int openssl_pkcs7_sign(lua_State *L)
 {
   int ret = 0;
 
@@ -234,7 +234,7 @@ verify pkcs7 object, and return msg content or verify result
 @treturn[1] boolean result
 */
 
-static LUA_FUNCTION(openssl_pkcs7_verify)
+static int openssl_pkcs7_verify(lua_State *L)
 {
   int    ret = 0;
   PKCS7 *p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
@@ -275,7 +275,7 @@ encrypt message with recipcerts certificates return encrypted pkcs7 object
 @tparam[opt='aes-128-cbc'] string|evp_cipher cipher
 @tparam[opt] number flags
 */
-static LUA_FUNCTION(openssl_pkcs7_encrypt)
+static int openssl_pkcs7_encrypt(lua_State *L)
 {
   int    ret = 0;
   PKCS7 *p7 = NULL;
@@ -304,7 +304,7 @@ decrypt encrypted pkcs7 message
 @tparam evp_pkey recipkey
 @treturn string decrypt message
 */
-static LUA_FUNCTION(openssl_pkcs7_decrypt)
+static int openssl_pkcs7_decrypt(lua_State *L)
 {
   int ret = 0;
 
@@ -330,7 +330,7 @@ openssl.pkcs7 object
 
 @type pkcs7
 */
-static LUA_FUNCTION(openssl_pkcs7_gc)
+static int openssl_pkcs7_gc(lua_State *L)
 {
   PKCS7 *p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
   PKCS7_free(p7);
@@ -344,7 +344,7 @@ export pkcs7 as string
 @tparam[opt='pem'] string support export as 'pem' or 'der' format, default is 'pem'
 @treturn string
 */
-static LUA_FUNCTION(openssl_pkcs7_export)
+static int openssl_pkcs7_export(lua_State *L)
 {
   int    ret = 0;
   PKCS7 *p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
@@ -429,7 +429,7 @@ get PKCS7 object type information
 @treturn string short name of PKCS7 type
 @treturn string long name of PKCS7 type
 */
-static LUA_FUNCTION(openssl_pkcs7_type)
+static int openssl_pkcs7_type(lua_State *L)
 {
   PKCS7 *p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
   int    i = OBJ_obj2nid(p7->type);
@@ -445,7 +445,7 @@ export pkcs7 as a string
 @function parse
 @treturn table  a table has pkcs7 infomation, include type,and other things relate to types
 */
-static LUA_FUNCTION(openssl_pkcs7_parse)
+static int openssl_pkcs7_parse(lua_State *L)
 {
   PKCS7 *p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
   STACK_OF(X509) *certs = NULL;
@@ -546,7 +546,7 @@ set digest algorithm for PKCS7 structure
 @tparam string|evp_md digest algorithm name or digest object
 @treturn boolean true on success, false on failure
 */
-static LUA_FUNCTION(openssl_pkcs7_set_digest)
+static int openssl_pkcs7_set_digest(lua_State *L)
 {
   PKCS7        *p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
   const EVP_MD *md = get_digest(L, 2, NULL);
@@ -565,7 +565,7 @@ finalize PKCS7 structure with data
 @tparam[opt=0] number flags finalization flags
 @treturn boolean true on success, false on failure
 */
-static LUA_FUNCTION(openssl_pkcs7_final)
+static int openssl_pkcs7_final(lua_State *L)
 {
   PKCS7 *p7 = CHECK_OBJECT(1, PKCS7, "openssl.pkcs7");
   BIO   *data = load_bio_object(L, 2);

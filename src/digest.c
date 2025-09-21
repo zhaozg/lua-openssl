@@ -18,7 +18,7 @@ list all support digest algs
 @tparam[opt] boolean alias include alias names for digest alg, default true
 @treturn[table] all methods
 */
-static LUA_FUNCTION(openssl_digest_list)
+static int openssl_digest_list(lua_State *L)
 {
   int aliases = lua_isnone(L, 1) ? 1 : lua_toboolean(L, 1);
   lua_newtable(L);
@@ -36,7 +36,7 @@ get evp_digest object
 
 @see evp_digest
 */
-static LUA_FUNCTION(openssl_digest_get)
+static int openssl_digest_get(lua_State *L)
 {
   const EVP_MD *md = get_digest(L, 1, NULL);
 
@@ -53,7 +53,7 @@ get evp_digest_ctx object
 
 @see evp_digest_ctx
 */
-static LUA_FUNCTION(openssl_digest_new)
+static int openssl_digest_new(lua_State *L)
 {
   const EVP_MD *md = get_digest(L, 1, NULL);
   int           ret = 0;
@@ -83,7 +83,7 @@ quick method to generate digest result
 @tparam[opt] boolean raw binary result return if set true, or hex encoded string default
 @treturn string digest result value
 */
-static LUA_FUNCTION(openssl_digest)
+static int openssl_digest(lua_State *L)
 {
   const EVP_MD *md;
   ENGINE       *eng;
@@ -119,7 +119,7 @@ create digest object for sign
 @tparam[opt=nil] engine object
 @treturn evp_digest_ctx
 */
-static LUA_FUNCTION(openssl_signInit)
+static int openssl_signInit(lua_State *L)
 {
   const EVP_MD *md = lua_isnil(L, 1) ? NULL : get_digest(L, 1, NULL);
   EVP_PKEY     *pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
@@ -146,7 +146,7 @@ create digest object for verify
 @tparam[opt=nil] engine object
 @treturn evp_digest_ctx
 */
-static LUA_FUNCTION(openssl_verifyInit)
+static int openssl_verifyInit(lua_State *L)
 {
   const EVP_MD *md = lua_isnil(L, 1) ? NULL : get_digest(L, 1, NULL);
   EVP_PKEY     *pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
@@ -179,7 +179,7 @@ compute msg digest result
 @tparam[opt] engine, eng
 @treturn string result a binary hash value for msg
 */
-static LUA_FUNCTION(openssl_digest_digest)
+static int openssl_digest_digest(lua_State *L)
 {
   size_t      inl;
   EVP_MD     *md = CHECK_OBJECT(1, EVP_MD, "openssl.evp_digest");
@@ -204,7 +204,7 @@ get infomation of evp_digest object
 @function info
 @treturn table info keys include nid,name size,block_size,pkey_type,flags
 */
-static LUA_FUNCTION(openssl_digest_info)
+static int openssl_digest_info(lua_State *L)
 {
   EVP_MD *md = CHECK_OBJECT(1, EVP_MD, "openssl.evp_digest");
   lua_newtable(L);
@@ -226,7 +226,7 @@ create new evp_digest_ctx
 @treturn evp_digest_ctx ctx
 @see evp_digest_ctx
 */
-static LUA_FUNCTION(openssl_evp_digest_init)
+static int openssl_evp_digest_init(lua_State *L)
 {
   EVP_MD *md = CHECK_OBJECT(1, EVP_MD, "openssl.evp_digest");
   ENGINE *e = lua_isnoneornil(L, 2) ? NULL : CHECK_OBJECT(2, ENGINE, "openssl.engine");
@@ -273,7 +273,7 @@ get infomation of evp_digest_ctx object
 @function info
 @treturn table info keys include size,block_size,digest
 */
-static LUA_FUNCTION(openssl_digest_ctx_info)
+static int openssl_digest_ctx_info(lua_State *L)
 {
   EVP_MD_CTX *ctx = CHECK_OBJECT(1, EVP_MD_CTX, "openssl.evp_digest_ctx");
 #if OPENSSL_VERSION_NUMBER < 0x30000000
@@ -298,7 +298,7 @@ feed data to do digest
 @tparam string msg data
 @treturn boolean result true for success
 */
-static LUA_FUNCTION(openssl_evp_digest_update)
+static int openssl_evp_digest_update(lua_State *L)
 {
   size_t      inl;
   EVP_MD_CTX *c = CHECK_OBJECT(1, EVP_MD_CTX, "openssl.evp_digest_ctx");
@@ -318,7 +318,7 @@ get result of digest
 @tparam[opt] boolean raw binary or hexadecimal result, default false for hexadecimal result
 @treturn string val hash result
 */
-static LUA_FUNCTION(openssl_evp_digest_final)
+static int openssl_evp_digest_final(lua_State *L)
 {
   EVP_MD_CTX *c = CHECK_OBJECT(1, EVP_MD_CTX, "openssl.evp_digest_ctx");
 
@@ -357,7 +357,7 @@ err:
   return ret;
 }
 
-static LUA_FUNCTION(openssl_digest_ctx_free)
+static int openssl_digest_ctx_free(lua_State *L)
 {
   EVP_MD_CTX *ctx = CHECK_OBJECT(1, EVP_MD_CTX, "openssl.evp_digest_ctx");
   lua_pushnil(L);
@@ -371,7 +371,7 @@ reset evp_diget_ctx to reuse
 
 @function reset
 */
-static LUA_FUNCTION(openssl_digest_ctx_reset)
+static int openssl_digest_ctx_reset(lua_State *L)
 {
   EVP_MD_CTX *ctx = CHECK_OBJECT(1, EVP_MD_CTX, "openssl.evp_digest_ctx");
 #if OPENSSL_VERSION_NUMBER < 0x30000000
@@ -406,7 +406,7 @@ restore md data
 @function data
 @tparam string md_data
 */
-static LUA_FUNCTION(openssl_digest_ctx_data)
+static int openssl_digest_ctx_data(lua_State *L)
 {
   EVP_MD_CTX *ctx = CHECK_OBJECT(1, EVP_MD_CTX, "openssl.evp_digest_ctx");
 
@@ -459,7 +459,7 @@ feed data for sign to get signature
 @tparam string data to be signed
 @treturn boolean result
 */
-static LUA_FUNCTION(openssl_signUpdate)
+static int openssl_signUpdate(lua_State *L)
 {
   size_t      l;
   int         ret;
@@ -476,7 +476,7 @@ feed data for verify with signature
 @tparam string data to be verified
 @treturn boolean result
 */
-static LUA_FUNCTION(openssl_verifyUpdate)
+static int openssl_verifyUpdate(lua_State *L)
 {
   size_t      l;
   int         ret;
@@ -493,7 +493,7 @@ get result of sign
 @tparam evp_pkey private key to do sign
 @treturn string singed result
 */
-static LUA_FUNCTION(openssl_signFinal)
+static int openssl_signFinal(lua_State *L)
 {
   EVP_MD_CTX *ctx = CHECK_OBJECT(1, EVP_MD_CTX, "openssl.evp_digest_ctx");
   size_t      siglen = 0;
@@ -517,7 +517,7 @@ get verify result
 @tparam string signature
 @treturn boolean result, true for verify pass
 */
-static LUA_FUNCTION(openssl_verifyFinal)
+static int openssl_verifyFinal(lua_State *L)
 {
   EVP_MD_CTX *ctx = CHECK_OBJECT(1, EVP_MD_CTX, "openssl.evp_digest_ctx");
   size_t      signature_len;
@@ -552,7 +552,7 @@ get result of oneshot sign
 @treturn[1] string singed result
 @treturn[2] nil followd by error message
 */
-static LUA_FUNCTION(openssl_oneshot_sign)
+static int openssl_oneshot_sign(lua_State *L)
 {
   EVP_MD_CTX    *ctx = CHECK_OBJECT(1, EVP_MD_CTX, "openssl.evp_digest_ctx");
   size_t         tbslen;
@@ -584,7 +584,7 @@ get result of oneshot verify
 @tparam string signature
 @treturn boolean result, true for verify pass
 */
-static LUA_FUNCTION(openssl_oneshot_verify)
+static int openssl_oneshot_verify(lua_State *L)
 {
   EVP_MD_CTX    *ctx = CHECK_OBJECT(1, EVP_MD_CTX, "openssl.evp_digest_ctx");
   size_t         siglen;

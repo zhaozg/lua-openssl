@@ -23,7 +23,7 @@ for DH parameter generation, key generation and key agreement operations.
 #include "private.h"
 
 #if !defined(OPENSSL_NO_DH)
-static LUA_FUNCTION(openssl_dh_free)
+static int openssl_dh_free(lua_State *L)
 {
   DH *dh = CHECK_OBJECT(1, DH, "openssl.dh");
   DH_free(dh);
@@ -35,7 +35,7 @@ parse DH key parameters and components
 @function parse
 @treturn table DH parameters including size, bits, p, q, g, public key, and private key (if present)
 */
-static LUA_FUNCTION(openssl_dh_parse)
+static int openssl_dh_parse(lua_State *L)
 {
   const BIGNUM *p = NULL, *q = NULL, *g = NULL, *pub = NULL, *pri = NULL;
   DH           *dh = CHECK_OBJECT(1, DH, "openssl.dh");
@@ -65,7 +65,7 @@ check DH parameters for validity
 @treturn boolean true if parameters are valid
 @treturn[opt] table error codes if parameters are invalid
 */
-static LUA_FUNCTION(openssl_dh_check)
+static int openssl_dh_check(lua_State *L)
 {
   const DH *dh = CHECK_OBJECT(1, DH, "openssl.dh");
   int       ret = 0;
