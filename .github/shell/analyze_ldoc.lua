@@ -377,23 +377,53 @@ local function analyze_file(filepath)
     local function_count = 0
     local documented_function_count = 0
 
-    -- Find all LDoc comments
+    -- Find all LDoc comments more carefully to avoid nested comment issues
     local comments = {}
     local pos = 1
+    
     while pos <= #content do
-        local start_pos, end_pos = content:find("/***.-*/", pos)
+        local start_pos = content:find("/%*%*%*", pos)
         if not start_pos then break end
-
-        local comment_text = content:sub(start_pos + 4, end_pos - 2) -- Remove /*** and */
-        table.insert(comments, {
-            text = comment_text,
-            start_pos = start_pos,
-            end_pos = end_pos,
-            line_num = select(2, content:sub(1, start_pos):gsub('\n', '\n')) + 1
-        })
-
-        comment_count = comment_count + 1
-        pos = end_pos + 1
+        
+        -- Find the next */ that closes this comment
+        local search_pos = start_pos + 4
+        local end_pos = nil
+        
+        -- Look for */ while avoiding any new /* starts
+        while search_pos <= #content do
+            local star_pos = content:find("%*/", search_pos)
+            if not star_pos then break end
+            
+            -- Check if there's a /* between our start and this */
+            local intervening_start = content:find("/%*", start_pos + 4)
+            if not intervening_start or intervening_start >= star_pos then
+                -- No intervening /* comment, this */ closes our comment
+                end_pos = star_pos
+                break
+            else
+                -- There's an intervening comment, skip past it
+                local intervening_end = content:find("%*/", intervening_start + 2)
+                if intervening_end then
+                    search_pos = intervening_end + 2
+                else
+                    break
+                end
+            end
+        end
+        
+        if end_pos then
+            local comment_text = content:sub(start_pos + 4, end_pos - 1)
+            table.insert(comments, {
+                text = comment_text,
+                start_pos = start_pos,
+                end_pos = end_pos + 1,
+                line_num = select(2, content:sub(1, start_pos):gsub('\n', '\n')) + 1
+            })
+            comment_count = comment_count + 1
+            pos = end_pos + 2
+        else
+            pos = start_pos + 4
+        end
     end
 
     printf("Found %d LDoc comment blocks", comment_count)
