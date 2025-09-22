@@ -142,7 +142,7 @@ openssl_cms_export(lua_State *L)
 
 /***
 create empty cms object
-@function create
+@function new
 @treturn cms
 */
 
@@ -160,7 +160,7 @@ openssl_cms_new(lua_State *L)
 
 /***
 create cms object from string or bio object
-@function create
+@function data_create
 @tparam bio input
 @tparam[opt=0] number flags
 @treturn cms
