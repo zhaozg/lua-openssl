@@ -638,7 +638,7 @@ openssl.cms object
 
 /***
 get type of cms object
-@function cms
+@function type
 @treturn asn1_object type of cms
 */
 static int
