@@ -329,10 +329,14 @@ openssl_asn1int_new(lua_State *L)
 }
 
 /***
-create asn1_time object
+create asn1_time object using generalized time format
 @function new_generalizedtime
 @tparam none|number|string time
 @treturn asn1_time
+@see asn1_time
+*/
+static int
+openssl_asn1generalizedtime_new(lua_State *L)
 */
 static int
 openssl_asn1generalizedtime_new(lua_State *L)
@@ -361,10 +365,14 @@ openssl_asn1generalizedtime_new(lua_State *L)
 }
 
 /***
-create asn1_time object
+create asn1_time object using UTC time format
 @function new_utctime
 @tparam none|number|string time
 @treturn asn1_time
+@see asn1_time
+*/
+static int
+openssl_asn1utctime_new(lua_State *L)
 */
 static int
 openssl_asn1utctime_new(lua_State *L)
@@ -445,6 +453,8 @@ create asn1_object from NID
 /***
 create asn1_object from table definition
 
+/***
+create new ASN1_OBJECT
 @function new_object
 @tparam table options table with sn (short name), ln (long name), oid keys to create new asn1_object
 @treturn asn1_object|nil ASN1_OBJECT mapping or nil on error
@@ -455,6 +465,9 @@ create asn1_object from table definition
     sn = "myShortName", 
     ln = "myLongName"
   })
+*/
+static int
+openssl_asn1object_new(lua_State *L)
 */
 static int
 openssl_asn1object_new(lua_State *L)
