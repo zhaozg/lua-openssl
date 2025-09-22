@@ -38,15 +38,10 @@ static int openssl_push_purpose(lua_State*L, CONSTIFY_OPENSSL X509_PURPOSE* purp
 };
 
 /***
-return all supported purpose as table
+get special purpose info as table or return all supported purposes
 @function purpose
-@treturn table
-*/
-/*
-get special purpose info as table
-@function purpose
-@tparam number|string purpose id or short name
-@treturn table
+@tparam[opt] number|string purpose purpose id or short name (optional)
+@treturn table purpose info table or table of all purposes if no parameter given
 */
 static int openssl_x509_purpose(lua_State*L)
 {

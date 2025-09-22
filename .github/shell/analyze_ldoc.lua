@@ -295,30 +295,89 @@ local function analyze_file(filepath)
     printf("Found %d LDoc comment blocks", comment_count)
     stats.total_comments = stats.total_comments + comment_count
 
-    -- 用字符串处理方式识别 API 函数定义，支持 static 可选和多行参数
+    -- Improved API function detection with accurate line numbers
     local function find_api_functions(content)
         local api_functions = {}
-        -- 合并多行函数头为一行，方便匹配
-        local merged = content:gsub("%s*\n%s*", " ")
-        -- 匹配 static int openssl_xxx(...)
-        for func_head, params in merged:gmatch("static%s*int%s*openssl_([%w_]+)%s*%((.-)%)") do
-            if params:find("lua_State%s*%*%s*L") then
-                -- 查找原始位置和行号
-                local pat = "static%s*int%s*openssl_" .. func_head .. "%s*%(" .. params .. "%)"
-                local s = content:find(pat, 1, true)
-                local line_num = s and (select(2, content:sub(1, s):gsub('\n', '\n')) + 1) or 1
-                table.insert(api_functions, { name = "openssl_" .. func_head, start_pos = s or 1, line_num = line_num })
+        local lines = {}
+        
+        -- Split content into lines for accurate line number tracking
+        -- Fix: Use reliable line splitting that matches system behavior
+        local line_start = 1
+        while line_start <= #content do
+            local line_end = content:find('\n', line_start) or (#content + 1)
+            local line = content:sub(line_start, line_end - 1)
+            table.insert(lines, line)
+            line_start = line_end + 1
+        end
+        
+        for line_num, line in ipairs(lines) do
+            -- Match function definitions: static int openssl_xxx(lua_State *L...)
+            -- or int openssl_xxx(lua_State *L...)
+            -- Handle both single-line and multi-line function definitions
+            local static_match = line:match("^%s*static%s+int%s+openssl_([%w_]+)%s*%(")
+            local int_match = line:match("^%s*int%s+openssl_([%w_]+)%s*%(")
+            
+            -- Also check for multi-line definitions where function name is on next non-empty line
+            local multiline_static = false
+            local multiline_int = false
+            local func_line_num = line_num
+            
+            if line:match("^%s*static%s+int%s*$") and line_num < #lines then
+                -- Look for the next non-empty line containing the function name
+                for check_line = line_num + 1, math.min(line_num + 5, #lines) do
+                    local check_line_content = lines[check_line]
+                    if check_line_content and check_line_content:match("%S") then -- Non-empty line
+                        static_match = check_line_content:match("^%s*openssl_([%w_]+)%s*%(")
+                        if static_match then
+                            multiline_static = true
+                            func_line_num = check_line
+                            break
+                        else
+                            break -- Stop if we find a non-empty line that's not a function
+                        end
+                    end
+                end
+            elseif line:match("^%s*int%s*$") and line_num < #lines then
+                -- Look for the next non-empty line containing the function name
+                for check_line = line_num + 1, math.min(line_num + 5, #lines) do
+                    local check_line_content = lines[check_line]
+                    if check_line_content and check_line_content:match("%S") then -- Non-empty line
+                        int_match = check_line_content:match("^%s*openssl_([%w_]+)%s*%(")
+                        if int_match then
+                            multiline_int = true
+                            func_line_num = check_line
+                            break
+                        else
+                            break -- Stop if we find a non-empty line that's not a function
+                        end
+                    end
+                end
+            end
+            
+            local func_name = static_match or int_match
+            if func_name then
+                -- Check if this line or the next few lines contain lua_State *L
+                local has_lua_state = false
+                local start_check = func_line_num
+                local check_lines = math.min(start_check + 3, #lines) -- Check current + next 3 lines
+                
+                for check_line = start_check, check_lines do
+                    if lines[check_line]:find("lua_State%s*%*%s*L") then
+                        has_lua_state = true
+                        break
+                    end
+                end
+                
+                if has_lua_state then
+                    table.insert(api_functions, {
+                        name = "openssl_" .. func_name,
+                        line_num = func_line_num,
+                        start_pos = 1 -- Not critical for this analysis
+                    })
+                end
             end
         end
-        -- 匹配 int openssl_xxx(...)
-        for func_head, params in merged:gmatch("int%s*openssl_([%w_]+)%s*%((.-)%)") do
-            if params:find("lua_State%s*%*%s*L") then
-                local pat = "int%s*openssl_" .. func_head .. "%s*%(" .. params .. "%)"
-                local s = content:find(pat, 1, true)
-                local line_num = s and (select(2, content:sub(1, s):gsub('\n', '\n')) + 1) or 1
-                table.insert(api_functions, { name = "openssl_" .. func_head, start_pos = s or 1, line_num = line_num })
-            end
-        end
+        
         return api_functions
     end
 
@@ -333,7 +392,7 @@ local function analyze_file(filepath)
         printf("Starting comment validation...")
     end
 
-    -- Analyze each comment
+    -- Analyze each comment for quality validation
     for i, comment in ipairs(comments) do
         local parsed = parse_ldoc_comment(comment.text)
         local valid = true
@@ -353,28 +412,11 @@ local function analyze_file(filepath)
                 valid = false
             end
         elseif parsed.tags["function"] then
-            -- Function documentation
-            documented_function_count = documented_function_count + 1
-
-            -- Check parameters and return values
-            local has_params = parsed.tags.tparam or parsed.tags.param
+            -- Basic validation for function documentation
             local has_return = parsed.tags.treturn or parsed.tags["return"]
-
-            -- Find corresponding API function
-            local next_func = nil
-            for _, func in ipairs(api_functions) do
-                if func.start_pos > comment.end_pos then
-                    next_func = func
-                    break
-                end
-            end
-
-            if next_func then
-                -- Basic validation for function documentation
-                if not has_return then
-                    table.insert(comment_issues, string.format("Function '%s' missing @treturn/@return documentation", next_func.name))
-                    valid = false
-                end
+            if not has_return then
+                table.insert(comment_issues, "Function missing @treturn/@return documentation")
+                valid = false
             end
         end
 
@@ -401,9 +443,6 @@ local function analyze_file(filepath)
                 elseif parsed.tags.type and #parsed.tags.type > 0 then
                     out_type = "Type"
                     out_name = parsed.tags.type[1]
-                elseif next_func and next_func.name then
-                    out_type = "Function"
-                    out_name = next_func.name
                 end
                 if out_type and out_name then
                     printf(colored("green", "✓ %s %s at line %d: Valid"), out_type, out_name, comment.line_num)
@@ -424,40 +463,106 @@ local function analyze_file(filepath)
         end
     end
 
-    stats.documented_functions = stats.documented_functions + documented_function_count
-
-    -- 输出未文档化 API 的详细信息
-    local documented_names = {}
-    for i, comment in ipairs(comments) do
-        local parsed = parse_ldoc_comment(comment.text)
-        if parsed.tags["function"] and #parsed.tags["function"] > 0 then
-            for _, fname in ipairs(parsed.tags["function"]) do
-                documented_names[fname] = true
+    -- Improved undocumented function detection with better comment-function association
+    local function is_function_documented(func, comments, content_lines)
+        -- Check if there's a LDoc comment block immediately before this function
+        local func_line = func.line_num
+        
+        -- Look backwards from the function line to find the closest LDoc comment
+        for line_num = func_line - 1, math.max(1, func_line - 10), -1 do
+            local line = content_lines[line_num]
+            if not line then break end
+            
+            -- Skip empty lines and single-line comments
+            local should_continue = false
+            if line:match("^%s*$") or line:match("^%s*//") or line:match("^%s*%*%s*$") then
+                should_continue = true
             end
-        end
-    end
-    local undocumented_set = {}
-    local undocumented_list = {}
-    for _, func in ipairs(api_functions) do
-        -- 兼容不同前缀
-        local suffix = func.name:match("openssl_[%w]+_(.+)")
-        local key = func.name .. ":" .. tostring(func.line_num)
-        if suffix and documented_names[suffix] then
-            -- 已文档化
-        elseif not undocumented_set[key] then
-            local lua_api = ""
-            if suffix and documented_names[suffix] then
-                lua_api = string.format("(%s)", suffix)
-            elseif suffix and documented_names[suffix] == nil then
-                -- 如果 suffix 在所有 Lua API 列表中，依然显示
-                if documented_names[suffix] then
-                    lua_api = string.format("(%s)", suffix)
+            
+            if not should_continue then
+                -- If we hit a non-comment line (like another function or code), stop searching
+                if not line:match("%*/") and not line:match("^%s*%*") and not line:match("^%s*/[%*]+") then
+                    if line:match("%S") then -- Non-empty, non-comment line
+                        break
+                    end
+                end
+                
+                -- Check if this line ends a LDoc comment block
+                if line:match("%*/") then
+                    -- Find the corresponding comment block
+                    for _, comment in ipairs(comments) do
+                        -- Calculate the end line of this comment
+                        local comment_start_line = select(2, content:sub(1, comment.start_pos):gsub('\n', '\n')) + 1
+                        local comment_lines_count = select(2, comment.text:gsub('\n', '\n')) + 1
+                        local comment_end_line = comment_start_line + comment_lines_count
+                        
+                        -- If this comment ends close to where we're looking
+                        if math.abs(comment_end_line - line_num) <= 2 then
+                            local parsed = parse_ldoc_comment(comment.text)
+                            -- Check if it has @function tag or if it's positioned right before our function
+                            if parsed.tags["function"] or 
+                               (comment_end_line >= func_line - 5 and comment_end_line < func_line) then
+                                return true, parsed.tags["function"] and parsed.tags["function"][1] or "unnamed"
+                            end
+                        end
+                    end
+                    break
                 end
             end
-            table.insert(undocumented_list, string.format("%s%s at line %d", func.name, lua_api, func.line_num))
-            undocumented_set[key] = true
+        end
+        
+        -- Also check by function name in all @function tags
+        local func_suffix = func.name:match("openssl_(.+)")
+        for _, comment in ipairs(comments) do
+            local parsed = parse_ldoc_comment(comment.text)
+            if parsed.tags["function"] then
+                for _, fname in ipairs(parsed.tags["function"]) do
+                    -- Check various matching patterns:
+                    -- 1. Exact match with suffix (e.g., "xstore_new" == "xstore_new")
+                    -- 2. Exact match with full name (e.g., "openssl_xstore_new" == "openssl_xstore_new") 
+                    -- 3. Function suffix ends with @function name (e.g., "xstore_new" ends with "new")
+                    -- 4. @function name equals the last part after underscore (e.g., "new" matches "xstore_new")
+                    if fname == func_suffix or 
+                       fname == func.name or
+                       func_suffix:match("_" .. fname .. "$") or
+                       func_suffix:match(fname .. "$") then
+                        return true, fname
+                    end
+                end
+            end
+        end
+        
+        return false, nil
+    end
+    
+    -- Split content into lines for analysis
+    local content_lines = {}
+    for line in content:gmatch("[^\r\n]*") do
+        table.insert(content_lines, line)
+    end
+    
+    -- Check each function for documentation
+    local undocumented_list = {}
+    local documented_function_count = 0
+    
+    for _, func in ipairs(api_functions) do
+        local is_documented, func_name = is_function_documented(func, comments, content_lines)
+        
+        if is_documented then
+            documented_function_count = documented_function_count + 1
+        else
+            -- Skip metamethods and utility functions as requested
+            local func_suffix = func.name:match("openssl_(.+)")
+            if not (func.name:match("_free$") or func.name:match("_gc$") or 
+                   func_suffix and (func_suffix:match("^__") or func_suffix == "pushresult" or 
+                   func_suffix:match("^push_") or func_suffix:match("^get_") or func_suffix:match("^to_"))) then
+                table.insert(undocumented_list, string.format("%s at line %d", func.name, func.line_num))
+            end
         end
     end
+    
+    stats.documented_functions = stats.documented_functions + documented_function_count
+    
     local undocumented = #undocumented_list
     if undocumented > 0 then
         if config.show_undocumented_list then
@@ -474,14 +579,12 @@ local function analyze_file(filepath)
         stats.issues[filepath] = file_issues
     end
 
-    -- Summary for this file - Updated approach for API coverage calculation
-    -- Only count functions that are intended for API documentation (with @function tags)
-    -- as per @zhaozg's feedback
+    -- Summary for this file - Fixed API coverage calculation
+    local total_api_functions = documented_function_count + undocumented
     local api_coverage_percentage = 0
-    if documented_function_count > 0 then
-        -- When we have documented functions, coverage is 100% for those functions
-        -- The undocumented count shows how many more need @function tags
-        api_coverage_percentage = 100
+    
+    if total_api_functions > 0 then
+        api_coverage_percentage = (documented_function_count / total_api_functions) * 100
         printf("API documentation coverage: %.1f%% (%d functions with @function tags)",
                api_coverage_percentage, documented_function_count)
         if undocumented > 0 then
@@ -557,8 +660,8 @@ local function analyze_path(path)
     printf("Valid LDoc comments: %d", stats.valid_comments)
 
     -- Updated API coverage calculation as per @zhaozg feedback
-    -- Only count functions with @function tags in API coverage
-    local api_coverage = stats.documented_functions > 0 and 100 or 0
+    -- Calculate proper API coverage percentage
+    local api_coverage = stats.total_functions > 0 and (stats.documented_functions / stats.total_functions * 100) or 0
     local comment_validity = stats.total_comments > 0 and (stats.valid_comments / stats.total_comments * 100) or 0
     local potential_api_functions = stats.total_functions - stats.documented_functions
 

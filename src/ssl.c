@@ -63,6 +63,12 @@ typedef enum
   SSL_CTX_MAX_IDX
 } SSL_CTX_INDEX;
 
+/***
+create a new SSL context object
+@function new
+@tparam[opt="TLS"] string method SSL/TLS protocol method ("TLS", "SSLv23", "TLSv1", "TLSv1_1", "TLSv1_2", etc.)
+@treturn ssl_ctx SSL context object
+*/
 static int
 openssl_ssl_ctx_new(lua_State *L)
 {

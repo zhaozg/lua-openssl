@@ -15,6 +15,16 @@ ec module to create EC keys and do EC key processes.
 static int openssl_push_group_asn1_flag(lua_State *L, int flag);
 static int openssl_push_point_conversion_form(lua_State *L, point_conversion_form_t form);
 
+/***
+get or set affine coordinates of an elliptic curve point
+@function affine_coordinates  
+@tparam ec_group group elliptic curve group
+@tparam ec_point point elliptic curve point
+@tparam[opt] bn x x coordinate (for setting)
+@tparam[opt] bn y y coordinate (for setting)
+@treturn bn x coordinate (when getting)
+@treturn bn y coordinate (when getting)
+*/
 static int
 openssl_ecpoint_affine_coordinates(lua_State *L)
 {
@@ -148,6 +158,13 @@ openssl_push_group_asn1_flag(lua_State *L, int flag)
   return 1;
 }
 
+/***
+get or set ASN1 flag for elliptic curve group
+@function asn1_flag
+@tparam ec_group group elliptic curve group
+@tparam[opt] number|string flag ASN1 flag to set
+@treturn string|number current ASN1 flag (string name and number value)
+*/
 static int
 openssl_ec_group_asn1_flag(lua_State *L)
 {
@@ -198,6 +215,13 @@ openssl_push_point_conversion_form(lua_State *L, point_conversion_form_t form)
   return 1;
 }
 
+/***
+get or set point conversion form for elliptic curve group
+@function point_conversion_form
+@tparam ec_group group elliptic curve group  
+@tparam[opt] number|string form point conversion form to set
+@treturn string|number current point conversion form (string name and number value)
+*/
 static int
 openssl_ec_group_point_conversion_form(lua_State *L)
 {
@@ -281,6 +305,12 @@ openssl_get_ec_group(lua_State *L, int ec_name_idx, int param_enc_idx, int conv_
   return g;
 }
 
+/***
+create new elliptic curve point for group
+@function point_new
+@tparam ec_group group elliptic curve group
+@treturn ec_point new elliptic curve point
+*/
 static int
 openssl_ec_group_point_new(lua_State *L)
 {
@@ -290,6 +320,13 @@ openssl_ec_group_point_new(lua_State *L)
   return 1;
 }
 
+/***
+duplicate an EC point
+@function point_dup
+@tparam ec_group group the EC group
+@tparam ec_point point the EC point to duplicate
+@treturn ec_point new EC point that is a copy of the input point
+*/
 static int
 openssl_ec_point_dup(lua_State *L)
 {
@@ -301,6 +338,14 @@ openssl_ec_point_dup(lua_State *L)
   return 1;
 }
 
+/***
+compare two EC points for equality
+@function point_equal
+@tparam ec_group group the EC group
+@tparam ec_point a first EC point to compare
+@tparam ec_point b second EC point to compare
+@treturn boolean true if points are equal, false otherwise
+*/
 static int
 openssl_ec_point_equal(lua_State *L)
 {

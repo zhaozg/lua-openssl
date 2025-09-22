@@ -111,6 +111,13 @@ openssl_verify_cb(int preverify_ok, X509_STORE_CTX *xctx)
   return ctx ? verify_cb(preverify_ok, xctx, L, ssl, ctx) : 0;
 };
 
+/***
+certificate verification callback function
+@function cert_verify_cb
+@tparam x509_store_ctx ctx X509 store context for verification
+@tparam userdata u user data passed to callback
+@treturn number verification result (1 for success, 0 for failure)
+*/
 int
 openssl_cert_verify_cb(X509_STORE_CTX *xctx, void *u)
 {

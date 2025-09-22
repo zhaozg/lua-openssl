@@ -142,7 +142,7 @@ openssl_cms_export(lua_State *L)
 
 /***
 create empty cms object
-@function create
+@function new
 @treturn cms
 */
 
@@ -160,7 +160,7 @@ openssl_cms_new(lua_State *L)
 
 /***
 create cms object from string or bio object
-@function create
+@function data_create
 @tparam bio input
 @tparam[opt=0] number flags
 @treturn cms
@@ -638,7 +638,7 @@ openssl.cms object
 
 /***
 get type of cms object
-@function cms
+@function type
 @treturn asn1_object type of cms
 */
 static int
@@ -702,6 +702,14 @@ openssl_cms_content(lua_State *L)
   return ret;
 }
 
+/***
+add signers to CMS structure
+@function add_signers
+@tparam cms cms object to add signers to
+@tparam x509 signer certificate for signing
+@tparam evp_pkey pkey private key for signing
+@treturn boolean result
+*/
 static int
 openssl_cms_add_signers(lua_State *L)
 {
@@ -719,6 +727,12 @@ openssl_cms_add_signers(lua_State *L)
   return 1;
 }
 
+/***
+get signers from CMS structure
+@function get_signers
+@tparam cms cms object to get signers from
+@treturn table array of x509 certificates
+*/
 static int
 openssl_cms_get_signers(lua_State *L)
 {
