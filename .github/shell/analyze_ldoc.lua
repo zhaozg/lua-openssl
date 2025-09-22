@@ -308,16 +308,55 @@ local function analyze_file(filepath)
         for line_num, line in ipairs(lines) do
             -- Match function definitions: static int openssl_xxx(lua_State *L...)
             -- or int openssl_xxx(lua_State *L...)
+            -- Handle both single-line and multi-line function definitions
             local static_match = line:match("^%s*static%s+int%s+openssl_([%w_]+)%s*%(")
             local int_match = line:match("^%s*int%s+openssl_([%w_]+)%s*%(")
+            
+            -- Also check for multi-line definitions where function name is on next non-empty line
+            local multiline_static = false
+            local multiline_int = false
+            local func_line_num = line_num
+            
+            if line:match("^%s*static%s+int%s*$") and line_num < #lines then
+                -- Look for the next non-empty line containing the function name
+                for check_line = line_num + 1, math.min(line_num + 5, #lines) do
+                    local check_line_content = lines[check_line]
+                    if check_line_content and check_line_content:match("%S") then -- Non-empty line
+                        static_match = check_line_content:match("^%s*openssl_([%w_]+)%s*%(")
+                        if static_match then
+                            multiline_static = true
+                            func_line_num = check_line
+                            break
+                        else
+                            break -- Stop if we find a non-empty line that's not a function
+                        end
+                    end
+                end
+            elseif line:match("^%s*int%s*$") and line_num < #lines then
+                -- Look for the next non-empty line containing the function name
+                for check_line = line_num + 1, math.min(line_num + 5, #lines) do
+                    local check_line_content = lines[check_line]
+                    if check_line_content and check_line_content:match("%S") then -- Non-empty line
+                        int_match = check_line_content:match("^%s*openssl_([%w_]+)%s*%(")
+                        if int_match then
+                            multiline_int = true
+                            func_line_num = check_line
+                            break
+                        else
+                            break -- Stop if we find a non-empty line that's not a function
+                        end
+                    end
+                end
+            end
             
             local func_name = static_match or int_match
             if func_name then
                 -- Check if this line or the next few lines contain lua_State *L
                 local has_lua_state = false
-                local check_lines = math.min(line_num + 3, #lines) -- Check current + next 3 lines
+                local start_check = func_line_num
+                local check_lines = math.min(start_check + 3, #lines) -- Check current + next 3 lines
                 
-                for check_line = line_num, check_lines do
+                for check_line = start_check, check_lines do
                     if lines[check_line]:find("lua_State%s*%*%s*L") then
                         has_lua_state = true
                         break
@@ -327,7 +366,7 @@ local function analyze_file(filepath)
                 if has_lua_state then
                     table.insert(api_functions, {
                         name = "openssl_" .. func_name,
-                        line_num = line_num,
+                        line_num = func_line_num,
                         start_pos = 1 -- Not critical for this analysis
                     })
                 end
