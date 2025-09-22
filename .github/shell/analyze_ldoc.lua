@@ -165,6 +165,17 @@ local skip_line_patterns = ws * (P("#") + P("//") + P("*") + P("/") + P("return"
                                 P("if") * ws * lparen + P("while") * ws * lparen +
                                 P("for") * ws * lparen)
 
+-- LPEG patterns for luaL_Reg structure parsing
+local lbrace = P("{")
+local rbrace = P("}")
+local comma = P(",")
+local semicolon = P(";")
+local quote = P('"')
+local null_entry = ws * lbrace * ws * P("NULL") * ws * comma * ws * P("NULL") * ws * rbrace
+
+-- Pattern to match luaL_Reg function entry: { "name", function_ptr },
+local reg_entry = ws * lbrace * ws * quote * C((1 - quote)^0) * quote * ws * comma * ws * C(identifier) * ws * rbrace
+
 -- LDoc tag patterns
 local function tag_pattern(tagname)
     return P("@" .. tagname) * ws * (1 - nl - P("@"))^0
@@ -243,9 +254,90 @@ local function parse_ldoc_comment(comment_text)
     }
 end
 
+-- Parse luaL_Reg structures to find exported functions
+local function parse_lual_reg_exports(content)
+    local exports = {}
+    local lines = {}
+    
+    -- Split content into lines
+    for line in content:gmatch("[^\r\n]*") do
+        table.insert(lines, line)
+    end
+    
+    local in_reg_struct = false
+    local current_reg_name = nil
+    local brace_count = 0
+    local pending_reg_name = nil  -- For when = { is on separate lines
+    
+    for line_num, line in ipairs(lines) do
+        -- Look for luaL_Reg structure declarations
+        local reg_name = line:match("static%s+.*luaL_Reg%s+([%w_]+)%s*%[%s*%]%s*=%s*{")
+        if not reg_name then
+            reg_name = line:match("static%s+const%s+luaL_Reg%s+([%w_]+)%s*%[%s*%]%s*=%s*{")
+        end
+        if not reg_name then
+            reg_name = line:match("static%s+luaL_Reg%s+([%w_]+)%s*%[%s*%]%s*=%s*$")
+        end
+        if not reg_name then
+            reg_name = line:match("static%s+luaL_Reg%s+([%w_]+)%s*%[%s*%]%s*$")
+        end
+        if not reg_name then
+            pending_reg_name = line:match("static%s+luaL_Reg%s+([%w_]+)%s*%[%s*%]%s*=%s*$")
+        end
+        if reg_name then
+            in_reg_struct = true
+            current_reg_name = reg_name
+            exports[reg_name] = {}
+            brace_count = 1
+        elseif pending_reg_name and line:match("^%s*{%s*$") then
+            -- Handle case where opening brace is on separate line  
+            in_reg_struct = true
+            current_reg_name = pending_reg_name
+            exports[current_reg_name] = {}
+            brace_count = 1
+            pending_reg_name = nil
+        elseif line:match("^%s*{%s*$") and current_reg_name then
+            -- Handle case where opening brace is on separate line
+            brace_count = 1
+            in_reg_struct = true
+        elseif in_reg_struct then
+            -- Count braces to track structure end
+            local open_braces = select(2, line:gsub("{", ""))
+            local close_braces = select(2, line:gsub("}", ""))
+            brace_count = brace_count + open_braces - close_braces
+            
+            -- Parse function entries: { "lua_name", c_function_ptr },
+            local lua_name, c_function = line:match('%s*{%s*"([^"]+)"%s*,%s*([%w_]+)%s*}')
+            if lua_name and c_function and c_function ~= "NULL" then
+                exports[current_reg_name][lua_name] = c_function
+            end
+            
+            -- End of structure
+            if brace_count <= 0 then
+                in_reg_struct = false
+                current_reg_name = nil
+            end
+        end
+    end
+    
+    return exports
+end
+
 -- String trim function
 function string:trim()
     return self:match("^%s*(.-)%s*$")
+end
+
+-- Check if a function is exported in any luaL_Reg structure
+local function is_function_exported(func_name, exports)
+    for reg_name, reg_exports in pairs(exports) do
+        for lua_name, c_function in pairs(reg_exports) do
+            if c_function == func_name then
+                return true, lua_name, reg_name
+            end
+        end
+    end
+    return false, nil, nil
 end
 
 -- Analyze a single C file
@@ -266,6 +358,18 @@ local function analyze_file(filepath)
 
     if config.verbose then
         printf("File size: %d bytes", #content)
+    end
+
+    -- Parse luaL_Reg exports to identify actually exported functions
+    local lual_reg_exports = parse_lual_reg_exports(content)
+    
+    if config.verbose and next(lual_reg_exports) then
+        printf("Found luaL_Reg structures:")
+        for reg_name, exports in pairs(lual_reg_exports) do
+            local count = 0
+            for _ in pairs(exports) do count = count + 1 end
+            printf("  %s: %d exports", reg_name, count)
+        end
     end
 
     local file_issues = {}
@@ -381,11 +485,35 @@ local function analyze_file(filepath)
         return api_functions
     end
 
-    -- 找到所有 API 函数定义
-    local api_functions = find_api_functions(content)
+    -- 找到所有 API 函数定义并过滤为仅导出的函数
+    local all_api_functions = find_api_functions(content)
+    
+    -- Filter to only include functions that are actually exported in luaL_Reg
+    local api_functions = {}
+    local internal_functions = {}
+    
+    for _, func in ipairs(all_api_functions) do
+        local is_exported, lua_name, reg_name = is_function_exported(func.name, lual_reg_exports)
+        if is_exported then
+            func.lua_name = lua_name
+            func.reg_name = reg_name
+            table.insert(api_functions, func)
+        else
+            table.insert(internal_functions, func)
+        end
+    end
+    
     local function_count = #api_functions
+    local total_functions_found = #all_api_functions
 
-    printf("Found %d API function definitions", function_count)
+    printf("Found %d total API function definitions", total_functions_found)
+    printf("Found %d exported API functions (in luaL_Reg)", function_count)
+    if config.verbose and #internal_functions > 0 then
+        printf("Internal functions (not exported): %d", #internal_functions)
+        for _, func in ipairs(internal_functions) do
+            printf("  - %s at line %d", func.name, func.line_num)
+        end
+    end
     stats.total_functions = stats.total_functions + function_count
 
     if config.verbose then
@@ -512,12 +640,20 @@ local function analyze_file(filepath)
         end
         
         -- Also check by function name in all @function tags
+        -- For exported functions, check against the Lua export name
         local func_suffix = func.name:match("openssl_(.+)")
+        local expected_lua_name = func.lua_name  -- This is set if function is exported
+        
         for _, comment in ipairs(comments) do
             local parsed = parse_ldoc_comment(comment.text)
             if parsed.tags["function"] then
                 for _, fname in ipairs(parsed.tags["function"]) do
-                    -- Check various matching patterns:
+                    -- For exported functions, prefer exact match with Lua export name
+                    if expected_lua_name and fname == expected_lua_name then
+                        return true, fname
+                    end
+                    
+                    -- Fallback to original matching patterns for compatibility:
                     -- 1. Exact match with suffix (e.g., "xstore_new" == "xstore_new")
                     -- 2. Exact match with full name (e.g., "openssl_xstore_new" == "openssl_xstore_new") 
                     -- 3. Function suffix ends with @function name (e.g., "xstore_new" ends with "new")
