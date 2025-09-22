@@ -305,6 +305,12 @@ openssl_get_ec_group(lua_State *L, int ec_name_idx, int param_enc_idx, int conv_
   return g;
 }
 
+/***
+create new elliptic curve point for group
+@function point_new
+@tparam ec_group group elliptic curve group
+@treturn ec_point new elliptic curve point
+*/
 static int
 openssl_ec_group_point_new(lua_State *L)
 {
