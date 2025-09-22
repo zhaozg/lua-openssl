@@ -670,6 +670,12 @@ openssl_ssl_ctx_cert_store(lua_State *L)
 }
 
 #ifndef OPENSSL_NO_ENGINE
+/***
+set client certificate engine for SSL context
+@function set_engine
+@tparam engine eng engine object to use for client certificates
+@treturn boolean result true for success
+*/
 static int
 openssl_ssl_ctx_set_engine(lua_State *L)
 {
@@ -931,6 +937,7 @@ set certificate verify options
 @function set_cert_verify
 @tparam table verify_cb_flag support field always_continue with boolean value and verify_depth with
 number value.
+@treturn boolean result true for success
 */
 static int
 openssl_ssl_ctx_set_cert_verify(lua_State *L)
@@ -1221,6 +1228,7 @@ set tmp key content pem format
 @function set_tmp
 @tparam string keytype, 'dh','ecdh',or 'rsa'
 @tparam[opt] string private key file
+@treturn boolean result true for success
 */
 
 static int
@@ -1584,6 +1592,8 @@ get current session cache mode
 set session cache mode,and return old mode
 @function session_cache_mode
 @tparam string mode support 'no_auto_clear','server','client','both','off',
+@treturn table old modes as array
+*/
 'no_auto_clear' can be combine with others, so accept one or two param.
 */
 static int
@@ -1663,6 +1673,12 @@ openssl_session_cache_mode(lua_State *L)
 }
 
 #if OPENSSL_VERSION_NUMBER > 0x1010100FL && !defined(LIBRESSL_VERSION_NUMBER)
+/***
+get or set number of TLS tickets
+@function num_tickets
+@tparam[opt] number num number of tickets to set
+@treturn number current number of tickets
+*/
 static int
 openssl_ssl_ctx_num_tickets(lua_State *L)
 {
@@ -2502,6 +2518,7 @@ shutdown ssl connection with quite or noquite mode
 /***
 shutdown SSL connection
 @function shutdown
+@treturn boolean result true for success
 */
 /***
 shutdown ssl connect with special mode, disable read or write,

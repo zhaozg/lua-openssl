@@ -112,6 +112,11 @@ openssl_engine_next(lua_State *L)
   return 1;
 }
 
+/***
+get previous engine in the internal list
+@function prev
+@treturn engine previous engine object or nil if none
+*/
 static int
 openssl_engine_prev(lua_State *L)
 {
@@ -472,6 +477,11 @@ openssl_engine_set_default(lua_State *L)
   return openssl_pushresult(L, ret);
 };
 
+/***
+set random number generator engine
+@function set_rand_engine
+@treturn boolean result true for success
+*/
 static int
 openssl_engine_set_rand_engine(lua_State *L)
 {
@@ -480,6 +490,12 @@ openssl_engine_set_rand_engine(lua_State *L)
   return openssl_pushresult(L, ret);
 }
 
+/***
+load private key from engine
+@function load_private_key
+@tparam string key_id key identifier
+@treturn evp_pkey private key object or nil if failed
+*/
 static int
 openssl_engine_load_private_key(lua_State *L)
 {

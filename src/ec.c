@@ -498,6 +498,11 @@ openssl_ec_point_point2hex(lua_State *L)
   return 1;
 }
 
+/***
+generate EC key pair from group
+@function generate_key
+@treturn ec_key generated EC key object or nil if failed
+*/
 static int
 openssl_ec_group_generate_key(lua_State *L)
 {
