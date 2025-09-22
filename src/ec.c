@@ -805,6 +805,12 @@ openssl_ecdh_compute_key(lua_State *L)
   return 1;
 }
 
+/***
+set ECDSA signing method for EC key
+@function set_method
+@tparam engine engine engine providing the ECDSA method
+@treturn boolean result true for success
+*/
 static int
 openssl_ecdsa_set_method(lua_State *L)
 {
@@ -903,6 +909,14 @@ openssl_ec_key_read(lua_State *L)
   return 1;
 }
 
+/***
+get or set point conversion form for EC key
+@function conv_form
+@tparam[opt] string|number form point conversion form to set
+@treturn[1] string point conversion form name if getting
+@treturn[1] number point conversion form value if getting  
+@treturn[2] boolean result true for success if setting
+*/
 static int
 openssl_ec_key_conv_form(lua_State *L)
 {
@@ -922,6 +936,14 @@ openssl_ec_key_conv_form(lua_State *L)
   return 1;
 }
 
+/***
+get or set encoding flags for EC key
+@function enc_flags
+@tparam[opt] string|number flags encoding flags to set
+@treturn[1] string encoding flags name if getting
+@treturn[1] number encoding flags value if getting
+@treturn[2] boolean result true for success if setting
+*/
 static int
 openssl_ec_key_enc_flags(lua_State *L)
 {

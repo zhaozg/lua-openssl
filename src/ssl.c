@@ -2490,6 +2490,11 @@ openssl_ssl_renegotiate(lua_State *L)
   return openssl_ssl_pushresult(L, s, ret);
 }
 
+/***
+perform abbreviated SSL renegotiation
+@function renegotiate_abbreviated
+@treturn boolean result true for success
+*/
 static int
 openssl_ssl_renegotiate_abbreviated(lua_State *L)
 {
@@ -2656,6 +2661,12 @@ openssl_ssl_cache_hit(lua_State *L)
   return 1;
 }
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
+/***
+set debug level for SSL connection
+@function set_debug
+@tparam number debug debug level to set
+@treturn number always returns 0
+*/
 static int
 openssl_ssl_set_debug(lua_State *L)
 {
@@ -2738,6 +2749,11 @@ openssl_ssl_session(lua_State *L)
   return 1;
 }
 
+/***
+convert SSL object to string representation
+@function __tostring
+@treturn string string representation of SSL object
+*/
 static int
 openssl_ssl_tostring(lua_State *L)
 {

@@ -179,6 +179,14 @@ static luaL_Reg ts_msg_imprint_funcs[] = {
   { NULL,         NULL                           }
 };
 
+/***
+create new timestamp accuracy object
+@function ts_accuracy_new
+@tparam[opt] number seconds accuracy in seconds
+@tparam[opt] number millis accuracy in milliseconds  
+@tparam[opt] number micros accuracy in microseconds
+@treturn ts_accuracy new timestamp accuracy object or nil on failure
+*/
 static int
 openssl_ts_accuracy_new(lua_State *L)
 {
@@ -349,6 +357,12 @@ openssl_ts_accuracy_export(lua_State *L)
   return len;
 }
 
+/***
+read timestamp accuracy from DER data
+@function ts_accuracy_read
+@tparam string data DER encoded timestamp accuracy data
+@treturn ts_accuracy timestamp accuracy object or nil on failure
+*/
 static int
 openssl_ts_accuracy_read(lua_State *L)
 {
@@ -496,6 +510,11 @@ openssl_ts_info_accuracy(lua_State *L)
 get ordering of ts_tst_info object object
 @function ording
 @treturn table
+*/
+/***
+get ordering flag from timestamp info
+@function ordering
+@treturn boolean true if ordering is required
 */
 static int
 openssl_ts_info_ordering(lua_State *L)
