@@ -41,6 +41,13 @@ static const char* sMethods[] = {
   NULL
 };
 
+/***
+create new bio object from file
+@function new
+@tparam string filename path to file
+@tparam[opt="r"] string mode file mode (r, w, a)
+@treturn bio|nil new bio object or nil on error
+*/
 static int openssl_bio_new(lua_State *L) {
 
 const char* f = luaL_checkstring(L,1);

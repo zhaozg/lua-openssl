@@ -277,6 +277,12 @@ create asn1_string object
 @tparam string data to create new asn1_string
 @tparam[opt] string type asn1 string type, defult with 'utf8'
 @treturn asn1_string
+/***
+create asn1_string object 
+@function new_string
+@tparam string data string data to encode
+@tparam[opt] number type ASN1 string type
+@treturn asn1_string new ASN1_STRING object
 @see asn1_string
 */
 static int
@@ -297,6 +303,11 @@ create asn1_integer object
 @function new_integer
 @tparam number|bn integer to create new asn1_integer
 @treturn asn1_integer
+/***
+create asn1_integer object
+@function new_integer
+@tparam number|bignum value integer value or bignum
+@treturn asn1_integer new ASN1_INTEGER object
 @see asn1_integer
 */
 static int

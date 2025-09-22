@@ -158,6 +158,13 @@ openssl_push_group_asn1_flag(lua_State *L, int flag)
   return 1;
 }
 
+/***
+get or set ASN1 flag for elliptic curve group
+@function asn1_flag
+@tparam ec_group group elliptic curve group
+@tparam[opt] number|string flag ASN1 flag to set
+@treturn string|number current ASN1 flag (string name and number value)
+*/
 static int
 openssl_ec_group_asn1_flag(lua_State *L)
 {
@@ -208,6 +215,13 @@ openssl_push_point_conversion_form(lua_State *L, point_conversion_form_t form)
   return 1;
 }
 
+/***
+get or set point conversion form for elliptic curve group
+@function point_conversion_form
+@tparam ec_group group elliptic curve group  
+@tparam[opt] number|string form point conversion form to set
+@treturn string|number current point conversion form (string name and number value)
+*/
 static int
 openssl_ec_group_point_conversion_form(lua_State *L)
 {
