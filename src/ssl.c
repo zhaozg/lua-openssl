@@ -1903,6 +1903,11 @@ openssl_ssl_session_export(lua_State *L)
 }
 
 #if OPENSSL_VERSION_NUMBER > 0x10101000L && !defined(LIBRESSL_VERSION_NUMBER)
+/***
+check if SSL session is resumable
+@function is_resumable
+@treturn boolean true if session can be resumed
+*/
 static int
 openssl_ssl_session_is_resumable(lua_State *L)
 {
@@ -1914,6 +1919,11 @@ openssl_ssl_session_is_resumable(lua_State *L)
 #endif
 
 #if OPENSSL_VERSION_NUMBER > 0x10100000L
+/***
+check if SSL session has a ticket
+@function has_ticket
+@treturn boolean true if session has a ticket
+*/
 static int
 openssl_ssl_session_has_ticket(lua_State *L)
 {
@@ -2632,6 +2642,11 @@ openssl_ssl_session_reused(lua_State *L)
   return 1;
 }
 
+/***
+check if SSL session was reused (cache hit)
+@function cache_hit
+@treturn boolean true if session was not reused (cache miss)
+*/
 static int
 openssl_ssl_cache_hit(lua_State *L)
 {

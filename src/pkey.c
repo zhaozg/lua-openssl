@@ -1987,6 +1987,11 @@ static int openssl_open_final(lua_State *L)
   return ret == 1 ? ret : openssl_pushresult(L, ret);
 }
 
+/***
+get the number of bits in the key
+@function bits
+@treturn number number of bits in the key
+*/
 static int
 openssl_pkey_bits(lua_State *L)
 {
@@ -1997,6 +2002,12 @@ openssl_pkey_bits(lua_State *L)
 };
 
 #ifndef OPENSSL_NO_ENGINE
+/***
+set engine for the key
+@function set_engine
+@tparam engine eng engine object to use for this key
+@treturn boolean result true for success
+*/
 static int
 openssl_pkey_set_engine(lua_State *L)
 {
@@ -2054,6 +2065,11 @@ openssl_pkey_set_engine(lua_State *L)
 #endif
 
 #if defined(OPENSSL_SUPPORT_SM2) && OPENSSL_VERSION_NUMBER < 0x30000000
+/***
+convert EC key to SM2 key type
+@function as_sm2
+@treturn boolean result true if successfully converted to SM2
+*/
 static int
 openssl_pkey_as_sm2(lua_State *L)
 {
@@ -2078,6 +2094,11 @@ openssl_pkey_as_sm2(lua_State *L)
 }
 #endif
 
+/***
+check if key parameters are missing
+@function missing_paramaters
+@treturn boolean true if key is missing parameters
+*/
 static int
 openssl_pkey_mssing_parameters(lua_State *L)
 {

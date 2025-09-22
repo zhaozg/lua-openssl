@@ -413,6 +413,14 @@ openssl_padding_add(lua_State *L)
   return ret;
 }
 
+/***
+check and remove padding from data
+@function padding_check
+@tparam string data padded data to check
+@tparam string padding padding mode to check
+@tparam number size expected output size
+@treturn string unpadded data or nil if padding check failed
+*/
 static int
 openssl_padding_check(lua_State *L)
 {
