@@ -387,6 +387,11 @@ openssl_engine_flags(lua_State *L)
 int ENGINE_set_ex_data(ENGINE *e, int idx, void *arg);
 void *ENGINE_get_ex_data(const ENGINE *e, int idx);
 */
+/***
+initialize an engine for use
+@function init
+@treturn boolean true on success, false on failure
+*/
 static int
 openssl_engine_init(lua_State *L)
 {
@@ -396,6 +401,11 @@ openssl_engine_init(lua_State *L)
   return 1;
 }
 
+/***
+release an initialized engine
+@function finish
+@treturn boolean true on success, false on failure
+*/
 static int
 openssl_engine_finish(lua_State *L)
 {
@@ -405,6 +415,12 @@ openssl_engine_finish(lua_State *L)
   return 1;
 }
 
+/***
+set engine as default for specified algorithm types
+@function set_default
+@tparam string ... algorithm types ("RSA", "DSA", "DH", "RAND", "ECDH", "ECDSA", "CIPHERS", "DIGESTS", "STORE", "complete")
+@treturn boolean true on success, false on failure
+*/
 static int
 openssl_engine_set_default(lua_State *L)
 {

@@ -15,6 +15,16 @@ ec module to create EC keys and do EC key processes.
 static int openssl_push_group_asn1_flag(lua_State *L, int flag);
 static int openssl_push_point_conversion_form(lua_State *L, point_conversion_form_t form);
 
+/***
+get or set affine coordinates of an elliptic curve point
+@function affine_coordinates  
+@tparam ec_group group elliptic curve group
+@tparam ec_point point elliptic curve point
+@tparam[opt] bn x x coordinate (for setting)
+@tparam[opt] bn y y coordinate (for setting)
+@treturn bn x coordinate (when getting)
+@treturn bn y coordinate (when getting)
+*/
 static int
 openssl_ecpoint_affine_coordinates(lua_State *L)
 {
