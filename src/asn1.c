@@ -267,6 +267,7 @@ openssl_asn1_tostring(lua_State *L)
 }
 
 /***
+/***
 create asn1_string object
 
 <br/><p> asn1_string object support types:   "integer", "enumerated", "bit",
@@ -277,13 +278,6 @@ create asn1_string object
 @tparam string data to create new asn1_string
 @tparam[opt] string type asn1 string type, defult with 'utf8'
 @treturn asn1_string
-/***
-create asn1_string object 
-@function new_string
-@tparam string data string data to encode
-@tparam[opt] number type ASN1 string type
-@treturn asn1_string new ASN1_STRING object
-@see asn1_string
 */
 static int
 openssl_asn1string_new(lua_State *L)
@@ -298,11 +292,6 @@ openssl_asn1string_new(lua_State *L)
 }
 
 /***
-create asn1_integer object
-
-@function new_integer
-@tparam number|bn integer to create new asn1_integer
-@treturn asn1_integer
 /***
 create asn1_integer object
 @function new_integer
@@ -465,9 +454,6 @@ create new ASN1_OBJECT
     sn = "myShortName", 
     ln = "myLongName"
   })
-*/
-static int
-openssl_asn1object_new(lua_State *L)
 */
 static int
 openssl_asn1object_new(lua_State *L)

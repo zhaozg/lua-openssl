@@ -219,10 +219,6 @@ static int openssl_digest_info(lua_State *L)
 }
 
 /***
-create new evp_digest_ctx
-
-@function new
-/***
 initialize digest context with message digest
 @function init
 @tparam evp_digest md message digest algorithm
@@ -451,11 +447,6 @@ static int openssl_digest_ctx_data(lua_State *L)
   return 1;
 }
 
-/***
-feed data for sign to get signature
-
-@function verifyUpdate
-@tparam string data to be signed
 /***
 update digest context for signing operation
 @function signUpdate

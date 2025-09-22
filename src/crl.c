@@ -358,18 +358,11 @@ static int openssl_crl_version(lua_State *L)
 }
 
 /***
-add revoked entry to x509_crl object
-@function add
-@tparam string|number|bn serial
-@tparam number revokedtime
-@tparam[opt=0] number|string reason
-/***
 add revoked certificate entry to CRL
-@function add_revoked
-@tparam x509_crl crl CRL to add revoked entry to
-@tparam bignum sn serial number of revoked certificate
-@tparam number time revocation time 
-@tparam[opt] number reason revocation reason code
+@function add
+@tparam string|number|bn serial serial number of revoked certificate
+@tparam number revokedtime revocation time
+@tparam[opt=0] number|string reason revocation reason code
 @treturn boolean result true for add success
 */
 static int openssl_crl_add_revocked(lua_State *L)
