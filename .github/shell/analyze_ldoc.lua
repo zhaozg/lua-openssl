@@ -527,14 +527,12 @@ local function analyze_file(filepath)
         stats.issues[filepath] = file_issues
     end
 
-    -- Summary for this file - Updated approach for API coverage calculation
-    -- Only count functions that are intended for API documentation (with @function tags)
-    -- as per @zhaozg's feedback
+    -- Summary for this file - Fixed API coverage calculation
+    local total_api_functions = documented_function_count + undocumented
     local api_coverage_percentage = 0
-    if documented_function_count > 0 then
-        -- When we have documented functions, coverage is 100% for those functions
-        -- The undocumented count shows how many more need @function tags
-        api_coverage_percentage = 100
+    
+    if total_api_functions > 0 then
+        api_coverage_percentage = (documented_function_count / total_api_functions) * 100
         printf("API documentation coverage: %.1f%% (%d functions with @function tags)",
                api_coverage_percentage, documented_function_count)
         if undocumented > 0 then
@@ -610,8 +608,8 @@ local function analyze_path(path)
     printf("Valid LDoc comments: %d", stats.valid_comments)
 
     -- Updated API coverage calculation as per @zhaozg feedback
-    -- Only count functions with @function tags in API coverage
-    local api_coverage = stats.documented_functions > 0 and 100 or 0
+    -- Calculate proper API coverage percentage
+    local api_coverage = stats.total_functions > 0 and (stats.documented_functions / stats.total_functions * 100) or 0
     local comment_validity = stats.total_comments > 0 and (stats.valid_comments / stats.total_comments * 100) or 0
     local potential_api_functions = stats.total_functions - stats.documented_functions
 
