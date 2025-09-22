@@ -125,6 +125,11 @@ openssl_engine_prev(lua_State *L)
   return 1;
 }
 
+/***
+add engine to the internal list for lookup by id or name
+@function add
+@treturn boolean true on success, false on failure
+*/
 static int
 openssl_engine_add(lua_State *L)
 {
@@ -134,6 +139,11 @@ openssl_engine_add(lua_State *L)
   return 1;
 }
 
+/***
+remove engine from the internal list
+@function remove
+@treturn boolean true on success, false on failure
+*/
 static int
 openssl_engine_remove(lua_State *L)
 {
@@ -143,6 +153,13 @@ openssl_engine_remove(lua_State *L)
   return 1;
 }
 
+/***
+register engine for specific algorithms
+@function register
+@tparam[opt=false] boolean unregister true to unregister, false to register
+@tparam[opt] string algorithms algorithm types to register for (e.g., "ALL", "RSA", "DSA")
+@treturn boolean true on success, false on failure
+*/
 static int
 openssl_engine_register(lua_State *L)
 {

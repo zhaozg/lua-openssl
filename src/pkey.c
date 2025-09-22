@@ -1207,6 +1207,12 @@ static int openssl_pkey_ctx_free(lua_State *L)
   return 0;
 }
 
+/***
+generate a key pair using the context
+@function keygen
+@tparam[opt] number bits key size in bits (depends on key type)
+@treturn evp_pkey generated key pair on success
+*/
 static int openssl_pkey_ctx_keygen(lua_State *L)
 {
   EVP_PKEY_CTX *ctx = CHECK_OBJECT(1, EVP_PKEY_CTX, "openssl.evp_pkey_ctx");
@@ -1230,6 +1236,13 @@ static int openssl_pkey_ctx_keygen(lua_State *L)
   return ret;
 }
 
+/***
+control EVP_PKEY_CTX with string parameters
+@function ctrl
+@tparam string name control parameter name
+@tparam string value control parameter value
+@treturn boolean true on success, false on failure
+*/
 static int openssl_pkey_ctx_ctrl(lua_State *L)
 {
   EVP_PKEY_CTX *ctx = CHECK_OBJECT(1, EVP_PKEY_CTX, "openssl.evp_pkey_ctx");
