@@ -301,8 +301,13 @@ local function analyze_file(filepath)
         local lines = {}
         
         -- Split content into lines for accurate line number tracking
-        for line in content:gmatch("[^\r\n]*") do
+        -- Fix: Use reliable line splitting that matches system behavior
+        local line_start = 1
+        while line_start <= #content do
+            local line_end = content:find('\n', line_start) or (#content + 1)
+            local line = content:sub(line_start, line_end - 1)
             table.insert(lines, line)
+            line_start = line_end + 1
         end
         
         for line_num, line in ipairs(lines) do
