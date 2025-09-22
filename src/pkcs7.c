@@ -274,6 +274,7 @@ encrypt message with recipcerts certificates return encrypted pkcs7 object
 @tparam stack_of_x509 recipcerts
 @tparam[opt='aes-128-cbc'] string|evp_cipher cipher
 @tparam[opt] number flags
+@treturn pkcs7 encrypted PKCS7 object or nil on failure
 */
 static int openssl_pkcs7_encrypt(lua_State *L)
 {
