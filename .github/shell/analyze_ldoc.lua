@@ -512,7 +512,15 @@ local function analyze_file(filepath)
             local parsed = parse_ldoc_comment(comment.text)
             if parsed.tags["function"] then
                 for _, fname in ipairs(parsed.tags["function"]) do
-                    if fname == func_suffix or fname == func.name then
+                    -- Check various matching patterns:
+                    -- 1. Exact match with suffix (e.g., "xstore_new" == "xstore_new")
+                    -- 2. Exact match with full name (e.g., "openssl_xstore_new" == "openssl_xstore_new") 
+                    -- 3. Function suffix ends with @function name (e.g., "xstore_new" ends with "new")
+                    -- 4. @function name equals the last part after underscore (e.g., "new" matches "xstore_new")
+                    if fname == func_suffix or 
+                       fname == func.name or
+                       func_suffix:match("_" .. fname .. "$") or
+                       func_suffix:match(fname .. "$") then
                         return true, fname
                     end
                 end
