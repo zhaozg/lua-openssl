@@ -776,6 +776,13 @@ KDF1_SHA1(const void *in, size_t inlen, void *out, size_t *outlen)
 
 #define MAX_ECDH_SIZE 256
 
+/***
+compute ECDH shared key
+@function compute_key
+@tparam ec_key peer peer EC key for key exchange
+@tparam[opt] function kdf key derivation function
+@treturn string shared secret or nil if failed
+*/
 static int
 openssl_ecdh_compute_key(lua_State *L)
 {

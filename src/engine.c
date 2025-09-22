@@ -509,6 +509,12 @@ openssl_engine_load_private_key(lua_State *L)
   return openssl_pushresult(L, 0);
 }
 
+/***
+load public key from engine
+@function load_public_key
+@tparam string key_id key identifier
+@treturn evp_pkey public key object or nil if failed
+*/
 static int
 openssl_engine_load_public_key(lua_State *L)
 {
@@ -522,6 +528,12 @@ openssl_engine_load_public_key(lua_State *L)
   return openssl_pushresult(L, 0);
 }
 
+/***
+load SSL client certificate from engine
+@function load_ssl_client_cert
+@tparam ssl ssl SSL connection object
+@treturn boolean result true for success
+*/
 static int
 openssl_engine_load_ssl_client_cert(lua_State *L)
 {

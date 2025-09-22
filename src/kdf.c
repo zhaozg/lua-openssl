@@ -361,6 +361,12 @@ create new openssl.kdf_ctx object
 @function fetch
 @treturn openssl.kdf_ctx|fail
 */
+/***
+create new KDF context
+@function new
+@tparam string algorithm KDF algorithm name
+@treturn kdf_ctx new KDF context object or nil if failed
+*/
 static int
 openssl_kdf_ctx_new(lua_State *L)
 {

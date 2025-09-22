@@ -981,6 +981,12 @@ static luaL_Reg asn1obj_funcs[] = {
 openssl.asn1_integer object
 @type asn1_integer
 */
+/***
+convert ASN1 integer to/from big number
+@function bn
+@tparam[opt] bn number big number to set, or nil to get current value
+@treturn bn big number representation if getting, or previous value if setting
+*/
 static int
 openssl_asn1int_bn(lua_State *L)
 {
@@ -1356,6 +1362,12 @@ compare two asn1_string, if equals return true
 @usage
   local obj = astr:dup()
   assert(obj==astr, "must equals")
+*/
+/***
+compare two ASN1 string objects for equality
+@function __eq
+@tparam asn1_string other ASN1 string object to compare with
+@treturn boolean true if objects are equal
 */
 static int
 openssl_asn1group_eq(lua_State *L)

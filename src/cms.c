@@ -839,6 +839,14 @@ err:
   return NULL;
 }
 
+/***
+add receipt request to CMS structure
+@function add_receipt
+@tparam[opt] table receipt_to array of recipient emails
+@tparam[opt] table receipt_from array of sender emails  
+@tparam[opt] boolean all_or_first request receipt from all or first recipient
+@treturn boolean result true for success
+*/
 static int
 openssl_cms_add_receipt(lua_State *L)
 {
@@ -892,6 +900,15 @@ openssl_cms_add_receipt(lua_State *L)
   return openssl_pushresult(L, ret);
 }
 
+/***
+sign receipt for CMS message
+@function sign_receipt
+@tparam x509 signcert certificate to use for signing receipt
+@tparam evp_pkey pkey private key for signing
+@tparam[opt] table other additional certificates
+@tparam[opt] number flags signing flags
+@treturn cms signed receipt CMS object or nil if failed
+*/
 static int
 openssl_cms_sign_receipt(lua_State *L)
 {
@@ -915,6 +932,16 @@ openssl_cms_sign_receipt(lua_State *L)
   return openssl_pushresult(L, 0);
 }
 
+/***
+verify receipt for CMS message
+@function verify_receipt
+@tparam cms rcms receipt CMS object to verify
+@tparam cms cms original CMS object
+@tparam[opt] table other additional certificates
+@tparam x509_store store certificate store for verification
+@tparam[opt] number flags verification flags
+@treturn boolean result true if receipt is valid
+*/
 static int
 openssl_cms_verify_receipt(lua_State *L)
 {
