@@ -717,6 +717,11 @@ static int openssl_bio_next(lua_State *L)
   return bio ? 1 : 0;
 }
 
+/***
+get cipher status for BIO
+@function cipher_status
+@treturn boolean cipher status
+*/
 static int openssl_bio_cipher_status(lua_State *L)
 {
   BIO *bio = CHECK_OBJECT(1, BIO, "openssl.bio");

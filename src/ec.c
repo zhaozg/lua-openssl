@@ -290,6 +290,13 @@ openssl_ec_group_point_new(lua_State *L)
   return 1;
 }
 
+/***
+duplicate an EC point
+@function point_dup
+@tparam ec_group group the EC group
+@tparam ec_point point the EC point to duplicate
+@treturn ec_point new EC point that is a copy of the input point
+*/
 static int
 openssl_ec_point_dup(lua_State *L)
 {
@@ -301,6 +308,14 @@ openssl_ec_point_dup(lua_State *L)
   return 1;
 }
 
+/***
+compare two EC points for equality
+@function point_equal
+@tparam ec_group group the EC group
+@tparam ec_point a first EC point to compare
+@tparam ec_point b second EC point to compare
+@treturn boolean true if points are equal, false otherwise
+*/
 static int
 openssl_ec_point_equal(lua_State *L)
 {
