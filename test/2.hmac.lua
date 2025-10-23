@@ -31,6 +31,7 @@ function TestHMACCompat:testDigest()
   c = a:final(self.msg)
   lu.assertEquals(c, b)
 
+  a = assert(hmac.new(self.alg, self.key))
   c = a:final(self.msg, true)
-  assert(c, openssl.hex(b))
+  lu.assertEquals(openssl.hex(c):lower(), b)
 end
