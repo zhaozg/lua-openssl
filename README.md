@@ -93,6 +93,22 @@ Notice: Documentation quality is low and stale, feel free to make a PR to improv
 
 If documentation is missing, refer to the [source code](./src) or check the Lua test scripts in the test directory.
 
+### Documentation Coverage
+
+The project includes an automated LDoc analyzer that scans all C source files to check documentation coverage. Current statistics:
+
+- **93.1%** of exported API functions are documented
+- **97.9%** of LDoc comments are valid and well-formed
+- **768** total LDoc comment blocks across 37 C files
+
+To check documentation coverage:
+
+```bash
+make check
+```
+
+For detailed coverage report, see [LDOC_COVERAGE.md](LDOC_COVERAGE.md).
+
 ### lua-openssl Objects
 
 The following are some important lua-openssl object types:
