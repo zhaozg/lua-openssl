@@ -283,7 +283,7 @@ static luaL_Reg R[] = {
   { NULL,           NULL                     }
 };
 
-/****************************SSL CTX********************************/
+/* SSL CTX object */
 /***
 openssl.ssl_ctx object
 @type ssl_ctx
@@ -686,7 +686,7 @@ openssl_ssl_ctx_set_engine(lua_State *L)
 }
 #endif
 
-/****************************************************************************/
+/* ssl functions */
 /***
 create ssl object
 @function ssl
@@ -1744,7 +1744,7 @@ static luaL_Reg ssl_ctx_funcs[] = {
   { NULL,                      NULL                                    },
 };
 
-/****************************SSL SESSION********************************/
+/* SSL SESSION functions */
 /***
 get peer certificate verify result
 @function getpeerverification
@@ -1952,7 +1952,7 @@ static luaL_Reg ssl_session_funcs[] = {
   { NULL,           NULL                             },
 };
 
-/***************************SSL**********************************/
+/* SSL object */
 /***
 openssl.ssl object
 All SSL object IO operation methods(connect, accept, handshake, read,
@@ -2122,7 +2122,7 @@ openssl_ssl_pending(lua_State *L)
   return 1;
 }
 
-/*********************************************/
+/* Helper function to push SSL result */
 static int
 openssl_ssl_pushresult(lua_State *L, SSL *ssl, int ret_code)
 {
