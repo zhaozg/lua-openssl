@@ -629,7 +629,7 @@ static const luaL_Reg R[] = {
   { NULL,                    NULL                              }
 };
 
-/*****************************************************************************/
+/* CMS object */
 /***
 openssl.cms object
 @type cms

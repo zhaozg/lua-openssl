@@ -1157,7 +1157,7 @@ static luaL_Reg ts_resp_funs[] = {
   { NULL,          NULL                        }
 };
 
-/********************************************************/
+/* ts_resp_ctx object */
 /***
 openssl.ts_resp_ctx object
 @type ts_resp_ctx
@@ -1627,7 +1627,7 @@ static luaL_Reg ts_resp_ctx_funs[] = {
   { NULL,                     NULL                                       }
 };
 
-/********************************************************************/
+/* ts_verify_ctx object */
 
 /***
 openssl.ts_verify_ctx object

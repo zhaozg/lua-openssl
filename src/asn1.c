@@ -986,7 +986,11 @@ openssl.asn1_string object
 */
 
 /***
+set value of ASN1 object
+
 @function set
+@tparam number|string value value to set (number for integers/times, string for time strings)
+@treturn boolean result true for success
 */
 static int
 openssl_asn1group_set(lua_State *L)
@@ -1065,8 +1069,10 @@ ASN1_TIME_get(ASN1_TIME *time, time_t off)
 }
 
 /***
+get value from ASN1 object
+
 @function get
-@treturn userdata object created
+@treturn number|bn value extracted from ASN1 object (bn for integers, number for times)
 */
 static int
 openssl_asn1group_get(lua_State *L)
@@ -1096,8 +1102,10 @@ openssl_asn1group_get(lua_State *L)
 }
 
 /***
+encode ASN1 object to DER format
+
 @function i2d
-@treturn string result
+@treturn string DER encoded string
 */
 static int
 openssl_asn1group_i2d(lua_State *L)
@@ -1177,8 +1185,12 @@ openssl_asn1group_i2d(lua_State *L)
 }
 
 /***
+decode DER encoded string to ASN1 object
+
 @function d2i
-@treturn boolean success status
+@tparam string der DER encoded string
+@treturn asn1group self on success
+@treturn boolean result false on failure
 */
 static int
 openssl_asn1group_d2i(lua_State *L)

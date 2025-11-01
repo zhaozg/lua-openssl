@@ -5,7 +5,7 @@ It base on EVP_MAC in OpenSSL v3.
 @module mac
 @author  george zhao <zhaozg(at)gmail.com>
 @usage
-  hamc = require('openssl').mac
+  mac = require('openssl').mac
 */
 #include "openssl.h"
 #include "private.h"
@@ -269,13 +269,14 @@ openssl_mac_ctx_free(lua_State *L)
 }
 
 /***
-compute mac one step, in module openssl.hamc
+compute mac one step, in module openssl.mac
 
 @function mac
 @tparam evp_digest|string|nid digest digest alg identity
 @tparam string message
 @tparam string key
-@treturn string result binary string
+@tparam[opt=false] boolean raw binary or hex encoded result, default false for hex result
+@treturn string result binary string when raw is true, hex string otherwise
 */
 static int
 openssl_mac(lua_State *L)
