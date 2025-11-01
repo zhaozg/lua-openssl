@@ -1,9 +1,9 @@
-/*=========================================================================*\
-* lhash.c
-* openssl lhash object for lua-openssl binding
-*
-* Author:  george zhao <zhaozg(at)gmail.com>
-\*=========================================================================*/
+/*
+ * lhash.c
+ * openssl lhash object for lua-openssl binding
+ *
+ * Author:  george zhao <zhaozg(at)gmail.com>
+ */
 
 /***
 lhash module for lua-openssl binding

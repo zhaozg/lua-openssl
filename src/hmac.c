@@ -5,19 +5,19 @@ It base on HMAC_CTX in OpenSSL v1.
 @module hmac
 @author  george zhao <zhaozg(at)gmail.com>
 @usage
-  hamc = require('openssl').hmac
+  hmac = require('openssl').hmac
 */
 #include "openssl.h"
 #include "private.h"
 
 /***
-get hamc_ctx object
+get hmac_ctx object
 
 @function new
 @tparam string|integer|asn1_object alg name, nid or object identity
 @tparam string key secret key
 @tparam[opt] engine engine, nothing with default engine
-@treturn hamc_ctx hmac object mapping HMAC_CTX in openssl
+@treturn hmac_ctx hmac object mapping HMAC_CTX in openssl
 
 @see hmac_ctx
 */
@@ -50,14 +50,14 @@ openssl_mac_ctx_free(lua_State *L)
 }
 
 /***
-compute hmac one step, in module openssl.hamc
+compute hmac one step, in module openssl.hmac
 
 @function hmac
 @tparam evp_digest|string|nid digest digest alg identity
 @tparam string message
 @tparam string key
-@tparam(opt=false) boolean raw
-@treturn string result binary string
+@tparam[opt=false] boolean raw binary or hex encoded result, default false for hex result
+@treturn string result binary string when raw is true, hex string otherwise
 */
 static int
 openssl_hmac(lua_State *L)
