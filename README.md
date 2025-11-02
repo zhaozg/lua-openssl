@@ -107,8 +107,6 @@ To check documentation coverage:
 make check
 ```
 
-For detailed coverage report, see [LDOC_COVERAGE.md](LDOC_COVERAGE.md).
-
 ### lua-openssl Objects
 
 The following are some important lua-openssl object types:
