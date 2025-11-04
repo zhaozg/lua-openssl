@@ -78,7 +78,7 @@ Copy one EC point to another.
 @tparam ec_point src source point
 @treturn ec_point destination point (self)
 */
-static int openssl_point_copy(lua_State *L)
+int openssl_point_copy(lua_State *L)
 {
   EC_POINT *dest = CHECK_OBJECT(1, EC_POINT, MYTYPE);
   const EC_POINT *src = CHECK_OBJECT(2, EC_POINT, MYTYPE);
@@ -508,7 +508,7 @@ Free the EC point (internal, called by __gc).
 
 @function free
 */
-static int openssl_point_free(lua_State *L)
+int openssl_point_free(lua_State *L)
 {
   EC_POINT *point = CHECK_OBJECT(1, EC_POINT, MYTYPE);
   EC_POINT_free(point);
