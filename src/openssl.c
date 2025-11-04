@@ -593,6 +593,12 @@ luaopen_openssl(lua_State *L)
 #ifdef EVP_PKEY_EC
   luaopen_ec(L);
   lua_setfield(L, -2, "ec");
+  
+  luaopen_group(L);
+  lua_setfield(L, -2, "group");
+  
+  luaopen_point(L);
+  lua_setfield(L, -2, "point");
 #endif
 
   luaopen_x509(L);

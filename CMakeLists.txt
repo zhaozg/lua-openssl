@@ -48,6 +48,7 @@ add_library(lua-openssl ${LUA_OPENSSL_LIBTYPE}
   src/dsa.c
   src/ec.c
   src/engine.c
+  src/group.c
   src/mac.c
   src/hmac.c
   src/kdf.c
@@ -62,6 +63,7 @@ add_library(lua-openssl ${LUA_OPENSSL_LIBTYPE}
   src/pkcs12.c
   src/pkcs7.c
   src/pkey.c
+  src/point.c
   src/private.h
   src/rsa.c
   src/sk.h

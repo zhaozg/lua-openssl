@@ -93,6 +93,8 @@ int luaopen_ocsp(lua_State *L);
 int luaopen_cms(lua_State *L);
 int luaopen_ssl(lua_State *L);
 int luaopen_ec(lua_State *L);
+int luaopen_group(lua_State *L);
+int luaopen_point(lua_State *L);
 int luaopen_rsa(lua_State *L);
 int luaopen_dsa(lua_State *L);
 int luaopen_dh(lua_State *L);
