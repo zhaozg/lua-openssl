@@ -455,6 +455,287 @@ static int openssl_push_point_conversion_form(lua_State *L, point_conversion_for
 }
 
 /***
+Create a new EC point on this group.
+
+@function point_new
+@treturn ec_point new elliptic curve point (at infinity)
+*/
+static int openssl_group_point_new(lua_State *L)
+{
+  EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, MYTYPE);
+  EC_POINT *point = EC_POINT_new(group);
+  
+  if (point) {
+    PUSH_OBJECT(point, "openssl.ec_point");
+    return 1;
+  }
+  
+  return 0;
+}
+
+/***
+Duplicate an EC point on this group.
+
+@function point_dup
+@tparam ec_point point the EC point to duplicate
+@treturn ec_point duplicated EC point
+*/
+static int openssl_group_point_dup(lua_State *L)
+{
+  const EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, MYTYPE);
+  const EC_POINT *point = CHECK_OBJECT(2, EC_POINT, "openssl.ec_point");
+  EC_POINT *dup = EC_POINT_dup(point, group);
+  
+  if (dup) {
+    PUSH_OBJECT(dup, "openssl.ec_point");
+    return 1;
+  }
+  
+  return 0;
+}
+
+/***
+Compare two EC points for equality.
+
+@function point_equal
+@tparam ec_point a first EC point
+@tparam ec_point b second EC point
+@treturn boolean true if equal, false otherwise
+*/
+static int openssl_group_point_equal(lua_State *L)
+{
+  const EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, MYTYPE);
+  const EC_POINT *a = CHECK_OBJECT(2, EC_POINT, "openssl.ec_point");
+  const EC_POINT *b = CHECK_OBJECT(3, EC_POINT, "openssl.ec_point");
+  BN_CTX *ctx = BN_CTX_new();
+  int ret = EC_POINT_cmp(group, a, b, ctx);
+  BN_CTX_free(ctx);
+  
+  lua_pushboolean(L, ret == 0);
+  return 1;
+}
+
+/***
+Convert EC point to octet string.
+
+@function point2oct
+@tparam ec_point point the EC point
+@tparam[opt] string form point conversion form ("compressed", "uncompressed", or "hybrid")
+@treturn string|nil octet string representation or nil on failure
+*/
+static int openssl_group_point2oct(lua_State *L)
+{
+  const EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, MYTYPE);
+  const EC_POINT *point = CHECK_OBJECT(2, EC_POINT, "openssl.ec_point");
+  point_conversion_form_t form = lua_isnone(L, 3)
+                                   ? EC_GROUP_get_point_conversion_form(group)
+                                   : openssl_to_point_conversion_form(L, 3, "uncompressed");
+  size_t size = EC_POINT_point2oct(group, point, form, NULL, 0, NULL);
+  
+  if (size > 0) {
+    unsigned char *oct = (unsigned char *)OPENSSL_malloc(size);
+    size = EC_POINT_point2oct(group, point, form, oct, size, NULL);
+    if (size > 0) {
+      lua_pushlstring(L, (const char *)oct, size);
+      OPENSSL_free(oct);
+      return 1;
+    }
+    OPENSSL_free(oct);
+  }
+  
+  lua_pushnil(L);
+  return 1;
+}
+
+/***
+Convert octet string to EC point.
+
+@function oct2point
+@tparam string oct octet string representation
+@treturn ec_point|nil the resulting EC point or nil on failure
+*/
+static int openssl_group_oct2point(lua_State *L)
+{
+  const EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, MYTYPE);
+  size_t size = 0;
+  const unsigned char *oct = (const unsigned char *)luaL_checklstring(L, 2, &size);
+  EC_POINT *point = EC_POINT_new(group);
+  
+  if (EC_POINT_oct2point(group, point, oct, size, NULL) == 1) {
+    PUSH_OBJECT(point, "openssl.ec_point");
+    return 1;
+  }
+  
+  EC_POINT_free(point);
+  lua_pushnil(L);
+  return 1;
+}
+
+/***
+Convert EC point to BIGNUM.
+
+@function point2bn
+@tparam ec_point point the EC point
+@tparam[opt] string form point conversion form ("compressed", "uncompressed", or "hybrid")
+@treturn bn|nil the resulting BIGNUM or nil on failure
+*/
+static int openssl_group_point2bn(lua_State *L)
+{
+  const EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, MYTYPE);
+  const EC_POINT *point = CHECK_OBJECT(2, EC_POINT, "openssl.ec_point");
+  point_conversion_form_t form = lua_isnone(L, 3)
+                                   ? EC_GROUP_get_point_conversion_form(group)
+                                   : openssl_to_point_conversion_form(L, 3, "uncompressed");
+  BIGNUM *bn = EC_POINT_point2bn(group, point, form, NULL, NULL);
+  
+  if (bn) {
+    PUSH_OBJECT(bn, "openssl.bn");
+    return 1;
+  }
+  
+  lua_pushnil(L);
+  return 1;
+}
+
+/***
+Convert BIGNUM to EC point.
+
+@function bn2point
+@tparam bn bn the BIGNUM to convert
+@treturn ec_point|nil the resulting EC point or nil on failure
+*/
+static int openssl_group_bn2point(lua_State *L)
+{
+  const EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, MYTYPE);
+  const BIGNUM *bn = CHECK_OBJECT(2, BIGNUM, "openssl.bn");
+  EC_POINT *point = EC_POINT_bn2point(group, bn, NULL, NULL);
+  
+  if (point) {
+    PUSH_OBJECT(point, "openssl.ec_point");
+    return 1;
+  }
+  
+  lua_pushnil(L);
+  return 1;
+}
+
+/***
+Convert EC point to hexadecimal string.
+
+@function point2hex
+@tparam ec_point point the EC point
+@tparam[opt] string form point conversion form ("compressed", "uncompressed", or "hybrid")
+@treturn string|nil hexadecimal string representation or nil on failure
+*/
+static int openssl_group_point2hex(lua_State *L)
+{
+  const EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, MYTYPE);
+  const EC_POINT *point = CHECK_OBJECT(2, EC_POINT, "openssl.ec_point");
+  point_conversion_form_t form = lua_isnone(L, 3)
+                                   ? EC_GROUP_get_point_conversion_form(group)
+                                   : openssl_to_point_conversion_form(L, 3, "uncompressed");
+  char *hex = EC_POINT_point2hex(group, point, form, NULL);
+  
+  if (hex) {
+    lua_pushstring(L, hex);
+    OPENSSL_free(hex);
+    return 1;
+  }
+  
+  lua_pushnil(L);
+  return 1;
+}
+
+/***
+Convert hexadecimal string to EC point.
+
+@function hex2point
+@tparam string hex hexadecimal string representation
+@treturn ec_point|nil the resulting EC point or nil on failure
+*/
+static int openssl_group_hex2point(lua_State *L)
+{
+  const EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, MYTYPE);
+  const char *hex = luaL_checkstring(L, 2);
+  EC_POINT *point = EC_POINT_hex2point(group, hex, NULL, NULL);
+  
+  if (point) {
+    PUSH_OBJECT(point, "openssl.ec_point");
+    return 1;
+  }
+  
+  lua_pushnil(L);
+  return 1;
+}
+
+/***
+Get or set affine coordinates of an EC point.
+
+@function affine_coordinates
+@tparam ec_point point the EC point
+@tparam[opt] bn x x coordinate (for setting)
+@tparam[opt] bn y y coordinate (for setting)
+@treturn bn x coordinate (when getting)
+@treturn bn y coordinate (when getting)
+*/
+static int openssl_group_affine_coordinates(lua_State *L)
+{
+  EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, MYTYPE);
+  EC_POINT *point = CHECK_OBJECT(2, EC_POINT, "openssl.ec_point");
+  
+  if (lua_gettop(L) == 2) {
+    /* Get coordinates */
+    BIGNUM *x = BN_new();
+    BIGNUM *y = BN_new();
+    
+    if (EC_POINT_get_affine_coordinates(group, point, x, y, NULL) == 1) {
+      PUSH_BN(x);
+      PUSH_BN(y);
+      return 2;
+    } else {
+      BN_free(x);
+      BN_free(y);
+      return 0;
+    }
+  } else {
+    /* Set coordinates */
+    BIGNUM *x = CHECK_OBJECT(3, BIGNUM, "openssl.bn");
+    BIGNUM *y = CHECK_OBJECT(4, BIGNUM, "openssl.bn");
+    
+    if (EC_POINT_set_affine_coordinates(group, point, x, y, NULL) == 1) {
+      return 0;
+    }
+    
+    return luaL_error(L, "EC_POINT_set_affine_coordinates failed");
+  }
+}
+
+/***
+Generate EC key pair from this group.
+
+@function generate_key
+@treturn ec_key generated EC key object or nil if failed
+*/
+static int openssl_group_generate_key(lua_State *L)
+{
+  const EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, MYTYPE);
+  
+  EC_KEY *ec = EC_KEY_new();
+  if (ec) {
+    int ret;
+    EC_KEY_set_group(ec, group);
+    ret = EC_KEY_generate_key(ec);
+    if (ret == 1) {
+      PUSH_OBJECT(ec, "openssl.ec_key");
+      return 1;
+    }
+    EC_KEY_free(ec);
+    return openssl_pushresult(L, ret);
+  }
+  return 0;
+}
+
+/***
 List all available elliptic curve names.
 
 @function list
@@ -504,6 +785,19 @@ static luaL_Reg group_methods[] = {
   {"seed",                  openssl_group_seed},
   {"parse",                 openssl_group_parse},
   {"equal",                 openssl_group_equal},
+  
+  /* Point operations on group */
+  {"point_new",             openssl_group_point_new},
+  {"point_dup",             openssl_group_point_dup},
+  {"point_equal",           openssl_group_point_equal},
+  {"point2oct",             openssl_group_point2oct},
+  {"oct2point",             openssl_group_oct2point},
+  {"point2bn",              openssl_group_point2bn},
+  {"bn2point",              openssl_group_bn2point},
+  {"point2hex",             openssl_group_point2hex},
+  {"hex2point",             openssl_group_hex2point},
+  {"affine_coordinates",    openssl_group_affine_coordinates},
+  {"generate_key",          openssl_group_generate_key},
   
   /* Metamethods */
   {"__eq",                  openssl_group_equal},

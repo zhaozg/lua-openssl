@@ -523,7 +523,7 @@ Convert EC point to string (internal, called by __tostring).
 */
 static int openssl_point_tostring(lua_State *L)
 {
-  lua_pushfstring(L, "ec_point: %p", lua_touserdata(L, 1));
+  lua_pushfstring(L, "openssl.ec_point: %p", lua_touserdata(L, 1));
   return 1;
 }
 
