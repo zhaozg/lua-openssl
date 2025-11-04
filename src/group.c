@@ -337,11 +337,6 @@ int openssl_group_equal(lua_State *L)
   return 1;
 }
 
-/***
-Free the EC group.
-
-@function free (internal, called by __gc)
-*/
 int openssl_group_free(lua_State *L)
 {
   EC_GROUP *g = CHECK_OBJECT(1, EC_GROUP, MYTYPE_GROUP);
@@ -349,12 +344,6 @@ int openssl_group_free(lua_State *L)
   return 0;
 }
 
-/***
-Convert EC group to string.
-
-@function tostring (internal, called by __tostring)
-@treturn string string representation of the group
-*/
 static int openssl_group_tostring(lua_State *L)
 {
   const EC_GROUP *g = CHECK_OBJECT(1, EC_GROUP, MYTYPE_GROUP);
@@ -687,7 +676,7 @@ static int openssl_point_is_on_curve(lua_State *L)
 /***
 Add two EC points.
 
-@function add
+@function point_add
 @tparam ec_group group the EC group
 @tparam ec_point a first point
 @tparam ec_point b second point
@@ -715,7 +704,7 @@ static int openssl_point_add(lua_State *L)
 /***
 Double an EC point.
 
-@function dbl
+@function point_dbl
 @tparam ec_group group the EC group
 @treturn ec_point result point (2 * point)
 */
@@ -740,7 +729,7 @@ static int openssl_point_dbl(lua_State *L)
 /***
 Invert an EC point.
 
-@function invert
+@function point_invert
 @tparam ec_group group the EC group
 @treturn ec_point self (inverted)
 */
@@ -763,7 +752,7 @@ static int openssl_point_invert(lua_State *L)
 /***
 Multiply EC point by a scalar.
 
-@function mul
+@function point_mul
 @tparam ec_group group the EC group
 @tparam bn|number n scalar multiplier
 @tparam[opt] ec_point q optional point for double scalar multiplication
