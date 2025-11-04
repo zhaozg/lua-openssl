@@ -72,8 +72,8 @@ function TestEC:TestEC()
   local ec2priv = pkey.new(ec2p)
   assert(ec2priv:is_private())
 
-  assert(openssl.ec.group(ec:parse().ec, 4, 1))
-  assert(openssl.ec.group(ec2, 4, 1))
+  assert(openssl.ec.group.new(ec:parse().ec, 4, 1))
+  assert(openssl.ec.group.new(ec2, 4, 1))
 end
 
 function TestEC:TestPrime256v1()
@@ -98,7 +98,7 @@ end
 
 if openssl.ec then
   local function ECConversionForm(form, flag)
-    local grp, pnt = openssl.ec.group("prime256v1", form, flag)
+    local grp, pnt = openssl.ec.group.new("prime256v1", form, flag)
     assert(grp:asn1_flag() == flag)
     assert(grp:point_conversion_form() == form)
 
@@ -205,7 +205,7 @@ if openssl.ec then
   end
 
   function TestEC:TestIssue262()
-    local grp = openssl.ec.group("prime256v1", "compressed", "named_curve")
+    local grp = openssl.ec.group.new("prime256v1", "compressed", "named_curve")
     local ec = grp:generate_key()
 
     local dgst = openssl.random(32)

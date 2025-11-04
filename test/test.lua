@@ -56,6 +56,8 @@ dofile("issue#185.lua")
 dofile("dh.lua")
 dofile("dsa.lua")
 dofile("rsa.lua")
+dofile("group.lua")
+dofile("point.lua")
 dofile("ec.lua")
 dofile("sm2.lua")
 
