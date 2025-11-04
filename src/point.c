@@ -48,11 +48,6 @@ int openssl_point_copy(lua_State *L)
   return 0;
 }
 
-/***
-Free the EC point (internal, called by __gc).
-
-@function free
-*/
 int openssl_point_free(lua_State *L)
 {
   EC_POINT *point = CHECK_OBJECT(1, EC_POINT, MYTYPE_POINT);

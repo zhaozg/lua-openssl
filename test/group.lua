@@ -220,3 +220,25 @@ function TestGroup:testMultipleCurves()
   end
 end
 
+function TestGroup:testPointMethods()
+  local g = self.p256
+  local p1 = g:point_new()
+  lu.assertNotNil(p1)
+  lu.assertTrue(g:is_at_infinity(p1))
+
+  local gen = g:generator()
+  local p2 = g:point_dup(gen)
+  lu.assertNotNil(p2)
+  lu.assertTrue(g:point_equal(gen, p2))
+
+  -- 不同点比较
+  local inf = g:point_new()
+  lu.assertFalse(g:point_equal(gen, inf))
+end
+
+function TestGroup:testGenerateKey()
+  local g = self.p256
+  local key = g:generate_key()
+  lu.assertNotNil(key)
+  lu.assertEquals(type(key), 'userdata')
+end

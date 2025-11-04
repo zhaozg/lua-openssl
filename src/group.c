@@ -580,6 +580,7 @@ Get or set affine coordinates of an EC point.
 
 @function affine_coordinates
 @tparam ec_group group the EC group
+@tparam ec_point point the EC point
 @tparam[opt] bn x x coordinate (for setting)
 @tparam[opt] bn y y coordinate (for setting)
 @treturn bn x coordinate (when getting)
@@ -589,13 +590,15 @@ int openssl_group_affine_coordinates(lua_State *L)
 {
   EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, MYTYPE_GROUP);
   EC_POINT *point = CHECK_OBJECT(2, EC_POINT, MYTYPE_POINT);
+  int ret = 0;
 
   if (lua_gettop(L) == 2) {
     /* Get coordinates */
     BIGNUM *x = BN_new();
     BIGNUM *y = BN_new();
 
-    if (EC_POINT_get_affine_coordinates(group, point, x, y, NULL) == 1) {
+    ret = EC_POINT_get_affine_coordinates(group, point, x, y, NULL);
+    if (ret == 1) {
       PUSH_BN(x);
       PUSH_BN(y);
       return 2;
@@ -608,14 +611,14 @@ int openssl_group_affine_coordinates(lua_State *L)
     /* Set coordinates */
     BIGNUM *x = CHECK_OBJECT(3, BIGNUM, "openssl.bn");
     BIGNUM *y = CHECK_OBJECT(4, BIGNUM, "openssl.bn");
-
-    if (EC_POINT_set_affine_coordinates(group, point, x, y, NULL) == 1) {
+    ret = EC_POINT_set_affine_coordinates(group, point, x, y, NULL);
+    if (ret == 1) {
       lua_pushvalue(L, 2);
       return 1;
     }
-
-    return luaL_error(L, "EC_POINT_set_affine_coordinates failed");
   }
+
+  return openssl_pushresult(L, ret);
 }
 
 /***
