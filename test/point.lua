@@ -1,7 +1,7 @@
 local lu = require("luaunit")
 local openssl = require("openssl")
-local group = openssl.group
-local point = openssl.point
+local group = openssl.ec.group
+local point = openssl.ec.point
 local bn = openssl.bn
 
 TestPoint = {}

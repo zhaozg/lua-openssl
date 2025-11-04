@@ -9,9 +9,12 @@ ec module to create EC keys and do EC key processes.
 
 #include "openssl.h"
 #include "private.h"
-#include "ec_group_point.h"
 
 #if !defined(OPENSSL_NO_EC)
+
+/* Include EC_GROUP and EC_POINT modules */
+#include "group.c"
+#include "point.c"
 
 /***
 get or set affine coordinates of an elliptic curve point
@@ -981,6 +984,18 @@ luaopen_ec(lua_State *L)
 
   lua_newtable(L);
   luaL_setfuncs(L, R, 0);
+  
+  /* Register group sub-module */
+  auxiliar_newclass(L, MYTYPE_GROUP, group_methods);
+  lua_newtable(L);
+  luaL_setfuncs(L, group_functions, 0);
+  lua_setfield(L, -2, "group");
+  
+  /* Register point sub-module */
+  auxiliar_newclass(L, MYTYPE_POINT, point_methods);
+  lua_newtable(L);
+  luaL_setfuncs(L, point_functions, 0);
+  lua_setfield(L, -2, "point");
 
   return 1;
 }

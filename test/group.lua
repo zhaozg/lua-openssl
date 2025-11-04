@@ -1,6 +1,6 @@
 local lu = require("luaunit")
 local openssl = require("openssl")
-local group = openssl.group
+local group = openssl.ec.group
 local bn = openssl.bn
 
 TestGroup = {}

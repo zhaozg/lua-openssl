@@ -4,24 +4,23 @@ EC_POINT module for Lua OpenSSL binding.
 This module provides a complete wrapper for OpenSSL's EC_POINT operations,
 enabling elliptic curve point mathematical operations.
 
-@module point
+@module ec.point
 @usage
-  point = require('openssl').point
+  point = require('openssl').ec.point
 */
 
-#include "openssl.h"
-#include "private.h"
+/* This file is included in ec.c */
 
-#if !defined(OPENSSL_NO_EC)
-#include <openssl/ec.h>
-#include <openssl/bn.h>
+#define MYNAME_POINT "ec.point"
+#define MYVERSION_POINT MYNAME_POINT " library for " LUA_VERSION " / Nov 2024"
+#define MYTYPE_POINT "openssl.ec_point"
+
 
 #define MYNAME "point"
 #define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2024"
-#define MYTYPE "openssl.ec_point"
+#define MYTYPE_POINT "openssl.ec_point"
 
 /* Forward declaration for point conversion form helper */
-static point_conversion_form_t openssl_to_point_conversion_form(lua_State *L, int i, const char *defval);
 
 /***
 Create a new EC point on a given group.
@@ -41,7 +40,7 @@ static int openssl_point_new(lua_State *L)
   EC_POINT *point = EC_POINT_new(group);
   
   if (point) {
-    PUSH_OBJECT(point, MYTYPE);
+    PUSH_OBJECT(point, MYTYPE_POINT);
     return 1;
   }
   
@@ -59,11 +58,11 @@ Duplicate an EC point.
 static int openssl_point_dup(lua_State *L)
 {
   const EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, "openssl.ec_group");
-  const EC_POINT *point = CHECK_OBJECT(2, EC_POINT, MYTYPE);
+  const EC_POINT *point = CHECK_OBJECT(2, EC_POINT, MYTYPE_POINT);
   EC_POINT *dup = EC_POINT_dup(point, group);
   
   if (dup) {
-    PUSH_OBJECT(dup, MYTYPE);
+    PUSH_OBJECT(dup, MYTYPE_POINT);
     return 1;
   }
   
@@ -80,8 +79,8 @@ Copy one EC point to another.
 */
 int openssl_point_copy(lua_State *L)
 {
-  EC_POINT *dest = CHECK_OBJECT(1, EC_POINT, MYTYPE);
-  const EC_POINT *src = CHECK_OBJECT(2, EC_POINT, MYTYPE);
+  EC_POINT *dest = CHECK_OBJECT(1, EC_POINT, MYTYPE_POINT);
+  const EC_POINT *src = CHECK_OBJECT(2, EC_POINT, MYTYPE_POINT);
   
   if (EC_POINT_copy(dest, src)) {
     lua_pushvalue(L, 1);
@@ -101,7 +100,7 @@ Set EC point to infinity.
 static int openssl_point_set_to_infinity(lua_State *L)
 {
   const EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, "openssl.ec_group");
-  EC_POINT *point = CHECK_OBJECT(2, EC_POINT, MYTYPE);
+  EC_POINT *point = CHECK_OBJECT(2, EC_POINT, MYTYPE_POINT);
   
   if (EC_POINT_set_to_infinity(group, point)) {
     lua_pushvalue(L, 2);
@@ -121,7 +120,7 @@ Check if EC point is at infinity.
 static int openssl_point_is_at_infinity(lua_State *L)
 {
   const EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, "openssl.ec_group");
-  const EC_POINT *point = CHECK_OBJECT(2, EC_POINT, MYTYPE);
+  const EC_POINT *point = CHECK_OBJECT(2, EC_POINT, MYTYPE_POINT);
   
   lua_pushboolean(L, EC_POINT_is_at_infinity(group, point));
   return 1;
@@ -137,7 +136,7 @@ Check if EC point is on the curve.
 static int openssl_point_is_on_curve(lua_State *L)
 {
   const EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, "openssl.ec_group");
-  const EC_POINT *point = CHECK_OBJECT(2, EC_POINT, MYTYPE);
+  const EC_POINT *point = CHECK_OBJECT(2, EC_POINT, MYTYPE_POINT);
   BN_CTX *ctx = BN_CTX_new();
   int ret = EC_POINT_is_on_curve(group, point, ctx);
   BN_CTX_free(ctx);
@@ -158,8 +157,8 @@ Compare two EC points for equality.
 static int openssl_point_equal(lua_State *L)
 {
   const EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, "openssl.ec_group");
-  const EC_POINT *a = CHECK_OBJECT(2, EC_POINT, MYTYPE);
-  const EC_POINT *b = CHECK_OBJECT(3, EC_POINT, MYTYPE);
+  const EC_POINT *a = CHECK_OBJECT(2, EC_POINT, MYTYPE_POINT);
+  const EC_POINT *b = CHECK_OBJECT(3, EC_POINT, MYTYPE_POINT);
   BN_CTX *ctx = BN_CTX_new();
   int ret = EC_POINT_cmp(group, a, b, ctx);
   BN_CTX_free(ctx);
@@ -181,7 +180,7 @@ Get or set affine coordinates of an EC point.
 static int openssl_point_affine_coordinates(lua_State *L)
 {
   EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, "openssl.ec_group");
-  EC_POINT *point = CHECK_OBJECT(2, EC_POINT, MYTYPE);
+  EC_POINT *point = CHECK_OBJECT(2, EC_POINT, MYTYPE_POINT);
   
   if (lua_gettop(L) == 2) {
     /* Get coordinates */
@@ -223,14 +222,14 @@ Add two EC points.
 static int openssl_point_add(lua_State *L)
 {
   const EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, "openssl.ec_group");
-  const EC_POINT *a = CHECK_OBJECT(2, EC_POINT, MYTYPE);
-  const EC_POINT *b = CHECK_OBJECT(3, EC_POINT, MYTYPE);
+  const EC_POINT *a = CHECK_OBJECT(2, EC_POINT, MYTYPE_POINT);
+  const EC_POINT *b = CHECK_OBJECT(3, EC_POINT, MYTYPE_POINT);
   EC_POINT *r = EC_POINT_new(group);
   BN_CTX *ctx = BN_CTX_new();
   
   if (EC_POINT_add(group, r, a, b, ctx)) {
     BN_CTX_free(ctx);
-    PUSH_OBJECT(r, MYTYPE);
+    PUSH_OBJECT(r, MYTYPE_POINT);
     return 1;
   }
   
@@ -249,13 +248,13 @@ Double an EC point.
 static int openssl_point_dbl(lua_State *L)
 {
   const EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, "openssl.ec_group");
-  const EC_POINT *point = CHECK_OBJECT(2, EC_POINT, MYTYPE);
+  const EC_POINT *point = CHECK_OBJECT(2, EC_POINT, MYTYPE_POINT);
   EC_POINT *r = EC_POINT_new(group);
   BN_CTX *ctx = BN_CTX_new();
   
   if (EC_POINT_dbl(group, r, point, ctx)) {
     BN_CTX_free(ctx);
-    PUSH_OBJECT(r, MYTYPE);
+    PUSH_OBJECT(r, MYTYPE_POINT);
     return 1;
   }
   
@@ -274,7 +273,7 @@ Invert an EC point.
 static int openssl_point_invert(lua_State *L)
 {
   const EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, "openssl.ec_group");
-  EC_POINT *point = CHECK_OBJECT(2, EC_POINT, MYTYPE);
+  EC_POINT *point = CHECK_OBJECT(2, EC_POINT, MYTYPE_POINT);
   BN_CTX *ctx = BN_CTX_new();
   
   if (EC_POINT_invert(group, point, ctx)) {
@@ -300,7 +299,7 @@ Multiply EC point by a scalar.
 static int openssl_point_mul(lua_State *L)
 {
   const EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, "openssl.ec_group");
-  const EC_POINT *point = CHECK_OBJECT(2, EC_POINT, MYTYPE);
+  const EC_POINT *point = CHECK_OBJECT(2, EC_POINT, MYTYPE_POINT);
   BIGNUM *n = NULL;
   const EC_POINT *q = NULL;
   const BIGNUM *m = NULL;
@@ -318,7 +317,7 @@ static int openssl_point_mul(lua_State *L)
   
   /* Check for double scalar multiplication */
   if (!lua_isnone(L, 4)) {
-    q = CHECK_OBJECT(4, EC_POINT, MYTYPE);
+    q = CHECK_OBJECT(4, EC_POINT, MYTYPE_POINT);
     m = CHECK_OBJECT(5, BIGNUM, "openssl.bn");
     ret = EC_POINT_mul(group, r, NULL, point, n, ctx);
     if (ret) {
@@ -339,7 +338,7 @@ static int openssl_point_mul(lua_State *L)
   BN_CTX_free(ctx);
   
   if (ret) {
-    PUSH_OBJECT(r, MYTYPE);
+    PUSH_OBJECT(r, MYTYPE_POINT);
     return 1;
   }
   
@@ -363,7 +362,7 @@ static int openssl_point_oct2point(lua_State *L)
   EC_POINT *point = EC_POINT_new(group);
   
   if (EC_POINT_oct2point(group, point, oct, size, NULL) == 1) {
-    PUSH_OBJECT(point, MYTYPE);
+    PUSH_OBJECT(point, MYTYPE_POINT);
     return 1;
   }
   
@@ -383,7 +382,7 @@ Convert EC point to octet string.
 static int openssl_point_point2oct(lua_State *L)
 {
   const EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, "openssl.ec_group");
-  const EC_POINT *point = CHECK_OBJECT(2, EC_POINT, MYTYPE);
+  const EC_POINT *point = CHECK_OBJECT(2, EC_POINT, MYTYPE_POINT);
   point_conversion_form_t form = lua_isnone(L, 3)
                                    ? EC_GROUP_get_point_conversion_form(group)
                                    : openssl_to_point_conversion_form(L, 3, "uncompressed");
@@ -419,7 +418,7 @@ static int openssl_point_bn2point(lua_State *L)
   EC_POINT *point = EC_POINT_bn2point(group, bn, NULL, NULL);
   
   if (point) {
-    PUSH_OBJECT(point, MYTYPE);
+    PUSH_OBJECT(point, MYTYPE_POINT);
     return 1;
   }
   
@@ -438,7 +437,7 @@ Convert EC point to BIGNUM.
 static int openssl_point_point2bn(lua_State *L)
 {
   const EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, "openssl.ec_group");
-  const EC_POINT *point = CHECK_OBJECT(2, EC_POINT, MYTYPE);
+  const EC_POINT *point = CHECK_OBJECT(2, EC_POINT, MYTYPE_POINT);
   point_conversion_form_t form = lua_isnone(L, 3)
                                    ? EC_GROUP_get_point_conversion_form(group)
                                    : openssl_to_point_conversion_form(L, 3, "uncompressed");
@@ -468,7 +467,7 @@ static int openssl_point_hex2point(lua_State *L)
   EC_POINT *point = EC_POINT_hex2point(group, hex, NULL, NULL);
   
   if (point) {
-    PUSH_OBJECT(point, MYTYPE);
+    PUSH_OBJECT(point, MYTYPE_POINT);
     return 1;
   }
   
@@ -487,7 +486,7 @@ Convert EC point to hexadecimal string.
 static int openssl_point_point2hex(lua_State *L)
 {
   const EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, "openssl.ec_group");
-  const EC_POINT *point = CHECK_OBJECT(2, EC_POINT, MYTYPE);
+  const EC_POINT *point = CHECK_OBJECT(2, EC_POINT, MYTYPE_POINT);
   point_conversion_form_t form = lua_isnone(L, 3)
                                    ? EC_GROUP_get_point_conversion_form(group)
                                    : openssl_to_point_conversion_form(L, 3, "uncompressed");
@@ -510,7 +509,7 @@ Free the EC point (internal, called by __gc).
 */
 int openssl_point_free(lua_State *L)
 {
-  EC_POINT *point = CHECK_OBJECT(1, EC_POINT, MYTYPE);
+  EC_POINT *point = CHECK_OBJECT(1, EC_POINT, MYTYPE_POINT);
   EC_POINT_free(point);
   return 0;
 }
@@ -528,23 +527,6 @@ static int openssl_point_tostring(lua_State *L)
 }
 
 /* Helper function */
-static point_conversion_form_t openssl_to_point_conversion_form(lua_State *L, int i, const char *defval)
-{
-  const char *options[] = {"compressed", "uncompressed", "hybrid", NULL};
-  int f = luaL_checkoption(L, i, defval, options);
-  point_conversion_form_t form = 0;
-  
-  if (f == 0)
-    form = POINT_CONVERSION_COMPRESSED;
-  else if (f == 1)
-    form = POINT_CONVERSION_UNCOMPRESSED;
-  else if (f == 2)
-    form = POINT_CONVERSION_HYBRID;
-  else
-    luaL_argerror(L, i, "invalid parameter, only support 'compressed', 'uncompressed' or 'hybrid'");
-  
-  return form;
-}
 
 /* Method table */
 static luaL_Reg point_methods[] = {
@@ -597,23 +579,3 @@ static luaL_Reg point_functions[] = {
   {NULL,                   NULL}
 };
 
-/***
-Open the EC point library.
-
-@function luaopen_point
-*/
-int luaopen_point(lua_State *L)
-{
-  auxiliar_newclass(L, MYTYPE, point_methods);
-  
-  lua_newtable(L);
-  luaL_setfuncs(L, point_functions, 0);
-  
-  lua_pushliteral(L, "version");
-  lua_pushliteral(L, MYVERSION);
-  lua_settable(L, -3);
-  
-  return 1;
-}
-
-#endif /* OPENSSL_NO_EC */

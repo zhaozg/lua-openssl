@@ -4,21 +4,16 @@ EC_GROUP module for Lua OpenSSL binding.
 This module provides a complete wrapper for OpenSSL's EC_GROUP operations,
 enabling elliptic curve group mathematical operations similar to BIGNUM.
 
-@module group
+@module ec.group
 @usage
-  group = require('openssl').group
+  group = require('openssl').ec.group
 */
 
-#include "openssl.h"
-#include "private.h"
+/* This file is included in ec.c */
 
-#if !defined(OPENSSL_NO_EC)
-#include <openssl/ec.h>
-#include <openssl/engine.h>
-
-#define MYNAME "group"
-#define MYVERSION MYNAME " library for " LUA_VERSION " / Nov 2024"
-#define MYTYPE "openssl.ec_group"
+#define MYNAME_GROUP "ec.group"
+#define MYVERSION_GROUP MYNAME_GROUP " library for " LUA_VERSION " / Nov 2024"
+#define MYTYPE_GROUP "openssl.ec_group"
 
 /* Forward declarations */
 int openssl_push_group_asn1_flag(lua_State *L, int flag);
@@ -58,7 +53,7 @@ static int openssl_group_new(lua_State *L)
     if (g) {
       EC_GROUP_set_asn1_flag(g, OPENSSL_EC_NAMED_CURVE);
       EC_GROUP_set_point_conversion_form(g, POINT_CONVERSION_UNCOMPRESSED);
-      PUSH_OBJECT(g, MYTYPE);
+      PUSH_OBJECT(g, MYTYPE_GROUP);
       return 1;
     }
   }
@@ -74,11 +69,11 @@ Duplicate an EC_GROUP.
 */
 static int openssl_group_dup(lua_State *L)
 {
-  const EC_GROUP *g = CHECK_OBJECT(1, EC_GROUP, MYTYPE);
+  const EC_GROUP *g = CHECK_OBJECT(1, EC_GROUP, MYTYPE_GROUP);
   EC_GROUP *dup = EC_GROUP_dup(g);
   
   if (dup) {
-    PUSH_OBJECT(dup, MYTYPE);
+    PUSH_OBJECT(dup, MYTYPE_GROUP);
     return 1;
   }
   
@@ -93,7 +88,7 @@ Get the generator point of the group.
 */
 static int openssl_group_generator(lua_State *L)
 {
-  const EC_GROUP *g = CHECK_OBJECT(1, EC_GROUP, MYTYPE);
+  const EC_GROUP *g = CHECK_OBJECT(1, EC_GROUP, MYTYPE_GROUP);
   const EC_POINT *p = EC_GROUP_get0_generator(g);
   
   if (p) {
@@ -113,7 +108,7 @@ Get the order of the group.
 */
 static int openssl_group_order(lua_State *L)
 {
-  const EC_GROUP *g = CHECK_OBJECT(1, EC_GROUP, MYTYPE);
+  const EC_GROUP *g = CHECK_OBJECT(1, EC_GROUP, MYTYPE_GROUP);
   BIGNUM *order = BN_new();
   BN_CTX *ctx = BN_CTX_new();
   
@@ -136,7 +131,7 @@ Get the cofactor of the group.
 */
 static int openssl_group_cofactor(lua_State *L)
 {
-  const EC_GROUP *g = CHECK_OBJECT(1, EC_GROUP, MYTYPE);
+  const EC_GROUP *g = CHECK_OBJECT(1, EC_GROUP, MYTYPE_GROUP);
   BIGNUM *cofactor = BN_new();
   BN_CTX *ctx = BN_CTX_new();
   
@@ -159,7 +154,7 @@ Get the degree of the group (field size in bits).
 */
 static int openssl_group_degree(lua_State *L)
 {
-  const EC_GROUP *g = CHECK_OBJECT(1, EC_GROUP, MYTYPE);
+  const EC_GROUP *g = CHECK_OBJECT(1, EC_GROUP, MYTYPE_GROUP);
   lua_pushinteger(L, EC_GROUP_get_degree(g));
   return 1;
 }
@@ -172,7 +167,7 @@ Get the curve name NID.
 */
 static int openssl_group_curve_name(lua_State *L)
 {
-  const EC_GROUP *g = CHECK_OBJECT(1, EC_GROUP, MYTYPE);
+  const EC_GROUP *g = CHECK_OBJECT(1, EC_GROUP, MYTYPE_GROUP);
   lua_pushinteger(L, EC_GROUP_get_curve_name(g));
   return 1;
 }
@@ -187,7 +182,7 @@ Get or set the ASN1 flag.
 */
 static int openssl_group_asn1_flag(lua_State *L)
 {
-  EC_GROUP *g = CHECK_OBJECT(1, EC_GROUP, MYTYPE);
+  EC_GROUP *g = CHECK_OBJECT(1, EC_GROUP, MYTYPE_GROUP);
   int asn1_flag;
   
   if (lua_isnone(L, 2)) {
@@ -218,7 +213,7 @@ Get or set the point conversion form.
 */
 int openssl_group_point_conversion_form(lua_State *L)
 {
-  EC_GROUP *g = CHECK_OBJECT(1, EC_GROUP, MYTYPE);
+  EC_GROUP *g = CHECK_OBJECT(1, EC_GROUP, MYTYPE_GROUP);
   point_conversion_form_t form;
   
   if (lua_isnone(L, 2)) {
@@ -247,7 +242,7 @@ Get curve parameters (p, a, b).
 */
 static int openssl_group_curve(lua_State *L)
 {
-  const EC_GROUP *g = CHECK_OBJECT(1, EC_GROUP, MYTYPE);
+  const EC_GROUP *g = CHECK_OBJECT(1, EC_GROUP, MYTYPE_GROUP);
   BIGNUM *a = BN_new();
   BIGNUM *b = BN_new();
   BIGNUM *p = BN_new();
@@ -277,7 +272,7 @@ Get the seed value for the group.
 */
 static int openssl_group_seed(lua_State *L)
 {
-  const EC_GROUP *g = CHECK_OBJECT(1, EC_GROUP, MYTYPE);
+  const EC_GROUP *g = CHECK_OBJECT(1, EC_GROUP, MYTYPE_GROUP);
   const unsigned char *seed = EC_GROUP_get0_seed(g);
   size_t seed_len = EC_GROUP_get_seed_len(g);
   
@@ -298,7 +293,7 @@ Parse the EC group to extract all parameters.
 */
 static int openssl_group_parse(lua_State *L)
 {
-  const EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, MYTYPE);
+  const EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, MYTYPE_GROUP);
   const EC_POINT *generator = EC_GROUP_get0_generator(group);
   BN_CTX *ctx = BN_CTX_new();
   BIGNUM *a, *b, *p, *order, *cofactor;
@@ -354,8 +349,8 @@ Compare two EC groups for equality.
 */
 int openssl_group_equal(lua_State *L)
 {
-  const EC_GROUP *a = CHECK_OBJECT(1, EC_GROUP, MYTYPE);
-  const EC_GROUP *b = CHECK_OBJECT(2, EC_GROUP, MYTYPE);
+  const EC_GROUP *a = CHECK_OBJECT(1, EC_GROUP, MYTYPE_GROUP);
+  const EC_GROUP *b = CHECK_OBJECT(2, EC_GROUP, MYTYPE_GROUP);
   
   lua_pushboolean(L, EC_GROUP_cmp(a, b, NULL) == 0);
   return 1;
@@ -368,7 +363,7 @@ Free the EC group.
 */
 int openssl_group_free(lua_State *L)
 {
-  EC_GROUP *g = CHECK_OBJECT(1, EC_GROUP, MYTYPE);
+  EC_GROUP *g = CHECK_OBJECT(1, EC_GROUP, MYTYPE_GROUP);
   EC_GROUP_free(g);
   return 0;
 }
@@ -381,7 +376,7 @@ Convert EC group to string.
 */
 static int openssl_group_tostring(lua_State *L)
 {
-  const EC_GROUP *g = CHECK_OBJECT(1, EC_GROUP, MYTYPE);
+  const EC_GROUP *g = CHECK_OBJECT(1, EC_GROUP, MYTYPE_GROUP);
   int nid = EC_GROUP_get_curve_name(g);
   const char *name = OBJ_nid2sn(nid);
   
@@ -462,7 +457,7 @@ Create a new EC point on this group.
 */
 static int openssl_group_point_new(lua_State *L)
 {
-  EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, MYTYPE);
+  EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, MYTYPE_GROUP);
   EC_POINT *point = EC_POINT_new(group);
   
   if (point) {
@@ -482,7 +477,7 @@ Duplicate an EC point on this group.
 */
 static int openssl_group_point_dup(lua_State *L)
 {
-  const EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, MYTYPE);
+  const EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, MYTYPE_GROUP);
   const EC_POINT *point = CHECK_OBJECT(2, EC_POINT, "openssl.ec_point");
   EC_POINT *dup = EC_POINT_dup(point, group);
   
@@ -504,7 +499,7 @@ Compare two EC points for equality.
 */
 int openssl_group_point_equal(lua_State *L)
 {
-  const EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, MYTYPE);
+  const EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, MYTYPE_GROUP);
   const EC_POINT *a = CHECK_OBJECT(2, EC_POINT, "openssl.ec_point");
   const EC_POINT *b = CHECK_OBJECT(3, EC_POINT, "openssl.ec_point");
   BN_CTX *ctx = BN_CTX_new();
@@ -525,7 +520,7 @@ Convert EC point to octet string.
 */
 int openssl_group_point2oct(lua_State *L)
 {
-  const EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, MYTYPE);
+  const EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, MYTYPE_GROUP);
   const EC_POINT *point = CHECK_OBJECT(2, EC_POINT, "openssl.ec_point");
   point_conversion_form_t form = lua_isnone(L, 3)
                                    ? EC_GROUP_get_point_conversion_form(group)
@@ -556,7 +551,7 @@ Convert octet string to EC point.
 */
 int openssl_group_oct2point(lua_State *L)
 {
-  const EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, MYTYPE);
+  const EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, MYTYPE_GROUP);
   size_t size = 0;
   const unsigned char *oct = (const unsigned char *)luaL_checklstring(L, 2, &size);
   EC_POINT *point = EC_POINT_new(group);
@@ -581,7 +576,7 @@ Convert EC point to BIGNUM.
 */
 int openssl_group_point2bn(lua_State *L)
 {
-  const EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, MYTYPE);
+  const EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, MYTYPE_GROUP);
   const EC_POINT *point = CHECK_OBJECT(2, EC_POINT, "openssl.ec_point");
   point_conversion_form_t form = lua_isnone(L, 3)
                                    ? EC_GROUP_get_point_conversion_form(group)
@@ -606,7 +601,7 @@ Convert BIGNUM to EC point.
 */
 int openssl_group_bn2point(lua_State *L)
 {
-  const EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, MYTYPE);
+  const EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, MYTYPE_GROUP);
   const BIGNUM *bn = CHECK_OBJECT(2, BIGNUM, "openssl.bn");
   EC_POINT *point = EC_POINT_bn2point(group, bn, NULL, NULL);
   
@@ -629,7 +624,7 @@ Convert EC point to hexadecimal string.
 */
 int openssl_group_point2hex(lua_State *L)
 {
-  const EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, MYTYPE);
+  const EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, MYTYPE_GROUP);
   const EC_POINT *point = CHECK_OBJECT(2, EC_POINT, "openssl.ec_point");
   point_conversion_form_t form = lua_isnone(L, 3)
                                    ? EC_GROUP_get_point_conversion_form(group)
@@ -655,7 +650,7 @@ Convert hexadecimal string to EC point.
 */
 int openssl_group_hex2point(lua_State *L)
 {
-  const EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, MYTYPE);
+  const EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, MYTYPE_GROUP);
   const char *hex = luaL_checkstring(L, 2);
   EC_POINT *point = EC_POINT_hex2point(group, hex, NULL, NULL);
   
@@ -680,7 +675,7 @@ Get or set affine coordinates of an EC point.
 */
 int openssl_group_affine_coordinates(lua_State *L)
 {
-  EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, MYTYPE);
+  EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, MYTYPE_GROUP);
   EC_POINT *point = CHECK_OBJECT(2, EC_POINT, "openssl.ec_point");
   
   if (lua_gettop(L) == 2) {
@@ -718,7 +713,7 @@ Generate EC key pair from this group.
 */
 int openssl_group_generate_key(lua_State *L)
 {
-  const EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, MYTYPE);
+  const EC_GROUP *group = CHECK_OBJECT(1, EC_GROUP, MYTYPE_GROUP);
   
   EC_KEY *ec = EC_KEY_new();
   if (ec) {
@@ -815,23 +810,3 @@ static luaL_Reg group_functions[] = {
   {NULL,   NULL}
 };
 
-/***
-Open the EC group library.
-
-@function luaopen_group
-*/
-int luaopen_group(lua_State *L)
-{
-  auxiliar_newclass(L, MYTYPE, group_methods);
-  
-  lua_newtable(L);
-  luaL_setfuncs(L, group_functions, 0);
-  
-  lua_pushliteral(L, "version");
-  lua_pushliteral(L, MYVERSION);
-  lua_settable(L, -3);
-  
-  return 1;
-}
-
-#endif /* OPENSSL_NO_EC */
