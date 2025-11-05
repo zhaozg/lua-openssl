@@ -775,8 +775,14 @@ static int openssl_point_mul(lua_State *L)
 
   /* Get scalar n */
   if (lua_isnumber(L, 3)) {
+    lua_Integer num = lua_tointeger(L, 3);
     n = BN_new();
-    BN_set_word(n, lua_tointeger(L, 3));
+    if (num < 0) {
+      BN_set_word(n, -num);
+      BN_set_negative(n, 1);
+    } else {
+      BN_set_word(n, num);
+    }
   } else {
     n = CHECK_OBJECT(3, BIGNUM, "openssl.bn");
   }

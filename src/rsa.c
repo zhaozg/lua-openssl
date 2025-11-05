@@ -290,6 +290,8 @@ openssl_rsa_generate_key(lua_State *L)
 
   BIGNUM *E = BN_new();
   RSA    *rsa = eng ? RSA_new_method(eng) : RSA_new();
+
+  luaL_argcheck(L, e > 0, 2, "e must be positive");
   BN_set_word(E, e);
 
   ret = RSA_generate_key_ex(rsa, bits, E, NULL);

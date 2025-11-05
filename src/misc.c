@@ -131,9 +131,16 @@ BN_get(lua_State *L, int i)
 {
   BIGNUM *x = BN_new();
   switch (lua_type(L, i)) {
-  case LUA_TNUMBER:
-    BN_set_word(x, lua_tointeger(L, i));
+  case LUA_TNUMBER: {
+    lua_Integer num = lua_tointeger(L, 3);
+    if (num < 0) {
+      BN_set_word(x, -num);
+      BN_set_negative(x, 1);
+    } else {
+      BN_set_word(x, num);
+    }
     break;
+  }
   case LUA_TSTRING: {
     const char *s = lua_tostring(L, i);
     if (s[0] == 'X' || s[0] == 'x')

@@ -370,6 +370,8 @@ static int openssl_pkey_new(lua_State *L)
       int     e = luaL_optint(L, 3, 65537);
       ENGINE *eng = lua_isnoneornil(L, 4) ? NULL : CHECK_OBJECT(4, ENGINE, "openssl.engine");
       BIGNUM *E = BN_new();
+
+      luaL_argcheck(L, e > 0, 3, "e must be positive integer");
       BN_set_word(E, e);
 
       RSA *rsa = eng ? RSA_new_method(eng) : RSA_new();

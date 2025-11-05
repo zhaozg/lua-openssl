@@ -327,6 +327,16 @@ function TestPoint:testPointAdditionCommutative()
   lu.assertTrue(point.equal(g, p1, p2))
 end
 
+function TestPoint:testPointMulWithNegNumber()
+  local g = self.g
+
+  local gen = g:generator()
+  local negGen = point.mul(g, gen, -1)
+  local should_be_zero = point.add(g, gen, negGen)
+  assert(point.is_at_infinity(g, should_be_zero))
+  assert("00" == g:point2hex(should_be_zero))
+end
+
 function TestPoint:testPointAdditionAssociative()
   local g = self.g
   local gen = g:generator()
