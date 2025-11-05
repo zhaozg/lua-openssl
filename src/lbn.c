@@ -1,11 +1,17 @@
 /***
-big-number library for Lua 5.1 based on OpenSSL bn
+big-number library for Lua 5.x based on OpenSSL BIGNUM
+
+This module provides a complete wrapper for OpenSSL's BIGNUM operations,
+enabling arbitrary precision arithmetic similar to BIGNUM.
 
 @author Luiz Henrique de Figueiredo <lhf@tecgraf.puc-rio.br>
 @license This code is hereby placed in the public domain.
 @warning verson 11 Nov 2010 22:56:45
-*/
 
+@module bn
+@usage
+  bn = require('openssl').bn
+*/
 #include <openssl/bn.h>
 #include <openssl/crypto.h>
 #include <openssl/err.h>
@@ -64,6 +70,13 @@ Bget(lua_State *L, int i)
   }
 }
 
+/**
+ * bits(x)
+ * @function bits
+ * @param x big number
+ * @return integer number of bits
+ * @usage bits = bn.bits(x)
+ */
 static int
 Bbits(lua_State *L) /** bits(x) */
 {
@@ -72,6 +85,13 @@ Bbits(lua_State *L) /** bits(x) */
   return 1;
 }
 
+/**
+ * tostring(x)
+ * @function tostring
+ * @param x big number
+ * @return string decimal representation
+ * @usage s = bn.tostring(x)
+ */
 static int
 Btostring(lua_State *L) /** tostring(x) */
 {
@@ -82,6 +102,13 @@ Btostring(lua_State *L) /** tostring(x) */
   return 1;
 }
 
+/**
+ * tohex(x)
+ * @function tohex
+ * @param x big number
+ * @return string hexadecimal representation
+ * @usage s = bn.tohex(x)
+ */
 static int
 Btohex(lua_State *L) /** tohex(x) */
 {
@@ -92,6 +119,14 @@ Btohex(lua_State *L) /** tohex(x) */
   return 1;
 }
 
+/**
+ * totext(x[, n])
+ * @function totext
+ * @param x big number
+ * @param[opt] n number of bytes
+ * @return string binary representation
+ * @usage t = bn.totext(x)
+ */
 static int
 Btotext(lua_State *L) /** totext(x) */
 {
@@ -108,6 +143,13 @@ Btotext(lua_State *L) /** totext(x) */
   return 1;
 }
 
+/**
+ * tonumber(x)
+ * @function tonumber
+ * @param x big number
+ * @return number
+ * @usage n = bn.tonumber(x)
+ */
 static int
 Btonumber(lua_State *L) /** tonumber(x) */
 {
@@ -116,6 +158,13 @@ Btonumber(lua_State *L) /** tonumber(x) */
   return 1;
 }
 
+/**
+ * iszero(x)
+ * @function iszero
+ * @param x big number
+ * @return boolean true if x == 0
+ * @usage ok = bn.iszero(x)
+ */
 static int
 Biszero(lua_State *L) /** iszero(x) */
 {
@@ -124,6 +173,13 @@ Biszero(lua_State *L) /** iszero(x) */
   return 1;
 }
 
+/**
+ * isone(x)
+ * @function isone
+ * @param x big number
+ * @return boolean true if x == 1
+ * @usage ok = bn.isone(x)
+ */
 static int
 Bisone(lua_State *L) /** isone(x) */
 {
@@ -132,6 +188,13 @@ Bisone(lua_State *L) /** isone(x) */
   return 1;
 }
 
+/**
+ * isodd(x)
+ * @function isodd
+ * @param x big number
+ * @return boolean true if x is odd
+ * @usage ok = bn.isodd(x)
+ */
 static int
 Bisodd(lua_State *L) /** isodd(x) */
 {
@@ -140,6 +203,13 @@ Bisodd(lua_State *L) /** isodd(x) */
   return 1;
 }
 
+/**
+ * isneg(x)
+ * @function isneg
+ * @param x big number
+ * @return boolean true if x < 0
+ * @usage ok = bn.isneg(x)
+ */
 static int
 Bisneg(lua_State *L) /** isneg(x) */
 {
@@ -148,6 +218,13 @@ Bisneg(lua_State *L) /** isneg(x) */
   return 1;
 }
 
+/**
+ * number(x)
+ * @function number
+ * @param x number or string
+ * @return big number
+ * @usage x = bn.number(123)
+ */
 static int
 Bnumber(lua_State *L) /** number(x) */
 {
@@ -156,6 +233,13 @@ Bnumber(lua_State *L) /** number(x) */
   return 1;
 }
 
+/**
+ * text(t)
+ * @function text
+ * @param t string binary representation
+ * @return big number
+ * @usage x = bn.text(t)
+ */
 static int
 Btext(lua_State *L) /** text(t) */
 {
@@ -166,6 +250,14 @@ Btext(lua_State *L) /** text(t) */
   return 1;
 }
 
+/**
+ * compare(x, y)
+ * @function compare
+ * @param x big number
+ * @param y big number
+ * @return integer (-1, 0, 1)
+ * @usage cmp = bn.compare(x, y)
+ */
 static int
 Bcompare(lua_State *L) /** compare(x,y) */
 {
@@ -193,6 +285,13 @@ Blt(lua_State *L)
   return 1;
 }
 
+/**
+ * sqr(x)
+ * @function sqr
+ * @param x big number
+ * @return big number x^2
+ * @usage y = bn.sqr(x)
+ */
 static int
 Bsqr(lua_State *L) /** sqr(x) */
 {
@@ -204,6 +303,13 @@ Bsqr(lua_State *L) /** sqr(x) */
   return 1;
 }
 
+/**
+ * neg(x)
+ * @function neg
+ * @param x big number
+ * @return big number -x
+ * @usage y = bn.neg(x)
+ */
 static int
 Bneg(lua_State *L) /** neg(x) */
 {
@@ -216,6 +322,13 @@ Bneg(lua_State *L) /** neg(x) */
   return 1;
 }
 
+/**
+ * abs(x)
+ * @function abs
+ * @param x big number
+ * @return big number |x|
+ * @usage y = bn.abs(x)
+ */
 static int
 Babs(lua_State *L) /** abs(x) */
 {
@@ -231,6 +344,14 @@ Babs(lua_State *L) /** abs(x) */
   return 1;
 }
 
+/**
+ * add(x, y)
+ * @function add
+ * @param x big number
+ * @param y big number
+ * @return big number x + y
+ * @usage z = bn.add(x, y)
+ */
 static int
 Badd(lua_State *L) /** add(x,y) */
 {
@@ -241,6 +362,14 @@ Badd(lua_State *L) /** add(x,y) */
   return 1;
 }
 
+/**
+ * sub(x, y)
+ * @function sub
+ * @param x big number
+ * @param y big number
+ * @return big number x - y
+ * @usage z = bn.sub(x, y)
+ */
 static int
 Bsub(lua_State *L) /** sub(x,y) */
 {
@@ -251,6 +380,14 @@ Bsub(lua_State *L) /** sub(x,y) */
   return 1;
 }
 
+/**
+ * mul(x, y)
+ * @function mul
+ * @param x big number
+ * @param y big number
+ * @return big number x * y
+ * @usage z = bn.mul(x, y)
+ */
 static int
 Bmul(lua_State *L) /** mul(x,y) */
 {
@@ -263,6 +400,14 @@ Bmul(lua_State *L) /** mul(x,y) */
   return 1;
 }
 
+/**
+ * div(x, y)
+ * @function div
+ * @param x big number
+ * @param y big number
+ * @return big number x // y
+ * @usage q = bn.div(x, y)
+ */
 static int
 Bdiv(lua_State *L) /** div(x,y) */
 {
@@ -276,6 +421,14 @@ Bdiv(lua_State *L) /** div(x,y) */
   return 1;
 }
 
+/**
+ * mod(x, y)
+ * @function mod
+ * @param x big number
+ * @param y big number
+ * @return big number x % y
+ * @usage r = bn.mod(x, y)
+ */
 static int
 Bmod(lua_State *L) /** mod(x,y) */
 {
@@ -289,6 +442,14 @@ Bmod(lua_State *L) /** mod(x,y) */
   return 1;
 }
 
+/**
+ * rmod(x, y)
+ * @function rmod
+ * @param x big number
+ * @param y big number
+ * @return big number x mod y (always positive)
+ * @usage r = bn.rmod(x, y)
+ */
 static int
 Brmod(lua_State *L) /** rmod(x,y) */
 {
@@ -301,6 +462,14 @@ Brmod(lua_State *L) /** rmod(x,y) */
   return 1;
 }
 
+/**
+ * divmod(x, y)
+ * @function divmod
+ * @param x big number
+ * @param y big number
+ * @return q, r quotient and remainder
+ * @usage q, r = bn.divmod(x, y)
+ */
 static int
 Bdivmod(lua_State *L) /** divmod(x,y) */
 {
@@ -314,6 +483,14 @@ Bdivmod(lua_State *L) /** divmod(x,y) */
   return 2;
 }
 
+/**
+ * gcd(x, y)
+ * @function gcd
+ * @param x big number
+ * @param y big number
+ * @return big number gcd(x, y)
+ * @usage g = bn.gcd(x, y)
+ */
 static int
 Bgcd(lua_State *L) /** gcd(x,y) */
 {
@@ -326,6 +503,14 @@ Bgcd(lua_State *L) /** gcd(x,y) */
   return 1;
 }
 
+/**
+ * pow(x, y)
+ * @function pow
+ * @param x big number
+ * @param y big number
+ * @return big number x^y
+ * @usage z = bn.pow(x, y)
+ */
 static int
 Bpow(lua_State *L) /** pow(x,y) */
 {
@@ -338,6 +523,15 @@ Bpow(lua_State *L) /** pow(x,y) */
   return 1;
 }
 
+/**
+ * addmod(x, y, m)
+ * @function addmod
+ * @param x big number
+ * @param y big number
+ * @param m modulus
+ * @return big number (x + y) % m
+ * @usage z = bn.addmod(x, y, m)
+ */
 static int
 Baddmod(lua_State *L) /** addmod(x,y,m) */
 {
@@ -351,6 +545,15 @@ Baddmod(lua_State *L) /** addmod(x,y,m) */
   return 1;
 }
 
+/**
+ * submod(x, y, m)
+ * @function submod
+ * @param x big number
+ * @param y big number
+ * @param m modulus
+ * @return big number (x - y) % m
+ * @usage z = bn.submod(x, y, m)
+ */
 static int
 Bsubmod(lua_State *L) /** submod(x,y,m) */
 {
@@ -364,6 +567,15 @@ Bsubmod(lua_State *L) /** submod(x,y,m) */
   return 1;
 }
 
+/**
+ * mulmod(x, y, m)
+ * @function mulmod
+ * @param x big number
+ * @param y big number
+ * @param m modulus
+ * @return big number (x * y) % m
+ * @usage z = bn.mulmod(x, y, m)
+ */
 static int
 Bmulmod(lua_State *L) /** mulmod(x,y,m) */
 {
@@ -377,6 +589,15 @@ Bmulmod(lua_State *L) /** mulmod(x,y,m) */
   return 1;
 }
 
+/**
+ * powmod(x, y, m)
+ * @function powmod
+ * @param x big number
+ * @param y big number
+ * @param m modulus
+ * @return big number (x^y) % m
+ * @usage z = bn.powmod(x, y, m)
+ */
 static int
 Bpowmod(lua_State *L) /** powmod(x,y,m) */
 {
@@ -390,6 +611,14 @@ Bpowmod(lua_State *L) /** powmod(x,y,m) */
   return 1;
 }
 
+/**
+ * sqrmod(x, m)
+ * @function sqrmod
+ * @param x big number
+ * @param m modulus
+ * @return big number (x^2) % m
+ * @usage z = bn.sqrmod(x, m)
+ */
 static int
 Bsqrmod(lua_State *L) /** sqrmod(x) */
 {
@@ -402,6 +631,14 @@ Bsqrmod(lua_State *L) /** sqrmod(x) */
   return 1;
 }
 
+/**
+ * invmod(x, m)
+ * @function invmod
+ * @param x big number
+ * @param m modulus
+ * @return big number modular inverse
+ * @usage y = bn.invmod(x, m)
+ */
 static int
 Binvmod(lua_State *L) /** invmod(x) */
 {
@@ -414,6 +651,14 @@ Binvmod(lua_State *L) /** invmod(x) */
   return 1;
 }
 
+/**
+ * sqrtmod(x, m)
+ * @function sqrtmod
+ * @param x big number
+ * @param m modulus
+ * @return big number modular square root
+ * @usage y = bn.sqrtmod(x, m)
+ */
 static int
 Bsqrtmod(lua_State *L) /** sqrtmod(x) */
 {
@@ -426,6 +671,13 @@ Bsqrtmod(lua_State *L) /** sqrtmod(x) */
   return 1;
 }
 
+/**
+ * random([bits])
+ * @function random
+ * @param[opt=32] bits number of bits (default 32)
+ * @return big number random value
+ * @usage x = bn.random(128)
+ */
 static int
 Brandom(lua_State *L) /** random(bits) */
 {
@@ -435,6 +687,13 @@ Brandom(lua_State *L) /** random(bits) */
   return 1;
 }
 
+/**
+ * aprime([bits])
+ * @function aprime
+ * @param[opt=32] bits number of bits (default 32)
+ * @return big number probable prime
+ * @usage p = bn.aprime(128)
+ */
 static int
 Baprime(lua_State *L) /** aprime(bits) */
 {
@@ -447,6 +706,14 @@ Baprime(lua_State *L) /** aprime(bits) */
   return 0;
 }
 
+/**
+ * isprime(x[, checks])
+ * @function isprime
+ * @param x big number
+ * @param[opt] checks number of checks
+ * @return boolean true if x is prime
+ * @usage ok = bn.isprime(x)
+ */
 static int
 Bisprime(lua_State *L) /** isprime(x,[checks]) */
 {
