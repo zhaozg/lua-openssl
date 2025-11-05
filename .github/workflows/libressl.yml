@@ -18,7 +18,8 @@ jobs:
         openssl_version:
         - libressl-3.8.4
         - libressl-3.9.2
-        - libressl-4.1.1
+        - libressl-4.1.2
+        - libressl-4.2.1
     env:
       MACOSX_DEPLOYMENT_TARGET: 10.12
       LUAROCKS: ${{ matrix.luarocks_version }}
