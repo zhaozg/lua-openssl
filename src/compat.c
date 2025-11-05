@@ -111,6 +111,7 @@ RSA_get0_crt_params(const RSA *r, const BIGNUM **dmp1, const BIGNUM **dmq1, cons
   if (iqmp != NULL) *iqmp = r->iqmp;
 }
 
+#if LIBRESSLV_LESS(0x4020000FL) || !defined(LIBRESSL_VERSION_NUMBER)
 RSA *
 EVP_PKEY_get0_RSA(EVP_PKEY *pkey)
 {
@@ -119,6 +120,7 @@ EVP_PKEY_get0_RSA(EVP_PKEY *pkey)
   }
   return pkey->pkey.rsa;
 }
+#endif
 
 int
 RSA_set0_key(RSA *r, BIGNUM *n, BIGNUM *e, BIGNUM *d)
@@ -221,6 +223,7 @@ DSA_bits(const DSA *dsa)
   return BN_num_bits(dsa->p);
 }
 
+#if LIBRESSLV_LESS(0x4020000FL) || !defined(LIBRESSL_VERSION_NUMBER)
 DSA *
 EVP_PKEY_get0_DSA(EVP_PKEY *pkey)
 {
@@ -229,6 +232,7 @@ EVP_PKEY_get0_DSA(EVP_PKEY *pkey)
   }
   return pkey->pkey.dsa;
 }
+#endif
 
 void
 DSA_get0_pqg(const DSA *d, const BIGNUM **p, const BIGNUM **q, const BIGNUM **g)
@@ -292,6 +296,7 @@ DSA_set0_key(DSA *d, BIGNUM *pub_key, BIGNUM *priv_key)
 }
 #endif
 
+#if LIBRESSLV_LESS(0x4020000FL) || !defined(LIBRESSL_VERSION_NUMBER)
 #ifndef OPENSSL_NO_EC
 EC_KEY *
 EVP_PKEY_get0_EC_KEY(EVP_PKEY *pkey)
@@ -312,6 +317,7 @@ EVP_PKEY_get0_DH(EVP_PKEY *pkey)
   }
   return pkey->pkey.dh;
 }
+#endif
 
 int
 DH_bits(const DH *dh)

@@ -334,7 +334,8 @@ function TestPoint:testPointMulWithNegNumber()
   local negGen = point.mul(g, gen, -1)
   local should_be_zero = point.add(g, gen, negGen)
   assert(point.is_at_infinity(g, should_be_zero))
-  assert("00" == g:point2hex(should_be_zero))
+  local s = g:point2hex(should_be_zero)
+  assert("00" == s or "0" == s, s)
 end
 
 function TestPoint:testPointAdditionAssociative()

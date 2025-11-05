@@ -141,7 +141,10 @@ int SSL_up_ref(SSL *s);
 int SSL_CTX_up_ref(SSL_CTX *ctx);
 int SSL_SESSION_up_ref(SSL_SESSION *s);
 
+#if LIBRESSLV_LESS(0x4020000FL) || !defined(LIBRESSL_VERSION_NUMBER)
 DH *EVP_PKEY_get0_DH(EVP_PKEY *pkey);
+#endif
+
 int DH_bits(const DH *dh);
 void DH_get0_key(const DH *dh,
                  const BIGNUM **pub_key, const BIGNUM **priv_key);
@@ -152,7 +155,10 @@ int DH_set0_pqg(DH *dh, BIGNUM *p, BIGNUM *q, BIGNUM *g);
 void DSA_get0_pqg(const DSA *dsa,
                   const BIGNUM **p, const BIGNUM **q, const BIGNUM **g);
 
+#if LIBRESSLV_LESS(0x4020000FL) || !defined(LIBRESSL_VERSION_NUMBER)
 EC_KEY *EVP_PKEY_get0_EC_KEY(EVP_PKEY *pkey);
+#endif
+
 void ECDSA_SIG_get0(const ECDSA_SIG *sig,
                     const BIGNUM **pr, const BIGNUM **ps);
 int ECDSA_SIG_set0(ECDSA_SIG *sig, BIGNUM *r, BIGNUM *s);
@@ -164,9 +170,12 @@ int RSA_set0_factors(RSA *r, BIGNUM *p, BIGNUM *q);
 int RSA_set0_crt_params(RSA *r, BIGNUM *dmp1, BIGNUM *dmq1, BIGNUM *iqmp);
 void RSA_get0_factors(const RSA *r, const BIGNUM **p, const BIGNUM **q);
 void RSA_get0_crt_params(const RSA *r, const BIGNUM **dmp1, const BIGNUM **dmq1, const BIGNUM **iqmp);
-RSA *EVP_PKEY_get0_RSA(EVP_PKEY *pkey);
 
+#if LIBRESSLV_LESS(0x4020000FL) || !defined(LIBRESSL_VERSION_NUMBER)
+RSA *EVP_PKEY_get0_RSA(EVP_PKEY *pkey);
 DSA *EVP_PKEY_get0_DSA(EVP_PKEY *pkey);
+#endif
+
 int DSA_bits(const DSA *dsa);
 void DSA_get0_key(const DSA *d,
                   const BIGNUM **pub_key, const BIGNUM **priv_key);
