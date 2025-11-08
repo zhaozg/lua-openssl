@@ -93,6 +93,18 @@ Notice: Documentation quality is low and stale, feel free to make a PR to improv
 
 If documentation is missing, refer to the [source code](./src) or check the Lua test scripts in the test directory.
 
+### Code Review and Improvement Analysis
+
+For a comprehensive analysis of the codebase, including:
+- OpenSSL API usage audit and recommendations
+- Version compatibility matrix and deprecated API migration guide
+- Missing features for a general-purpose crypto library
+- Implementation roadmap for OpenSSL 3.0+ features
+
+Please refer to:
+- **[CODE_REVIEW_ANALYSIS.md](./CODE_REVIEW_ANALYSIS.md)** - Detailed analysis (Chinese)
+- **[CODE_REVIEW_SUMMARY_EN.md](./CODE_REVIEW_SUMMARY_EN.md)** - Executive summary (English)
+
 ### Documentation Coverage
 
 The project includes an automated LDoc analyzer that scans all C source files to check documentation coverage. Current statistics:
