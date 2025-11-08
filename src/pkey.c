@@ -1519,7 +1519,7 @@ static int openssl_sign(lua_State *L)
   if (is_SM2) is_SM2 = EVP_MD_type(md) == NID_sm3;
 #endif
 
-  ctx = EVP_MD_CTX_create();
+  ctx = EVP_MD_CTX_new();
 #if defined(OPENSSL_SUPPORT_SM2)
   if (is_SM2) {
     size_t idlen = 0;
@@ -1594,7 +1594,7 @@ static int openssl_verify(lua_State *L)
 
   md = get_digest(L, 4, md_alg);
 
-  ctx = EVP_MD_CTX_create();
+  ctx = EVP_MD_CTX_new();
 #if defined(OPENSSL_SUPPORT_SM2)
   if (is_SM2) {
     size_t idlen = 0;

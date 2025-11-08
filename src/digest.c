@@ -58,16 +58,15 @@ static int openssl_digest_new(lua_State *L)
   const EVP_MD *md = get_digest(L, 1, NULL);
   int           ret = 0;
   ENGINE       *e = lua_isnoneornil(L, 2) ? NULL : CHECK_OBJECT(2, ENGINE, "openssl.engine");
-  EVP_MD_CTX   *ctx = EVP_MD_CTX_create();
+  EVP_MD_CTX   *ctx = EVP_MD_CTX_new();
   if (ctx) {
-    EVP_MD_CTX_init(ctx);
     lua_pushlightuserdata(L, e);
     lua_rawsetp(L, LUA_REGISTRYINDEX, ctx);
     ret = EVP_DigestInit_ex(ctx, md, e);
     if (ret == 1) {
       PUSH_OBJECT(ctx, "openssl.evp_digest_ctx");
     } else {
-      EVP_MD_CTX_destroy(ctx);
+      EVP_MD_CTX_free(ctx);
       ret = openssl_pushresult(L, ret);
     }
   }
@@ -124,11 +123,10 @@ static int openssl_signInit(lua_State *L)
   const EVP_MD *md = lua_isnil(L, 1) ? NULL : get_digest(L, 1, NULL);
   EVP_PKEY     *pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
   ENGINE       *e = lua_gettop(L) > 2 ? CHECK_OBJECT(3, ENGINE, "openssl.engine") : NULL;
-  EVP_MD_CTX   *ctx = EVP_MD_CTX_create();
+  EVP_MD_CTX   *ctx = EVP_MD_CTX_new();
   int           ret = 0;
 
   if (ctx) {
-    EVP_MD_CTX_init(ctx);
     ret = EVP_DigestSignInit(ctx, NULL, md, e, pkey);
     if (ret == 1) {
       PUSH_OBJECT(ctx, "openssl.evp_digest_ctx");
@@ -152,11 +150,10 @@ static int openssl_verifyInit(lua_State *L)
   EVP_PKEY     *pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
   ENGINE       *e = lua_gettop(L) > 2 ? CHECK_OBJECT(3, ENGINE, "openssl.engine") : NULL;
   EVP_PKEY_CTX *pctx = 0;
-  EVP_MD_CTX   *ctx = EVP_MD_CTX_create();
+  EVP_MD_CTX   *ctx = EVP_MD_CTX_new();
   int           ret = 0;
 
   if (ctx) {
-    EVP_MD_CTX_init(ctx);
     ret = EVP_DigestVerifyInit(ctx, &pctx, md, e, pkey);
     if (ret) {
       PUSH_OBJECT(ctx, "openssl.evp_digest_ctx");
@@ -232,14 +229,13 @@ static int openssl_evp_digest_init(lua_State *L)
   ENGINE *e = lua_isnoneornil(L, 2) ? NULL : CHECK_OBJECT(2, ENGINE, "openssl.engine");
   int     ret = 0;
 
-  EVP_MD_CTX *ctx = EVP_MD_CTX_create();
+  EVP_MD_CTX *ctx = EVP_MD_CTX_new();
   if (ctx) {
-    EVP_MD_CTX_init(ctx);
     ret = EVP_DigestInit_ex(ctx, md, e);
     if (ret == 1) {
       PUSH_OBJECT(ctx, "openssl.evp_digest_ctx");
     } else {
-      EVP_MD_CTX_destroy(ctx);
+      EVP_MD_CTX_free(ctx);
       ret = openssl_pushresult(L, ret);
     }
   }
@@ -362,7 +358,7 @@ static int openssl_digest_ctx_free(lua_State *L)
   EVP_MD_CTX *ctx = CHECK_OBJECT(1, EVP_MD_CTX, "openssl.evp_digest_ctx");
   lua_pushnil(L);
   lua_rawsetp(L, LUA_REGISTRYINDEX, ctx);
-  EVP_MD_CTX_destroy(ctx);
+  EVP_MD_CTX_free(ctx);
   return 0;
 }
 
@@ -388,7 +384,6 @@ static int openssl_digest_ctx_reset(lua_State *L)
   e = (ENGINE *)lua_topointer(L, -1);
   ret = EVP_MD_CTX_reset(ctx);
   if (ret) {
-    EVP_MD_CTX_init(ctx);
     EVP_DigestInit_ex(ctx, md, e);
   }
   return openssl_pushresult(L, ret);
