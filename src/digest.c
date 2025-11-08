@@ -414,17 +414,16 @@ static int openssl_digest_ctx_data(lua_State *L)
   }
 #else
 
-#if defined(LIBRESSL_VERSION_NUMBER)
-  /* without EVP_MD_meth_get_app_datasize */
+#if defined(LIBRESSL_VERSION_NUMBER) || OPENSSL_VERSION_NUMBER >= 0x30000000L
+  /* without EVP_MD_meth_get_app_datasize
+   * LibreSSL does not support this function
+   * OpenSSL 3.0+ deprecated EVP_MD_meth_get_app_datasize in favor of provider-based architecture
+   */
   (void)ctx;
   return 0;
 #else
 
-#if OPENSSL_VERSION_NUMBER < 0x30000000
   const EVP_MD *md = EVP_MD_CTX_md(ctx);
-#else
-  const EVP_MD *md = EVP_MD_CTX_get0_md(ctx);
-#endif
   size_t ctx_size = (size_t)EVP_MD_meth_get_app_datasize(md);
   if (ctx_size == 0) return 0;
 
