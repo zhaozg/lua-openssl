@@ -482,13 +482,6 @@ openssl_ecdsa_set_method(lua_State *L)
     return openssl_pushresult(L, r);
   }
   
-#if defined(__GNUC__) || defined(__clang__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
-#if defined(__GNUC__) || defined(__clang__)
-#pragma GCC diagnostic pop
-#endif
   
 #endif
 #endif
