@@ -23,9 +23,9 @@ static const char *evp_pkey_type2name(int type);
 
 /* Compatibility layer for low-level key access migration to OpenSSL 3.0+ PARAM API */
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
-/* Helper function to check if a private key component exists using PARAM API */
+/* Helper: check if private key exists using PARAM API */
 static int
-openssl_pkey_has_private_bn_param(EVP_PKEY *pkey, const char *param_name)
+pkey_has_private(EVP_PKEY *pkey, const char *param_name)
 {
   BIGNUM *bn = NULL;
   int     ret = 0;
@@ -43,9 +43,9 @@ openssl_pkey_has_private_bn_param(EVP_PKEY *pkey, const char *param_name)
   return -1; /* Indicate need for legacy fallback */
 }
 
-/* Helper function to check if EVP_PKEY has a valid key of expected type */
+/* Helper: check if key matches expected type */
 static int
-openssl_pkey_has_key_of_type(EVP_PKEY *pkey, int expected_type)
+pkey_is_type(EVP_PKEY *pkey, int expected_type)
 {
   /* In OpenSSL 3.0+, if EVP_PKEY_id returns the expected type, the key exists */
   return pkey != NULL && EVP_PKEY_type(EVP_PKEY_id(pkey)) == expected_type;
@@ -65,7 +65,7 @@ openssl_pkey_is_private(EVP_PKEY *pkey)
   case EVP_PKEY_RSA: {
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
     /* Try OpenSSL 3.0+ PARAM API first */
-    ret = openssl_pkey_has_private_bn_param(pkey, OSSL_PKEY_PARAM_RSA_D);
+    ret = pkey_has_private(pkey, OSSL_PKEY_PARAM_RSA_D);
     if (ret < 0) {
       /* Fallback to OpenSSL 1.x way for legacy keys */
       RSA          *rsa = (RSA *)EVP_PKEY_get0_RSA(pkey);
@@ -92,7 +92,7 @@ openssl_pkey_is_private(EVP_PKEY *pkey)
   case EVP_PKEY_DSA: {
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
     /* Try OpenSSL 3.0+ PARAM API first */
-    ret = openssl_pkey_has_private_bn_param(pkey, OSSL_PKEY_PARAM_PRIV_KEY);
+    ret = pkey_has_private(pkey, OSSL_PKEY_PARAM_PRIV_KEY);
     if (ret < 0) {
       /* Fallback to OpenSSL 1.x way for legacy keys */
       DSA          *dsa = (DSA *)EVP_PKEY_get0_DSA(pkey);
@@ -118,7 +118,7 @@ openssl_pkey_is_private(EVP_PKEY *pkey)
   case EVP_PKEY_DH: {
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
     /* Try OpenSSL 3.0+ PARAM API first */
-    ret = openssl_pkey_has_private_bn_param(pkey, OSSL_PKEY_PARAM_PRIV_KEY);
+    ret = pkey_has_private(pkey, OSSL_PKEY_PARAM_PRIV_KEY);
     if (ret < 0) {
       /* Fallback to OpenSSL 1.x way for legacy keys */
       DH           *dh = (DH *)EVP_PKEY_get0_DH(pkey);
@@ -148,7 +148,7 @@ openssl_pkey_is_private(EVP_PKEY *pkey)
   {
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
     /* Try OpenSSL 3.0+ PARAM API first */
-    ret = openssl_pkey_has_private_bn_param(pkey, OSSL_PKEY_PARAM_PRIV_KEY);
+    ret = pkey_has_private(pkey, OSSL_PKEY_PARAM_PRIV_KEY);
     if (ret < 0) {
       /* Fallback to OpenSSL 1.x way for legacy keys */
       EC_KEY       *ec = (EC_KEY *)EVP_PKEY_get0_EC_KEY(pkey);
@@ -1561,8 +1561,8 @@ static int openssl_derive(lua_State *L)
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
   /* OpenSSL 3.0+ way: use PARAM API compatible check */
   luaL_argcheck(L,
-                (ptype == EVP_PKEY_DH && openssl_pkey_has_key_of_type(pkey, EVP_PKEY_DH))
-                  || (ptype == EVP_PKEY_EC && openssl_pkey_has_key_of_type(pkey, EVP_PKEY_EC)),
+                (ptype == EVP_PKEY_DH && pkey_is_type(pkey, EVP_PKEY_DH))
+                  || (ptype == EVP_PKEY_EC && pkey_is_type(pkey, EVP_PKEY_EC)),
                 1,
                 "only support DH or EC private key");
 #else
@@ -1577,7 +1577,7 @@ static int openssl_derive(lua_State *L)
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
   /* OpenSSL 3.0+ way: use PARAM API compatible check */
   luaL_argcheck(L,
-                ptype == EVP_PKEY_DH && openssl_pkey_has_key_of_type(pkey, EVP_PKEY_DH),
+                ptype == EVP_PKEY_DH && pkey_is_type(pkey, EVP_PKEY_DH),
                 1,
                 "only support DH or EC private key");
 #else
@@ -1591,7 +1591,7 @@ static int openssl_derive(lua_State *L)
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
   /* OpenSSL 3.0+ way: use PARAM API compatible check */
   luaL_argcheck(L,
-                ptype == EVP_PKEY_EC && openssl_pkey_has_key_of_type(pkey, EVP_PKEY_EC),
+                ptype == EVP_PKEY_EC && pkey_is_type(pkey, EVP_PKEY_EC),
                 1,
                 "only support DH or EC private key");
 #else
