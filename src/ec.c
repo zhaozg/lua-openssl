@@ -17,62 +17,164 @@ ec module to create EC keys and do EC key processes.
 #include "group.c"
 #include "point.c"
 
+/* Helper function to convert EC_KEY to EVP_PKEY for cryptographic operations */
+static EVP_PKEY*
+ec_key_to_evp_pkey(EC_KEY *ec)
+{
+  EVP_PKEY *pkey = EVP_PKEY_new();
+  if (pkey == NULL)
+    return NULL;
+  
+  if (EVP_PKEY_set1_EC_KEY(pkey, ec) != 1) {
+    EVP_PKEY_free(pkey);
+    return NULL;
+  }
+  
+  return pkey;
+}
+
 static int
 openssl_ecdsa_do_sign(lua_State *L)
 {
-  EC_KEY     *ec = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
-  size_t      l;
-  const char *sdata = luaL_checklstring(L, 2, &l);
-  ECDSA_SIG  *sig = ECDSA_do_sign((const unsigned char *)sdata, l, ec);
-  int         der = lua_isnone(L, 3) ? 1 : lua_toboolean(L, 3);
-  int         ret = 0;
+  EC_KEY              *ec = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
+  size_t               l;
+  const unsigned char *sdata = (const unsigned char *)luaL_checklstring(L, 2, &l);
+  int                  der = lua_isnone(L, 3) ? 1 : lua_toboolean(L, 3);
+  int                  ret = 0;
+  EVP_PKEY            *pkey = NULL;
+  EVP_MD_CTX          *ctx = NULL;
+  unsigned char       *sigbuf = NULL;
+  size_t               siglen = 0;
 
-  if (der) {
-    unsigned char *p = NULL;
-    l = i2d_ECDSA_SIG(sig, &p);
-    if (l > 0) {
-      lua_pushlstring(L, (const char *)p, l);
-      OPENSSL_free(p);
-      ret = 1;
-    }
-  } else {
-    const BIGNUM *r = NULL, *s = NULL;
-    ECDSA_SIG_get0(sig, &r, &s);
+  pkey = ec_key_to_evp_pkey(ec);
+  if (pkey == NULL)
+    return openssl_pushresult(L, 0);
 
-    r = BN_dup(r);
-    s = BN_dup(s);
-
-    PUSH_OBJECT(r, "openssl.bn");
-    PUSH_OBJECT(s, "openssl.bn");
-    ret = 2;
+  ctx = EVP_MD_CTX_new();
+  if (ctx == NULL) {
+    EVP_PKEY_free(pkey);
+    return openssl_pushresult(L, 0);
   }
-  ECDSA_SIG_free(sig);
-  return ret;
+
+  /* Initialize with NULL digest to sign pre-hashed data */
+  ret = EVP_DigestSignInit(ctx, NULL, NULL, NULL, pkey);
+  if (ret == 1) {
+    /* Get signature length */
+    ret = EVP_DigestSign(ctx, NULL, &siglen, sdata, l);
+    if (ret == 1) {
+      sigbuf = OPENSSL_malloc(siglen);
+      if (sigbuf) {
+        ret = EVP_DigestSign(ctx, sigbuf, &siglen, sdata, l);
+        if (ret == 1) {
+          if (der) {
+            /* Return DER-encoded signature */
+            lua_pushlstring(L, (const char *)sigbuf, siglen);
+            ret = 1;
+          } else {
+            /* Parse DER signature and return r, s components */
+            const unsigned char *p = sigbuf;
+            ECDSA_SIG           *sig = d2i_ECDSA_SIG(NULL, &p, siglen);
+            if (sig) {
+              const BIGNUM *r = NULL, *s = NULL;
+              ECDSA_SIG_get0(sig, &r, &s);
+
+              r = BN_dup(r);
+              s = BN_dup(s);
+
+              PUSH_OBJECT(r, "openssl.bn");
+              PUSH_OBJECT(s, "openssl.bn");
+              ret = 2;
+              ECDSA_SIG_free(sig);
+            } else {
+              ret = 0;
+            }
+          }
+        }
+        OPENSSL_free(sigbuf);
+      } else {
+        ret = 0;
+      }
+    }
+  }
+
+  EVP_MD_CTX_free(ctx);
+  EVP_PKEY_free(pkey);
+  
+  return ret > 0 ? ret : openssl_pushresult(L, 0);
 }
 
 static int
 openssl_ecdsa_do_verify(lua_State *L)
 {
-  size_t      l, sigl;
-  int         ret;
-  EC_KEY     *ec = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
-  const char *dgst = luaL_checklstring(L, 2, &l);
-  int         top = lua_gettop(L);
+  size_t               l, sigl;
+  int                  ret;
+  EC_KEY              *ec = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
+  const unsigned char *dgst = (const unsigned char *)luaL_checklstring(L, 2, &l);
+  int                  top = lua_gettop(L);
+  EVP_PKEY            *pkey = NULL;
+  EVP_MD_CTX          *ctx = NULL;
+  unsigned char       *sigbuf = NULL;
+  size_t               siglen = 0;
+
+  pkey = ec_key_to_evp_pkey(ec);
+  if (pkey == NULL)
+    return openssl_pushresult(L, 0);
+
+  ctx = EVP_MD_CTX_new();
+  if (ctx == NULL) {
+    EVP_PKEY_free(pkey);
+    return openssl_pushresult(L, 0);
+  }
+
+  /* Convert signature to DER format if needed */
   if (top == 3) {
-    const char *s = luaL_checklstring(L, 3, &sigl);
-    ECDSA_SIG  *sig = d2i_ECDSA_SIG(NULL, (const unsigned char **)&s, sigl);
-    ret = ECDSA_do_verify((const unsigned char *)dgst, l, sig, ec);
-    ECDSA_SIG_free(sig);
+    /* Signature is already in DER format */
+    const unsigned char *s = (const unsigned char *)luaL_checklstring(L, 3, &sigl);
+    sigbuf = OPENSSL_malloc(sigl);
+    if (sigbuf == NULL) {
+      EVP_MD_CTX_free(ctx);
+      EVP_PKEY_free(pkey);
+      return openssl_pushresult(L, 0);
+    }
+    memcpy(sigbuf, s, sigl);
+    siglen = sigl;
   } else {
+    /* Signature is provided as r, s components */
     BIGNUM    *r = BN_get(L, 3);
     BIGNUM    *s = BN_get(L, 4);
     ECDSA_SIG *sig = ECDSA_SIG_new();
     ECDSA_SIG_set0(sig, r, s);
-    ret = ECDSA_do_verify((const unsigned char *)dgst, l, sig, ec);
+    
+    /* Convert to DER */
+    unsigned char *p = NULL;
+    int            derlen = i2d_ECDSA_SIG(sig, &p);
+    if (derlen > 0) {
+      sigbuf = p;
+      siglen = derlen;
+    }
     ECDSA_SIG_free(sig);
+    
+    if (derlen <= 0) {
+      EVP_MD_CTX_free(ctx);
+      EVP_PKEY_free(pkey);
+      return openssl_pushresult(L, 0);
+    }
   }
-  if (ret == -1) return openssl_pushresult(L, ret);
-  lua_pushboolean(L, ret);
+
+  /* Initialize with NULL digest to verify pre-hashed data */
+  ret = EVP_DigestVerifyInit(ctx, NULL, NULL, NULL, pkey);
+  if (ret == 1) {
+    ret = EVP_DigestVerify(ctx, sigbuf, siglen, dgst, l);
+  }
+
+  OPENSSL_free(sigbuf);
+  EVP_MD_CTX_free(ctx);
+  EVP_PKEY_free(pkey);
+
+  if (ret == -1)
+    return openssl_pushresult(L, ret);
+  
+  lua_pushboolean(L, ret == 1);
   return 1;
 }
 
@@ -92,17 +194,46 @@ static int openssl_ecdsa_sign(lua_State *L)
   size_t               dgstlen = 0;
   const unsigned char *dgst = (const unsigned char *)luaL_checklstring(L, 2, &dgstlen);
   const EVP_MD        *md = get_digest(L, 3, NULL);
-  unsigned int         siglen = ECDSA_size(eckey);
-  unsigned char       *sig = OPENSSL_malloc(siglen);
+  EVP_PKEY            *pkey = NULL;
+  EVP_MD_CTX          *ctx = NULL;
+  unsigned char       *sig = NULL;
+  size_t               siglen = 0;
 
-  luaL_argcheck(L, dgstlen == EVP_MD_size(md), 4, "invalid digest");
-  ret = ECDSA_sign(EVP_MD_type(md), dgst, dgstlen, sig, &siglen, eckey);
+  luaL_argcheck(L, dgstlen == (size_t)EVP_MD_size(md), 2, "invalid digest length");
+
+  pkey = ec_key_to_evp_pkey(eckey);
+  if (pkey == NULL)
+    return openssl_pushresult(L, 0);
+
+  ctx = EVP_MD_CTX_new();
+  if (ctx == NULL) {
+    EVP_PKEY_free(pkey);
+    return openssl_pushresult(L, 0);
+  }
+
+  /* Initialize with NULL digest to sign pre-hashed data */
+  ret = EVP_DigestSignInit(ctx, NULL, NULL, NULL, pkey);
   if (ret == 1) {
-    lua_pushlstring(L, (const char *)sig, siglen);
-  } else
-    ret = openssl_pushresult(L, ret);
-  OPENSSL_free(sig);
-  return ret;
+    /* Get signature length */
+    ret = EVP_DigestSign(ctx, NULL, &siglen, dgst, dgstlen);
+    if (ret == 1) {
+      sig = OPENSSL_malloc(siglen);
+      if (sig) {
+        ret = EVP_DigestSign(ctx, sig, &siglen, dgst, dgstlen);
+        if (ret == 1) {
+          lua_pushlstring(L, (const char *)sig, siglen);
+        }
+        OPENSSL_free(sig);
+      } else {
+        ret = 0;
+      }
+    }
+  }
+
+  EVP_MD_CTX_free(ctx);
+  EVP_PKEY_free(pkey);
+
+  return ret == 1 ? 1 : openssl_pushresult(L, ret);
 }
 
 /***
@@ -125,12 +256,34 @@ static int openssl_ecdsa_verify(lua_State *L)
   size_t               siglen = 0;
   const unsigned char *sig = (const unsigned char *)luaL_checklstring(L, 3, &siglen);
   const EVP_MD        *md = get_digest(L, 4, NULL);
-  int                  type = EVP_MD_type(md);
+  EVP_PKEY            *pkey = NULL;
+  EVP_MD_CTX          *ctx = NULL;
 
-  luaL_argcheck(L, dgstlen == EVP_MD_size(md), 4, "invalid digest");
-  ret = ECDSA_verify(type, dgst, (int)dgstlen, sig, (int)siglen, eckey);
-  if (ret == -1) return openssl_pushresult(L, ret);
-  lua_pushboolean(L, ret);
+  luaL_argcheck(L, dgstlen == (size_t)EVP_MD_size(md), 2, "invalid digest length");
+
+  pkey = ec_key_to_evp_pkey(eckey);
+  if (pkey == NULL)
+    return openssl_pushresult(L, 0);
+
+  ctx = EVP_MD_CTX_new();
+  if (ctx == NULL) {
+    EVP_PKEY_free(pkey);
+    return openssl_pushresult(L, 0);
+  }
+
+  /* Initialize with NULL digest to verify pre-hashed data */
+  ret = EVP_DigestVerifyInit(ctx, NULL, NULL, NULL, pkey);
+  if (ret == 1) {
+    ret = EVP_DigestVerify(ctx, sig, siglen, dgst, dgstlen);
+  }
+
+  EVP_MD_CTX_free(ctx);
+  EVP_PKEY_free(pkey);
+
+  if (ret == -1)
+    return openssl_pushresult(L, ret);
+  
+  lua_pushboolean(L, ret == 1);
   return 1;
 }
 
@@ -186,24 +339,8 @@ openssl_key_parse(lua_State *L)
   return 1;
 };
 
-#ifndef OPENSSL_NO_ECDH
-static const int KDF1_SHA1_len = 20;
-static void *
-KDF1_SHA1(const void *in, size_t inlen, void *out, size_t *outlen)
-{
-#ifndef OPENSSL_NO_SHA
-  if (*outlen < SHA_DIGEST_LENGTH)
-    return NULL;
-  else
-    *outlen = SHA_DIGEST_LENGTH;
-  return SHA1(in, inlen, out);
-#else
-  return NULL;
-#endif /* OPENSSL_NO_SHA */
-}
-#endif /* OPENSSL_NO_ECDH */
-
 #define MAX_ECDH_SIZE 256
+
 
 /***
 compute ECDH shared key
@@ -215,23 +352,58 @@ compute ECDH shared key
 static int
 openssl_ecdh_compute_key(lua_State *L)
 {
-  EC_KEY *ec = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
-  EC_KEY *peer = CHECK_OBJECT(2, EC_KEY, "openssl.ec_key");
+  EC_KEY        *ec = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
+  EC_KEY        *peer = CHECK_OBJECT(2, EC_KEY, "openssl.ec_key");
+  EVP_PKEY      *pkey = NULL;
+  EVP_PKEY      *peerkey = NULL;
+  EVP_PKEY_CTX  *ctx = NULL;
+  unsigned char *secret = NULL;
+  size_t         secretlen = 0;
+  int            ret = 0;
 
-  int           field_size, outlen, secret_size_a;
-  unsigned char secret_a[MAX_ECDH_SIZE];
-  void *(*kdf)(const void *in, size_t inlen, void *out, size_t *xoutlen);
-  field_size = EC_GROUP_get_degree(EC_KEY_get0_group(ec));
-  if (field_size <= 24 * 8) {
-    outlen = KDF1_SHA1_len;
-    kdf = KDF1_SHA1;
-  } else {
-    outlen = (field_size + 7) / 8;
-    kdf = NULL;
+  pkey = ec_key_to_evp_pkey(ec);
+  if (pkey == NULL)
+    return openssl_pushresult(L, 0);
+
+  peerkey = ec_key_to_evp_pkey(peer);
+  if (peerkey == NULL) {
+    EVP_PKEY_free(pkey);
+    return openssl_pushresult(L, 0);
   }
-  secret_size_a = ECDH_compute_key(secret_a, outlen, EC_KEY_get0_public_key(peer), ec, kdf);
-  lua_pushlstring(L, (const char *)secret_a, secret_size_a);
-  return 1;
+
+  ctx = EVP_PKEY_CTX_new(pkey, NULL);
+  if (ctx == NULL) {
+    EVP_PKEY_free(pkey);
+    EVP_PKEY_free(peerkey);
+    return openssl_pushresult(L, 0);
+  }
+
+  ret = EVP_PKEY_derive_init(ctx);
+  if (ret == 1) {
+    ret = EVP_PKEY_derive_set_peer(ctx, peerkey);
+    if (ret == 1) {
+      /* Get the length of the shared secret */
+      ret = EVP_PKEY_derive(ctx, NULL, &secretlen);
+      if (ret == 1) {
+        secret = OPENSSL_malloc(secretlen);
+        if (secret) {
+          ret = EVP_PKEY_derive(ctx, secret, &secretlen);
+          if (ret == 1) {
+            lua_pushlstring(L, (const char *)secret, secretlen);
+          }
+          OPENSSL_free(secret);
+        } else {
+          ret = 0;
+        }
+      }
+    }
+  }
+
+  EVP_PKEY_CTX_free(ctx);
+  EVP_PKEY_free(peerkey);
+  EVP_PKEY_free(pkey);
+
+  return ret == 1 ? 1 : openssl_pushresult(L, ret);
 }
 
 /***
