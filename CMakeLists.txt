@@ -63,6 +63,7 @@ add_library(lua-openssl ${LUA_OPENSSL_LIBTYPE}
   src/pkcs7.c
   src/pkey.c
   src/private.h
+  src/provider.c
   src/rsa.c
   src/sk.h
   src/srp.c
