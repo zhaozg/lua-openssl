@@ -98,7 +98,7 @@ int luaopen_point(lua_State *L);
 int luaopen_rsa(lua_State *L);
 int luaopen_dsa(lua_State *L);
 int luaopen_dh(lua_State *L);
-#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L) && !defined(LIBRESSL_VERSION_NUMBER)
 int luaopen_mac(lua_State *L);
 int luaopen_param(lua_State *L);
 int luaopen_provider(lua_State *L);

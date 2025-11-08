@@ -4,6 +4,9 @@ Provider module for OpenSSL 3.0+ provider API support
 This module provides Lua bindings for OpenSSL 3.0+ provider functionality,
 allowing loading, unloading, and querying of cryptographic providers.
 
+Note: This module is only available with OpenSSL 3.0 or later.
+LibreSSL does not support the provider API, so it is excluded.
+
 @module provider
 @usage
   local provider = require('openssl').provider
@@ -13,7 +16,8 @@ allowing loading, unloading, and querying of cryptographic providers.
 #include "openssl.h"
 #include "private.h"
 
-#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
+/* Provider API is only available in OpenSSL 3.0+, not in LibreSSL */
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L) && !defined(LIBRESSL_VERSION_NUMBER)
 #include <openssl/provider.h>
 
 /***
