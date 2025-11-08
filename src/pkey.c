@@ -13,7 +13,7 @@ pkey module to create and process public or private key, do asymmetric key opera
 #include "openssl.h"
 #include "private.h"
 
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
 #include <openssl/core_names.h>
 #include <openssl/params.h>
 #endif
@@ -22,7 +22,7 @@ static int         evp_pkey_name2type(const char *name);
 static const char *evp_pkey_type2name(int type);
 
 /* Compatibility layer for low-level key access migration to OpenSSL 3.0+ PARAM API */
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
 /* Helper function to check if a private key component exists using PARAM API */
 static int
 openssl_pkey_has_private_bn_param(EVP_PKEY *pkey, const char *param_name)
@@ -63,7 +63,7 @@ openssl_pkey_is_private(EVP_PKEY *pkey)
   switch (typ) {
 #ifndef OPENSSL_NO_RSA
   case EVP_PKEY_RSA: {
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
     /* Try OpenSSL 3.0+ PARAM API first */
     ret = openssl_pkey_has_private_bn_param(pkey, OSSL_PKEY_PARAM_RSA_D);
     if (ret < 0) {
@@ -90,7 +90,7 @@ openssl_pkey_is_private(EVP_PKEY *pkey)
 #endif
 #ifndef OPENSSL_NO_DSA
   case EVP_PKEY_DSA: {
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
     /* Try OpenSSL 3.0+ PARAM API first */
     ret = openssl_pkey_has_private_bn_param(pkey, OSSL_PKEY_PARAM_PRIV_KEY);
     if (ret < 0) {
@@ -116,7 +116,7 @@ openssl_pkey_is_private(EVP_PKEY *pkey)
 #endif
 #ifndef OPENSSL_NO_DH
   case EVP_PKEY_DH: {
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
     /* Try OpenSSL 3.0+ PARAM API first */
     ret = openssl_pkey_has_private_bn_param(pkey, OSSL_PKEY_PARAM_PRIV_KEY);
     if (ret < 0) {
@@ -146,7 +146,7 @@ openssl_pkey_is_private(EVP_PKEY *pkey)
   case EVP_PKEY_SM2:
 #endif
   {
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
     /* Try OpenSSL 3.0+ PARAM API first */
     ret = openssl_pkey_has_private_bn_param(pkey, OSSL_PKEY_PARAM_PRIV_KEY);
     if (ret < 0) {
@@ -170,7 +170,7 @@ openssl_pkey_is_private(EVP_PKEY *pkey)
   }
 #endif
   default:
-#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L) && !defined(LIBRESSL_VERSION_NUMBER)
   {
     EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new_from_pkey(NULL, pkey, NULL);
     if (EVP_PKEY_private_check(ctx)) ret = 1;
@@ -198,7 +198,7 @@ openssl_pkey_is_sm2(const EVP_PKEY *pkey)
 
   id = EVP_PKEY_base_id(pkey);
   if (id == EVP_PKEY_EC) {
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
     /* OpenSSL 3.0+ way: use PARAM API to get curve name */
     char curve_name[256];
     size_t curve_name_len = sizeof(curve_name);
@@ -1558,7 +1558,7 @@ static int openssl_derive(lua_State *L)
   int           ptype = EVP_PKEY_type(EVP_PKEY_id(pkey));
 
 #if !defined(OPENSSL_NO_DH) && !defined(OPENSSL_NO_EC)
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
   /* OpenSSL 3.0+ way: use PARAM API compatible check */
   luaL_argcheck(L,
                 (ptype == EVP_PKEY_DH && openssl_pkey_has_key_of_type(pkey, EVP_PKEY_DH))
@@ -1574,7 +1574,7 @@ static int openssl_derive(lua_State *L)
                 "only support DH or EC private key");
 #endif
 #elif !defined(OPENSSL_NO_DH)
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
   /* OpenSSL 3.0+ way: use PARAM API compatible check */
   luaL_argcheck(L,
                 ptype == EVP_PKEY_DH && openssl_pkey_has_key_of_type(pkey, EVP_PKEY_DH),
@@ -1588,7 +1588,7 @@ static int openssl_derive(lua_State *L)
                 "only support DH or EC private key");
 #endif
 #elif !defined(OPENSSL_NO_EC)
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
   /* OpenSSL 3.0+ way: use PARAM API compatible check */
   luaL_argcheck(L,
                 ptype == EVP_PKEY_EC && openssl_pkey_has_key_of_type(pkey, EVP_PKEY_EC),
