@@ -13,6 +13,14 @@ Provide srp_gn as lua object.
 #include <openssl/bn.h>
 #include <openssl/srp.h>
 
+/* Suppress deprecation warnings for SRP functions in OpenSSL 3.0+
+ * The SRP module is marked deprecated but remains functional.
+ * We continue to use it to maintain backward compatibility. */
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 /***
 Gets the default SRP_gN object.
 @function get_default_gN
@@ -291,4 +299,9 @@ luaopen_srp(lua_State *L)
 
   return 1;
 }
+
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+
 #endif
