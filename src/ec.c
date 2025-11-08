@@ -454,6 +454,21 @@ openssl_key_parse(lua_State *L)
 
 #define MAX_ECDH_SIZE 256
 
+#if OPENSSL_VERSION_NUMBER < 0x30000000L || defined(LIBRESSL_VERSION_NUMBER)
+/* KDF1_SHA1 for legacy ECDH implementation (OpenSSL < 3.0 and LibreSSL) */
+#ifndef OPENSSL_NO_SHA
+static const int KDF1_SHA1_len = 20;
+static void *
+KDF1_SHA1(const void *in, size_t inlen, void *out, size_t *outlen)
+{
+  if (*outlen < SHA_DIGEST_LENGTH)
+    return NULL;
+  else
+    *outlen = SHA_DIGEST_LENGTH;
+  return SHA1(in, inlen, out);
+}
+#endif
+#endif
 
 /***
 compute ECDH shared key
@@ -525,19 +540,6 @@ openssl_ecdh_compute_key(lua_State *L)
   int           field_size, outlen, secret_size_a;
   unsigned char secret_a[MAX_ECDH_SIZE];
   void *(*kdf)(const void *in, size_t inlen, void *out, size_t *xoutlen);
-  
-#ifndef OPENSSL_NO_SHA
-  static const int KDF1_SHA1_len = 20;
-  static void *
-  KDF1_SHA1(const void *in, size_t inlen, void *out, size_t *outlen)
-  {
-    if (*outlen < SHA_DIGEST_LENGTH)
-      return NULL;
-    else
-      *outlen = SHA_DIGEST_LENGTH;
-    return SHA1(in, inlen, out);
-  }
-#endif
   
   field_size = EC_GROUP_get_degree(EC_KEY_get0_group(ec));
   if (field_size <= 24 * 8) {
