@@ -1,9 +1,32 @@
 local lu = require('luaunit')
 local openssl = require('openssl')
 
--- Check if provider module is available (OpenSSL 3.0+)
+-- Check if provider module is available (OpenSSL 3.0+ and not LibreSSL)
 if not openssl.provider then
-  print("Provider API not available - requires OpenSSL 3.0 or later")
+  print("\n" .. string.rep("=", 60))
+  print("Provider API Test Skipped")
+  print(string.rep("=", 60))
+  print("Reason: Provider API requires OpenSSL 3.0 or later")
+  print("        (not available in LibreSSL)")
+  print("\nCurrent OpenSSL version:")
+  local version_str, lua_ver, ssl_ver = openssl.version()
+  print("  " .. ssl_ver)
+  print("\nProvider tests will be skipped.")
+  print(string.rep("=", 60) .. "\n")
+  os.exit(0)
+end
+
+-- Additional check: verify provider module is actually functional
+if openssl.provider._error then
+  print("\n" .. string.rep("=", 60))
+  print("Provider API Test Skipped")
+  print(string.rep("=", 60))
+  print("Reason: " .. openssl.provider._error)
+  print("\nCurrent OpenSSL version:")
+  local version_str, lua_ver, ssl_ver = openssl.version()
+  print("  " .. ssl_ver)
+  print("\nProvider tests will be skipped.")
+  print(string.rep("=", 60) .. "\n")
   os.exit(0)
 end
 

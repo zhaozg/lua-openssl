@@ -578,7 +578,7 @@ luaopen_openssl(lua_State *L)
   luaopen_hmac(L);
   lua_setfield(L, -2, "hmac");
 
-#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L) && !defined(LIBRESSL_VERSION_NUMBER)
   luaopen_mac(L);
   lua_setfield(L, -2, "mac");
   luaopen_param(L);
