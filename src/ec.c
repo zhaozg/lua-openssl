@@ -29,7 +29,8 @@ ec module to create EC keys and do EC key processes.
 #pragma GCC diagnostic pop
 #endif
 
-/* Helper function to convert EC_KEY to EVP_PKEY for cryptographic operations */
+/* Helper function to convert EC_KEY to EVP_PKEY for cryptographic operations (OpenSSL 3.0+) */
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
 static EVP_PKEY*
 ec_key_to_evp_pkey(EC_KEY *ec)
 {
@@ -37,22 +38,14 @@ ec_key_to_evp_pkey(EC_KEY *ec)
   if (pkey == NULL)
     return NULL;
   
-#if defined(__GNUC__) || defined(__clang__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
-  
   if (EVP_PKEY_set1_EC_KEY(pkey, ec) != 1) {
     EVP_PKEY_free(pkey);
     return NULL;
   }
   
-#if defined(__GNUC__) || defined(__clang__)
-#pragma GCC diagnostic pop
-#endif
-  
   return pkey;
 }
+#endif
 
 static int
 openssl_ecdsa_do_sign(lua_State *L)
@@ -62,6 +55,9 @@ openssl_ecdsa_do_sign(lua_State *L)
   const unsigned char *sdata = (const unsigned char *)luaL_checklstring(L, 2, &l);
   int                  der = lua_isnone(L, 3) ? 1 : lua_toboolean(L, 3);
   int                  ret = 0;
+
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
+  /* OpenSSL 3.0+: Use EVP API */
   EVP_PKEY            *pkey = NULL;
   EVP_MD_CTX          *ctx = NULL;
   unsigned char       *sigbuf = NULL;
@@ -122,6 +118,32 @@ openssl_ecdsa_do_sign(lua_State *L)
   EVP_PKEY_free(pkey);
   
   return ret > 0 ? ret : openssl_pushresult(L, 0);
+#else
+  /* OpenSSL 1.1 and LibreSSL: Use legacy API */
+  ECDSA_SIG *sig = ECDSA_do_sign(sdata, l, ec);
+
+  if (der) {
+    unsigned char *p = NULL;
+    l = i2d_ECDSA_SIG(sig, &p);
+    if (l > 0) {
+      lua_pushlstring(L, (const char *)p, l);
+      OPENSSL_free(p);
+      ret = 1;
+    }
+  } else {
+    const BIGNUM *r = NULL, *s = NULL;
+    ECDSA_SIG_get0(sig, &r, &s);
+
+    r = BN_dup(r);
+    s = BN_dup(s);
+
+    PUSH_OBJECT(r, "openssl.bn");
+    PUSH_OBJECT(s, "openssl.bn");
+    ret = 2;
+  }
+  ECDSA_SIG_free(sig);
+  return ret;
+#endif
 }
 
 static int
@@ -132,6 +154,9 @@ openssl_ecdsa_do_verify(lua_State *L)
   EC_KEY              *ec = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
   const unsigned char *dgst = (const unsigned char *)luaL_checklstring(L, 2, &l);
   int                  top = lua_gettop(L);
+
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
+  /* OpenSSL 3.0+: Use EVP API */
   EVP_PKEY            *pkey = NULL;
   EVP_MD_CTX          *ctx = NULL;
   unsigned char       *sigbuf = NULL;
@@ -197,6 +222,25 @@ openssl_ecdsa_do_verify(lua_State *L)
   
   lua_pushboolean(L, ret == 1);
   return 1;
+#else
+  /* OpenSSL 1.1 and LibreSSL: Use legacy API */
+  if (top == 3) {
+    const unsigned char *s = (const unsigned char *)luaL_checklstring(L, 3, &sigl);
+    ECDSA_SIG  *sig = d2i_ECDSA_SIG(NULL, &s, sigl);
+    ret = ECDSA_do_verify(dgst, l, sig, ec);
+    ECDSA_SIG_free(sig);
+  } else {
+    BIGNUM    *r = BN_get(L, 3);
+    BIGNUM    *s = BN_get(L, 4);
+    ECDSA_SIG *sig = ECDSA_SIG_new();
+    ECDSA_SIG_set0(sig, r, s);
+    ret = ECDSA_do_verify(dgst, l, sig, ec);
+    ECDSA_SIG_free(sig);
+  }
+  if (ret == -1) return openssl_pushresult(L, ret);
+  lua_pushboolean(L, ret);
+  return 1;
+#endif
 }
 
 /***
@@ -215,12 +259,15 @@ static int openssl_ecdsa_sign(lua_State *L)
   size_t               dgstlen = 0;
   const unsigned char *dgst = (const unsigned char *)luaL_checklstring(L, 2, &dgstlen);
   const EVP_MD        *md = get_digest(L, 3, NULL);
+
+  luaL_argcheck(L, dgstlen == (size_t)EVP_MD_size(md), 4, "invalid digest");
+
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
+  /* OpenSSL 3.0+: Use EVP API */
   EVP_PKEY            *pkey = NULL;
   EVP_MD_CTX          *ctx = NULL;
   unsigned char       *sig = NULL;
   size_t               siglen = 0;
-
-  luaL_argcheck(L, dgstlen == (size_t)EVP_MD_size(md), 2, "invalid digest length");
 
   pkey = ec_key_to_evp_pkey(eckey);
   if (pkey == NULL)
@@ -255,6 +302,19 @@ static int openssl_ecdsa_sign(lua_State *L)
   EVP_PKEY_free(pkey);
 
   return ret == 1 ? 1 : openssl_pushresult(L, ret);
+#else
+  /* OpenSSL 1.1 and LibreSSL: Use legacy API */
+  unsigned int         siglen = ECDSA_size(eckey);
+  unsigned char       *sig = OPENSSL_malloc(siglen);
+
+  ret = ECDSA_sign(EVP_MD_type(md), dgst, dgstlen, sig, &siglen, eckey);
+  if (ret == 1) {
+    lua_pushlstring(L, (const char *)sig, siglen);
+  } else
+    ret = openssl_pushresult(L, ret);
+  OPENSSL_free(sig);
+  return ret;
+#endif
 }
 
 /***
@@ -277,10 +337,13 @@ static int openssl_ecdsa_verify(lua_State *L)
   size_t               siglen = 0;
   const unsigned char *sig = (const unsigned char *)luaL_checklstring(L, 3, &siglen);
   const EVP_MD        *md = get_digest(L, 4, NULL);
+
+  luaL_argcheck(L, dgstlen == (size_t)EVP_MD_size(md), 4, "invalid digest");
+
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
+  /* OpenSSL 3.0+: Use EVP API */
   EVP_PKEY            *pkey = NULL;
   EVP_MD_CTX          *ctx = NULL;
-
-  luaL_argcheck(L, dgstlen == (size_t)EVP_MD_size(md), 2, "invalid digest length");
 
   pkey = ec_key_to_evp_pkey(eckey);
   if (pkey == NULL)
@@ -306,6 +369,15 @@ static int openssl_ecdsa_verify(lua_State *L)
   
   lua_pushboolean(L, ret == 1);
   return 1;
+#else
+  /* OpenSSL 1.1 and LibreSSL: Use legacy API */
+  int type = EVP_MD_type(md);
+
+  ret = ECDSA_verify(type, dgst, (int)dgstlen, sig, (int)siglen, eckey);
+  if (ret == -1) return openssl_pushresult(L, ret);
+  lua_pushboolean(L, ret);
+  return 1;
+#endif
 }
 
 static int
@@ -395,6 +467,9 @@ openssl_ecdh_compute_key(lua_State *L)
 {
   EC_KEY        *ec = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
   EC_KEY        *peer = CHECK_OBJECT(2, EC_KEY, "openssl.ec_key");
+
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
+  /* OpenSSL 3.0+: Use EVP API */
   EVP_PKEY      *pkey = NULL;
   EVP_PKEY      *peerkey = NULL;
   EVP_PKEY_CTX  *ctx = NULL;
@@ -445,6 +520,42 @@ openssl_ecdh_compute_key(lua_State *L)
   EVP_PKEY_free(pkey);
 
   return ret == 1 ? 1 : openssl_pushresult(L, ret);
+#else
+  /* OpenSSL 1.1 and LibreSSL: Use legacy API */
+  int           field_size, outlen, secret_size_a;
+  unsigned char secret_a[MAX_ECDH_SIZE];
+  void *(*kdf)(const void *in, size_t inlen, void *out, size_t *xoutlen);
+  
+#ifndef OPENSSL_NO_SHA
+  static const int KDF1_SHA1_len = 20;
+  static void *
+  KDF1_SHA1(const void *in, size_t inlen, void *out, size_t *outlen)
+  {
+    if (*outlen < SHA_DIGEST_LENGTH)
+      return NULL;
+    else
+      *outlen = SHA_DIGEST_LENGTH;
+    return SHA1(in, inlen, out);
+  }
+#endif
+  
+  field_size = EC_GROUP_get_degree(EC_KEY_get0_group(ec));
+  if (field_size <= 24 * 8) {
+#ifndef OPENSSL_NO_SHA
+    outlen = KDF1_SHA1_len;
+    kdf = KDF1_SHA1;
+#else
+    outlen = (field_size + 7) / 8;
+    kdf = NULL;
+#endif
+  } else {
+    outlen = (field_size + 7) / 8;
+    kdf = NULL;
+  }
+  secret_size_a = ECDH_compute_key(secret_a, outlen, EC_KEY_get0_public_key(peer), ec, kdf);
+  lua_pushlstring(L, (const char *)secret_a, secret_size_a);
+  return 1;
+#endif
 }
 
 /***
