@@ -51,13 +51,16 @@ dofile("8.ssl.lua")
 dofile("9.ocsp.lua")
 dofile("9.srp.lua")
 dofile("9.issue.lua")
+
 dofile("issues_cipher.lua")
 dofile("issue#185.lua")
+
 dofile("dh.lua")
 dofile("dsa.lua")
 dofile("rsa.lua")
 dofile("group.lua")
 dofile("point.lua")
+dofile("provider.lua")
 dofile("ec.lua")
 dofile("sm2.lua")
 

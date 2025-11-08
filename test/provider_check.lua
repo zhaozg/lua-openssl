@@ -28,7 +28,7 @@ if openssl.provider then
   else
     print("  Status:          Available and functional")
     print("  Module type:     " .. type(openssl.provider))
-    
+
     -- Try to list providers
     local ok, result = pcall(function() return openssl.provider.list() end)
     if ok and result then
