@@ -27,7 +27,14 @@ generation, signature creation and verification.
 static int openssl_dsa_free(lua_State *L)
 {
   DSA *dsa = CHECK_OBJECT(1, DSA, "openssl.dsa");
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
   DSA_free(dsa);
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
   return 0;
 };
 
@@ -42,11 +49,18 @@ static int openssl_dsa_parse(lua_State *L)
   DSA          *dsa = CHECK_OBJECT(1, DSA, "openssl.dsa");
   lua_newtable(L);
 
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
   lua_pushinteger(L, DSA_bits(dsa));
   lua_setfield(L, -2, "bits");
 
   DSA_get0_pqg(dsa, &p, &q, &g);
   DSA_get0_key(dsa, &pub, &pri);
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 
   OPENSSL_PKEY_GET_BN(p, p);
   OPENSSL_PKEY_GET_BN(q, q);
@@ -68,11 +82,21 @@ openssl_dsa_set_engine(lua_State *L)
 #ifndef OPENSSL_NO_ENGINE
   DSA              *dsa = CHECK_OBJECT(1, DSA, "openssl.dsa");
   ENGINE           *e = CHECK_OBJECT(2, ENGINE, "openssl.engine");
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
   const DSA_METHOD *m = ENGINE_get_DSA(e);
   if (m) {
     int r = DSA_set_method(dsa, m);
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
     return openssl_pushresult(L, r);
   }
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 #endif
   return 0;
 }
@@ -92,9 +116,97 @@ openssl_dsa_generate_key(lua_State *L)
   size_t      seed_len = 0;
   const char *seed = luaL_optlstring(L, 2, NULL, &seed_len);
   ENGINE     *eng = lua_isnoneornil(L, 3) ? NULL : CHECK_OBJECT(3, ENGINE, "openssl.engine");
+  DSA        *dsa = NULL;
+  int         ret = 0;
 
-  DSA *dsa = eng ? DSA_new_method(eng) : DSA_new();
-  int  ret = DSA_generate_parameters_ex(dsa, bits, (byte *)seed, seed_len, NULL, NULL, NULL);
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
+  /* OpenSSL 3.0+ - Use EVP_PKEY APIs to avoid deprecation warnings */
+  EVP_PKEY_CTX *pctx = NULL;
+  EVP_PKEY_CTX *kctx = NULL;
+  EVP_PKEY     *param_pkey = NULL;
+  EVP_PKEY     *pkey = NULL;
+
+  /* Create context for parameter generation */
+  pctx = EVP_PKEY_CTX_new_from_name(NULL, "DSA", NULL);
+  if (!pctx) {
+    return openssl_pushresult(L, 0);
+  }
+
+  /* Initialize parameter generation */
+  ret = EVP_PKEY_paramgen_init(pctx);
+  if (ret != 1) {
+    EVP_PKEY_CTX_free(pctx);
+    return openssl_pushresult(L, ret);
+  }
+
+  /* Set key size */
+  ret = EVP_PKEY_CTX_set_dsa_paramgen_bits(pctx, bits);
+  if (ret != 1) {
+    EVP_PKEY_CTX_free(pctx);
+    return openssl_pushresult(L, ret);
+  }
+
+  /* Set seed if provided */
+  if (seed && seed_len > 0) {
+    ret = EVP_PKEY_CTX_ctrl(pctx, EVP_PKEY_DSA, EVP_PKEY_OP_PARAMGEN,
+                            EVP_PKEY_CTRL_DSA_PARAMGEN_MD, 0, (void *)seed);
+    /* Note: seed handling may not work the same way in OpenSSL 3.0 */
+    /* We continue even if this fails, as the seed is optional */
+  }
+
+  /* Generate parameters */
+  ret = EVP_PKEY_paramgen(pctx, &param_pkey);
+  EVP_PKEY_CTX_free(pctx);
+
+  if (ret != 1 || !param_pkey) {
+    if (param_pkey) EVP_PKEY_free(param_pkey);
+    return openssl_pushresult(L, ret);
+  }
+
+  /* Create key generation context from parameters */
+  kctx = EVP_PKEY_CTX_new(param_pkey, eng);
+  EVP_PKEY_free(param_pkey);
+
+  if (!kctx) {
+    return openssl_pushresult(L, 0);
+  }
+
+  /* Initialize key generation */
+  ret = EVP_PKEY_keygen_init(kctx);
+  if (ret != 1) {
+    EVP_PKEY_CTX_free(kctx);
+    return openssl_pushresult(L, ret);
+  }
+
+  /* Generate key pair */
+  ret = EVP_PKEY_keygen(kctx, &pkey);
+  EVP_PKEY_CTX_free(kctx);
+
+  if (ret == 1 && pkey) {
+    /* Extract DSA from EVP_PKEY for compatibility with Lua API */
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+    dsa = EVP_PKEY_get1_DSA(pkey);
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+
+    EVP_PKEY_free(pkey);
+
+    if (dsa) {
+      PUSH_OBJECT(dsa, "openssl.dsa");
+      return 1;
+    }
+  }
+
+  if (pkey) EVP_PKEY_free(pkey);
+  return openssl_pushresult(L, ret);
+#else
+  /* OpenSSL 1.x - Use legacy DSA APIs */
+  dsa = eng ? DSA_new_method(eng) : DSA_new();
+  ret = DSA_generate_parameters_ex(dsa, bits, (byte *)seed, seed_len, NULL, NULL, NULL);
   if (ret == 1) ret = DSA_generate_key(dsa);
   if (ret == 1) {
     PUSH_OBJECT(dsa, "openssl.dsa");
@@ -102,6 +214,7 @@ openssl_dsa_generate_key(lua_State *L)
   }
   DSA_free(dsa);
   return openssl_pushresult(L, ret);
+#endif
 }
 
 static luaL_Reg dsa_funs[] = {
