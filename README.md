@@ -286,12 +286,29 @@ this is very useful to free memory when lua-openssl repeat calls or run long tim
 ### Example 1: short encrypt/decrypt
 
 ```lua
-local evp_cipher = openssl.cipher.get('des')
-m = 'abcdefghick'
-key = m
-cdata = evp_cipher:encrypt(m,key)
-m1  = evp_cipher:decrypt(cdata,key)
-assert(m==m1)
+local openssl = require('openssl')
+local evp_cipher = openssl.cipher.get('aes-128-cbc')
+
+-- Note: Use AES instead of DES as DES is disabled by default in OpenSSL 3.x
+local msg = 'abcdefghick'
+local key = '1234567890123456'  -- 16 bytes for AES-128
+local iv = '1234567890123456'   -- 16 bytes IV
+
+-- Encrypt with error handling
+local cdata, err = evp_cipher:encrypt(msg, key, iv)
+if not cdata then
+  print("Encryption failed: " .. (err or "unknown error"))
+  return
+end
+
+-- Decrypt with error handling
+local decrypted, err = evp_cipher:decrypt(cdata, key, iv)
+if not decrypted then
+  print("Decryption failed: " .. (err or "unknown error"))
+  return
+end
+
+assert(msg == decrypted)
 ```
 
 ### Example 2: quick evp_digest
