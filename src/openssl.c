@@ -583,6 +583,8 @@ luaopen_openssl(lua_State *L)
   lua_setfield(L, -2, "mac");
   luaopen_param(L);
   lua_setfield(L, -2, "param");
+  luaopen_provider(L);
+  lua_setfield(L, -2, "provider");
 #endif
   luaopen_kdf(L);
   lua_setfield(L, -2, "kdf");

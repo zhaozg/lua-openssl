@@ -101,6 +101,7 @@ int luaopen_dh(lua_State *L);
 #if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
 int luaopen_mac(lua_State *L);
 int luaopen_param(lua_State *L);
+int luaopen_provider(lua_State *L);
 #endif
 int luaopen_kdf(lua_State *L);
 int luaopen_srp(lua_State *L);
