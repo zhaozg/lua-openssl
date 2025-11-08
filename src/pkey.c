@@ -13,8 +13,44 @@ pkey module to create and process public or private key, do asymmetric key opera
 #include "openssl.h"
 #include "private.h"
 
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+#include <openssl/core_names.h>
+#include <openssl/params.h>
+#endif
+
 static int         evp_pkey_name2type(const char *name);
 static const char *evp_pkey_type2name(int type);
+
+/* Compatibility layer for low-level key access migration to OpenSSL 3.0+ PARAM API */
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+/* Helper function to check if a private key component exists using PARAM API */
+static int
+openssl_pkey_has_private_bn_param(EVP_PKEY *pkey, const char *param_name)
+{
+  BIGNUM *bn = NULL;
+  int     ret = 0;
+
+  /* Try PARAM API first (for keys created with OpenSSL 3.0 API) */
+  if (EVP_PKEY_get_bn_param(pkey, param_name, &bn) && bn != NULL) {
+    ret = !BN_is_zero(bn);
+    BN_free(bn);
+    return ret;
+  }
+  
+  /* Fallback: PARAM API failed, likely a legacy key.
+   * For legacy keys created with OpenSSL 1.x API and assigned with
+   * EVP_PKEY_assign_*, we need to use EVP_PKEY_get0_* approach */
+  return -1; /* Indicate need for legacy fallback */
+}
+
+/* Helper function to check if EVP_PKEY has a valid key of expected type */
+static int
+openssl_pkey_has_key_of_type(EVP_PKEY *pkey, int expected_type)
+{
+  /* In OpenSSL 3.0+, if EVP_PKEY_id returns the expected type, the key exists */
+  return pkey != NULL && EVP_PKEY_type(EVP_PKEY_id(pkey)) == expected_type;
+}
+#endif
 
 int
 openssl_pkey_is_private(EVP_PKEY *pkey)
@@ -27,29 +63,80 @@ openssl_pkey_is_private(EVP_PKEY *pkey)
   switch (typ) {
 #ifndef OPENSSL_NO_RSA
   case EVP_PKEY_RSA: {
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+    /* Try OpenSSL 3.0+ PARAM API first */
+    ret = openssl_pkey_has_private_bn_param(pkey, OSSL_PKEY_PARAM_RSA_D);
+    if (ret < 0) {
+      /* Fallback to OpenSSL 1.x way for legacy keys */
+      RSA          *rsa = (RSA *)EVP_PKEY_get0_RSA(pkey);
+      const BIGNUM *d = NULL;
+      if (rsa) {
+        RSA_get0_key(rsa, NULL, NULL, &d);
+        ret = d != NULL;
+      } else {
+        ret = 0;
+      }
+    }
+#else
+    /* OpenSSL 1.x way */
     RSA          *rsa = (RSA *)EVP_PKEY_get0_RSA(pkey);
     const BIGNUM *d = NULL;
 
     RSA_get0_key(rsa, NULL, NULL, &d);
     ret = d != NULL;
+#endif
     break;
   }
 #endif
 #ifndef OPENSSL_NO_DSA
   case EVP_PKEY_DSA: {
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+    /* Try OpenSSL 3.0+ PARAM API first */
+    ret = openssl_pkey_has_private_bn_param(pkey, OSSL_PKEY_PARAM_PRIV_KEY);
+    if (ret < 0) {
+      /* Fallback to OpenSSL 1.x way for legacy keys */
+      DSA          *dsa = (DSA *)EVP_PKEY_get0_DSA(pkey);
+      const BIGNUM *p = NULL;
+      if (dsa) {
+        DSA_get0_key(dsa, NULL, &p);
+        ret = p != NULL;
+      } else {
+        ret = 0;
+      }
+    }
+#else
+    /* OpenSSL 1.x way */
     DSA          *dsa = (DSA *)EVP_PKEY_get0_DSA(pkey);
     const BIGNUM *p = NULL;
     DSA_get0_key(dsa, NULL, &p);
     ret = p != NULL;
+#endif
     break;
   }
 #endif
 #ifndef OPENSSL_NO_DH
   case EVP_PKEY_DH: {
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+    /* Try OpenSSL 3.0+ PARAM API first */
+    ret = openssl_pkey_has_private_bn_param(pkey, OSSL_PKEY_PARAM_PRIV_KEY);
+    if (ret < 0) {
+      /* Fallback to OpenSSL 1.x way for legacy keys */
+      DH           *dh = (DH *)EVP_PKEY_get0_DH(pkey);
+      const BIGNUM *p = NULL;
+      if (dh) {
+        DH_get0_key(dh, NULL, &p);
+        ret = p != NULL;
+      } else {
+        ret = 0;
+      }
+    }
+#else
+    /* OpenSSL 1.x way */
     DH           *dh = (DH *)EVP_PKEY_get0_DH(pkey);
     const BIGNUM *p = NULL;
     DH_get0_key(dh, NULL, &p);
     ret = p != NULL;
+#endif
     break;
   }
 #endif
@@ -59,9 +146,26 @@ openssl_pkey_is_private(EVP_PKEY *pkey)
   case EVP_PKEY_SM2:
 #endif
   {
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+    /* Try OpenSSL 3.0+ PARAM API first */
+    ret = openssl_pkey_has_private_bn_param(pkey, OSSL_PKEY_PARAM_PRIV_KEY);
+    if (ret < 0) {
+      /* Fallback to OpenSSL 1.x way for legacy keys */
+      EC_KEY       *ec = (EC_KEY *)EVP_PKEY_get0_EC_KEY(pkey);
+      const BIGNUM *p = NULL;
+      if (ec) {
+        p = EC_KEY_get0_private_key(ec);
+        ret = p != NULL;
+      } else {
+        ret = 0;
+      }
+    }
+#else
+    /* OpenSSL 1.x way */
     EC_KEY       *ec = (EC_KEY *)EVP_PKEY_get0_EC_KEY(pkey);
     const BIGNUM *p = EC_KEY_get0_private_key(ec);
     ret = p != NULL;
+#endif
     break;
   }
 #endif
@@ -94,10 +198,27 @@ openssl_pkey_is_sm2(const EVP_PKEY *pkey)
 
   id = EVP_PKEY_base_id(pkey);
   if (id == EVP_PKEY_EC) {
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+    /* OpenSSL 3.0+ way: use PARAM API to get curve name */
+    char curve_name[256];
+    size_t curve_name_len = sizeof(curve_name);
+    if (EVP_PKEY_get_utf8_string_param(pkey, OSSL_PKEY_PARAM_GROUP_NAME,
+                                        curve_name, sizeof(curve_name), &curve_name_len)) {
+      /* Check if the group name is SM2 */
+      if (strcmp(curve_name, "SM2") == 0) {
+        return 1;
+      }
+      /* Convert group name to NID and check */
+      int curve = OBJ_sn2nid(curve_name);
+      return curve == NID_sm2;
+    }
+#else
+    /* OpenSSL 1.x way */
     const EC_KEY   *ec = EVP_PKEY_get0_EC_KEY((EVP_PKEY *)pkey);
     const EC_GROUP *grp = EC_KEY_get0_group(ec);
     int             curve = EC_GROUP_get_curve_name(grp);
     return curve == NID_sm2;
+#endif
   }
   return 0;
 }
@@ -1437,21 +1558,49 @@ static int openssl_derive(lua_State *L)
   int           ptype = EVP_PKEY_type(EVP_PKEY_id(pkey));
 
 #if !defined(OPENSSL_NO_DH) && !defined(OPENSSL_NO_EC)
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+  /* OpenSSL 3.0+ way: use PARAM API compatible check */
+  luaL_argcheck(L,
+                (ptype == EVP_PKEY_DH && openssl_pkey_has_key_of_type(pkey, EVP_PKEY_DH))
+                  || (ptype == EVP_PKEY_EC && openssl_pkey_has_key_of_type(pkey, EVP_PKEY_EC)),
+                1,
+                "only support DH or EC private key");
+#else
+  /* OpenSSL 1.x way */
   luaL_argcheck(L,
                 (ptype == EVP_PKEY_DH && EVP_PKEY_get0_DH(pkey) != NULL)
                   || (ptype == EVP_PKEY_EC && EVP_PKEY_get0_EC_KEY(pkey) != NULL),
                 1,
                 "only support DH or EC private key");
+#endif
 #elif !defined(OPENSSL_NO_DH)
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+  /* OpenSSL 3.0+ way: use PARAM API compatible check */
+  luaL_argcheck(L,
+                ptype == EVP_PKEY_DH && openssl_pkey_has_key_of_type(pkey, EVP_PKEY_DH),
+                1,
+                "only support DH or EC private key");
+#else
+  /* OpenSSL 1.x way */
   luaL_argcheck(L,
                 ptype == EVP_PKEY_DH && EVP_PKEY_get0_DH(pkey) != NULL,
                 1,
                 "only support DH or EC private key");
+#endif
 #elif !defined(OPENSSL_NO_EC)
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+  /* OpenSSL 3.0+ way: use PARAM API compatible check */
+  luaL_argcheck(L,
+                ptype == EVP_PKEY_EC && openssl_pkey_has_key_of_type(pkey, EVP_PKEY_EC),
+                1,
+                "only support DH or EC private key");
+#else
+  /* OpenSSL 1.x way */
   luaL_argcheck(L,
                 ptype == EVP_PKEY_EC && EVP_PKEY_get0_EC_KEY(pkey) != NULL,
                 1,
                 "only support DH or EC private key");
+#endif
 #endif
 
   luaL_argcheck(L, ptype == EVP_PKEY_type(EVP_PKEY_id(peer)), 2, "mismatch key type");
