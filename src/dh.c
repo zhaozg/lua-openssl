@@ -18,8 +18,10 @@ for DH parameter generation, key generation and key agreement operations.
 */
 #include <openssl/dh.h>
 #include <openssl/engine.h>
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
 #include <openssl/core_names.h>
 #include <openssl/param_build.h>
+#endif
 
 #include "openssl.h"
 #include "private.h"
@@ -54,12 +56,14 @@ parse DH key parameters and components
 */
 static int openssl_dh_parse(lua_State *L)
 {
+  DH *dh = CHECK_OBJECT(1, DH, "openssl.dh");
+  lua_newtable(L);
+
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+  /* OpenSSL 3.0+ - Use EVP_PKEY APIs */
   BIGNUM   *p = NULL, *q = NULL, *g = NULL, *pub = NULL, *pri = NULL;
-  DH       *dh = CHECK_OBJECT(1, DH, "openssl.dh");
   EVP_PKEY *pkey = NULL;
   int       bits = 0;
-  
-  lua_newtable(L);
 
   /* Create EVP_PKEY from DH to use new APIs */
   pkey = EVP_PKEY_new();
@@ -118,6 +122,25 @@ static int openssl_dh_parse(lua_State *L)
     lua_pushinteger(L, 0);
     lua_setfield(L, -2, "bits");
   }
+#else
+  /* OpenSSL 1.x - Use legacy DH APIs */
+  const BIGNUM *p = NULL, *q = NULL, *g = NULL, *pub = NULL, *pri = NULL;
+
+  lua_pushinteger(L, DH_size(dh));
+  lua_setfield(L, -2, "size");
+
+  lua_pushinteger(L, DH_bits(dh));
+  lua_setfield(L, -2, "bits");
+
+  DH_get0_pqg(dh, &p, &q, &g);
+  DH_get0_key(dh, &pub, &pri);
+
+  OPENSSL_PKEY_GET_BN(p, p);
+  OPENSSL_PKEY_GET_BN(q, q);
+  OPENSSL_PKEY_GET_BN(g, g);
+  OPENSSL_PKEY_GET_BN(pub, pub_key);
+  OPENSSL_PKEY_GET_BN(pri, priv_key);
+#endif
 
   return 1;
 }
@@ -130,11 +153,14 @@ check DH parameters for validity
 */
 static int openssl_dh_check(lua_State *L)
 {
-  const DH     *dh = CHECK_OBJECT(1, DH, "openssl.dh");
+  const DH *dh = CHECK_OBJECT(1, DH, "openssl.dh");
+  int       ret = 0;
+  int       codes = 0;
+
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+  /* OpenSSL 3.0+ - Use EVP_PKEY APIs */
   EVP_PKEY     *pkey = NULL;
   EVP_PKEY_CTX *ctx = NULL;
-  int           ret = 0;
-  int           codes = 0;
 
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic push
@@ -178,6 +204,16 @@ static int openssl_dh_check(lua_State *L)
 #pragma GCC diagnostic pop
 #endif
 
+#else
+  /* OpenSSL 1.x - Use legacy DH APIs */
+  if (lua_isuserdata(L, 2)) {
+    const BIGNUM *pub = CHECK_OBJECT(2, BIGNUM, "openssl.bn");
+    ret = DH_check_pub_key(dh, pub, &codes);
+  } else {
+    ret = DH_check(dh, &codes);
+  }
+#endif
+
   lua_pushboolean(L, ret);
   lua_pushinteger(L, codes);
   return 2;
@@ -194,16 +230,20 @@ generate DH parameters for key exchange
 static int
 openssl_dh_generate_parameters(lua_State *L)
 {
-  int           bits = luaL_optint(L, 1, 1024);
-  int           generator = luaL_optint(L, 2, 2);
+  int     bits = luaL_optint(L, 1, 1024);
+  int     generator = luaL_optint(L, 2, 2);
+  ENGINE *eng = lua_isnoneornil(L, 3) ? NULL : CHECK_OBJECT(3, ENGINE, "openssl.engine");
+  int     ret = 0;
+  DH     *dh = NULL;
+
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+  /* OpenSSL 3.0+ - Use EVP_PKEY APIs */
   EVP_PKEY_CTX *pctx = NULL;
   EVP_PKEY     *pkey = NULL;
-  DH           *dh = NULL;
-  int           ret = 0;
 
   /* Note: ENGINE support is not directly available with EVP_PKEY_CTX_new_from_name.
    * For ENGINE support, the old API would need to be used. */
-  (void)L; /* Suppress unused warning if engine parameter is removed */
+  (void)eng;
 
   /* Create parameter generation context */
   pctx = EVP_PKEY_CTX_new_from_name(NULL, "DH", NULL);
@@ -254,6 +294,18 @@ openssl_dh_generate_parameters(lua_State *L)
   
   if (pkey) EVP_PKEY_free(pkey);
   return openssl_pushresult(L, ret);
+#else
+  /* OpenSSL 1.x - Use legacy DH APIs */
+  dh = eng ? DH_new_method(eng) : DH_new();
+  ret = DH_generate_parameters_ex(dh, bits, generator, NULL);
+
+  if (ret == 1) {
+    PUSH_OBJECT(dh, "openssl.dh");
+    return 1;
+  }
+  DH_free(dh);
+  return openssl_pushresult(L, ret);
+#endif
 }
 
 /***
@@ -264,12 +316,15 @@ generate a DH key pair from parameters
 static int
 openssl_dh_generate_key(lua_State *L)
 {
-  DH           *dhparameter = CHECK_OBJECT(1, DH, "openssl.dh");
+  DH  *dhparameter = CHECK_OBJECT(1, DH, "openssl.dh");
+  DH  *dh = NULL;
+  int  ret = 0;
+
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+  /* OpenSSL 3.0+ - Use EVP_PKEY APIs */
   EVP_PKEY     *param_pkey = NULL;
   EVP_PKEY_CTX *kctx = NULL;
   EVP_PKEY     *pkey = NULL;
-  DH           *dh = NULL;
-  int           ret = 0;
 
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic push
@@ -330,6 +385,18 @@ openssl_dh_generate_key(lua_State *L)
   
   if (pkey) EVP_PKEY_free(pkey);
   return openssl_pushresult(L, ret);
+#else
+  /* OpenSSL 1.x - Use legacy DH APIs */
+  dh = DHparams_dup(dhparameter);
+  ret = DH_generate_key(dh);
+  
+  if (ret == 1) {
+    PUSH_OBJECT(dh, "openssl.dh");
+    return 1;
+  }
+  DH_free(dh);
+  return openssl_pushresult(L, ret);
+#endif
 }
 
 static luaL_Reg dh_funs[] = {
