@@ -100,6 +100,36 @@ However, many existing applications still rely on DSA, so the module is maintain
  * We continue to use it to maintain backward compatibility. */
 ```
 
+### HMAC Module (src/hmac.c)
+**Status:** ✅ **COMPLETED**  
+**Warnings:** 0  
+**Strategy:**
+- Migrated to EVP_MAC API for OpenSSL 3.0+ with full backward compatibility
+- Uses conditional compilation to support both OpenSSL 3.0+ (EVP_MAC) and OpenSSL 1.1.x (HMAC)
+- Maintains exact same Lua API - no breaking changes
+- Full test coverage with existing test suite
+
+**Code Example:**
+```c
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+/* OpenSSL 3.0+ - Use EVP_MAC API */
+#define USE_EVP_MAC_API 1
+#endif
+
+#ifdef USE_EVP_MAC_API
+  EVP_MAC *mac = EVP_MAC_fetch(NULL, "hmac", NULL);
+  EVP_MAC_CTX *ctx = EVP_MAC_CTX_new(mac);
+  OSSL_PARAM params[2];
+  params[0] = OSSL_PARAM_construct_utf8_string("digest", (char *)EVP_MD_name(type), 0);
+  params[1] = OSSL_PARAM_construct_end();
+  EVP_MAC_init(ctx, key, key_len, params);
+#else
+  /* OpenSSL 1.1.x - Use HMAC API */
+  HMAC_CTX *ctx = HMAC_CTX_new();
+  HMAC_Init_ex(ctx, key, key_len, type, engine);
+#endif
+```
+
 ## Remaining Deprecation Warnings
 
 The following modules still have deprecation warnings. These are **expected and acceptable** as they 
@@ -123,12 +153,6 @@ and could break backward compatibility.
 **Reason:** RSA low-level functions for complete RSA functionality  
 **Status:** Direct bindings to OpenSSL RSA API for Lua  
 **Future:** May migrate to EVP_PKEY operations while maintaining API compatibility
-
-### HMAC Module (src/hmac.c)
-**Warnings:** 7  
-**Reason:** HMAC API replaced by EVP_MAC in OpenSSL 3.0  
-**Status:** Functional with current API  
-**Future:** Evaluate migration to EVP_MAC with backward compatibility layer
 
 ## Implementation Strategy
 
