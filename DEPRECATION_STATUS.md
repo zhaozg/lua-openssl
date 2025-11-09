@@ -1,6 +1,6 @@
 # OpenSSL 3.0 Deprecation Warnings - Current Status
 
-**Last Updated:** 2025-11-08  
+**Last Updated:** 2025-11-09  
 **OpenSSL Version Tested:** 3.0.13  
 **Test Results:** 177/177 passing ✅
 
@@ -100,6 +100,32 @@ However, many existing applications still rely on DSA, so the module is maintain
  * We continue to use it to maintain backward compatibility. */
 ```
 
+### RSA Module (src/rsa.c)
+**Status:** ✅ **COMPLETED**  
+**Warnings:** 0  
+**Strategy:**
+- Uses `#pragma GCC diagnostic ignored "-Wdeprecated-declarations"` to suppress warnings
+- RSA low-level API is deprecated in OpenSSL 3.0 but remains fully functional
+- Provides direct Lua bindings to complete RSA functionality
+- Retained for backward compatibility and complete control over RSA operations
+- Full test coverage
+
+**Code Comment from Source:**
+```c
+/* Suppress deprecation warnings for RSA functions in OpenSSL 3.0+
+ * RSA low-level API functions are deprecated in OpenSSL 3.0 in favor of EVP_PKEY APIs.
+ * However, this module provides direct Lua bindings to OpenSSL RSA API for:
+ * 1. Complete RSA functionality including low-level operations
+ * 2. Backward compatibility with existing Lua code
+ * 3. Direct control over RSA operations (padding, encryption modes, etc.)
+ * 
+ * The RSA API remains functional in OpenSSL 3.0+ and is widely used.
+ * Future versions may migrate to EVP_PKEY operations while maintaining API compatibility.
+ * 
+ * Compatibility: OpenSSL 1.1.x, 3.0.x, 3.x.x and LibreSSL 3.3.6+
+ */
+```
+
 ## Remaining Deprecation Warnings
 
 The following modules still have deprecation warnings. These are **expected and acceptable** as they 
@@ -117,12 +143,6 @@ and could break backward compatibility.
 **Reason:** Low-level key operations required for complete OpenSSL key management  
 **Status:** Many functions needed for legacy key support and backward compatibility  
 **Future:** Gradual migration as Provider API matures
-
-### RSA Module (src/rsa.c)
-**Warnings:** 44  
-**Reason:** RSA low-level functions for complete RSA functionality  
-**Status:** Direct bindings to OpenSSL RSA API for Lua  
-**Future:** May migrate to EVP_PKEY operations while maintaining API compatibility
 
 ### HMAC Module (src/hmac.c)
 **Warnings:** 7  

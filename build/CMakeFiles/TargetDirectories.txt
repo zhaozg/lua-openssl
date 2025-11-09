@@ -1,7 +1,0 @@
-/home/runner/work/lua-openssl/lua-openssl/build/CMakeFiles/lua-openssl.dir
-/home/runner/work/lua-openssl/lua-openssl/build/CMakeFiles/edit_cache.dir
-/home/runner/work/lua-openssl/lua-openssl/build/CMakeFiles/rebuild_cache.dir
-/home/runner/work/lua-openssl/lua-openssl/build/CMakeFiles/list_install_components.dir
-/home/runner/work/lua-openssl/lua-openssl/build/CMakeFiles/install.dir
-/home/runner/work/lua-openssl/lua-openssl/build/CMakeFiles/install/local.dir
-/home/runner/work/lua-openssl/lua-openssl/build/CMakeFiles/install/strip.dir
