@@ -1786,20 +1786,13 @@ openssl_ssl_session_time(lua_State *L)
 #if OPENSSL_VERSION_NUMBER >= 0x30400000L && !defined(LIBRESSL_VERSION_NUMBER)
   time_t       time;
   if (!lua_isnone(L, 2)) {
-    time_t prev_time;
     time = (time_t)luaL_checklong(L, 2);
-    if (SSL_SESSION_set_time_ex(session, time, &prev_time) == 1) {
-      lua_pushinteger(L, (lua_Integer)prev_time);
-    } else {
-      lua_pushinteger(L, 0);
-    }
+    time_t prev_time = SSL_SESSION_set_time_ex(session, time);
+    lua_pushinteger(L, (lua_Integer)prev_time);
     return 1;
   }
-  if (SSL_SESSION_get_time_ex(session, &time) == 1) {
-    lua_pushinteger(L, (lua_Integer)time);
-  } else {
-    lua_pushinteger(L, 0);
-  }
+  time = SSL_SESSION_get_time_ex(session);
+  lua_pushinteger(L, (lua_Integer)time);
   return 1;
 #else
   int          time;

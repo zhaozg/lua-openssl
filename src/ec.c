@@ -37,7 +37,7 @@ ec_key_to_evp_pkey(EC_KEY *ec)
   EVP_PKEY *pkey = EVP_PKEY_new();
   if (pkey == NULL)
     return NULL;
-  
+
   /* Suppress deprecation warning for EVP_PKEY_set1_EC_KEY (deprecated in OpenSSL 3.0).
    * This function is necessary for compatibility with EC_KEY-based operations. */
 #if defined(__GNUC__) || defined(__clang__)
@@ -45,16 +45,13 @@ ec_key_to_evp_pkey(EC_KEY *ec)
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
   if (EVP_PKEY_set1_EC_KEY(pkey, ec) != 1) {
-#if defined(__GNUC__) || defined(__clang__)
-#pragma GCC diagnostic pop
-#endif
     EVP_PKEY_free(pkey);
     return NULL;
   }
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
-  
+
   return pkey;
 }
 #endif
@@ -128,7 +125,7 @@ openssl_ecdsa_do_sign(lua_State *L)
 
   EVP_MD_CTX_free(ctx);
   EVP_PKEY_free(pkey);
-  
+
   return ret > 0 ? ret : openssl_pushresult(L, 0);
 #else
   /* OpenSSL 1.1 and LibreSSL: Use legacy API */
@@ -202,7 +199,7 @@ openssl_ecdsa_do_verify(lua_State *L)
     BIGNUM    *s = BN_get(L, 4);
     ECDSA_SIG *sig = ECDSA_SIG_new();
     ECDSA_SIG_set0(sig, r, s);
-    
+
     /* Convert to DER */
     unsigned char *p = NULL;
     int            derlen = i2d_ECDSA_SIG(sig, &p);
@@ -211,7 +208,7 @@ openssl_ecdsa_do_verify(lua_State *L)
       siglen = derlen;
     }
     ECDSA_SIG_free(sig);
-    
+
     if (derlen <= 0) {
       EVP_MD_CTX_free(ctx);
       EVP_PKEY_free(pkey);
@@ -231,7 +228,7 @@ openssl_ecdsa_do_verify(lua_State *L)
 
   if (ret == -1)
     return openssl_pushresult(L, ret);
-  
+
   lua_pushboolean(L, ret == 1);
   return 1;
 #else
@@ -378,7 +375,7 @@ static int openssl_ecdsa_verify(lua_State *L)
 
   if (ret == -1)
     return openssl_pushresult(L, ret);
-  
+
   lua_pushboolean(L, ret == 1);
   return 1;
 #else
@@ -421,12 +418,12 @@ openssl_key_parse(lua_State *L)
   const EC_POINT *point;
   const EC_GROUP *group;
   const BIGNUM   *priv;
-  
+
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
-  
+
   point = EC_KEY_get0_public_key(ec);
   group = EC_KEY_get0_group(ec);
   priv = EC_KEY_get0_private_key(ec);
@@ -552,7 +549,7 @@ openssl_ecdh_compute_key(lua_State *L)
   int           field_size, outlen, secret_size_a;
   unsigned char secret_a[MAX_ECDH_SIZE];
   void *(*kdf)(const void *in, size_t inlen, void *out, size_t *xoutlen);
-  
+
   field_size = EC_GROUP_get_degree(EC_KEY_get0_group(ec));
   if (field_size <= 24 * 8) {
 #ifndef OPENSSL_NO_SHA
@@ -595,19 +592,19 @@ openssl_ecdsa_set_method(lua_State *L)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
-  
+
   const EC_KEY_METHOD *m = ENGINE_get_EC(e);
   if (m) {
     int r = EC_KEY_set_method(ec, m);
-    
+
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
-    
+
     return openssl_pushresult(L, r);
   }
-  
-  
+
+
 #endif
 #endif
   return 0;
@@ -644,18 +641,18 @@ openssl_key_export(lua_State *L)
   EC_KEY        *ec = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
   unsigned char *der = NULL;
   int            len;
-  
+
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
-  
+
   len = i2d_ECPrivateKey(ec, &der);
-  
+
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
-  
+
   if (len > 0)
     lua_pushlstring(L, (const char *)der, len);
   else
@@ -675,27 +672,27 @@ static int
 openssl_key_group(lua_State *L)
 {
   EC_KEY *ec = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
-  
+
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
-  
+
   if (!lua_isnone(L, 2)) {
     EC_GROUP *g = CHECK_OBJECT(2, EC_GROUP, "openssl.ec_group");
     int       ret = EC_KEY_set_group(ec, g);
-    
+
     return openssl_pushresult(L, ret);
   } else {
     const EC_GROUP *g = EC_KEY_get0_group(ec);
     g = EC_GROUP_dup(g);
-    
+
     PUSH_OBJECT(g, "openssl.ec_group");
-    
+
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
-    
+
     return 1;
   }
 }
@@ -717,13 +714,13 @@ openssl_key_read(lua_State *L)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
-  
+
   ec = d2i_ECPrivateKey(NULL, &der, len);
-  
+
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
-  
+
   if (ec)
     PUSH_OBJECT(ec, "openssl.ec_key");
   else
@@ -744,19 +741,19 @@ openssl_key_conv_form(lua_State *L)
 {
   EC_KEY                 *ec = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
   point_conversion_form_t cform;
-  
+
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
-  
+
   if (lua_isnone(L, 2)) {
     cform = EC_KEY_get_conv_form(ec);
-    
+
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
-    
+
     openssl_push_point_conversion_form(L, cform);
     lua_pushinteger(L, cform);
     return 2;
@@ -764,18 +761,18 @@ openssl_key_conv_form(lua_State *L)
     cform = lua_tointeger(L, 2);
   else
     cform = openssl_to_point_conversion_form(L, 2, NULL);
-  
+
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
-  
+
   EC_KEY_set_conv_form(ec, cform);
-  
+
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
-  
+
   lua_pushvalue(L, 1);
   return 1;
 }
@@ -793,19 +790,19 @@ openssl_key_enc_flags(lua_State *L)
 {
   EC_KEY      *ec = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
   unsigned int flags;
-  
+
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
-  
+
   if (lua_isnone(L, 2)) {
     flags = EC_KEY_get_enc_flags(ec);
-    
+
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
-    
+
     openssl_push_group_asn1_flag(L, flags);
     lua_pushinteger(L, flags);
     return 2;
@@ -813,18 +810,18 @@ openssl_key_enc_flags(lua_State *L)
     flags = luaL_checkint(L, 2);
   else
     flags = openssl_to_group_asn1_flag(L, 2, NULL);
-  
+
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
-  
+
   EC_KEY_set_enc_flags(ec, flags);
-  
+
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
-  
+
   lua_pushvalue(L, 1);
   return 1;
 }
