@@ -163,9 +163,6 @@ function TestProvider:test_load_invalid_provider()
 
   lu.assertNil(prov, "Should not load non-existent provider")
   lu.assertTrue(type(err) == 'string', "Error message should be a string")
-
-  -- Avoid memory leak by unloading
-  prov:unload()
 end
 
 function TestProvider:test_multiple_providers()
