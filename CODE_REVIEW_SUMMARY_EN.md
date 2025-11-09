@@ -15,38 +15,7 @@ This document provides a comprehensive code review of the lua-openssl project, f
 
 ## 1. Critical Issues (Highest Priority)
 
-### 1.1 Deprecated API Usage
-
-**Severity: HIGH** - These APIs generate deprecation warnings and may be removed in future OpenSSL versions.
-
-| Deprecated Function | Modern Replacement | Locations | Priority |
-|---------------------|-------------------|-----------|----------|
-| `EVP_MD_CTX_create()` | `EVP_MD_CTX_new()` | digest.c:61,127,155,235; pkey.c:1522,1597 | **CRITICAL** |
-| `EVP_MD_CTX_destroy()` | `EVP_MD_CTX_free()` | digest.c:70,242,365 | **CRITICAL** |
-| `EVP_MD_CTX_init()` | Remove (new() already initializes) | digest.c:63 | **HIGH** |
-| `HMAC_CTX_init()` | Handled by `HMAC_CTX_new()` | compat.c:204 | MEDIUM |
-| `HMAC_CTX_cleanup()` | Handled by `HMAC_CTX_free()` | compat.c:213 | MEDIUM |
-| `EVP_CIPHER_CTX_cleanup()` | `EVP_CIPHER_CTX_reset()` | compat.c:397 | MEDIUM |
-
-**Recommended Fix (Example for digest.c):**
-```c
-// OLD (deprecated)
-EVP_MD_CTX *ctx = EVP_MD_CTX_create();
-if (ctx) {
-  EVP_MD_CTX_init(ctx);  // Unnecessary!
-  // ... use ctx
-  EVP_MD_CTX_destroy(ctx);
-}
-
-// NEW (modern)
-EVP_MD_CTX *ctx = EVP_MD_CTX_new();  // Already initialized
-if (ctx) {
-  // ... use ctx
-  EVP_MD_CTX_free(ctx);
-}
-```
-
-### 1.2 Potential Memory Leaks
+d### 1.1 Potential Memory Leaks
 
 **Severity: MEDIUM-HIGH** - Some error paths may not properly free allocated resources.
 
@@ -76,61 +45,6 @@ if (ctx) {
 
 ### 2.2 Deprecated API Migration Path
 
-#### Phase 1: Context Management (Immediate)
-- Replace all `*_create/*_destroy` with `*_new/*_free`
-- Remove redundant `*_init` calls
-- Estimated effort: 2-3 days
-
-#### Phase 2: OpenSSL 3.0 Low-Level Access ✅ **COMPLETED**
-- ✅ Migrated 27 uses of `EVP_PKEY_get0_*` to PARAM API with legacy fallback
-- ✅ Created compatibility layer for OpenSSL 1.x and LibreSSL
-- ✅ All 177/177 tests passing
-- Actual effort: 1 day (completed)
-- PR: [Migrate EVP_PKEY_get0_* to OpenSSL 3.0 PARAM API](https://github.com/zhaozg/lua-openssl/pull/xxx)
-
-**Implementation approach:**
-- Try OpenSSL 3.0+ PARAM API first (for native 3.0 keys)
-- Fallback to legacy EVP_PKEY_get0_* API (for legacy keys)
-- All OpenSSL 3.0+ code excludes LibreSSL (`!defined(LIBRESSL_VERSION_NUMBER)`)
-
-#### Phase 3: Module-Specific Deprecation Handling ✅ **COMPLETED**
-The following modules have been properly handled for OpenSSL 3.0 deprecation warnings:
-
-**✅ DH Module (src/dh.c) - COMPLETED:**
-- Uses `#pragma GCC diagnostic ignored "-Wdeprecated-declarations"` to suppress warnings
-- Implemented OSSL_PARAM API and EVP_PKEY_CTX_new_from_name() for OpenSSL 3.0+
-- Maintains backward compatibility with OpenSSL 1.1
-- Status: 0 compilation warnings
-- Related issues: #344
-
-**✅ DSA Module (src/dsa.c) - COMPLETED:**
-- Uses `#pragma GCC diagnostic ignored "-Wdeprecated-declarations"` to suppress warnings
-- DSA API is deprecated in OpenSSL 3.0 but remains fully functional
-- Retained for backward compatibility and existing code support
-- Status: 0 compilation warnings
-- Related issues: #346
-
-**✅ EC Module (src/ec.c) - COMPLETED:**
-- Uses `#pragma GCC diagnostic ignored "-Wdeprecated-declarations"` to suppress warnings
-- Core cryptographic operations (ECDSA sign/verify, ECDH) migrated to EVP APIs
-- EC_KEY accessor functions retained for Lua API and object lifecycle management
-- Status: 0 compilation warnings (suppressed by pragma)
-- Related issues: Mentioned in original issue
-
-**✅ Digest Module (src/digest.c) - COMPLETED:**
-- PR #353: Fixed `EVP_MD_meth_get_app_datasize()` deprecation warnings
-- Disabled unsupported functionality for OpenSSL 3.0+ and LibreSSL
-- Uses conditional compilation for cross-version compatibility
-- Status: 0 compilation warnings
-- Related issues: #353
-
-**✅ SRP Module (src/srp.c) - COMPLETED:**
-- Uses `#pragma GCC diagnostic ignored "-Wdeprecated-declarations"` to suppress warnings
-- SRP is deprecated in OpenSSL 3.0 but remains functional
-- Retained for backward compatibility
-- Status: 0 compilation warnings
-- Related issues: #351
-
 **Implementation Strategy:**
 These modules use appropriate deprecation handling strategies:
 1. **For migratable APIs**: Migrated to modern alternatives (e.g., DH module uses EVP_PKEY API in OpenSSL 3.0+)
@@ -139,10 +53,8 @@ These modules use appropriate deprecation handling strategies:
 
 **Remaining Deprecation Warnings:**
 The following modules still have deprecation warnings, but these are expected as they provide direct bindings to low-level OpenSSL APIs:
-- `src/engine.c`: 53 warnings - ENGINE API replaced by Provider API in OpenSSL 3.0, retained for backward compatibility
 - `src/pkey.c`: 127 warnings - Low-level key operations, many needed for legacy key support and backward compatibility
 - `src/rsa.c`: 44 warnings - RSA low-level functions, provide complete RSA functionality access for Lua API
-- `src/hmac.c`: 7 warnings - HMAC API replaced by MAC provider in OpenSSL 3.0, requires future migration evaluation
 
 **Future Recommendations:**
 These remaining warnings involve significant code refactoring and should be addressed in separate PRs:
@@ -165,6 +77,7 @@ These remaining warnings involve significant code refactoring and should be addr
 | **ChaCha20-Poly1305** | 1.1.0+ | **HIGH** | ⚠️ Verify | Modern AEAD cipher |
 
 **Recommended API Design:**
+
 ```lua
 -- Ed25519 signing
 local pkey = openssl.pkey.new('ed25519')
@@ -221,27 +134,7 @@ local verified = openssl.password.verify('mypassword', hashed)
 
 ### 4.1 Short-term (1-3 months)
 
-#### A. Fix Deprecated APIs ✅ **MUST DO**
-- **Impact:** Eliminates warnings, improves future compatibility
-- **Effort:** 2-3 days
-- **Files:** `src/digest.c`, `src/pkey.c`, `src/compat.c`
-
-#### B. Provider API Support ✅ **HIGH VALUE**
-```lua
--- Load providers
-local provider = openssl.provider.load('default')
-local fips_prov = openssl.provider.load('fips')
-
--- Query provider status
-if provider:is_available() then
-  print("Provider loaded")
-end
-```
-- **Impact:** Access to OpenSSL 3.0 provider architecture
-- **Effort:** 5-7 days
-- **File:** New `src/provider.c` or extend `src/engine.c`
-
-#### C. Enhanced Error Handling ✅ **IMPORTANT**
+#### A. Enhanced Error Handling ✅ **IMPORTANT**
 - Audit all error paths for memory leaks
 - Standardize error reporting
 - Add error injection tests
@@ -321,35 +214,26 @@ local cipher = openssl.cipher.fetch('AES-256-GCM', {
 
 ## 5. Implementation Priority Summary
 
-### ✅ Completed
-1. ✅ Complete analysis document
-2. ✅ Fix Digest module deprecation warnings (PR #353)
-3. ✅ Handle DH module deprecation warnings (Issue #344)
-4. ✅ Handle DSA module deprecation warnings (Issue #346)
-5. ✅ Handle EC module deprecation warnings
-6. ✅ Handle SRP module deprecation warnings (Issue #351)
-7. ✅ Migrate EVP_PKEY_get0_* to PARAM API with legacy fallback
-
 ### Near-term (This Month)
-4. 🔍 Error handling audit and fixes
-5. 📝 Create version compatibility documentation
-6. 🧪 Enhanced test suite
+1. 🔍 Error handling audit and fixes
+1. 📝 Create version compatibility documentation
+1. 🧪 Enhanced test suite
 
 ### Short-term (1-3 Months)
-7. 🆕 OpenSSL 3.0 Provider API support
-8. 🆕 Ed25519/Ed448 implementation
-9. 🔄 Evaluate HMAC module migration to EVP_MAC
+1. 🆕 OpenSSL 3.0 Provider API support
+1. 🆕 Ed25519/Ed448 implementation
+1. 🔄 Evaluate HMAC module migration to EVP_MAC
 
 ### Medium-term (3-6 Months)
-10. 🆕 OSSL_PARAM API bindings
-11. 🆕 X25519/X448 implementation
-12. 🔍 KDF feature completion
-13. 🔄 Evaluate ENGINE module migration to Provider API
+1. 🆕 OSSL_PARAM API bindings
+1. 🆕 X25519/X448 implementation
+1. 🔍 KDF feature completion
+1. 🔄 Evaluate ENGINE module migration to Provider API
 
 ### Long-term (6-12 Months)
-14. 🆕 QUIC support
-15. 🆕 JWE/JOSE consideration
-16. 🔬 Post-quantum cryptography research
+1. 🆕 QUIC support
+1. 🆕 JWE/JOSE consideration
+1. 🔬 Post-quantum cryptography research
 
 ---
 
@@ -450,7 +334,7 @@ Apply similar changes to:
 - ⚠️ Error handling consistency
 - ⚠️ Documentation completeness
 
-**Recommendation:** 
+**Recommendation:**
 Fix deprecated APIs immediately (2-3 days effort), then gradually adopt OpenSSL 3.0+ features and modern algorithms over 3-6 months. The project is solid but needs modernization to stay current with cryptographic best practices.
 
 ---
@@ -473,9 +357,9 @@ Fix deprecated APIs immediately (2-3 days effort), then gradually adopt OpenSSL 
 
 ---
 
-**Document Version:** 1.0  
-**Date:** 2025-11-08  
-**Author:** Code Review Analysis  
+**Document Version:** 1.1
+**Date:** 2025-11-09
+**Author:** Code Review Analysis
 **Status:** Initial Draft
 
 **For the complete analysis in Chinese with more details, see:** [CODE_REVIEW_ANALYSIS.md](./CODE_REVIEW_ANALYSIS.md)

@@ -1,75 +1,16 @@
 # OpenSSL 3.0 Deprecation Warnings - Current Status
 
-**Last Updated:** 2025-11-09  
-**OpenSSL Version Tested:** 3.0.13  
+**Last Updated:** 2025-11-09
+**OpenSSL Version Tested:** 3.0.13
 **Test Results:** 177/177 passing ✅
 
 ## Executive Summary
 
-This document tracks the status of OpenSSL 3.0 deprecation warning handling in lua-openssl. 
-The project has successfully addressed deprecation warnings in critical modules while maintaining 
+This document tracks the status of OpenSSL 3.0 deprecation warning handling in lua-openssl.
+The project has successfully addressed deprecation warnings in critical modules while maintaining
 backward compatibility with OpenSSL 1.1.x and LibreSSL.
 
 ## Completed Modules ✅
-
-### DH Module (src/dh.c) - Issue #344
-**Status:** ✅ **COMPLETED**  
-**Warnings:** 0  
-**Strategy:**
-- Uses `#pragma GCC diagnostic ignored "-Wdeprecated-declarations"` to suppress warnings
-- Implements OSSL_PARAM API for OpenSSL 3.0+ (e.g., EVP_PKEY_CTX_new_from_name)
-- Maintains backward compatibility with OpenSSL 1.1.x through conditional compilation
-- Full test coverage with existing test suite
-
-**Code Example:**
-```c
-#if defined(__GNUC__) || defined(__clang__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
-// DH operations...
-#if defined(__GNUC__) || defined(__clang__)
-#pragma GCC diagnostic pop
-#endif
-```
-
-### DSA Module (src/dsa.c) - Issue #346
-**Status:** ✅ **COMPLETED**  
-**Warnings:** 0  
-**Strategy:**
-- Uses `#pragma GCC diagnostic ignored "-Wdeprecated-declarations"` to suppress warnings
-- DSA API is marked deprecated in OpenSSL 3.0 but remains fully functional
-- Retained for backward compatibility and existing application support
-- Full test coverage
-
-**Rationale:**  
-DSA is deprecated in OpenSSL 3.0 due to security concerns and recommendations to use ECDSA or EdDSA instead.
-However, many existing applications still rely on DSA, so the module is maintained with suppressed warnings.
-
-### EC Module (src/ec.c)
-**Status:** ✅ **COMPLETED**  
-**Warnings:** 0 (suppressed by pragma)  
-**Strategy:**
-- Uses `#pragma GCC diagnostic ignored "-Wdeprecated-declarations"` for the entire module
-- Core cryptographic operations (ECDSA sign/verify, ECDH) migrated to EVP APIs
-- EC_KEY accessor functions retained for Lua API and object lifecycle management
-- Full test coverage including EC key generation, signing, and verification
-
-**Code Comment from Source:**
-```c
-/* Suppress deprecation warnings for EC_KEY accessor functions that are part of the module's API.
- * The core cryptographic operations (ECDSA sign/verify, ECDH) have been migrated to EVP APIs.
- * These accessors are needed for the Lua API and object lifecycle management. */
-```
-
-### Digest Module (src/digest.c) - PR #353
-**Status:** ✅ **COMPLETED**  
-**Warnings:** 0  
-**Strategy:**
-- Conditional compilation to disable `EVP_MD_meth_get_app_datasize()` for OpenSSL 3.0+ and LibreSSL
-- Function is not supported in modern OpenSSL/LibreSSL, so the feature is gracefully disabled
-- No breaking changes to API - function returns 0 when unsupported
-- Full test coverage
 
 **Code Example:**
 ```c
@@ -84,64 +25,18 @@ However, many existing applications still rely on DSA, so the module is maintain
 #endif
 ```
 
-### SRP Module (src/srp.c) - Issue #351
-**Status:** ✅ **COMPLETED**  
-**Warnings:** 0  
-**Strategy:**
-- Uses `#pragma GCC diagnostic ignored "-Wdeprecated-declarations"` to suppress warnings
-- SRP is deprecated in OpenSSL 3.0 but remains functional
-- Retained for backward compatibility
-- Full test coverage
-
-**Code Comment from Source:**
-```c
-/* Suppress deprecation warnings for SRP functions in OpenSSL 3.0+
- * The SRP module is marked deprecated but remains functional.
- * We continue to use it to maintain backward compatibility. */
-```
-
-### HMAC Module (src/hmac.c)
-**Status:** ✅ **COMPLETED**  
-**Warnings:** 0  
-**Strategy:**
-- Migrated to EVP_MAC API for OpenSSL 3.0+ with full backward compatibility
-- Uses conditional compilation to support both OpenSSL 3.0+ (EVP_MAC) and OpenSSL 1.1.x (HMAC)
-- Maintains exact same Lua API - no breaking changes
-- Full test coverage with existing test suite
-
-**Code Example:**
-```c
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L
-/* OpenSSL 3.0+ - Use EVP_MAC API */
-#define USE_EVP_MAC_API 1
-#endif
-
-#ifdef USE_EVP_MAC_API
-  EVP_MAC *mac = EVP_MAC_fetch(NULL, "hmac", NULL);
-  EVP_MAC_CTX *ctx = EVP_MAC_CTX_new(mac);
-  OSSL_PARAM params[2];
-  params[0] = OSSL_PARAM_construct_utf8_string("digest", (char *)EVP_MD_name(type), 0);
-  params[1] = OSSL_PARAM_construct_end();
-  EVP_MAC_init(ctx, key, key_len, params);
-#else
-  /* OpenSSL 1.1.x - Use HMAC API */
-  HMAC_CTX *ctx = HMAC_CTX_new();
-  HMAC_Init_ex(ctx, key, key_len, type, engine);
-#endif
-```
-
 ### ENGINE Module (src/engine.c)
-**Status:** ✅ **COMPLETED**  
-**Warnings:** 0  
+**Status:** ✅ **COMPLETED**
+**Warnings:** 0
 **Strategy:**
 - Uses `#pragma GCC diagnostic ignored "-Wdeprecated-declarations"` to suppress warnings
 - ENGINE API is deprecated in OpenSSL 3.0 in favor of the Provider API
 - Retained for backward compatibility with existing applications
 - Full test coverage with existing test suite
 
-**Rationale:**  
+**Rationale:**
 ENGINE is deprecated in OpenSSL 3.0 as the Provider API replaces its functionality.
-However, many existing applications still rely on ENGINE, so the module is maintained 
+However, many existing applications still rely on ENGINE, so the module is maintained
 with suppressed warnings. Migration to Provider API may happen in a future major version.
 
 **Code Comment from Source:**
@@ -154,20 +49,22 @@ with suppressed warnings. Migration to Provider API may happen in a future major
 
 ## Remaining Deprecation Warnings
 
-The following modules still have deprecation warnings. These are **expected and acceptable** as they 
-provide direct Lua bindings to low-level OpenSSL APIs. Migration would require significant refactoring 
+The following modules still have deprecation warnings. These are **expected and acceptable** as they
+provide direct Lua bindings to low-level OpenSSL APIs. Migration would require significant refactoring
 and could break backward compatibility.
 
 ### PKEY Module (src/pkey.c)
-**Warnings:** 127  
-**Reason:** Low-level key operations required for complete OpenSSL key management  
-**Status:** Many functions needed for legacy key support and backward compatibility  
+
+**Warnings:** 127
+**Reason:** Low-level key operations required for complete OpenSSL key management
+**Status:** Many functions needed for legacy key support and backward compatibility
 **Future:** Gradual migration as Provider API matures
 
 ### RSA Module (src/rsa.c)
-**Warnings:** 44  
-**Reason:** RSA low-level functions for complete RSA functionality  
-**Status:** Direct bindings to OpenSSL RSA API for Lua  
+
+**Warnings:** 44
+**Reason:** RSA low-level functions for complete RSA functionality
+**Status:** Direct bindings to OpenSSL RSA API for Lua
 **Future:** May migrate to EVP_PKEY operations while maintaining API compatibility
 
 ## Implementation Strategy
@@ -215,15 +112,15 @@ All deprecation warning handling has been validated with:
 - [OpenSSL 3.0 Migration Guide](https://www.openssl.org/docs/man3.0/man7/migration_guide.html)
 - [OpenSSL 3.0 Provider Documentation](https://www.openssl.org/docs/man3.0/man7/provider.html)
 - Issue #344: DH module deprecation warnings
-- Issue #346: DSA module deprecation warnings  
+- Issue #346: DSA module deprecation warnings
 - Issue #351: SRP module deprecation warnings
 - Issue #360: ENGINE module deprecation warnings (minimal refactor)
 - PR #353: Digest module deprecation fixes
 
 ## Conclusion
 
-The lua-openssl project has successfully addressed critical deprecation warnings for OpenSSL 3.0 
-compatibility while maintaining full backward compatibility with OpenSSL 1.1.x. The ENGINE module 
-has been updated with minimal changes to suppress deprecation warnings while retaining full 
-functionality. Remaining warnings are in low-level API modules (PKEY, RSA) and are expected/acceptable. 
+The lua-openssl project has successfully addressed critical deprecation warnings for OpenSSL 3.0
+compatibility while maintaining full backward compatibility with OpenSSL 1.1.x. The ENGINE module
+has been updated with minimal changes to suppress deprecation warnings while retaining full
+functionality. Remaining warnings are in low-level API modules (PKEY, RSA) and are expected/acceptable.
 The project is well-positioned for long-term OpenSSL 3.0+ support.
