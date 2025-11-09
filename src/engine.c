@@ -24,6 +24,15 @@ or alternative software implementations of cryptographic operations.
 #include "private.h"
 
 #ifndef OPENSSL_NO_ENGINE
+
+/* Suppress deprecation warnings for ENGINE API in OpenSSL 3.0+
+ * The ENGINE API is deprecated in favor of the Provider API, but we continue
+ * to use it to maintain backward compatibility. The module may be migrated
+ * to the Provider API in a future major version. */
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 enum
 {
   TYPE_RSA,
@@ -593,4 +602,9 @@ openssl_register_engine(lua_State *L)
   auxiliar_newclass(L, "openssl.engine", eng_funcs);
   return 0;
 }
+
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+
 #endif
