@@ -25,16 +25,23 @@ RSA key generation, encryption, decryption, signing and signature verification.
 #if !defined(OPENSSL_NO_RSA)
 
 /* Suppress deprecation warnings for RSA functions in OpenSSL 3.0+
- * RSA low-level API functions are deprecated in OpenSSL 3.0 in favor of EVP_PKEY APIs.
- * However, this module provides direct Lua bindings to OpenSSL RSA API for:
- * 1. Complete RSA functionality including low-level operations
- * 2. Backward compatibility with existing Lua code
- * 3. Direct control over RSA operations (padding, encryption modes, etc.)
  * 
- * The RSA API remains functional in OpenSSL 3.0+ and is widely used.
- * Future versions may migrate to EVP_PKEY operations while maintaining API compatibility.
+ * In OpenSSL 3.0+, low-level RSA APIs are deprecated in favor of EVP_PKEY APIs.
+ * However, this module provides direct Lua bindings to RSA functionality that requires:
+ * 1. Complete control over RSA operations including all padding modes
+ * 2. Support for operations like RSA_private_encrypt/RSA_public_decrypt
+ * 3. Direct access to RSA structures and parameters  
+ * 4. Backward compatibility with existing Lua applications
  * 
- * Compatibility: OpenSSL 1.1.x, 3.0.x, 3.x.x and LibreSSL 3.3.6+
+ * The EVP_PKEY APIs in OpenSSL 3.0 don't provide perfect equivalents for all
+ * low-level RSA operations (e.g., private encrypt with X931 padding, public decrypt).
+ * The RSA low-level APIs remain functional and are still widely used in production.
+ * 
+ * This approach follows OpenSSL community practice: use pragma directives to suppress
+ * warnings for modules that legitimately need low-level API access, while documenting
+ * the rationale clearly.
+ * 
+ * Compatibility: OpenSSL 1.1.x, 3.0+, LibreSSL 3.3.6+
  */
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic push
