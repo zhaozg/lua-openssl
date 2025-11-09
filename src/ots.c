@@ -1650,7 +1650,12 @@ openssl_ts_verify_ctx_store(lua_State *L)
   TS_VERIFY_CTX *ctx = CHECK_OBJECT(1, TS_VERIFY_CTX, "openssl.ts_verify_ctx");
   X509_STORE    *store = CHECK_OBJECT(2, X509_STORE, "openssl.x509_store");
   X509_STORE_up_ref(store);
+#if OPENSSL_VERSION_NUMBER >= 0x30400000L && !defined(LIBRESSL_VERSION_NUMBER)
+  /* Use TS_VERIFY_CTX_set0_store for OpenSSL 3.4+ (clear semantics) */
+  TS_VERIFY_CTX_set0_store(ctx, store);
+#else
   TS_VERIFY_CTX_set_store(ctx, store);
+#endif
   return 0;
 }
 
@@ -1686,7 +1691,12 @@ openssl_ts_verify_ctx_data(lua_State *L)
 {
   TS_VERIFY_CTX *ctx = CHECK_OBJECT(1, TS_VERIFY_CTX, "openssl.ts_verify_ctx");
   BIO           *bio = load_bio_object(L, 2);
+#if OPENSSL_VERSION_NUMBER >= 0x30400000L && !defined(LIBRESSL_VERSION_NUMBER)
+  /* Use TS_VERIFY_CTX_set0_data for OpenSSL 3.4+ (clear semantics) */
+  TS_VERIFY_CTX_set0_data(ctx, bio);
+#else
   TS_VERIFY_CTX_set_data(ctx, bio);
+#endif
   return 0;
 }
 
@@ -1709,7 +1719,12 @@ openssl_ts_verify_ctx_imprint(lua_State *L)
   const char    *imprint = luaL_checklstring(L, 2, &imprint_len);
   unsigned char *to = OPENSSL_malloc(imprint_len);
   memcpy(to, imprint, imprint_len);
+#if OPENSSL_VERSION_NUMBER >= 0x30400000L && !defined(LIBRESSL_VERSION_NUMBER)
+  /* Use TS_VERIFY_CTX_set0_imprint for OpenSSL 3.4+ (clear semantics) */
+  TS_VERIFY_CTX_set0_imprint(ctx, to, imprint_len);
+#else
   TS_VERIFY_CTX_set_imprint(ctx, to, imprint_len);
+#endif
   return 0;
 }
 

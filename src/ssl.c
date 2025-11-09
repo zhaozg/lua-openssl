@@ -1552,7 +1552,12 @@ openssl_ssl_ctx_flush_sessions(lua_State *L)
 {
   SSL_CTX *ctx = CHECK_OBJECT(1, SSL_CTX, "openssl.ssl_ctx");
   long     tm = luaL_checkinteger(L, 2);
+#if OPENSSL_VERSION_NUMBER >= 0x30400000L && !defined(LIBRESSL_VERSION_NUMBER)
+  /* Use SSL_CTX_flush_sessions_ex for OpenSSL 3.4+ (Y2038-safe) */
+  SSL_CTX_flush_sessions_ex(ctx, (time_t)tm);
+#else
   SSL_CTX_flush_sessions(ctx, tm);
+#endif
   return 0;
 }
 
@@ -1778,6 +1783,25 @@ static int
 openssl_ssl_session_time(lua_State *L)
 {
   SSL_SESSION *session = CHECK_OBJECT(1, SSL_SESSION, "openssl.ssl_session");
+#if OPENSSL_VERSION_NUMBER >= 0x30400000L && !defined(LIBRESSL_VERSION_NUMBER)
+  time_t       time;
+  if (!lua_isnone(L, 2)) {
+    time_t prev_time;
+    time = (time_t)luaL_checklong(L, 2);
+    if (SSL_SESSION_set_time_ex(session, time, &prev_time) == 1) {
+      lua_pushinteger(L, (lua_Integer)prev_time);
+    } else {
+      lua_pushinteger(L, 0);
+    }
+    return 1;
+  }
+  if (SSL_SESSION_get_time_ex(session, &time) == 1) {
+    lua_pushinteger(L, (lua_Integer)time);
+  } else {
+    lua_pushinteger(L, 0);
+  }
+  return 1;
+#else
   int          time;
   if (!lua_isnone(L, 2)) {
     time = luaL_checklong(L, 2);
@@ -1788,6 +1812,7 @@ openssl_ssl_session_time(lua_State *L)
   time = SSL_SESSION_get_time(session);
   lua_pushinteger(L, time);
   return 1;
+#endif
 }
 
 /***

@@ -38,10 +38,22 @@ ec_key_to_evp_pkey(EC_KEY *ec)
   if (pkey == NULL)
     return NULL;
   
+  /* Suppress deprecation warning for EVP_PKEY_set1_EC_KEY (deprecated in OpenSSL 3.0).
+   * This function is necessary for compatibility with EC_KEY-based operations. */
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
   if (EVP_PKEY_set1_EC_KEY(pkey, ec) != 1) {
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
     EVP_PKEY_free(pkey);
     return NULL;
   }
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
   
   return pkey;
 }
