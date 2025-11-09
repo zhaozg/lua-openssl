@@ -985,7 +985,7 @@ static int openssl_ts_req_info(lua_State *L)
     ASN1_OCTET_STRING *os = TS_MSG_IMPRINT_get_msg(msg_inprint);
     X509_ALGOR        *alg = TS_MSG_IMPRINT_get_algo(msg_inprint);
 
-    AUXILIAR_SETLSTR(L, -1, "hashed_msg", (const char *)os->data, os->length);
+    AUXILIAR_SETLSTR(L, -1, "hashed_msg", (const char *)ASN1_STRING_get0_data(os), ASN1_STRING_length(os));
     alg = X509_ALGOR_dup(alg);
     PUSH_OBJECT(alg, "openssl.x509_algor");
     lua_setfield(L, -2, "hash_algo");
@@ -1062,9 +1062,9 @@ static int openssl_ts_resp_export(lua_State *L)
   TS_RESP *res = CHECK_OBJECT(1, TS_RESP, "openssl.ts_resp");
   BIO     *bio = BIO_new(BIO_s_mem());
   if (i2d_TS_RESP_bio(bio, res)) {
-    BUF_MEM *bptr = NULL;
-    BIO_get_mem_ptr(bio, &bptr);
-    lua_pushlstring(L, bptr->data, bptr->length);
+    char *bio_mem_ptr = NULL;
+    long bio_mem_len = BIO_get_mem_data(bio, &bio_mem_ptr);
+    lua_pushlstring(L, bio_mem_ptr, bio_mem_len);
     ret = 1;
   }
   BIO_free(bio);
@@ -1118,7 +1118,7 @@ static int openssl_ts_resp_status_info(lua_State *L)
     n = sk_ASN1_UTF8STRING_num(sk);
     for (i = 0; i < n; i++) {
       ASN1_UTF8STRING *x = sk_ASN1_UTF8STRING_value(sk, i);
-      lua_pushlstring(L, (const char *)x->data, x->length);
+      lua_pushlstring(L, (const char *)ASN1_STRING_get0_data(x), ASN1_STRING_length(x));
       lua_rawseti(L, -2, i + 1);
     }
   }
