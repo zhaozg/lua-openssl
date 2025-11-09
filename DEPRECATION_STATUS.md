@@ -1,6 +1,6 @@
 # OpenSSL 3.0 Deprecation Warnings - Current Status
 
-**Last Updated:** 2025-11-08  
+**Last Updated:** 2025-11-09  
 **OpenSSL Version Tested:** 3.0.13  
 **Test Results:** 177/177 passing ✅
 
@@ -130,17 +130,33 @@ However, many existing applications still rely on DSA, so the module is maintain
 #endif
 ```
 
+### ENGINE Module (src/engine.c)
+**Status:** ✅ **COMPLETED**  
+**Warnings:** 0  
+**Strategy:**
+- Uses `#pragma GCC diagnostic ignored "-Wdeprecated-declarations"` to suppress warnings
+- ENGINE API is deprecated in OpenSSL 3.0 in favor of the Provider API
+- Retained for backward compatibility with existing applications
+- Full test coverage with existing test suite
+
+**Rationale:**  
+ENGINE is deprecated in OpenSSL 3.0 as the Provider API replaces its functionality.
+However, many existing applications still rely on ENGINE, so the module is maintained 
+with suppressed warnings. Migration to Provider API may happen in a future major version.
+
+**Code Comment from Source:**
+```c
+/* Suppress deprecation warnings for ENGINE API in OpenSSL 3.0+
+ * The ENGINE API is deprecated in favor of the Provider API, but we continue
+ * to use it to maintain backward compatibility. The module may be migrated
+ * to the Provider API in a future major version. */
+```
+
 ## Remaining Deprecation Warnings
 
 The following modules still have deprecation warnings. These are **expected and acceptable** as they 
 provide direct Lua bindings to low-level OpenSSL APIs. Migration would require significant refactoring 
 and could break backward compatibility.
-
-### ENGINE Module (src/engine.c)
-**Warnings:** 53  
-**Reason:** ENGINE API is deprecated in OpenSSL 3.0 in favor of the Provider API  
-**Status:** Retained for backward compatibility  
-**Future:** May be migrated to Provider API in a future major version
 
 ### PKEY Module (src/pkey.c)
 **Warnings:** 127  
@@ -201,11 +217,13 @@ All deprecation warning handling has been validated with:
 - Issue #344: DH module deprecation warnings
 - Issue #346: DSA module deprecation warnings  
 - Issue #351: SRP module deprecation warnings
+- Issue #360: ENGINE module deprecation warnings (minimal refactor)
 - PR #353: Digest module deprecation fixes
 
 ## Conclusion
 
 The lua-openssl project has successfully addressed critical deprecation warnings for OpenSSL 3.0 
-compatibility while maintaining full backward compatibility with OpenSSL 1.1.x. Remaining warnings 
-are in low-level API modules and are expected/acceptable. The project is well-positioned for 
-long-term OpenSSL 3.0+ support.
+compatibility while maintaining full backward compatibility with OpenSSL 1.1.x. The ENGINE module 
+has been updated with minimal changes to suppress deprecation warnings while retaining full 
+functionality. Remaining warnings are in low-level API modules (PKEY, RSA) and are expected/acceptable. 
+The project is well-positioned for long-term OpenSSL 3.0+ support.
