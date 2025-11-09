@@ -27,6 +27,8 @@ function TestProvider:test_load_default_provider()
 
   lu.assertNotNil(prov, "Should load default provider")
   lu.assertEquals(type(prov), 'userdata', "Provider should be userdata")
+  -- Avoid memory leak by unloading
+  prov:unload()
 end
 
 function TestProvider:test_provider_name()
@@ -36,6 +38,8 @@ function TestProvider:test_provider_name()
   local name = prov:name()
   lu.assertNotNil(name, "Provider should have a name")
   lu.assertEquals(name, 'default', "Name should be 'default'")
+  -- Avoid memory leak by unloading
+  prov:unload()
 end
 
 function TestProvider:test_provider_available()
@@ -44,6 +48,8 @@ function TestProvider:test_provider_available()
 
   local available = prov:available()
   lu.assertTrue(available, "Default provider should be available")
+  -- Avoid memory leak by unloading
+  prov:unload()
 end
 
 function TestProvider:test_provider_get_params()
@@ -54,6 +60,8 @@ function TestProvider:test_provider_get_params()
   local params = prov:get_params({'name', 'version', 'buildinfo'})
   lu.assertNotNil(params, "Should return params table")
   lu.assertEquals(type(params), 'table', "Params should be a table")
+  -- Avoid memory leak by unloading
+  prov:unload()
 end
 
 function TestProvider:test_provider_self_test()
@@ -63,7 +71,8 @@ function TestProvider:test_provider_self_test()
   local result = prov:self_test()
   lu.assertNotNil(result, "Self-test should return a result")
   lu.assertEquals(type(result), 'boolean', "Self-test result should be boolean")
-
+  -- Avoid memory leak by unloading
+  prov:unload()
 end
 
 function TestProvider:test_load_legacy_provider()
@@ -78,6 +87,8 @@ function TestProvider:test_load_legacy_provider()
     -- Test unload
     local unload_result = prov:unload()
     lu.assertNotNil(unload_result, "Unload should return a result")
+    -- Avoid memory leak by unloading
+    prov:unload()
   else
     print("⚠ Legacy provider not available on this system")
     print("  Error:", err or "unknown")
@@ -95,6 +106,9 @@ function TestProvider:test_load_fips_provider()
 
     -- Test FIPS self-test
     local self_test = prov:self_test()
+    assert(self_test, "FIPS provider self-test should pass")
+    -- Avoid memory leak by unloading
+    prov:unload()
   end
 end
 
@@ -106,6 +120,8 @@ function TestProvider:test_provider_get()
     lu.assertNotNil(prov, "Should get default provider")
     local name = prov:name()
     lu.assertEquals(name, 'default', "Name should be 'default'")
+    -- Avoid memory leak by unloading
+    prov:unload()
   end
 end
 
@@ -127,6 +143,9 @@ function TestProvider:test_provider_tostring()
                 "String should contain 'openssl.provider'")
   lu.assertTrue(string.find(str, 'default') ~= nil,
                 "String should contain provider name")
+
+  -- Avoid memory leak by unloading
+  prov:unload()
 end
 
 function TestProvider:test_load_with_retain()
@@ -135,6 +154,8 @@ function TestProvider:test_load_with_retain()
   lu.assertNotNil(prov, "Should load default provider with retain")
   local name = prov:name()
   lu.assertEquals(name, 'default', "Name should be 'default'")
+  -- Avoid memory leak by unloading
+  prov:unload()
 end
 
 function TestProvider:test_load_invalid_provider()
@@ -142,6 +163,9 @@ function TestProvider:test_load_invalid_provider()
 
   lu.assertNil(prov, "Should not load non-existent provider")
   lu.assertTrue(type(err) == 'string', "Error message should be a string")
+
+  -- Avoid memory leak by unloading
+  prov:unload()
 end
 
 function TestProvider:test_multiple_providers()
@@ -154,6 +178,9 @@ function TestProvider:test_multiple_providers()
   -- Both should be usable
   lu.assertEquals(prov1:name(), 'default', "First provider name")
   lu.assertEquals(prov2:name(), 'default', "Second provider name")
+  -- Avoid memory leak by unloading
+  prov1:unload()
+  prov2:unload()
 end
 
 function TestProvider:test_provider_with_digest()
@@ -168,6 +195,8 @@ function TestProvider:test_provider_with_digest()
   local hash = digest:digest(data)
   lu.assertNotNil(hash, "Should compute hash")
   lu.assertEquals(#hash, 32, "SHA256 should produce 32 bytes")
+  -- Avoid memory leak by unloading
+  prov:unload()
 end
 
 function TestProvider:test_provider_with_cipher()
@@ -187,6 +216,8 @@ function TestProvider:test_provider_with_cipher()
 
   local decrypted = cipher:decrypt(ciphertext, key, iv)
   lu.assertEquals(decrypted, plaintext, "Decrypted should match plaintext")
+  -- Avoid memory leak by unloading
+  prov:unload()
 end
 
 -- Test suite for OpenSSL 3.0+ specific features
@@ -196,12 +227,16 @@ function TestProviderAdvanced:test_base_provider()
   local prov, err = provider.load('base')
   assert(type(prov) == 'userdata', "Null provider should be userdata")
   assert(type(err) == 'nil', err)
+  -- Avoid memory leak by unloading
+  prov:unload()
 end
 
 function TestProviderAdvanced:test_null_provider()
   local prov, err = assert(provider.load('null'))
   assert(type(prov) == 'userdata', "Null provider should be userdata")
   assert(type(err) == 'nil', err)
+  -- Avoid memory leak by unloading
+  prov:unload()
 end
 
 -- Performance test
