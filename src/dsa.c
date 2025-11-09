@@ -89,9 +89,6 @@ openssl_dsa_set_engine(lua_State *L)
   const DSA_METHOD *m = ENGINE_get_DSA(e);
   if (m) {
     int r = DSA_set_method(dsa, m);
-#if defined(__GNUC__) || defined(__clang__)
-#pragma GCC diagnostic pop
-#endif
     return openssl_pushresult(L, r);
   }
 #if defined(__GNUC__) || defined(__clang__)

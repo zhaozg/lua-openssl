@@ -28,7 +28,7 @@ for DH parameter generation, key generation and key agreement operations.
 
 #if !defined(OPENSSL_NO_DH)
 
-/* Suppress deprecation warnings for DH_free which is unavoidable 
+/* Suppress deprecation warnings for DH_free which is unavoidable
  * since we manage DH objects for Lua interface compatibility */
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic push
@@ -67,52 +67,52 @@ static int openssl_dh_parse(lua_State *L)
 
   /* Create EVP_PKEY from DH to use new APIs */
   pkey = EVP_PKEY_new();
-  
+
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
-  
+
   if (pkey && EVP_PKEY_set1_DH(pkey, dh) == 1) {
-    
+
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
-    
+
     /* Get bits using EVP_PKEY API */
     bits = EVP_PKEY_get_bits(pkey);
     lua_pushinteger(L, (bits + 7) / 8); /* size in bytes */
     lua_setfield(L, -2, "size");
-    
+
     lua_pushinteger(L, bits);
     lua_setfield(L, -2, "bits");
-    
+
     /* Get parameters using EVP_PKEY_get_bn_param */
     if (EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_FFC_P, &p) == 1) {
       OPENSSL_PKEY_GET_BN(p, p);
       BN_free(p);
     }
-    
+
     if (EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_FFC_Q, &q) == 1) {
       OPENSSL_PKEY_GET_BN(q, q);
       BN_free(q);
     }
-    
+
     if (EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_FFC_G, &g) == 1) {
       OPENSSL_PKEY_GET_BN(g, g);
       BN_free(g);
     }
-    
+
     if (EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_PUB_KEY, &pub) == 1) {
       OPENSSL_PKEY_GET_BN(pub, pub_key);
       BN_free(pub);
     }
-    
+
     if (EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_PRIV_KEY, &pri) == 1) {
       OPENSSL_PKEY_GET_BN(pri, priv_key);
       BN_free(pri);
     }
-    
+
     EVP_PKEY_free(pkey);
   } else {
     /* Fallback if EVP_PKEY creation fails */
@@ -283,15 +283,15 @@ openssl_dh_generate_parameters(lua_State *L)
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
-    
+
     EVP_PKEY_free(pkey);
-    
+
     if (dh) {
       PUSH_OBJECT(dh, "openssl.dh");
       return 1;
     }
   }
-  
+
   if (pkey) EVP_PKEY_free(pkey);
   return openssl_pushresult(L, ret);
 #else
@@ -335,9 +335,6 @@ openssl_dh_generate_key(lua_State *L)
   param_pkey = EVP_PKEY_new();
   if (!param_pkey || EVP_PKEY_set1_DH(param_pkey, dhparameter) != 1) {
     if (param_pkey) EVP_PKEY_free(param_pkey);
-#if defined(__GNUC__) || defined(__clang__)
-#pragma GCC diagnostic pop
-#endif
     return openssl_pushresult(L, 0);
   }
 
@@ -348,7 +345,7 @@ openssl_dh_generate_key(lua_State *L)
   /* Create key generation context from parameters */
   kctx = EVP_PKEY_CTX_new(param_pkey, NULL);
   EVP_PKEY_free(param_pkey);
-  
+
   if (!kctx) {
     return openssl_pushresult(L, 0);
   }
@@ -374,22 +371,22 @@ openssl_dh_generate_key(lua_State *L)
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
-    
+
     EVP_PKEY_free(pkey);
-    
+
     if (dh) {
       PUSH_OBJECT(dh, "openssl.dh");
       return 1;
     }
   }
-  
+
   if (pkey) EVP_PKEY_free(pkey);
   return openssl_pushresult(L, ret);
 #else
   /* OpenSSL 1.x - Use legacy DH APIs */
   dh = DHparams_dup(dhparameter);
   ret = DH_generate_key(dh);
-  
+
   if (ret == 1) {
     PUSH_OBJECT(dh, "openssl.dh");
     return 1;

@@ -216,9 +216,6 @@ List all available providers
 */
 static int openssl_provider_list_all(lua_State *L)
 {
-  STACK_OF(OSSL_PROVIDER) *providers = NULL;
-  int count = 0;
-
   /* This is a simplified version - OpenSSL 3.0 doesn't have a direct API to list all
      available providers, so we'll try loading common ones */
   const char *common_providers[] = {
@@ -282,6 +279,7 @@ static int openssl_provider_gc(lua_State *L)
   OSSL_PROVIDER *prov = CHECK_OBJECT(1, OSSL_PROVIDER, "openssl.provider");
   /* Note: We don't automatically unload here as the provider might be in use
      Users should explicitly call unload() if needed */
+  (void)prov;
   return 0;
 }
 
