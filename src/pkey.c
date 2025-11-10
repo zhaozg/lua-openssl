@@ -1663,9 +1663,27 @@ static int openssl_sign(lua_State *L)
   if (is_SM2) md_alg = "sm3";
 #endif
 
+  /* For EdDSA keys (Ed25519, Ed448), allow NULL digest as they use
+   * internal hash functions. Detect EdDSA and allow omitting or explicitly passing nil. */
+#ifdef EVP_PKEY_ED25519
+  {
+    int pkey_type = EVP_PKEY_type(EVP_PKEY_id(pkey));
+    if (pkey_type == EVP_PKEY_ED25519
+#ifdef EVP_PKEY_ED448
+        || pkey_type == EVP_PKEY_ED448
+#endif
+    ) {
+      /* EdDSA keys don't need a digest - use NULL */
+      md = NULL;
+    } else {
+      md = get_digest(L, 3, md_alg);
+    }
+  }
+#else
   md = get_digest(L, 3, md_alg);
+#endif
 #if defined(OPENSSL_SUPPORT_SM2)
-  if (is_SM2) is_SM2 = EVP_MD_type(md) == NID_sm3;
+  if (is_SM2 && md) is_SM2 = EVP_MD_type(md) == NID_sm3;
 #endif
 
   ctx = EVP_MD_CTX_new();
@@ -1682,19 +1700,37 @@ static int openssl_sign(lua_State *L)
 
   ret = EVP_DigestSignInit(ctx, NULL, md, NULL, pkey);
   if (ret == 1) {
-    ret = EVP_DigestSignUpdate(ctx, data, data_len);
-    if (ret == 1) {
-      size_t         siglen = 0;
-      unsigned char *sigbuf = NULL;
-      ret = EVP_DigestSignFinal(ctx, NULL, &siglen);
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L && !defined(LIBRESSL_VERSION_NUMBER)
+    /* For EdDSA (and other algorithms), use one-shot API if available (OpenSSL >= 1.1.1) */
+    if (md == NULL) {
+      size_t siglen = 0;
+      ret = EVP_DigestSign(ctx, NULL, &siglen, (const unsigned char *)data, data_len);
       if (ret == 1) {
-        siglen += 2;
-        sigbuf = OPENSSL_malloc(siglen);
-        ret = EVP_DigestSignFinal(ctx, sigbuf, &siglen);
+        unsigned char *sigbuf = OPENSSL_malloc(siglen);
+        ret = EVP_DigestSign(ctx, sigbuf, &siglen, (const unsigned char *)data, data_len);
         if (ret == 1) {
           lua_pushlstring(L, (char *)sigbuf, siglen);
         }
         OPENSSL_free(sigbuf);
+      }
+    } else
+#endif
+    {
+      /* Traditional three-step approach for algorithms with digest */
+      ret = EVP_DigestSignUpdate(ctx, data, data_len);
+      if (ret == 1) {
+        size_t         siglen = 0;
+        unsigned char *sigbuf = NULL;
+        ret = EVP_DigestSignFinal(ctx, NULL, &siglen);
+        if (ret == 1) {
+          siglen += 2;
+          sigbuf = OPENSSL_malloc(siglen);
+          ret = EVP_DigestSignFinal(ctx, sigbuf, &siglen);
+          if (ret == 1) {
+            lua_pushlstring(L, (char *)sigbuf, siglen);
+          }
+          OPENSSL_free(sigbuf);
+        }
       }
     }
   }
@@ -1741,7 +1777,25 @@ static int openssl_verify(lua_State *L)
   if (is_SM2) md_alg = "sm3";
 #endif
 
+  /* For EdDSA keys (Ed25519, Ed448), allow NULL digest as they use
+   * internal hash functions. Detect EdDSA and allow omitting or explicitly passing nil. */
+#ifdef EVP_PKEY_ED25519
+  {
+    int pkey_type = EVP_PKEY_type(EVP_PKEY_id(pkey));
+    if (pkey_type == EVP_PKEY_ED25519
+#ifdef EVP_PKEY_ED448
+        || pkey_type == EVP_PKEY_ED448
+#endif
+    ) {
+      /* EdDSA keys don't need a digest - use NULL */
+      md = NULL;
+    } else {
+      md = get_digest(L, 4, md_alg);
+    }
+  }
+#else
   md = get_digest(L, 4, md_alg);
+#endif
 
   ctx = EVP_MD_CTX_new();
 #if defined(OPENSSL_SUPPORT_SM2)
@@ -1758,11 +1812,24 @@ static int openssl_verify(lua_State *L)
 
   ret = EVP_DigestVerifyInit(ctx, NULL, md, NULL, pkey);
   if (ret == 1) {
-    ret = EVP_DigestVerifyUpdate(ctx, data, data_len);
-    if (ret == 1) {
-      ret = EVP_DigestVerifyFinal(ctx, (unsigned char *)signature, signature_len);
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L && !defined(LIBRESSL_VERSION_NUMBER)
+    /* For EdDSA (and other algorithms), use one-shot API if available (OpenSSL >= 1.1.1) */
+    if (md == NULL) {
+      ret = EVP_DigestVerify(ctx, (const unsigned char *)signature, signature_len,
+                              (const unsigned char *)data, data_len);
       if (ret == 1) {
-        lua_pushboolean(L, ret == 1);
+        lua_pushboolean(L, 1);
+      }
+    } else
+#endif
+    {
+      /* Traditional three-step approach for algorithms with digest */
+      ret = EVP_DigestVerifyUpdate(ctx, data, data_len);
+      if (ret == 1) {
+        ret = EVP_DigestVerifyFinal(ctx, (unsigned char *)signature, signature_len);
+        if (ret == 1) {
+          lua_pushboolean(L, ret == 1);
+        }
       }
     }
   }
