@@ -76,10 +76,12 @@ Module overview:
 - bio: memory/file/network data streams
 - ssl: SSL/TLS protocol support
 - hmac: HMAC authentication
+- kdf: key derivation functions (pbkdf2, hkdf, scrypt, etc.) - see [KDF_USAGE.md](./docs/KDF_USAGE.md)
 
 ```lua
    local digest = require'openssl'.digest
    local cipher = require'openssl'.cipher
+   local kdf = require'openssl'.kdf
 ```
 
 digest() equals with digest.digest(), same cipher() equals with cipher.cipher().
