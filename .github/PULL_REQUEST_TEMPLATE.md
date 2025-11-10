@@ -59,6 +59,6 @@ Add any other context about the pull request here.
 
 ---
 
-**For comprehensive code review findings and recommendations, see:**
-- [CODE_REVIEW_ANALYSIS.md](../CODE_REVIEW_ANALYSIS.md) (Chinese)
-- [CODE_REVIEW_SUMMARY_EN.md](../CODE_REVIEW_SUMMARY_EN.md) (English)
+**For development roadmap and planning, see:**
+- [ROADMAP.md](../ROADMAP.md) (English)
+- [ROADMAP_CN.md](../ROADMAP_CN.md) (Chinese)

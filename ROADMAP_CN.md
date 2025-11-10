@@ -9,8 +9,6 @@
 本路线图为 lua-openssl 开发提供结构化计划，按优先级、难度和影响范围组织。该计划基于全面的代码审查分析，旨在保持向后兼容性和现有接口习惯的前提下实现代码现代化。
 
 **相关文档:**
-- [CODE_REVIEW_ANALYSIS.md](./CODE_REVIEW_ANALYSIS.md) - 详细中文分析
-- [CODE_REVIEW_SUMMARY_EN.md](./CODE_REVIEW_SUMMARY_EN.md) - 英文摘要
 - [DEPRECATION_STATUS.md](./DEPRECATION_STATUS.md) - 废弃警告状态
 - [ROADMAP.md](./ROADMAP.md) - 完整英文路线图
 
@@ -599,8 +597,6 @@ end
 
 ## 参考资料
 
-- [CODE_REVIEW_ANALYSIS.md](./CODE_REVIEW_ANALYSIS.md) - 详细代码分析
-- [CODE_REVIEW_SUMMARY_EN.md](./CODE_REVIEW_SUMMARY_EN.md) - 执行摘要
 - [DEPRECATION_STATUS.md](./DEPRECATION_STATUS.md) - 当前状态
 - [README.md](./README.md) - 项目概述
 - [ROADMAP.md](./ROADMAP.md) - 完整英文路线图

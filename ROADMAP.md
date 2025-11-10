@@ -9,8 +9,6 @@
 This roadmap provides a structured plan for lua-openssl development, organized by priority, difficulty, and impact. The plan is based on comprehensive code review analysis and aims to modernize the codebase while maintaining backward compatibility and existing interface habits.
 
 **Related Documents:**
-- [CODE_REVIEW_ANALYSIS.md](./CODE_REVIEW_ANALYSIS.md) - Detailed Chinese analysis
-- [CODE_REVIEW_SUMMARY_EN.md](./CODE_REVIEW_SUMMARY_EN.md) - English summary
 - [DEPRECATION_STATUS.md](./DEPRECATION_STATUS.md) - Deprecation warning status
 
 ---
@@ -1158,8 +1156,6 @@ The roadmap is living document and will be updated based on:
 
 ## References
 
-- [CODE_REVIEW_ANALYSIS.md](./CODE_REVIEW_ANALYSIS.md) - Detailed code analysis
-- [CODE_REVIEW_SUMMARY_EN.md](./CODE_REVIEW_SUMMARY_EN.md) - Executive summary
 - [DEPRECATION_STATUS.md](./DEPRECATION_STATUS.md) - Current status
 - [README.md](./README.md) - Project overview
 - [OpenSSL Documentation](https://www.openssl.org/docs/)
