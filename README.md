@@ -93,6 +93,12 @@ Notice: Documentation quality is low and stale, feel free to make a PR to improv
 
 If documentation is missing, refer to the [source code](./src) or check the Lua test scripts in the test directory.
 
+### Development Roadmap
+
+For the project's development plan and priorities:
+- **[ROADMAP.md](./ROADMAP.md)** - Complete development roadmap (English)
+- **[ROADMAP_CN.md](./ROADMAP_CN.md)** - 开发路线图 (Chinese)
+
 ### Code Review and Improvement Analysis
 
 For a comprehensive analysis of the codebase, including:
@@ -104,6 +110,7 @@ For a comprehensive analysis of the codebase, including:
 Please refer to:
 - **[CODE_REVIEW_ANALYSIS.md](./CODE_REVIEW_ANALYSIS.md)** - Detailed analysis (Chinese)
 - **[CODE_REVIEW_SUMMARY_EN.md](./CODE_REVIEW_SUMMARY_EN.md)** - Executive summary (English)
+- **[DEPRECATION_STATUS.md](./DEPRECATION_STATUS.md)** - Deprecation warning status
 
 ### Documentation Coverage
 
