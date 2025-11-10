@@ -492,6 +492,86 @@ assert(r==msg)
 print('Done')
 ```
 
+### Example 9: Ed25519 digital signatures
+
+```lua
+local openssl = require('openssl')
+local pkey = openssl.pkey
+
+-- Generate Ed25519 key pair
+local ctx = pkey.ctx_new("ED25519")
+local key = ctx:keygen()
+
+-- Sign a message
+local message = "Hello, world!"
+local signature = pkey.sign(key, message)
+
+-- Verify the signature
+local verified = pkey.verify(key, message, signature)
+print("Signature verified:", verified)  -- true
+
+-- Export and import keys
+local pem = key:export("pem")
+local imported_key = pkey.read(pem, true, "pem")
+print("Key successfully imported")
+```
+
+### Example 10: X25519 key exchange
+
+```lua
+local openssl = require('openssl')
+local pkey = openssl.pkey
+
+-- Alice and Bob each generate a key pair
+local alice = pkey.ctx_new("X25519"):keygen()
+local bob = pkey.ctx_new("X25519"):keygen()
+
+-- Alice derives shared secret using Bob's public key
+local alice_secret = alice:derive(bob)
+
+-- Bob derives shared secret using Alice's public key
+local bob_secret = bob:derive(alice)
+
+-- Both secrets should be identical
+assert(alice_secret == bob_secret)
+print("Shared secret established:", openssl.hex(alice_secret))
+```
+
+### Example 11: ChaCha20-Poly1305 AEAD encryption
+
+```lua
+local openssl = require('openssl')
+local cipher = openssl.cipher
+
+-- Get ChaCha20-Poly1305 cipher
+local cc20 = cipher.get("chacha20-poly1305")
+
+-- Prepare key and nonce
+local key = string.rep("k", 32)  -- 256-bit key
+local nonce = string.rep("n", 12) -- 96-bit nonce
+local message = "Secret message"
+local aad = "Additional authenticated data"
+
+-- Encrypt with AAD
+local enc = cc20:encrypt_new()
+enc:ctrl(openssl.cipher.EVP_CTRL_GCM_SET_IVLEN, #nonce)
+enc:init(key, nonce)
+enc:update(aad, true)  -- Set AAD
+local ciphertext = enc:update(message) .. enc:final()
+local tag = enc:ctrl(openssl.cipher.EVP_CTRL_GCM_GET_TAG, 16)
+
+-- Decrypt with AAD
+local dec = cc20:decrypt_new()
+dec:ctrl(openssl.cipher.EVP_CTRL_GCM_SET_IVLEN, #nonce)
+dec:init(key, nonce)
+dec:ctrl(openssl.cipher.EVP_CTRL_GCM_SET_TAG, tag)
+dec:update(aad, true)  -- Set AAD
+local plaintext = dec:update(ciphertext) .. dec:final()
+
+assert(plaintext == message)
+print("Decrypted:", plaintext)
+```
+
 For more examples, please see test lua script file.
 
 ---
