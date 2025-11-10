@@ -75,8 +75,10 @@ openssl_hmac_ctx_new(lua_State *L)
   int       ret = HMAC_Init_ex(c, k, (int)l, type, e);
   if (ret == 1)
     PUSH_OBJECT(c, "openssl.hmac_ctx");
-  else
+  else {
+    HMAC_CTX_free(c);
     ret = openssl_pushresult(L, ret);
+  }
   return ret;
 #endif
 }
