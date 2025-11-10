@@ -1562,44 +1562,86 @@ static int openssl_derive(lua_State *L)
   /* OpenSSL 3.0+ way: use PARAM API compatible check */
   luaL_argcheck(L,
                 (ptype == EVP_PKEY_DH && pkey_is_type(pkey, EVP_PKEY_DH))
-                  || (ptype == EVP_PKEY_EC && pkey_is_type(pkey, EVP_PKEY_EC)),
+                  || (ptype == EVP_PKEY_EC && pkey_is_type(pkey, EVP_PKEY_EC))
+#ifdef EVP_PKEY_X25519
+                  || ptype == EVP_PKEY_X25519
+#ifdef EVP_PKEY_X448
+                  || ptype == EVP_PKEY_X448
+#endif
+#endif
+                ,
                 1,
-                "only support DH or EC private key");
+                "only support DH, EC, X25519 or X448 private key");
 #else
   /* OpenSSL 1.x way */
   luaL_argcheck(L,
                 (ptype == EVP_PKEY_DH && EVP_PKEY_get0_DH(pkey) != NULL)
-                  || (ptype == EVP_PKEY_EC && EVP_PKEY_get0_EC_KEY(pkey) != NULL),
+                  || (ptype == EVP_PKEY_EC && EVP_PKEY_get0_EC_KEY(pkey) != NULL)
+#ifdef EVP_PKEY_X25519
+                  || ptype == EVP_PKEY_X25519
+#ifdef EVP_PKEY_X448
+                  || ptype == EVP_PKEY_X448
+#endif
+#endif
+                ,
                 1,
-                "only support DH or EC private key");
+                "only support DH, EC, X25519 or X448 private key");
 #endif
 #elif !defined(OPENSSL_NO_DH)
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
   /* OpenSSL 3.0+ way: use PARAM API compatible check */
   luaL_argcheck(L,
-                ptype == EVP_PKEY_DH && pkey_is_type(pkey, EVP_PKEY_DH),
+                (ptype == EVP_PKEY_DH && pkey_is_type(pkey, EVP_PKEY_DH))
+#ifdef EVP_PKEY_X25519
+                  || ptype == EVP_PKEY_X25519
+#ifdef EVP_PKEY_X448
+                  || ptype == EVP_PKEY_X448
+#endif
+#endif
+                ,
                 1,
-                "only support DH or EC private key");
+                "only support DH, X25519 or X448 private key");
 #else
   /* OpenSSL 1.x way */
   luaL_argcheck(L,
-                ptype == EVP_PKEY_DH && EVP_PKEY_get0_DH(pkey) != NULL,
+                (ptype == EVP_PKEY_DH && EVP_PKEY_get0_DH(pkey) != NULL)
+#ifdef EVP_PKEY_X25519
+                  || ptype == EVP_PKEY_X25519
+#ifdef EVP_PKEY_X448
+                  || ptype == EVP_PKEY_X448
+#endif
+#endif
+                ,
                 1,
-                "only support DH or EC private key");
+                "only support DH, X25519 or X448 private key");
 #endif
 #elif !defined(OPENSSL_NO_EC)
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
   /* OpenSSL 3.0+ way: use PARAM API compatible check */
   luaL_argcheck(L,
-                ptype == EVP_PKEY_EC && pkey_is_type(pkey, EVP_PKEY_EC),
+                (ptype == EVP_PKEY_EC && pkey_is_type(pkey, EVP_PKEY_EC))
+#ifdef EVP_PKEY_X25519
+                  || ptype == EVP_PKEY_X25519
+#ifdef EVP_PKEY_X448
+                  || ptype == EVP_PKEY_X448
+#endif
+#endif
+                ,
                 1,
-                "only support DH or EC private key");
+                "only support EC, X25519 or X448 private key");
 #else
   /* OpenSSL 1.x way */
   luaL_argcheck(L,
-                ptype == EVP_PKEY_EC && EVP_PKEY_get0_EC_KEY(pkey) != NULL,
+                (ptype == EVP_PKEY_EC && EVP_PKEY_get0_EC_KEY(pkey) != NULL)
+#ifdef EVP_PKEY_X25519
+                  || ptype == EVP_PKEY_X25519
+#ifdef EVP_PKEY_X448
+                  || ptype == EVP_PKEY_X448
+#endif
+#endif
+                ,
                 1,
-                "only support DH or EC private key");
+                "only support EC, X25519 or X448 private key");
 #endif
 #endif
 
