@@ -130,8 +130,10 @@ static int openssl_signInit(lua_State *L)
     ret = EVP_DigestSignInit(ctx, NULL, md, e, pkey);
     if (ret == 1) {
       PUSH_OBJECT(ctx, "openssl.evp_digest_ctx");
-    } else
+    } else {
+      EVP_MD_CTX_free(ctx);
       ret = openssl_pushresult(L, ret);
+    }
   }
   return ret;
 }
@@ -157,8 +159,10 @@ static int openssl_verifyInit(lua_State *L)
     ret = EVP_DigestVerifyInit(ctx, &pctx, md, e, pkey);
     if (ret) {
       PUSH_OBJECT(ctx, "openssl.evp_digest_ctx");
-    } else
+    } else {
+      EVP_MD_CTX_free(ctx);
       ret = openssl_pushresult(L, ret);
+    }
   }
   return ret;
 }
