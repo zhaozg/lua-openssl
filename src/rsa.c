@@ -22,6 +22,11 @@ RSA key generation, encryption, decryption, signing and signature verification.
 #include "openssl.h"
 #include "private.h"
 
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
+#include <openssl/core_names.h>
+#include <openssl/params.h>
+#endif
+
 #if !defined(OPENSSL_NO_RSA)
 static int openssl_rsa_free(lua_State *L)
 {
@@ -174,28 +179,90 @@ parse RSA key components and parameters
 */
 static int openssl_rsa_parse(lua_State *L)
 {
-  const BIGNUM *n = NULL, *e = NULL, *d = NULL;
-  const BIGNUM *p = NULL, *q = NULL;
-  const BIGNUM *dmp1 = NULL, *dmq1 = NULL, *iqmp = NULL;
-
   RSA *rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");
-  RSA_get0_key(rsa, &n, &e, &d);
-  RSA_get0_factors(rsa, &p, &q);
-  RSA_get0_crt_params(rsa, &dmp1, &dmq1, &iqmp);
-
+  
   lua_newtable(L);
-  lua_pushinteger(L, RSA_size(rsa));
-  lua_setfield(L, -2, "size");
-  lua_pushinteger(L, RSA_bits(rsa));
-  lua_setfield(L, -2, "bits");
-  OPENSSL_PKEY_GET_BN(n, n);
-  OPENSSL_PKEY_GET_BN(e, e);
-  OPENSSL_PKEY_GET_BN(d, d);
-  OPENSSL_PKEY_GET_BN(p, p);
-  OPENSSL_PKEY_GET_BN(q, q);
-  OPENSSL_PKEY_GET_BN(dmp1, dmp1);
-  OPENSSL_PKEY_GET_BN(dmq1, dmq1);
-  OPENSSL_PKEY_GET_BN(iqmp, iqmp);
+  
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
+  /* Try OpenSSL 3.0+ PARAM API first for keys created with new API */
+  EVP_PKEY *pkey = EVP_PKEY_new();
+  if (pkey && EVP_PKEY_set1_RSA(pkey, rsa)) {
+    BIGNUM *n = NULL, *e = NULL, *d = NULL;
+    BIGNUM *p = NULL, *q = NULL;
+    BIGNUM *dmp1 = NULL, *dmq1 = NULL, *iqmp = NULL;
+    int use_legacy = 0;
+    
+    /* Try to get parameters using PARAM API */
+    if (!EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_RSA_N, &n)) {
+      use_legacy = 1;
+    } else {
+      EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_RSA_E, &e);
+      EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_RSA_D, &d);
+      EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_RSA_FACTOR1, &p);
+      EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_RSA_FACTOR2, &q);
+      EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_RSA_EXPONENT1, &dmp1);
+      EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_RSA_EXPONENT2, &dmq1);
+      EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_RSA_COEFFICIENT1, &iqmp);
+      
+      lua_pushinteger(L, RSA_size(rsa));
+      lua_setfield(L, -2, "size");
+      lua_pushinteger(L, RSA_bits(rsa));
+      lua_setfield(L, -2, "bits");
+      
+      OPENSSL_PKEY_GET_BN(n, n);
+      OPENSSL_PKEY_GET_BN(e, e);
+      OPENSSL_PKEY_GET_BN(d, d);
+      OPENSSL_PKEY_GET_BN(p, p);
+      OPENSSL_PKEY_GET_BN(q, q);
+      OPENSSL_PKEY_GET_BN(dmp1, dmp1);
+      OPENSSL_PKEY_GET_BN(dmq1, dmq1);
+      OPENSSL_PKEY_GET_BN(iqmp, iqmp);
+      
+      /* Clean up allocated BIGNUMs */
+      BN_free(n);
+      BN_free(e);
+      BN_free(d);
+      BN_free(p);
+      BN_free(q);
+      BN_free(dmp1);
+      BN_free(dmq1);
+      BN_free(iqmp);
+    }
+    
+    EVP_PKEY_free(pkey);
+    
+    if (!use_legacy) {
+      return 1;
+    }
+  }
+  
+  /* Fallback to legacy API if PARAM API fails or EVP_PKEY creation fails */
+#endif
+  
+  /* Legacy OpenSSL 1.x / 3.x compatibility path */
+  {
+    const BIGNUM *n = NULL, *e = NULL, *d = NULL;
+    const BIGNUM *p = NULL, *q = NULL;
+    const BIGNUM *dmp1 = NULL, *dmq1 = NULL, *iqmp = NULL;
+
+    RSA_get0_key(rsa, &n, &e, &d);
+    RSA_get0_factors(rsa, &p, &q);
+    RSA_get0_crt_params(rsa, &dmp1, &dmq1, &iqmp);
+
+    lua_pushinteger(L, RSA_size(rsa));
+    lua_setfield(L, -2, "size");
+    lua_pushinteger(L, RSA_bits(rsa));
+    lua_setfield(L, -2, "bits");
+    OPENSSL_PKEY_GET_BN(n, n);
+    OPENSSL_PKEY_GET_BN(e, e);
+    OPENSSL_PKEY_GET_BN(d, d);
+    OPENSSL_PKEY_GET_BN(p, p);
+    OPENSSL_PKEY_GET_BN(q, q);
+    OPENSSL_PKEY_GET_BN(dmp1, dmp1);
+    OPENSSL_PKEY_GET_BN(dmq1, dmq1);
+    OPENSSL_PKEY_GET_BN(iqmp, iqmp);
+  }
+  
   return 1;
 }
 
