@@ -1,8 +1,8 @@
 # lua-openssl 开发路线图
 
-**文档版本:** 1.0  
-**创建日期:** 2025-11-10  
-**状态:** 积极规划中  
+**文档版本:** 1.0
+**创建日期:** 2025-11-11
+**状态:** 积极规划中
 
 ## 概述
 
@@ -64,7 +64,7 @@
 - [ ] 更新 API 文档，标注版本要求
 - [ ] 标记废弃函数并提供替代方案
 
-**成功标准:** 完整的版本兼容性矩阵，主要 OpenSSL 版本的迁移指南
+**进度:** ROADMAP.md/ROADMAP_CN.md 已完成，其余任务进行中。
 
 ---
 
@@ -89,28 +89,7 @@
 
 **原因:** Ed25519 是现代数字签名标准，比 RSA 更快，密钥更小，是 SSH、TLS 1.3 等协议的要求
 
-**任务:**
-- [ ] 实现 Ed25519 密钥生成
-- [ ] 实现 Ed25519 签名/验证
-- [ ] 实现 Ed448 支持
-- [ ] 添加 PEM/DER 导入/导出
-- [ ] 创建测试套件 `test/eddsa.lua`
-- [ ] 在 README 中添加使用示例
-
-**API 设计:**
-```lua
--- 密钥生成
-local ed25519_key = openssl.pkey.new('ed25519')
-
--- 签名
-local signature = ed25519_key:sign("Hello, world!")
-
--- 验证
-local verified = ed25519_key:verify("Hello, world!", signature)
-assert(verified == true)
-```
-
-**成功标准:** Ed25519 和 Ed448 完全功能，与 OpenSSL 命令行工具兼容
+**进度:** 已全部完成，相关功能和测试已合并。
 
 ---
 
@@ -119,20 +98,7 @@ assert(verified == true)
 
 **原因:** X25519 是 TLS 1.3 的默认密钥交换算法，比传统 ECDH 更高效
 
-**API 设计:**
-```lua
--- 密钥交换示例
-local alice = openssl.pkey.new('x25519')
-local bob = openssl.pkey.new('x25519')
-
--- 派生共享密钥
-local alice_secret = alice:derive(bob:get_public())
-local bob_secret = bob:derive(alice:get_public())
-
-assert(alice_secret == bob_secret)
-```
-
-**成功标准:** X25519 和 X448 密钥交换工作正常，与现有 ECDH API 兼容
+**进度:** 已全部完成，相关功能和测试已合并。
 
 ---
 
@@ -141,59 +107,14 @@ assert(alice_secret == bob_secret)
 
 **原因:** ChaCha20-Poly1305 广泛用于 TLS、QUIC，在移动设备上性能优于 AES-GCM
 
-**任务:**
-- [ ] 验证当前代码中的 ChaCha20-Poly1305 支持
-- [ ] 创建全面的测试套件
-- [ ] 添加类似 AES-GCM 示例的使用示例
-- [ ] 文档化性能特征
-
-**成功标准:** ChaCha20-Poly1305 完全测试，README 中有示例代码
+**进度:** 已全部完成，相关功能和测试已合并。
 
 ---
 
-### 2.4 高级密码哈希 API
-**优先级:** 🟠 高 | **难度:** ⭐⭐ 中等 (3-5天) | **影响:** 🎯 高
-
-**原因:** 密码哈希是非常常见的用例，当前 KDF API 较低级且复杂，用户需要简单、安全的默认值
-
-**API 设计:**
-```lua
-local openssl = require('openssl')
-
--- 使用良好默认值的简单密码哈希
-local hashed = openssl.password.hash('mypassword')
-
--- 自定义参数
-local hashed2 = openssl.password.hash('mypassword', {
-  algorithm = 'pbkdf2',  -- 或 'scrypt'
-  hash = 'sha256',
-  iterations = 100000,
-  salt_length = 16
-})
-
--- 验证
-local valid = openssl.password.verify('mypassword', hashed)
-assert(valid == true)
-```
-
-**成功标准:** 简单、安全的密码哈希 API，自动盐生成，清晰的安全警告文档
-
----
-
-### 2.5 OpenSSL 3.0 OSSL_PARAM API 绑定
+### 2.4 OpenSSL 3.0 OSSL_PARAM API 绑定
 **优先级:** 🟠 高 | **难度:** ⭐⭐⭐ 困难 (7-10天) | **影响:** 🎯 高
 
-**原因:** OSSL_PARAM 是 OpenSSL 3.0+ 访问密钥参数的现代方式，是未来 Provider API 使用的基础
-
-**任务:**
-- [ ] 研究 OSSL_PARAM API
-- [ ] 设计 OSSL_PARAM 的 Lua 绑定
-- [ ] 实现参数创建/访问
-- [ ] 迁移 RSA 密钥访问使用 OSSL_PARAM
-- [ ] 添加 OpenSSL 1.x vs 3.x 的条件编译
-- [ ] 创建全面测试
-
-**成功标准:** Lua 可访问 OSSL_PARAM，RSA/EC 密钥参数在 OpenSSL 3.0+ 上工作，保持与 OpenSSL 1.1.x 的向后兼容性
+**进度:** 已在RSA模块部分实现，逐步迁移中。
 
 ---
 
@@ -245,60 +166,11 @@ local algorithms = provider:query('digest')
 ### 3.3 KDF 模块增强
 **优先级:** 🟡 中 | **难度:** ⭐⭐ 中等 (5-7天) | **影响:** 🎯🎯 中等
 
-**当前状态:**
-- ✅ PBKDF2 已实现
-- ✅ HKDF 已实现
-- ❓ scrypt 需要验证
-- ❓ TLS 1.3 KDF 需要验证
-
-**统一 API 设计:**
-```lua
--- PBKDF2
-local key = openssl.kdf.derive({
-  type = 'pbkdf2',
-  password = 'secret',
-  salt = salt,
-  iterations = 100000,
-  hash = 'sha256',
-  length = 32
-})
-
--- scrypt
-local key = openssl.kdf.derive({
-  type = 'scrypt',
-  password = 'secret',
-  salt = salt,
-  N = 32768,
-  r = 8,
-  p = 1,
-  length = 32
-})
-```
-
-**成功标准:** 所有 KDF 算法验证和测试，统一 API 实现，文档完整
+**进度:** 已全部完成，相关功能和测试已合并。
 
 ---
 
-### 3.4 Base64URL 编码支持
-**优先级:** 🟡 中 | **难度:** ⭐ 简单 (1-2天) | **影响:** 🎯🎯 中等
-
-**原因:** Base64URL 是 JWT、JWE 和现代 Web API 所需，与标准 Base64 不同（无填充，不同字符）
-
-**API 设计:**
-```lua
--- Base64URL (URL安全，无填充)
-local b64url = openssl.base64url('Hello, world!')
--- 返回: SGVsbG8sIHdvcmxkIQ
-
--- 解码
-local decoded = openssl.base64url_decode(b64url)
-```
-
-**成功标准:** Base64URL 编码/解码正确工作，与 JWT 库兼容
-
----
-
-### 3.5 剩余废弃警告解决
+### 3.4 剩余废弃警告解决
 **优先级:** 🟡 中 | **难度:** ⭐⭐⭐ 困难 (15-20天) | **影响:** 🎯🎯 中等
 
 **当前状态:**

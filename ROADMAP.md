@@ -1,8 +1,8 @@
 # lua-openssl Development Roadmap
 
-**Document Version:** 1.0  
-**Created:** 2025-11-10  
-**Status:** Active Planning  
+**Document Version:** 1.0
+**Created:** 2025-11-11
+**Status:** Active Planning
 
 ## Overview
 
@@ -37,9 +37,10 @@ This roadmap provides a structured plan for lua-openssl development, organized b
 ## Phase 1: Immediate Actions (0-1 Month)
 
 ### 1.1 Error Handling Audit
-**Priority:** 🔴 Critical  
-**Difficulty:** ⭐⭐ Medium (5-7 days)  
-**Impact:** 🎯 High - Prevents memory leaks and improves stability  
+
+**Priority:** 🔴 Critical
+**Difficulty:** ⭐⭐ Medium (5-7 days)
+**Impact:** 🎯 High - Prevents memory leaks and improves stability
 
 **Tasks:**
 - [ ] Audit all error paths in `src/*.c` for proper resource cleanup
@@ -61,9 +62,9 @@ This roadmap provides a structured plan for lua-openssl development, organized b
 ---
 
 ### 1.2 Documentation Enhancement
-**Priority:** 🟠 High  
-**Difficulty:** ⭐ Easy (2-3 days)  
-**Impact:** 🎯 High - Improves user experience and adoption  
+**Priority:** 🟠 High
+**Difficulty:** ⭐ Easy (2-3 days)
+**Impact:** 🎯 High - Improves user experience and adoption
 
 **Tasks:**
 - [x] Create this ROADMAP.md document
@@ -87,9 +88,10 @@ This roadmap provides a structured plan for lua-openssl development, organized b
 ---
 
 ### 1.3 CI/CD Enhancement
-**Priority:** 🟠 High  
-**Difficulty:** ⭐ Easy (2-3 days)  
-**Impact:** 🎯 High - Catches issues early  
+
+**Priority:** 🟠 High
+**Difficulty:** ⭐ Easy (2-3 days)
+**Impact:** 🎯 High - Catches issues early
 
 **Tasks:**
 - [ ] Add static analysis to CI (cppcheck, clang-tidy)
@@ -117,9 +119,10 @@ This roadmap provides a structured plan for lua-openssl development, organized b
 ## Phase 2: Short-term Goals (1-3 Months)
 
 ### 2.1 Modern Signature Algorithms - Ed25519/Ed448
-**Priority:** 🟠 High  
-**Difficulty:** ⭐⭐ Medium (5-7 days)  
-**Impact:** 🎯 High - Modern cryptography standard  
+
+**Priority:** 🟠 High
+**Difficulty:** ⭐⭐ Medium (5-7 days)
+**Impact:** 🎯 High - Modern cryptography standard
 
 **Rationale:**
 - Ed25519 is becoming the standard for modern digital signatures
@@ -127,228 +130,47 @@ This roadmap provides a structured plan for lua-openssl development, organized b
 - Required for many modern protocols (SSH, TLS 1.3, etc.)
 - Available in OpenSSL 1.1.1+
 
-**Tasks:**
-- [ ] Implement Ed25519 key generation
-- [ ] Implement Ed25519 sign/verify
-- [ ] Implement Ed448 support
-- [ ] Add PEM/DER import/export
-- [ ] Create test suite `test/eddsa.lua`
-- [ ] Add usage examples to README
-
-**API Design:**
-```lua
--- Key generation
-local ed25519_key = openssl.pkey.new('ed25519')
-local ed448_key = openssl.pkey.new('ed448')
-
--- Signing
-local message = "Hello, world!"
-local signature = ed25519_key:sign(message)
-
--- Verification
-local verified = ed25519_key:verify(message, signature)
-assert(verified == true)
-
--- Export/Import
-local pem = ed25519_key:export('pem')
-local key2 = openssl.pkey.read(pem)
-```
-
-**Files to Modify:**
-- `src/pkey.c` - Add EdDSA key type support
-- `test/eddsa.lua` - New test file
-
-**Success Criteria:**
-- Ed25519 and Ed448 fully functional
-- Compatible with OpenSSL command-line tools
-- Full test coverage
-- Documentation and examples complete
+**Progress:** All completed, features and tests merged.
 
 ---
 
 ### 2.2 Modern Key Exchange - X25519/X448
-**Priority:** 🟠 High  
-**Difficulty:** ⭐⭐ Medium (3-5 days)  
-**Impact:** 🎯 High - Required for TLS 1.3  
+
+**Priority:** 🟠 High
+**Difficulty:** ⭐⭐ Medium (3-5 days)
+**Impact:** 🎯 High - Required for TLS 1.3
 
 **Rationale:**
 - X25519 is the default key exchange in TLS 1.3
 - More efficient than traditional ECDH
 - Available in OpenSSL 1.1.0+
 
-**Tasks:**
-- [ ] Implement X25519 key generation
-- [ ] Implement X448 key generation
-- [ ] Add key derivation functions
-- [ ] Make API compatible with existing ECDH
-- [ ] Add tests to `test/ec.lua` or create `test/x25519.lua`
-- [ ] Document usage patterns
-
-**API Design:**
-```lua
--- Key exchange example
-local alice = openssl.pkey.new('x25519')
-local bob = openssl.pkey.new('x25519')
-
--- Derive shared secret
-local alice_secret = alice:derive(bob:get_public())
-local bob_secret = bob:derive(alice:get_public())
-
-assert(alice_secret == bob_secret)
-```
-
-**Files to Modify:**
-- `src/pkey.c` or `src/ec.c`
-- `test/x25519.lua` (new)
-
-**Success Criteria:**
-- X25519 and X448 key exchange working
-- Compatible with existing ECDH API
-- Full test coverage
-- Examples in documentation
+**Progress:** All completed, features and tests merged.
 
 ---
 
 ### 2.3 ChaCha20-Poly1305 Verification and Documentation
-**Priority:** 🟡 Medium  
-**Difficulty:** ⭐ Easy (2-3 days)  
-**Impact:** 🎯🎯 Medium - Modern AEAD cipher  
+
+**Priority:** 🟡 Medium
+**Difficulty:** ⭐ Easy (2-3 days)
+**Impact:** 🎯🎯 Medium - Modern AEAD cipher
 
 **Rationale:**
 - ChaCha20-Poly1305 is widely used (TLS, QUIC)
 - Better performance on mobile devices than AES-GCM
 - Should already be supported via EVP_CIPHER
 
-**Tasks:**
-- [ ] Verify ChaCha20-Poly1305 support in current code
-- [ ] Create comprehensive test suite
-- [ ] Add usage example similar to AES-GCM example
-- [ ] Document performance characteristics
-- [ ] Add to cipher examples in README
-
-**Example Code:**
-```lua
-local openssl = require('openssl')
-local cipher = openssl.cipher.get('chacha20-poly1305')
-
-local key = openssl.random(32)  -- 256-bit key
-local iv = openssl.random(12)   -- 96-bit nonce
-local plaintext = "Secret message"
-
--- Encrypt
-local enc = cipher:encrypt_new()
-enc:init(key, iv)
-local ciphertext = enc:update(plaintext) .. enc:final()
-local tag = enc:ctrl(openssl.cipher.EVP_CTRL_AEAD_GET_TAG, 16)
-
--- Decrypt
-local dec = cipher:decrypt_new()
-dec:init(key, iv)
-dec:ctrl(openssl.cipher.EVP_CTRL_AEAD_SET_TAG, tag)
-local decrypted = dec:update(ciphertext) .. dec:final()
-
-assert(plaintext == decrypted)
-```
-
-**Success Criteria:**
-- ChaCha20-Poly1305 fully tested
-- Example code in README
-- Performance comparison with AES-GCM documented
+**Progress:** All completed, features and tests merged.
 
 ---
 
-### 2.4 High-Level Password Hashing API
-**Priority:** 🟠 High  
-**Difficulty:** ⭐⭐ Medium (3-5 days)  
-**Impact:** 🎯 High - Common use case  
+### 2.4 OpenSSL 3.0 OSSL_PARAM API Bindings
 
-**Rationale:**
-- Password hashing is a very common use case
-- Current KDF API is low-level and complex
-- Users need simple, secure defaults
+**Priority:** 🟠 High
+**Difficulty:** ⭐⭐⭐ Hard (7-10 days)
+**Impact:** 🎯 High - Foundation for OpenSSL 3.0+ features
 
-**Tasks:**
-- [ ] Design high-level password API
-- [ ] Implement wrapper around PBKDF2
-- [ ] Add scrypt support (if available)
-- [ ] Implement password verification
-- [ ] Add salt generation helpers
-- [ ] Create comprehensive examples
-
-**API Design:**
-```lua
-local openssl = require('openssl')
-
--- Simple password hashing with good defaults
-local hashed = openssl.password.hash('mypassword')
--- Returns: algorithm$iterations$salt$hash
-
--- Custom parameters
-local hashed2 = openssl.password.hash('mypassword', {
-  algorithm = 'pbkdf2',  -- or 'scrypt' if available
-  hash = 'sha256',
-  iterations = 100000,
-  salt_length = 16
-})
-
--- Verification
-local valid = openssl.password.verify('mypassword', hashed)
-assert(valid == true)
-
--- Invalid password
-local invalid = openssl.password.verify('wrongpassword', hashed)
-assert(invalid == false)
-```
-
-**Files to Create/Modify:**
-- `src/password.c` (new module)
-- `test/password.lua` (new test)
-
-**Success Criteria:**
-- Simple, secure password hashing API
-- Automatic salt generation
-- Compatible with standard formats
-- Full test coverage
-- Clear documentation with security warnings
-
----
-
-### 2.5 OpenSSL 3.0 OSSL_PARAM API Bindings
-**Priority:** 🟠 High  
-**Difficulty:** ⭐⭐⭐ Hard (7-10 days)  
-**Impact:** 🎯 High - Foundation for OpenSSL 3.0+ features  
-
-**Rationale:**
-- OSSL_PARAM is the modern way to access key parameters in OpenSSL 3.0+
-- Required for low-level key access without deprecated APIs
-- Foundation for future Provider API usage
-
-**Tasks:**
-- [ ] Study OSSL_PARAM API
-- [ ] Design Lua bindings for OSSL_PARAM
-- [ ] Implement parameter creation/access
-- [ ] Migrate RSA key access to use OSSL_PARAM
-- [ ] Add conditional compilation for OpenSSL 1.x vs 3.x
-- [ ] Create comprehensive tests
-
-**Example Implementation:**
-```c
-// OpenSSL 3.0+ parameter access
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
-static int openssl_pkey_get_rsa_param(lua_State *L) {
-  EVP_PKEY *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
-  const char *param_name = luaL_checkstring(L, 2);
-  
-  BIGNUM *bn = NULL;
-  if (EVP_PKEY_get_bn_param(pkey, param_name, &bn)) {
-    PUSH_OBJECT(bn, "openssl.bn");
-    return 1;
-  }
-  
-  return openssl_pushresult(L, 0);
-}
-#endif
-```
+**Progress:** Partially implemented in RSA module, migration ongoing.
 
 **Files to Modify:**
 - `src/pkey.c` - Migrate key parameter access
@@ -367,9 +189,10 @@ static int openssl_pkey_get_rsa_param(lua_State *L) {
 ## Phase 3: Medium-term Goals (3-6 Months)
 
 ### 3.1 Fetchable Objects API (OpenSSL 3.0)
-**Priority:** 🟡 Medium  
-**Difficulty:** ⭐⭐ Medium (5-7 days)  
-**Impact:** 🎯🎯 Medium - Modern OpenSSL 3.0 feature  
+
+**Priority:** 🟡 Medium
+**Difficulty:** ⭐⭐ Medium (5-7 days)
+**Impact:** 🎯🎯 Medium - Modern OpenSSL 3.0 feature
 
 **Rationale:**
 - OpenSSL 3.0 introduces "fetchable" algorithms
@@ -413,9 +236,10 @@ print(props.fips)      -- "no"
 ---
 
 ### 3.2 Provider API Support (OpenSSL 3.0)
-**Priority:** 🟡 Medium  
-**Difficulty:** ⭐⭐⭐ Hard (10-15 days)  
-**Impact:** 🎯🎯 Medium - Future-proofing  
+
+**Priority:** 🟡 Medium
+**Difficulty:** ⭐⭐⭐ Hard (10-15 days)
+**Impact:** 🎯🎯 Medium - Future-proofing
 
 **Rationale:**
 - Provider API is the replacement for ENGINE API in OpenSSL 3.0
@@ -464,62 +288,12 @@ provider:unload()
 ---
 
 ### 3.3 KDF Module Enhancement
-**Priority:** 🟡 Medium  
-**Difficulty:** ⭐⭐ Medium (5-7 days)  
-**Impact:** 🎯🎯 Medium - Improves existing feature  
 
-**Rationale:**
-- KDF module exists but needs verification and enhancement
-- Unified API would simplify usage
-- Important for password derivation and key derivation
+**Priority:** 🟡 Medium
+**Difficulty:** ⭐⭐ Medium (5-7 days)
+**Impact:** 🎯🎯 Medium - Improves existing feature
 
-**Tasks:**
-- [ ] Audit existing KDF implementations (PBKDF2, HKDF)
-- [ ] Verify scrypt support
-- [ ] Add TLS 1.3 KDF if missing
-- [ ] Create unified KDF API
-- [ ] Add comprehensive tests
-- [ ] Document security considerations
-
-**Current Status:**
-- ✅ PBKDF2 implemented
-- ✅ HKDF implemented  
-- ❓ scrypt needs verification
-- ❓ TLS 1.3 KDF needs verification
-
-**Unified API Design:**
-```lua
--- PBKDF2
-local key = openssl.kdf.derive({
-  type = 'pbkdf2',
-  password = 'secret',
-  salt = salt,
-  iterations = 100000,
-  hash = 'sha256',
-  length = 32
-})
-
--- HKDF
-local key = openssl.kdf.derive({
-  type = 'hkdf',
-  key = ikm,
-  salt = salt,
-  info = info,
-  hash = 'sha256',
-  length = 32
-})
-
--- scrypt
-local key = openssl.kdf.derive({
-  type = 'scrypt',
-  password = 'secret',
-  salt = salt,
-  N = 32768,  -- CPU cost
-  r = 8,       -- Memory cost
-  p = 1,       -- Parallelization
-  length = 32
-})
-```
+**Progress:** All completed, features and tests merged.
 
 **Files to Modify:**
 - `src/kdf.c`
@@ -533,54 +307,11 @@ local key = openssl.kdf.derive({
 
 ---
 
-### 3.4 Base64URL Encoding Support
-**Priority:** 🟡 Medium  
-**Difficulty:** ⭐ Easy (1-2 days)  
-**Impact:** 🎯🎯 Medium - Required for JWT/JWE  
+### 3.4 Remaining Deprecation Warning Resolution
 
-**Rationale:**
-- Base64URL is required for JWT, JWE, and modern web APIs
-- Differs from standard Base64 (no padding, different characters)
-- Easy to implement
-
-**Tasks:**
-- [ ] Implement Base64URL encoding
-- [ ] Implement Base64URL decoding
-- [ ] Add padding options (with/without)
-- [ ] Add tests
-- [ ] Document differences from standard Base64
-
-**API Design:**
-```lua
-local openssl = require('openssl')
-
--- Standard Base64
-local b64 = openssl.base64('Hello, world!')
--- Returns: SGVsbG8sIHdvcmxkIQ==
-
--- Base64URL (URL-safe, no padding)
-local b64url = openssl.base64url('Hello, world!')
--- Returns: SGVsbG8sIHdvcmxkIQ
-
--- Decode
-local decoded = openssl.base64url_decode(b64url)
-assert(decoded == 'Hello, world!')
-```
-
-**Files to Modify:**
-- `src/misc.c` or `src/base64.c` (new)
-
-**Success Criteria:**
-- Base64URL encoding/decoding works correctly
-- Compatible with JWT libraries
-- Full test coverage
-
----
-
-### 3.5 Remaining Deprecation Warning Resolution
-**Priority:** 🟡 Medium  
-**Difficulty:** ⭐⭐⭐ Hard (15-20 days)  
-**Impact:** 🎯🎯 Medium - Code modernization  
+**Priority:** 🟡 Medium
+**Difficulty:** ⭐⭐⭐ Hard (15-20 days)
+**Impact:** 🎯🎯 Medium - Code modernization
 
 **Rationale:**
 - Some modules still use deprecated APIs
@@ -622,9 +353,10 @@ assert(decoded == 'Hello, world!')
 ## Phase 4: Long-term Goals (6-12 Months)
 
 ### 4.1 QUIC Protocol Support
-**Priority:** 🟡 Medium  
-**Difficulty:** ⭐⭐⭐⭐ Very Hard (15-20 days)  
-**Impact:** 🎯🎯 Medium - Modern protocol support  
+
+**Priority:** 🟡 Medium
+**Difficulty:** ⭐⭐⭐⭐ Very Hard (15-20 days)
+**Impact:** 🎯🎯 Medium - Modern protocol support
 
 **Prerequisites:**
 - OpenSSL 3.2.0 or later
@@ -678,9 +410,10 @@ quic:close()
 ---
 
 ### 4.2 JWE/JOSE Support
-**Priority:** 🟢 Low  
-**Difficulty:** ⭐⭐⭐⭐ Very Hard (20+ days)  
-**Impact:** 🎯🎯🎯 Low - Specialized use case  
+
+**Priority:** 🟢 Low
+**Difficulty:** ⭐⭐⭐⭐ Very Hard (20+ days)
+**Impact:** 🎯🎯🎯 Low - Specialized use case
 
 **Considerations:**
 - May be better as separate module/package
@@ -735,9 +468,10 @@ local jwe = jose.jwe.encrypt({
 ---
 
 ### 4.3 Post-Quantum Cryptography
-**Priority:** 🟢 Low  
-**Difficulty:** ⭐⭐⭐⭐ Very Hard (25+ days)  
-**Impact:** 🎯🎯🎯 Low - Future consideration  
+
+**Priority:** 🟢 Low
+**Difficulty:** ⭐⭐⭐⭐ Very Hard (25+ days)
+**Impact:** 🎯🎯🎯 Low - Future consideration
 
 **Status:** Highly experimental, depends on OpenSSL PQC adoption
 
@@ -773,9 +507,10 @@ local jwe = jose.jwe.encrypt({
 ---
 
 ### 4.4 Performance Optimization
-**Priority:** 🟡 Medium  
-**Difficulty:** ⭐⭐⭐ Hard (10-15 days)  
-**Impact:** 🎯🎯 Medium - Improves user experience  
+
+**Priority:** 🟡 Medium
+**Difficulty:** ⭐⭐⭐ Hard (10-15 days)
+**Impact:** 🎯🎯 Medium - Improves user experience
 
 **Rationale:**
 - Performance is critical for cryptographic operations
@@ -831,9 +566,10 @@ end
 ## Phase 5: Continuous Improvements
 
 ### 5.1 Test Coverage Enhancement
-**Priority:** 🟠 High (Ongoing)  
-**Difficulty:** ⭐⭐ Medium (ongoing)  
-**Impact:** 🎯 High - Quality assurance  
+
+**Priority:** 🟠 High (Ongoing)
+**Difficulty:** ⭐⭐ Medium (ongoing)
+**Impact:** 🎯 High - Quality assurance
 
 **Current Status:**
 - 177 tests passing
@@ -843,7 +579,7 @@ end
 **Tasks:**
 - [ ] Increase test coverage to 80%+
 - [ ] Add edge case tests
-- [ ] Add error path tests  
+- [ ] Add error path tests
 - [ ] Add performance benchmarks
 - [ ] Add multi-version compatibility tests
 - [ ] Add fuzzing tests
@@ -872,9 +608,10 @@ end
 ---
 
 ### 5.2 Security Audit Process
-**Priority:** 🔴 Critical (Ongoing)  
-**Difficulty:** ⭐⭐⭐ Hard (ongoing)  
-**Impact:** 🎯 High - User safety  
+
+**Priority:** 🔴 Critical (Ongoing)
+**Difficulty:** ⭐⭐⭐ Hard (ongoing)
+**Impact:** 🎯 High - User safety
 
 **Rationale:**
 - Cryptographic code requires highest security standards
@@ -923,9 +660,10 @@ end
 ---
 
 ### 5.3 Documentation Maintenance
-**Priority:** 🟠 High (Ongoing)  
-**Difficulty:** ⭐ Easy (ongoing)  
-**Impact:** 🎯 High - User experience  
+
+**Priority:** 🟠 High (Ongoing)
+**Difficulty:** ⭐ Easy (ongoing)
+**Impact:** 🎯 High - User experience
 
 **Current Status:**
 - 93.1% of functions documented (LDoc)
