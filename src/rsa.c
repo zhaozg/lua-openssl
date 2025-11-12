@@ -180,9 +180,9 @@ parse RSA key components and parameters
 static int openssl_rsa_parse(lua_State *L)
 {
   RSA *rsa = CHECK_OBJECT(1, RSA, "openssl.rsa");
-  
+
   lua_newtable(L);
-  
+
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
   /* Try OpenSSL 3.0+ PARAM API first for keys created with new API */
   EVP_PKEY *pkey = EVP_PKEY_new();
@@ -191,7 +191,7 @@ static int openssl_rsa_parse(lua_State *L)
     BIGNUM *p = NULL, *q = NULL;
     BIGNUM *dmp1 = NULL, *dmq1 = NULL, *iqmp = NULL;
     int use_legacy = 0;
-    
+
     /* Try to get parameters using PARAM API */
     if (!EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_RSA_N, &n)) {
       use_legacy = 1;
@@ -203,12 +203,12 @@ static int openssl_rsa_parse(lua_State *L)
       EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_RSA_EXPONENT1, &dmp1);
       EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_RSA_EXPONENT2, &dmq1);
       EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_RSA_COEFFICIENT1, &iqmp);
-      
+
       lua_pushinteger(L, RSA_size(rsa));
       lua_setfield(L, -2, "size");
       lua_pushinteger(L, RSA_bits(rsa));
       lua_setfield(L, -2, "bits");
-      
+
       OPENSSL_PKEY_GET_BN(n, n);
       OPENSSL_PKEY_GET_BN(e, e);
       OPENSSL_PKEY_GET_BN(d, d);
@@ -217,7 +217,7 @@ static int openssl_rsa_parse(lua_State *L)
       OPENSSL_PKEY_GET_BN(dmp1, dmp1);
       OPENSSL_PKEY_GET_BN(dmq1, dmq1);
       OPENSSL_PKEY_GET_BN(iqmp, iqmp);
-      
+
       /* Clean up allocated BIGNUMs */
       BN_free(n);
       BN_free(e);
@@ -228,17 +228,17 @@ static int openssl_rsa_parse(lua_State *L)
       BN_free(dmq1);
       BN_free(iqmp);
     }
-    
+
     EVP_PKEY_free(pkey);
-    
+
     if (!use_legacy) {
       return 1;
     }
   }
-  
+
   /* Fallback to legacy API if PARAM API fails or EVP_PKEY creation fails */
 #endif
-  
+
   /* Legacy OpenSSL 1.x / 3.x compatibility path */
   {
     const BIGNUM *n = NULL, *e = NULL, *d = NULL;
@@ -262,7 +262,7 @@ static int openssl_rsa_parse(lua_State *L)
     OPENSSL_PKEY_GET_BN(dmq1, dmq1);
     OPENSSL_PKEY_GET_BN(iqmp, iqmp);
   }
-  
+
   return 1;
 }
 

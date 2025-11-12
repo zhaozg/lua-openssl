@@ -16,6 +16,7 @@ pkey module to create and process public or private key, do asymmetric key opera
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
 #include <openssl/core_names.h>
 #include <openssl/params.h>
+#include <openssl/param_build.h>
 #endif
 
 static int         evp_pkey_name2type(const char *name);
@@ -25,22 +26,91 @@ static const char *evp_pkey_type2name(int type);
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
 /* Helper: check if private key exists using PARAM API */
 static int
-pkey_has_private(EVP_PKEY *pkey, const char *param_name)
+pkey_has_private(EVP_PKEY *pkey)
 {
   BIGNUM *bn = NULL;
-  int     ret = 0;
+  int ret = 0;
+  size_t priv_len = 0;
 
-  /* Try PARAM API first (for keys created with OpenSSL 3.0 API) */
-  if (EVP_PKEY_get_bn_param(pkey, param_name, &bn) && bn != NULL) {
-    ret = !BN_is_zero(bn);
-    BN_free(bn);
+  int typ = EVP_PKEY_type(EVP_PKEY_id(pkey));
+
+  switch (typ) {
+#ifndef OPENSSL_NO_RSA
+  case EVP_PKEY_RSA: {
+    ret = EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_RSA_D, &bn);
+    break;
+  }
+#endif
+#ifndef OPENSSL_NO_DSA
+  case EVP_PKEY_DSA: {
+    ret = EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_PRIV_KEY, &bn);
+    if (!ret || bn == NULL) {
+      /* FIXME: OpenSSL 3.0 DSA priv key param not working? Fallback to legacy way */
+      DSA* dsa = EVP_PKEY_get0_DSA(pkey);
+      if (dsa) {
+        BIGNUM* priv_key = NULL;
+        DSA_get0_key(dsa, NULL, &priv_key);
+        if (priv_key) {
+          bn = BN_dup(priv_key);
+          ret = 1;
+        }
+      }
+    }
+    break;
+  }
+#endif
+#ifndef OPENSSL_NO_DH
+  case EVP_PKEY_DH: {
+    ret = EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_PRIV_KEY, &bn);
+    break;
+  }
+#endif
+#ifndef OPENSSL_NO_EC
+  case EVP_PKEY_EC:
+#ifdef EVP_PKEY_SM2
+  case EVP_PKEY_SM2:
+#endif
+  {
+    ret = EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_PRIV_KEY, &bn);
+    break;
+  }
+#endif
+#ifndef OPENSSL_NO_ED25519
+  case EVP_PKEY_ED25519: {
+    ret = EVP_PKEY_get_octet_string_param(pkey, OSSL_PKEY_PARAM_PRIV_KEY, NULL, 0, &priv_len);
+    break;
+  }
+#endif
+#ifndef OPENSSL_NO_ED448
+  case EVP_PKEY_ED448: {
+    ret = EVP_PKEY_get_octet_string_param(pkey, OSSL_PKEY_PARAM_PRIV_KEY, NULL, 0, &priv_len);
+    break;
+  }
+#endif
+#ifndef OPENSSL_NO_EX25519
+  case EVP_PKEY_X25519: {
+    ret = EVP_PKEY_get_octet_string_param(pkey, OSSL_PKEY_PARAM_PRIV_KEY, NULL, 0, &priv_len);
+    break;
+  }
+#endif
+  default:
+  {
+    EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new_from_pkey(NULL, pkey, NULL);
+    if (EVP_PKEY_private_check(ctx))
+      ret = 1;
+    EVP_PKEY_CTX_free(ctx);
     return ret;
   }
-  
-  /* Fallback: PARAM API failed, likely a legacy key.
-   * For legacy keys created with OpenSSL 1.x API and assigned with
-   * EVP_PKEY_assign_*, we need to use EVP_PKEY_get0_* approach */
-  return -1; /* Indicate need for legacy fallback */
+  }
+
+  if (ret && bn != NULL) {
+    ret = !BN_is_zero(bn);
+    BN_free(bn);
+  } else if (ret && priv_len > 0) {
+    ret = 1;
+  }
+
+  return ret;
 }
 
 /* Helper: check if key matches expected type */
@@ -55,88 +125,39 @@ pkey_is_type(EVP_PKEY *pkey, int expected_type)
 int
 openssl_pkey_is_private(EVP_PKEY *pkey)
 {
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
+  return pkey_has_private(pkey);
+#else
+  /* OpenSSL 1.x way */
   int ret = 0;
-  int typ;
-  assert(pkey != NULL);
+  int typ = EVP_PKEY_type(EVP_PKEY_id(pkey));
 
-  typ = EVP_PKEY_type(EVP_PKEY_id(pkey));
   switch (typ) {
 #ifndef OPENSSL_NO_RSA
   case EVP_PKEY_RSA: {
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
-    /* Try OpenSSL 3.0+ PARAM API first */
-    ret = pkey_has_private(pkey, OSSL_PKEY_PARAM_RSA_D);
-    if (ret < 0) {
-      /* Fallback to OpenSSL 1.x way for legacy keys */
-      RSA          *rsa = (RSA *)EVP_PKEY_get0_RSA(pkey);
-      const BIGNUM *d = NULL;
-      if (rsa) {
-        RSA_get0_key(rsa, NULL, NULL, &d);
-        ret = d != NULL;
-      } else {
-        ret = 0;
-      }
-    }
-#else
-    /* OpenSSL 1.x way */
     RSA          *rsa = (RSA *)EVP_PKEY_get0_RSA(pkey);
     const BIGNUM *d = NULL;
 
     RSA_get0_key(rsa, NULL, NULL, &d);
     ret = d != NULL;
-#endif
     break;
   }
 #endif
 #ifndef OPENSSL_NO_DSA
   case EVP_PKEY_DSA: {
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
-    /* Try OpenSSL 3.0+ PARAM API first */
-    ret = pkey_has_private(pkey, OSSL_PKEY_PARAM_PRIV_KEY);
-    if (ret < 0) {
-      /* Fallback to OpenSSL 1.x way for legacy keys */
-      DSA          *dsa = (DSA *)EVP_PKEY_get0_DSA(pkey);
-      const BIGNUM *p = NULL;
-      if (dsa) {
-        DSA_get0_key(dsa, NULL, &p);
-        ret = p != NULL;
-      } else {
-        ret = 0;
-      }
-    }
-#else
-    /* OpenSSL 1.x way */
     DSA          *dsa = (DSA *)EVP_PKEY_get0_DSA(pkey);
     const BIGNUM *p = NULL;
     DSA_get0_key(dsa, NULL, &p);
     ret = p != NULL;
-#endif
     break;
   }
 #endif
 #ifndef OPENSSL_NO_DH
   case EVP_PKEY_DH: {
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
-    /* Try OpenSSL 3.0+ PARAM API first */
-    ret = pkey_has_private(pkey, OSSL_PKEY_PARAM_PRIV_KEY);
-    if (ret < 0) {
-      /* Fallback to OpenSSL 1.x way for legacy keys */
-      DH           *dh = (DH *)EVP_PKEY_get0_DH(pkey);
-      const BIGNUM *p = NULL;
-      if (dh) {
-        DH_get0_key(dh, NULL, &p);
-        ret = p != NULL;
-      } else {
-        ret = 0;
-      }
-    }
-#else
-    /* OpenSSL 1.x way */
     DH           *dh = (DH *)EVP_PKEY_get0_DH(pkey);
     const BIGNUM *p = NULL;
     DH_get0_key(dh, NULL, &p);
     ret = p != NULL;
-#endif
     break;
   }
 #endif
@@ -146,41 +167,17 @@ openssl_pkey_is_private(EVP_PKEY *pkey)
   case EVP_PKEY_SM2:
 #endif
   {
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
-    /* Try OpenSSL 3.0+ PARAM API first */
-    ret = pkey_has_private(pkey, OSSL_PKEY_PARAM_PRIV_KEY);
-    if (ret < 0) {
-      /* Fallback to OpenSSL 1.x way for legacy keys */
-      EC_KEY       *ec = (EC_KEY *)EVP_PKEY_get0_EC_KEY(pkey);
-      const BIGNUM *p = NULL;
-      if (ec) {
-        p = EC_KEY_get0_private_key(ec);
-        ret = p != NULL;
-      } else {
-        ret = 0;
-      }
-    }
-#else
-    /* OpenSSL 1.x way */
     EC_KEY       *ec = (EC_KEY *)EVP_PKEY_get0_EC_KEY(pkey);
     const BIGNUM *p = EC_KEY_get0_private_key(ec);
     ret = p != NULL;
-#endif
     break;
   }
 #endif
   default:
-#if (OPENSSL_VERSION_NUMBER >= 0x30000000L) && !defined(LIBRESSL_VERSION_NUMBER)
-  {
-    EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new_from_pkey(NULL, pkey, NULL);
-    if (EVP_PKEY_private_check(ctx)) ret = 1;
-    EVP_PKEY_CTX_free(ctx);
-  }
-#endif
-  break;
   }
 
   return ret;
+#endif
 }
 
 #if defined(OPENSSL_SUPPORT_SM2)
@@ -660,6 +657,41 @@ static int openssl_pkey_new(lua_State *L)
           pub_key = BN_get(L, -1);
           lua_pop(L, 1);
 
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
+          OSSL_PARAM_BLD *param_bld = NULL;
+
+          param_bld = OSSL_PARAM_BLD_new();
+          if (param_bld) {
+            EVP_PKEY_CTX *ctx = NULL;
+            OSSL_PARAM *params = NULL;
+
+            if (p && !OSSL_PARAM_BLD_push_BN(param_bld, OSSL_PKEY_PARAM_FFC_P, p)) goto cleanup;
+            if (q && !OSSL_PARAM_BLD_push_BN(param_bld, OSSL_PKEY_PARAM_FFC_Q, q)) goto cleanup;
+            if (g && !OSSL_PARAM_BLD_push_BN(param_bld, OSSL_PKEY_PARAM_FFC_G, g)) goto cleanup;
+            if (pub_key && !OSSL_PARAM_BLD_push_BN(param_bld, OSSL_PKEY_PARAM_PUB_KEY, pub_key)) goto cleanup;
+
+            if (priv_key && !OSSL_PARAM_BLD_push_BN(param_bld, OSSL_PKEY_PARAM_PRIV_KEY, priv_key)) goto cleanup;
+            params = OSSL_PARAM_BLD_to_param(param_bld);
+            if (!params) goto cleanup;
+
+            ctx = EVP_PKEY_CTX_new_from_name(NULL, "DSA", NULL);
+            if (!ctx) goto cleanup;
+
+            if (EVP_PKEY_fromdata_init(ctx) <= 0) goto cleanup;
+            if (EVP_PKEY_fromdata(ctx, &pkey, EVP_PKEY_KEYPAIR, params) <= 0) {
+                pkey = NULL;
+            }
+cleanup:
+            OSSL_PARAM_free(params);
+            OSSL_PARAM_BLD_free(param_bld);
+            EVP_PKEY_CTX_free(ctx);
+            BN_free(p);
+            BN_free(q);
+            BN_free(g);
+            BN_free(pub_key);
+            BN_free(priv_key);
+          }
+#else
           if (DSA_set0_key(dsa, pub_key, priv_key) == 1 && DSA_set0_pqg(dsa, p, q, g)) {
             if (!EVP_PKEY_assign_DSA(pkey, dsa)) {
               DSA_free(dsa);
@@ -672,6 +704,7 @@ static int openssl_pkey_new(lua_State *L)
             EVP_PKEY_free(pkey);
             pkey = NULL;
           }
+#endif
         }
       }
     } else

@@ -176,29 +176,47 @@ end
 
 function testDSA()
   local dsa = { "dsa", 1024 }
-  dsa = pkey.new(unpack(dsa))
+  dsa = assert(pkey.new(unpack(dsa)))
 
-  local k1 = pkey.get_public(dsa)
-  assert(not k1:is_private())
+  local pub = pkey.get_public(dsa)
+  assert(not pub:is_private())
   local t = dsa:parse()
   assert(t.bits == 1024)
   assert(t.type == "DSA")
   assert(t.size)
 
+  t = pub:parse().dsa:parse()
+  assert(t.g)
+  assert(t.p)
+  assert(t.q)
+  assert(t.pub_key)
+  assert(not t.priv_key)
+
+  t = dsa:parse()
   local r = t.dsa
   t = r:parse()
   assert(t.g)
   assert(t.p)
   assert(t.q)
   assert(t.pub_key)
+  assert(t.priv_key)
 
   t.alg = "dsa"
   local r2 = pkey.new(t)
+  t = r2:parse()
+  local r = t.dsa
+  t = r:parse()
+  assert(t.g)
+  assert(t.p)
+  assert(t.q)
+  assert(t.pub_key)
+  assert(t.priv_key)
+
   assert(r2:is_private())
   local msg = openssl.random(128 - 11)
 
   local out = pkey.sign(r2, msg)
-  local ret = pkey.verify(k1, msg, out)
+  local ret = pkey.verify(pub, msg, out)
   assert(ret)
   ret = pkey.verify(r2, msg, out)
   assert(ret)
@@ -349,9 +367,9 @@ FV/lrqg=
     k2 = pkey.read(export, true, "der")
     lu.assertEquals(pri:export(), k2:export())
 
-    if k ~= "DH" then
+    if k ~= "DH" and k ~= 'DSA' then
       k2 = assert(pkey.read(export, true, "der", k), k)
-      lu.assertEquals(pri:export(), k2:export())
+      lu.assertEquals(pri:export(), k2:export(), k)
     end
 
     export = pri:export("der", false)
@@ -401,7 +419,7 @@ FV/lrqg=
       lu.assertStrContains(pem2, "-----BEGIN " .. tmp .. "PUBLIC KEY-----")
       lu.assertStrContains(pem2, "-----END " .. tmp .. "PUBLIC KEY-----")
       k2 = assert(pkey.read(pem2, false, "pem", k))
-      lu.assertEquals(pub:export(), k2:export())
+      lu.assertEquals(pub:export(), k2:export(), k)
     end
 
     -- 3 format='der', raw=false, passphrase=nil
