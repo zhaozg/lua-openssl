@@ -177,7 +177,13 @@ Unload a provider
 static int openssl_provider_unload(lua_State *L)
 {
   OSSL_PROVIDER *prov = CHECK_OBJECT(1, OSSL_PROVIDER, "openssl.provider");
-  int ret = OSSL_PROVIDER_unload(prov);
+  int ret = 0;
+  
+  if (prov != NULL) {
+    ret = OSSL_PROVIDER_unload(prov);
+    /* Set pointer to NULL to prevent double-free */
+    *(void **)lua_touserdata(L, 1) = NULL;
+  }
 
   lua_pushboolean(L, ret);
   return 1;
@@ -277,9 +283,11 @@ Provider object garbage collection
 static int openssl_provider_gc(lua_State *L)
 {
   OSSL_PROVIDER *prov = CHECK_OBJECT(1, OSSL_PROVIDER, "openssl.provider");
-  /* Note: We don't automatically unload here as the provider might be in use
-     Users should explicitly call unload() if needed */
-  (void)prov;
+  if (prov != NULL) {
+    OSSL_PROVIDER_unload(prov);
+    /* Set pointer to NULL to prevent double-free */
+    *(void **)lua_touserdata(L, 1) = NULL;
+  }
   return 0;
 }
 
