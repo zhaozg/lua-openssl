@@ -12,6 +12,109 @@ ec module to create EC keys and do EC key processes.
 
 #if !defined(OPENSSL_NO_EC)
 
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
+EVP_PKEY* openssl_new_pkey_ec_with(const EC_GROUP *group,
+                                   const BIGNUM *x,
+                                   const BIGNUM *y,
+                                   const BIGNUM *d)
+{
+  EVP_PKEY *pkey = NULL;
+  OSSL_PARAM_BLD *param_bld = OSSL_PARAM_BLD_new();
+
+  if (param_bld) {
+    EVP_PKEY_CTX *ctx = NULL;
+    OSSL_PARAM *params = NULL;
+    const char *point_form = NULL;
+    const char *asn1_encoding = NULL;
+    int nid = EC_GROUP_get_curve_name(group);
+    int form = EC_GROUP_get_point_conversion_form(group);
+    int flags = EC_GROUP_get_asn1_flag(group);
+
+    const char *curve_name = OBJ_nid2sn(nid);
+    if (curve_name == NULL) {
+      goto cleanup;
+    }
+
+    if (!OSSL_PARAM_BLD_push_utf8_string(param_bld, OSSL_PKEY_PARAM_GROUP_NAME, curve_name, 0)) {
+      goto cleanup;
+    }
+
+    if (form == POINT_CONVERSION_COMPRESSED)
+      point_form = "compressed";
+    else if (form == POINT_CONVERSION_UNCOMPRESSED)
+      point_form = "uncompressed";
+    else if (form == POINT_CONVERSION_HYBRID)
+      point_form = "hybrid";
+    else
+      goto cleanup;
+
+    if (!OSSL_PARAM_BLD_push_utf8_string(param_bld,
+                                         OSSL_PKEY_PARAM_EC_POINT_CONVERSION_FORMAT,
+                                         point_form, 0))
+      goto cleanup;
+
+    if (flags == OPENSSL_EC_NAMED_CURVE)
+      asn1_encoding = "named_curve";
+    else if (flags == OPENSSL_EC_EXPLICIT_CURVE)
+      asn1_encoding = "explicit";
+    else
+      goto cleanup;
+    if (!OSSL_PARAM_BLD_push_utf8_string(param_bld,
+                                         OSSL_PKEY_PARAM_EC_ENCODING,
+                                         asn1_encoding, 0))
+      goto cleanup;
+
+    printf("X=>%p\n", x);
+    printf("Y=>%p\n", y);
+    if (x && !OSSL_PARAM_BLD_push_BN(param_bld, OSSL_PKEY_PARAM_EC_PUB_X, x)) {
+      goto cleanup;
+    }
+
+    if (y && !OSSL_PARAM_BLD_push_BN(param_bld, OSSL_PKEY_PARAM_EC_PUB_Y, y)) {
+      goto cleanup;
+    }
+    if (x && y && !OSSL_PARAM_BLD_push_int(param_bld, OSSL_PKEY_PARAM_EC_INCLUDE_PUBLIC, 1)) {
+      goto cleanup;
+    }
+
+    if (d && !OSSL_PARAM_BLD_push_BN(param_bld, OSSL_PKEY_PARAM_PRIV_KEY, d)) {
+      goto cleanup;
+    }
+
+    params = OSSL_PARAM_BLD_to_param(param_bld);
+    if (!params) goto cleanup;
+
+    if (!OSSL_PARAM_BLD_push_utf8_string(param_bld, OSSL_PKEY_PARAM_EC_FIELD_TYPE,
+                                         "prime-field", 0))
+    ctx = EVP_PKEY_CTX_new_from_name(NULL,
+                                     nid == NID_sm2 ? "SM2" : "EC",
+                                     NULL);
+    if (!ctx) goto cleanup;
+    if (nid == NID_sm2) {
+      /* For SM2, set the group name explicitly */
+      if (!OSSL_PARAM_BLD_push_utf8_string(param_bld,
+                                           OSSL_PKEY_PARAM_DEFAULT_DIGEST,
+                                           "sm3", 0)) {
+        goto cleanup;
+      }
+    }
+
+    if (EVP_PKEY_fromdata_init(ctx) <= 0) goto cleanup;
+
+    int selection = (d != NULL) ? EVP_PKEY_KEYPAIR : EVP_PKEY_PUBLIC_KEY;
+    if (EVP_PKEY_fromdata(ctx, &pkey, selection, params) <= 0) {
+      pkey = NULL;
+    }
+
+  cleanup:
+    OSSL_PARAM_free(params);
+    OSSL_PARAM_BLD_free(param_bld);
+    EVP_PKEY_CTX_free(ctx);
+  }
+  return pkey;
+}
+#endif
+
 /* Suppress deprecation warnings for EC_KEY accessor functions that are part of the module's API.
  * The core cryptographic operations (ECDSA sign/verify, ECDH) have been migrated to EVP APIs.
  * These accessors are needed for the Lua API and object lifecycle management. */

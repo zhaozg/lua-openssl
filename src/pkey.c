@@ -781,6 +781,9 @@ static int openssl_pkey_new(lua_State *L)
       EC_GET_FIELD(z);
       if (z) luaL_error(L, "only accpet affine co-ordinates");
 
+#if 0 && OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
+      pkey = openssl_new_pkey_ec_with(group, x, y, d);
+#else
       pkey = EVP_PKEY_new();
       if (pkey) {
         EC_KEY *ec = EC_KEY_new();
@@ -802,13 +805,13 @@ static int openssl_pkey_new(lua_State *L)
             EVP_PKEY_free(pkey);
             pkey = NULL;
           }
-
-          BN_free(d);
-          BN_free(x);
-          BN_free(y);
-          BN_free(z);
         }
       }
+#endif
+      BN_free(d);
+      BN_free(x);
+      BN_free(y);
+      BN_free(z);
       EC_GROUP_free(group);
     }
 #endif

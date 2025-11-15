@@ -449,6 +449,11 @@ EVP_PKEY* openssl_new_pkey_dh_with(const BIGNUM *p,
                                    const BIGNUM *g,
                                    const BIGNUM *pub_key,
                                    const BIGNUM *priv_key);
+
+EVP_PKEY* openssl_new_pkey_ec_with(const EC_GROUP *group,
+                                   const BIGNUM *x,
+                                   const BIGNUM *y,
+                                   const BIGNUM *d);
 #endif
 
 #if defined(__cplusplus)
