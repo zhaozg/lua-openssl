@@ -24,6 +24,45 @@ generation, signature creation and verification.
 #include "private.h"
 
 #if !defined(OPENSSL_NO_DSA)
+
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
+EVP_PKEY* openssl_new_pkey_dsa_with(const BIGNUM *p,
+                                 const BIGNUM *q,
+                                 const BIGNUM *g,
+                                 const BIGNUM *pub_key,
+                                 const BIGNUM *priv_key)
+{
+  EVP_PKEY *pkey = NULL;
+  OSSL_PARAM_BLD *param_bld = OSSL_PARAM_BLD_new();
+  if (param_bld) {
+    EVP_PKEY_CTX *ctx = NULL;
+    OSSL_PARAM *params = NULL;
+
+    if (p && !OSSL_PARAM_BLD_push_BN(param_bld, OSSL_PKEY_PARAM_FFC_P, p)) goto cleanup;
+    if (q && !OSSL_PARAM_BLD_push_BN(param_bld, OSSL_PKEY_PARAM_FFC_Q, q)) goto cleanup;
+    if (g && !OSSL_PARAM_BLD_push_BN(param_bld, OSSL_PKEY_PARAM_FFC_G, g)) goto cleanup;
+    if (pub_key && !OSSL_PARAM_BLD_push_BN(param_bld, OSSL_PKEY_PARAM_PUB_KEY, pub_key)) goto cleanup;
+
+    if (priv_key && !OSSL_PARAM_BLD_push_BN(param_bld, OSSL_PKEY_PARAM_PRIV_KEY, priv_key)) goto cleanup;
+    params = OSSL_PARAM_BLD_to_param(param_bld);
+    if (!params) goto cleanup;
+
+    ctx = EVP_PKEY_CTX_new_from_name(NULL, "DSA", NULL);
+    if (!ctx) goto cleanup;
+
+    if (EVP_PKEY_fromdata_init(ctx) <= 0) goto cleanup;
+    if (EVP_PKEY_fromdata(ctx, &pkey, EVP_PKEY_KEYPAIR, params) <= 0) {
+      pkey = NULL;
+    }
+  cleanup:
+    OSSL_PARAM_free(params);
+    OSSL_PARAM_BLD_free(param_bld);
+    EVP_PKEY_CTX_free(ctx);
+  }
+  return pkey;
+}
+#endif
+
 static int openssl_dsa_free(lua_State *L)
 {
   DSA *dsa = CHECK_OBJECT(1, DSA, "openssl.dsa");

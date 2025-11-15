@@ -658,39 +658,12 @@ static int openssl_pkey_new(lua_State *L)
           lua_pop(L, 1);
 
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
-          OSSL_PARAM_BLD *param_bld = NULL;
-
-          param_bld = OSSL_PARAM_BLD_new();
-          if (param_bld) {
-            EVP_PKEY_CTX *ctx = NULL;
-            OSSL_PARAM *params = NULL;
-
-            if (p && !OSSL_PARAM_BLD_push_BN(param_bld, OSSL_PKEY_PARAM_FFC_P, p)) goto cleanup;
-            if (q && !OSSL_PARAM_BLD_push_BN(param_bld, OSSL_PKEY_PARAM_FFC_Q, q)) goto cleanup;
-            if (g && !OSSL_PARAM_BLD_push_BN(param_bld, OSSL_PKEY_PARAM_FFC_G, g)) goto cleanup;
-            if (pub_key && !OSSL_PARAM_BLD_push_BN(param_bld, OSSL_PKEY_PARAM_PUB_KEY, pub_key)) goto cleanup;
-
-            if (priv_key && !OSSL_PARAM_BLD_push_BN(param_bld, OSSL_PKEY_PARAM_PRIV_KEY, priv_key)) goto cleanup;
-            params = OSSL_PARAM_BLD_to_param(param_bld);
-            if (!params) goto cleanup;
-
-            ctx = EVP_PKEY_CTX_new_from_name(NULL, "DSA", NULL);
-            if (!ctx) goto cleanup;
-
-            if (EVP_PKEY_fromdata_init(ctx) <= 0) goto cleanup;
-            if (EVP_PKEY_fromdata(ctx, &pkey, EVP_PKEY_KEYPAIR, params) <= 0) {
-                pkey = NULL;
-            }
-cleanup:
-            OSSL_PARAM_free(params);
-            OSSL_PARAM_BLD_free(param_bld);
-            EVP_PKEY_CTX_free(ctx);
-            BN_free(p);
-            BN_free(q);
-            BN_free(g);
-            BN_free(pub_key);
-            BN_free(priv_key);
-          }
+          pkey = openssl_new_pkey_dsa_with(p, q, g, pub_key, priv_key);
+          BN_free(p);
+          BN_free(q);
+          BN_free(g);
+          BN_free(pub_key);
+          BN_free(priv_key);
 #else
           if (DSA_set0_key(dsa, pub_key, priv_key) == 1 && DSA_set0_pqg(dsa, p, q, g)) {
             if (!EVP_PKEY_assign_DSA(pkey, dsa)) {

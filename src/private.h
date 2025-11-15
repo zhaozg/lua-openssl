@@ -428,6 +428,12 @@ lua_State *openssl_mainthread(lua_State *L);
 
 int openssl_pushparams(lua_State *L, const OSSL_PARAM* params);
 OSSL_PARAM* openssl_toparams(lua_State *L, int idx);
+EVP_PKEY* openssl_new_pkey_dsa_with(const BIGNUM *p,
+                                 const BIGNUM *q,
+                                 const BIGNUM *g,
+                                 const BIGNUM *pub_key,
+                                 const BIGNUM *priv_key);
+
 EVP_PKEY* openssl_new_pkey_dh_with(const BIGNUM *p,
                                    const BIGNUM *q,
                                    const BIGNUM *g,
