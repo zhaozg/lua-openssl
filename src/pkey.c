@@ -739,6 +739,14 @@ cleanup:
           pub_key = BN_get(L, -1);
           lua_pop(L, 1);
 
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
+          pkey = openssl_new_pkey_dh_with(p, q, g, pub_key, priv_key);
+          BN_free(p);
+          BN_free(q);
+          BN_free(g);
+          BN_free(pub_key);
+          BN_free(priv_key);
+#else
           if (DH_set0_key(dh, pub_key, priv_key) == 1 && DH_set0_pqg(dh, p, q, g)) {
             if (!EVP_PKEY_assign_DH(pkey, dh)) {
               DH_free(dh);
@@ -752,6 +760,7 @@ cleanup:
             EVP_PKEY_free(pkey);
             pkey = NULL;
           }
+#endif
         }
       }
     } else

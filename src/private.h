@@ -421,9 +421,18 @@ lua_State *openssl_mainthread(lua_State *L);
 #endif
 #endif
 
-#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
+#include <openssl/core_names.h>
+#include <openssl/params.h>
+#include <openssl/param_build.h>
+
 int openssl_pushparams(lua_State *L, const OSSL_PARAM* params);
 OSSL_PARAM* openssl_toparams(lua_State *L, int idx);
+EVP_PKEY* openssl_new_pkey_dh_with(const BIGNUM *p,
+                                   const BIGNUM *q,
+                                   const BIGNUM *g,
+                                   const BIGNUM *pub_key,
+                                   const BIGNUM *priv_key);
 #endif
 
 #if defined(__cplusplus)
