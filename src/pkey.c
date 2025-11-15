@@ -608,6 +608,18 @@ static int openssl_pkey_new(lua_State *L)
           iqmp = BN_get(L, -1);
           lua_pop(L, 1);
 
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
+          pkey = openssl_new_pkey_rsa_with(n, e, d,
+                                           p, q, dmp1, dmq1, iqmp);
+          BN_free(n);
+          BN_free(e);
+          BN_free(d);
+          BN_free(p);
+          BN_free(q);
+          BN_free(dmp1);
+          BN_free(dmq1);
+          BN_free(iqmp);
+#else
           if (RSA_set0_key(rsa, n, e, d) == 1 && (p == NULL || RSA_set0_factors(rsa, p, q) == 1)
               && (dmp1 == NULL || RSA_set0_crt_params(rsa, dmp1, dmq1, iqmp) == 1))
           {
@@ -623,6 +635,7 @@ static int openssl_pkey_new(lua_State *L)
             EVP_PKEY_free(pkey);
             pkey = NULL;
           }
+#endif
         }
       }
     } else
