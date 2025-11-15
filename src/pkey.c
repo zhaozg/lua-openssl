@@ -565,61 +565,62 @@ static int openssl_pkey_new(lua_State *L)
       luaL_error(L, "not support %s!!!!", alg);
     }
   } else if (lua_istable(L, 1)) {
+    /* contruct key from factors in Lua table */
     lua_getfield(L, 1, "alg");
     alg = luaL_optstring(L, -1, alg);
     lua_pop(L, 1);
 #ifndef OPENSSL_NO_RSA
     if (strcasecmp(alg, "rsa") == 0) {
+      BIGNUM *n = NULL, *e = NULL, *d = NULL;
+      BIGNUM *p = NULL, *q = NULL;
+      BIGNUM *dmp1 = NULL, *dmq1 = NULL, *iqmp = NULL;
+
+      lua_getfield(L, 1, "n");
+      n = BN_get(L, -1);
+      lua_pop(L, 1);
+
+      lua_getfield(L, 1, "e");
+      e = BN_get(L, -1);
+      lua_pop(L, 1);
+
+      lua_getfield(L, 1, "d");
+      d = BN_get(L, -1);
+      lua_pop(L, 1);
+
+      lua_getfield(L, 1, "p");
+      p = BN_get(L, -1);
+      lua_pop(L, 1);
+
+      lua_getfield(L, 1, "q");
+      q = BN_get(L, -1);
+      lua_pop(L, 1);
+
+      lua_getfield(L, 1, "dmp1");
+      dmp1 = BN_get(L, -1);
+      lua_pop(L, 1);
+      lua_getfield(L, 1, "dmq1");
+      dmq1 = BN_get(L, -1);
+      lua_pop(L, 1);
+      lua_getfield(L, 1, "iqmp");
+      iqmp = BN_get(L, -1);
+      lua_pop(L, 1);
+
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
+      pkey = openssl_new_pkey_rsa_with(n, e, d,
+                                       p, q, dmp1, dmq1, iqmp);
+      BN_free(n);
+      BN_free(e);
+      BN_free(d);
+      BN_free(p);
+      BN_free(q);
+      BN_free(dmp1);
+      BN_free(dmq1);
+      BN_free(iqmp);
+#else
       pkey = EVP_PKEY_new();
       if (pkey) {
         RSA *rsa = RSA_new();
         if (rsa) {
-          BIGNUM *n = NULL, *e = NULL, *d = NULL;
-          BIGNUM *p = NULL, *q = NULL;
-          BIGNUM *dmp1 = NULL, *dmq1 = NULL, *iqmp = NULL;
-
-          lua_getfield(L, 1, "n");
-          n = BN_get(L, -1);
-          lua_pop(L, 1);
-
-          lua_getfield(L, 1, "e");
-          e = BN_get(L, -1);
-          lua_pop(L, 1);
-
-          lua_getfield(L, 1, "d");
-          d = BN_get(L, -1);
-          lua_pop(L, 1);
-
-          lua_getfield(L, 1, "p");
-          p = BN_get(L, -1);
-          lua_pop(L, 1);
-
-          lua_getfield(L, 1, "q");
-          q = BN_get(L, -1);
-          lua_pop(L, 1);
-
-          lua_getfield(L, 1, "dmp1");
-          dmp1 = BN_get(L, -1);
-          lua_pop(L, 1);
-          lua_getfield(L, 1, "dmq1");
-          dmq1 = BN_get(L, -1);
-          lua_pop(L, 1);
-          lua_getfield(L, 1, "iqmp");
-          iqmp = BN_get(L, -1);
-          lua_pop(L, 1);
-
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
-          pkey = openssl_new_pkey_rsa_with(n, e, d,
-                                           p, q, dmp1, dmq1, iqmp);
-          BN_free(n);
-          BN_free(e);
-          BN_free(d);
-          BN_free(p);
-          BN_free(q);
-          BN_free(dmp1);
-          BN_free(dmq1);
-          BN_free(iqmp);
-#else
           if (RSA_set0_key(rsa, n, e, d) == 1 && (p == NULL || RSA_set0_factors(rsa, p, q) == 1)
               && (dmp1 == NULL || RSA_set0_crt_params(rsa, dmp1, dmq1, iqmp) == 1))
           {
@@ -635,49 +636,49 @@ static int openssl_pkey_new(lua_State *L)
             EVP_PKEY_free(pkey);
             pkey = NULL;
           }
-#endif
         }
       }
+#endif
     } else
 #endif
 #ifndef OPENSSL_NO_DSA
       if (strcasecmp(alg, "dsa") == 0)
     {
+      BIGNUM *p = NULL, *q = NULL, *g = NULL;
+      BIGNUM *priv_key = NULL, *pub_key = NULL;
+
+      lua_getfield(L, 1, "p");
+      p = BN_get(L, -1);
+      lua_pop(L, 1);
+
+      lua_getfield(L, 1, "q");
+      q = BN_get(L, -1);
+      lua_pop(L, 1);
+
+      lua_getfield(L, 1, "g");
+      g = BN_get(L, -1);
+      lua_pop(L, 1);
+
+      lua_getfield(L, 1, "priv_key");
+      priv_key = BN_get(L, -1);
+      lua_pop(L, 1);
+
+      lua_getfield(L, 1, "pub_key");
+      pub_key = BN_get(L, -1);
+      lua_pop(L, 1);
+
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
+      pkey = openssl_new_pkey_dsa_with(p, q, g, pub_key, priv_key);
+      BN_free(p);
+      BN_free(q);
+      BN_free(g);
+      BN_free(pub_key);
+      BN_free(priv_key);
+#else
       pkey = EVP_PKEY_new();
       if (pkey) {
         DSA *dsa = DSA_new();
         if (dsa) {
-          BIGNUM *p = NULL, *q = NULL, *g = NULL;
-          BIGNUM *priv_key = NULL, *pub_key = NULL;
-
-          lua_getfield(L, 1, "p");
-          p = BN_get(L, -1);
-          lua_pop(L, 1);
-
-          lua_getfield(L, 1, "q");
-          q = BN_get(L, -1);
-          lua_pop(L, 1);
-
-          lua_getfield(L, 1, "g");
-          g = BN_get(L, -1);
-          lua_pop(L, 1);
-
-          lua_getfield(L, 1, "priv_key");
-          priv_key = BN_get(L, -1);
-          lua_pop(L, 1);
-
-          lua_getfield(L, 1, "pub_key");
-          pub_key = BN_get(L, -1);
-          lua_pop(L, 1);
-
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
-          pkey = openssl_new_pkey_dsa_with(p, q, g, pub_key, priv_key);
-          BN_free(p);
-          BN_free(q);
-          BN_free(g);
-          BN_free(pub_key);
-          BN_free(priv_key);
-#else
           if (DSA_set0_key(dsa, pub_key, priv_key) == 1 && DSA_set0_pqg(dsa, p, q, g)) {
             if (!EVP_PKEY_assign_DSA(pkey, dsa)) {
               DSA_free(dsa);
@@ -690,49 +691,49 @@ static int openssl_pkey_new(lua_State *L)
             EVP_PKEY_free(pkey);
             pkey = NULL;
           }
-#endif
         }
       }
+#endif
     } else
 #endif
 #ifndef OPENSSL_NO_DH
       if (strcasecmp(alg, "dh") == 0)
     {
+      BIGNUM *p = NULL, *q = NULL, *g = NULL;
+      BIGNUM *priv_key = NULL, *pub_key = NULL;
+
+      lua_getfield(L, 1, "p");
+      p = BN_get(L, -1);
+      lua_pop(L, 1);
+
+      lua_getfield(L, 1, "q");
+      q = BN_get(L, -1);
+      lua_pop(L, 1);
+
+      lua_getfield(L, 1, "g");
+      g = BN_get(L, -1);
+      lua_pop(L, 1);
+
+      lua_getfield(L, 1, "priv_key");
+      priv_key = BN_get(L, -1);
+      lua_pop(L, 1);
+
+      lua_getfield(L, 1, "pub_key");
+      pub_key = BN_get(L, -1);
+      lua_pop(L, 1);
+
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
+      pkey = openssl_new_pkey_dh_with(p, q, g, pub_key, priv_key);
+      BN_free(p);
+      BN_free(q);
+      BN_free(g);
+      BN_free(pub_key);
+      BN_free(priv_key);
+#else
       pkey = EVP_PKEY_new();
       if (pkey) {
         DH *dh = DH_new();
         if (dh) {
-          BIGNUM *p = NULL, *q = NULL, *g = NULL;
-          BIGNUM *priv_key = NULL, *pub_key = NULL;
-
-          lua_getfield(L, 1, "p");
-          p = BN_get(L, -1);
-          lua_pop(L, 1);
-
-          lua_getfield(L, 1, "q");
-          q = BN_get(L, -1);
-          lua_pop(L, 1);
-
-          lua_getfield(L, 1, "g");
-          g = BN_get(L, -1);
-          lua_pop(L, 1);
-
-          lua_getfield(L, 1, "priv_key");
-          priv_key = BN_get(L, -1);
-          lua_pop(L, 1);
-
-          lua_getfield(L, 1, "pub_key");
-          pub_key = BN_get(L, -1);
-          lua_pop(L, 1);
-
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
-          pkey = openssl_new_pkey_dh_with(p, q, g, pub_key, priv_key);
-          BN_free(p);
-          BN_free(q);
-          BN_free(g);
-          BN_free(pub_key);
-          BN_free(priv_key);
-#else
           if (DH_set0_key(dh, pub_key, priv_key) == 1 && DH_set0_pqg(dh, p, q, g)) {
             if (!EVP_PKEY_assign_DH(pkey, dh)) {
               DH_free(dh);
@@ -746,9 +747,9 @@ static int openssl_pkey_new(lua_State *L)
             EVP_PKEY_free(pkey);
             pkey = NULL;
           }
-#endif
         }
       }
+#endif
     } else
 #endif
 #ifndef OPENSSL_NO_EC
