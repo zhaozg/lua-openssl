@@ -766,12 +766,16 @@ static int openssl_pkey_new(lua_State *L)
         lua_pop(L, 1);
         lua_getfield(L, -1, "curve_name");
       }
-      lua_getfield(L, -2, "param_enc");
+      lua_getfield(L, -2, "conv_form");
       if (lua_isnil(L, -1)) {
         lua_pop(L, 1);
-        lua_getfield(L, -2, "enc_flag");
+        lua_getfield(L, -2, "param_enc");
       }
-      lua_getfield(L, -3, "conv_form");
+      lua_getfield(L, -3, "enc_flag");
+      if (lua_isnil(L, -1)) {
+        lua_pop(L, 1);
+        lua_getfield(L, -3, "asn1_flag");
+      }
       group = openssl_get_ec_group(L, -3, -2, -1);
       lua_pop(L, 3);
       if (!group) luaL_error(L, "get openssl.ec_group fail");
@@ -782,7 +786,7 @@ static int openssl_pkey_new(lua_State *L)
       EC_GET_FIELD(z);
       if (z) luaL_error(L, "only accpet affine co-ordinates");
 
-#if 0 && OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
       pkey = openssl_new_pkey_ec_with(group, x, y, d);
 #else
       pkey = EVP_PKEY_new();

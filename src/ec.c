@@ -26,12 +26,17 @@ EVP_PKEY* openssl_new_pkey_ec_with(const EC_GROUP *group,
     OSSL_PARAM *params = NULL;
     const char *point_form = NULL;
     const char *asn1_encoding = NULL;
+    unsigned char *point_buf = NULL;
     int nid = EC_GROUP_get_curve_name(group);
     int form = EC_GROUP_get_point_conversion_form(group);
     int flags = EC_GROUP_get_asn1_flag(group);
 
     const char *curve_name = OBJ_nid2sn(nid);
     if (curve_name == NULL) {
+      goto cleanup;
+    }
+
+    if (d == NULL && (x == NULL || y == NULL)) {
       goto cleanup;
     }
 
@@ -64,17 +69,51 @@ EVP_PKEY* openssl_new_pkey_ec_with(const EC_GROUP *group,
                                          asn1_encoding, 0))
       goto cleanup;
 
-    printf("X=>%p\n", x);
-    printf("Y=>%p\n", y);
-    if (x && !OSSL_PARAM_BLD_push_BN(param_bld, OSSL_PKEY_PARAM_EC_PUB_X, x)) {
-      goto cleanup;
-    }
+    if (x && y)
+    {
+      size_t degree = EC_GROUP_get_degree(group);
+      size_t field_len = (degree + 7) / 8;
+      size_t point_len = 0;
 
-    if (y && !OSSL_PARAM_BLD_push_BN(param_bld, OSSL_PKEY_PARAM_EC_PUB_Y, y)) {
-      goto cleanup;
-    }
-    if (x && y && !OSSL_PARAM_BLD_push_int(param_bld, OSSL_PKEY_PARAM_EC_INCLUDE_PUBLIC, 1)) {
-      goto cleanup;
+      switch(form) {
+        case POINT_CONVERSION_COMPRESSED:
+          point_len = 1 + field_len;
+          point_buf = malloc(point_len);
+          if (point_buf) {
+            point_buf[0] = 0x02 + (BN_is_odd(y) ? 1 : 0);
+            BN_bn2binpad(x, point_buf + 1, field_len);
+          }
+          break;
+
+        case POINT_CONVERSION_UNCOMPRESSED:
+          point_len = 1 + 2 * field_len;
+          point_buf = malloc(point_len);
+          if (point_buf) {
+            point_buf[0] = 0x04;
+            BN_bn2binpad(x, point_buf + 1, field_len);
+            BN_bn2binpad(y, point_buf + 1 + field_len, field_len);
+          }
+          break;
+
+        case POINT_CONVERSION_HYBRID:
+          point_len = 1 + 2 * field_len;
+          point_buf = malloc(point_len);
+          if (point_buf) {
+            point_buf[0] = 0x06 + (BN_is_odd(y) ? 1 : 0);
+            BN_bn2binpad(x, point_buf + 1, field_len);
+            BN_bn2binpad(y, point_buf + 1 + field_len, field_len);
+          }
+          break;
+
+        default:
+          break;
+      }
+
+      if (!point_buf || !OSSL_PARAM_BLD_push_octet_string(param_bld,
+                                         OSSL_PKEY_PARAM_PUB_KEY,
+                                         point_buf, point_len)) {
+        goto cleanup;
+      }
     }
 
     if (d && !OSSL_PARAM_BLD_push_BN(param_bld, OSSL_PKEY_PARAM_PRIV_KEY, d)) {
@@ -84,20 +123,10 @@ EVP_PKEY* openssl_new_pkey_ec_with(const EC_GROUP *group,
     params = OSSL_PARAM_BLD_to_param(param_bld);
     if (!params) goto cleanup;
 
-    if (!OSSL_PARAM_BLD_push_utf8_string(param_bld, OSSL_PKEY_PARAM_EC_FIELD_TYPE,
-                                         "prime-field", 0))
     ctx = EVP_PKEY_CTX_new_from_name(NULL,
                                      nid == NID_sm2 ? "SM2" : "EC",
                                      NULL);
     if (!ctx) goto cleanup;
-    if (nid == NID_sm2) {
-      /* For SM2, set the group name explicitly */
-      if (!OSSL_PARAM_BLD_push_utf8_string(param_bld,
-                                           OSSL_PKEY_PARAM_DEFAULT_DIGEST,
-                                           "sm3", 0)) {
-        goto cleanup;
-      }
-    }
 
     if (EVP_PKEY_fromdata_init(ctx) <= 0) goto cleanup;
 
@@ -110,6 +139,7 @@ EVP_PKEY* openssl_new_pkey_ec_with(const EC_GROUP *group,
     OSSL_PARAM_free(params);
     OSSL_PARAM_BLD_free(param_bld);
     EVP_PKEY_CTX_free(ctx);
+    free(point_buf);
   }
   return pkey;
 }
