@@ -13,6 +13,23 @@ pkey module to create and process public or private key, do asymmetric key opera
 #include "openssl.h"
 #include "private.h"
 
+/* Suppress deprecation warnings for low-level key APIs in OpenSSL 3.0+
+ * This module provides direct Lua bindings to OpenSSL's low-level key APIs.
+ * These APIs are deprecated in OpenSSL 3.0+ in favor of EVP_PKEY operations,
+ * but we maintain them for:
+ * 1. Backward compatibility with existing Lua code
+ * 2. Complete coverage of OpenSSL key functionality
+ * 3. Support for legacy key formats (PKCS#1 RSA, etc.)
+ * 
+ * Migration to pure EVP_PKEY operations would require significant API changes
+ * and break backward compatibility. The current implementation is safe and
+ * well-tested across OpenSSL 1.1.x and 3.x versions.
+ */
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
 #include <openssl/core_names.h>
 #include <openssl/params.h>
@@ -2514,3 +2531,7 @@ luaopen_pkey(lua_State *L)
 
   return 1;
 }
+
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif

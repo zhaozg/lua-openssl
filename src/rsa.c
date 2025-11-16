@@ -22,6 +22,22 @@ RSA key generation, encryption, decryption, signing and signature verification.
 #include "openssl.h"
 #include "private.h"
 
+/* Suppress deprecation warnings for RSA low-level APIs in OpenSSL 3.0+
+ * This module provides direct Lua bindings to OpenSSL's RSA-specific APIs.
+ * These APIs are deprecated in OpenSSL 3.0+ in favor of EVP_PKEY operations,
+ * but we maintain them for:
+ * 1. Complete RSA-specific functionality (padding modes, parameters, etc.)
+ * 2. Backward compatibility with existing Lua code
+ * 3. Direct access to RSA key components for advanced use cases
+ * 
+ * The current implementation is safe, well-tested, and maintains compatibility
+ * across OpenSSL 1.1.x and 3.x versions.
+ */
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
 EVP_PKEY* openssl_new_pkey_rsa_with(const BIGNUM *n,
                                     const BIGNUM *e,
@@ -670,4 +686,9 @@ luaopen_rsa(lua_State *L)
 
   return 1;
 }
+
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+
 #endif
