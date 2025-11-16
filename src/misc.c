@@ -64,10 +64,6 @@ opt_digest(lua_State *L, int idx, const char *alg)
       md = EVP_get_digestbyobj(CHECK_OBJECT(idx, ASN1_OBJECT, "openssl.asn1_object"));
     else if (auxiliar_getclassudata(L, "openssl.evp_digest", idx))
       md = CHECK_OBJECT(idx, EVP_MD, "openssl.evp_digest");
-#if (OPENSSL_VERSION_NUMBER >= 0x30000000L) && !defined(LIBRESSL_VERSION_NUMBER)
-    else if (auxiliar_getclassudata(L, "openssl.evp_digest_fetched", idx))
-      md = CHECK_OBJECT(idx, EVP_MD, "openssl.evp_digest_fetched");
-#endif
     break;
   case LUA_TNONE:
   case LUA_TNIL:
@@ -108,10 +104,6 @@ opt_cipher(lua_State *L, int idx, const char *alg)
       cipher = EVP_get_cipherbyobj(CHECK_OBJECT(idx, ASN1_OBJECT, "openssl.asn1_object"));
     else if (auxiliar_getclassudata(L, "openssl.evp_cipher", idx))
       cipher = CHECK_OBJECT(idx, EVP_CIPHER, "openssl.evp_cipher");
-#if (OPENSSL_VERSION_NUMBER >= 0x30000000L) && !defined(LIBRESSL_VERSION_NUMBER)
-    else if (auxiliar_getclassudata(L, "openssl.evp_cipher_fetched", idx))
-      cipher = CHECK_OBJECT(idx, EVP_CIPHER, "openssl.evp_cipher_fetched");
-#endif
     break;
   case LUA_TNONE:
   case LUA_TNIL:

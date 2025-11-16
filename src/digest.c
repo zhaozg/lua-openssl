@@ -11,30 +11,6 @@ digest module perform digest operations base on OpenSSL EVP API.
 #include <openssl/engine.h>
 #endif
 
-/* Helper function to get EVP_MD from either regular or fetched type */
-static EVP_MD* get_evp_md_object(lua_State *L, int idx)
-{
-  void *ud = NULL;
-  
-  /* Try regular evp_digest first */
-  ud = auxiliar_getclassudata(L, "openssl.evp_digest", idx);
-  if (ud != NULL) {
-    return *(EVP_MD **)ud;
-  }
-  
-#if (OPENSSL_VERSION_NUMBER >= 0x30000000L) && !defined(LIBRESSL_VERSION_NUMBER)
-  /* Try fetched evp_digest */
-  ud = auxiliar_getclassudata(L, "openssl.evp_digest_fetched", idx);
-  if (ud != NULL) {
-    return *(EVP_MD **)ud;
-  }
-#endif
-
-  /* Neither type matched */
-  luaL_argerror(L, idx, "expected openssl.evp_digest or openssl.evp_digest_fetched");
-  return NULL;
-}
-
 /***
 list all support digest algs
 
@@ -110,9 +86,8 @@ static int openssl_digest_fetch(lua_State *L)
     lua_pop(L, 1);
   }
 
-  /* If provider is specified, we need to load it first */
+  /* If provider is specified, check if it's available */
   if (provider != NULL) {
-    /* Check if provider is available */
     if (!OSSL_PROVIDER_available(libctx, provider)) {
       lua_pushnil(L);
       lua_pushfstring(L, "provider '%s' is not available", provider);
@@ -124,7 +99,10 @@ static int openssl_digest_fetch(lua_State *L)
   md = EVP_MD_fetch(libctx, algorithm, properties);
   
   if (md != NULL) {
-    PUSH_OBJECT(md, "openssl.evp_digest_fetched");
+    PUSH_OBJECT(md, "openssl.evp_digest");
+    /* Mark this as a fetched object that needs to be freed */
+    lua_pushboolean(L, 1);
+    lua_rawsetp(L, LUA_REGISTRYINDEX, md);
     return 1;
   }
 
@@ -132,36 +110,49 @@ static int openssl_digest_fetch(lua_State *L)
 }
 
 /***
-free a fetched evp_digest object (OpenSSL 3.0+)
-
-@function free
-@treturn boolean true on success
-*/
-static int openssl_digest_fetched_free(lua_State *L)
-{
-  EVP_MD *md = CHECK_OBJECT(1, EVP_MD, "openssl.evp_digest_fetched");
-  EVP_MD_free(md);
-  return 0;
-}
-
-/***
-get provider name for a fetched digest (OpenSSL 3.0+)
+get provider name for a digest (OpenSSL 3.0+)
 
 @function get_provider_name
 @treturn string provider name or nil
 */
-static int openssl_digest_fetched_get_provider(lua_State *L)
+static int openssl_digest_get_provider_name(lua_State *L)
 {
-  EVP_MD *md = CHECK_OBJECT(1, EVP_MD, "openssl.evp_digest_fetched");
-  const char *name = OSSL_PROVIDER_get0_name(EVP_MD_get0_provider(md));
+  EVP_MD *md = CHECK_OBJECT(1, EVP_MD, "openssl.evp_digest");
+  const OSSL_PROVIDER *prov = EVP_MD_get0_provider(md);
   
-  if (name != NULL) {
-    lua_pushstring(L, name);
-    return 1;
+  if (prov != NULL) {
+    const char *name = OSSL_PROVIDER_get0_name(prov);
+    if (name != NULL) {
+      lua_pushstring(L, name);
+      return 1;
+    }
   }
   
   lua_pushnil(L);
   return 1;
+}
+
+/***
+free a fetched evp_digest object (OpenSSL 3.0+)
+
+@function __gc
+*/
+static int openssl_digest_gc(lua_State *L)
+{
+  EVP_MD *md = CHECK_OBJECT(1, EVP_MD, "openssl.evp_digest");
+  
+  /* Check if this is a fetched object that needs to be freed */
+  lua_rawgetp(L, LUA_REGISTRYINDEX, md);
+  if (lua_toboolean(L, -1)) {
+    /* This is a fetched object, free it */
+    EVP_MD_free(md);
+    /* Remove the marker */
+    lua_pushnil(L);
+    lua_rawsetp(L, LUA_REGISTRYINDEX, md);
+  }
+  lua_pop(L, 1);
+  
+  return 0;
 }
 #endif
 
@@ -304,7 +295,7 @@ compute msg digest result
 static int openssl_digest_digest(lua_State *L)
 {
   size_t      inl;
-  EVP_MD     *md = get_evp_md_object(L, 1);
+  EVP_MD     *md = CHECK_OBJECT(1, EVP_MD, "openssl.evp_digest");
   const char *in = luaL_checklstring(L, 2, &inl);
   ENGINE     *e = lua_isnoneornil(L, 3) ? NULL : CHECK_OBJECT(3, ENGINE, "openssl.engine");
 
@@ -328,7 +319,7 @@ get infomation of evp_digest object
 */
 static int openssl_digest_info(lua_State *L)
 {
-  EVP_MD *md = get_evp_md_object(L, 1);
+  EVP_MD *md = CHECK_OBJECT(1, EVP_MD, "openssl.evp_digest");
   lua_newtable(L);
   AUXILIAR_SET(L, -1, "nid", EVP_MD_nid(md), integer);
   AUXILIAR_SET(L, -1, "name", EVP_MD_name(md), string);
@@ -350,7 +341,7 @@ initialize digest context with message digest
 */
 static int openssl_evp_digest_init(lua_State *L)
 {
-  EVP_MD *md = get_evp_md_object(L, 1);
+  EVP_MD *md = CHECK_OBJECT(1, EVP_MD, "openssl.evp_digest");
   ENGINE *e = lua_isnoneornil(L, 2) ? NULL : CHECK_OBJECT(2, ENGINE, "openssl.engine");
   int     ret = 0;
 
@@ -650,6 +641,11 @@ static luaL_Reg digest_funs[] = {
   { "signInit",   openssl_signInit        },
   { "verifyInit", openssl_verifyInit      },
 
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L) && !defined(LIBRESSL_VERSION_NUMBER)
+  { "get_provider_name", openssl_digest_get_provider_name },
+  { "__gc",       openssl_digest_gc       },
+#endif
+
   { "__tostring", auxiliar_tostring       },
 
   { NULL,         NULL                    }
@@ -755,32 +751,11 @@ static const luaL_Reg R[] = {
   { NULL,         NULL                }
 };
 
-#if (OPENSSL_VERSION_NUMBER >= 0x30000000L) && !defined(LIBRESSL_VERSION_NUMBER)
-static luaL_Reg digest_fetched_funs[] = {
-  { "new",                openssl_evp_digest_init           },
-  { "info",               openssl_digest_info               },
-  { "digest",             openssl_digest_digest             },
-  { "get_provider_name",  openssl_digest_fetched_get_provider },
-
-  { "signInit",           openssl_signInit                  },
-  { "verifyInit",         openssl_verifyInit                },
-
-  { "__tostring",         auxiliar_tostring                 },
-  { "__gc",               openssl_digest_fetched_free       },
-
-  { NULL,                 NULL                              }
-};
-#endif
-
 int
 luaopen_digest(lua_State *L)
 {
   auxiliar_newclass(L, "openssl.evp_digest", digest_funs);
   auxiliar_newclass(L, "openssl.evp_digest_ctx", digest_ctx_funs);
-
-#if (OPENSSL_VERSION_NUMBER >= 0x30000000L) && !defined(LIBRESSL_VERSION_NUMBER)
-  auxiliar_newclass(L, "openssl.evp_digest_fetched", digest_fetched_funs);
-#endif
 
   lua_newtable(L);
   luaL_setfuncs(L, R, 0);

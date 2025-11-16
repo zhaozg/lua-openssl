@@ -9,30 +9,6 @@ cipher module do encrypt or decrypt base on OpenSSL EVP API.
 #include "openssl.h"
 #include "private.h"
 
-/* Helper function to get EVP_CIPHER from either regular or fetched type */
-static EVP_CIPHER* get_evp_cipher_object(lua_State *L, int idx)
-{
-  void *ud = NULL;
-  
-  /* Try regular evp_cipher first */
-  ud = auxiliar_getclassudata(L, "openssl.evp_cipher", idx);
-  if (ud != NULL) {
-    return *(EVP_CIPHER **)ud;
-  }
-  
-#if (OPENSSL_VERSION_NUMBER >= 0x30000000L) && !defined(LIBRESSL_VERSION_NUMBER)
-  /* Try fetched evp_cipher */
-  ud = auxiliar_getclassudata(L, "openssl.evp_cipher_fetched", idx);
-  if (ud != NULL) {
-    return *(EVP_CIPHER **)ud;
-  }
-#endif
-
-  /* Neither type matched */
-  luaL_argerror(L, idx, "expected openssl.evp_cipher or openssl.evp_cipher_fetched");
-  return NULL;
-}
-
 /***
 list all support cipher algs
 
@@ -108,7 +84,7 @@ static int openssl_cipher_fetch(lua_State *L)
     lua_pop(L, 1);
   }
 
-  /* If provider is specified, we need to check if it's available */
+  /* If provider is specified, check if it's available */
   if (provider != NULL) {
     if (!OSSL_PROVIDER_available(libctx, provider)) {
       lua_pushnil(L);
@@ -121,7 +97,10 @@ static int openssl_cipher_fetch(lua_State *L)
   cipher = EVP_CIPHER_fetch(libctx, algorithm, properties);
   
   if (cipher != NULL) {
-    PUSH_OBJECT(cipher, "openssl.evp_cipher_fetched");
+    PUSH_OBJECT(cipher, "openssl.evp_cipher");
+    /* Mark this as a fetched object that needs to be freed */
+    lua_pushboolean(L, 1);
+    lua_rawsetp(L, LUA_REGISTRYINDEX, cipher);
     return 1;
   }
 
@@ -129,36 +108,49 @@ static int openssl_cipher_fetch(lua_State *L)
 }
 
 /***
-free a fetched evp_cipher object (OpenSSL 3.0+)
-
-@function free
-@treturn boolean true on success
-*/
-static int openssl_cipher_fetched_free(lua_State *L)
-{
-  EVP_CIPHER *cipher = CHECK_OBJECT(1, EVP_CIPHER, "openssl.evp_cipher_fetched");
-  EVP_CIPHER_free(cipher);
-  return 0;
-}
-
-/***
-get provider name for a fetched cipher (OpenSSL 3.0+)
+get provider name for a cipher (OpenSSL 3.0+)
 
 @function get_provider_name
 @treturn string provider name or nil
 */
-static int openssl_cipher_fetched_get_provider(lua_State *L)
+static int openssl_cipher_get_provider_name(lua_State *L)
 {
-  EVP_CIPHER *cipher = CHECK_OBJECT(1, EVP_CIPHER, "openssl.evp_cipher_fetched");
-  const char *name = OSSL_PROVIDER_get0_name(EVP_CIPHER_get0_provider(cipher));
+  EVP_CIPHER *cipher = CHECK_OBJECT(1, EVP_CIPHER, "openssl.evp_cipher");
+  const OSSL_PROVIDER *prov = EVP_CIPHER_get0_provider(cipher);
   
-  if (name != NULL) {
-    lua_pushstring(L, name);
-    return 1;
+  if (prov != NULL) {
+    const char *name = OSSL_PROVIDER_get0_name(prov);
+    if (name != NULL) {
+      lua_pushstring(L, name);
+      return 1;
+    }
   }
   
   lua_pushnil(L);
   return 1;
+}
+
+/***
+free a fetched evp_cipher object (OpenSSL 3.0+)
+
+@function __gc
+*/
+static int openssl_cipher_gc(lua_State *L)
+{
+  EVP_CIPHER *cipher = CHECK_OBJECT(1, EVP_CIPHER, "openssl.evp_cipher");
+  
+  /* Check if this is a fetched object that needs to be freed */
+  lua_rawgetp(L, LUA_REGISTRYINDEX, cipher);
+  if (lua_toboolean(L, -1)) {
+    /* This is a fetched object, free it */
+    EVP_CIPHER_free(cipher);
+    /* Remove the marker */
+    lua_pushnil(L);
+    lua_rawsetp(L, LUA_REGISTRYINDEX, cipher);
+  }
+  lua_pop(L, 1);
+  
+  return 0;
 }
 #endif
 
@@ -540,7 +532,7 @@ get infomation of evp_cipher object
 */
 static int openssl_cipher_info(lua_State *L)
 {
-  EVP_CIPHER *cipher = get_evp_cipher_object(L, 1);
+  EVP_CIPHER *cipher = CHECK_OBJECT(1, EVP_CIPHER, "openssl.evp_cipher");
   lua_newtable(L);
   AUXILIAR_SET(L, -1, "name", EVP_CIPHER_name(cipher), string);
   AUXILIAR_SET(L, -1, "block_size", EVP_CIPHER_block_size(cipher), integer);
@@ -563,7 +555,7 @@ derive key
 */
 static int openssl_evp_BytesToKey(lua_State *L)
 {
-  EVP_CIPHER   *c = get_evp_cipher_object(L, 1);
+  EVP_CIPHER   *c = CHECK_OBJECT(1, EVP_CIPHER, "openssl.evp_cipher");
   size_t        lsalt, lk;
   const char   *k = luaL_checklstring(L, 2, &lk);
   const char   *salt = luaL_optlstring(L, 3, NULL, &lsalt);
@@ -967,6 +959,11 @@ static luaL_Reg cipher_funs[] = {
   { "decrypt",     openssl_evp_decrypt        },
   { "cipher",      openssl_evp_cipher         },
 
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L) && !defined(LIBRESSL_VERSION_NUMBER)
+  { "get_provider_name", openssl_cipher_get_provider_name },
+  { "__gc",        openssl_cipher_gc          },
+#endif
+
   { "__tostring",  auxiliar_tostring          },
 
   { NULL,          NULL                       }
@@ -1041,35 +1038,11 @@ static LuaL_Enumeration evp_ctrls_code[] = {
   { NULL,                                     -1                                     }
 };
 
-#if (OPENSSL_VERSION_NUMBER >= 0x30000000L) && !defined(LIBRESSL_VERSION_NUMBER)
-static luaL_Reg cipher_fetched_funs[] = {
-  { "new",                openssl_cipher_new                  },
-  { "encrypt_new",        openssl_cipher_encrypt_new          },
-  { "decrypt_new",        openssl_cipher_decrypt_new          },
-  { "info",               openssl_cipher_info                 },
-  { "get_provider_name",  openssl_cipher_fetched_get_provider },
-  
-  { "BytesToKey",         openssl_evp_BytesToKey              },
-  { "encrypt",            openssl_evp_encrypt                 },
-  { "decrypt",            openssl_evp_decrypt                 },
-  { "cipher",             openssl_evp_cipher                  },
-
-  { "__tostring",         auxiliar_tostring                   },
-  { "__gc",               openssl_cipher_fetched_free         },
-
-  { NULL,                 NULL                                }
-};
-#endif
-
 int
 luaopen_cipher(lua_State *L)
 {
   auxiliar_newclass(L, "openssl.evp_cipher", cipher_funs);
   auxiliar_newclass(L, "openssl.evp_cipher_ctx", cipher_ctx_funs);
-
-#if (OPENSSL_VERSION_NUMBER >= 0x30000000L) && !defined(LIBRESSL_VERSION_NUMBER)
-  auxiliar_newclass(L, "openssl.evp_cipher_fetched", cipher_fetched_funs);
-#endif
 
   lua_newtable(L);
   luaL_setfuncs(L, R, 0);
