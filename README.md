@@ -574,7 +574,12 @@ assert(plaintext == message)
 print("Decrypted:", plaintext)
 ```
 
-For more examples, please see test lua script file.
+For more examples, please see test lua script files:
+- `test/eddsa.lua` - Ed25519/Ed448 digital signatures
+- `test/xecdh.lua` - X25519/X448 key exchange
+- `test/chacha20.lua` - ChaCha20-Poly1305 AEAD encryption
+- `test/2.kdf.lua` - Key derivation functions (PBKDF2, HKDF, SCRYPT)
+- `test/2.param.lua` - OSSL_PARAM API usage
 
 ---
 

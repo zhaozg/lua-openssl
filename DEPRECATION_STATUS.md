@@ -1,8 +1,8 @@
 # OpenSSL 3.0 Deprecation Warnings - Current Status
 
-**Last Updated:** 2025-11-09
-**OpenSSL Version Tested:** 3.0.13
-**Test Results:** 177/177 passing ✅
+**Last Updated:** 2025-11-16
+**OpenSSL Version Tested:** 3.0.x, 3.2.x
+**Test Results:** All tests passing ✅
 
 ## Executive Summary
 
@@ -81,17 +81,19 @@ The project uses a pragmatic approach to deprecation warnings:
 | OpenSSL Version | Status | Notes |
 |----------------|--------|-------|
 | 1.1.0 - 1.1.1w | ✅ Fully Supported | Primary backward compatibility target |
-| 3.0.0 - 3.0.x | ✅ Fully Supported | Modern API usage where appropriate |
-| 3.5.x - 3.6.0 | ✅ Supported | Latest features not yet utilized |
-| LibreSSL 3.3.6+ | ✅ Supported | Some features unavailable |
+| 3.0.0 - 3.0.x | ✅ Fully Supported | Modern API usage, Provider support |
+| 3.2.0 - 3.2.x | ✅ Fully Supported | Fetchable objects API implemented |
+| 3.5.x - 3.6.0 | ✅ Supported | Latest features available |
+| LibreSSL 3.3.6+ | ✅ Supported | Some OpenSSL 3.x features unavailable |
 
 ## Testing
 
 All deprecation warning handling has been validated with:
-- **Test Suite:** 177/177 tests passing
-- **Build:** Successful compilation with OpenSSL 3.0.13
+- **Test Suite:** All tests passing (including modern algorithm tests)
+- **Build:** Successful compilation with OpenSSL 1.1.x, 3.0.x, 3.2.x
 - **Runtime:** No functional regressions
-- **Compatibility:** Tested across OpenSSL 1.1.x and 3.0.x
+- **Compatibility:** Tested across OpenSSL 1.1.x, 3.0.x, 3.2.x, and LibreSSL 3.3.6+
+- **Modern Features:** Ed25519/Ed448, X25519/X448, ChaCha20-Poly1305 verified
 
 ## Recommendations
 
@@ -116,6 +118,7 @@ All deprecation warning handling has been validated with:
 - Issue #351: SRP module deprecation warnings
 - Issue #360: ENGINE module deprecation warnings (minimal refactor)
 - PR #353: Digest module deprecation fixes
+- PR #386: Fetchable Objects API for OpenSSL 3.0+ provider support
 
 ## Conclusion
 
