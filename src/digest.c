@@ -44,6 +44,118 @@ static int openssl_digest_get(lua_State *L)
   return 1;
 }
 
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L) && !defined(LIBRESSL_VERSION_NUMBER)
+/***
+fetch evp_digest object with provider support (OpenSSL 3.0+)
+
+@function fetch
+@tparam string alg algorithm name (e.g., 'SHA256', 'SHA512')
+@tparam[opt] table options optional table with 'provider' and 'properties' fields
+@treturn evp_digest digest object mapping EVP_MD in openssl or nil on failure
+@treturn string error message if failed
+
+@usage
+  -- Fetch with default provider
+  local sha256 = digest.fetch('SHA256')
+  
+  -- Fetch from specific provider
+  local fips_sha256 = digest.fetch('SHA256', {provider = 'fips', properties = 'fips=yes'})
+
+@see evp_digest
+*/
+static int openssl_digest_fetch(lua_State *L)
+{
+  const char *algorithm = luaL_checkstring(L, 1);
+  const char *provider = NULL;
+  const char *properties = NULL;
+  OSSL_LIB_CTX *libctx = NULL;  /* NULL means default context */
+  EVP_MD *md = NULL;
+
+  /* Parse optional options table */
+  if (lua_istable(L, 2)) {
+    lua_getfield(L, 2, "provider");
+    if (lua_isstring(L, -1)) {
+      provider = lua_tostring(L, -1);
+    }
+    lua_pop(L, 1);
+
+    lua_getfield(L, 2, "properties");
+    if (lua_isstring(L, -1)) {
+      properties = lua_tostring(L, -1);
+    }
+    lua_pop(L, 1);
+  }
+
+  /* If provider is specified, check if it's available */
+  if (provider != NULL) {
+    if (!OSSL_PROVIDER_available(libctx, provider)) {
+      lua_pushnil(L);
+      lua_pushfstring(L, "provider '%s' is not available", provider);
+      return 2;
+    }
+  }
+
+  /* Fetch the algorithm */
+  md = EVP_MD_fetch(libctx, algorithm, properties);
+  
+  if (md != NULL) {
+    PUSH_OBJECT(md, "openssl.evp_digest");
+    /* Mark this as a fetched object that needs to be freed */
+    lua_pushboolean(L, 1);
+    lua_rawsetp(L, LUA_REGISTRYINDEX, md);
+    return 1;
+  }
+
+  return openssl_pushresult(L, 0);
+}
+
+/***
+get provider name for a digest (OpenSSL 3.0+)
+
+@function get_provider_name
+@treturn string provider name or nil
+*/
+static int openssl_digest_get_provider_name(lua_State *L)
+{
+  EVP_MD *md = CHECK_OBJECT(1, EVP_MD, "openssl.evp_digest");
+  const OSSL_PROVIDER *prov = EVP_MD_get0_provider(md);
+  
+  if (prov != NULL) {
+    const char *name = OSSL_PROVIDER_get0_name(prov);
+    if (name != NULL) {
+      lua_pushstring(L, name);
+      return 1;
+    }
+  }
+  
+  lua_pushnil(L);
+  return 1;
+}
+
+/***
+free a fetched evp_digest object (OpenSSL 3.0+)
+
+@function __gc
+*/
+static int openssl_digest_gc(lua_State *L)
+{
+  EVP_MD *md = CHECK_OBJECT(1, EVP_MD, "openssl.evp_digest");
+  
+  /* Check if this is a fetched object that needs to be freed */
+  lua_rawgetp(L, LUA_REGISTRYINDEX, md);
+  if (lua_toboolean(L, -1)) {
+    /* This is a fetched object, free it */
+    EVP_MD_free(md);
+    /* Remove the marker */
+    lua_pushnil(L);
+    lua_rawsetp(L, LUA_REGISTRYINDEX, md);
+  }
+  lua_pop(L, 1);
+  
+  return 0;
+}
+#endif
+
 /***
 get evp_digest_ctx object
 
@@ -529,6 +641,11 @@ static luaL_Reg digest_funs[] = {
   { "signInit",   openssl_signInit        },
   { "verifyInit", openssl_verifyInit      },
 
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L) && !defined(LIBRESSL_VERSION_NUMBER)
+  { "get_provider_name", openssl_digest_get_provider_name },
+  { "__gc",       openssl_digest_gc       },
+#endif
+
   { "__tostring", auxiliar_tostring       },
 
   { NULL,         NULL                    }
@@ -626,6 +743,10 @@ static const luaL_Reg R[] = {
 
   { "signInit",   openssl_signInit    },
   { "verifyInit", openssl_verifyInit  },
+
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L) && !defined(LIBRESSL_VERSION_NUMBER)
+  { "fetch",      openssl_digest_fetch },
+#endif
 
   { NULL,         NULL                }
 };

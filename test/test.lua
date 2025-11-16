@@ -64,6 +64,7 @@ dofile("point.lua")
 dofile("provider.lua")
 dofile("ec.lua")
 dofile("sm2.lua")
+dofile("fetchable.lua")
 
 local runner = lu.LuaUnit.new()
 runner:setOutputType("tap")
