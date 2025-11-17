@@ -188,6 +188,31 @@
    fun:RAND_status
 }
 {
+   openssl_evp_cipher_fetch_definite_leak_rand_load
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:CRYPTO_zalloc
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   fun:EVP_CIPHER_fetch
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   fun:EVP_RAND_instantiate
+   obj:*/libcrypto.so.3
+   fun:RAND_get0_primary
+   obj:*/libcrypto.so.3
+   fun:RAND_load_file
+}
+{
    glibc_dl_new_object_provider_leak
    Memcheck:Leak
    match-leak-kinds: reachable
