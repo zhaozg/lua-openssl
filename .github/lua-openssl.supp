@@ -330,6 +330,27 @@
    fun:RAND_status
 }
 {
+   openssl_bio_meth_new_evp_rand_load_leak
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   fun:malloc
+   fun:CRYPTO_zalloc
+   fun:BIO_meth_new
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   fun:EVP_RAND_fetch
+   fun:RAND_get0_primary
+   obj:*/libcrypto.so.3
+   fun:RAND_load_file
+}
+{
    openssl_evp_rand_fetch_indirect_leak
    Memcheck:Leak
    match-leak-kinds: indirect
@@ -345,6 +366,24 @@
    fun:EVP_RAND_fetch
    fun:RAND_get0_primary
    fun:RAND_status
+}
+{
+   openssl_evp_rand_fetch_indirect_load_leak
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   fun:malloc
+   fun:CRYPTO_zalloc
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   fun:EVP_RAND_fetch
+   fun:RAND_get0_primary
+   obj:*/libcrypto.so.3
+   fun:RAND_load_file
 }
 {
    openssl_engine_new_init_ssl_leak
