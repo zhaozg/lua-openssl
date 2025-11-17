@@ -58,13 +58,18 @@
    match-leak-kinds: indirect
    fun:realloc
    obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
    fun:OSSL_DECODER_do_all_provided
+   obj:*/libcrypto.so.3
    fun:OSSL_DECODER_CTX_new_for_pkey
+   obj:*/libcrypto.so.3
    fun:PEM_read_bio_PrivateKey_ex
-   obj:/usr/bin/luajit
-   fun:lua_pcall
-   fun:lua_cpcall
-   fun:main
 }
 {
    openssl_rand_fetch_leak
