@@ -114,78 +114,6 @@
    fun:main
 }
 {
-   openssl_evp_cipher_fetch_definite_leak
-   Memcheck:Leak
-   match-leak-kinds: definite
-   fun:malloc
-   fun:CRYPTO_zalloc
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   fun:EVP_CIPHER_fetch
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   fun:EVP_RAND_instantiate
-   obj:*/libcrypto.so.3
-   fun:RAND_get0_primary
-   fun:RAND_status
-}
-{
-   openssl_evp_cipher_fetch_definite_leak_rand_load
-   Memcheck:Leak
-   match-leak-kinds: definite
-   fun:malloc
-   fun:CRYPTO_zalloc
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   fun:EVP_CIPHER_fetch
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   fun:EVP_RAND_instantiate
-   obj:*/libcrypto.so.3
-   fun:RAND_get0_primary
-   obj:*/libcrypto.so.3
-   fun:RAND_load_file
-}
-{
-   openssl_evp_md_fetch_definite_leak
-   Memcheck:Leak
-   match-leak-kinds: definite
-   fun:malloc
-   fun:CRYPTO_zalloc
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   fun:EVP_MD_fetch
-   obj:*/libcrypto.so.3
-   obj:*/libcrypto.so.3
-   fun:EVP_DigestSignInit
-   fun:ASN1_item_sign_ex
-   fun:X509_REQ_sign
-}
-{
    openssl_thread_lock_leak
    Memcheck:Leak
    match-leak-kinds: reachable
@@ -234,6 +162,30 @@
    fun:_dlerror_run
    fun:dlopen_implementation
    fun:dlopen@@GLIBC_2.34
+}
+{
+   openssl_evp_cipher_fetch_definite_leak
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:CRYPTO_zalloc
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   fun:EVP_CIPHER_fetch
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   fun:EVP_RAND_instantiate
+   obj:*/libcrypto.so.3
+   fun:RAND_get0_primary
+   fun:RAND_status
 }
 {
    glibc_dl_new_object_provider_leak
