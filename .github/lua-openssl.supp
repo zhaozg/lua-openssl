@@ -602,34 +602,7 @@
    fun:lua_cpcall
    fun:main
 }
-{
-   <insert_a_suppression_name_here>
-   Memcheck:Leak
-   match-leak-kinds: reachable
-   fun:malloc
-   fun:CRYPTO_zalloc
-   fun:CRYPTO_THREAD_lock_new
-   obj:/usr/lib/x86_64-linux-gnu/libcrypto.so.3
-   fun:EVP_MD_meth_new
-   obj:/usr/lib/x86_64-linux-gnu/libcrypto.so.3
-   obj:/usr/lib/x86_64-linux-gnu/libcrypto.so.3
-   fun:ENGINE_register_digests
-   fun:ENGINE_register_complete
-   fun:ENGINE_register_all_complete
-   fun:OPENSSL_init_crypto
-   fun:OPENSSL_init_ssl
-   obj:*
-   obj:*
-   obj:/usr/bin/luajit
-   obj:/usr/bin/luajit
-   obj:/usr/bin/luajit
-   fun:lua_pcall
-   obj:/usr/bin/luajit
-   obj:/usr/bin/luajit
-   obj:/usr/bin/luajit
-   fun:lua_cpcall
-   fun:main
-}
+
 {
    <insert_a_suppression_name_here>
    Memcheck:Leak
@@ -656,32 +629,7 @@
    fun:lua_cpcall
    fun:main
 }
-{
-   <insert_a_suppression_name_here>
-   Memcheck:Leak
-   match-leak-kinds: indirect
-   fun:malloc
-   fun:CRYPTO_zalloc
-   fun:CRYPTO_THREAD_lock_new
-   obj:/usr/lib/x86_64-linux-gnu/libcrypto.so.3
-   obj:/usr/lib/x86_64-linux-gnu/libcrypto.so.3
-   obj:/usr/lib/x86_64-linux-gnu/libcrypto.so.3
-   obj:/usr/lib/x86_64-linux-gnu/libcrypto.so.3
-   obj:/usr/lib/x86_64-linux-gnu/libcrypto.so.3
-   obj:/usr/lib/x86_64-linux-gnu/libcrypto.so.3
-   obj:/usr/lib/x86_64-linux-gnu/libcrypto.so.3
-   fun:EVP_RAND_fetch
-   fun:RAND_get0_primary
-   fun:RAND_status
-   obj:*
-   obj:/usr/bin/luajit
-   fun:lua_pcall
-   obj:/usr/bin/luajit
-   obj:/usr/bin/luajit
-   obj:/usr/bin/luajit
-   fun:lua_cpcall
-   fun:main
-}
+
 {
    <insert_a_suppression_name_here>
    Memcheck:Leak
