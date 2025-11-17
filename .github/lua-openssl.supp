@@ -114,6 +114,78 @@
    fun:main
 }
 {
+   openssl_evp_cipher_fetch_definite_leak
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:CRYPTO_zalloc
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   fun:EVP_CIPHER_fetch
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   fun:EVP_RAND_instantiate
+   obj:*/libcrypto.so.3
+   fun:RAND_get0_primary
+   fun:RAND_status
+}
+{
+   openssl_evp_cipher_fetch_definite_leak_rand_load
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:CRYPTO_zalloc
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   fun:EVP_CIPHER_fetch
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   fun:EVP_RAND_instantiate
+   obj:*/libcrypto.so.3
+   fun:RAND_get0_primary
+   obj:*/libcrypto.so.3
+   fun:RAND_load_file
+}
+{
+   openssl_evp_md_fetch_definite_leak
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:CRYPTO_zalloc
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   fun:EVP_MD_fetch
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   fun:EVP_DigestSignInit
+   fun:ASN1_item_sign_ex
+   fun:X509_REQ_sign
+}
+{
    openssl_thread_lock_leak
    Memcheck:Leak
    match-leak-kinds: reachable
@@ -143,4 +215,73 @@
    obj:*/libcrypto.so.3
    fun:DSO_load
    fun:OSSL_PROVIDER_try_load
+}
+{
+   glibc_dl_check_map_versions_leak
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   fun:calloc
+   fun:_dl_check_map_versions
+   fun:dl_open_worker_begin
+   fun:_dl_catch_exception
+   fun:dl_open_worker
+   fun:_dl_catch_exception
+   fun:_dl_open
+   fun:dlopen_doit
+   fun:_dl_catch_exception
+   fun:_dl_catch_error
+   fun:_dlerror_run
+   fun:dlopen_implementation
+   fun:dlopen@@GLIBC_2.34
+}
+{
+   glibc_dl_new_object_provider_leak
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   fun:calloc
+   fun:_dl_new_object
+   fun:_dl_map_object_from_fd
+   fun:_dl_map_object
+   fun:dl_open_worker_begin
+   fun:_dl_catch_exception
+   fun:dl_open_worker
+   fun:_dl_catch_exception
+   fun:_dl_open
+   fun:dlopen_doit
+   fun:_dl_catch_exception
+   fun:_dl_catch_error
+   fun:_dlerror_run
+   fun:dlopen_implementation
+   fun:dlopen@@GLIBC_2.34
+   obj:*/libcrypto.so.3
+   fun:DSO_load
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   fun:OSSL_PROVIDER_try_load
+}
+{
+   glibc_dl_new_object_openaux_leak
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   fun:calloc
+   fun:_dl_new_object
+   fun:_dl_map_object_from_fd
+   fun:_dl_map_object
+   fun:openaux
+   fun:_dl_catch_exception
+   fun:_dl_map_object_deps
+   fun:dl_open_worker_begin
+   fun:_dl_catch_exception
+   fun:dl_open_worker
+   fun:_dl_catch_exception
+   fun:_dl_open
+   fun:dlopen_doit
+   fun:_dl_catch_exception
+   fun:_dl_catch_error
+   fun:_dlerror_run
+   fun:dlopen_implementation
+   fun:dlopen@@GLIBC_2.34
 }
