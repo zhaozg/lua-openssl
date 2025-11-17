@@ -285,3 +285,78 @@
    fun:dlopen_implementation
    fun:dlopen@@GLIBC_2.34
 }
+{
+   glibc_dl_new_object_openaux_malloc_leak
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:malloc
+   fun:_dl_new_object
+   fun:_dl_map_object_from_fd
+   fun:_dl_map_object
+   fun:openaux
+   fun:_dl_catch_exception
+   fun:_dl_map_object_deps
+   fun:dl_open_worker_begin
+   fun:_dl_catch_exception
+   fun:dl_open_worker
+   fun:_dl_catch_exception
+   fun:_dl_open
+   fun:dlopen_doit
+   fun:_dl_catch_exception
+   fun:_dl_catch_error
+   fun:_dlerror_run
+   fun:dlopen_implementation
+   fun:dlopen@@GLIBC_2.34
+}
+{
+   openssl_bio_meth_new_evp_rand_leak
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   fun:malloc
+   fun:CRYPTO_zalloc
+   fun:BIO_meth_new
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   fun:EVP_RAND_fetch
+   fun:RAND_get0_primary
+   fun:RAND_status
+}
+{
+   openssl_evp_rand_fetch_indirect_leak
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   fun:malloc
+   fun:CRYPTO_zalloc
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   fun:EVP_RAND_fetch
+   fun:RAND_get0_primary
+   fun:RAND_status
+}
+{
+   openssl_engine_new_init_ssl_leak
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:CRYPTO_zalloc
+   fun:ENGINE_new
+   obj:*/libcrypto.so.3
+   obj:*/libcrypto.so.3
+   fun:__pthread_once_slow
+   fun:CRYPTO_THREAD_run_once
+   fun:OPENSSL_init_crypto
+   fun:OPENSSL_init_ssl
+}
