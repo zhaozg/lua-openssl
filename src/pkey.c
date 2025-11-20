@@ -20,7 +20,7 @@ pkey module to create and process public or private key, do asymmetric key opera
  * 1. Backward compatibility with existing Lua code
  * 2. Complete coverage of OpenSSL key functionality
  * 3. Support for legacy key formats (PKCS#1 RSA, etc.)
- * 
+ *
  * Migration to pure EVP_PKEY operations would require significant API changes
  * and break backward compatibility. The current implementation is safe and
  * well-tested across OpenSSL 1.1.x and 3.x versions.
@@ -191,6 +191,7 @@ openssl_pkey_is_private(EVP_PKEY *pkey)
   }
 #endif
   default:
+    break;
   }
 
   return ret;
