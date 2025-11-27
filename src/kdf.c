@@ -629,6 +629,17 @@ luaopen_kdf(lua_State *L)
   AUXILIAR_SET(L, -1, OSSL_KDF_NAME_KRB5KDF, OSSL_KDF_NAME_KRB5KDF, string);
 #endif
 
+/* Argon2 KDF names (OpenSSL 3.2+) */
+#if defined(OSSL_KDF_NAME_ARGON2I)
+  AUXILIAR_SET(L, -1, OSSL_KDF_NAME_ARGON2I, OSSL_KDF_NAME_ARGON2I, string);
+#endif
+#if defined(OSSL_KDF_NAME_ARGON2D)
+  AUXILIAR_SET(L, -1, OSSL_KDF_NAME_ARGON2D, OSSL_KDF_NAME_ARGON2D, string);
+#endif
+#if defined(OSSL_KDF_NAME_ARGON2ID)
+  AUXILIAR_SET(L, -1, OSSL_KDF_NAME_ARGON2ID, OSSL_KDF_NAME_ARGON2ID, string);
+#endif
+
   lua_rawset(L, -3);
 #endif
 

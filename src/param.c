@@ -83,6 +83,23 @@ static struct param_info kdf_params[] = {
 
   { OSSL_KDF_PARAM_SIZE,                OSSL_PARAM_UNSIGNED_INTEGER, PARAM_T_SIZE_T },
 
+/* Argon2 parameters (OpenSSL 3.2+) */
+#if defined(OSSL_KDF_PARAM_ARGON2_AD)
+  { OSSL_KDF_PARAM_ARGON2_AD,           OSSL_PARAM_OCTET_STRING,     0              },
+#endif
+#if defined(OSSL_KDF_PARAM_ARGON2_LANES)
+  { OSSL_KDF_PARAM_ARGON2_LANES,        OSSL_PARAM_UNSIGNED_INTEGER, PARAM_T_UINT32 },
+#endif
+#if defined(OSSL_KDF_PARAM_ARGON2_MEMCOST)
+  { OSSL_KDF_PARAM_ARGON2_MEMCOST,      OSSL_PARAM_UNSIGNED_INTEGER, PARAM_T_UINT32 },
+#endif
+#if defined(OSSL_KDF_PARAM_ARGON2_VERSION)
+  { OSSL_KDF_PARAM_ARGON2_VERSION,      OSSL_PARAM_UNSIGNED_INTEGER, PARAM_T_UINT32 },
+#endif
+#if defined(OSSL_KDF_PARAM_THREADS)
+  { OSSL_KDF_PARAM_THREADS,             OSSL_PARAM_UNSIGNED_INTEGER, PARAM_T_UINT32 },
+#endif
+
   { NULL,                               0,                           0              }
 };
 
