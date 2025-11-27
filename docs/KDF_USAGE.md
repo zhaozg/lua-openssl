@@ -200,6 +200,8 @@ local key = argon2id:derive({
 
 ```lua
 -- Using optional parameters
+local secret_key = openssl.random(16)  -- Generate a secret key
+
 local key = argon2id:derive({
   {
     name = "pass",
