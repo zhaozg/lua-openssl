@@ -151,6 +151,107 @@ local key = scrypt:derive({
 - p: 1
 - Salt: 16+ bytes of random data
 
+#### Argon2 (OpenSSL 3.2+)
+
+Argon2 is the winner of the Password Hashing Competition (PHC) and is recommended for new applications. It comes in three variants:
+- **ARGON2ID**: Recommended for most use cases (hybrid approach)
+- **ARGON2I**: Data-independent, resistant to side-channel attacks
+- **ARGON2D**: Data-dependent, faster but vulnerable to side-channel attacks
+
+```lua
+-- Argon2id is recommended for password hashing
+local argon2id = kdf.fetch("ARGON2ID")
+if not argon2id then
+  -- Argon2 not available (requires OpenSSL 3.2+)
+  -- Fall back to SCRYPT or PBKDF2
+end
+
+local key = argon2id:derive({
+  {
+    name = "pass",
+    data = "user_password",
+  },
+  {
+    name = "salt",
+    data = openssl.random(16),  -- Minimum 8 bytes
+  },
+  {
+    name = "lanes",
+    data = 4,      -- Parallelism (p in Argon2 spec)
+  },
+  {
+    name = "memcost",
+    data = 65536,  -- Memory cost in KB (64 MB)
+  },
+  {
+    name = "iter",
+    data = 3,      -- Time cost (iterations)
+  },
+  {
+    name = "threads",
+    data = 4,      -- Number of threads to use
+  },
+}, 32)
+```
+
+**Optional parameters:**
+- `ad`: Associated data (additional context)
+- `secret`: Secret key for keyed hashing
+
+```lua
+-- Using optional parameters
+local key = argon2id:derive({
+  {
+    name = "pass",
+    data = "user_password",
+  },
+  {
+    name = "salt",
+    data = openssl.random(16),
+  },
+  {
+    name = "ad",
+    data = "context info",  -- Associated data
+  },
+  {
+    name = "secret",
+    data = secret_key,      -- Optional secret key
+  },
+  {
+    name = "lanes",
+    data = 4,
+  },
+  {
+    name = "memcost",
+    data = 65536,
+  },
+  {
+    name = "iter",
+    data = 3,
+  },
+  {
+    name = "threads",
+    data = 4,
+  },
+}, 32)
+```
+
+**Recommended parameters (OWASP 2024):**
+- Memory (memcost): 65536 KB (64 MB) or higher
+- Iterations (iter): 3 or higher
+- Parallelism (lanes/threads): 4 or match your CPU cores
+- Salt: 16+ bytes of random data
+
+**Note:** Argon2 requires OpenSSL 3.2 or later. Check availability:
+```lua
+local argon2 = kdf.fetch("ARGON2ID")
+if argon2 then
+  print("Argon2 is available")
+else
+  print("Argon2 not available, using fallback KDF")
+end
+```
+
 #### PKCS12KDF
 
 Used in PKCS#12 files for password-based encryption.
@@ -619,7 +720,9 @@ end
 ## Additional Resources
 
 - OpenSSL KDF Documentation: https://www.openssl.org/docs/man3.0/man7/EVP_KDF.html
+- OpenSSL Argon2 Documentation (3.2+): https://docs.openssl.org/3.3/man7/EVP_KDF-ARGON2/
 - OWASP Password Storage Cheat Sheet: https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html
 - RFC 2898 (PBKDF2): https://tools.ietf.org/html/rfc2898
 - RFC 7914 (SCRYPT): https://tools.ietf.org/html/rfc7914
 - RFC 5869 (HKDF): https://tools.ietf.org/html/rfc5869
+- RFC 9106 (Argon2): https://tools.ietf.org/html/rfc9106

@@ -565,3 +565,362 @@ function TestKDF:testKDFDifferentSizes()
     assert(#key == size, "Key size should match requested size")
   end
 end
+
+-- Helper function to check if Argon2 is available (OpenSSL 3.2+)
+local function hasArgon2()
+  if not kdf.fetch then
+    return false
+  end
+  local argon2 = kdf.fetch("ARGON2ID")
+  return argon2 ~= nil
+end
+
+function TestKDF:testARGON2ID()
+  if not hasArgon2() then
+    return
+  end
+
+  -- Test Argon2id key derivation (recommended variant)
+  local argon2id = kdf.fetch("ARGON2ID")
+  assert(argon2id)
+  
+  local password = "test password"
+  local salt = "unique salt!!!" -- 14 bytes, minimum 8 bytes required
+  
+  -- Use minimal parameters for fast testing
+  local key = assert(argon2id:derive({
+    {
+      name = "pass",
+      data = password,
+    },
+    {
+      name = "salt",
+      data = salt,
+    },
+    {
+      name = "lanes",
+      data = 1, -- parallelism
+    },
+    {
+      name = "memcost",
+      data = 32, -- memory cost in KB (minimal for testing)
+    },
+    {
+      name = "iter",
+      data = 1, -- time cost (iterations)
+    },
+    {
+      name = "threads",
+      data = 1, -- number of threads
+    },
+  }, 32))
+  
+  assert(#key == 32)
+  
+  -- Verify consistency
+  local key2 = assert(argon2id:derive({
+    {
+      name = "pass",
+      data = password,
+    },
+    {
+      name = "salt",
+      data = salt,
+    },
+    {
+      name = "lanes",
+      data = 1,
+    },
+    {
+      name = "memcost",
+      data = 32,
+    },
+    {
+      name = "iter",
+      data = 1,
+    },
+    {
+      name = "threads",
+      data = 1,
+    },
+  }, 32))
+  assert(key == key2, "ARGON2ID should produce consistent output")
+end
+
+function TestKDF:testARGON2I()
+  if not hasArgon2() then
+    return
+  end
+
+  -- Test Argon2i key derivation (data-independent)
+  local argon2i = kdf.fetch("ARGON2I")
+  assert(argon2i)
+  
+  local password = "another password"
+  local salt = "different salt!"
+  
+  local key = assert(argon2i:derive({
+    {
+      name = "pass",
+      data = password,
+    },
+    {
+      name = "salt",
+      data = salt,
+    },
+    {
+      name = "lanes",
+      data = 1,
+    },
+    {
+      name = "memcost",
+      data = 32,
+    },
+    {
+      name = "iter",
+      data = 1,
+    },
+    {
+      name = "threads",
+      data = 1,
+    },
+  }, 32))
+  
+  assert(#key == 32)
+end
+
+function TestKDF:testARGON2D()
+  if not hasArgon2() then
+    return
+  end
+
+  -- Test Argon2d key derivation (data-dependent)
+  local argon2d = kdf.fetch("ARGON2D")
+  assert(argon2d)
+  
+  local password = "secret password"
+  local salt = "random salt val"
+  
+  local key = assert(argon2d:derive({
+    {
+      name = "pass",
+      data = password,
+    },
+    {
+      name = "salt",
+      data = salt,
+    },
+    {
+      name = "lanes",
+      data = 1,
+    },
+    {
+      name = "memcost",
+      data = 32,
+    },
+    {
+      name = "iter",
+      data = 1,
+    },
+    {
+      name = "threads",
+      data = 1,
+    },
+  }, 32))
+  
+  assert(#key == 32)
+end
+
+function TestKDF:testARGON2WithAD()
+  if not hasArgon2() then
+    return
+  end
+
+  -- Test Argon2id with associated data (optional parameter)
+  local argon2id = kdf.fetch("ARGON2ID")
+  
+  local password = "test password"
+  local salt = "test salt value"
+  local ad = "associated data"
+  
+  local key = assert(argon2id:derive({
+    {
+      name = "pass",
+      data = password,
+    },
+    {
+      name = "salt",
+      data = salt,
+    },
+    {
+      name = "ad",
+      data = ad,
+    },
+    {
+      name = "lanes",
+      data = 1,
+    },
+    {
+      name = "memcost",
+      data = 32,
+    },
+    {
+      name = "iter",
+      data = 1,
+    },
+    {
+      name = "threads",
+      data = 1,
+    },
+  }, 32))
+  
+  assert(#key == 32)
+  
+  -- Key with AD should be different from key without AD
+  local key_no_ad = assert(argon2id:derive({
+    {
+      name = "pass",
+      data = password,
+    },
+    {
+      name = "salt",
+      data = salt,
+    },
+    {
+      name = "lanes",
+      data = 1,
+    },
+    {
+      name = "memcost",
+      data = 32,
+    },
+    {
+      name = "iter",
+      data = 1,
+    },
+    {
+      name = "threads",
+      data = 1,
+    },
+  }, 32))
+  
+  assert(key ~= key_no_ad, "Keys with and without AD should differ")
+end
+
+function TestKDF:testARGON2WithSecret()
+  if not hasArgon2() then
+    return
+  end
+
+  -- Test Argon2id with secret key (optional parameter)
+  local argon2id = kdf.fetch("ARGON2ID")
+  
+  local password = "test password"
+  local salt = "test salt value"
+  local secret = "secret key data"
+  
+  local key = assert(argon2id:derive({
+    {
+      name = "pass",
+      data = password,
+    },
+    {
+      name = "salt",
+      data = salt,
+    },
+    {
+      name = "secret",
+      data = secret,
+    },
+    {
+      name = "lanes",
+      data = 1,
+    },
+    {
+      name = "memcost",
+      data = 32,
+    },
+    {
+      name = "iter",
+      data = 1,
+    },
+    {
+      name = "threads",
+      data = 1,
+    },
+  }, 32))
+  
+  assert(#key == 32)
+  
+  -- Key with secret should be different from key without secret
+  local key_no_secret = assert(argon2id:derive({
+    {
+      name = "pass",
+      data = password,
+    },
+    {
+      name = "salt",
+      data = salt,
+    },
+    {
+      name = "lanes",
+      data = 1,
+    },
+    {
+      name = "memcost",
+      data = 32,
+    },
+    {
+      name = "iter",
+      data = 1,
+    },
+    {
+      name = "threads",
+      data = 1,
+    },
+  }, 32))
+  
+  assert(key ~= key_no_secret, "Keys with and without secret should differ")
+end
+
+function TestKDF:testARGON2DifferentKeySizes()
+  if not hasArgon2() then
+    return
+  end
+
+  -- Test deriving keys of different sizes with Argon2
+  local argon2id = kdf.fetch("ARGON2ID")
+  
+  local params = {
+    {
+      name = "pass",
+      data = "password",
+    },
+    {
+      name = "salt",
+      data = "salty salt val",
+    },
+    {
+      name = "lanes",
+      data = 1,
+    },
+    {
+      name = "memcost",
+      data = 32,
+    },
+    {
+      name = "iter",
+      data = 1,
+    },
+    {
+      name = "threads",
+      data = 1,
+    },
+  }
+  
+  -- Test various key sizes
+  for _, size in ipairs({16, 32, 48, 64}) do
+    local key = assert(argon2id:derive(params, size))
+    assert(#key == size, "Key size should match requested size")
+  end
+end
