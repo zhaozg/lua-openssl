@@ -598,7 +598,7 @@ This project involves cryptographic algorithms and is intended for learning and 
 
 **_lua-openssl License_**
 
-Copyright (c) 2011 - 2025 zhaozg, zhaozg(at)gmail.com
+Copyright (c) 2011 - 2026 zhaozg, zhaozg(at)gmail.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to
