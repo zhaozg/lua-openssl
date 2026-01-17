@@ -55,6 +55,15 @@ jobs:
       with:
         arch: ${{ matrix.arch }}
 
+    - name: Check Prerequisites
+      run: |
+        Write-Host "Checking Perl..."
+        perl --version
+        Write-Host "Checking 7z..."
+        7z --help
+        Write-Host "Architecture: ${{ matrix.arch }}"
+        Write-Host "OpenSSL Version: ${{ matrix.openssl_version }}"
+
     - uses: actions/checkout@v4
       with:
         submodules: recursive
@@ -118,33 +127,30 @@ jobs:
         $VERSION = "${{ matrix.openssl_version }}" -replace "openssl-", ""
         
         if ($VERSION -match "^1\.") {
-          $LIBS = "`"$PREFIX\lib\libeay32.lib $PREFIX\lib\ssleay32.lib`""
+          $LIBS = """$PREFIX\lib\libeay32.lib $PREFIX\lib\ssleay32.lib"""
         } else {
-          $LIBS = "`"$PREFIX\lib\libcrypto.lib $PREFIX\lib\libssl.lib`""
+          $LIBS = """$PREFIX\lib\libcrypto.lib $PREFIX\lib\libssl.lib"""
         }
         
-        $config = @"
-# Installation directories
-# System's libraries directory (where binary libraries are installed)
-
-# Lua includes and lib
-LUA_INC= "c:\luajit\src"
-LUA_LIB= "c:\luajit\src\lua51.lib"
-
-# Openssl include and lib
-OPENSSL_INC="$PREFIX\include"
-OPENSSL_LIB=$LIBS
-
-LIBNAME= `$T.dll
-
-# Compilation directives
-WARN= /O2
-INCS= /I`$(LUA_INC) /I`$(OPENSSL_INC) /Ideps
-CFLAGS= /DWIN32_LEAN_AND_MEAN /MD `$(WARN) `$(INCS)
-CC= cl
-
-"@
-        $config | Out-File -FilePath config.win -Encoding ASCII
+        "# Installation directories" | Out-File -FilePath config.win -Encoding ASCII
+        "# System's libraries directory (where binary libraries are installed)" | Out-File -FilePath config.win -Append -Encoding ASCII
+        "" | Out-File -FilePath config.win -Append -Encoding ASCII
+        "# Lua includes and lib" | Out-File -FilePath config.win -Append -Encoding ASCII
+        'LUA_INC= "c:\luajit\src"' | Out-File -FilePath config.win -Append -Encoding ASCII
+        'LUA_LIB= "c:\luajit\src\lua51.lib"' | Out-File -FilePath config.win -Append -Encoding ASCII
+        "" | Out-File -FilePath config.win -Append -Encoding ASCII
+        "# Openssl include and lib" | Out-File -FilePath config.win -Append -Encoding ASCII
+        "OPENSSL_INC=""$PREFIX\include""" | Out-File -FilePath config.win -Append -Encoding ASCII
+        "OPENSSL_LIB=$LIBS" | Out-File -FilePath config.win -Append -Encoding ASCII
+        "" | Out-File -FilePath config.win -Append -Encoding ASCII
+        'LIBNAME= $T.dll' | Out-File -FilePath config.win -Append -Encoding ASCII
+        "" | Out-File -FilePath config.win -Append -Encoding ASCII
+        "# Compilation directives" | Out-File -FilePath config.win -Append -Encoding ASCII
+        "WARN= /O2" | Out-File -FilePath config.win -Append -Encoding ASCII
+        'INCS= /I$(LUA_INC) /I$(OPENSSL_INC) /Ideps' | Out-File -FilePath config.win -Append -Encoding ASCII
+        'CFLAGS= /DWIN32_LEAN_AND_MEAN /MD $(WARN) $(INCS)' | Out-File -FilePath config.win -Append -Encoding ASCII
+        "CC= cl" | Out-File -FilePath config.win -Append -Encoding ASCII
+        "" | Out-File -FilePath config.win -Append -Encoding ASCII
 
     - name: Build
       run: nmake -f Makefile.win
