@@ -115,14 +115,28 @@ jobs:
         $ARCH = "${{ matrix.arch }}"
         $OPENSSL_ARCH = if ($ARCH -eq "amd64") { "x64" } else { $ARCH }
         
-        # Detect OpenSSL library directory (Chocolatey uses lib\VC\x64 or lib\VC\x86 structure)
-        $LIB_DIR = if (Test-Path "$PREFIX\lib\VC\$OPENSSL_ARCH") {
+        # Detect OpenSSL library directory (Chocolatey uses lib\VC\x64\MD structure)
+        # The MD subdirectory corresponds to /MD compiler flag (multi-threaded DLL runtime)
+        $LIB_DIR = if (Test-Path "$PREFIX\lib\VC\$OPENSSL_ARCH\MD\libcrypto.lib") {
+          "$PREFIX\lib\VC\$OPENSSL_ARCH\MD"
+        } elseif (Test-Path "$PREFIX\lib\VC\$OPENSSL_ARCH\libcrypto.lib") {
           "$PREFIX\lib\VC\$OPENSSL_ARCH"
+        } elseif (Test-Path "$PREFIX\lib\VC\$OPENSSL_ARCH") {
+          # Try to find runtime subdirectory (MD, MT, etc.) that contains libraries
+          $runtimeDirs = Get-ChildItem "$PREFIX\lib\VC\$OPENSSL_ARCH" -Directory | Where-Object {
+            (Test-Path "$($_.FullName)\libcrypto.lib") -or (Test-Path "$($_.FullName)\crypto.lib")
+          } | Sort-Object Name
+          if ($runtimeDirs) {
+            Write-Host "Found library directory: $($runtimeDirs[0].FullName)"
+            $runtimeDirs[0].FullName
+          } else {
+            "$PREFIX\lib\VC\$OPENSSL_ARCH"
+          }
         } elseif (Test-Path "$PREFIX\lib\VC") {
           # Try to find any arch directory and verify it contains libraries
-          $vcDirs = Get-ChildItem "$PREFIX\lib\VC" -Directory | Where-Object {
-            (Test-Path "$($_.FullName)\*.lib")
-          } | Sort-Object Name
+          $vcDirs = Get-ChildItem "$PREFIX\lib\VC" -Directory -Recurse | Where-Object {
+            (Test-Path "$($_.FullName)\libcrypto.lib") -or (Test-Path "$($_.FullName)\crypto.lib")
+          } | Sort-Object FullName
           if ($vcDirs) {
             Write-Host "Found library directory: $($vcDirs[0].FullName)"
             $vcDirs[0].FullName
@@ -131,7 +145,7 @@ jobs:
             Show-LibraryFiles
             exit 1
           }
-        } elseif (Test-Path "$PREFIX\lib\*.lib") {
+        } elseif (Test-Path "$PREFIX\lib\libcrypto.lib") {
           # Libraries directly in lib directory
           "$PREFIX\lib"
         } else {
