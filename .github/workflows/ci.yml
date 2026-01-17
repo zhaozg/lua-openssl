@@ -51,9 +51,6 @@ jobs:
       fail-fast: false
       matrix:
         arch: [amd64]
-        # Simplified: Use only one OpenSSL 3.x version for now
-        # Testing with multiple versions can be added later if needed
-        openssl_version: ['3.0']
 
     steps:
     - name: Setup MSVC Developer Prompt
@@ -87,8 +84,8 @@ jobs:
       run: |
         $ErrorActionPreference = "Stop"
         
-        Write-Host "Installing OpenSSL ${{ matrix.openssl_version }} via Chocolatey..."
-        # Install OpenSSL 3.x from Chocolatey - much simpler than building from source
+        Write-Host "Installing OpenSSL via Chocolatey..."
+        # Install OpenSSL from Chocolatey - much simpler than building from source
         choco install openssl -y
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         
@@ -122,9 +119,6 @@ jobs:
         'CFLAGS= /DWIN32_LEAN_AND_MEAN /MD $(WARN) $(INCS)' | Out-File -FilePath config.win -Append -Encoding ASCII
         "CC= cl" | Out-File -FilePath config.win -Append -Encoding ASCII
         "" | Out-File -FilePath config.win -Append -Encoding ASCII
-        
-        Write-Host "config.win contents:"
-        Get-Content config.win
 
     - name: Build
       run: |
