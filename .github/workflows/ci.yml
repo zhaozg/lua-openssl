@@ -70,16 +70,29 @@ jobs:
 
     - name: Setup LuaJIT
       run: |
+        Write-Host "Cloning LuaJIT..."
         git clone https://github.com/LuaJIT/LuaJIT.git C:\luajit
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        
+        Write-Host "Building LuaJIT..."
         cd C:\luajit\src
-        msvcbuild.bat
+        cmd /c "msvcbuild.bat"
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        
+        Write-Host "Copying LuaJIT files..."
         copy luajit.exe C:\
         copy lua51.* C:\
+        
+        Write-Host "LuaJIT setup complete"
+        C:\luajit.exe -v
 
     - name: Setup OpenSSL
       run: |
+        $ErrorActionPreference = "Stop"
         $SSL = "${{ matrix.openssl_version }}"
         $VERSION = $SSL -replace "openssl-", ""
+        
+        Write-Host "Setting up OpenSSL $VERSION"
         
         # Download OpenSSL
         if ($VERSION -match "^(0\.9\.|1\.0\.0|1\.0\.1|1\.0\.2|1\.1\.1)") {
@@ -89,32 +102,60 @@ jobs:
           $URL = "https://github.com/openssl/openssl/releases/download/$SSL/$SSL.tar.gz"
         }
         
-        curl -L $URL -o $SSL.tar.gz
+        Write-Host "Downloading from: $URL"
+        curl -L $URL -o "$SSL.tar.gz"
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        
+        Write-Host "Extracting..."
         7z x "$SSL.tar.gz" -so | 7z x -aoa -si -ttar
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        
         cd $SSL
         
         # Configure based on architecture
         if ("${{ matrix.arch }}" -eq "x86") {
+          Write-Host "Configuring for x86..."
           perl Configure --prefix=C:\openssl-win32 no-asm no-shared VC-WIN32
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          
           if ($VERSION -match "^1\.") {
+            Write-Host "Building OpenSSL 1.x..."
             cmd /c "ms\do_ms.bat"
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             nmake -f ms\nt.mak
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             nmake -f ms\nt.mak install
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           } else {
+            Write-Host "Building OpenSSL 3.x..."
             nmake
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             nmake install
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           }
         } else {
+          Write-Host "Configuring for x64..."
           perl Configure --prefix=C:\openssl-win64 no-asm no-shared VC-WIN64A
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          
           if ($VERSION -match "^1\.") {
+            Write-Host "Building OpenSSL 1.x..."
             cmd /c "ms\do_win64a.bat"
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             nmake -f ms\nt.mak
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             nmake -f ms\nt.mak install
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           } else {
+            Write-Host "Building OpenSSL 3.x..."
             nmake
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             nmake install
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           }
         }
+        
+        Write-Host "OpenSSL setup complete"
 
     - name: Update config.win
       run: |
@@ -153,14 +194,22 @@ jobs:
         "" | Out-File -FilePath config.win -Append -Encoding ASCII
 
     - name: Build
-      run: nmake -f Makefile.win
+      run: |
+        Write-Host "Building lua-openssl..."
+        nmake -f Makefile.win
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        Write-Host "Build complete"
+        dir src\openssl.dll
 
     - name: Test
       run: |
+        Write-Host "Running tests..."
         cd test
         $env:LUA_PATH = "?.lua;"
         $env:LUA_CPATH = "C:\?.dll;..\src\?.dll"
         C:\luajit.exe test.lua
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        Write-Host "Tests complete"
 
   deploy:
     if: startsWith(github.ref, 'refs/tags/')
