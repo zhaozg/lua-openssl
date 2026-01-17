@@ -62,6 +62,7 @@ build = {
         "src/pkcs7.c",
         "src/pkcs12.c",
         "src/pkey.c",
+        "src/provider.c",
         "src/rsa.c",
         "src/srp.c",
         "src/ssl.c",
