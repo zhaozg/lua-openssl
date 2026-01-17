@@ -93,12 +93,41 @@ jobs:
         $PREFIX = "C:\OpenSSL"
         Write-Host "OpenSSL installed to: $PREFIX"
         
-        # Verify installation
+        # Verify installation and check library files
         & "$PREFIX\bin\openssl.exe" version
+        Write-Host "Checking OpenSSL library files..."
+        Get-ChildItem "$PREFIX\lib" | Format-Table Name
 
     - name: Update config.win
       run: |
         $PREFIX = "C:\OpenSSL"
+        
+        # Detect OpenSSL library files (OpenSSL 3.x may use different naming)
+        $CRYPTO_LIB = if (Test-Path "$PREFIX\lib\libcrypto.lib") {
+          "$PREFIX\lib\libcrypto.lib"
+        } elseif (Test-Path "$PREFIX\lib\libcrypto_static.lib") {
+          "$PREFIX\lib\libcrypto_static.lib"
+        } elseif (Test-Path "$PREFIX\lib\crypto.lib") {
+          "$PREFIX\lib\crypto.lib"
+        } else {
+          Write-Host "ERROR: Could not find libcrypto library"
+          Get-ChildItem "$PREFIX\lib"
+          exit 1
+        }
+        
+        $SSL_LIB = if (Test-Path "$PREFIX\lib\libssl.lib") {
+          "$PREFIX\lib\libssl.lib"
+        } elseif (Test-Path "$PREFIX\lib\libssl_static.lib") {
+          "$PREFIX\lib\libssl_static.lib"
+        } elseif (Test-Path "$PREFIX\lib\ssl.lib") {
+          "$PREFIX\lib\ssl.lib"
+        } else {
+          Write-Host "ERROR: Could not find libssl library"
+          Get-ChildItem "$PREFIX\lib"
+          exit 1
+        }
+        
+        Write-Host "Using OpenSSL libraries: $CRYPTO_LIB $SSL_LIB"
         
         "# Installation directories" | Out-File -FilePath config.win -Encoding ASCII
         "# System's libraries directory (where binary libraries are installed)" | Out-File -FilePath config.win -Append -Encoding ASCII
@@ -109,7 +138,7 @@ jobs:
         "" | Out-File -FilePath config.win -Append -Encoding ASCII
         "# Openssl include and lib" | Out-File -FilePath config.win -Append -Encoding ASCII
         "OPENSSL_INC= $PREFIX\include" | Out-File -FilePath config.win -Append -Encoding ASCII
-        "OPENSSL_LIB= $PREFIX\lib\libcrypto.lib $PREFIX\lib\libssl.lib" | Out-File -FilePath config.win -Append -Encoding ASCII
+        "OPENSSL_LIB= $CRYPTO_LIB $SSL_LIB" | Out-File -FilePath config.win -Append -Encoding ASCII
         "" | Out-File -FilePath config.win -Append -Encoding ASCII
         'LIBNAME= $T.dll' | Out-File -FilePath config.win -Append -Encoding ASCII
         "" | Out-File -FilePath config.win -Append -Encoding ASCII

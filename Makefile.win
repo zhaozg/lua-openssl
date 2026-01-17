@@ -19,7 +19,7 @@ lib: src\$T.dll
 	$(CC) /nologo /c /I"deps/lua-compat/c-api" /I"deps/auxiliar" /DLUA_BUILD_AS_DLL /DLUA_LIB /Fo$@ $(CFLAGS) $<
 
 src\$T.dll: $(OBJS)
-	link /DLL /out:src\$T.dll $(OBJS) "$(LUA_LIB)" "$(OPENSSL_LIB)" \
+	link /DLL /out:src\$T.dll $(OBJS) "$(LUA_LIB)" $(OPENSSL_LIB) \
 		crypt32.lib ws2_32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib 
 	IF EXIST src\$T.dll.manifest mt -manifest src\$T.dll.manifest -outputresource:src\$T.dll;2
 
