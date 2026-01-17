@@ -91,6 +91,7 @@ jobs:
         $ErrorActionPreference = "Stop"
         $SSL = "${{ matrix.openssl_version }}"
         $VERSION = $SSL -replace "openssl-", ""
+        $IS_OPENSSL_1X = $VERSION -match "^1\."
         
         Write-Host "Setting up OpenSSL $VERSION"
         
@@ -114,60 +115,50 @@ jobs:
         
         # Configure based on architecture
         if ("${{ matrix.arch }}" -eq "x86") {
+          $PREFIX = "C:\openssl-win32"
+          $CONFIGURE_TARGET = "VC-WIN32"
+          $DO_BATCH = "ms\do_ms.bat"
           Write-Host "Configuring for x86..."
-          perl Configure --prefix=C:\openssl-win32 no-asm no-shared VC-WIN32
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          
-          if ($VERSION -match "^1\.") {
-            Write-Host "Building OpenSSL 1.x..."
-            cmd /c "ms\do_ms.bat"
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-            nmake -f ms\nt.mak
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-            nmake -f ms\nt.mak install
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          } else {
-            Write-Host "Building OpenSSL 3.x..."
-            nmake
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-            nmake install
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          }
         } else {
+          $PREFIX = "C:\openssl-win64"
+          $CONFIGURE_TARGET = "VC-WIN64A"
+          $DO_BATCH = "ms\do_win64a.bat"
           Write-Host "Configuring for x64..."
-          perl Configure --prefix=C:\openssl-win64 no-asm no-shared VC-WIN64A
+        }
+        
+        perl Configure --prefix=$PREFIX no-asm no-shared $CONFIGURE_TARGET
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        
+        if ($IS_OPENSSL_1X) {
+          Write-Host "Building OpenSSL 1.x..."
+          cmd /c $DO_BATCH
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          
-          if ($VERSION -match "^1\.") {
-            Write-Host "Building OpenSSL 1.x..."
-            cmd /c "ms\do_win64a.bat"
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-            nmake -f ms\nt.mak
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-            nmake -f ms\nt.mak install
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          } else {
-            Write-Host "Building OpenSSL 3.x..."
-            nmake
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-            nmake install
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          }
+          nmake -f ms\nt.mak
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          nmake -f ms\nt.mak install
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        } else {
+          Write-Host "Building OpenSSL 3.x..."
+          nmake
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          nmake install
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         }
         
         Write-Host "OpenSSL setup complete"
 
     - name: Update config.win
       run: |
+        $VERSION = "${{ matrix.openssl_version }}" -replace "openssl-", ""
+        $IS_OPENSSL_1X = $VERSION -match "^1\."
+        
         if ("${{ matrix.arch }}" -eq "x86") {
           $PREFIX = "C:\openssl-win32"
         } else {
           $PREFIX = "C:\openssl-win64"
         }
         
-        $VERSION = "${{ matrix.openssl_version }}" -replace "openssl-", ""
-        
-        if ($VERSION -match "^1\.") {
+        if ($IS_OPENSSL_1X) {
           $LIBS = """$PREFIX\lib\libeay32.lib $PREFIX\lib\ssleay32.lib"""
         } else {
           $LIBS = """$PREFIX\lib\libcrypto.lib $PREFIX\lib\libssl.lib"""
