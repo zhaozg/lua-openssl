@@ -112,3 +112,20 @@ jobs:
       run: sudo apt update && sudo apt install -y luajit libluajit-5.1-dev
     - name: Test
       run: make tsan
+
+  CMake:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    - name: depends
+      run: sudo apt update && sudo apt install -y luajit libluajit-5.1-dev libssl-dev
+    - name: Configure
+      run: cmake -B build -S .
+    - name: Build
+      run: cmake --build build
+    - name: Test
+      run: cd test && LUA_CPATH=../build/?.so luajit test.lua -v
