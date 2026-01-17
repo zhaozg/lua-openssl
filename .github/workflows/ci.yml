@@ -196,7 +196,7 @@ jobs:
     - name: Build
       run: |
         Write-Host "Building lua-openssl..."
-        nmake -f Makefile.win
+        nmake -f Makefile.win lib
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         Write-Host "Build complete"
         dir src\openssl.dll
