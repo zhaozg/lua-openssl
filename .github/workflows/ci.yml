@@ -80,112 +80,63 @@ jobs:
         Write-Host "LuaJIT setup complete"
         C:\luajit.exe -v
 
-    - name: Setup OpenSSL via Chocolatey
+    - name: Setup vcpkg and Install OpenSSL
       run: |
         $ErrorActionPreference = "Stop"
         
-        Write-Host "Installing OpenSSL via Chocolatey..."
-        # Install OpenSSL from Chocolatey - much simpler than building from source
-        # Install to a path without spaces to avoid linker issues
-        choco install openssl -y --install-arguments="'/DIR=C:\OpenSSL'"
+        Write-Host "Installing OpenSSL via vcpkg..."
+        # vcpkg is pre-installed on GitHub Actions Windows runners
+        # Install OpenSSL with static linking (:x64-windows-static triplet)
+        vcpkg install openssl:x64-windows-static
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         
-        $PREFIX = "C:\OpenSSL"
-        Write-Host "OpenSSL installed to: $PREFIX"
+        Write-Host "OpenSSL installed successfully"
         
-        # Verify installation
-        & "$PREFIX\bin\openssl.exe" version
+        # vcpkg packages are installed to $env:VCPKG_INSTALLATION_ROOT
+        $VCPKG_ROOT = $env:VCPKG_INSTALLATION_ROOT
+        Write-Host "vcpkg root: $VCPKG_ROOT"
         
-        # Check library directory structure
-        Write-Host "Checking OpenSSL directory structure..."
-        Write-Host "Contents of $PREFIX\lib:"
-        Get-ChildItem "$PREFIX\lib" -Recurse | Format-Table FullName
+        # Verify OpenSSL installation
+        $OPENSSL_DIR = "$VCPKG_ROOT\installed\x64-windows-static"
+        if (Test-Path "$OPENSSL_DIR\tools\openssl\openssl.exe") {
+          & "$OPENSSL_DIR\tools\openssl\openssl.exe" version
+        }
+        
+        # Show installed files for debugging
+        Write-Host "OpenSSL include directory:"
+        Get-ChildItem "$OPENSSL_DIR\include\openssl" | Select-Object -First 5 | Format-Table Name
+        Write-Host "OpenSSL library directory:"
+        Get-ChildItem "$OPENSSL_DIR\lib" | Where-Object { $_.Extension -eq ".lib" } | Format-Table Name
 
     - name: Update config.win
       run: |
-        $PREFIX = "C:\OpenSSL"
+        $ErrorActionPreference = "Stop"
         
-        # Function to list available library files on error
-        function Show-LibraryFiles {
-          Write-Host "Available files in $PREFIX\lib:"
-          Get-ChildItem "$PREFIX\lib" -Recurse | Where-Object { $_.Extension -eq ".lib" } | Format-Table FullName
+        # vcpkg installs to a standard location
+        $VCPKG_ROOT = $env:VCPKG_INSTALLATION_ROOT
+        $OPENSSL_DIR = "$VCPKG_ROOT\installed\x64-windows-static"
+        
+        Write-Host "Using vcpkg OpenSSL from: $OPENSSL_DIR"
+        
+        # vcpkg uses standard naming: libcrypto.lib and libssl.lib
+        $CRYPTO_LIB = "$OPENSSL_DIR\lib\libcrypto.lib"
+        $SSL_LIB = "$OPENSSL_DIR\lib\libssl.lib"
+        
+        # Verify libraries exist
+        if (-not (Test-Path $CRYPTO_LIB)) {
+          Write-Host "ERROR: Could not find $CRYPTO_LIB"
+          exit 1
         }
-        
-        # Map GitHub Actions matrix arch to OpenSSL arch naming
-        $ARCH = "${{ matrix.arch }}"
-        $OPENSSL_ARCH = if ($ARCH -eq "amd64") { "x64" } else { $ARCH }
-        
-        # Detect OpenSSL library directory (Chocolatey uses lib\VC\x64\MT structure)
-        # The MT subdirectory corresponds to /MT compiler flag (multi-threaded static runtime)
-        $LIB_DIR = if (Test-Path "$PREFIX\lib\VC\$OPENSSL_ARCH\MT\libcrypto.lib") {
-          "$PREFIX\lib\VC\$OPENSSL_ARCH\MT"
-        } elseif (Test-Path "$PREFIX\lib\VC\$OPENSSL_ARCH\MD\libcrypto.lib") {
-          "$PREFIX\lib\VC\$OPENSSL_ARCH\MD"
-        } elseif (Test-Path "$PREFIX\lib\VC\$OPENSSL_ARCH\libcrypto.lib") {
-          "$PREFIX\lib\VC\$OPENSSL_ARCH"
-        } elseif (Test-Path "$PREFIX\lib\VC\$OPENSSL_ARCH") {
-          # Try to find runtime subdirectory (MD, MT, etc.) that contains libraries
-          $runtimeDirs = Get-ChildItem "$PREFIX\lib\VC\$OPENSSL_ARCH" -Directory | Where-Object {
-            (Test-Path "$($_.FullName)\libcrypto.lib") -or (Test-Path "$($_.FullName)\crypto.lib")
-          } | Sort-Object Name
-          if ($runtimeDirs) {
-            Write-Host "Found library directory: $($runtimeDirs[0].FullName)"
-            $runtimeDirs[0].FullName
-          } else {
-            "$PREFIX\lib\VC\$OPENSSL_ARCH"
-          }
-        } elseif (Test-Path "$PREFIX\lib\VC") {
-          # Try to find any arch directory and verify it contains libraries
-          # Limit search to 2 levels deep (VC\arch\runtime) for efficiency
-          $vcDirs = Get-ChildItem "$PREFIX\lib\VC" -Directory -Recurse -Depth 2 | Where-Object {
-            (Test-Path "$($_.FullName)\libcrypto.lib") -or (Test-Path "$($_.FullName)\crypto.lib")
-          } | Sort-Object FullName
-          if ($vcDirs) {
-            Write-Host "Found library directory: $($vcDirs[0].FullName)"
-            $vcDirs[0].FullName
-          } else {
-            Write-Host "ERROR: No library files found in VC subdirectories"
-            Show-LibraryFiles
-            exit 1
-          }
-        } elseif ((Test-Path "$PREFIX\lib\libcrypto.lib") -and (Test-Path "$PREFIX\lib\libssl.lib")) {
-          # Libraries directly in lib directory - verify both are present
-          "$PREFIX\lib"
-        } else {
-          Write-Host "ERROR: Could not find OpenSSL lib directory with library files"
-          Show-LibraryFiles
+        if (-not (Test-Path $SSL_LIB)) {
+          Write-Host "ERROR: Could not find $SSL_LIB"
           exit 1
         }
         
-        Write-Host "Using library directory: $LIB_DIR"
+        Write-Host "Using OpenSSL libraries:"
+        Write-Host "  Crypto: $CRYPTO_LIB"
+        Write-Host "  SSL: $SSL_LIB"
         
-        # Detect OpenSSL library files (OpenSSL 3.x may use different naming)
-        $CRYPTO_LIB = if (Test-Path "$LIB_DIR\libcrypto.lib") {
-          "$LIB_DIR\libcrypto.lib"
-        } elseif (Test-Path "$LIB_DIR\libcrypto_static.lib") {
-          "$LIB_DIR\libcrypto_static.lib"
-        } elseif (Test-Path "$LIB_DIR\crypto.lib") {
-          "$LIB_DIR\crypto.lib"
-        } else {
-          Write-Host "ERROR: Could not find libcrypto library in $LIB_DIR"
-          Show-LibraryFiles
-          exit 1
-        }
-        
-        $SSL_LIB = if (Test-Path "$LIB_DIR\libssl.lib") {
-          "$LIB_DIR\libssl.lib"
-        } elseif (Test-Path "$LIB_DIR\libssl_static.lib") {
-          "$LIB_DIR\libssl_static.lib"
-        } elseif (Test-Path "$LIB_DIR\ssl.lib") {
-          "$LIB_DIR\ssl.lib"
-        } else {
-          Write-Host "ERROR: Could not find libssl library in $LIB_DIR"
-          Show-LibraryFiles
-          exit 1
-        }
-        
-        Write-Host "Using OpenSSL libraries: $CRYPTO_LIB $SSL_LIB"
-        
+        # Create config.win
         "# Installation directories" | Out-File -FilePath config.win -Encoding ASCII
         "# System's libraries directory (where binary libraries are installed)" | Out-File -FilePath config.win -Append -Encoding ASCII
         "" | Out-File -FilePath config.win -Append -Encoding ASCII
@@ -194,7 +145,7 @@ jobs:
         'LUA_LIB= c:\luajit\src\lua51.lib' | Out-File -FilePath config.win -Append -Encoding ASCII
         "" | Out-File -FilePath config.win -Append -Encoding ASCII
         "# Openssl include and lib" | Out-File -FilePath config.win -Append -Encoding ASCII
-        "OPENSSL_INC= $PREFIX\include" | Out-File -FilePath config.win -Append -Encoding ASCII
+        "OPENSSL_INC= $OPENSSL_DIR\include" | Out-File -FilePath config.win -Append -Encoding ASCII
         "OPENSSL_LIB= $CRYPTO_LIB $SSL_LIB" | Out-File -FilePath config.win -Append -Encoding ASCII
         "" | Out-File -FilePath config.win -Append -Encoding ASCII
         'LIBNAME= $T.dll' | Out-File -FilePath config.win -Append -Encoding ASCII
