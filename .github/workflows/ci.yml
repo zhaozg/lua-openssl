@@ -102,6 +102,12 @@ jobs:
       run: |
         $PREFIX = "C:\OpenSSL"
         
+        # Function to list available library files on error
+        function Show-LibraryFiles {
+          Write-Host "Available library files in $PREFIX\lib:"
+          Get-ChildItem "$PREFIX\lib"
+        }
+        
         # Detect OpenSSL library files (OpenSSL 3.x may use different naming)
         $CRYPTO_LIB = if (Test-Path "$PREFIX\lib\libcrypto.lib") {
           "$PREFIX\lib\libcrypto.lib"
@@ -111,7 +117,7 @@ jobs:
           "$PREFIX\lib\crypto.lib"
         } else {
           Write-Host "ERROR: Could not find libcrypto library"
-          Get-ChildItem "$PREFIX\lib"
+          Show-LibraryFiles
           exit 1
         }
         
@@ -123,7 +129,7 @@ jobs:
           "$PREFIX\lib\ssl.lib"
         } else {
           Write-Host "ERROR: Could not find libssl library"
-          Get-ChildItem "$PREFIX\lib"
+          Show-LibraryFiles
           exit 1
         }
         
