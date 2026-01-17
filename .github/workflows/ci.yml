@@ -41,9 +41,124 @@ jobs:
       run:
         PKG_CONFIG_PATH=$HOME/.usr/lib64/pkgconfig:$HOME/.usr/lib/pkgconfig PATH=$HOME/.usr/bin:$PATH LD_LIBRARY_PATH=$HOME/.usr/lib64:$HOME/.usr/lib make test
 
+  build-msvc:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, x86]
+        openssl_version: [openssl-1.1.1w, openssl-3.0.18, openssl-3.5.4]
+
+    steps:
+    - name: Setup MSVC Developer Prompt
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: ${{ matrix.arch }}
+
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Setup LuaJIT
+      run: |
+        git clone https://github.com/LuaJIT/LuaJIT.git C:\luajit
+        cd C:\luajit\src
+        msvcbuild.bat
+        copy luajit.exe C:\
+        copy lua51.* C:\
+
+    - name: Setup OpenSSL
+      run: |
+        $SSL = "${{ matrix.openssl_version }}"
+        $VERSION = $SSL -replace "openssl-", ""
+        
+        # Download OpenSSL
+        if ($VERSION -match "^(0\.9\.|1\.0\.0|1\.0\.1|1\.0\.2|1\.1\.1)") {
+          $CONVERTED = $VERSION -replace "\.", "_"
+          $URL = "https://github.com/openssl/openssl/releases/download/OpenSSL_$CONVERTED/$SSL.tar.gz"
+        } else {
+          $URL = "https://github.com/openssl/openssl/releases/download/$SSL/$SSL.tar.gz"
+        }
+        
+        curl -L $URL -o $SSL.tar.gz
+        7z x "$SSL.tar.gz" -so | 7z x -aoa -si -ttar
+        cd $SSL
+        
+        # Configure based on architecture
+        if ("${{ matrix.arch }}" -eq "x86") {
+          perl Configure --prefix=C:\openssl-win32 no-asm no-shared VC-WIN32
+          if ($VERSION -match "^1\.") {
+            cmd /c "ms\do_ms.bat"
+            nmake -f ms\nt.mak
+            nmake -f ms\nt.mak install
+          } else {
+            nmake
+            nmake install
+          }
+        } else {
+          perl Configure --prefix=C:\openssl-win64 no-asm no-shared VC-WIN64A
+          if ($VERSION -match "^1\.") {
+            cmd /c "ms\do_win64a.bat"
+            nmake -f ms\nt.mak
+            nmake -f ms\nt.mak install
+          } else {
+            nmake
+            nmake install
+          }
+        }
+
+    - name: Update config.win
+      run: |
+        if ("${{ matrix.arch }}" -eq "x86") {
+          $PREFIX = "C:\openssl-win32"
+        } else {
+          $PREFIX = "C:\openssl-win64"
+        }
+        
+        $VERSION = "${{ matrix.openssl_version }}" -replace "openssl-", ""
+        
+        if ($VERSION -match "^1\.") {
+          $LIBS = "`"$PREFIX\lib\libeay32.lib $PREFIX\lib\ssleay32.lib`""
+        } else {
+          $LIBS = "`"$PREFIX\lib\libcrypto.lib $PREFIX\lib\libssl.lib`""
+        }
+        
+        $config = @"
+# Installation directories
+# System's libraries directory (where binary libraries are installed)
+
+# Lua includes and lib
+LUA_INC= "c:\luajit\src"
+LUA_LIB= "c:\luajit\src\lua51.lib"
+
+# Openssl include and lib
+OPENSSL_INC="$PREFIX\include"
+OPENSSL_LIB=$LIBS
+
+LIBNAME= `$T.dll
+
+# Compilation directives
+WARN= /O2
+INCS= /I`$(LUA_INC) /I`$(OPENSSL_INC) /Ideps
+CFLAGS= /DWIN32_LEAN_AND_MEAN /MD `$(WARN) `$(INCS)
+CC= cl
+
+"@
+        $config | Out-File -FilePath config.win -Encoding ASCII
+
+    - name: Build
+      run: nmake -f Makefile.win
+
+    - name: Test
+      run: |
+        cd test
+        $env:LUA_PATH = "?.lua;"
+        $env:LUA_CPATH = "C:\?.dll;..\src\?.dll"
+        C:\luajit.exe test.lua
+
   deploy:
     if: startsWith(github.ref, 'refs/tags/')
-    needs: [build]
+    needs: [build, build-msvc]
     runs-on: ubuntu-latest
     env:
       WITH_LUA_ENGINE: LuaJIT
