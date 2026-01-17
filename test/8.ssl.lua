@@ -587,7 +587,9 @@ function TestSSL:testSNI()
 
   if openssl.engine then
     local eng = openssl.engine("openssl")
-    eng:load_ssl_client_cert(cli)
+    if eng then
+      eng:load_ssl_client_cert(cli)
+    end
   end
   cli:clear()
   cli:shutdown()

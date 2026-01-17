@@ -171,8 +171,7 @@ jobs:
         cd test
         $env:LUA_PATH = "?.lua;"
         $env:LUA_CPATH = "C:\?.dll;..\src\?.dll"
-        # Add OpenSSL DLLs to PATH for runtime
-        $env:PATH = "C:\OpenSSL\bin;$env:PATH"
+        # Static linking - no OpenSSL DLLs needed at runtime
         C:\luajit.exe test.lua
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         Write-Host "Tests complete"
