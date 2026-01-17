@@ -111,22 +111,31 @@ jobs:
           Get-ChildItem "$PREFIX\lib" -Recurse | Where-Object { $_.Extension -eq ".lib" } | Format-Table FullName
         }
         
+        # Map GitHub Actions matrix arch to OpenSSL arch naming
+        $ARCH = "${{ matrix.arch }}"
+        $OPENSSL_ARCH = if ($ARCH -eq "amd64") { "x64" } else { $ARCH }
+        
         # Detect OpenSSL library directory (Chocolatey uses lib\VC\x64 or lib\VC\x86 structure)
-        $ARCH_SUFFIX = "x64"
-        $LIB_DIR = if (Test-Path "$PREFIX\lib\VC\$ARCH_SUFFIX") {
-          "$PREFIX\lib\VC\$ARCH_SUFFIX"
+        $LIB_DIR = if (Test-Path "$PREFIX\lib\VC\$OPENSSL_ARCH") {
+          "$PREFIX\lib\VC\$OPENSSL_ARCH"
         } elseif (Test-Path "$PREFIX\lib\VC") {
-          # Try to find the actual arch directory
-          $vcDirs = Get-ChildItem "$PREFIX\lib\VC" -Directory
+          # Try to find any arch directory and verify it contains libraries
+          $vcDirs = Get-ChildItem "$PREFIX\lib\VC" -Directory | Where-Object {
+            (Test-Path "$($_.FullName)\*.lib")
+          } | Sort-Object Name
           if ($vcDirs) {
+            Write-Host "Found library directory: $($vcDirs[0].FullName)"
             $vcDirs[0].FullName
           } else {
-            "$PREFIX\lib"
+            Write-Host "ERROR: No library files found in VC subdirectories"
+            Show-LibraryFiles
+            exit 1
           }
-        } elseif (Test-Path "$PREFIX\lib") {
+        } elseif (Test-Path "$PREFIX\lib\*.lib") {
+          # Libraries directly in lib directory
           "$PREFIX\lib"
         } else {
-          Write-Host "ERROR: Could not find OpenSSL lib directory"
+          Write-Host "ERROR: Could not find OpenSSL lib directory with library files"
           Show-LibraryFiles
           exit 1
         }
