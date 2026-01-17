@@ -254,7 +254,10 @@ function TestProviderPerformance:test_provider_load_performance()
   local elapsed = end_time - start_time
   local avg_time = elapsed / iterations * 1000  -- Convert to milliseconds
 
-  assert(elapsed > 0, "Elapsed time should be greater than zero")
+  -- On Windows, os.clock() may have low precision, so we only check if elapsed time is reasonable (not too long)
+  -- We don't assert that elapsed > 0 since it may round to 0 for fast operations on Windows
   assert(elapsed < 100, "Total time should be reasonable")
-  lu.assertTrue(avg_time < 100, "Average load time should be reasonable")
+  if elapsed > 0 then
+    lu.assertTrue(avg_time < 100, "Average load time should be reasonable")
+  end
 end

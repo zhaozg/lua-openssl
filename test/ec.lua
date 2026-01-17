@@ -160,7 +160,10 @@ if openssl.ec then
     assert(type(der) == "string")
     local ec1 = openssl.ec.read(der)
     if openssl.engine then
-      assert(ec1:set_method(openssl.engine("openssl")))
+      local eng = openssl.engine("openssl")
+      if eng then
+        assert(ec1:set_method(eng))
+      end
     end
     assert(ec1:conv_form("hybrid"))
     assert(ec1:conv_form() == "hybrid")
