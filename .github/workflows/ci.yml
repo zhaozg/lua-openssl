@@ -86,11 +86,11 @@ jobs:
         
         Write-Host "Installing OpenSSL via Chocolatey..."
         # Install OpenSSL from Chocolatey - much simpler than building from source
-        choco install openssl -y
+        # Install to a path without spaces to avoid linker issues
+        choco install openssl -y --install-arguments="'/DIR=C:\OpenSSL'"
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         
-        # Choco installs to C:\Program Files\OpenSSL\
-        $PREFIX = "C:\Program Files\OpenSSL"
+        $PREFIX = "C:\OpenSSL"
         Write-Host "OpenSSL installed to: $PREFIX"
         
         # Verify installation
@@ -98,18 +98,18 @@ jobs:
 
     - name: Update config.win
       run: |
-        $PREFIX = "C:\Program Files\OpenSSL"
+        $PREFIX = "C:\OpenSSL"
         
         "# Installation directories" | Out-File -FilePath config.win -Encoding ASCII
         "# System's libraries directory (where binary libraries are installed)" | Out-File -FilePath config.win -Append -Encoding ASCII
         "" | Out-File -FilePath config.win -Append -Encoding ASCII
         "# Lua includes and lib" | Out-File -FilePath config.win -Append -Encoding ASCII
-        'LUA_INC= "c:\luajit\src"' | Out-File -FilePath config.win -Append -Encoding ASCII
-        'LUA_LIB= "c:\luajit\src\lua51.lib"' | Out-File -FilePath config.win -Append -Encoding ASCII
+        'LUA_INC= c:\luajit\src' | Out-File -FilePath config.win -Append -Encoding ASCII
+        'LUA_LIB= c:\luajit\src\lua51.lib' | Out-File -FilePath config.win -Append -Encoding ASCII
         "" | Out-File -FilePath config.win -Append -Encoding ASCII
         "# Openssl include and lib" | Out-File -FilePath config.win -Append -Encoding ASCII
-        "OPENSSL_INC=""$PREFIX\include""" | Out-File -FilePath config.win -Append -Encoding ASCII
-        "OPENSSL_LIB=""$PREFIX\lib\libcrypto.lib"" ""$PREFIX\lib\libssl.lib""" | Out-File -FilePath config.win -Append -Encoding ASCII
+        "OPENSSL_INC= $PREFIX\include" | Out-File -FilePath config.win -Append -Encoding ASCII
+        "OPENSSL_LIB= $PREFIX\lib\libcrypto.lib $PREFIX\lib\libssl.lib" | Out-File -FilePath config.win -Append -Encoding ASCII
         "" | Out-File -FilePath config.win -Append -Encoding ASCII
         'LIBNAME= $T.dll' | Out-File -FilePath config.win -Append -Encoding ASCII
         "" | Out-File -FilePath config.win -Append -Encoding ASCII
@@ -135,7 +135,7 @@ jobs:
         $env:LUA_PATH = "?.lua;"
         $env:LUA_CPATH = "C:\?.dll;..\src\?.dll"
         # Add OpenSSL DLLs to PATH for runtime
-        $env:PATH = "C:\Program Files\OpenSSL\bin;$env:PATH"
+        $env:PATH = "C:\OpenSSL\bin;$env:PATH"
         C:\luajit.exe test.lua
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         Write-Host "Tests complete"
