@@ -51,7 +51,10 @@ function TestRSA:TestRSA()
     }
 
     if openssl.engine then
-      k:set_engine(openssl.engine("openssl"))
+      local eng = openssl.engine("openssl")
+      if eng then
+        k:set_engine(eng)
+      end
     end
 
     for _ = 1, #padding + 1 do

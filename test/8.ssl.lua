@@ -356,7 +356,10 @@ function TestSSL:testSNI()
   local cli = assert(cli_ctx:ssl(bc, bc, false))
   srv_ctx:add(ca.cacert, certs)
   if openssl.engine then
-    srv_ctx:set_engine(openssl.engine("openssl"))
+    local eng = openssl.engine("openssl")
+    if eng then
+      srv_ctx:set_engine(eng)
+    end
   end
   srv_ctx:timeout(500)
   assert(srv_ctx:timeout() == 500)
@@ -584,7 +587,9 @@ function TestSSL:testSNI()
 
   if openssl.engine then
     local eng = openssl.engine("openssl")
-    eng:load_ssl_client_cert(cli)
+    if eng then
+      eng:load_ssl_client_cert(cli)
+    end
   end
   cli:clear()
   cli:shutdown()

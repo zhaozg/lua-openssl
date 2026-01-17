@@ -30,7 +30,7 @@ end
 function TestPKEYMY:testBasic()
   local eng
   if openssl.engine then
-    eng = assert(openssl.engine("openssl"))
+    eng = openssl.engine("openssl")
   end
   for _, v in ipairs(self.genalg) do
     local k = mk_key(v)

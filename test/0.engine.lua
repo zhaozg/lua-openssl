@@ -6,7 +6,11 @@ end
 
 TestEngine = {}
 function TestEngine:testAll()
-  local eng = assert(openssl.engine("openssl"))
+  local eng = openssl.engine("openssl")
+  if not eng then
+    -- The "openssl" engine may not be available in all builds (e.g., static builds)
+    return
+  end
   assert(eng:id() == "openssl")
   assert(eng:id("openssl"))
   assert(eng:set_default("RSA"))

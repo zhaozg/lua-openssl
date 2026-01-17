@@ -10,6 +10,9 @@ function TestDSA:Testdsa()
   assert(t.bits == 1024)
 
   if openssl.engine then
-    k:set_engine(openssl.engine("openssl"))
+    local eng = openssl.engine("openssl")
+    if eng then
+      k:set_engine(eng)
+    end
   end
 end
