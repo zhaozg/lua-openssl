@@ -95,13 +95,6 @@ Notice: Documentation quality is low and stale, feel free to make a PR to improv
 
 If documentation is missing, refer to the [source code](./src) or check the Lua test scripts in the test directory.
 
-### Development Roadmap
-
-For the project's development plan and priorities:
-- **[ROADMAP.md](./ROADMAP.md)** - Complete development roadmap (English)
-- **[ROADMAP_CN.md](./ROADMAP_CN.md)** - 开发路线图 (Chinese)
-- **[DEPRECATION_STATUS.md](./DEPRECATION_STATUS.md)** - Deprecation warning status
-
 ### Documentation Coverage
 
 The project includes an automated LDoc analyzer that scans all C source files to check documentation coverage. Current statistics:
@@ -311,7 +304,8 @@ assert(msg == decrypted)
 ### Example 2: quick evp_digest
 
 ```lua
-md = openssl.digest.get('md5')
+local alg = 'sha256'
+md = openssl.digest.get(alg)
 m = 'abcd'
 aa = md:digest(m)
 
