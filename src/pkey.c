@@ -1715,8 +1715,8 @@ static int openssl_derive(lua_State *L)
             ret = EVP_PKEY_derive(ctx, skey, &skeylen);
             if (ret == 1) {
               lua_pushlstring(L, (const char *)skey, skeylen);
-              OPENSSL_free(skey);
             }
+            OPENSSL_free(skey);
           }
         }
       }
