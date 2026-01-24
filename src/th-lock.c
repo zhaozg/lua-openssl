@@ -56,9 +56,11 @@
  * [including the GNU Public Licence.]
  */
 
-#include <openssl/crypto.h>
 #include <openssl/opensslconf.h>
 
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER))
+
+#include <openssl/crypto.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -383,6 +385,8 @@ CRYPTO_thread_setup(void)
   CRYPTO_THREADID_set_callback(pthreads_thread_id);
   CRYPTO_set_locking_callback(pthreads_locking_callback);
 }
+#endif
+
 #endif
 
 #endif

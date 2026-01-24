@@ -63,9 +63,9 @@ pkey_has_private(EVP_PKEY *pkey)
     ret = EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_PRIV_KEY, &bn);
     if (!ret || bn == NULL) {
       /* FIXME: OpenSSL 3.0 DSA priv key param not working? Fallback to legacy way */
-      DSA* dsa = EVP_PKEY_get0_DSA(pkey);
+      DSA* dsa = (DSA*)EVP_PKEY_get0_DSA(pkey);
       if (dsa) {
-        BIGNUM* priv_key = NULL;
+        const BIGNUM* priv_key = NULL;
         DSA_get0_key(dsa, NULL, &priv_key);
         if (priv_key) {
           bn = BN_dup(priv_key);
@@ -1298,7 +1298,7 @@ static int openssl_pkey_get_public(lua_State *L)
 #if OPENSSL_VERSION_NUMBER > 0x30100000L && !defined(LIBRESSL_VERSION_NUMBER)
   if (EVP_PKEY_id(pkey) == EVP_PKEY_SM2) {
     /* NOTES: bugs in openssl3 for SM2, ugly hack */
-    EC_KEY *ec = EVP_PKEY_get0_EC_KEY(pkey);
+    EC_KEY *ec = (EC_KEY*)EVP_PKEY_get0_EC_KEY(pkey);
     ec = EC_KEY_dup(ec);
     EC_KEY_set_private_key(ec, NULL);
     pkey = EVP_PKEY_new();

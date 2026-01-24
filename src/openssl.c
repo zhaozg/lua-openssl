@@ -414,7 +414,7 @@ static const luaL_Reg eay_functions[] = {
 };
 
 #if defined(OPENSSL_THREADS) && \
-    (OPENSSL_VERSION_NUMBER < 0x30000000L || defined(LIBRESSL_VERSION_NUMBER))
+    (OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER))
 void CRYPTO_thread_setup(void);
 void CRYPTO_thread_cleanup(void);
 #endif
@@ -441,15 +441,16 @@ openssl_finalize(void)
 #endif
 
   CONF_modules_unload(1);
+
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER))
   OBJ_cleanup();
   EVP_cleanup();
 #ifndef OPENSSL_NO_ENGINE
   ENGINE_cleanup();
 #endif
+
   CRYPTO_cleanup_all_ex_data();
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
   ERR_remove_thread_state(NULL);
-#endif
   RAND_cleanup();
   ERR_free_strings();
 #if !defined(OPENSSL_NO_COMP) && !defined(LIBRESSL_VERSION_NUMBER)
@@ -464,6 +465,8 @@ openssl_finalize(void)
 #endif
 
   CONF_modules_free();
+
+#endif /* (OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER) */
 
 #ifndef OPENSSL_NO_CRYPTO_MDEBUG
 #if !(defined(OPENSSL_NO_STDIO) || defined(OPENSSL_NO_FP_API))
@@ -498,23 +501,31 @@ openssl_initialize()
 #if (OPENSSL_VERSION_NUMBER < 0x30000000L || defined(LIBRESSL_VERSION_NUMBER))
   atexit(openssl_finalize);
 
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER))
   CRYPTO_thread_setup();
 
   OpenSSL_add_all_ciphers();
   OpenSSL_add_all_digests();
   SSL_library_init();
 
+  ERR_load_crypto_strings();
+#endif
+
   ERR_load_ERR_strings();
   ERR_load_EVP_strings();
-  ERR_load_crypto_strings();
+
   ERR_load_SSL_strings();
   ERR_load_BN_strings();
 #ifndef OPENSSL_NO_CMS
   ERR_load_CMS_strings();
 #endif
+
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER))
 #ifndef OPENSSL_NO_ENGINE
   ENGINE_load_openssl();
 #endif
+#endif
+
   ENGINE_load_builtin_engines();
 
   RAND_seed(LOPENSSL_VERSION LUA_VERSION OPENSSL_VERSION_TEXT,

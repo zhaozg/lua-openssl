@@ -24,7 +24,16 @@ extern "C" {
 #endif
 
 #if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
-#include "openssl/provider.h"
+#include <openssl/provider.h>
+/**
+ * The keys returned from the functions EVP_PKEY_get0_RSA(), EVP_PKEY_get0_DSA(),
+ * EVP_PKEY_get0_DH() and EVP_PKEY_get0_EC_KEY() were changed to have a "const"
+ * return type in OpenSSL 3.0
+ */
+#define EVP_PKEY_GET0_CONST(type) (const type*)
+#else
+#include <openssl/evp.h>
+#define EVP_PKEY_GET0_CONST(type) type*
 #endif
 
 typedef unsigned char byte;
@@ -142,7 +151,7 @@ int SSL_CTX_up_ref(SSL_CTX *ctx);
 int SSL_SESSION_up_ref(SSL_SESSION *s);
 
 #if LIBRESSLV_LESS(0x4020000FL) || !defined(LIBRESSL_VERSION_NUMBER)
-DH *EVP_PKEY_get0_DH(EVP_PKEY *pkey);
+DH *EVP_PKEY_get0_DH(EVP_PKEY_GET0_CONST(EVP_PKEY) pkey);
 #endif
 
 int DH_bits(const DH *dh);
@@ -156,7 +165,7 @@ void DSA_get0_pqg(const DSA *dsa,
                   const BIGNUM **p, const BIGNUM **q, const BIGNUM **g);
 
 #if LIBRESSLV_LESS(0x4020000FL) || !defined(LIBRESSL_VERSION_NUMBER)
-EC_KEY *EVP_PKEY_get0_EC_KEY(EVP_PKEY *pkey);
+EC_KEY *EVP_PKEY_get0_EC_KEY(EVP_PKEY_GET0_CONST(EVP_PKEY) pkey);
 #endif
 
 void ECDSA_SIG_get0(const ECDSA_SIG *sig,
@@ -172,8 +181,8 @@ void RSA_get0_factors(const RSA *r, const BIGNUM **p, const BIGNUM **q);
 void RSA_get0_crt_params(const RSA *r, const BIGNUM **dmp1, const BIGNUM **dmq1, const BIGNUM **iqmp);
 
 #if LIBRESSLV_LESS(0x4020000FL) || !defined(LIBRESSL_VERSION_NUMBER)
-RSA *EVP_PKEY_get0_RSA(EVP_PKEY *pkey);
-DSA *EVP_PKEY_get0_DSA(EVP_PKEY *pkey);
+RSA *EVP_PKEY_get0_RSA(EVP_PKEY_GET0_CONST(EVP_PKEY) pkey);
+DSA *EVP_PKEY_get0_DSA(EVP_PKEY_GET0_CONST(EVP_PKEY) pkey);
 #endif
 
 int DSA_bits(const DSA *dsa);

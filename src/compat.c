@@ -113,7 +113,7 @@ RSA_get0_crt_params(const RSA *r, const BIGNUM **dmp1, const BIGNUM **dmq1, cons
 
 #if LIBRESSLV_LESS(0x4020000FL) || !defined(LIBRESSL_VERSION_NUMBER)
 RSA *
-EVP_PKEY_get0_RSA(EVP_PKEY *pkey)
+EVP_PKEY_get0_RSA(EVP_PKEY_GET0_CONST(EVP_PKEY) pkey)
 {
   if (pkey->type != EVP_PKEY_RSA) {
     return NULL;
@@ -225,7 +225,7 @@ DSA_bits(const DSA *dsa)
 
 #if LIBRESSLV_LESS(0x4020000FL) || !defined(LIBRESSL_VERSION_NUMBER)
 DSA *
-EVP_PKEY_get0_DSA(EVP_PKEY *pkey)
+EVP_PKEY_get0_DSA(EVP_PKEY_GET0_CONST(EVP_PKEY) pkey)
 {
   if (pkey->type != EVP_PKEY_DSA) {
     return NULL;
@@ -299,7 +299,7 @@ DSA_set0_key(DSA *d, BIGNUM *pub_key, BIGNUM *priv_key)
 #if LIBRESSLV_LESS(0x4020000FL) || !defined(LIBRESSL_VERSION_NUMBER)
 #ifndef OPENSSL_NO_EC
 EC_KEY *
-EVP_PKEY_get0_EC_KEY(EVP_PKEY *pkey)
+EVP_PKEY_get0_EC_KEY(EVP_PKEY_GET0_CONST(EVP_PKEY) pkey)
 {
   if (pkey->type != EVP_PKEY_EC) {
     return NULL;
@@ -310,7 +310,7 @@ EVP_PKEY_get0_EC_KEY(EVP_PKEY *pkey)
 
 #ifndef OPENSSL_NO_DH
 DH *
-EVP_PKEY_get0_DH(EVP_PKEY *pkey)
+EVP_PKEY_get0_DH(EVP_PKEY_GET0_CONST(EVP_PKEY) pkey)
 {
   if (pkey->type != EVP_PKEY_DH) {
     return NULL;
