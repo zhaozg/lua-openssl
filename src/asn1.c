@@ -22,7 +22,9 @@ static LuaL_Enumeration asn1_const[] = {
   { "CONSTRUCTED",       V_ASN1_CONSTRUCTED       },
   { "PRIMITIVE_TAG",     V_ASN1_PRIMITIVE_TAG     },
   { "PRIMATIVE_TAG",     V_ASN1_PRIMATIVE_TAG     },
+#if !defined(LIBRESSL_VERSION_NUMBER)
   { "APP_CHOOSE",        V_ASN1_APP_CHOOSE        },
+#endif
   { "OTHER",             V_ASN1_OTHER             },
   { "ANY",               V_ASN1_ANY               },
 
