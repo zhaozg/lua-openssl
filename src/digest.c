@@ -57,7 +57,7 @@ fetch evp_digest object with provider support (OpenSSL 3.0+)
 @usage
   -- Fetch with default provider
   local sha256 = digest.fetch('SHA256')
-  
+
   -- Fetch from specific provider
   local fips_sha256 = digest.fetch('SHA256', {provider = 'fips', properties = 'fips=yes'})
 
@@ -97,7 +97,7 @@ static int openssl_digest_fetch(lua_State *L)
 
   /* Fetch the algorithm */
   md = EVP_MD_fetch(libctx, algorithm, properties);
-  
+
   if (md != NULL) {
     PUSH_OBJECT(md, "openssl.evp_digest");
     /* Mark this as a fetched object that needs to be freed */
@@ -119,7 +119,7 @@ static int openssl_digest_get_provider_name(lua_State *L)
 {
   EVP_MD *md = CHECK_OBJECT(1, EVP_MD, "openssl.evp_digest");
   const OSSL_PROVIDER *prov = EVP_MD_get0_provider(md);
-  
+
   if (prov != NULL) {
     const char *name = OSSL_PROVIDER_get0_name(prov);
     if (name != NULL) {
@@ -127,7 +127,7 @@ static int openssl_digest_get_provider_name(lua_State *L)
       return 1;
     }
   }
-  
+
   lua_pushnil(L);
   return 1;
 }
@@ -140,7 +140,7 @@ free a fetched evp_digest object (OpenSSL 3.0+)
 static int openssl_digest_gc(lua_State *L)
 {
   EVP_MD *md = CHECK_OBJECT(1, EVP_MD, "openssl.evp_digest");
-  
+
   /* Check if this is a fetched object that needs to be freed */
   lua_rawgetp(L, LUA_REGISTRYINDEX, md);
   if (lua_toboolean(L, -1)) {
@@ -151,7 +151,7 @@ static int openssl_digest_gc(lua_State *L)
     lua_rawsetp(L, LUA_REGISTRYINDEX, md);
   }
   lua_pop(L, 1);
-  
+
   return 0;
 }
 #endif
@@ -289,7 +289,7 @@ compute msg digest result
 
 @function digest
 @tparam string msg data to digest
-@tparam[opt] engine, eng
+@tparam[opt] engine eng
 @treturn string result a binary hash value for msg
 */
 static int openssl_digest_digest(lua_State *L)
@@ -335,7 +335,7 @@ static int openssl_digest_info(lua_State *L)
 initialize digest context with message digest
 @function init
 @tparam evp_digest md message digest algorithm
-@tparam[opt] engine, eng
+@tparam[opt] engine eng
 @treturn evp_digest_ctx ctx
 @see evp_digest_ctx
 */

@@ -101,7 +101,7 @@ openssl_xalgor_md(lua_State *L)
 /***
 get x509_algor properties
 @function get
-@treturn asn1_object ident algorithm, nil for fail
+@treturn asn1_object ident of algorithm, nil for fail
 @treturn asn1_string attached paramater value
 */
 static int

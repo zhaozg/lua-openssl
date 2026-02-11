@@ -19,7 +19,7 @@ is to provide long term proof of the existence of a certain datum before a parti
 create a new ts_msg_imprint object.
 @function ts_msg_imprint_new
 @tparam string data
-@tparam string|integer|asn1_object alg name, nid or object identity
+@tparam string|integer|asn1_object alg alg name, nid or object identity
 @treturn ts_msg_imprint
 */
 static int

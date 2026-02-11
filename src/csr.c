@@ -601,7 +601,7 @@ static int openssl_csr_subject(lua_State *L)
 /***
 get extensions of x509_req object
 @function extensions
-@tparam[opt=false] boolean asobject, true for return as stack_of_x509_extension or as table
+@tparam[opt=false] boolean asobject true for return as stack_of_x509_extension or as table
 @treturn stack_of_x509_extension object when param set true
 @treturn table contain all x509_extension when param set false or nothing
 */
@@ -636,7 +636,7 @@ static int openssl_csr_extensions(lua_State *L)
 remove attribute object from location
 @function attribute
 @tparam integer location
-@tparam nil nil, nil not none
+@tparam nil nil nil not none
 @treturn x509_attribute attribute removed
 */
 /***

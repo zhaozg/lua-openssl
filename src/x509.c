@@ -251,7 +251,7 @@ static int openssl_x509_read(lua_State *L)
 create or generate a new x509 object.
 @function new
 @tparam[opt] openssl.bn serial serial number
-@tparam[opt] x509_req csr,copy x509_name, pubkey and extension to new object
+@tparam[opt] x509_req csr copy x509_name, pubkey and extension to new object
 @tparam[opt] x509_name subject subject name set to x509_req
 @tparam[opt] stack_of_x509_extension extensions add to x509
 @tparam[opt] stack_of_x509_attribute attributes add to x509
@@ -507,7 +507,7 @@ openssl.x509 object
 /***
 export x509_req to string
 @function export
-@tparam[opt='pem'] string format, 'der' or 'pem' default
+@tparam[opt='pem'] string format 'der' or 'pem' default
 @treturn string
 */
 static int openssl_x509_export(lua_State *L)
@@ -906,7 +906,7 @@ static int openssl_x509_subject(lua_State* L)
 /***
 get issuer name of x509
 @function issuer
-@tparam[opt=false] boolean asobject, true for return as x509_name object, or as table
+@tparam[opt=false] boolean asobject true for return as x509_name object, or as table
 @treturn[1] x509_name issuer
 @treturn[1] table issuer name as table
 */
@@ -935,7 +935,7 @@ static int openssl_x509_issuer(lua_State* L)
 /***
 get digest of x509 object
 @function digest
-@tparam[opt='sha1'] evp_digest|string md_alg, default use 'sha1'
+@tparam[opt='sha1'] evp_digest|string md_alg default use 'sha1'
 @treturn string digest result
 */
 static int openssl_x509_digest(lua_State* L)
@@ -1052,7 +1052,7 @@ static int openssl_x509_notafter(lua_State *L)
 /***
 check x509 valid
 @function validat
-@tparam[opt] number time, default will use now time
+@tparam[opt] number time default will use now time
 @treturn boolean result true for valid, or for invalid
 @treturn string notbefore
 @treturn string notafter

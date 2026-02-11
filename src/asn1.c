@@ -175,7 +175,7 @@ do der encode and return encoded string partly head or full
 @function put_object
 @tparam number tag
 @tparam number class
-@tparam[opt=nil] number|string length or date to encode, defualt will make
+@tparam[opt=nil] number|string val length or data to encode, defualt will make
 indefinite length constructed
 @tparam[opt=nil] boolean constructed or not
 @treturn string der encoded string or head when not give data
@@ -274,7 +274,7 @@ create asn1_string object
 "graphics", "iso64", "visible", "general", "unversal", "bmp", "utctime" </p>
 
 @function new_string
-@tparam string data to create new asn1_string
+@tparam string data create new asn1_string with data
 @tparam[opt] string type asn1 string type, defult with 'utf8'
 @treturn asn1_string
 */
@@ -507,7 +507,7 @@ openssl_asn1object_new(lua_State *L)
 
 /***
 convert der encoded asn1type string to object
-@function asn1type_di2
+@function asn1type_d2i
 @tparam string der
 @treturn asn1type object for success, and nil for fail
 */

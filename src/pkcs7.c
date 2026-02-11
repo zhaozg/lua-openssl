@@ -21,7 +21,7 @@ read string or bio object, which include pkcs7 content
 
 @function read
 @tparam bio|string input
-@tparam[opt='auto'] format allow 'auto','der','pem','smime'
+@tparam[opt='auto'] string format allow 'auto','der','pem','smime'
  auto will only try 'der' or 'pem'
 @treturn pkcs7 object or nil
 @treturn string content exist only smime format
@@ -444,7 +444,7 @@ static int openssl_pkcs7_type(lua_State *L)
 export pkcs7 as a string
 
 @function parse
-@treturn table  a table has pkcs7 infomation, include type,and other things relate to types
+@treturn table a table has pkcs7 infomation, include type,and other things relate to types
 */
 static int openssl_pkcs7_parse(lua_State *L)
 {

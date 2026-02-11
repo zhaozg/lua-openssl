@@ -166,7 +166,7 @@ failed, followed by string type error _reason_ and number type error _code_,
 _code_ can pass to openssl.error() to get more error information.
 
 @function error
-@tparam[opt] number error, default use ERR_get_error() return value
+@tparam[opt] number error default use ERR_get_error() return value
 @treturn string reason
 @treturn string library name
 @treturn number errcode

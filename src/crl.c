@@ -520,7 +520,7 @@ get updateTime time
 /***
 set updateTime time
 @function updateTime
-@tparam[opt=os.time()] lastUpdate, default use current time
+@tparam[opt=os.time()] integer lastUpdate default use current time
 @tparam number period period how long time(seconds)
 @treturn boolean result
 */

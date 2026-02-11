@@ -244,7 +244,7 @@ read public/private key from data
 @function read
 @tparam string|openssl.bio input string data or bio object
 @tparam[opt=false] boolean priv prikey set true when input is private key
-@tparam[opt='auto'] string format or encoding of input, support 'auto','pem','der'
+@tparam[opt='auto'] string format format or encoding of input, support 'auto','pem','der'
 @tparam[opt] string passhprase when input is private key, or key types 'ec','rsa','dsa','dh'
 @treturn evp_pkey public key
 @see evp_pkey
@@ -459,7 +459,7 @@ err:
 /***
 generate a new ec keypair
 @function new
-@tparam string alg, alg must be 'ec'
+@tparam string alg alg must be 'ec'
 @tparam string|number curvename this can be integer as curvename NID
 @tparam[opt] integer flags when alg is ec need this.
 @treturn evp_pkey object with mapping to EVP_PKEY in openssl
@@ -467,9 +467,9 @@ generate a new ec keypair
 /***
 generate a new keypair
 @function new
-@tparam[opt='rsa'] string alg, accept `rsa`,`dsa`,`dh`
-@tparam[opt=2048|512] integer bits, `rsa` with 2048, `dh` or `dsa` with 1024
-@tparam[opt] integer e, when alg is `rsa` give e value default is 0x10001,
+@tparam[opt='rsa'] string alg accept `rsa`,`dsa`,`dh`
+@tparam[opt=2048|512] integer bits `rsa` with 2048, `dh` or `dsa` with 1024
+@tparam[opt] integer e when alg is `rsa` give e value default is 0x10001,
  when alg is `dh` give generator value default is 2,
  when alg is `dsa` give string type seed value default is none.
 @tparam[opt] engine eng
@@ -478,7 +478,7 @@ generate a new keypair
 /***
 create a new keypair by factors of keypair or get public key only
 @function new
-@tparam table factors to create private/public key, key alg only accept accept 'rsa','dsa','dh','ec'
+@tparam table factors create private/public key, key alg only accept accept 'rsa','dsa','dh','ec'
 and must exist</br>
 when arg is rsa, table may with key n,e,d,p,q,dmp1,dmq1,iqmp, both are binary string or openssl.bn<br>
 when arg is dsa, table may with key p,q,g,priv_key,pub_key, both are binary string or openssl.bn<br>

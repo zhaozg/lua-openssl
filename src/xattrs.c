@@ -13,9 +13,9 @@ x509.attribute module to mapping X509_ATTRIBUTE to lua object.
 x509_attribute contrust param table.
 
 @table x509_attribute_param_table
-@tfield string|integer|asn1_object object, identify a asn1_object
-@tfield string|integer type, same with type in asn1.new_string
-@tfield string|asn1_object value, value of attribute
+@tfield string|integer|asn1_object object identify a asn1_object
+@tfield string|integer type same with type in asn1.new_string
+@tfield string|asn1_object value value of attribute
 
 @usage
 xattr = x509.attribute.new_attribute {
@@ -29,9 +29,9 @@ xattr = x509.attribute.new_attribute {
 asn1_type object as table
 
 @table asn1_type_table
-@tfield string value, value data
-@tfield string type, type of value
-@tfield string format, value is 'der', only exist when type is not in 'bit','bmp','octet'
+@tfield string value value data
+@tfield string type type of value
+@tfield string format value is 'der', only exist when type is not in 'bit','bmp','octet'
 */
 
 /***
@@ -107,7 +107,7 @@ openssl.x509_attribute object
 get infomation table of x509_attribute.
 
 @function info
-@treturn[1] table info,  x509_attribute infomation as table
+@treturn[1] table info x509_attribute infomation as table
 @see x509_attribute_info_table
 */
 static int
@@ -191,7 +191,7 @@ get type of x509_attribute.
 
 @function type
 @tparam[opt] integer location which location to get type, default is 0
-@treturn table asn1_type, asn1_type as table info
+@treturn table asn1_type asn1_type as table info
 @treturn nil nil, fail return nothing
 @see asn1_type_table
 */

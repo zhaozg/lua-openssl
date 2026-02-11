@@ -20,9 +20,9 @@ Migrated to EVP_MAC API for OpenSSL 3.0+ with backward compatibility.
 get hmac_ctx object
 
 @function new
-@tparam string|integer|asn1_object alg name, nid or object identity
+@tparam string|integer|asn1_object alg alg name, nid or object identity
 @tparam string key secret key
-@tparam[opt] engine engine, nothing with default engine
+@tparam[opt] engine engine nothing with default engine
 @treturn hmac_ctx hmac object mapping HMAC_CTX in openssl
 
 @see hmac_ctx
@@ -59,10 +59,10 @@ openssl_hmac_ctx_new(lua_State *L)
     }
     EVP_MAC_free(mac);
   }
-  
+
   if (!ctx && ret == 0)
     ret = openssl_pushresult(L, ret);
-  
+
   return ret;
 #else
   /* OpenSSL 1.1.x implementation using HMAC API */

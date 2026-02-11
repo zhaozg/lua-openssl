@@ -29,7 +29,7 @@ static int openssl_cipher_list(lua_State *L)
 get evp_cipher object
 
 @function get
-@tparam string|integer|asn1_object alg name, nid or object identity
+@tparam string|integer|asn1_object alg alg name, nid or object identity
 @treturn evp_cipher cipher object mapping EVP_MD in openssl
 
 @see evp_cipher
@@ -55,7 +55,7 @@ fetch evp_cipher object with provider support (OpenSSL 3.0+)
 @usage
   -- Fetch with default provider
   local aes = cipher.fetch('AES-256-CBC')
-  
+
   -- Fetch from specific provider
   local fips_aes = cipher.fetch('AES-256-CBC', {provider = 'fips', properties = 'fips=yes'})
 
@@ -95,7 +95,7 @@ static int openssl_cipher_fetch(lua_State *L)
 
   /* Fetch the algorithm */
   cipher = EVP_CIPHER_fetch(libctx, algorithm, properties);
-  
+
   if (cipher != NULL) {
     PUSH_OBJECT(cipher, "openssl.evp_cipher");
     /* Mark this as a fetched object that needs to be freed */
@@ -117,7 +117,7 @@ static int openssl_cipher_get_provider_name(lua_State *L)
 {
   EVP_CIPHER *cipher = CHECK_OBJECT(1, EVP_CIPHER, "openssl.evp_cipher");
   const OSSL_PROVIDER *prov = EVP_CIPHER_get0_provider(cipher);
-  
+
   if (prov != NULL) {
     const char *name = OSSL_PROVIDER_get0_name(prov);
     if (name != NULL) {
@@ -125,7 +125,7 @@ static int openssl_cipher_get_provider_name(lua_State *L)
       return 1;
     }
   }
-  
+
   lua_pushnil(L);
   return 1;
 }
@@ -138,7 +138,7 @@ free a fetched evp_cipher object (OpenSSL 3.0+)
 static int openssl_cipher_gc(lua_State *L)
 {
   EVP_CIPHER *cipher = CHECK_OBJECT(1, EVP_CIPHER, "openssl.evp_cipher");
-  
+
   /* Check if this is a fetched object that needs to be freed */
   lua_rawgetp(L, LUA_REGISTRYINDEX, cipher);
   if (lua_toboolean(L, -1)) {
@@ -149,7 +149,7 @@ static int openssl_cipher_gc(lua_State *L)
     lua_rawsetp(L, LUA_REGISTRYINDEX, cipher);
   }
   lua_pop(L, 1);
-  
+
   return 0;
 }
 #endif
@@ -176,7 +176,7 @@ set_key_iv(const char *key,
 quick encrypt
 
 @function encrypt
-@tparam string|integer|asn1_object alg name, nid or object identity
+@tparam string|integer|asn1_object alg alg name, nid or object identity
 @tparam string input data to encrypt
 @tparam string key secret key
 @tparam[opt] string iv
@@ -303,7 +303,7 @@ static int openssl_evp_decrypt(lua_State *L)
 quick encrypt or decrypt
 
 @function cipher
-@tparam string|integer|asn1_object alg name, nid or object identity
+@tparam string|integer|asn1_object alg alg name, nid or object identity
 @tparam boolean encrypt true for encrypt,false for decrypt
 @tparam string input data to encrypt or decrypt
 @tparam string key secret key
@@ -376,7 +376,7 @@ typedef enum
 get evp_cipher_ctx object for encrypt or decrypt
 
 @function new
-@tparam string|integer|asn1_object alg name, nid or object identity
+@tparam string|integer|asn1_object alg alg name, nid or object identity
 @tparam boolean encrypt true for encrypt,false for decrypt
 @tparam[opt] string key secret key
 @tparam[opt] string iv
@@ -429,7 +429,7 @@ static int openssl_cipher_new(lua_State *L)
 get evp_cipher_ctx object for encrypt
 
 @function encrypt_new
-@tparam string|integer|asn1_object alg name, nid or object identity
+@tparam string|integer|asn1_object alg alg name, nid or object identity
 @tparam string key secret key
 @tparam[opt] string iv
 @tparam[opt] engine engine custom crypto engine
@@ -477,7 +477,7 @@ static int openssl_cipher_encrypt_new(lua_State *L)
 get evp_cipher_ctx object for decrypt
 
 @function decrypt_new
-@tparam string|integer|asn1_object alg name, nid or object identity
+@tparam string|integer|asn1_object alg alg name, nid or object identity
 @tparam string key secret key
 @tparam[opt] string iv
 @tparam[opt] engine engine custom crypto engine

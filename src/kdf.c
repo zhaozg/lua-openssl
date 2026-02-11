@@ -220,7 +220,7 @@ openssl_kdf_ctx_reset(lua_State *L)
 derive the key
 
 @function derive
-@tparam table paramaters, settable paramaters can be get by `kdf:settable_ctx_params()`
+@tparam table paramaters settable paramaters can be get by `kdf:settable_ctx_params()`
 @treturn string|fail
 */
 static int

@@ -196,7 +196,7 @@ get mac_ctx object
 @function new
 @tparam string|integer|asn1_object alg name, nid or object identity
 @tparam string key secret key
-@tparam[opt] engine engine, nothing with default engine
+@tparam[opt] engine engine nothing with default engine
 @treturn mac_ctx object mapping MAC_CTX in openssl
 */
 static int

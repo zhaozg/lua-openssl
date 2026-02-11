@@ -46,7 +46,7 @@ static const char* sMethods[] = {
 make string as bio object
 
 @function mem
-@tparam[opt=nil] string data, it will be memory buffer data
+@tparam[opt=nil] string data it will be memory buffer data
 @treturn bio it can be input or output object
 */
 static int openssl_bio_new_mem(lua_State *L)
