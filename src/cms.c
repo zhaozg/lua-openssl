@@ -64,7 +64,7 @@ read cms object from input bio or string
 @tparam bio|string input
 @tparam[opt='auto'] string format, support 'auto','smime','der','pem'
   auto will only try 'der' or 'pem'
-@tparam[opt=nil] bio content, only used when format is 'smime'
+@tparam[opt=nil] openssl.bio content, only used when format is 'smime'
 @treturn cms
 */
 static int
@@ -105,7 +105,7 @@ write cms object to bio object
 
 @function export
 @tparam cms cms
-@tparam[opt] bio data
+@tparam[opt] openssl.bio data
 @tparam[opt=0] number flags
 @tparam[opt='smime'] string format
 @treturn string
@@ -161,7 +161,7 @@ openssl_cms_new(lua_State *L)
 /***
 create cms object from string or bio object
 @function data_create
-@tparam bio input
+@tparam openssl.bio input
 @tparam[opt=0] number flags
 @treturn cms
 */
@@ -189,7 +189,7 @@ static int openssl_compress_nid[] = { NID_zlib_compression,
 /***
 create compress cms object
 @function compress
-@tparam bio input
+@tparam openssl.bio input
 @tparam string alg, zlib or rle
 @tparam[opt=0] number flags
 @treturn cms
@@ -227,7 +227,7 @@ openssl_cms_compress(lua_State *L)
 uncompress cms object
 @function uncompress
 @tparam cms cms
-@tparam[opt=nil] bio dcent default nil for normal, in the rare case where the compressed content is
+@tparam[opt=nil] openssl.bio dcent default nil for normal, in the rare case where the compressed content is
 detached.
 @tparam[opt=0] number flags
 @treturn string
@@ -255,9 +255,9 @@ openssl_cms_uncompress(lua_State *L)
 make signed cms object
 
 @function sign
-@tparam x509 signer cert
-@tparam evp_pkey pkey
-@tparam bio input_data
+@tparam openssl.x509 signer cert
+@tparam openssl.evp_pkey pkey
+@tparam openssl.bio input_data
 @tparam[opt] stack_of_x509 certs include in the CMS
 @tparam[opt=0] number flags
 @treturn cms object
@@ -290,7 +290,7 @@ verfiy signed cms object
 @tparam cms signed
 @tparam stack_of_x509 signers
 @tparam[opt] x509_store store trust certificates store
-@tparam[opt] bio message
+@tparam[opt] openssl.bio message
 @tparam[opt=0] number flags
 @treturn string content
 @return nil, and followed by error message
@@ -353,7 +353,7 @@ decrypt encryptdata cms
 @function EncryptedData_decrypt
 @tparam cms encrypted
 @tparam string key
-@tparam[opt] bio dcont
+@tparam[opt] openssl.bio dcont
 @tparam[opt=0] number flags
 @treturn boolean result
 */
@@ -540,9 +540,9 @@ openssl_cms_encrypt(lua_State *L)
 decrypt cms message
 @function decrypt
 @tparam cms message
-@tparam evp_pkey pkey
-@tparam x509 recipt
-@tparam[opt] bio dcount output object
+@tparam openssl.evp_pkey pkey
+@tparam openssl.x509 recipt
+@tparam[opt] openssl.bio dcount output object
 @tparam[opt=0] number flags
 @tparam[opt=nil] table options may have key, keyid, password field,
   and values must be string type
@@ -655,7 +655,7 @@ openssl_cms_type(lua_State *L)
 get detached state
 @function detached
 @treturn boolean true for detached
-@tparam bio cmsbio bio returned by datainit
+@tparam openssl.bio cmsbio bio returned by datainit
 @treturn boolean true for success, others value will followed by error message
 @warning inner use
 */
@@ -706,8 +706,8 @@ openssl_cms_content(lua_State *L)
 add signers to CMS structure
 @function add_signers
 @tparam cms cms object to add signers to
-@tparam x509 signer certificate for signing
-@tparam evp_pkey pkey private key for signing
+@tparam openssl.x509 signer certificate for signing
+@tparam openssl.evp_pkey pkey private key for signing
 @treturn boolean result
 */
 static int
@@ -903,8 +903,8 @@ openssl_cms_add_receipt(lua_State *L)
 /***
 sign receipt for CMS message
 @function sign_receipt
-@tparam x509 signcert certificate to use for signing receipt
-@tparam evp_pkey pkey private key for signing
+@tparam openssl.x509 signcert certificate to use for signing receipt
+@tparam openssl.evp_pkey pkey private key for signing
 @tparam[opt] table other additional certificates
 @tparam[opt] number flags signing flags
 @treturn cms signed receipt CMS object or nil if failed

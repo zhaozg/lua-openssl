@@ -23,7 +23,7 @@ read string or bio object, which include pkcs7 content
 @tparam bio|string input
 @tparam[opt='auto'] string format allow 'auto','der','pem','smime'
  auto will only try 'der' or 'pem'
-@treturn pkcs7 object or nil
+@treturn openssl.pkcs7 object or nil
 @treturn string content exist only smime format
 */
 static int openssl_pkcs7_read(lua_State *L)
@@ -67,7 +67,7 @@ create new empty pkcs7 object, which support flexible sign methods.
 @function new
 @tparam[opt=NID_pkcs7_signed] int oid given pkcs7 type
 @tparam[opt=NID_pkcs7_data] int content given pkcs7 content type
-@treturn pkcs7 object
+@treturn openssl.pkcs7 object
 */
 static int openssl_pkcs7_new(lua_State *L)
 {
@@ -139,7 +139,7 @@ static int openssl_pkcs7_create(lua_State *L)
 /***
 set content for PKCS7 structure
 @function set_content
-@tparam pkcs7 content PKCS7 content to set
+@tparam openssl.pkcs7 content PKCS7 content to set
 @treturn boolean true on success, false on failure
 */
 static int openssl_pkcs7_set_content(lua_State *L)
@@ -190,11 +190,11 @@ sign message with signcert and signpkey to create pkcs7 object
 
 @function sign
 @tparam string|bio msg
-@tparam x509 signcert
-@tparam evp_pkey signkey
+@tparam openssl.x509 signcert
+@tparam openssl.evp_pkey signkey
 @tparam[opt] stack_of_x509 cacerts
 @tparam[opt=0] number flags
-@treturn pkcs7 object
+@treturn openssl.pkcs7 object
 */
 static int openssl_pkcs7_sign(lua_State *L)
 {
@@ -225,7 +225,7 @@ static int openssl_pkcs7_sign(lua_State *L)
 verify pkcs7 object, and return msg content or verify result
 
 @function verify
-@tparam pkcs7 in
+@tparam openssl.pkcs7 in
 @tparam[opt] stack_of_x509 signercerts
 @tparam[opt] x509_store cacerts
 @tparam[opt] string|bio msg
@@ -274,7 +274,7 @@ encrypt message with recipcerts certificates return encrypted pkcs7 object
 @tparam stack_of_x509 recipcerts
 @tparam[opt='aes-128-cbc'] string|evp_cipher cipher
 @tparam[opt] number flags
-@treturn pkcs7 encrypted PKCS7 object or nil on failure
+@treturn openssl.pkcs7 encrypted PKCS7 object or nil on failure
 */
 static int openssl_pkcs7_encrypt(lua_State *L)
 {
@@ -300,9 +300,9 @@ static int openssl_pkcs7_encrypt(lua_State *L)
 decrypt encrypted pkcs7 message
 
 @function decrypt
-@tparam pkcs7 input
-@tparam x509 recipcert
-@tparam evp_pkey recipkey
+@tparam openssl.pkcs7 input
+@tparam openssl.x509 recipcert
+@tparam openssl.evp_pkey recipkey
 @treturn string decrypt message
 */
 static int openssl_pkcs7_decrypt(lua_State *L)
@@ -561,7 +561,7 @@ static int openssl_pkcs7_set_digest(lua_State *L)
 /***
 finalize PKCS7 structure with data
 @function final
-@tparam pkcs7 p7 PKCS7 object to finalize
+@tparam openssl.pkcs7 p7 PKCS7 object to finalize
 @tparam bio|string data data to finalize with
 @tparam[opt=0] number flags finalization flags
 @treturn boolean true on success, false on failure
@@ -595,8 +595,8 @@ verify pkcs7 object, and return msg content or verify result
 decrypt encrypted pkcs7 message
 
 @function decrypt
-@tparam x509 recipcert
-@tparam evp_pkey recipkey
+@tparam openssl.x509 recipcert
+@tparam openssl.evp_pkey recipkey
 @treturn string decrypt message
 */
 

@@ -23,7 +23,7 @@ read x509_req from string or bio input
 @function read
 @tparam bio|string input input data
 @tparam[opt='auto'] string format support 'auto','pem','der'
-@treturn x509_req certificate sign request object
+@treturn openssl.x509_req certificate sign request object
 */
 static int openssl_csr_read(lua_State *L)
 {
@@ -56,11 +56,11 @@ object.
 @tparam[opt] x509_name subject subject name set to x509_req
 @tparam[opt] stack_of_x509_extension extensions add to x509_req
 @tparam[opt] stack_of_x509_attribute attributes add to x509_req
-@tparam[opt] evp_pkey pkey private key sign the x509_req, and set as public key
+@tparam[opt] openssl.evp_pkey pkey private key sign the x509_req, and set as public key
 @tparam[opt='sha1WithRSAEncryption'] evp_digest|string md_alg,  only used when pkey exist, and
 should fellow pkey
-@treturn x509_req certificate sign request object
-@see x509_req
+@treturn openssl.x509_req certificate sign request object
+-- @see openssl/x509.h:X509_REQ_
 */
 static int openssl_csr_new(lua_State *L)
 {
@@ -234,11 +234,11 @@ openssl.x509_req object
 /***
 convert x509_req to x509 object and sign it
 @function to_x509
-@tparam x509_req csr
-@tparam evp_pkey prikey
+@tparam openssl.x509_req csr
+@tparam openssl.evp_pkey prikey
 @tparam[opt=365] number days
 @tparam[opt='sha256'] evp_md|string md_alg default use sha256
-@treturn x509 object not signed
+@treturn openssl.x509 object not signed
 */
 static int openssl_csr_to_x509(lua_State *L)
 {
@@ -311,7 +311,7 @@ static int openssl_csr_digest(lua_State *L)
 /***
 check x509_req with evp_pkey
 @function check
-@tparam evp_pkey pkey
+@tparam openssl.evp_pkey pkey
 @treturn boolean result true for check pass
 */
 static int openssl_csr_check(lua_State *L)
@@ -325,7 +325,7 @@ static int openssl_csr_check(lua_State *L)
 /***
 clone x509_req object
 @function dup
-@treturn x509_req object
+@treturn openssl.x509_req object
 */
 static int openssl_csr_dup(lua_State *L)
 {
@@ -373,7 +373,7 @@ set_csr_pubkey(X509_REQ *csr, EVP_PKEY *pkey)
 sign x509_req object
 
 @function sign
-@tparam evp_pkey pkey private key which to sign x509_req object
+@tparam openssl.evp_pkey pkey private key which to sign x509_req object
 @tparam number|string|evp_md md message digest alg used to sign
 @treturn boolean result true for suceess
 */
@@ -521,13 +521,13 @@ static int openssl_csr_free(lua_State *L)
 /***
 get public key
 @function public
-@treturn evp_pkey public key
+@treturn openssl.evp_pkey public key
 */
 
 /***
 set public key
 @function public
-@tparam evp_pkey pubkey public key set to x509_req
+@tparam openssl.evp_pkey pubkey public key set to x509_req
 @treturn boolean result
 */
 static int openssl_csr_public(lua_State *L)
@@ -576,7 +576,7 @@ get subject x509_name object
 /***
 set subject x509_name object
 @function subject
-@tparam x509_name subject
+@tparam openssl.x509_name subject
 @treturn boolean result
 */
 static int openssl_csr_subject(lua_State *L)

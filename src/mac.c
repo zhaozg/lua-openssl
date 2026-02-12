@@ -135,7 +135,7 @@ openssl_mac_ctx_dup(lua_State *L)
 /***
 get MAC object from MAC context
 @function mac
-@treturn mac the MAC object associated with this context
+@treturn openssl.mac the MAC object associated with this context
 */
 static int
 openssl_mac_ctx_mac(lua_State *L)
@@ -196,7 +196,7 @@ get mac_ctx object
 @function new
 @tparam string|integer|asn1_object alg name, nid or object identity
 @tparam string key secret key
-@tparam[opt] engine engine nothing with default engine
+@tparam[opt] openssl.engine engine nothing with default engine
 @treturn mac_ctx object mapping MAC_CTX in openssl
 */
 static int

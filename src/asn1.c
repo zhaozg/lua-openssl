@@ -294,8 +294,8 @@ openssl_asn1string_new(lua_State *L)
 create asn1_integer object
 @function new_integer
 @tparam number|bn value integer value or bignum
-@treturn asn1_integer new ASN1_INTEGER object
-@see asn1_integer
+@treturn openssl.asn1_integer new ASN1_INTEGER object
+-- @see openssl/asn1.h:ASN1_INTEGER_
 */
 static int
 openssl_asn1int_new(lua_State *L)
@@ -321,7 +321,7 @@ create asn1_time object using generalized time format
 @function new_generalizedtime
 @tparam none|number|string time
 @treturn asn1_time
-@see asn1_string
+-- @see openssl/asn1.h:ASN1_STRING_
 */
 static int
 openssl_asn1generalizedtime_new(lua_State *L)
@@ -354,7 +354,7 @@ create asn1_time object using UTC time format
 @function new_utctime
 @tparam none|number|string time
 @treturn asn1_time
-@see asn1_string
+-- @see openssl/asn1.h:ASN1_STRING_
 */
 static int
 openssl_asn1utctime_new(lua_State *L)
@@ -413,8 +413,8 @@ create asn1_object from string identifier
 @function new_object
 @tparam string name_or_oid short name (e.g., "C"), long name (e.g., "countryName"), or OID string (e.g., "2.5.4.6")
 @tparam[opt=false] boolean no_name true for only oid string parsing, false to allow names
-@treturn asn1_object|nil ASN1_OBJECT mapping or nil on error
-@see asn1_object
+@treturn openssl.asn1_object|nil ASN1_OBJECT mapping or nil on error
+-- @see openssl/asn1.h:ASN1_OBJECT_
 @usage
   local obj1 = asn1.new_object("C")           -- short name
   local obj2 = asn1.new_object("countryName") -- long name
@@ -426,8 +426,8 @@ create asn1_object from NID
 
 @function new_object
 @tparam integer nid numeric identifier for the ASN1_OBJECT
-@treturn asn1_object|nil ASN1_OBJECT mapping or nil on error
-@see asn1_object
+@treturn openssl.asn1_object|nil ASN1_OBJECT mapping or nil on error
+-- @see openssl/asn1.h:ASN1_OBJECT_
 @usage
   local obj = asn1.new_object(14)  -- NID for countryName
 */
@@ -437,8 +437,8 @@ create asn1_object from table definition
 
 @function new_object
 @tparam table options table with sn (short name), ln (long name), oid keys to create new asn1_object
-@treturn asn1_object|nil ASN1_OBJECT mapping or nil on error
-@see asn1_object
+@treturn openssl.asn1_object|nil ASN1_OBJECT mapping or nil on error
+-- @see openssl/asn1.h:ASN1_OBJECT_
 @usage
   local obj = asn1.new_object({
     oid = "1.2.3.4.5.6",
@@ -616,7 +616,7 @@ openssl_asn1type_free(lua_State *L)
 /***
 convert asn1_type to asn1_string object
 @function asn1string
-@treturn asn1_string|nil asn1_string object or nil if conversion is not supported
+@treturn openssl.asn1_string|nil asn1_string object or nil if conversion is not supported
 */
 static int
 openssl_asn1type_asn1string(lua_State *L)
@@ -837,7 +837,7 @@ openssl_asn1object_txt(lua_State *L)
 compare two asn1_objects, if equals return true
 
 @function equals
-@tparam asn1_object another to compre
+@tparam openssl.asn1_object another to compre
 @treturn boolean true if equals
 */
 static int
@@ -882,7 +882,7 @@ openssl_asn1object_free(lua_State *L)
 make a clone of asn1_object
 
 @function dup
-@treturn asn1_object clone for self
+@treturn openssl.asn1_object clone for self
 */
 static int
 openssl_asn1object_dup(lua_State *L)
@@ -961,8 +961,8 @@ openssl.asn1_integer object
 /***
 convert ASN1 integer to/from big number
 @function bn
-@tparam[opt] bn number big number to set, or nil to get current value
-@treturn bn big number representation if getting, or previous value if setting
+@tparam[opt] openssl.bn number big number to set, or nil to get current value
+@treturn openssl.bn big number representation if getting, or previous value if setting
 */
 static int
 openssl_asn1int_bn(lua_State *L)
@@ -1274,7 +1274,7 @@ get type of asn1_string
 
 @function type
 @treturn string type of asn1_string
-@see new_string
+-- @see OpenSSL function: ASN1_STRING_new
 */
 static int
 openssl_asn1group_type(lua_State *L)
@@ -1346,7 +1346,7 @@ openssl_asn1group_data(lua_State *L)
 compare two asn1_string, if equals return true
 
 @function equals
-@tparam asn1_string another to compre
+@tparam openssl.asn1_string another to compre
 @treturn boolean true if equals
 @usage
   local obj = astr:dup()
@@ -1355,7 +1355,7 @@ compare two asn1_string, if equals return true
 /***
 compare two ASN1 string objects for equality
 @function __eq
-@tparam asn1_string other ASN1 string object to compare with
+@tparam openssl.asn1_string other ASN1 string object to compare with
 @treturn boolean true if objects are equal
 */
 static int
@@ -1468,7 +1468,7 @@ openssl_asn1group_toutf8(lua_State *L)
 duplicate a new asn1_string
 
 @function dup
-@treturn asn1_string clone for self
+@treturn openssl.asn1_string clone for self
 */
 static int
 openssl_asn1group_dup(lua_State *L)

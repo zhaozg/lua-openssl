@@ -15,7 +15,7 @@ create or generate a new x509_store object.
 not nil
 @tparam[opt] table crls array of x509_crl objects, all crl object will add to store
 @treturn x509_store object
-@see x509_store
+-- @see openssl/x509.h:X509_STORE_
 */
 static int
 openssl_xstore_new(lua_State *L)

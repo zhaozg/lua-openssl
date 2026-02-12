@@ -38,10 +38,18 @@ asn1_type object as table
 Create x509_attribute object
 
 @function new_attribute
-@tparam table attribute with object, type and value
-@treturn[1] x509_attribute mapping to X509_ATTRIBUTE in openssl
-
-@see x509_attribute_param_table
+@tparam table attribute attribute table with object, type and value fields
+@treturn[1] openssl.x509_attribute X509_ATTRIBUTE object on success
+@treturn[2] nil on error
+@treturn[2] string error message
+-- @see openssl/x509.h:X509_ATTRIBUTE_
+-- @see OpenSSL function: X509_ATTRIBUTE_new
+@usage
+  local attr = x509.attribute.new_attribute({
+    object = '1.2.3.4.5',
+    type = 'utf8',
+    value = 'test value'
+  })
 */
 static int
 openssl_xattr_new(lua_State *L)
@@ -108,7 +116,7 @@ get infomation table of x509_attribute.
 
 @function info
 @treturn[1] table info x509_attribute infomation as table
-@see x509_attribute_info_table
+-- @see OpenSSL function: X509_ATTRIBUTE_get0_type
 */
 static int
 openssl_xattr_info(lua_State *L)
@@ -193,7 +201,7 @@ get type of x509_attribute.
 @tparam[opt] integer location which location to get type, default is 0
 @treturn table asn1_type asn1_type as table info
 @treturn nil nil, fail return nothing
-@see asn1_type_table
+-- @see openssl/asn1.h:ASN1_TYPE_
 */
 static int
 openssl_xattr_type(lua_State *L)
@@ -212,13 +220,13 @@ openssl_xattr_type(lua_State *L)
 get asn1_object of x509_attribute.
 
 @function object
-@treturn asn1_object object of x509_attribute
+@treturn openssl.asn1_object object of x509_attribute
 */
 /***
 set asn1_object for x509_attribute.
 
 @function object
-@tparam asn1_object obj
+@tparam openssl.asn1_object obj
 @treturn boolean true for success
 @return nil when occure error, and followed by error message
 */

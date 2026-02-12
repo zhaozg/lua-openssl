@@ -22,10 +22,10 @@ get hmac_ctx object
 @function new
 @tparam string|integer|asn1_object alg alg name, nid or object identity
 @tparam string key secret key
-@tparam[opt] engine engine nothing with default engine
+@tparam[opt] openssl.engine engine nothing with default engine
 @treturn hmac_ctx hmac object mapping HMAC_CTX in openssl
 
-@see hmac_ctx
+-- @see openssl/hmac.h:HMAC_CTX_
 */
 static int
 openssl_hmac_ctx_new(lua_State *L)

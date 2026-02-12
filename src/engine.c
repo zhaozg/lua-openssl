@@ -124,7 +124,7 @@ openssl_engine_next(lua_State *L)
 /***
 get previous engine in the internal list
 @function prev
-@treturn engine previous engine object or nil if none
+@treturn openssl.engine previous engine object or nil if none
 */
 static int
 openssl_engine_prev(lua_State *L)
@@ -503,7 +503,7 @@ openssl_engine_set_rand_engine(lua_State *L)
 load private key from engine
 @function load_private_key
 @tparam string key_id key identifier
-@treturn evp_pkey private key object or nil if failed
+@treturn openssl.evp_pkey private key object or nil if failed
 */
 static int
 openssl_engine_load_private_key(lua_State *L)
@@ -522,7 +522,7 @@ openssl_engine_load_private_key(lua_State *L)
 load public key from engine
 @function load_public_key
 @tparam string key_id key identifier
-@treturn evp_pkey public key object or nil if failed
+@treturn openssl.evp_pkey public key object or nil if failed
 */
 static int
 openssl_engine_load_public_key(lua_State *L)
@@ -540,7 +540,7 @@ openssl_engine_load_public_key(lua_State *L)
 /***
 load SSL client certificate from engine
 @function load_ssl_client_cert
-@tparam ssl ssl SSL connection object
+@tparam openssl.ssl ssl SSL connection object
 @treturn boolean result true for success
 */
 static int

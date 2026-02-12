@@ -12,11 +12,39 @@ digest module perform digest operations base on OpenSSL EVP API.
 #endif
 
 /***
-list all support digest algs
+EVP_MD digest algorithm object
+
+This object represents an OpenSSL EVP_MD digest algorithm.
+It can be obtained using digest.get() or digest.fetch().
+
+@type openssl.evp_digest
+*/
+
+/***
+EVP_MD_CTX digest context object
+
+This object represents an OpenSSL EVP_MD_CTX digest context.
+It is created using digest.new() and used for hash operations.
+
+@type openssl.evp_digest_ctx
+*/
+
+/***
+list all supported digest algorithms
 
 @function list
-@tparam[opt] boolean alias include alias names for digest alg, default true
-@treturn[table] all methods
+@tparam[opt=true] boolean alias include alias names for digest algorithms
+@treturn table table of digest algorithm names
+-- @see OpenSSL function: EVP_MD_do_all_sorted
+@usage
+  -- Get all digest algorithms with aliases
+  local digests = digest.list()
+  for name, _ in pairs(digests) do
+    print(name)
+  end
+
+  -- Get only primary names (no aliases)
+  local primary_digests = digest.list(false)
 */
 static int openssl_digest_list(lua_State *L)
 {
@@ -28,13 +56,31 @@ static int openssl_digest_list(lua_State *L)
 };
 
 /***
-get evp_digest object
+get EVP_MD digest algorithm object
+
+This function retrieves a digest algorithm object by name, NID, or ASN1 object.
+The returned object can be used with digest.new() to create a digest context.
 
 @function get
-@tparam string|integer|asn1_object alg name, nid or object identity
-@treturn evp_digest digest object mapping EVP_MD in openssl
+@tparam string|integer|openssl.asn1_object alg algorithm name, NID, or ASN1 object
+@treturn[1] openssl.evp_digest digest algorithm object
+@treturn[2] nil if algorithm not found
+@treturn[2] string error message
+@see digest.new
+@see digest.fetch
+@usage
+  local digest = require('openssl').digest
 
-@see evp_digest
+  -- Get digest by name
+  local sha256 = digest.get('SHA256')
+
+  -- Get digest by NID
+  local sha256_nid = digest.get(672)  -- NID for SHA256
+
+  -- Use with digest.new()
+  local ctx = digest.new(sha256)
+  ctx:update('data')
+  local result = ctx:final()
 */
 static int openssl_digest_get(lua_State *L)
 {
@@ -51,7 +97,7 @@ fetch evp_digest object with provider support (OpenSSL 3.0+)
 @function fetch
 @tparam string alg algorithm name (e.g., 'SHA256', 'SHA512')
 @tparam[opt] table options optional table with 'provider' and 'properties' fields
-@treturn evp_digest digest object mapping EVP_MD in openssl or nil on failure
+@treturn openssl.evp_digest digest object mapping EVP_MD in openssl or nil on failure
 @treturn string error message if failed
 
 @usage
@@ -113,7 +159,8 @@ static int openssl_digest_fetch(lua_State *L)
 get provider name for a digest (OpenSSL 3.0+)
 
 @function get_provider_name
-@treturn string provider name or nil
+@treturn[1] string provider name
+@treturn[2] nil if digest has no provider or provider has no name
 */
 static int openssl_digest_get_provider_name(lua_State *L)
 {
@@ -136,6 +183,7 @@ static int openssl_digest_get_provider_name(lua_State *L)
 free a fetched evp_digest object (OpenSSL 3.0+)
 
 @function __gc
+@treturn nil always returns nil
 */
 static int openssl_digest_gc(lua_State *L)
 {
@@ -227,7 +275,7 @@ create digest object for sign
 
 @function signInit
 @tparam string|integer|asn1_object alg name, nid or object identity
-@tparam[opt=nil] engine object
+@tparam[opt=nil] openssl.engine object
 @treturn evp_digest_ctx
 */
 static int openssl_signInit(lua_State *L)
@@ -255,7 +303,7 @@ create digest object for verify
 
 @function verifyInit
 @tparam string|integer|asn1_object alg name, nid or object identity
-@tparam[opt=nil] engine object
+@tparam[opt=nil] openssl.engine object
 @treturn evp_digest_ctx
 */
 static int openssl_verifyInit(lua_State *L)
@@ -289,7 +337,7 @@ compute msg digest result
 
 @function digest
 @tparam string msg data to digest
-@tparam[opt] engine eng
+@tparam[opt] openssl.engine eng
 @treturn string result a binary hash value for msg
 */
 static int openssl_digest_digest(lua_State *L)
@@ -334,8 +382,8 @@ static int openssl_digest_info(lua_State *L)
 /***
 initialize digest context with message digest
 @function init
-@tparam evp_digest md message digest algorithm
-@tparam[opt] engine eng
+@tparam openssl.evp_digest md message digest algorithm
+@tparam[opt] openssl.engine eng
 @treturn evp_digest_ctx ctx
 @see evp_digest_ctx
 */
@@ -362,7 +410,7 @@ static int openssl_evp_digest_init(lua_State *L)
 create digest object for sign
 
 @function signInit
-@tparam[opt=nil] engine object
+@tparam[opt=nil] openssl.engine object
 @treturn evp_digest_ctx
 */
 
@@ -370,7 +418,7 @@ create digest object for sign
 create digest object for verify
 
 @function verifyInit
-@tparam[opt=nil] engine object
+@tparam[opt=nil] openssl.engine object
 @treturn evp_digest_ctx
 */
 
@@ -595,7 +643,7 @@ static int openssl_verifyUpdate(lua_State *L)
 get result of sign
 
 @function signFinal
-@tparam evp_pkey private key to do sign
+@tparam openssl.evp_pkey private key to do sign
 @treturn string singed result
 */
 static int openssl_signFinal(lua_State *L)
@@ -750,6 +798,24 @@ static const luaL_Reg R[] = {
 
   { NULL,         NULL                }
 };
+
+/***
+EVP_MD digest algorithm object
+
+This object represents an OpenSSL EVP_MD digest algorithm.
+It can be obtained using digest.get() or digest.fetch().
+
+@type openssl.evp_digest
+*/
+
+/***
+EVP_MD_CTX digest context object
+
+This object represents an OpenSSL EVP_MD_CTX digest context.
+It is created using digest.new() and used for hash operations.
+
+@type openssl.evp_digest_ctx
+*/
 
 int
 luaopen_digest(lua_State *L)

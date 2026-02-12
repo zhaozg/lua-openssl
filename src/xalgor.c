@@ -101,8 +101,8 @@ openssl_xalgor_md(lua_State *L)
 /***
 get x509_algor properties
 @function get
-@treturn asn1_object ident of algorithm, nil for fail
-@treturn asn1_string attached paramater value
+@treturn openssl.asn1_object ident of algorithm, nil for fail
+@treturn openssl.asn1_string attached paramater value
 */
 static int
 openssl_xalgor_get(lua_State *L)
@@ -130,7 +130,7 @@ openssl_xalgor_get(lua_State *L)
 /***
 set x509_algor properties
 @function set
-@tparam asn1_object obj ident algorithm in openssl
+@tparam openssl.asn1_object obj ident algorithm in openssl
 @tparam[opt] asn1_string val attached paramater value
 @treturn boolean result true for success, others for fail
 */

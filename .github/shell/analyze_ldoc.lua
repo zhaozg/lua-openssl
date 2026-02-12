@@ -259,8 +259,8 @@ local function parse_lual_reg_exports(content)
     local exports = {}
     local lines = {}
 
-    -- Split content into lines
-    for line in content:gmatch("[^\r\n]*") do
+    -- Split content into lines, skipping empty lines
+    for line in content:gmatch("[^\r\n]+") do
         table.insert(lines, line)
     end
 
@@ -284,6 +284,7 @@ local function parse_lual_reg_exports(content)
         if not reg_name then
             pending_reg_name = line:match("static%s+luaL_Reg%s+([%w_]+)%s*%[%s*%]%s*=%s*$")
         end
+
         if reg_name then
             in_reg_struct = true
             current_reg_name = reg_name
@@ -298,7 +299,7 @@ local function parse_lual_reg_exports(content)
             pending_reg_name = nil
         elseif line:match("^%s*{%s*$") and current_reg_name then
             -- Handle case where opening brace is on separate line
-            brace_count = 1
+            brace_count = brace_count + 1  -- Increment, don't reset!
             in_reg_struct = true
         elseif in_reg_struct then
             -- Count braces to track structure end
@@ -316,6 +317,7 @@ local function parse_lual_reg_exports(content)
             if brace_count <= 0 then
                 in_reg_struct = false
                 current_reg_name = nil
+                pending_reg_name = nil
             end
         end
     end
@@ -390,13 +392,14 @@ local function analyze_file(filepath)
         local end_pos = nil
 
         -- Look for */ while avoiding any new /* starts
-        while search_pos <= #content do
+        local max_search = math.min(search_pos + 10000, #content)  -- Limit search range
+        while search_pos <= max_search do
             local star_pos = content:find("%*/", search_pos)
             if not star_pos then break end
 
             -- Check if there's a /* between our start and this */
-            local intervening_start = content:find("/%*", start_pos + 4)
-            if not intervening_start or intervening_start >= star_pos then
+            local intervening_start = content:find("/%*", start_pos + 4, star_pos - 1)
+            if not intervening_start then
                 -- No intervening /* comment, this */ closes our comment
                 end_pos = star_pos
                 break
@@ -444,7 +447,11 @@ local function analyze_file(filepath)
             line_start = line_end + 1
         end
 
-        for line_num, line in ipairs(lines) do
+        local i = 1
+        while i <= #lines do
+            local line = lines[i]
+            local line_num = i
+
             -- Match function definitions: static int openssl_xxx(lua_State *L...)
             -- or int openssl_xxx(lua_State *L...)
             -- Handle both single-line and multi-line function definitions
@@ -456,30 +463,32 @@ local function analyze_file(filepath)
             local multiline_int = false
             local func_line_num = line_num
 
-            if line:match("^%s*static%s+int%s*$") and line_num < #lines then
+            if line:match("^%s*static%s+int%s*$") and i < #lines then
                 -- Look for the next non-empty line containing the function name
-                for check_line = line_num + 1, math.min(line_num + 5, #lines) do
+                for check_line = i + 1, math.min(i + 5, #lines) do
                     local check_line_content = lines[check_line]
                     if check_line_content and check_line_content:match("%S") then -- Non-empty line
                         static_match = check_line_content:match("^%s*openssl_([%w_]+)%s*%(")
                         if static_match then
                             multiline_static = true
                             func_line_num = check_line
+                            i = check_line  -- Skip ahead to avoid reprocessing
                             break
                         else
                             break -- Stop if we find a non-empty line that's not a function
                         end
                     end
                 end
-            elseif line:match("^%s*int%s*$") and line_num < #lines then
+            elseif line:match("^%s*int%s*$") and i < #lines then
                 -- Look for the next non-empty line containing the function name
-                for check_line = line_num + 1, math.min(line_num + 5, #lines) do
+                for check_line = i + 1, math.min(i + 5, #lines) do
                     local check_line_content = lines[check_line]
                     if check_line_content and check_line_content:match("%S") then -- Non-empty line
                         int_match = check_line_content:match("^%s*openssl_([%w_]+)%s*%(")
                         if int_match then
                             multiline_int = true
                             func_line_num = check_line
+                            i = check_line  -- Skip ahead to avoid reprocessing
                             break
                         else
                             break -- Stop if we find a non-empty line that's not a function
@@ -510,6 +519,8 @@ local function analyze_file(filepath)
                     })
                 end
             end
+
+            i = i + 1
         end
 
         return api_functions

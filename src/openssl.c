@@ -202,6 +202,7 @@ static int openssl_error_string(lua_State *L)
 /***
 Empties the current thread's error queue, helps reduce memory usage.
 @function clear_error
+@treturn nil always returns nil
 */
 static int openssl_clear_error(lua_State *L)
 {
@@ -238,6 +239,9 @@ mixes the num bytes at buf into the PRNG state.
 @tparam string seed data to seed random generator
 @tparam number entropy the lower bound of an estimate of how much randomness is contained in buf,
 measured in bytes.
+@treturn boolean true if successful
+@treturn[2] nil if error occurs
+@treturn[2] string error message if error occurs
 */
 static int
 openssl_random_add(lua_State *L)
@@ -298,7 +302,7 @@ openssl_random_write(lua_State *L)
 /***
 get random generator state
 @function rand_status
-@tparam boolean result true for sucess
+@treturn boolean true if PRNG is sufficiently seeded, false otherwise
 */
 static int
 openssl_random_status(lua_State *L)
@@ -386,7 +390,7 @@ openssl_mem_leaks(lua_State *L)
 get openssl engine object
 @function engine
 @tparam string engine_id
-@treturn engine
+@treturn openssl.engine
 */
 static const luaL_Reg eay_functions[] = {
   { "version",     openssl_version       },

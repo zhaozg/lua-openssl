@@ -29,7 +29,7 @@ RSA key generation, encryption, decryption, signing and signature verification.
  * 1. Complete RSA-specific functionality (padding modes, parameters, etc.)
  * 2. Backward compatibility with existing Lua code
  * 3. Direct access to RSA key components for advanced use cases
- * 
+ *
  * The current implementation is safe, well-tested, and maintains compatibility
  * across OpenSSL 1.1.x and 3.x versions.
  */
@@ -377,7 +377,7 @@ static int openssl_rsa_export(lua_State *L)
 /***
 set RSA engine for cryptographic operations
 @function set_engine
-@tparam engine engine ENGINE object to use for RSA operations
+@tparam openssl.engine engine ENGINE object to use for RSA operations
 @treturn boolean true on success, false on failure
 */
 static int
@@ -401,7 +401,7 @@ generate RSA key pair
 @function generate_key
 @tparam[opt=2048] number bits key size in bits
 @tparam[opt=65537] number e public exponent (typically 65537)
-@tparam[opt] engine eng engine to use for key generation
+@tparam[opt] openssl.engine eng engine to use for key generation
 @treturn rsa|nil generated RSA key pair or nil on error
 */
 static int

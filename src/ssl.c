@@ -32,7 +32,7 @@ create ssl_ctx object, which mapping to SSL_CTX in openssl.
 'DTLSv1','DTLSv1_2', and can be follow by '_server' or '_client', in general you should use 'TLS' to
 negotiate highest available SSL/TLS version
 @tparam[opt] string support_ciphers, if not given, default of openssl will be used
-@treturn ssl_ctx
+@treturn openssl.ssl_ctx
 */
 #if OPENSSL_VERSION_NUMBER > 0x10100000L
 #define TLS_PROTOCOL_TIPS                                                                          \
@@ -67,7 +67,7 @@ typedef enum
 create a new SSL context object
 @function new
 @tparam[opt="TLS"] string method SSL/TLS protocol method ("TLS", "SSLv23", "TLSv1", "TLSv1_1", "TLSv1_2", etc.)
-@treturn ssl_ctx SSL context object
+@treturn openssl.ssl_ctx SSL context object
 */
 static int
 openssl_ssl_ctx_new(lua_State *L)
@@ -292,8 +292,8 @@ openssl.ssl_ctx object
 /***
 tell ssl_ctx use private key and certificate, and check private key
 @function use
-@tparam evp_pkey pkey
-@tparam x509 cert
+@tparam openssl.evp_pkey pkey
+@tparam openssl.x509 cert
 @treturn boolean result return true for ok, or nil followed by errmsg and errval
 */
 static int
@@ -321,7 +321,7 @@ openssl_ssl_ctx_use(lua_State *L)
 /***
 add client ca cert and option extra chain cert
 @function add
-@tparam x509 clientca
+@tparam openssl.x509 clientca
 @tparam[opt] table extra_chain_cert_array
 @treturn boolean result
 */
@@ -673,7 +673,7 @@ openssl_ssl_ctx_cert_store(lua_State *L)
 /***
 set client certificate engine for SSL context
 @function set_engine
-@tparam engine eng engine object to use for client certificates
+@tparam openssl.engine eng engine object to use for client certificates
 @treturn boolean result true for success
 */
 static int
@@ -688,19 +688,33 @@ openssl_ssl_ctx_set_engine(lua_State *L)
 
 /* ssl functions */
 /***
-create ssl object
-@function ssl
-@tparam number fd
-@tparam[opt=false] boolean server, true will make ssl server
-@treturn ssl
-*/
 /***
-create ssl object
+create SSL object from SSL context
+
+This function creates a new SSL object from an SSL context. It supports two modes:
+1. Using a file descriptor (fd)
+2. Using BIO objects for input/output
+
 @function ssl
-@tparam bio input
-@tparam[opt=input] bio ouput, default will use input as output
-@tparam[opt=false] boolean server, true will make ssl server
-@treturn ssl
+@tparam openssl.ssl_ctx ctx SSL context object
+@tparam number|openssl.bio fd_or_input File descriptor or input BIO
+@tparam[opt=false] boolean|openssl.bio server_or_output Server mode flag or output BIO
+@treturn[1] openssl.ssl SSL object on success
+@treturn[2] nil on error
+@treturn[2] string error message
+-- @see OpenSSL function: SSL_new
+-- @see OpenSSL function: SSL_set_fd
+-- @see OpenSSL function: SSL_set_bio
+@usage
+  -- Create SSL object from file descriptor
+  local ssl_ctx = require('openssl').ssl.ctx_new('TLS')
+  local fd = 5  -- Assume fd 5 is a connected socket
+  local ssl = ssl_ctx:ssl(fd)
+
+  -- Create SSL server object from BIO
+  local bio_in = require('openssl').bio.new('mem')
+  local bio_out = require('openssl').bio.new('mem')
+  local ssl = ssl_ctx:ssl(bio_in, bio_out, true)  -- true for server mode
 */
 static int
 openssl_ssl_ctx_new_ssl(lua_State *L)
@@ -769,7 +783,7 @@ create bio object
 @tparam string host_addr format like 'host:port'
 @tparam[opt=false] boolean server, true listen at host_addr,false connect to host_addr
 @tparam[opt=true] boolean autoretry ssl operation autoretry mode
-@treturn bio bio object
+@treturn openssl.bio bio object
 */
 static int
 openssl_ssl_ctx_new_bio(lua_State *L)
@@ -1841,7 +1855,7 @@ openssl_ssl_session_gc(lua_State *L)
 /***
 get peer certificate from SSL session
 @function peer
-@treturn x509 peer certificate from the session
+@treturn openssl.x509 peer certificate from the session
 */
 static int
 openssl_ssl_session_peer(lua_State *L)
@@ -1999,8 +2013,8 @@ openssl_ssl_clear(lua_State *L)
 /***
 tell ssl use private key and certificate, and check private key
 @function use
-@tparam evp_pkey pkey
-@tparam[opt] x509 cert
+@tparam openssl.evp_pkey pkey
+@tparam[opt] openssl.x509 cert
 @treturn boolean result return true for ok, or nil followed by errmsg and errval
 */
 static int
@@ -2024,7 +2038,7 @@ openssl_ssl_use(lua_State *L)
 /***
 get peer certificate and certificate chains
 @function peer
-@treturn[1] x509 certificate
+@treturn[1] openssl.x509 certificate
 @treturn[1] sk_of_x509 chains of peer
 */
 static int
@@ -2548,14 +2562,14 @@ shutdown ssl connection with quite or noquite mode
 */
 /***
 shutdown SSL connection
-@function shutdown
-@treturn boolean result true for success
-*/
 /***
-shutdown ssl connect with special mode, disable read or write,
-enable or disable quite shutdown
+shutdown SSL connection
 @function shutdown
-@tparam string mode support 'read','write', 'quite', 'noquite'
+@tparam[opt] string mode optional mode: 'read', 'write', 'quite', 'noquite'
+@treturn[1] boolean true for success when called without mode
+@treturn[2] number shutdown result when called with mode
+@treturn[3] nil when error occurs
+@treturn[3] string error message when error occurs
 */
 static int
 openssl_ssl_shutdown(lua_State *L)
@@ -2625,7 +2639,7 @@ openssl_ssl_set_accept_state(lua_State *L)
 
 /***
 duplicate ssl object
-@treturn ssl
+@treturn openssl.ssl
 @function dup
 */
 static int
@@ -2696,13 +2710,13 @@ openssl_ssl_set_debug(lua_State *L)
 /***
 get ssl_ctx associate with current ssl
 @function ctx
-@treturn ssl_ctx
+@treturn openssl.ssl_ctx
 */
 /***
 set ssl_ctx associate to current ssl
 @function ctx
-@tparam ssl_ctx ctx
-@treturn ssl_ctx orgine ssl_ctx object
+@tparam openssl.ssl_ctx ctx
+@treturn openssl.ssl_ctx orgine ssl_ctx object
 */
 static int
 openssl_ssl_ctx(lua_State *L)

@@ -47,7 +47,7 @@ static void table2data(lua_State*L, int idx, BIO* bio)
 /***
 read configuration hash from BIO object
 @function read
-@tparam bio bio BIO object to read from
+@tparam openssl.bio bio BIO object to read from
 @treturn lhash configuration hash object
 */
 static int openssl_lhash_read(lua_State *L)

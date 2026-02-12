@@ -368,11 +368,11 @@ openssl_ocsp_request_is_signed(lua_State *L)
 /***
 sign ocsp_request object
 @function sign
-@tparam x509 signer
-@tparam evp_pkey pkey
+@tparam openssl.x509 signer
+@tparam openssl.evp_pkey pkey
 @param[opt] others certificates in ocsp_request
 @tparam[opt=0] integer flags
-@param[opt='sha256'] digest
+@param[opt='sha256'] openssl.evp_digest
 @treturn boolean
 */
 static int

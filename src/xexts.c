@@ -127,8 +127,8 @@ openssl_new_xextension(lua_State *L, int idx, int v3)
 Create x509_extension object
 @function new_extension
 @tparam table extension with object, value and critical
-@treturn x509_extension mapping to X509_EXTENSION in openssl
-@see x509_extension_param_table
+@treturn openssl.x509_extension mapping to X509_EXTENSION in openssl
+-- @see openssl/x509.h:X509_EXTENSION_
 */
 static int
 openssl_xext_new(lua_State *L)
@@ -149,7 +149,7 @@ openssl_xext_new(lua_State *L)
 read der encoded x509_extension
 @function read_extension
 @tparam string data der encoded
-@treturn x509_extension mappling to X509_EXTENSION in openssl
+@treturn openssl.x509_extension mappling to X509_EXTENSION in openssl
 */
 static int
 openssl_xext_read(lua_State *L)
@@ -173,7 +173,7 @@ get all x509 certificate supported extensions
 /***
 check x509_extension object support or not
 @function support
-@tparam x509_extension extension
+@tparam openssl.x509_extension extension
 @treturn boolean true for supported, false or not
 */
 /***
@@ -310,7 +310,7 @@ get infomation table of x509_extension.
 @function info
 @tparam[opt] boolean|utf8 true for utf8 default
 @treturn[1] table info,  x509_extension infomation as table
-@see x509_extension_info_table
+-- @see OpenSSL function: X509_EXTENSION_get_object
 */
 static int
 openssl_xext_info(lua_State *L)
@@ -323,7 +323,7 @@ openssl_xext_info(lua_State *L)
 clone then x509_extension
 
 @function dup
-@treturn x509_extension clone of x509_extension
+@treturn openssl.x509_extension clone of x509_extension
 */
 static int
 openssl_xext_dup(lua_State *L)
@@ -363,14 +363,14 @@ openssl_xext_free(lua_State *L)
 /***
 get asn1_object of x509_extension.
 @function object
-@treturn asn1_object object of x509_extension
+@treturn openssl.asn1_object object of x509_extension
 */
 
 /***
 set asn1_object for x509_extension.
 
 @function object
-@tparam asn1_object obj
+@tparam openssl.asn1_object obj
 @treturn boolean true for success
 @return nil when occure error, and followed by error message
 */
@@ -429,7 +429,7 @@ get data of x509_extension
 set type of x509_extension
 
 @function data
-@tparam asn1_string data set to self
+@tparam openssl.asn1_string data set to self
 @treturn boolean result true for success
 @return nil for error, and followed by error message
 */

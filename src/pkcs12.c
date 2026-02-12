@@ -13,8 +13,8 @@ pkcs12 module to create and parse PKCS#12(PFX) files.
 create and export pkcs12 data
 
 @function export
-@tparam x509 cert
-@tparam evp_pkey pkey
+@tparam openssl.x509 cert
+@tparam openssl.evp_pkey pkey
 @tparam string password
 @tparam[opt=nil] string friendlyname
 @tparam[opt] table|stak_of_x509 extracerts

@@ -26,13 +26,31 @@ static int openssl_cipher_list(lua_State *L)
 }
 
 /***
-get evp_cipher object
+get EVP_CIPHER cipher algorithm object
+
+This function retrieves a cipher algorithm object by name, NID, or ASN1 object.
+The returned object can be used with cipher.new() to create a cipher context.
 
 @function get
-@tparam string|integer|asn1_object alg alg name, nid or object identity
-@treturn evp_cipher cipher object mapping EVP_MD in openssl
+@tparam string|integer|openssl.asn1_object alg algorithm name, NID, or ASN1 object
+@treturn[1] openssl.evp_cipher cipher algorithm object
+@treturn[2] nil if algorithm not found
+@treturn[2] string error message
+@see cipher.new
+@see cipher.fetch
+@usage
+  local cipher = require('openssl').cipher
 
-@see evp_cipher
+  -- Get cipher by name
+  local aes_256_cbc = cipher.get('AES-256-CBC')
+
+  -- Get cipher by NID
+  local aes_256_cbc_nid = cipher.get(423)  -- NID for AES-256-CBC
+
+  -- Use with cipher.new()
+  local ctx = cipher.new(aes_256_cbc, 'key', 'iv', true)  -- true for encryption
+  local encrypted = ctx:update('data')
+  encrypted = encrypted .. ctx:final()
 */
 static int openssl_cipher_get(lua_State *L)
 {
@@ -49,7 +67,7 @@ fetch evp_cipher object with provider support (OpenSSL 3.0+)
 @function fetch
 @tparam string alg algorithm name (e.g., 'AES-256-CBC', 'ChaCha20-Poly1305')
 @tparam[opt] table options optional table with 'provider' and 'properties' fields
-@treturn evp_cipher cipher object mapping EVP_CIPHER in openssl or nil on failure
+@treturn openssl.evp_cipher cipher object mapping EVP_CIPHER in openssl or nil on failure
 @treturn string error message if failed
 
 @usage
@@ -111,7 +129,8 @@ static int openssl_cipher_fetch(lua_State *L)
 get provider name for a cipher (OpenSSL 3.0+)
 
 @function get_provider_name
-@treturn string provider name or nil
+@treturn[1] string provider name
+@treturn[2] nil if cipher has no provider or provider has no name
 */
 static int openssl_cipher_get_provider_name(lua_State *L)
 {
@@ -134,6 +153,7 @@ static int openssl_cipher_get_provider_name(lua_State *L)
 free a fetched evp_cipher object (OpenSSL 3.0+)
 
 @function __gc
+@treturn nil always returns nil
 */
 static int openssl_cipher_gc(lua_State *L)
 {
@@ -181,7 +201,7 @@ quick encrypt
 @tparam string key secret key
 @tparam[opt] string iv
 @tparam[opt] boolean pad true for padding default
-@tparam[opt] engine engine custom crypto engine
+@tparam[opt] openssl.engine engine custom crypto engine
 @treturn string result encrypt data
 */
 static int openssl_evp_encrypt(lua_State *L)
@@ -244,7 +264,7 @@ quick decrypt
 @tparam string key secret key
 @tparam[opt] string iv
 @tparam[opt] boolean pad true for padding default
-@tparam[opt] engine engine custom crypto engine
+@tparam[opt] openssl.engine engine custom crypto engine
 @treturn string result decrypt data
 */
 static int openssl_evp_decrypt(lua_State *L)
@@ -309,7 +329,7 @@ quick encrypt or decrypt
 @tparam string key secret key
 @tparam[opt] string iv
 @tparam[opt] boolean pad true for padding default
-@tparam[opt] engine engine custom crypto engine
+@tparam[opt] openssl.engine engine custom crypto engine
 @treturn string result
 */
 static int openssl_evp_cipher(lua_State *L)
@@ -373,18 +393,35 @@ typedef enum
 } CIPHER_MODE;
 
 /***
-get evp_cipher_ctx object for encrypt or decrypt
+create EVP_CIPHER_CTX cipher context for encryption or decryption
+
+This function creates a new cipher context for the specified algorithm.
+The context can be used for encryption or decryption operations.
 
 @function new
-@tparam string|integer|asn1_object alg alg name, nid or object identity
-@tparam boolean encrypt true for encrypt,false for decrypt
-@tparam[opt] string key secret key
-@tparam[opt] string iv
-@tparam[opt=true] boolean pad true for padding
-@tparam[opt] engine engine custom crypto engine
-@treturn evp_cipher_ctx cipher object mapping EVP_CIPHER_CTX in openssl
+@tparam string|integer|openssl.asn1_object|openssl.evp_cipher alg algorithm name, NID, ASN1 object, or cipher object
+@tparam boolean encrypt true for encryption, false for decryption
+@tparam[opt] string key secret key (required for most ciphers)
+@tparam[opt] string iv initialization vector (required for CBC mode)
+@tparam[opt=true] boolean pad true for PKCS#7 padding
+@tparam[opt] openssl.engine engine custom crypto engine
+@treturn[1] openssl.evp_cipher_ctx cipher context object
+@treturn[2] nil on error
+@treturn[2] string error message
+@see cipher.get
+@see cipher.fetch
+@usage
+  local cipher = require('openssl').cipher
 
-@see evp_cipher_ctx
+  -- Create AES-256-CBC encryption context
+  local ctx = cipher.new('AES-256-CBC', true, '32_byte_key_here', '16_byte_iv_here')
+
+  -- Create context from cipher object
+  local aes = cipher.get('AES-256-CBC')
+  local ctx2 = cipher.new(aes, false, 'key', 'iv')  -- decryption context
+
+  -- Use without padding
+  local ctx3 = cipher.new('AES-256-ECB', true, 'key', nil, false)  -- no padding
 */
 
 static int openssl_cipher_new(lua_State *L)
@@ -432,7 +469,7 @@ get evp_cipher_ctx object for encrypt
 @tparam string|integer|asn1_object alg alg name, nid or object identity
 @tparam string key secret key
 @tparam[opt] string iv
-@tparam[opt] engine engine custom crypto engine
+@tparam[opt] openssl.engine engine custom crypto engine
 @tparam[opt=true] boolean pad true for padding
 @treturn evp_cipher_ctx cipher object mapping EVP_CIPHER_CTX in openssl
 
@@ -480,7 +517,7 @@ get evp_cipher_ctx object for decrypt
 @tparam string|integer|asn1_object alg alg name, nid or object identity
 @tparam string key secret key
 @tparam[opt] string iv
-@tparam[opt] engine engine custom crypto engine
+@tparam[opt] openssl.engine engine custom crypto engine
 @tparam[opt=true] boolean pad true for padding
 @treturn evp_cipher_ctx cipher object mapping EVP_CIPHER_CTX in openssl
 
@@ -591,7 +628,7 @@ get evp_cipher_ctx to encrypt or decrypt
 @tparam string key secret key
 @tparam[opt] string iv
 @tparam[opt] boolean pad true for padding default
-@tparam[opt] engine engine custom crypto engine
+@tparam[opt] openssl.engine engine custom crypto engine
 @treturn evp_cipher_ctx evp_cipher_ctx object
 
 @see evp_cipher_ctx
@@ -604,7 +641,7 @@ get evp_cipher_ctx to encrypt
 @tparam string key secret key
 @tparam[opt] string iv
 @tparam[opt] boolean pad true for padding default
-@tparam[opt] engine engine custom crypto engine
+@tparam[opt] openssl.engine engine custom crypto engine
 @treturn evp_cipher_ctx evp_cipher_ctx object
 
 @see evp_cipher_ctx
@@ -617,7 +654,7 @@ get evp_cipher_ctx to decrypt
 @tparam string key secret key
 @tparam[opt] string iv
 @tparam[opt] boolean pad true for padding default
-@tparam[opt] engine engine custom crypto engine
+@tparam[opt] openssl.engine engine custom crypto engine
 @treturn evp_cipher_ctx evp_cipher_ctx object
 
 @see evp_cipher_ctx
@@ -632,7 +669,7 @@ do encrypt or decrypt
 @tparam string key secret key
 @tparam[opt] string iv
 @tparam[opt] boolean pad true for padding default
-@tparam[opt] engine engine custom crypto engine
+@tparam[opt] openssl.engine engine custom crypto engine
 @treturn string result
 */
 
@@ -644,7 +681,7 @@ do encrypt
 @tparam string key secret key
 @tparam[opt] string iv
 @tparam[opt] boolean pad true for padding default
-@tparam[opt] engine engine custom crypto engine
+@tparam[opt] openssl.engine engine custom crypto engine
 @treturn string result
 */
 
@@ -656,7 +693,7 @@ do decrypt
 @tparam string key secret key
 @tparam[opt] string iv
 @tparam[opt] boolean pad true for padding default
-@tparam[opt] engine engine custom crypto engine
+@tparam[opt] openssl.engine engine custom crypto engine
 @treturn string result
 */
 
@@ -1037,6 +1074,24 @@ static LuaL_Enumeration evp_ctrls_code[] = {
 
   { NULL,                                     -1                                     }
 };
+
+/***
+EVP_CIPHER cipher algorithm object
+
+This object represents an OpenSSL EVP_CIPHER cipher algorithm.
+It can be obtained using cipher.get() or cipher.fetch().
+
+@type openssl.evp_cipher
+*/
+
+/***
+EVP_CIPHER_CTX cipher context object
+
+This object represents an OpenSSL EVP_CIPHER_CTX cipher context.
+It is created using cipher.new() and used for encryption/decryption operations.
+
+@type openssl.evp_cipher_ctx
+*/
 
 int
 luaopen_cipher(lua_State *L)

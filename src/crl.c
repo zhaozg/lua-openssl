@@ -171,12 +171,12 @@ Note if not give evp_pkey, will create a new x509_crl object,if give will genera
 object.
 @function new
 @tparam[opt] table revoked_list
-@tparam[opt] x509 cacert ca cert to sign x509_crl
-@tparam[opt] evp_pkey capkey private key to sign x509_crl
+@tparam[opt] openssl.x509 cacert ca cert to sign x509_crl
+@tparam[opt] openssl.evp_pkey capkey private key to sign x509_crl
 @tparam[opt] string|evp_md md_alg
 @tparam[opt=7*24*3600] number period to generate new crl
-@treturn x509_crl object
-@see x509_crl
+@treturn openssl.x509_crl object
+-- @see openssl/x509.h:X509_CRL_
 */
 static int openssl_crl_new(lua_State *L)
 {
@@ -278,8 +278,8 @@ read x509_crl from string or bio input
 @function read
 @tparam bio|string input input data
 @tparam[opt='auto'] string format support 'auto','pem','der'
-@treturn x509_crl certificate sign request object
-@see x509_crl
+@treturn openssl.x509_crl certificate sign request object
+-- @see openssl/x509.h:X509_CRL_
 */
 static int openssl_crl_read(lua_State *L)
 {
@@ -606,7 +606,7 @@ static int openssl_crl_verify(lua_State *L)
 /***
 sign x509_crl
 @function sign
-@tparam evp_pkey pkey private key to sign x509
+@tparam openssl.evp_pkey pkey private key to sign x509
 @tparam x509|x509_name cacert or cacert x509_name
 @tparam[opt='sha256WithRSAEncryption'] string|md_digest md_alg
 @treturn boolean result true for check pass
@@ -669,7 +669,7 @@ static int openssl_crl_digest(lua_State *L)
 /***
 compare with other x509_crl object
 @function cmp
-@tparam x509_crl other
+@tparam openssl.x509_crl other
 @treturn boolean result true for equals or false
 @usage
   x:cmp(y) == (x==y)
@@ -687,11 +687,11 @@ static int openssl_crl_cmp(lua_State *L)
 /***
 make a delta x509_crl object
 @function diff
-@tparam x509_crl newer
-@tparam evp_pkey pkey
+@tparam openssl.x509_crl newer
+@tparam openssl.evp_pkey pkey
 @tparam[opt='sha256'] evp_md|string md_alg
 @tparam[opt=0] integer flags
-@treturn x509_crl delta result x509_crl object
+@treturn openssl.x509_crl delta result x509_crl object
 */
 static int openssl_crl_diff(lua_State *L)
 {
@@ -1045,7 +1045,7 @@ openssl_revoked_revocationDate(lua_State *L)
 /***
 get serial number from revoked certificate entry
 @function serialNumber
-@treturn bn serial number as bignum
+@treturn openssl.bn serial number as bignum
 @treturn asn1_integer serial number as ASN1_INTEGER object
 */
 static int

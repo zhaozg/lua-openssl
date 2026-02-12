@@ -26,7 +26,7 @@ Load a provider by name
 @function load
 @tparam string name the name of the provider to load (e.g., 'default', 'fips', 'legacy')
 @tparam[opt] boolean retain if true, the provider will be retained even after all references are released
-@treturn provider loaded provider object or nil on failure
+@treturn openssl.provider loaded provider object or nil on failure
 @treturn string error message if failed
 @usage
   local default = provider.load('default')
@@ -245,7 +245,7 @@ Get provider by name without loading
 
 @function get
 @tparam string name the name of the provider
-@treturn provider provider object if already loaded, nil otherwise
+@treturn openssl.provider provider object if already loaded, nil otherwise
 @usage
   local prov = provider.get('default')
   if prov then
@@ -273,6 +273,7 @@ static int openssl_provider_get(lua_State *L)
 Provider object garbage collection
 
 @function __gc
+@treturn nil always returns nil
 */
 static int openssl_provider_gc(lua_State *L)
 {

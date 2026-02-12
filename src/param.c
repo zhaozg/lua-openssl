@@ -129,7 +129,7 @@ get_param_type(const char *name, PARAM_NUMBER_TYPE *nt)
       return p->data_type;
     }
   }
-  
+
   /* Try RSA parameters */
   for (i = 0; i < sizeof(rsa_params) / sizeof(rsa_params[0]); i++) {
     struct param_info *p = &rsa_params[i];
@@ -138,7 +138,7 @@ get_param_type(const char *name, PARAM_NUMBER_TYPE *nt)
       return p->data_type;
     }
   }
-  
+
   return 0;
 }
 

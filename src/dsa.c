@@ -112,7 +112,7 @@ static int openssl_dsa_parse(lua_State *L)
 /***
 set engine for DSA operations
 @function set_engine
-@tparam engine engine the engine to use for DSA operations
+@tparam openssl.engine engine the engine to use for DSA operations
 @treturn boolean true on success, false on failure
 */
 static int
@@ -142,7 +142,7 @@ generate DSA key pair with specified parameters
 @function generate_key
 @tparam[opt=1024] number bits key size in bits
 @tparam[opt] string seed random seed for parameter generation
-@tparam[opt] engine eng engine to use for key generation
+@tparam[opt] openssl.engine eng engine to use for key generation
 @treturn dsa|nil generated DSA key pair or nil on error
 */
 static int

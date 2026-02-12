@@ -43,11 +43,29 @@ static const char* sMethods[] = {
 */
 
 /***
-make string as bio object
+/***
+create memory BIO object
+
+Creates a memory BIO that can be used for input or output operations.
+If a string is provided, it will be written to the BIO as initial data.
+If a number is provided, it sets the buffer size.
 
 @function mem
-@tparam[opt=nil] string data it will be memory buffer data
-@treturn bio it can be input or output object
+@tparam[opt] string|number data optional initial data string or buffer size
+@treturn[1] openssl.bio memory BIO object on success
+@treturn[2] nil on error
+@treturn[2] string error message
+-- @see OpenSSL function: BIO_new_mem_buf
+-- @see OpenSSL function: BIO_s_mem
+@usage
+  -- Create empty memory BIO
+  local bio1 = bio.mem()
+
+  -- Create memory BIO with initial data
+  local bio2 = bio.mem("initial data")
+
+  -- Create memory BIO with specific buffer size
+  local bio3 = bio.mem(4096)  -- 4KB buffer
 */
 static int openssl_bio_new_mem(lua_State *L)
 {
@@ -624,7 +642,9 @@ static int openssl_bio_push(lua_State *L)
 /***
 remove bio from chain
 @function pop
-@tparam bio toremove
+@tparam openssl.bio toremove
+@treturn[1] openssl.bio removed bio object
+@treturn[2] nil if no bio was removed
 */
 static int openssl_bio_pop(lua_State *L)
 {
@@ -725,7 +745,7 @@ setup ready and accept client connect
 @function accept
 @tparam[opt=false] boolean setup true for setup accept bio, false or none will accept client connect
 @treturn[1] boolean result only when setup is true
-@treturn[2] bio accpeted bio object
+@treturn[2] openssl.bio accepted bio object
 */
 static int openssl_bio_accept(lua_State *L)
 {
@@ -749,6 +769,7 @@ static int openssl_bio_accept(lua_State *L)
 /***
 shutdown SSL or TCP connection
 @function shutdown
+@treturn bio returns self for method chaining
 */
 static int openssl_bio_shutdown(lua_State *L)
 {
@@ -1026,6 +1047,8 @@ static int openssl_bio_pending(lua_State *L)
 /***
 close bio
 @function close
+@tparam[opt=false] boolean free_all if true, free entire BIO chain; if false, free only this BIO
+@treturn number always returns 0
 */
 
 static luaL_Reg bio_funs[] = {

@@ -389,7 +389,7 @@ openssl_ecdsa_do_verify(lua_State *L)
 do EC sign
 
 @function sign
-@tparam ec_key eckey
+@tparam openssl.ec_key eckey
 @tparam string digest result of digest to be signed
 @tparam evp_md|string|nid md digest alg identity, default is sm3
 @treturn string signature
@@ -463,7 +463,7 @@ static int openssl_ecdsa_sign(lua_State *L)
 do EC verify, input msg is digest result
 
 @function verify
-@tparam ec_key eckey
+@tparam openssl.ec_key eckey
 @tparam string digest result of digest to be signed
 @tparam string signature
 @tparam evp_md|string|nid md digest alg identity
@@ -615,7 +615,7 @@ KDF1_SHA1(const void *in, size_t inlen, void *out, size_t *outlen)
 /***
 compute ECDH shared key
 @function compute_key
-@tparam ec_key peer peer EC key for key exchange
+@tparam openssl.ec_key peer peer EC key for key exchange
 @tparam[opt] function kdf key derivation function
 @treturn string shared secret or nil if failed
 */
@@ -705,7 +705,7 @@ openssl_ecdh_compute_key(lua_State *L)
 /***
 set ECDSA signing method for EC key
 @function set_method
-@tparam engine engine engine providing the ECDSA method
+@tparam openssl.engine engine engine providing the ECDSA method
 @treturn boolean result true for success
 */
 static int
@@ -797,8 +797,8 @@ openssl_key_export(lua_State *L)
 /***
 get or set EC group for EC key
 @function group
-@tparam[opt] ec_group group optional EC group to set
-@treturn ec_group current EC group when called without parameters
+@tparam[opt] openssl.ec_group group optional EC group to set
+@treturn openssl.ec_group current EC group when called without parameters
 @treturn boolean true when setting group successfully
 */
 static int
@@ -834,7 +834,7 @@ openssl_key_group(lua_State *L)
 read EC key from DER encoded data
 @function read
 @tparam string der DER encoded EC private key data
-@treturn ec_key|nil parsed EC key or nil on failure
+@treturn openssl.ec_key|nil parsed EC key or nil on failure
 */
 static int
 openssl_key_read(lua_State *L)

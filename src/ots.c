@@ -597,8 +597,8 @@ static luaL_Reg ts_tst_info_funcs[] = {
 create a new ts_req object.
 @function req_new
 @tparam[opt=1] integer version
-@treturn ts_req timestamp sign request object
-@see ts_req
+@treturn openssl.ts_req timestamp sign request object
+-- @see openssl/ts.h:TS_REQ_
 */
 static int openssl_ts_req_new(lua_State *L)
 {
@@ -618,8 +618,8 @@ static int openssl_ts_req_new(lua_State *L)
 read ts_req object from string or bio data
 @function req_read
 @tparam string|bio input
-@treturn ts_req timestamp sign request object
-@see ts_req
+@treturn openssl.ts_req timestamp sign request object
+-- @see openssl/ts.h:TS_REQ_
 */
 static int openssl_ts_req_read(lua_State *L)
 {
@@ -637,7 +637,7 @@ static int openssl_ts_req_read(lua_State *L)
 read ts_resp object from string or bio input
 @function resp_read
 @tparam string|bio input
-@treturn ts_resp object
+@treturn openssl.ts_resp object
 */
 static int openssl_ts_resp_read(lua_State *L)
 {
@@ -654,10 +654,10 @@ static int openssl_ts_resp_read(lua_State *L)
 /***
 create ts_resp_ctx object
 @function resp_ctx_new
-@tparam x509 signer timestamp certificate
-@tparam evp_pkey pkey private key to sign ts_req
+@tparam openssl.x509 signer timestamp certificate
+@tparam openssl.evp_pkey pkey private key to sign ts_req
 @tparam asn1_object|string|nid identity for default policy object
-@treturn ts_resp_ctx object
+@treturn openssl.ts_resp_ctx object
 */
 static int openssl_ts_resp_ctx_new(lua_State *L)
 {
@@ -755,7 +755,7 @@ openssl.ts_req object
 /***
 make a clone of ts_req object
 @function dup
-@treturn ts_req
+@treturn openssl.ts_req
 */
 static int
 openssl_ts_req_dup(lua_State *L)
@@ -794,7 +794,7 @@ openssl_ts_req_cert_req(lua_State *L)
 /***
 get nonce
 @function nonce
-@treturn bn openssl.bn object
+@treturn openssl.bn openssl.bn object
 */
 /***
 set nonce
@@ -1041,7 +1041,7 @@ static int openssl_ts_resp_gc(lua_State *L)
 /***
 duplicate ts_resp object
 @function dup
-@treturn ts_resp object
+@treturn openssl.ts_resp object
 */
 static int openssl_ts_resp_dup(lua_State *L)
 {
@@ -1166,13 +1166,13 @@ openssl.ts_resp_ctx object
 create response for ts_req
 @function create_response
 @tparam string|bio|ts_req data support string,bio ts_req content or ts_req object
-@treturn ts_resp result
+@treturn openssl.ts_resp result
 */
 /***
 sign ts_req and get ts_resp, alias of create_response
 @function sign
 @tparam string|bio|ts_req data support string,bio ts_req content or ts_req object
-@treturn ts_resp result
+@treturn openssl.ts_resp result
 */
 static int openssl_ts_create_response(lua_State *L)
 {
@@ -1191,14 +1191,14 @@ static int openssl_ts_create_response(lua_State *L)
 /***
 get signer cert and pkey
 @function signer
-@treturn x509 cert object or nil
-@treturn evp_pkey pkey object or nil
+@treturn openssl.x509 cert object or nil
+@treturn openssl.evp_pkey pkey object or nil
 */
 /***
 set signer cert and pkey
 @function signer
-@tparam x509 cert signer cert
-@tparam evp_pkey pkey signer pkey
+@tparam openssl.x509 cert signer cert
+@tparam openssl.evp_pkey pkey signer pkey
 @treturn boolean result
 */
 static int openssl_ts_resp_ctx_signer(lua_State *L)
@@ -1330,8 +1330,10 @@ static int openssl_ts_resp_ctx_clock_precision_digits(lua_State *L)
 }
 
 /***
-get flags
-@function flags
+add flags to TS response context
+@function add_flags
+@tparam number flags flags to add
+@treturn nil always returns nil
 */
 static int openssl_ts_resp_ctx_add_flags(lua_State *L)
 {
@@ -1472,6 +1474,8 @@ openssl_serial_cb(TS_RESP_CTX *ctx, void *data)
 set serial generate callback function
 @function set_serial_cb
 @tparam function serial_cb serial_cb with proto funciont(ts_resp_ctx, arg) return openssl.bn end
+@tparam[opt] table arg optional argument passed to callback
+@treturn nil always returns nil
 @usage
   function serial_cb(tsa,arg)
     local bn = ...
@@ -1542,6 +1546,8 @@ openssl_time_cb(TS_RESP_CTX *ctx, void *data, long *sec, long *usec)
 set time callback function
 @function set_time_cb
 @tparam function time_cb serial_cb with proto funciont(ts_resp_ctx, arg) return sec, usec end
+@tparam[opt] table arg optional argument passed to callback
+@treturn nil always returns nil
 @usage
   function time_cb(tsa,arg)
     local time = os.time()
@@ -1683,7 +1689,7 @@ openssl_ts_verify_ctx_flags(lua_State *L)
 /***
 set data
 @function data
-@tparam bio data object
+@tparam openssl.bio data object
 @treturn boolean result
 */
 static int

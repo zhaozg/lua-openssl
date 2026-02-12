@@ -246,7 +246,7 @@ read public/private key from data
 @tparam[opt=false] boolean priv prikey set true when input is private key
 @tparam[opt='auto'] string format format or encoding of input, support 'auto','pem','der'
 @tparam[opt] string passhprase when input is private key, or key types 'ec','rsa','dsa','dh'
-@treturn evp_pkey public key
+@treturn openssl.evp_pkey public key
 @see evp_pkey
 */
 static int
@@ -462,7 +462,7 @@ generate a new ec keypair
 @tparam string alg alg must be 'ec'
 @tparam string|number curvename this can be integer as curvename NID
 @tparam[opt] integer flags when alg is ec need this.
-@treturn evp_pkey object with mapping to EVP_PKEY in openssl
+@treturn openssl.evp_pkey object with mapping to EVP_PKEY in openssl
 */
 /***
 generate a new keypair
@@ -472,8 +472,8 @@ generate a new keypair
 @tparam[opt] integer e when alg is `rsa` give e value default is 0x10001,
  when alg is `dh` give generator value default is 2,
  when alg is `dsa` give string type seed value default is none.
-@tparam[opt] engine eng
-@treturn evp_pkey object with mapping to EVP_PKEY in openssl
+@tparam[opt] openssl.engine eng
+@treturn openssl.evp_pkey object with mapping to EVP_PKEY in openssl
 */
 /***
 create a new keypair by factors of keypair or get public key only
@@ -486,7 +486,7 @@ when arg is dh, table may with key p,g,priv_key,pub_key, both are binary string 
 when arg is ec, table may with d,x,y,z,both are binary string or openssl.bn, and with curve_name,
 enc_flag, conv_form<br>
 
-@treturn evp_pkey object with mapping to EVP_PKEY in openssl
+@treturn openssl.evp_pkey object with mapping to EVP_PKEY in openssl
 @usage
  --create rsa public key
    pubkey = new({alg='rsa',n=...,e=...}
@@ -1287,7 +1287,7 @@ int openssl_pkey_is_private1(lua_State *L)
 /***
 return public key
 @function get_public
-@treturn evp_pkey pub
+@treturn openssl.evp_pkey pub
 */
 static int openssl_pkey_get_public(lua_State *L)
 {
@@ -1336,7 +1336,7 @@ static int openssl_pkey_get_public(lua_State *L)
 /***
 create EVP_PKEY_CTX context for public key operations
 @function ctx
-@tparam[opt] engine engine optional engine for hardware acceleration
+@tparam[opt] openssl.engine engine optional engine for hardware acceleration
 @treturn evp_pkey_ctx public key context object for RSA operations
 */
 static int openssl_pkey_ctx(lua_State *L)
@@ -1358,7 +1358,7 @@ static int openssl_pkey_ctx(lua_State *L)
 create new EVP_PKEY_CTX by algorithm identifier
 @function ctx_new
 @tparam string|number algorithm algorithm name or NID
-@tparam[opt] engine engine optional engine for hardware acceleration
+@tparam[opt] openssl.engine engine optional engine for hardware acceleration
 @treturn evp_pkey_ctx|nil new context object or nil on error
 */
 static int openssl_pkey_ctx_new(lua_State *L)
@@ -1388,7 +1388,7 @@ static int openssl_pkey_ctx_free(lua_State *L)
 generate a key pair using the context
 @function keygen
 @tparam[opt] number bits key size in bits (depends on key type)
-@treturn evp_pkey generated key pair on success
+@treturn openssl.evp_pkey generated key pair on success
 */
 static int openssl_pkey_ctx_keygen(lua_State *L)
 {
@@ -1596,9 +1596,9 @@ static int openssl_pkey_ctx_sign(lua_State *L)
 Derive public key algorithm shared secret
 
 @function derive
-@tparam evp_pkey pkey private key
-@tparam evp_pkey peer public key
-@tparam[opt] engine eng
+@tparam openssl.evp_pkey pkey private key
+@tparam openssl.evp_pkey peer public key
+@tparam[opt] openssl.engine eng
 @treturn string
 */
 static int openssl_derive(lua_State *L)
@@ -2228,7 +2228,7 @@ static int openssl_seal_final(lua_State *L)
 /***
 initialize envelope decryption (opening) context
 @function open_init
-@tparam evp_pkey private_key private key for decryption
+@tparam openssl.evp_pkey private_key private key for decryption
 @tparam string encrypted_key encrypted symmetric key
 @tparam string iv initialization vector
 @tparam[opt] string|evp_cipher cipher decryption cipher to use
@@ -2319,7 +2319,7 @@ openssl_pkey_bits(lua_State *L)
 /***
 set engine for the key
 @function set_engine
-@tparam engine eng engine object to use for this key
+@tparam openssl.engine eng engine object to use for this key
 @treturn boolean result true for success
 */
 static int

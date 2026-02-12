@@ -258,7 +258,7 @@ generate DH parameters for key exchange
 @function generate_parameters
 @tparam[opt=1024] number bits parameter size in bits
 @tparam[opt=2] number generator generator value (typically 2 or 5)
-@tparam[opt] engine eng engine to use for parameter generation
+@tparam[opt] openssl.engine eng engine to use for parameter generation
 @treturn dh|nil generated DH parameters or nil on error
 */
 static int
@@ -345,7 +345,7 @@ openssl_dh_generate_parameters(lua_State *L)
 /***
 generate a DH key pair from parameters
 @function generate_key
-@treturn dh new DH object with generated key pair on success
+@treturn openssl.dh new DH object with generated key pair on success
 */
 static int
 openssl_dh_generate_key(lua_State *L)

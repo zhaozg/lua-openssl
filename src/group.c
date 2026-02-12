@@ -17,16 +17,35 @@ enabling elliptic curve group mathematical operations similar to BIGNUM.
 
 /***
 Create EC group and generator point from curve specification
+
 @function new
 @tparam string|table|number curve curve specification (name, parameters, or NID)
-@tparam [opt] string|number form point_conversion_form
-@tparam [opt] string|number flag asn1_flag
-@treturn ec_group the elliptic curve group
-@treturn ec_point the generator point
+@tparam[opt] string|number form point_conversion_form
+@tparam[opt] string|number flag asn1_flag
+@treturn[1] openssl.ec_group the elliptic curve group
+@treturn[2] openssl.ec_point the generator point
+@treturn[3] nil on error
+@treturn[3] string error message
+-- @see OpenSSL function: EC_GROUP_new_by_curve_name
+-- @see OpenSSL function: EC_GROUP_new_curve_GFp
 @usage
-  group = require('openssl').group
-  g = group.new('prime256v1')
-  g = group.new(415)  -- NID for prime256v1
+  local group = require('openssl').group
+
+  -- Create group from curve name
+  local ec_group, generator = group.new('prime256v1')
+
+  -- Create group from NID
+  local ec_group2, generator2 = group.new(415)  -- NID for prime256v1
+
+  -- Create group with parameters
+  local ec_group3, generator3 = group.new({
+    p = '0xFFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFF',
+    a = '0xFFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFC',
+    b = '0x5AC635D8AA3A93E7B3EBBD55769886BC651D06B0CC53B0F63BCE3C3E27D2604B',
+    order = '0xFFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551',
+    generator = '046B17D1F2E12C4247F8BCE6E563A440F277037D812DEB33A0F4A13945D898C2964FE342E2FE1A7F9B8EE7EB4A7C0F9E162BCE33576B315ECECBB6406837BF51F5',
+    cofactor = 1
+  })
 */
 static int
 openssl_group_new(lua_State *L)
@@ -46,7 +65,7 @@ openssl_group_new(lua_State *L)
 Duplicate an EC_GROUP.
 
 @function dup
-@treturn ec_group duplicated elliptic curve group
+@treturn openssl.ec_group duplicated elliptic curve group
 */
 static int openssl_group_dup(lua_State *L)
 {
@@ -65,7 +84,7 @@ static int openssl_group_dup(lua_State *L)
 Get the generator point of the group.
 
 @function generator
-@treturn ec_point generator point of the curve
+@treturn openssl.ec_point generator point of the curve
 */
 static int openssl_group_generator(lua_State *L)
 {
@@ -85,7 +104,7 @@ static int openssl_group_generator(lua_State *L)
 Get the order of the group.
 
 @function order
-@treturn bn order of the group
+@treturn openssl.bn order of the group
 */
 static int openssl_group_order(lua_State *L)
 {
@@ -108,7 +127,7 @@ static int openssl_group_order(lua_State *L)
 Get the cofactor of the group.
 
 @function cofactor
-@treturn bn cofactor of the group
+@treturn openssl.bn cofactor of the group
 */
 static int openssl_group_cofactor(lua_State *L)
 {
@@ -159,7 +178,7 @@ Get or set the ASN1 flag.
 @function asn1_flag
 @tparam[opt] string|number flag ASN1 flag ("explicit" or "named_curve")
 @treturn string|number current ASN1 flag (when getting)
-@treturn ec_group self (when setting)
+@treturn openssl.ec_group self (when setting)
 */
 static int openssl_group_asn1_flag(lua_State *L)
 {
@@ -190,7 +209,7 @@ Get or set the point conversion form.
 @function point_conversion_form
 @tparam[opt] string|number form point conversion form ("compressed", "uncompressed", or "hybrid")
 @treturn string|number current conversion form (when getting)
-@treturn ec_group self (when setting)
+@treturn openssl.ec_group self (when setting)
 */
 int openssl_group_point_conversion_form(lua_State *L)
 {
@@ -325,7 +344,7 @@ static int openssl_group_parse(lua_State *L)
 Compare two EC groups for equality.
 
 @function equal
-@tparam ec_group other EC group to compare
+@tparam openssl.ec_group other EC group to compare
 @treturn boolean true if equal, false otherwise
 */
 int openssl_group_equal(lua_State *L)
@@ -365,7 +384,7 @@ static int openssl_group_tostring(lua_State *L)
 Create a new EC point on this group.
 
 @function point_new
-@treturn ec_point new elliptic curve point (at infinity)
+@treturn openssl.ec_point new elliptic curve point (at infinity)
 */
 static int openssl_group_point_new(lua_State *L)
 {
@@ -384,8 +403,8 @@ static int openssl_group_point_new(lua_State *L)
 Duplicate an EC point on this group.
 
 @function point_dup
-@tparam ec_point point the EC point to duplicate
-@treturn ec_point duplicated EC point
+@tparam openssl.ec_point point the EC point to duplicate
+@treturn openssl.ec_point duplicated EC point
 */
 static int openssl_group_point_dup(lua_State *L)
 {
@@ -405,8 +424,8 @@ static int openssl_group_point_dup(lua_State *L)
 Compare two EC points for equality.
 
 @function point_equal
-@tparam ec_point a first EC point
-@tparam ec_point b second EC point
+@tparam openssl.ec_point a first EC point
+@tparam openssl.ec_point b second EC point
 @treturn boolean true if equal, false otherwise
 */
 int openssl_group_point_equal(lua_State *L)
@@ -426,7 +445,7 @@ int openssl_group_point_equal(lua_State *L)
 Convert EC point to octet string.
 
 @function point2oct
-@tparam ec_point point the EC point
+@tparam openssl.ec_point point the EC point
 @tparam[opt] string form point conversion form ("compressed", "uncompressed", or "hybrid")
 @treturn string|nil octet string representation or nil on failure
 */
@@ -482,7 +501,7 @@ int openssl_group_oct2point(lua_State *L)
 Convert EC point to BIGNUM.
 
 @function point2bn
-@tparam ec_point point the EC point
+@tparam openssl.ec_point point the EC point
 @tparam[opt] string form point conversion form ("compressed", "uncompressed", or "hybrid")
 @treturn bn|nil the resulting BIGNUM or nil on failure
 */
@@ -508,7 +527,7 @@ int openssl_group_point2bn(lua_State *L)
 Convert BIGNUM to EC point.
 
 @function bn2point
-@tparam bn bn the BIGNUM to convert
+@tparam openssl.bn bn the BIGNUM to convert
 @treturn ec_point|nil the resulting EC point or nil on failure
 */
 int openssl_group_bn2point(lua_State *L)
@@ -530,7 +549,7 @@ int openssl_group_bn2point(lua_State *L)
 Convert EC point to hexadecimal string.
 
 @function point2hex
-@tparam ec_point point the EC point
+@tparam openssl.ec_point point the EC point
 @tparam[opt] string form point conversion form ("compressed", "uncompressed", or "hybrid")
 @treturn string|nil hexadecimal string representation or nil on failure
 */
@@ -579,12 +598,12 @@ int openssl_group_hex2point(lua_State *L)
 Get or set affine coordinates of an EC point.
 
 @function affine_coordinates
-@tparam ec_group group the EC group
-@tparam ec_point point the EC point
-@tparam[opt] bn x x coordinate (for setting)
-@tparam[opt] bn y y coordinate (for setting)
-@treturn bn x coordinate (when getting)
-@treturn bn y coordinate (when getting)
+@tparam openssl.ec_group group the EC group
+@tparam openssl.ec_point point the EC point
+@tparam[opt] openssl.bn x x coordinate (for setting)
+@tparam[opt] openssl.bn y y coordinate (for setting)
+@treturn openssl.bn x coordinate (when getting)
+@treturn openssl.bn y coordinate (when getting)
 */
 int openssl_group_affine_coordinates(lua_State *L)
 {
@@ -625,8 +644,8 @@ int openssl_group_affine_coordinates(lua_State *L)
 Set EC point to infinity.
 
 @function set_to_infinity
-@tparam ec_group group the EC group
-@treturn ec_point self
+@tparam openssl.ec_group group the EC group
+@treturn openssl.ec_point self
 */
 static int openssl_point_set_to_infinity(lua_State *L)
 {
@@ -645,7 +664,7 @@ static int openssl_point_set_to_infinity(lua_State *L)
 Check if EC point is at infinity.
 
 @function is_at_infinity
-@tparam ec_group group the EC group
+@tparam openssl.ec_group group the EC group
 @treturn boolean true if at infinity, false otherwise
 */
 static int openssl_point_is_at_infinity(lua_State *L)
@@ -661,7 +680,7 @@ static int openssl_point_is_at_infinity(lua_State *L)
 Check if EC point is on the curve.
 
 @function is_on_curve
-@tparam ec_group group the EC group
+@tparam openssl.ec_group group the EC group
 @treturn boolean true if on curve, false otherwise
 */
 static int openssl_point_is_on_curve(lua_State *L)
@@ -680,10 +699,10 @@ static int openssl_point_is_on_curve(lua_State *L)
 Add two EC points.
 
 @function point_add
-@tparam ec_group group the EC group
-@tparam ec_point a first point
-@tparam ec_point b second point
-@treturn ec_point result point (a + b)
+@tparam openssl.ec_group group the EC group
+@tparam openssl.ec_point a first point
+@tparam openssl.ec_point b second point
+@treturn openssl.ec_point result point (a + b)
 */
 static int openssl_point_add(lua_State *L)
 {
@@ -708,8 +727,8 @@ static int openssl_point_add(lua_State *L)
 Double an EC point.
 
 @function point_dbl
-@tparam ec_group group the EC group
-@treturn ec_point result point (2 * point)
+@tparam openssl.ec_group group the EC group
+@treturn openssl.ec_point result point (2 * point)
 */
 static int openssl_point_dbl(lua_State *L)
 {
@@ -733,8 +752,8 @@ static int openssl_point_dbl(lua_State *L)
 Invert an EC point.
 
 @function point_invert
-@tparam ec_group group the EC group
-@treturn ec_point self (inverted)
+@tparam openssl.ec_group group the EC group
+@treturn openssl.ec_point self (inverted)
 */
 static int openssl_point_invert(lua_State *L)
 {
@@ -756,11 +775,11 @@ static int openssl_point_invert(lua_State *L)
 Multiply EC point by a scalar.
 
 @function point_mul
-@tparam ec_group group the EC group
+@tparam openssl.ec_group group the EC group
 @tparam bn|number n scalar multiplier
-@tparam[opt] ec_point q optional point for double scalar multiplication
-@tparam[opt] bn m optional second scalar for double scalar multiplication
-@treturn ec_point result point (n * point) or (n * point + m * q)
+@tparam[opt] openssl.ec_point q optional point for double scalar multiplication
+@tparam[opt] openssl.bn m optional second scalar for double scalar multiplication
+@treturn openssl.ec_point result point (n * point) or (n * point + m * q)
 */
 static int openssl_point_mul(lua_State *L)
 {

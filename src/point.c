@@ -18,8 +18,8 @@ enabling elliptic curve point mathematical operations.
 Create a new EC point on a given group.
 
 @function new
-@tparam ec_group group the EC group
-@treturn ec_point new elliptic curve point (at infinity)
+@tparam openssl.ec_group group the EC group
+@treturn openssl.ec_point new elliptic curve point (at infinity)
 @usage
   group = require('openssl').group
   point = require('openssl').point
@@ -31,9 +31,9 @@ Create a new EC point on a given group.
 Copy one EC point to another.
 
 @function copy
-@tparam ec_point dest destination point
-@tparam ec_point src source point
-@treturn ec_point destination point (self)
+@tparam openssl.ec_point dest destination point
+@tparam openssl.ec_point src source point
+@treturn openssl.ec_point destination point (self)
 */
 int openssl_point_copy(lua_State *L)
 {
