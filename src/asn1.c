@@ -906,8 +906,13 @@ openssl_asn1object_d2i(lua_State *L)
   size_t               l;
   ASN1_OBJECT         *o = CHECK_OBJECT(1, ASN1_OBJECT, "openssl.asn1_object");
   const unsigned char *p = (const unsigned char *)luaL_checklstring(L, 2, &l);
-
-  lua_pushboolean(L, d2i_ASN1_OBJECT(&o, &p, l) != NULL);
+  ASN1_OBJECT         *no = d2i_ASN1_OBJECT(NULL, &p, l);
+  if (no != NULL) {
+    ASN1_OBJECT_free(o);
+    void **ud = lua_touserdata(L, 1);
+    *ud = no;
+  }
+  lua_pushboolean(L, no != NULL);
   return 1;
 }
 
@@ -1201,12 +1206,15 @@ openssl_asn1group_d2i(lua_State *L)
 
 #define P(T)                                                                                       \
   case V_##T: {                                                                                    \
-    T *v = (T *)s;                                                                                 \
-    v = d2i_##T(&v, &der, (long)len);                                                              \
+    T *v = d2i_##T(NULL, &der, (long)len);                                                         \
     if (v == NULL)                                                                                 \
       return openssl_pushresult(L, -1);                                                            \
-    else                                                                                           \
+    else {                                                                                         \
+      ASN1_STRING_free(s);                                                                         \
+      void **ud = lua_touserdata(L, 1);                                                            \
+      *ud = v;                                                                                     \
       lua_pushvalue(L, 1);                                                                         \
+    }                                                                                              \
     break;                                                                                         \
   }
 
@@ -1294,7 +1302,7 @@ openssl_asn1group_type(lua_State *L)
 }
 
 /***
-get length two asn1_string
+get length of asn1_string
 
 @function length
 @treturn integer length of asn1_string
