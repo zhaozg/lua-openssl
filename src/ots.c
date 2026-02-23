@@ -1507,7 +1507,7 @@ static int openssl_ts_resp_ctx_set_serial_cb(lua_State *L)
 };
 
 static int
-openssl_time_cb(TS_RESP_CTX *ctx, void *data, long *sec, long *usec)
+openssl_time_cb(TS_RESP_CTX *ctx, void *data, time_t *sec, long *usec)
 {
   int        err;
   TS_CB_ARG *arg;
@@ -1527,7 +1527,7 @@ openssl_time_cb(TS_RESP_CTX *ctx, void *data, long *sec, long *usec)
   err = lua_pcall(L, 1, 2, 0);
   if (err == 0) {
     if (lua_isnumber(L, -2)) {
-      *sec = (long)luaL_checkinteger(L, -2);
+      *sec = (time_t)luaL_checkinteger(L, -2);
       *usec = (long)luaL_optinteger(L, -1, 0);
       lua_pop(L, 2); /* remove callback returned value */
       return 1;
