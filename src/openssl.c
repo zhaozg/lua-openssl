@@ -513,6 +513,14 @@ openssl_initialize()
   SSL_library_init();
 
   ERR_load_crypto_strings();
+#else
+  OPENSSL_init_ssl(OPENSSL_INIT_ENGINE_ALL_BUILTIN |
+                   OPENSSL_INIT_ENGINE_OPENSSL |
+                   OPENSSL_INIT_LOAD_CRYPTO_STRINGS |
+                   OPENSSL_INIT_LOAD_SSL_STRINGS |
+                   OPENSSL_INIT_ADD_ALL_CIPHERS |
+                   OPENSSL_INIT_ADD_ALL_DIGESTS,
+                   NULL);
 #endif
 
   ERR_load_ERR_strings();

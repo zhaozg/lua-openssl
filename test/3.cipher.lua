@@ -100,8 +100,10 @@ function TestCipherMY:testList()
   t1 = cipher.list(true)
   t2 = cipher.list()
   assert(#t1 == #t2)
+  assert(#t1 > 0)
   t3 = cipher.list(false)
   assert(#t1 > #t3)
+  assert(#t3 > 0)
 
   local C = cipher.get("aes-128-cbc")
 
