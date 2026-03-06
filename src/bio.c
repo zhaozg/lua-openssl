@@ -43,7 +43,6 @@ static const char* sMethods[] = {
 */
 
 /***
-/***
 create memory BIO object
 
 Creates a memory BIO that can be used for input or output operations.

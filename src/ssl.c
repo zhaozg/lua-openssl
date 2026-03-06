@@ -688,7 +688,6 @@ openssl_ssl_ctx_set_engine(lua_State *L)
 
 /* ssl functions */
 /***
-/***
 create SSL object from SSL context
 
 This function creates a new SSL object from an SSL context. It supports two modes:
@@ -2560,8 +2559,7 @@ shutdown ssl connection with quite or noquite mode
 @treturn boolean if mode is true, return true or false for quite
 @treturn string if mode is false, return 'read' or 'write' for shutdown direction
 */
-/***
-shutdown SSL connection
+
 /***
 shutdown SSL connection
 @function shutdown
