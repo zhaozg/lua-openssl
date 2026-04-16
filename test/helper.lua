@@ -6,7 +6,7 @@ local M = {}
 M.luaopensslv, M.luav, M.opensslv = openssl.version()
 M._luaopensslv, M._luav, M._opensslv = openssl.version(true)
 M.libressl = M.opensslv:find("^LibreSSL")
-M.openssl3 = M.opensslv:find("^OpenSSL 3")
+M.openssl3 = M.opensslv:find("^OpenSSL 3") or M.opensslv:find("^OpenSSL 4")
 
 function M.sslProtocol(srv, protocol)
   protocol = protocol or openssl.ssl.default

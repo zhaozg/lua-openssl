@@ -120,8 +120,8 @@ static int
 copy_extensions(X509 *x, X509_REQ *req, int override)
 {
   STACK_OF(X509_EXTENSION) *exts = NULL;
-  X509_EXTENSION *ext, *tmpext;
-  ASN1_OBJECT    *obj;
+  const X509_EXTENSION *ext, *tmpext;
+  const ASN1_OBJECT *obj;
   int             i, idx, ret = 0;
   if (!x || !req) return 1;
   exts = X509_REQ_get_extensions(req);
@@ -138,7 +138,7 @@ copy_extensions(X509 *x, X509_REQ *req, int override)
       do {
         tmpext = X509_get_ext(x, idx);
         X509_delete_ext(x, idx);
-        X509_EXTENSION_free(tmpext);
+        X509_EXTENSION_free((X509_EXTENSION*)tmpext);
         idx = X509_get_ext_by_OBJ(x, obj, -1);
       } while (idx != -1);
     }
@@ -157,7 +157,7 @@ static int
 X509_REQ_to_X509_ex(X509_REQ *r, int days, EVP_PKEY *pkey, const EVP_MD *md, X509 **x)
 {
   X509         *ret = NULL;
-  X509_NAME    *xn = NULL;
+  const X509_NAME *xn = NULL;
   EVP_PKEY     *pubkey = NULL;
   ASN1_TIME    *notBefore = NULL, *notAfter = NULL;
   ASN1_INTEGER *serial = NULL;
@@ -412,9 +412,21 @@ static int openssl_csr_sign(lua_State *L)
     /*
      * In the interests of compatibility, I'll make sure that the bit string
      * has a 'not-used bits' value of 0
+     *
+     * Instead of directly manipulating the internal flags (which is not allowed
+     * in OpenSSL 4.0+), we use ASN1_BIT_STRING_set_bit to properly manage the
+     * unused bits count. Setting the last bit explicitly ensures the unused
+     * bits count is calculated correctly by OpenSSL.
      */
-    sig->flags &= ~(ASN1_STRING_FLAG_BITS_LEFT | 0x07);
-    sig->flags |= ASN1_STRING_FLAG_BITS_LEFT;
+    if (siglen > 0) {
+        /* Set the last bit of the signature to its current value.
+         * This forces OpenSSL to recalculate and set the unused bits count
+         * to 0 (since the signature is byte-aligned). */
+        int last_bit = (siglen * 8) - 1;
+        int bit_value = (sigdata[siglen - 1] & 1) ? 1 : 0;
+        ASN1_BIT_STRING_set_bit(sig, last_bit, bit_value);
+    }
+
     lua_pushboolean(L, 1);
     return 1;
   } else {
@@ -442,7 +454,7 @@ parse x509_req object as table
 static int openssl_csr_parse(lua_State *L)
 {
   X509_REQ  *csr = CHECK_OBJECT(1, X509_REQ, "openssl.x509_req");
-  X509_NAME *subject = X509_REQ_get_subject_name(csr);
+  const X509_NAME *subject = X509_REQ_get_subject_name(csr);
   STACK_OF(X509_EXTENSION) *exts = X509_REQ_get_extensions(csr);
 
   lua_newtable(L);
@@ -457,7 +469,7 @@ static int openssl_csr_parse(lua_State *L)
       PUSH_OBJECT(alg, "openssl.x509_algor");
       lua_setfield(L, -2, "sig_alg");
     }
-    if (sig->length) {
+    if (sig) {
       openssl_push_asn1(L, sig, V_ASN1_BIT_STRING);
       lua_setfield(L, -2, "signature");
     }
@@ -585,7 +597,7 @@ static int openssl_csr_subject(lua_State *L)
   int       ret = 0;
 
   if (lua_isnone(L, 2)) {
-    X509_NAME *xn = X509_REQ_get_subject_name(csr);
+    const X509_NAME *xn = X509_REQ_get_subject_name(csr);
     if (xn) {
       openssl_push_xname_asobject(L, xn);
       ret = 1;

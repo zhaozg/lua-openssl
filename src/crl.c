@@ -770,7 +770,7 @@ static int openssl_crl_parse(lua_State *L)
       lua_setfield(L, -2, "sig_alg");
     }
 
-    if (sig != NULL && sig->length > 0) {
+    if (sig != NULL && ASN1_STRING_length(sig) > 0) {
       PUSH_ASN1_STRING(L, sig);
       lua_setfield(L, -2, "signature");
     }
@@ -995,16 +995,17 @@ static time_t
 ASN1_GetTimeT(const ASN1_TIME *time)
 {
   struct tm   t;
-  const char *str = (const char *)time->data;
+  const char *str = ASN1_STRING_get0_data(time);
+  int type = ASN1_STRING_type(time);
   size_t      i = 0;
 
   memset(&t, 0, sizeof(t));
 
-  if (time->type == V_ASN1_UTCTIME) /* two digit year */ {
+  if (type == V_ASN1_UTCTIME) /* two digit year */ {
     t.tm_year = (str[i++] - '0') * 10;
     t.tm_year += (str[i++] - '0');
     if (t.tm_year < 70) t.tm_year += 100;
-  } else if (time->type == V_ASN1_GENERALIZEDTIME) /* four digit year */ {
+  } else if (type == V_ASN1_GENERALIZEDTIME) /* four digit year */ {
     t.tm_year = (str[i++] - '0') * 1000;
     t.tm_year += (str[i++] - '0') * 100;
     t.tm_year += (str[i++] - '0') * 10;

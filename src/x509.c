@@ -466,7 +466,7 @@ int openssl_push_x509_signature(lua_State *L, const X509_ALGOR *alg, const ASN1_
   if (sig != NULL)
   {
     lua_pushliteral(L, "sig");
-    lua_pushlstring(L, (const char *)sig->data, sig->length);
+    lua_pushlstring(L, ASN1_STRING_get0_data(sig), ASN1_STRING_length(sig));
     lua_rawset(L, i==0 ? -3 : i);
   }
 

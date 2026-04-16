@@ -332,7 +332,7 @@ int openssl_push_x509_signature(lua_State *L, const X509_ALGOR *alg, const ASN1_
 #define PUSH_ASN1_OCTET_STRING(L, s)      openssl_push_asn1(L, (ASN1_STRING*)(s),  V_ASN1_OCTET_STRING)
 #define PUSH_ASN1_STRING(L, s)            openssl_push_asn1(L, (ASN1_STRING*)(s),  V_ASN1_UNDEF)
 
-int openssl_push_xname_asobject(lua_State*L, X509_NAME* xname);
+int openssl_push_xname_asobject(lua_State*L, const X509_NAME* xname);
 int openssl_push_bit_string_bitname(lua_State* L, const BIT_STRING_BITNAME* name);
 
 ASN1_OBJECT* openssl_get_asn1object(lua_State*L, int idx, int retnil);

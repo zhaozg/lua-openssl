@@ -151,7 +151,7 @@ openssl_xalgor_set(lua_State *L)
   obj = OBJ_dup(obj);
   if (val) {
     val = ASN1_STRING_dup(val);
-    ret = X509_ALGOR_set0(alg, obj, val->type, val);
+    ret = X509_ALGOR_set0(alg, obj, ASN1_STRING_type(val), val);
   } else {
     ret = X509_ALGOR_set0(alg, obj, 0, NULL);
   }

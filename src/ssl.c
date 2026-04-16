@@ -158,7 +158,7 @@ openssl_ssl_ctx_new(lua_State *L)
     method = TLSv1_client_method();
 #endif
 
-#ifndef OPENSSL_NO_SSL3_METHOD
+#if OPENSSL_VERSION_NUMBER < 0x40000000L && !defined(OPENSSL_NO_SSL3_METHOD)
   else if (strcmp(meth, "SSLv3") == 0)
     method = SSLv3_method();
   else if (strcmp(meth, "SSLv3_server") == 0)

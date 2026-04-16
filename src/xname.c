@@ -10,7 +10,7 @@ x509.name module to mapping X509_NAME to lua object.
 #include "sk.h"
 
 int
-openssl_push_xname_asobject(lua_State *L, X509_NAME *xname)
+openssl_push_xname_asobject(lua_State *L, const X509_NAME *xname)
 {
   const X509_NAME *dup = X509_NAME_dup(xname);
   PUSH_OBJECT(dup, "openssl.x509_name");

@@ -544,7 +544,9 @@ openssl_initialize()
             sizeof(LOPENSSL_VERSION LUA_VERSION OPENSSL_VERSION_TEXT));
 #else
   OPENSSL_init_ssl(OPENSSL_INIT_ENGINE_ALL_BUILTIN |
+#if defined (OPENSSL_INIT_ENGINE_OPENSSL)
                    OPENSSL_INIT_ENGINE_OPENSSL |
+#endif
                    OPENSSL_INIT_LOAD_CRYPTO_STRINGS |
                    OPENSSL_INIT_LOAD_SSL_STRINGS |
                    OPENSSL_INIT_ADD_ALL_CIPHERS |
