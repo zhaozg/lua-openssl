@@ -64,6 +64,9 @@ else
   elif [ "$LUA" == "lua5.4" ]; then
     curl https://www.lua.org/ftp/lua-5.4.8.tar.gz | tar xz
     cd lua-5.4.8
+  elif [ "$LUA" == "lua5.5" ]; then
+    curl https://www.lua.org/ftp/lua-5.5.0.tar.gz | tar xz
+    cd lua-5.5.0
   fi
 
   if [ "$PLATFORM" == "linux" ]; then
@@ -115,4 +118,6 @@ elif [ "$LUA" == "lua5.3" ]; then
   rm -rf lua-5.3.6
 elif [ "$LUA" == "lua5.4" ]; then
   rm -rf lua-5.4.8
+elif [ "$LUA" == "lua5.5" ]; then
+  rm -rf lua-5.5.0
 fi
