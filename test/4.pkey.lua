@@ -86,7 +86,7 @@ function TestPKEYMY:testBasic()
       local p = mk_key(v)
       p = pkey.get_public(p)
       assert(not p:is_private())
-      p, _ = k:derive(p)
+      p = k:derive(p)
       assert(type(p) == "string")
     end
 
