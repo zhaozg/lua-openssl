@@ -1008,10 +1008,20 @@ openssl_ssl_ctx_set_alpn_protos(lua_State *L)
         break;
       }
       if (proto_list_len + proto_len >= proto_list_size) {
+        unsigned char *tmp;
         do {
+          if (proto_list_size > (size_t)(-1) / 2) {
+            free(proto_list);
+            return luaL_error(L, "protocol list too large");
+          }
           proto_list_size = proto_list_size * 2;
         } while (proto_list_len + proto_len >= proto_list_size);
-        proto_list = realloc(proto_list, proto_list_size);
+        tmp = realloc(proto_list, proto_list_size);
+        if (tmp == NULL) {
+          free(proto_list);
+          return luaL_error(L, "fail to allocate protocol list");
+        }
+        proto_list = tmp;
       }
       if (proto_list == NULL) {
         err = "fail to allocate protocol list";
