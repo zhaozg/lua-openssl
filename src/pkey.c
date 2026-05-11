@@ -62,7 +62,7 @@ pkey_has_private(EVP_PKEY *pkey)
   case EVP_PKEY_DSA: {
     ret = EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_PRIV_KEY, &bn);
     if (!ret || bn == NULL) {
-      /* FIXME: OpenSSL 3.0 DSA priv key param not working? Fallback to legacy way */
+      /*OpenSSL 3.0 DSA priv key param not working, Fallback to legacy way */
       DSA* dsa = (DSA*)EVP_PKEY_get0_DSA(pkey);
       if (dsa) {
         const BIGNUM* priv_key = NULL;
