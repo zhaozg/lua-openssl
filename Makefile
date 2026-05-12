@@ -45,22 +45,28 @@ endif
 
 #OpenSSL auto detect
 OPENSSL_CFLAGS	?= $(shell $(PKG_CONFIG) openssl --cflags)
-ifeq (${OPENSSL_STATIC},)
-OPENSSL_LIBS	?= $(shell $(PKG_CONFIG) openssl --static --libs)
+ifdef OPENSSL_STATIC
+  # User requested static linking: use pkg-config --static
+  OPENSSL_LIBS	?= $(shell $(PKG_CONFIG) openssl --static --libs)
 else
-OPENSSL_LIBDIR  ?= $(shell $(PKG_CONFIG) openssl --variable=libdir)
-OPENSSL_LIBS    ?= $(OPENSSL_LIBDIR)/libcrypto.a $(OPENSSL_LIBDIR)/libssl.a
+  # Default: dynamic linking via pkg-config
+  OPENSSL_LIBS	?= $(shell $(PKG_CONFIG) openssl --libs)
 endif
 
-TARGET  = $(MAKECMDGOALS)
-ifeq (coveralls, ${TARGET})
+# Detect build target
+BUILD_TARGET := $(firstword $(MAKECMDGOALS))
+ifeq ($(BUILD_TARGET),)
+  BUILD_TARGET := all
+endif
+
+ifeq (coveralls, $(BUILD_TARGET))
   CFLAGS	+=-g -fprofile-arcs -ftest-coverage
   LDFLAGS	+=-g -fprofile-arcs
 endif
 
 # asan {{{
 
-ifeq (asan, ${TARGET})
+ifeq (asan, $(BUILD_TARGET))
 ifneq (, $(findstring apple, $(SYS)))
   ASAN_LIB      ?= $(shell dirname $(shell dirname $(shell clang -print-libgcc-file-name)))/darwin/libclang_rt.asan_osx_dynamic.dylib
   LDFLAGS       +=-g -fsanitize=address
@@ -78,7 +84,7 @@ endif
 
 # tsan {{{
 
-ifeq (tsan, ${TARGET})
+ifeq (tsan, $(BUILD_TARGET))
 ifneq (, $(findstring apple, $(SYS)))
   ASAN_LIB      ?= $(shell dirname $(shell dirname $(shell clang -print-libgcc-file-name)))/darwin/libclang_rt.tsan_osx_dynamic.dylib
   LDFLAGS       +=-g -fsanitize=thread
@@ -95,12 +101,12 @@ endif
 
 # tsan }}}
 
-ifeq (debug, ${TARGET})
+ifeq (debug, $(BUILD_TARGET))
   CFLAGS	+=-g -Og
   LDFLAGS       +=-g -Og
 endif
 
-ifeq (valgrind, ${TARGET})
+ifeq (valgrind, $(BUILD_TARGET))
   CFLAGS	+=-g -O0
   LDFLAGS	+=-g -O0
 endif
@@ -113,10 +119,9 @@ endif
 
 ifneq (, $(findstring apple, $(SYS)))
   # Do darwin things
+  export MACOSX_DEPLOYMENT_TARGET := 10.12
   CFLAGS	+= -fPIC
   LDFLAGS	+= -fPIC -Wl,-undefined,dynamic_lookup -ldl
-  MACOSX_DEPLOYMENT_TARGET="10.12"
-  CC		:= MACOSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET} $(CC)
 endif
 
 ifneq (, $(findstring mingw, $(SYS)))
@@ -157,7 +162,7 @@ OBJS=src/asn1.o deps/auxiliar/auxiliar.o src/bio.o src/cipher.o src/cms.o src/co
      src/xstore.o src/xalgor.o src/param.o src/kdf.o                                   \
      src/callback.o src/srp.o src/mac.o deps/auxiliar/subsidiar.o
 
-.PHONY: all install test info doc coveralls asan
+.PHONY: all install test info doc coveralls asan debug valgrind tsan clean check
 
 .c.o:
 	$(CC) $(CFLAGS) -c -o $@ $?
@@ -166,10 +171,18 @@ all: $T.so
 	@echo "Target system: "$(SYS)
 
 $T.so: lib$T.a
-	$(CC) -shared -o $@ src/openssl.o -L. -l$T $(LDFLAGS)
+ifneq (, $(findstring apple, $(SYS)))
+	$(CC) -shared -o $@ -Wl,-all_load $^ $(LDFLAGS)
+else
+	$(CC) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive $(LDFLAGS)
+endif
 
 lib$T.a: $(OBJS)
 	$(AR) rcs $@ $?
+
+src/pkey.o: src/pkey.c src/pkey/core.c src/pkey/engine.c src/pkey/read.c src/pkey/sign.c \
+            src/pkey/derive.c src/pkey/new.c src/pkey/seal.c src/pkey/sm2.c
+	$(CC) $(CFLAGS) -c -o $@ src/pkey.c
 
 install: all
 	mkdir -p $(LUA_LIBDIR)
@@ -237,6 +250,7 @@ ifneq (, $(findstring linux, $(SYS)))
 endif
 
 clean:
-	rm -rf $T.* lib$T.a $(OBJS) src/*.g*
+	rm -rf $T.* lib$T.a $(OBJS) src/*.g* doc/
+	$(RM) -r test/__cache
 
 # vim: ts=8 sw=8 noet
