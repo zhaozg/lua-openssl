@@ -646,6 +646,13 @@ luaopen_openssl(lua_State *L)
   luaopen_ssl(L);
   lua_setfield(L, -2, "ssl");
 
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L) && !defined(LIBRESSL_VERSION_NUMBER)
+  /* Register PQC TLS integration methods into ssl.ctx */
+  lua_getfield(L, -1, "ssl");
+  luaopen_ssl_pqc(L);
+  lua_pop(L, 1);
+#endif
+
   /* third part */
   luaopen_bn(L);
   lua_setfield(L, -2, "bn");
