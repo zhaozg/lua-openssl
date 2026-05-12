@@ -66,6 +66,7 @@ build = {
         "src/rsa.c",
         "src/srp.c",
         "src/ssl.c",
+        "src/ssl_pqc.c",
         "src/th-lock.c",
         "src/util.c",
         "src/x509.c",

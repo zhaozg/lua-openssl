@@ -186,6 +186,7 @@ static const OSSL_ITEM standard_name2type[] = {
 #endif
 };
 
+#if (OPENSSL_VERSION_NUMBER < 0x30000000L || defined(LIBRESSL_VERSION_NUMBER))
 int
 evp_pkey_name2type(const char *name)
 {
@@ -213,6 +214,7 @@ evp_pkey_type2name(int type)
 
   return ret;
 }
+#endif
 
 /* ========================================================================
  * evp_pkey_needs_null_digest - PQC helper for sign/verify

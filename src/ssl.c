@@ -2894,5 +2894,10 @@ luaopen_ssl(lua_State *L)
   lua_pushstring(L, SSL_DEFAULT_CIPHER_LIST);
   lua_setfield(L, -2, "DEFAULT_CIPHER_LIST");
 
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L) && !defined(LIBRESSL_VERSION_NUMBER)
+  /* Register PQC TLS integration methods into ssl.ctx */
+  ssl_pqc_register_ctx_methods(L, -1);
+#endif
+
   return 1;
 }
