@@ -29,9 +29,17 @@ struct luaopenssl_ossl_item {
 int evp_pkey_name2type(const char *name);
 const char *evp_pkey_type2name(int type);
 
+/* PQC helper: check if a key is a PQC signature algorithm (ML-DSA, Falcon, SLH-DSA).
+ * Returns 1 if the key is a PQC signature algorithm that uses internal hashing.
+ * Returns 0 otherwise.
+ * Uses the pqc_sig_nids[] table for O(1) lookup by NID.
+ * For OpenSSL 3.0+, also tries EVP_PKEY_is_a() for keymgmt-based keys. */
+int evp_pkey_is_pqc_sig(EVP_PKEY *pkey);
+
 /* PQC helper: check if a key type uses internal hashing (no external digest needed).
  * Returns 1 if the key is EdDSA, ML-DSA, Falcon, SLH-DSA, or a keymgmt-based key.
- * Returns 0 otherwise (traditional algorithms like RSA, ECDSA). */
+ * Returns 0 otherwise (traditional algorithms like RSA, ECDSA).
+ * This is a superset of evp_pkey_is_pqc_sig() that also includes EdDSA. */
 int evp_pkey_needs_null_digest(EVP_PKEY *pkey);
 
 /* Key operations exposed to other modules */
