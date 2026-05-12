@@ -172,7 +172,7 @@ all: $T.so
 
 $T.so: lib$T.a
 ifneq (, $(findstring apple, $(SYS)))
-	$(CC) -shared -o $@ -Wl,-all_load $^ $(LDFLAGS)
+	$(CC) -shared -o $@ -Wl,-force_load,$^ $(LDFLAGS)
 else
 	$(CC) -shared -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive $(LDFLAGS)
 endif

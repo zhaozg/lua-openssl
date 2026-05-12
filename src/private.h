@@ -255,6 +255,12 @@ const X509_ALGOR *OCSP_resp_get0_tbs_sigalg(const OCSP_BASICRESP *bs);
 
 #endif /* < 1.1.0 */
 
+/* EVP_PKEY_dup was introduced in OpenSSL 3.0. Provide fallback for older versions. */
+#if OPENSSL_VERSION_NUMBER < 0x30000000L || defined(LIBRESSL_VERSION_NUMBER)
+EVP_PKEY *EVP_PKEY_dup(EVP_PKEY *pkey);
+#endif
+
+
 #define AUXILIAR_SETOBJECT(L, cval, ltype, idx, lvar) \
   do {                                                \
   int n = (idx < 0)?idx-1:idx;                        \
