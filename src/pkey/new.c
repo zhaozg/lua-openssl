@@ -212,7 +212,29 @@ openssl_pkey_new(lua_State *L)
 #endif
     else
     {
-      luaL_error(L, "not support %s!!!!", alg);
+      /* Try PQC or other unknown algorithms via EVP_PKEY_CTX_new_id */
+      int nid = OBJ_txt2nid(alg);
+      if (nid == NID_undef) {
+        /* Try case-insensitive lookup via our type table */
+        nid = evp_pkey_name2type(alg);
+      }
+
+      if (nid > 0) {
+        EVP_PKEY_CTX *pctx = EVP_PKEY_CTX_new_id(nid, NULL);
+        if (pctx) {
+          if (EVP_PKEY_keygen_init(pctx) == 1) {
+            EVP_PKEY *genkey = NULL;
+            if (EVP_PKEY_keygen(pctx, &genkey) == 1 && genkey) {
+              pkey = genkey;
+            }
+          }
+          EVP_PKEY_CTX_free(pctx);
+        }
+      }
+
+      if (!pkey) {
+        luaL_error(L, "not support %s!!!!", alg);
+      }
     }
   } else if (lua_istable(L, 1)) {
     /* contruct key from factors in Lua table */

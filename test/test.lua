@@ -51,6 +51,7 @@ dofile("8.ssl.lua")
 dofile("9.error_handling.lua")
 dofile("9.ocsp.lua")
 dofile("9.srp.lua")
+dofile("9.pqc.lua")
 dofile("9.issue.lua")
 
 dofile("issues_cipher.lua")

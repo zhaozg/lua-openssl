@@ -662,3 +662,63 @@ i2d_re_X509_tbs(X509 *x, unsigned char **pp)
   return i2d_X509_CINF(x->cert_info, pp);
 }
 #endif /* IS_LIBRESSL() && LIBRESSLV_LESS(0x3050000fL)*/
+
+/* EVP_PKEY_dup fallback for OpenSSL < 3.0 and LibreSSL.
+ * Uses BIO-based serialization round-trip to duplicate the key.
+ * First tries PKCS#8 PrivateKeyInfo (for private keys),
+ * then falls back to SubjectPublicKeyInfo (for public keys). */
+#if OPENSSL_VERSION_NUMBER < 0x30000000L || defined(LIBRESSL_VERSION_NUMBER)
+EVP_PKEY *
+EVP_PKEY_dup(EVP_PKEY *pkey)
+{
+  EVP_PKEY *dup = NULL;
+  BIO *bio = NULL;
+  unsigned char *buf = NULL;
+  long len;
+
+  if (pkey == NULL)
+    return NULL;
+
+  /* Try PKCS#8 PrivateKeyInfo round-trip first (works for private keys) */
+  bio = BIO_new(BIO_s_mem());
+  if (bio == NULL)
+    return NULL;
+
+  if (i2d_PKCS8PrivateKey_bio(bio, pkey, NULL, NULL, 0, NULL, NULL)) {
+    len = BIO_get_mem_data(bio, NULL);
+    if (len > 0) {
+      buf = OPENSSL_malloc((size_t)len);
+      if (buf) {
+        if (BIO_read(bio, buf, len) == len) {
+          const unsigned char *pp = buf;
+          dup = d2i_AutoPrivateKey(NULL, &pp, len);
+        }
+        OPENSSL_free(buf);
+        buf = NULL;
+      }
+    }
+  }
+
+  if (dup == NULL) {
+    /* Try SubjectPublicKeyInfo round-trip (works for public keys) */
+    (void)BIO_reset(bio);
+    if (i2d_PUBKEY_bio(bio, pkey)) {
+      len = BIO_get_mem_data(bio, NULL);
+      if (len > 0) {
+        buf = OPENSSL_malloc((size_t)len);
+        if (buf) {
+          if (BIO_read(bio, buf, len) == len) {
+            const unsigned char *pp = buf;
+            dup = d2i_PUBKEY(NULL, &pp, len);
+          }
+          OPENSSL_free(buf);
+        }
+      }
+    }
+  }
+
+  BIO_free(bio);
+  return dup;
+}
+#endif
+

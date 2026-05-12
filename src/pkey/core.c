@@ -7,14 +7,13 @@
 #include "pkey.h"
 
 /* Suppress deprecation warnings for low-level key APIs in OpenSSL 3.0+ */
-#if defined(__GNUC__) || defined(__clang__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-
 #ifndef OSSL_NELEM
 #define OSSL_NELEM(ary) (sizeof(ary) / sizeof(ary[0]))
 #endif
 
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
 /* ========================================================================
@@ -57,6 +56,133 @@ static const OSSL_ITEM standard_name2type[] = {
 #endif
 #ifdef EVP_PKEY_DSA
   { EVP_PKEY_DSA,     "DSA"      },
+#endif
+
+/* PQC (Post-Quantum Cryptography) algorithm type mappings.
+ * These are conditionally compiled based on OpenSSL provider support.
+ * When an OQS provider or similar is loaded, these NIDs become available.
+ *
+ * We support both the old OQS names (DILITHIUM, KYBER, SPHINCS) and the
+ * standardized NIST names (ML-DSA, ML-KEM, SLH-DSA) via compatibility
+ * macros defined in private.h. */
+
+/* ML-DSA (FIPS 204) - Dilithium */
+#ifdef EVP_PKEY_DILITHIUM
+  { EVP_PKEY_DILITHIUM, "DILITHIUM"   },
+  { EVP_PKEY_DILITHIUM, "ML-DSA"      },
+#endif
+#ifdef EVP_PKEY_DILITHIUM2
+  { EVP_PKEY_DILITHIUM2, "DILITHIUM2"  },
+  { EVP_PKEY_DILITHIUM2, "ML-DSA-44"   },
+#endif
+#ifdef EVP_PKEY_DILITHIUM3
+  { EVP_PKEY_DILITHIUM3, "DILITHIUM3"  },
+  { EVP_PKEY_DILITHIUM3, "ML-DSA-65"   },
+#endif
+#ifdef EVP_PKEY_DILITHIUM5
+  { EVP_PKEY_DILITHIUM5, "DILITHIUM5"  },
+  { EVP_PKEY_DILITHIUM5, "ML-DSA-87"   },
+#endif
+
+/* ML-KEM (FIPS 203) - Kyber */
+#ifdef EVP_PKEY_KYBER
+  { EVP_PKEY_KYBER,     "KYBER"       },
+  { EVP_PKEY_KYBER,     "ML-KEM"      },
+#endif
+#ifdef EVP_PKEY_KYBER512
+  { EVP_PKEY_KYBER512,  "KYBER512"    },
+  { EVP_PKEY_KYBER512,  "ML-KEM-512"  },
+#endif
+#ifdef EVP_PKEY_KYBER768
+  { EVP_PKEY_KYBER768,  "KYBER768"    },
+  { EVP_PKEY_KYBER768,  "ML-KEM-768"  },
+#endif
+#ifdef EVP_PKEY_KYBER1024
+  { EVP_PKEY_KYBER1024, "KYBER1024"   },
+  { EVP_PKEY_KYBER1024, "ML-KEM-1024" },
+#endif
+
+/* Falcon */
+#ifdef EVP_PKEY_FALCON
+  { EVP_PKEY_FALCON,    "FALCON"      },
+#endif
+#ifdef EVP_PKEY_FALCON512
+  { EVP_PKEY_FALCON512, "FALCON512"   },
+#endif
+#ifdef EVP_PKEY_FALCON1024
+  { EVP_PKEY_FALCON1024,"FALCON1024"  },
+#endif
+
+/* SLH-DSA (FIPS 205) - SPHINCS+ */
+#ifdef EVP_PKEY_SPHINCS
+  { EVP_PKEY_SPHINCS,   "SPHINCS"     },
+  { EVP_PKEY_SPHINCS,   "SLH-DSA"     },
+#endif
+#ifdef EVP_PKEY_SPHINCSSHA256
+  { EVP_PKEY_SPHINCSSHA256, "SPHINCS-SHA256" },
+#endif
+#ifdef EVP_PKEY_SPHINCSSHAKE256
+  { EVP_PKEY_SPHINCSSHAKE256, "SPHINCS-SHAKE256" },
+#endif
+
+/* SLH-DSA standardized NIST names (OpenSSL 3.5+) */
+#ifdef EVP_PKEY_SLH_DSA_SHA2_128S
+  { EVP_PKEY_SLH_DSA_SHA2_128S, "SLH-DSA-SHA2-128S" },
+#endif
+#ifdef EVP_PKEY_SLH_DSA_SHA2_128F
+  { EVP_PKEY_SLH_DSA_SHA2_128F, "SLH-DSA-SHA2-128F" },
+#endif
+#ifdef EVP_PKEY_SLH_DSA_SHA2_192S
+  { EVP_PKEY_SLH_DSA_SHA2_192S, "SLH-DSA-SHA2-192S" },
+#endif
+#ifdef EVP_PKEY_SLH_DSA_SHA2_192F
+  { EVP_PKEY_SLH_DSA_SHA2_192F, "SLH-DSA-SHA2-192F" },
+#endif
+#ifdef EVP_PKEY_SLH_DSA_SHA2_256S
+  { EVP_PKEY_SLH_DSA_SHA2_256S, "SLH-DSA-SHA2-256S" },
+#endif
+#ifdef EVP_PKEY_SLH_DSA_SHA2_256F
+  { EVP_PKEY_SLH_DSA_SHA2_256F, "SLH-DSA-SHA2-256F" },
+#endif
+#ifdef EVP_PKEY_SLH_DSA_SHAKE_128S
+  { EVP_PKEY_SLH_DSA_SHAKE_128S, "SLH-DSA-SHAKE-128S" },
+#endif
+#ifdef EVP_PKEY_SLH_DSA_SHAKE_128F
+  { EVP_PKEY_SLH_DSA_SHAKE_128F, "SLH-DSA-SHAKE-128F" },
+#endif
+#ifdef EVP_PKEY_SLH_DSA_SHAKE_192S
+  { EVP_PKEY_SLH_DSA_SHAKE_192S, "SLH-DSA-SHAKE-192S" },
+#endif
+#ifdef EVP_PKEY_SLH_DSA_SHAKE_192F
+  { EVP_PKEY_SLH_DSA_SHAKE_192F, "SLH-DSA-SHAKE-192F" },
+#endif
+#ifdef EVP_PKEY_SLH_DSA_SHAKE_256S
+  { EVP_PKEY_SLH_DSA_SHAKE_256S, "SLH-DSA-SHAKE-256S" },
+#endif
+#ifdef EVP_PKEY_SLH_DSA_SHAKE_256F
+  { EVP_PKEY_SLH_DSA_SHAKE_256F, "SLH-DSA-SHAKE-256F" },
+#endif
+
+/* ML-DSA standardized NIST names (OpenSSL 3.5+ built-in) */
+#ifdef EVP_PKEY_ML_DSA_44
+  { EVP_PKEY_ML_DSA_44, "ML-DSA-44" },
+#endif
+#ifdef EVP_PKEY_ML_DSA_65
+  { EVP_PKEY_ML_DSA_65, "ML-DSA-65" },
+#endif
+#ifdef EVP_PKEY_ML_DSA_87
+  { EVP_PKEY_ML_DSA_87, "ML-DSA-87" },
+#endif
+
+/* ML-KEM standardized NIST names (OpenSSL 3.5+ built-in) */
+#ifdef EVP_PKEY_ML_KEM_512
+  { EVP_PKEY_ML_KEM_512, "ML-KEM-512" },
+#endif
+#ifdef EVP_PKEY_ML_KEM_768
+  { EVP_PKEY_ML_KEM_768, "ML-KEM-768" },
+#endif
+#ifdef EVP_PKEY_ML_KEM_1024
+  { EVP_PKEY_ML_KEM_1024, "ML-KEM-1024" },
 #endif
 };
 
@@ -189,6 +315,8 @@ openssl_pkey_get_public(lua_State *L)
   }
 #endif
 
+  /* Try standard i2d_PUBKEY/d2i_PUBKEY round-trip first.
+   * This works for traditional algorithms (RSA, EC, Ed25519, etc.) */
   len = i2d_PUBKEY(pkey, NULL);
 
   if (len > 0) {
@@ -204,10 +332,30 @@ openssl_pkey_get_public(lua_State *L)
       p = buf;
       pub = d2i_PUBKEY(&pub, (const unsigned char **)&p, len);
       if (pub) {
-        PUSH_OBJECT(pub, "openssl.evp_pkey");
-        ret = 1;
+        /* Check if the reconstructed key has a valid type.
+         * For PQC keys on OpenSSL 3.5+, d2i_PUBKEY may return id=-1
+         * (EVP_PKEY_KEYMGMT). In that case, fall through to the dup path. */
+        int pub_id = EVP_PKEY_id(pub);
+        if (pub_id != NID_undef) {
+          PUSH_OBJECT(pub, "openssl.evp_pkey");
+          ret = 1;
+        } else {
+          EVP_PKEY_free(pub);
+        }
       }
       OPENSSL_free(buf);
+    }
+  }
+
+  /* Fallback: for PQC keys (ML-DSA, ML-KEM, SLH-DSA, etc.) where
+   * the SubjectPublicKeyInfo round-trip returns id=-1, use EVP_PKEY_dup.
+   * PQC signature algorithm private keys contain the full public key data,
+   * so a dup'd key can be used for verification. */
+  if (!ret) {
+    EVP_PKEY *pub = EVP_PKEY_dup(pkey);
+    if (pub) {
+      PUSH_OBJECT(pub, "openssl.evp_pkey");
+      ret = 1;
     }
   }
 
@@ -234,7 +382,21 @@ openssl_pkey_parse(lua_State *L)
 
   AUXILIAR_SET(L, -1, "bits", EVP_PKEY_bits(pkey), integer);
   AUXILIAR_SET(L, -1, "size", EVP_PKEY_size(pkey), integer);
-  AUXILIAR_SET(L, -1, "type", evp_pkey_type2name(typ), string);
+
+  /* Get type name: first try our lookup table, then fall back to OBJ_nid2sn */
+  {
+    const char *tname = evp_pkey_type2name(typ);
+    if (tname == NULL) {
+      /* For unknown types (e.g., PQC algorithms on OpenSSL 3.5+),
+       * try to get the short name from the NID */
+      tname = OBJ_nid2sn(typ);
+    }
+    if (tname == NULL) {
+      /* Last resort: use the long name */
+      tname = OBJ_nid2ln(typ);
+    }
+    AUXILIAR_SET(L, -1, "type", tname, string);
+  }
 
   switch (typ) {
 #ifndef OPENSSL_NO_RSA
@@ -282,8 +444,59 @@ openssl_pkey_parse(lua_State *L)
 #endif
 
   default:
+  {
+    /* For unknown key types (including PQC algorithms), try to extract
+     * generic parameters via OpenSSL 3.x PARAM API */
+#if defined(OSSL_PKEY_PARAM_ALGORITHM_ID)
+    {
+      /* Try to get the algorithm ID (works for PQC keys with OQS provider) */
+      char alg_name[256];
+      size_t alg_len = sizeof(alg_name);
+      if (EVP_PKEY_get_utf8_string_param(pkey, OSSL_PKEY_PARAM_ALGORITHM_ID,
+                                          alg_name, sizeof(alg_name), &alg_len)) {
+        AUXILIAR_SET(L, -1, "algorithm", alg_name, string);
+        /* Also update the "type" field with the actual algorithm name */
+        AUXILIAR_SET(L, -1, "type", alg_name, string);
+      }
+
+      /* Try to get public key raw bytes for display */
+      unsigned char *pubkey_buf = NULL;
+      size_t pubkey_len = 0;
+      if (EVP_PKEY_get_octet_string_param(pkey, OSSL_PKEY_PARAM_PUB_KEY,
+                                           NULL, 0, &pubkey_len) && pubkey_len > 0) {
+        pubkey_buf = OPENSSL_malloc(pubkey_len);
+        if (pubkey_buf) {
+          if (EVP_PKEY_get_octet_string_param(pkey, OSSL_PKEY_PARAM_PUB_KEY,
+                                               pubkey_buf, pubkey_len, &pubkey_len)) {
+            lua_pushlstring(L, (const char *)pubkey_buf, pubkey_len);
+            lua_setfield(L, -2, "pub_key_raw");
+          }
+          OPENSSL_free(pubkey_buf);
+        }
+      }
+
+      /* Try to get security bits for PQC keys */
+      {
+        int sec_bits = 0;
+        if (EVP_PKEY_get_int_param(pkey, OSSL_PKEY_PARAM_SECURITY_BITS, &sec_bits)) {
+          AUXILIAR_SET(L, -1, "security_bits", sec_bits, integer);
+        }
+      }
+    }
+#else
+    {
+      /* On older OpenSSL, just record the type name if we can */
+      const char *tname = evp_pkey_type2name(typ);
+      if (tname) {
+        AUXILIAR_SET(L, -1, "key_type_name", tname, string);
+        /* Also update the "type" field */
+        AUXILIAR_SET(L, -1, "type", tname, string);
+      }
+    }
+#endif
     break;
-  };
+  }
+  }
   return 1;
 }
 
