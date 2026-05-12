@@ -2,10 +2,10 @@ name: LibreSSL
 
 on:
   push:
-    branches: [ "master", "ci" ]
+    branches: [ "master", "ci", "v0.x" ]
   pull_request:
     # The branches below must be a subset of the branches above
-    branches: [ "master" ]
+    branches: [ "master", "v0.x" ]
 
 jobs:
   build:
