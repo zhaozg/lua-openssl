@@ -181,7 +181,7 @@ lib$T.a: $(OBJS)
 	$(AR) rcs $@ $?
 
 src/pkey.o: src/pkey.c src/pkey/core.c src/pkey/engine.c src/pkey/read.c src/pkey/sign.c \
-            src/pkey/derive.c src/pkey/new.c src/pkey/seal.c src/pkey/sm2.c
+            src/pkey/derive.c src/pkey/new.c src/pkey/seal.c src/pkey/sm2.c src/pkey/kem.c
 	$(CC) $(CFLAGS) -c -o $@ src/pkey.c
 
 install: all

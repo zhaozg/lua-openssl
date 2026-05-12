@@ -18,6 +18,13 @@
  * @tparam[opt='auto'] string format format or encoding of input, support 'auto','pem','der'
  * @tparam[opt] string passhprase when input is private key, or key types 'ec','rsa','dsa','dh'
  * @treturn openssl.evp_pkey public key
+ * @treturn[2] nil
+ * @treturn[2] string error message
+ *
+ * For PQC algorithms (ML-DSA, ML-KEM, SLH-DSA, etc.), uses generic
+ * SubjectPublicKeyInfo (PEM_read_bio_PUBKEY/d2i_PUBKEY_bio) for public keys
+ * and PKCS#8 PrivateKeyInfo (d2i_PKCS8PrivateKey_bio/d2i_PrivateKey_bio)
+ * for private keys.
  * @see pkey
  */
 int

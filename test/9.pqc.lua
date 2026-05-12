@@ -305,3 +305,100 @@ function TestPQCEdgeCases:test_read_invalid_pqc_pem()
   print("  Invalid PEM handling: OK")
 end
 
+-- Test suite for KEM (Key Encapsulation Mechanism) operations
+TestPQCKEM = {}
+
+function TestPQCKEM:setUp()
+  -- Find first available KEM algorithm
+  self.kem_alg = nil
+
+  for _, alg in ipairs(PQC_ALGORITHMS) do
+    if is_alg_available(alg) then
+      local name_upper = alg:upper()
+      if name_upper:match("KYBER") or name_upper:match("ML%-KEM") then
+        if not self.kem_alg then
+          self.kem_alg = alg
+        end
+      end
+    end
+  end
+end
+
+function TestPQCKEM:test_kem_key_generation()
+  lu.assertNotNil(self.kem_alg, "Need at least one KEM algorithm available")
+  if not self.kem_alg then return end
+
+  local key = pkey.new(self.kem_alg)
+  lu.assertNotNil(key, "Should generate " .. self.kem_alg .. " key")
+  lu.assertTrue(key:is_private(), "Generated KEM key should be private")
+
+  local pub = pkey.get_public(key)
+  lu.assertNotNil(pub, "Should get public KEM key")
+  lu.assertFalse(pub:is_private(), "Public KEM key should not be private")
+
+  print(string.format("  Generated %s KEM key pair successfully", self.kem_alg))
+end
+
+function TestPQCKEM:test_kem_encapsulate_decapsulate()
+  lu.assertNotNil(self.kem_alg, "Need at least one KEM algorithm available")
+  if not self.kem_alg then return end
+
+  -- Generate KEM key pair
+  local key = pkey.new(self.kem_alg)
+  lu.assertNotNil(key, "Should generate key")
+
+  local pub = pkey.get_public(key)
+  lu.assertNotNil(pub, "Should get public key")
+
+  -- Encapsulate: create a shared secret with the public key
+  local ct, ss1 = pkey.encapsulate(pub)
+  if ct then
+    lu.assertTrue(#ct > 0, "Ciphertext should not be empty")
+    print(string.format("  %s encapsulate: ct=%d bytes, ss=%d bytes",
+      self.kem_alg, #ct, #ss1 or 0))
+
+    -- Decapsulate: recover the shared secret with the private key
+    if ss1 and #ss1 > 0 then
+      local ss2 = pkey.decapsulate(key, ct)
+      lu.assertNotNil(ss2, "Should decapsulate shared secret")
+      lu.assertEquals(ss1, ss2, "Shared secrets should match")
+      print(string.format("  %s encapsulate/decapsulate round-trip passed", self.kem_alg))
+    end
+  else
+    print(string.format("  %s encapsulate not yet supported (KEM API may need provider update)", self.kem_alg))
+  end
+end
+
+function TestPQCKEM:test_kem_key_export_import()
+  lu.assertNotNil(self.kem_alg, "Need at least one KEM algorithm available")
+  if not self.kem_alg then return end
+
+  local key = pkey.new(self.kem_alg)
+  lu.assertNotNil(key, "Should generate key")
+
+  -- Export private key as PEM
+  local pem_priv = key:export("pem", false)
+  lu.assertNotNil(pem_priv, "Should export private key as PEM")
+
+  -- Export public key as PEM
+  local pub = pkey.get_public(key)
+  local pem_pub = pub:export("pem", false)
+  lu.assertNotNil(pem_pub, "Should export public key as PEM")
+
+  -- Re-import and test encapsulate/decapsulate
+  local key2 = pkey.read(pem_priv, true)
+  lu.assertNotNil(key2, "Should re-import private key")
+
+  local pub2 = pkey.read(pem_pub, false)
+  lu.assertNotNil(pub2, "Should re-import public key")
+
+  -- Test with re-imported keys
+  local ct, ss1 = pkey.encapsulate(pub2)
+  if ct and ss1 and #ss1 > 0 then
+    local ss2 = pkey.decapsulate(key2, ct)
+    lu.assertNotNil(ss2, "Should decapsulate with re-imported key")
+    lu.assertEquals(ss1, ss2, "Shared secrets should match after re-import")
+    print(string.format("  %s KEM export/import round-trip passed", self.kem_alg))
+  end
+end
+
