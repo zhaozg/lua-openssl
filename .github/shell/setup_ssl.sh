@@ -44,13 +44,13 @@ if [ ! -d "$HOME/opt/$SSL" ]; then
                 *)
                         FLAGS=no-shared
                 esac
-                ./config zlib no-tests $FLAGS --prefix="$OPENSSL_DIR" || exit 1
+                ./config no-zlib no-tests $FLAGS --prefix="$OPENSSL_DIR" || exit 1
         fi
         if [ "$RUNNER_OS" == "macOS" ]; then
                 if [ -z "$LIBRESSL" ]; then
-                        ./Configure zlib darwin64-x86_64-cc no-tests no-shared --prefix="$OPENSSL_DIR" || exit 1
+                        ./Configure no-zlib darwin64-x86_64-cc no-tests no-shared --prefix="$OPENSSL_DIR" || exit 1
                 else
-                        ./config zlib no-tests no-shared --prefix="$OPENSSL_DIR" || exit 1
+                        ./config no-zlib no-tests no-shared --prefix="$OPENSSL_DIR" || exit 1
                 fi
         fi
         make && make install_sw || {
