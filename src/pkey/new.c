@@ -97,13 +97,32 @@ err:
 /***
  * generate a new keypair
  * @function new
- * @tparam[opt='rsa'] string alg accept `rsa`,`dsa`,`dh`
+ * @tparam[opt='rsa'] string alg accept `rsa`,`dsa`,`dh`,`ec`, or PQC algorithm names
+ *  such as `ML-DSA-44`, `DILITHIUM2`, `ML-KEM-768`, `KYBER768`, `FALCON512`,
+ *  `SLH-DSA-SHA2-128S`, `SPHINCS-SHA256`, etc.
  * @tparam[opt=2048|512] integer bits `rsa` with 2048, `dh` or `dsa` with 1024
  * @tparam[opt] integer e when alg is `rsa` give e value default is 0x10001,
  *  when alg is `dh` give generator value default is 2,
  *  when alg is `dsa` give string type seed value default is none.
  * @tparam[opt] openssl.engine eng
  * @treturn openssl.evp_pkey object with mapping to EVP_PKEY in openssl
+ * @treturn[2] nil
+ * @treturn[2] string error message
+ *
+ * PQC algorithm support requires:
+ *   - OpenSSL 3.x with OQS provider loaded, OR
+ *   - OpenSSL 3.5+ with built-in PQC support
+ *
+ * Both old OQS provider names (DILITHIUM2, KYBER768, SPHINCS-SHA256) and
+ * standardized NIST names (ML-DSA-44, ML-KEM-768, SLH-DSA-SHA2-128S) are supported.
+ *
+ * @usage
+ * -- Generate ML-DSA-44 (Dilithium2) key pair
+ * local key = pkey.new("ML-DSA-44")
+ * -- Generate ML-KEM-768 (Kyber768) key pair
+ * local kem_key = pkey.new("ML-KEM-768")
+ * -- Generate Falcon-512 key pair
+ * local falcon_key = pkey.new("FALCON512")
  */
 
 /***

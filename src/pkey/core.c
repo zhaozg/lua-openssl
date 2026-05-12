@@ -215,6 +215,134 @@ evp_pkey_type2name(int type)
 }
 
 /* ========================================================================
+ * evp_pkey_needs_null_digest - PQC helper for sign/verify
+ *
+ * Check if a key type uses internal hashing and does not need an external
+ * digest algorithm. This applies to:
+ *   - EdDSA (Ed25519, Ed448)
+ *   - PQC signature algorithms: ML-DSA (Dilithium), Falcon, SLH-DSA (SPHINCS+)
+ *   - Keymgmt-based keys (EVP_PKEY_id == -1) as fallback
+ *
+ * For PQC algorithms, EVP_PKEY_type(EVP_PKEY_id(pkey)) returns 0 because
+ * these NIDs are not registered in the legacy type table, so we must
+ * compare EVP_PKEY_id(pkey) directly.
+ *
+ * @tparam evp_pkey pkey the key to check
+ * @treturn boolean true if the key uses internal hashing
+ * ======================================================================== */
+int
+evp_pkey_needs_null_digest(EVP_PKEY *pkey)
+{
+  int pkey_id = EVP_PKEY_id(pkey);
+  int pkey_type = EVP_PKEY_type(pkey_id);
+  int needs_null = 0;
+
+  /* EdDSA keys (Ed25519, Ed448) use internal hashing */
+#ifdef EVP_PKEY_ED25519
+  if (pkey_type == EVP_PKEY_ED25519
+#ifdef EVP_PKEY_ED448
+      || pkey_type == EVP_PKEY_ED448
+#endif
+  ) {
+    needs_null = 1;
+  }
+#endif
+
+  if (!needs_null) {
+    /* PQC signature algorithms use internal hashing.
+     * Check via EVP_PKEY_id() directly since EVP_PKEY_type() returns 0 for these. */
+
+    /* Old OQS provider names (DILITHIUM, KYBER, SPHINCS) */
+#ifdef EVP_PKEY_DILITHIUM
+    if (pkey_id == EVP_PKEY_DILITHIUM) needs_null = 1;
+#endif
+#ifdef EVP_PKEY_DILITHIUM2
+    if (pkey_id == EVP_PKEY_DILITHIUM2) needs_null = 1;
+#endif
+#ifdef EVP_PKEY_DILITHIUM3
+    if (pkey_id == EVP_PKEY_DILITHIUM3) needs_null = 1;
+#endif
+#ifdef EVP_PKEY_DILITHIUM5
+    if (pkey_id == EVP_PKEY_DILITHIUM5) needs_null = 1;
+#endif
+#ifdef EVP_PKEY_FALCON
+    if (pkey_id == EVP_PKEY_FALCON) needs_null = 1;
+#endif
+#ifdef EVP_PKEY_FALCON512
+    if (pkey_id == EVP_PKEY_FALCON512) needs_null = 1;
+#endif
+#ifdef EVP_PKEY_FALCON1024
+    if (pkey_id == EVP_PKEY_FALCON1024) needs_null = 1;
+#endif
+#ifdef EVP_PKEY_SPHINCS
+    if (pkey_id == EVP_PKEY_SPHINCS) needs_null = 1;
+#endif
+#ifdef EVP_PKEY_SPHINCSSHA256
+    if (pkey_id == EVP_PKEY_SPHINCSSHA256) needs_null = 1;
+#endif
+#ifdef EVP_PKEY_SPHINCSSHAKE256
+    if (pkey_id == EVP_PKEY_SPHINCSSHAKE256) needs_null = 1;
+#endif
+
+    /* Standardized NIST names (OpenSSL 3.5+) */
+#ifdef EVP_PKEY_ML_DSA_44
+    if (pkey_id == EVP_PKEY_ML_DSA_44) needs_null = 1;
+#endif
+#ifdef EVP_PKEY_ML_DSA_65
+    if (pkey_id == EVP_PKEY_ML_DSA_65) needs_null = 1;
+#endif
+#ifdef EVP_PKEY_ML_DSA_87
+    if (pkey_id == EVP_PKEY_ML_DSA_87) needs_null = 1;
+#endif
+#ifdef EVP_PKEY_SLH_DSA_SHA2_128S
+    if (pkey_id == EVP_PKEY_SLH_DSA_SHA2_128S) needs_null = 1;
+#endif
+#ifdef EVP_PKEY_SLH_DSA_SHA2_128F
+    if (pkey_id == EVP_PKEY_SLH_DSA_SHA2_128F) needs_null = 1;
+#endif
+#ifdef EVP_PKEY_SLH_DSA_SHA2_192S
+    if (pkey_id == EVP_PKEY_SLH_DSA_SHA2_192S) needs_null = 1;
+#endif
+#ifdef EVP_PKEY_SLH_DSA_SHA2_192F
+    if (pkey_id == EVP_PKEY_SLH_DSA_SHA2_192F) needs_null = 1;
+#endif
+#ifdef EVP_PKEY_SLH_DSA_SHA2_256S
+    if (pkey_id == EVP_PKEY_SLH_DSA_SHA2_256S) needs_null = 1;
+#endif
+#ifdef EVP_PKEY_SLH_DSA_SHA2_256F
+    if (pkey_id == EVP_PKEY_SLH_DSA_SHA2_256F) needs_null = 1;
+#endif
+#ifdef EVP_PKEY_SLH_DSA_SHAKE_128S
+    if (pkey_id == EVP_PKEY_SLH_DSA_SHAKE_128S) needs_null = 1;
+#endif
+#ifdef EVP_PKEY_SLH_DSA_SHAKE_128F
+    if (pkey_id == EVP_PKEY_SLH_DSA_SHAKE_128F) needs_null = 1;
+#endif
+#ifdef EVP_PKEY_SLH_DSA_SHAKE_192S
+    if (pkey_id == EVP_PKEY_SLH_DSA_SHAKE_192S) needs_null = 1;
+#endif
+#ifdef EVP_PKEY_SLH_DSA_SHAKE_192F
+    if (pkey_id == EVP_PKEY_SLH_DSA_SHAKE_192F) needs_null = 1;
+#endif
+#ifdef EVP_PKEY_SLH_DSA_SHAKE_256S
+    if (pkey_id == EVP_PKEY_SLH_DSA_SHAKE_256S) needs_null = 1;
+#endif
+#ifdef EVP_PKEY_SLH_DSA_SHAKE_256F
+    if (pkey_id == EVP_PKEY_SLH_DSA_SHAKE_256F) needs_null = 1;
+#endif
+  }
+
+  /* Fallback: for keymgmt-based keys (EVP_PKEY_id == -1), such as
+   * PQC public keys obtained via EVP_PKEY_dup, try NULL digest.
+   * These algorithms (ML-DSA, SLH-DSA) use internal hashing. */
+  if (!needs_null && pkey_id == -1) {
+    needs_null = 1;
+  }
+
+  return needs_null;
+}
+
+/* ========================================================================
  * openssl_pkey_free - __gc metamethod
  * ======================================================================== */
 
@@ -293,7 +421,23 @@ openssl_pkey_is_private1(lua_State *L)
 /***
  * return public key
  * @function get_public
- * @treturn openssl.evp_pkey pub
+ * @tparam openssl.evp_pkey pkey private key (or key with public key data)
+ * @treturn openssl.evp_pkey pub public key
+ * @treturn[2] nil
+ * @treturn[2] string error message
+ *
+ * For traditional algorithms (RSA, EC, Ed25519, etc.), uses standard
+ * i2d_PUBKEY/d2i_PUBKEY round-trip.
+ *
+ * For PQC algorithms (ML-DSA, ML-KEM, SLH-DSA, etc.) where the
+ * SubjectPublicKeyInfo round-trip may fail, falls back to EVP_PKEY_dup().
+ * PQC private keys contain the full public key data internally.
+ *
+ * @see openssl/evp.h:EVP_PKEY_dup
+ * @usage
+ * local key = pkey.new("ML-DSA-44")
+ * local pub = pkey.get_public(key)
+ * assert(not pub:is_private())
  */
 int
 openssl_pkey_get_public(lua_State *L)
@@ -369,8 +513,18 @@ openssl_pkey_get_public(lua_State *L)
 /***
  * get key details as table
  * @function parse
- * @treturn table infos with key bits,pkey,type, pkey may be rsa,dh,dsa, show as table with factor hex
- * encoded bignum
+ * @treturn table infos with key bits, size, type, and algorithm-specific fields.
+ *  For traditional algorithms (RSA, DSA, DH, EC), includes the raw key object
+ *  (rsa, dsa, dh, ec) with factor hex encoded bignums.
+ *  For PQC algorithms (ML-DSA, ML-KEM, SLH-DSA, etc.), includes:
+ *    - algorithm: the algorithm identifier string
+ *    - pub_key_raw: raw public key bytes (if available)
+ *    - security_bits: estimated security strength in bits
+ * @usage
+ * local info = key:parse()
+ * print(info.type, info.bits, info.size)
+ * -- For PQC keys:
+ * -- print(info.algorithm, info.security_bits)
  */
 int
 openssl_pkey_parse(lua_State *L)
@@ -1057,6 +1211,9 @@ luaL_Reg pkey_funcs[] = {
 
   { "derive",             openssl_derive                 },
 
+  { "encapsulate",        openssl_encapsulate            },
+  { "decapsulate",        openssl_decapsulate            },
+
 #if defined(OPENSSL_SUPPORT_SM2) && OPENSSL_VERSION_NUMBER < 0x30000000
   { "as_sm2",             openssl_pkey_as_sm2            },
 #endif
@@ -1118,6 +1275,9 @@ static const luaL_Reg R[] = {
   { "sign",        openssl_sign             },
   { "verify",      openssl_verify           },
   { "derive",      openssl_derive           },
+
+  { "encapsulate", openssl_encapsulate      },
+  { "decapsulate", openssl_decapsulate      },
 
 #if defined(OPENSSL_SUPPORT_SM2) && OPENSSL_VERSION_NUMBER < 0x30000000
   { "as_sm2",      openssl_pkey_as_sm2      },

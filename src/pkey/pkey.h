@@ -29,6 +29,11 @@ struct luaopenssl_ossl_item {
 int evp_pkey_name2type(const char *name);
 const char *evp_pkey_type2name(int type);
 
+/* PQC helper: check if a key type uses internal hashing (no external digest needed).
+ * Returns 1 if the key is EdDSA, ML-DSA, Falcon, SLH-DSA, or a keymgmt-based key.
+ * Returns 0 otherwise (traditional algorithms like RSA, ECDSA). */
+int evp_pkey_needs_null_digest(EVP_PKEY *pkey);
+
 /* Key operations exposed to other modules */
 int openssl_pkey_is_private1(lua_State *L);
 int openssl_pkey_read(lua_State *L);
@@ -61,6 +66,10 @@ int openssl_pkey_ctx_sign(lua_State *L);
 int openssl_sign(lua_State *L);
 int openssl_verify(lua_State *L);
 int openssl_derive(lua_State *L);
+
+/* KEM (Key Encapsulation Mechanism) operations */
+int openssl_encapsulate(lua_State *L);
+int openssl_decapsulate(lua_State *L);
 int openssl_seal(lua_State *L);
 int openssl_open(lua_State *L);
 int openssl_seal_init(lua_State *L);

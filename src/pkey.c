@@ -246,6 +246,7 @@ openssl_pkey_is_sm2(const EVP_PKEY *pkey)
 #include "pkey/sign.c"
 #include "pkey/derive.c"
 #include "pkey/seal.c"
+#include "pkey/kem.c"
 #include "pkey/engine.c"
 #include "pkey/sm2.c"
 #include "pkey/core.c"

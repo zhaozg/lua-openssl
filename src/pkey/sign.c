@@ -14,9 +14,14 @@
  * sign message with private key
  * @function sign
  * @tparam string data data be signed
- * @tparam[opt] string|env_digest md_alg default use sha256 or sm3 when pkey is SM2 type
+ * @tparam[opt] string|env_digest md_alg digest algorithm name, default "sha256" (or "sm3" for SM2).
+ *  For EdDSA (Ed25519, Ed448) and PQC signature algorithms (ML-DSA, Falcon, SLH-DSA),
+ *  the digest is ignored as these algorithms use internal hashing.
  * @tparam[opt='1234567812345678'] string userId used when pkey is SM2 type
  * @treturn string signed message
+ * @treturn[2] nil
+ * @treturn[2] string error message
+ * @see evp_pkey_needs_null_digest
  */
 int
 openssl_sign(lua_State *L)
@@ -46,117 +51,11 @@ openssl_sign(lua_State *L)
   /* For EdDSA keys (Ed25519, Ed448) and PQC signature algorithms (ML-DSA, etc.),
    * allow NULL digest as they use internal hash functions.
    * Detect these and allow omitting or explicitly passing nil.
-   *
-   * NOTE: For PQC algorithms (ML-DSA, SLH-DSA), EVP_PKEY_type(EVP_PKEY_id(pkey))
-   * returns 0 because these NIDs are not registered in the legacy type table.
-   * So we must compare EVP_PKEY_id(pkey) directly for PQC algorithms. */
-  {
-    int pkey_id = EVP_PKEY_id(pkey);
-    int pkey_type = EVP_PKEY_type(pkey_id);
-    int needs_null_digest = 0;
-#ifdef EVP_PKEY_ED25519
-    if (pkey_type == EVP_PKEY_ED25519
-#ifdef EVP_PKEY_ED448
-        || pkey_type == EVP_PKEY_ED448
-#endif
-    ) {
-      needs_null_digest = 1;
-    }
-#endif
-    /* PQC signature algorithms (ML-DSA/Dilithium, Falcon, SLH-DSA/SPHINCS+) use
-     * internal hashing and don't need an external digest.
-     * Detect these and allow omitting or explicitly passing nil.
-     * Use EVP_PKEY_id() directly since EVP_PKEY_type() returns 0 for these. */
-    if (!needs_null_digest) {
-      /* Old OQS provider names (DILITHIUM, KYBER, SPHINCS) */
-#ifdef EVP_PKEY_DILITHIUM
-      if (pkey_id == EVP_PKEY_DILITHIUM) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_DILITHIUM2
-      if (pkey_id == EVP_PKEY_DILITHIUM2) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_DILITHIUM3
-      if (pkey_id == EVP_PKEY_DILITHIUM3) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_DILITHIUM5
-      if (pkey_id == EVP_PKEY_DILITHIUM5) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_FALCON
-      if (pkey_id == EVP_PKEY_FALCON) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_FALCON512
-      if (pkey_id == EVP_PKEY_FALCON512) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_FALCON1024
-      if (pkey_id == EVP_PKEY_FALCON1024) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_SPHINCS
-      if (pkey_id == EVP_PKEY_SPHINCS) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_SPHINCSSHA256
-      if (pkey_id == EVP_PKEY_SPHINCSSHA256) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_SPHINCSSHAKE256
-      if (pkey_id == EVP_PKEY_SPHINCSSHAKE256) needs_null_digest = 1;
-#endif
-      /* Standardized NIST names (OpenSSL 3.5+) */
-#ifdef EVP_PKEY_ML_DSA_44
-      if (pkey_id == EVP_PKEY_ML_DSA_44) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_ML_DSA_65
-      if (pkey_id == EVP_PKEY_ML_DSA_65) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_ML_DSA_87
-      if (pkey_id == EVP_PKEY_ML_DSA_87) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_SLH_DSA_SHA2_128S
-      if (pkey_id == EVP_PKEY_SLH_DSA_SHA2_128S) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_SLH_DSA_SHA2_128F
-      if (pkey_id == EVP_PKEY_SLH_DSA_SHA2_128F) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_SLH_DSA_SHA2_192S
-      if (pkey_id == EVP_PKEY_SLH_DSA_SHA2_192S) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_SLH_DSA_SHA2_192F
-      if (pkey_id == EVP_PKEY_SLH_DSA_SHA2_192F) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_SLH_DSA_SHA2_256S
-      if (pkey_id == EVP_PKEY_SLH_DSA_SHA2_256S) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_SLH_DSA_SHA2_256F
-      if (pkey_id == EVP_PKEY_SLH_DSA_SHA2_256F) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_SLH_DSA_SHAKE_128S
-      if (pkey_id == EVP_PKEY_SLH_DSA_SHAKE_128S) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_SLH_DSA_SHAKE_128F
-      if (pkey_id == EVP_PKEY_SLH_DSA_SHAKE_128F) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_SLH_DSA_SHAKE_192S
-      if (pkey_id == EVP_PKEY_SLH_DSA_SHAKE_192S) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_SLH_DSA_SHAKE_192F
-      if (pkey_id == EVP_PKEY_SLH_DSA_SHAKE_192F) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_SLH_DSA_SHAKE_256S
-      if (pkey_id == EVP_PKEY_SLH_DSA_SHAKE_256S) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_SLH_DSA_SHAKE_256F
-      if (pkey_id == EVP_PKEY_SLH_DSA_SHAKE_256F) needs_null_digest = 1;
-#endif
-    }
-    /* Fallback: for keymgmt-based keys (EVP_PKEY_id == -1), such as
-     * PQC public keys obtained via EVP_PKEY_dup, try NULL digest.
-     * These algorithms (ML-DSA, SLH-DSA) use internal hashing. */
-    if (!needs_null_digest && pkey_id == -1) {
-      needs_null_digest = 1;
-    }
-    if (needs_null_digest) {
-      md = NULL;
-    } else {
-      md = get_digest(L, 3, md_alg);
-    }
+   * Uses shared helper evp_pkey_needs_null_digest() defined in core.c. */
+  if (evp_pkey_needs_null_digest(pkey)) {
+    md = NULL;
+  } else {
+    md = get_digest(L, 3, md_alg);
   }
 #if defined(OPENSSL_SUPPORT_SM2)
   if (is_SM2 && md) is_SM2 = EVP_MD_type(md) == NID_sm3;
@@ -224,9 +123,14 @@ openssl_sign(lua_State *L)
  * @function verify
  * @tparam string data data be signed
  * @tparam string signature signed result
- * @tparam[opt] string|env_digest md_alg default use sha256 or sm3 when pkey is SM2 type
+ * @tparam[opt] string|env_digest md_alg digest algorithm name, default "sha256" (or "sm3" for SM2).
+ *  For EdDSA (Ed25519, Ed448) and PQC signature algorithms (ML-DSA, Falcon, SLH-DSA),
+ *  the digest is ignored as these algorithms use internal hashing.
  * @tparam[opt='1234567812345678'] string userId used when pkey is SM2 type
  * @treturn boolean true for pass verify
+ * @treturn[2] nil
+ * @treturn[2] string error message
+ * @see evp_pkey_needs_null_digest
  */
 int
 openssl_verify(lua_State *L)
@@ -257,117 +161,11 @@ openssl_verify(lua_State *L)
   /* For EdDSA keys (Ed25519, Ed448) and PQC signature algorithms (ML-DSA, etc.),
    * allow NULL digest as they use internal hash functions.
    * Detect these and allow omitting or explicitly passing nil.
-   *
-   * NOTE: For PQC algorithms (ML-DSA, SLH-DSA), EVP_PKEY_type(EVP_PKEY_id(pkey))
-   * returns 0 because these NIDs are not registered in the legacy type table.
-   * So we must compare EVP_PKEY_id(pkey) directly for PQC algorithms. */
-  {
-    int pkey_id = EVP_PKEY_id(pkey);
-    int pkey_type = EVP_PKEY_type(pkey_id);
-    int needs_null_digest = 0;
-#ifdef EVP_PKEY_ED25519
-    if (pkey_type == EVP_PKEY_ED25519
-#ifdef EVP_PKEY_ED448
-        || pkey_type == EVP_PKEY_ED448
-#endif
-    ) {
-      needs_null_digest = 1;
-    }
-#endif
-    /* PQC signature algorithms (ML-DSA/Dilithium, Falcon, SLH-DSA/SPHINCS+) use
-     * internal hashing and don't need an external digest.
-     * Detect these and allow omitting or explicitly passing nil.
-     * Use EVP_PKEY_id() directly since EVP_PKEY_type() returns 0 for these. */
-    if (!needs_null_digest) {
-      /* Old OQS provider names (DILITHIUM, KYBER, SPHINCS) */
-#ifdef EVP_PKEY_DILITHIUM
-      if (pkey_id == EVP_PKEY_DILITHIUM) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_DILITHIUM2
-      if (pkey_id == EVP_PKEY_DILITHIUM2) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_DILITHIUM3
-      if (pkey_id == EVP_PKEY_DILITHIUM3) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_DILITHIUM5
-      if (pkey_id == EVP_PKEY_DILITHIUM5) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_FALCON
-      if (pkey_id == EVP_PKEY_FALCON) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_FALCON512
-      if (pkey_id == EVP_PKEY_FALCON512) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_FALCON1024
-      if (pkey_id == EVP_PKEY_FALCON1024) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_SPHINCS
-      if (pkey_id == EVP_PKEY_SPHINCS) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_SPHINCSSHA256
-      if (pkey_id == EVP_PKEY_SPHINCSSHA256) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_SPHINCSSHAKE256
-      if (pkey_id == EVP_PKEY_SPHINCSSHAKE256) needs_null_digest = 1;
-#endif
-      /* Standardized NIST names (OpenSSL 3.5+) */
-#ifdef EVP_PKEY_ML_DSA_44
-      if (pkey_id == EVP_PKEY_ML_DSA_44) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_ML_DSA_65
-      if (pkey_id == EVP_PKEY_ML_DSA_65) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_ML_DSA_87
-      if (pkey_id == EVP_PKEY_ML_DSA_87) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_SLH_DSA_SHA2_128S
-      if (pkey_id == EVP_PKEY_SLH_DSA_SHA2_128S) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_SLH_DSA_SHA2_128F
-      if (pkey_id == EVP_PKEY_SLH_DSA_SHA2_128F) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_SLH_DSA_SHA2_192S
-      if (pkey_id == EVP_PKEY_SLH_DSA_SHA2_192S) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_SLH_DSA_SHA2_192F
-      if (pkey_id == EVP_PKEY_SLH_DSA_SHA2_192F) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_SLH_DSA_SHA2_256S
-      if (pkey_id == EVP_PKEY_SLH_DSA_SHA2_256S) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_SLH_DSA_SHA2_256F
-      if (pkey_id == EVP_PKEY_SLH_DSA_SHA2_256F) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_SLH_DSA_SHAKE_128S
-      if (pkey_id == EVP_PKEY_SLH_DSA_SHAKE_128S) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_SLH_DSA_SHAKE_128F
-      if (pkey_id == EVP_PKEY_SLH_DSA_SHAKE_128F) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_SLH_DSA_SHAKE_192S
-      if (pkey_id == EVP_PKEY_SLH_DSA_SHAKE_192S) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_SLH_DSA_SHAKE_192F
-      if (pkey_id == EVP_PKEY_SLH_DSA_SHAKE_192F) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_SLH_DSA_SHAKE_256S
-      if (pkey_id == EVP_PKEY_SLH_DSA_SHAKE_256S) needs_null_digest = 1;
-#endif
-#ifdef EVP_PKEY_SLH_DSA_SHAKE_256F
-      if (pkey_id == EVP_PKEY_SLH_DSA_SHAKE_256F) needs_null_digest = 1;
-#endif
-    }
-    /* Fallback: for keymgmt-based keys (EVP_PKEY_id == -1), such as
-     * PQC public keys obtained via EVP_PKEY_dup, try NULL digest.
-     * These algorithms (ML-DSA, SLH-DSA) use internal hashing. */
-    if (!needs_null_digest && pkey_id == -1) {
-      needs_null_digest = 1;
-    }
-    if (needs_null_digest) {
-      md = NULL;
-    } else {
-      md = get_digest(L, 4, md_alg);
-    }
+   * Uses shared helper evp_pkey_needs_null_digest() defined in core.c. */
+  if (evp_pkey_needs_null_digest(pkey)) {
+    md = NULL;
+  } else {
+    md = get_digest(L, 4, md_alg);
   }
 
   ctx = EVP_MD_CTX_new();
