@@ -236,6 +236,95 @@ function TestProviderAdvanced:test_null_provider()
   prov:unload()
 end
 
+-- Test suite for PQC provider management
+TestProviderPQC = {}
+
+function TestProviderPQC:test_query_pqc_algorithms()
+  -- query_pqc_algorithms should return a table (may be empty if no PQC provider)
+  local algs = provider.query_pqc_algorithms()
+
+  lu.assertNotNil(algs, "Should return a table")
+  lu.assertEquals(type(algs), 'table', "Should be a table")
+
+  if #algs > 0 then
+    print(string.format("  Found %d PQC algorithm(s):", #algs))
+    for i, alg in ipairs(algs) do
+      print("    " .. i .. ". " .. alg)
+    end
+  else
+    print("  No PQC algorithms available (install OQS provider to test)")
+  end
+end
+
+function TestProviderPQC:test_query_pqc_algorithms_with_provider()
+  -- Try loading OQS provider first, then query
+  local algs = provider.query_pqc_algorithms({'oqsprovider', 'liboqs'})
+
+  lu.assertNotNil(algs, "Should return a table")
+  lu.assertEquals(type(algs), 'table', "Should be a table")
+
+  if #algs > 0 then
+    print(string.format("  Found %d PQC algorithm(s) after loading providers:", #algs))
+    for i, alg in ipairs(algs) do
+      print("    " .. i .. ". " .. alg)
+    end
+  end
+end
+
+function TestProviderPQC:test_load_pqc_providers()
+  -- Try to auto-load common PQC providers
+  local loaded = provider.load_pqc_providers()
+
+  lu.assertNotNil(loaded, "Should return a table")
+  lu.assertEquals(type(loaded), 'table', "Should be a table")
+
+  -- Check if any PQC providers were loaded
+  local count = 0
+  for name, prov in pairs(loaded) do
+    count = count + 1
+    lu.assertEquals(type(prov), 'userdata',
+      string.format("Provider '%s' should be userdata", name))
+    lu.assertEquals(prov:name(), name,
+      string.format("Provider name should be '%s'", name))
+    print(string.format("  Loaded PQC provider: %s", name))
+  end
+
+  if count == 0 then
+    print("  No PQC providers found (install OQS provider to test)")
+  end
+end
+
+function TestProviderPQC:test_pqc_algorithms_after_load()
+  -- First try to load PQC providers
+  local loaded = provider.load_pqc_providers()
+
+  -- Then query available algorithms
+  local algs = provider.query_pqc_algorithms()
+
+  lu.assertNotNil(algs, "Should return a table")
+  lu.assertEquals(type(algs), 'table', "Should be a table")
+
+  if #algs > 0 then
+    -- Verify that at least some algorithms are recognizable PQC types
+    local has_ml_dsa = false
+    local has_ml_kem = false
+    for _, alg in ipairs(algs) do
+      local upper = alg:upper()
+      if upper:match("ML%-DSA") or upper:match("DILITHIUM") then
+        has_ml_dsa = true
+      end
+      if upper:match("ML%-KEM") or upper:match("KYBER") then
+        has_ml_kem = true
+      end
+    end
+
+    -- Just report what we found
+    print(string.format("  PQC algorithms available: %d", #algs))
+    if has_ml_dsa then print("    - ML-DSA/Dilithium available") end
+    if has_ml_kem then print("    - ML-KEM/Kyber available") end
+  end
+end
+
 -- Performance test
 TestProviderPerformance = {}
 

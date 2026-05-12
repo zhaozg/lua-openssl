@@ -33,9 +33,6 @@
  * Compatibility layer (stays in pkey.c for cross-module access)
  * ======================================================================== */
 
-static int         evp_pkey_name2type(const char *name);
-static const char *evp_pkey_type2name(int type);
-
 /* Compatibility layer for low-level key access migration to OpenSSL 3.0+ PARAM API */
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
 
