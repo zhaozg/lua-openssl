@@ -106,4 +106,10 @@ int luaopen_provider(lua_State *L);
 int luaopen_kdf(lua_State *L);
 int luaopen_srp(lua_State *L);
 
+/* PQC SSL/TLS integration */
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L) && !defined(LIBRESSL_VERSION_NUMBER)
+int luaopen_ssl_pqc(lua_State *L);
+void ssl_pqc_register_ctx_methods(lua_State *L, int ctx_idx);
+#endif
+
 #endif

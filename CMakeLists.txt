@@ -68,6 +68,7 @@ add_library(lua-openssl ${LUA_OPENSSL_LIBTYPE}
   src/sk.h
   src/srp.c
   src/ssl.c
+  src/ssl_pqc.c
   src/th-lock.c
   src/util.c
   src/x509.c
