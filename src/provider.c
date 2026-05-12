@@ -4,6 +4,14 @@ Provider module for OpenSSL 3.0+ provider API support
 This module provides Lua bindings for OpenSSL 3.0+ provider functionality,
 allowing loading, unloading, and querying of cryptographic providers.
 
+Key features:
+- Load and unload providers (default, fips, legacy, base, null)
+- Query provider parameters (name, version, buildinfo)
+- Self-test providers (especially important for FIPS)
+- List available providers
+- Query available PQC (Post-Quantum Cryptography) algorithms
+- Auto-load common PQC providers (oqsprovider, liboqs)
+
 Note: This module is only available with OpenSSL 3.0 or later.
 LibreSSL does not support the provider API, so it is excluded.
 
@@ -11,10 +19,23 @@ LibreSSL does not support the provider API, so it is excluded.
 @usage
   local provider = require('openssl').provider
   local default_provider = provider.load('default')
+
+  -- Query available PQC algorithms
+  local pqc_algs = provider.query_pqc_algorithms()
+  for _, alg in ipairs(pqc_algs) do
+    print(alg)
+  end
+
+  -- Auto-load common PQC providers
+  local loaded = provider.load_pqc_providers()
+  for name, prov in pairs(loaded) do
+    print("Loaded:", name)
+  end
 */
 
 #include "openssl.h"
 #include "private.h"
+#include "pkey/pkey.h"
 
 /* Provider API is only available in OpenSSL 3.0+, not in LibreSSL */
 #if (OPENSSL_VERSION_NUMBER >= 0x30000000L) && !defined(LIBRESSL_VERSION_NUMBER)
@@ -312,10 +333,203 @@ static luaL_Reg provider_funs[] = {
   {NULL, NULL}
 };
 
+/***
+Query available PQC (Post-Quantum Cryptography) algorithms
+
+Probes the current OpenSSL provider configuration for available PQC
+algorithms by attempting key generation for known PQC algorithm names.
+Supports both old OQS provider names and standardized NIST names.
+
+@function query_pqc_algorithms
+@tparam[opt] table providers optional list of provider names to load first
+@treturn table array of available PQC algorithm name strings
+@usage
+  -- Query all available PQC algorithms
+  local algs = provider.query_pqc_algorithms()
+  for _, alg in ipairs(algs) do
+    print(alg)
+  end
+
+  -- Try loading OQS provider first, then query
+  local algs = provider.query_pqc_algorithms({'oqsprovider', 'liboqs'})
+*/
+static int openssl_provider_query_pqc(lua_State *L)
+{
+  /* Known PQC algorithm names to probe */
+  const char *pqc_algorithms[] = {
+    /* ML-DSA (FIPS 204) - Standardized NIST names */
+    "ML-DSA-44",
+    "ML-DSA-65",
+    "ML-DSA-87",
+    /* ML-DSA - Old OQS provider names */
+    "DILITHIUM2",
+    "DILITHIUM3",
+    "DILITHIUM5",
+    /* ML-KEM (FIPS 203) - Standardized NIST names */
+    "ML-KEM-512",
+    "ML-KEM-768",
+    "ML-KEM-1024",
+    /* ML-KEM - Old OQS provider names */
+    "KYBER512",
+    "KYBER768",
+    "KYBER1024",
+    /* Falcon */
+    "FALCON512",
+    "FALCON1024",
+    /* SLH-DSA (FIPS 205) - Standardized NIST names */
+    "SLH-DSA-SHA2-128S",
+    "SLH-DSA-SHA2-128F",
+    "SLH-DSA-SHA2-192S",
+    "SLH-DSA-SHA2-192F",
+    "SLH-DSA-SHA2-256S",
+    "SLH-DSA-SHA2-256F",
+    "SLH-DSA-SHAKE-128S",
+    "SLH-DSA-SHAKE-128F",
+    "SLH-DSA-SHAKE-192S",
+    "SLH-DSA-SHAKE-192F",
+    "SLH-DSA-SHAKE-256S",
+    "SLH-DSA-SHAKE-256F",
+    /* SLH-DSA - Old OQS provider names */
+    "SPHINCS+-SHA256-128S",
+    "SPHINCS+-SHA256-128F",
+    "SPHINCS+-SHA256-192S",
+    "SPHINCS+-SHA256-192F",
+    "SPHINCS+-SHA256-256S",
+    "SPHINCS+-SHA256-256F",
+    "SPHINCS+-SHAKE256-128S",
+    "SPHINCS+-SHAKE256-128F",
+    "SPHINCS+-SHAKE256-192S",
+    "SPHINCS+-SHAKE256-192F",
+    "SPHINCS+-SHAKE256-256S",
+    "SPHINCS+-SHAKE256-256F",
+    NULL
+  };
+
+  /* Optional: try loading providers from argument list first */
+  if (!lua_isnone(L, 1)) {
+    luaL_checktype(L, 1, LUA_TTABLE);
+    lua_pushnil(L);
+    while (lua_next(L, 1) != 0) {
+      if (lua_type(L, -1) == LUA_TSTRING) {
+        const char *prov_name = lua_tostring(L, -1);
+        /* Try to load the provider, don't retain */
+        OSSL_PROVIDER_try_load(NULL, prov_name, 1);
+      }
+      lua_pop(L, 1);
+    }
+  }
+
+  lua_newtable(L);
+  int idx = 1;
+
+  for (int i = 0; pqc_algorithms[i] != NULL; i++) {
+    const char *alg_name = pqc_algorithms[i];
+    int nid = OBJ_txt2nid(alg_name);
+    if (nid == NID_undef) {
+      /* Try case-insensitive lookup via evp_pkey_name2type */
+      nid = evp_pkey_name2type(alg_name);
+    }
+    if (nid == NID_undef)
+      continue;
+
+    EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new_id(nid, NULL);
+    if (ctx == NULL)
+      continue;
+
+    if (EVP_PKEY_keygen_init(ctx) == 1) {
+      lua_pushstring(L, alg_name);
+      lua_rawseti(L, -2, idx++);
+    }
+    EVP_PKEY_CTX_free(ctx);
+  }
+
+  return 1;
+}
+
+/***
+Auto-load common PQC (Post-Quantum Cryptography) providers
+
+Attempts to load well-known PQC providers in order of preference.
+Common providers tried: oqsprovider, liboqs, oqs, oqs-provider.
+Returns a table mapping provider names to loaded provider objects.
+
+@function load_pqc_providers
+@treturn table table mapping provider names to loaded openssl.provider objects
+@usage
+  local loaded = provider.load_pqc_providers()
+  if next(loaded) then
+    for name, prov in pairs(loaded) do
+      print("Loaded PQC provider:", name)
+    end
+  else
+    print("No PQC providers available")
+  end
+*/
+static int openssl_provider_load_pqc(lua_State *L)
+{
+  /* Common PQC provider names to try, in order of preference */
+  const char *pqc_providers[] = {
+    "oqsprovider",
+    "liboqs",
+    "oqs",
+    "oqs-provider",
+    NULL
+  };
+
+  lua_newtable(L);
+
+  for (int i = 0; pqc_providers[i] != NULL; i++) {
+    const char *name = pqc_providers[i];
+
+    /* Skip if already loaded */
+    if (OSSL_PROVIDER_available(NULL, name))
+      continue;
+
+    /* Try to load (non-retained, so it can be unloaded if no algorithms found) */
+    OSSL_PROVIDER *prov = OSSL_PROVIDER_try_load(NULL, name, 1);
+    if (prov != NULL) {
+      /* Verify it actually provides PQC algorithms by probing */
+      int has_pqc = 0;
+      const char *probe_algs[] = {
+        "ML-DSA-44", "DILITHIUM2", "ML-KEM-768", "KYBER768", NULL
+      };
+      for (int j = 0; probe_algs[j] != NULL; j++) {
+        int nid = OBJ_txt2nid(probe_algs[j]);
+        if (nid == NID_undef)
+          nid = evp_pkey_name2type(probe_algs[j]);
+        if (nid != NID_undef) {
+          EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new_id(nid, NULL);
+          if (ctx) {
+            if (EVP_PKEY_keygen_init(ctx) == 1) {
+              has_pqc = 1;
+              EVP_PKEY_CTX_free(ctx);
+              break;
+            }
+            EVP_PKEY_CTX_free(ctx);
+          }
+        }
+      }
+
+      if (has_pqc) {
+        /* Provider has PQC algorithms, push as userdata */
+        PUSH_OBJECT(prov, "openssl.provider");
+        lua_setfield(L, -2, name);
+      } else {
+        /* No PQC algorithms, unload it */
+        OSSL_PROVIDER_unload(prov);
+      }
+    }
+  }
+
+  return 1;
+}
+
 static luaL_Reg provider_funcs[] = {
   {"load",  openssl_provider_load},
   {"list",  openssl_provider_list_all},
   {"get",   openssl_provider_get},
+  {"query_pqc_algorithms", openssl_provider_query_pqc},
+  {"load_pqc_providers", openssl_provider_load_pqc},
 
   {NULL, NULL}
 };
@@ -326,6 +540,23 @@ int luaopen_provider(lua_State *L)
 
   lua_newtable(L);
   luaL_setfuncs(L, provider_funcs, 0);
+
+  /* Auto-load common PQC providers on initialization.
+   * This is a best-effort attempt - if no PQC providers are installed,
+   * it silently continues. Users can call load_pqc_providers() later
+   * to retry or query_pqc_algorithms() to check availability.
+   */
+  const char *auto_pqc_providers[] = {
+    "oqsprovider",
+    "liboqs",
+    "oqs",
+    NULL
+  };
+  for (int i = 0; auto_pqc_providers[i] != NULL; i++) {
+    if (!OSSL_PROVIDER_available(NULL, auto_pqc_providers[i])) {
+      OSSL_PROVIDER_try_load(NULL, auto_pqc_providers[i], 1);
+    }
+  }
 
   return 1;
 }
