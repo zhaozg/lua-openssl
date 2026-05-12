@@ -217,7 +217,154 @@ evp_pkey_type2name(int type)
 #endif
 
 /* ========================================================================
- * evp_pkey_needs_null_digest - PQC helper for sign/verify
+ * PQC signature algorithm NID table
+ *
+ * This table lists all known PQC signature algorithm NIDs that use
+ * internal hashing (no external digest needed). It is used by
+ * evp_pkey_needs_null_digest() to detect PQC keys.
+ *
+ * The table is conditionally compiled: each entry is guarded by
+ * #ifdef for the corresponding EVP_PKEY_* macro, so it automatically
+ * adapts to the available PQC algorithms in the current OpenSSL build.
+ *
+ * Both old OQS provider names and standardized NIST names are included.
+ * ======================================================================== */
+
+/* Helper macro: add a PQC signature NID to the table if available */
+#define PQC_SIG_NID(nid) { nid, #nid }
+
+static const struct {
+  int   nid;
+  const char *name;
+} pqc_sig_nids[] = {
+  /* Old OQS provider names */
+#ifdef EVP_PKEY_DILITHIUM
+  PQC_SIG_NID(EVP_PKEY_DILITHIUM),
+#endif
+#ifdef EVP_PKEY_DILITHIUM2
+  PQC_SIG_NID(EVP_PKEY_DILITHIUM2),
+#endif
+#ifdef EVP_PKEY_DILITHIUM3
+  PQC_SIG_NID(EVP_PKEY_DILITHIUM3),
+#endif
+#ifdef EVP_PKEY_DILITHIUM5
+  PQC_SIG_NID(EVP_PKEY_DILITHIUM5),
+#endif
+#ifdef EVP_PKEY_FALCON
+  PQC_SIG_NID(EVP_PKEY_FALCON),
+#endif
+#ifdef EVP_PKEY_FALCON512
+  PQC_SIG_NID(EVP_PKEY_FALCON512),
+#endif
+#ifdef EVP_PKEY_FALCON1024
+  PQC_SIG_NID(EVP_PKEY_FALCON1024),
+#endif
+#ifdef EVP_PKEY_SPHINCS
+  PQC_SIG_NID(EVP_PKEY_SPHINCS),
+#endif
+#ifdef EVP_PKEY_SPHINCSSHA256
+  PQC_SIG_NID(EVP_PKEY_SPHINCSSHA256),
+#endif
+#ifdef EVP_PKEY_SPHINCSSHAKE256
+  PQC_SIG_NID(EVP_PKEY_SPHINCSSHAKE256),
+#endif
+
+  /* Standardized NIST names (OpenSSL 3.5+) */
+#ifdef EVP_PKEY_ML_DSA_44
+  PQC_SIG_NID(EVP_PKEY_ML_DSA_44),
+#endif
+#ifdef EVP_PKEY_ML_DSA_65
+  PQC_SIG_NID(EVP_PKEY_ML_DSA_65),
+#endif
+#ifdef EVP_PKEY_ML_DSA_87
+  PQC_SIG_NID(EVP_PKEY_ML_DSA_87),
+#endif
+#ifdef EVP_PKEY_SLH_DSA_SHA2_128S
+  PQC_SIG_NID(EVP_PKEY_SLH_DSA_SHA2_128S),
+#endif
+#ifdef EVP_PKEY_SLH_DSA_SHA2_128F
+  PQC_SIG_NID(EVP_PKEY_SLH_DSA_SHA2_128F),
+#endif
+#ifdef EVP_PKEY_SLH_DSA_SHA2_192S
+  PQC_SIG_NID(EVP_PKEY_SLH_DSA_SHA2_192S),
+#endif
+#ifdef EVP_PKEY_SLH_DSA_SHA2_192F
+  PQC_SIG_NID(EVP_PKEY_SLH_DSA_SHA2_192F),
+#endif
+#ifdef EVP_PKEY_SLH_DSA_SHA2_256S
+  PQC_SIG_NID(EVP_PKEY_SLH_DSA_SHA2_256S),
+#endif
+#ifdef EVP_PKEY_SLH_DSA_SHA2_256F
+  PQC_SIG_NID(EVP_PKEY_SLH_DSA_SHA2_256F),
+#endif
+#ifdef EVP_PKEY_SLH_DSA_SHAKE_128S
+  PQC_SIG_NID(EVP_PKEY_SLH_DSA_SHAKE_128S),
+#endif
+#ifdef EVP_PKEY_SLH_DSA_SHAKE_128F
+  PQC_SIG_NID(EVP_PKEY_SLH_DSA_SHAKE_128F),
+#endif
+#ifdef EVP_PKEY_SLH_DSA_SHAKE_192S
+  PQC_SIG_NID(EVP_PKEY_SLH_DSA_SHAKE_192S),
+#endif
+#ifdef EVP_PKEY_SLH_DSA_SHAKE_192F
+  PQC_SIG_NID(EVP_PKEY_SLH_DSA_SHAKE_192F),
+#endif
+#ifdef EVP_PKEY_SLH_DSA_SHAKE_256S
+  PQC_SIG_NID(EVP_PKEY_SLH_DSA_SHAKE_256S),
+#endif
+#ifdef EVP_PKEY_SLH_DSA_SHAKE_256F
+  PQC_SIG_NID(EVP_PKEY_SLH_DSA_SHAKE_256F),
+#endif
+};
+
+#undef PQC_SIG_NID
+
+/* ========================================================================
+ * evp_pkey_is_pqc_sig - Check if a key is a PQC signature algorithm
+ *
+ * Returns 1 if the key is a PQC signature algorithm (ML-DSA, Falcon,
+ * SLH-DSA) that uses internal hashing. Returns 0 otherwise.
+ *
+ * Uses the pqc_sig_nids[] table for O(1) lookup by NID.
+ * For OpenSSL 3.0+, also tries EVP_PKEY_is_a() for keymgmt-based keys
+ * where EVP_PKEY_id() may return -1.
+ *
+ * @tparam evp_pkey pkey the key to check
+ * @treturn boolean 1 if PQC signature algorithm, 0 otherwise
+ * ======================================================================== */
+int
+evp_pkey_is_pqc_sig(EVP_PKEY *pkey)
+{
+  int pkey_id = EVP_PKEY_id(pkey);
+  size_t i;
+
+  /* Check against the PQC signature NID table */
+  for (i = 0; i < OSSL_NELEM(pqc_sig_nids); i++) {
+    if (pkey_id == pqc_sig_nids[i].nid)
+      return 1;
+  }
+
+  /* For keymgmt-based keys (EVP_PKEY_id == -1), such as PQC public keys
+   * obtained via EVP_PKEY_dup on OpenSSL 3.5+, try EVP_PKEY_is_a() */
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
+  if (pkey_id == -1) {
+    /* Check against known PQC signature algorithm names */
+    for (i = 0; i < OSSL_NELEM(pqc_sig_nids); i++) {
+      if (EVP_PKEY_is_a(pkey, pqc_sig_nids[i].name)) {
+        return 1;
+      }
+    }
+  }
+#else
+  (void)pkey_id;
+  /* On older OpenSSL, keymgmt-based keys don't exist, so nothing to do */
+#endif
+
+  return 0;
+}
+
+/* ========================================================================
+ * evp_pkey_needs_null_digest - Check if a key uses internal hashing
  *
  * Check if a key type uses internal hashing and does not need an external
  * digest algorithm. This applies to:
@@ -225,19 +372,13 @@ evp_pkey_type2name(int type)
  *   - PQC signature algorithms: ML-DSA (Dilithium), Falcon, SLH-DSA (SPHINCS+)
  *   - Keymgmt-based keys (EVP_PKEY_id == -1) as fallback
  *
- * For PQC algorithms, EVP_PKEY_type(EVP_PKEY_id(pkey)) returns 0 because
- * these NIDs are not registered in the legacy type table, so we must
- * compare EVP_PKEY_id(pkey) directly.
- *
  * @tparam evp_pkey pkey the key to check
  * @treturn boolean true if the key uses internal hashing
  * ======================================================================== */
 int
 evp_pkey_needs_null_digest(EVP_PKEY *pkey)
 {
-  int pkey_id = EVP_PKEY_id(pkey);
-  int pkey_type = EVP_PKEY_type(pkey_id);
-  int needs_null = 0;
+  int pkey_type = EVP_PKEY_type(EVP_PKEY_id(pkey));
 
   /* EdDSA keys (Ed25519, Ed448) use internal hashing */
 #ifdef EVP_PKEY_ED25519
@@ -246,102 +387,21 @@ evp_pkey_needs_null_digest(EVP_PKEY *pkey)
       || pkey_type == EVP_PKEY_ED448
 #endif
   ) {
-    needs_null = 1;
+    return 1;
   }
 #endif
 
-  if (!needs_null) {
-    /* PQC signature algorithms use internal hashing.
-     * Check via EVP_PKEY_id() directly since EVP_PKEY_type() returns 0 for these. */
-
-    /* Old OQS provider names (DILITHIUM, KYBER, SPHINCS) */
-#ifdef EVP_PKEY_DILITHIUM
-    if (pkey_id == EVP_PKEY_DILITHIUM) needs_null = 1;
-#endif
-#ifdef EVP_PKEY_DILITHIUM2
-    if (pkey_id == EVP_PKEY_DILITHIUM2) needs_null = 1;
-#endif
-#ifdef EVP_PKEY_DILITHIUM3
-    if (pkey_id == EVP_PKEY_DILITHIUM3) needs_null = 1;
-#endif
-#ifdef EVP_PKEY_DILITHIUM5
-    if (pkey_id == EVP_PKEY_DILITHIUM5) needs_null = 1;
-#endif
-#ifdef EVP_PKEY_FALCON
-    if (pkey_id == EVP_PKEY_FALCON) needs_null = 1;
-#endif
-#ifdef EVP_PKEY_FALCON512
-    if (pkey_id == EVP_PKEY_FALCON512) needs_null = 1;
-#endif
-#ifdef EVP_PKEY_FALCON1024
-    if (pkey_id == EVP_PKEY_FALCON1024) needs_null = 1;
-#endif
-#ifdef EVP_PKEY_SPHINCS
-    if (pkey_id == EVP_PKEY_SPHINCS) needs_null = 1;
-#endif
-#ifdef EVP_PKEY_SPHINCSSHA256
-    if (pkey_id == EVP_PKEY_SPHINCSSHA256) needs_null = 1;
-#endif
-#ifdef EVP_PKEY_SPHINCSSHAKE256
-    if (pkey_id == EVP_PKEY_SPHINCSSHAKE256) needs_null = 1;
-#endif
-
-    /* Standardized NIST names (OpenSSL 3.5+) */
-#ifdef EVP_PKEY_ML_DSA_44
-    if (pkey_id == EVP_PKEY_ML_DSA_44) needs_null = 1;
-#endif
-#ifdef EVP_PKEY_ML_DSA_65
-    if (pkey_id == EVP_PKEY_ML_DSA_65) needs_null = 1;
-#endif
-#ifdef EVP_PKEY_ML_DSA_87
-    if (pkey_id == EVP_PKEY_ML_DSA_87) needs_null = 1;
-#endif
-#ifdef EVP_PKEY_SLH_DSA_SHA2_128S
-    if (pkey_id == EVP_PKEY_SLH_DSA_SHA2_128S) needs_null = 1;
-#endif
-#ifdef EVP_PKEY_SLH_DSA_SHA2_128F
-    if (pkey_id == EVP_PKEY_SLH_DSA_SHA2_128F) needs_null = 1;
-#endif
-#ifdef EVP_PKEY_SLH_DSA_SHA2_192S
-    if (pkey_id == EVP_PKEY_SLH_DSA_SHA2_192S) needs_null = 1;
-#endif
-#ifdef EVP_PKEY_SLH_DSA_SHA2_192F
-    if (pkey_id == EVP_PKEY_SLH_DSA_SHA2_192F) needs_null = 1;
-#endif
-#ifdef EVP_PKEY_SLH_DSA_SHA2_256S
-    if (pkey_id == EVP_PKEY_SLH_DSA_SHA2_256S) needs_null = 1;
-#endif
-#ifdef EVP_PKEY_SLH_DSA_SHA2_256F
-    if (pkey_id == EVP_PKEY_SLH_DSA_SHA2_256F) needs_null = 1;
-#endif
-#ifdef EVP_PKEY_SLH_DSA_SHAKE_128S
-    if (pkey_id == EVP_PKEY_SLH_DSA_SHAKE_128S) needs_null = 1;
-#endif
-#ifdef EVP_PKEY_SLH_DSA_SHAKE_128F
-    if (pkey_id == EVP_PKEY_SLH_DSA_SHAKE_128F) needs_null = 1;
-#endif
-#ifdef EVP_PKEY_SLH_DSA_SHAKE_192S
-    if (pkey_id == EVP_PKEY_SLH_DSA_SHAKE_192S) needs_null = 1;
-#endif
-#ifdef EVP_PKEY_SLH_DSA_SHAKE_192F
-    if (pkey_id == EVP_PKEY_SLH_DSA_SHAKE_192F) needs_null = 1;
-#endif
-#ifdef EVP_PKEY_SLH_DSA_SHAKE_256S
-    if (pkey_id == EVP_PKEY_SLH_DSA_SHAKE_256S) needs_null = 1;
-#endif
-#ifdef EVP_PKEY_SLH_DSA_SHAKE_256F
-    if (pkey_id == EVP_PKEY_SLH_DSA_SHAKE_256F) needs_null = 1;
-#endif
-  }
+  /* PQC signature algorithms use internal hashing */
+  if (evp_pkey_is_pqc_sig(pkey))
+    return 1;
 
   /* Fallback: for keymgmt-based keys (EVP_PKEY_id == -1), such as
    * PQC public keys obtained via EVP_PKEY_dup, try NULL digest.
    * These algorithms (ML-DSA, SLH-DSA) use internal hashing. */
-  if (!needs_null && pkey_id == -1) {
-    needs_null = 1;
-  }
+  if (EVP_PKEY_id(pkey) == -1)
+    return 1;
 
-  return needs_null;
+  return 0;
 }
 
 /* ========================================================================
