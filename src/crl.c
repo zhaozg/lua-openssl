@@ -995,7 +995,7 @@ static time_t
 ASN1_GetTimeT(const ASN1_TIME *time)
 {
   struct tm   t;
-  const char *str = ASN1_STRING_get0_data(time);
+  const unsigned char *str = ASN1_STRING_get0_data(time);
   int type = ASN1_STRING_type(time);
   size_t      i = 0;
 
