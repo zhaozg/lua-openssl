@@ -36,7 +36,7 @@ function TestCMS:testCompress()
     lu.assertEquals(msg, ret)
   else
     local tips = "WARNING: %d:%s, maybe openssl without compress support"
-    print(string.format(tips, code, err))
+    print(string.format(tips, code, tostring(err or 'unknown')))
   end
 end
 
