@@ -186,7 +186,7 @@ static const OSSL_ITEM standard_name2type[] = {
 #endif
 };
 
-#if (OPENSSL_VERSION_NUMBER < 0x30000000L || defined(LIBRESSL_VERSION_NUMBER))
+#if (OPENSSL_VERSION_NUMBER < 0x30000130L || defined(LIBRESSL_VERSION_NUMBER))
 int
 evp_pkey_name2type(const char *name)
 {
