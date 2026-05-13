@@ -15,10 +15,10 @@ local openssl = require('openssl')
 local pkey = openssl.pkey
 
 -- Helper: check if we're on OpenSSL 3.x (not LibreSSL)
-local function is_openssl35()
+local function is_openssl3()
   local _, _, ssl_ver = openssl.version()
   local _, _, ssl_num = openssl.version(true)
-  return ssl_num >= 0x30500000 and not ssl_ver:match("LibreSSL")
+  return ssl_num >= 0x30000000 and not ssl_ver:match("LibreSSL"), ssl_num
 end
 
 -- Helper: check if a specific algorithm is available for key generation
@@ -28,8 +28,18 @@ local function is_alg_available(alg_name)
   return ok and key ~= nil
 end
 
-if not is_openssl35() then
-  print("  Skipping: Not OpenSSL 3.x")
+local function is_with_pqs()
+  local ok, V = is_openssl3()
+  if ok and V >= 0x30500000  then
+    return true
+  end
+  if openssl.provider then
+    return openssl.provider.load('oqsprovider')
+  end
+end
+
+if not is_with_pqs() then
+  print("  Skipping: Not OpenSSL 3.x or without oqsprovider")
   return
 end
 
@@ -65,7 +75,7 @@ end
 
 function TestPQCDetection:test_provider_module_available()
   -- Provider module should be available on OpenSSL 3.x
-  if is_openssl35() then
+  if is_openssl3() then
     lu.assertNotNil(openssl.provider, "Provider module should exist on OpenSSL 3.x")
     if openssl.provider and not openssl.provider._error then
       print("  Provider module is functional")
@@ -249,7 +259,7 @@ TestPQCProvider = {}
 
 function TestPQCProvider:test_load_oqs_provider()
   -- Try to load OQS provider if available
-  if not is_openssl35() then
+  if not is_openssl3() then
     print("  Skipping: Requires OpenSSL 3.x")
     return
   end
