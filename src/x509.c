@@ -1112,17 +1112,29 @@ static int openssl_x509_valid_at(lua_State* L)
 }
 
 /***
-get serial number of x509
+Get or set the serial number of an X.509 certificate.
+
+**Getting** (no second argument or second argument is boolean):
+- If called with only `cert`, returns the serial as a hexadecimal string.
+- If called with `cert` and a boolean `asobject`:
+  - `asobject == true`  → returns the serial as an `ASN1_INTEGER` object (class `openssl.asn1_string`).
+  - `asobject == false` → returns the serial as a `BIGNUM` object (class `openssl.bn`).
+
+**Setting** (second argument is not boolean):
+- Accepts a serial value as a Lua string (hexadecimal), number, `openssl.bn` object, or `openssl.asn1_string` (ASN1_INTEGER).
+- Sets the serial number of the certificate and returns `true` on success, or `false` on failure (with an error pushed).
+
 @function serial
-@tparam[opt=true] boolean asobject
-@treturn[1] openssl.bn object
-@treturn[2] string result
-*/
-/***
-set serial number of x509
-@function serial
-@tparam string|number|bn serail
-@treturn boolean result true for success
+@tparam openssl.x509 cert The X.509 certificate object.
+@tparam[opt] boolean|string|number|openssl.bn|openssl.asn1_string arg
+    Optional argument:
+    - If boolean: controls return format when getting.
+    - Otherwise: new serial value to set.
+@treturn string|openssl.asn1_string|openssl.bn
+    When getting: hexadecimal string (no arg), ASN1_INTEGER (arg==true), or BIGNUM (arg==false).
+@treturn boolean
+    When setting: `true` for success, `false` for failure.
+@error Raises a Lua error on invalid argument types or OpenSSL failures.
 */
 static int openssl_x509_serial(lua_State *L)
 {
