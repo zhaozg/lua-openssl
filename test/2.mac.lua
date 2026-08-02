@@ -24,9 +24,11 @@ function TestMAC:testCMAC()
     b = a:final(self.msg)
     lu.assertEquals(b, "21a805600f5a650854142d7ec00a4224")
 
-    -- get the raw binary form from a duplicated context: a finalized
-    -- context cannot be fed again (see testFinalized)
-    c = assert(a:dup():final(self.msg, true))
+    -- get the raw binary form from a duplicated *fresh* context: the
+    -- finalized context itself cannot be fed again (see testFinalized),
+    -- and dup() inherits the finalized state of the original
+    local fresh = assert(mac.ctx(self.alg, self.key))
+    c = assert(fresh:dup():final(self.msg, true))
     lu.assertEquals(openssl.hex(c), b)
   else
     print("Bugs, " .. err)
