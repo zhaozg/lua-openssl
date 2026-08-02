@@ -185,12 +185,17 @@ openssl_pushresult(lua_State *L, int result)
     return 1;
   } else {
     unsigned long val = ERR_get_error();
+    const char    *reason = val ? ERR_reason_error_string(val) : NULL;
     lua_pushnil(L);
+    /* ERR_reason_error_string() may return NULL for error codes whose
+     * reason table is not registered (e.g. provider errors). Pushing that
+     * NULL would yield a second nil on the Lua side, so callers could no
+     * longer tell a failed call from a nil result. Fall back to a generic
+     * message while still exposing the error code. */
+    lua_pushstring(L, reason ? reason : "UNKNOWN ERROR");
     if (val) {
-      lua_pushstring(L, ERR_reason_error_string(val));
       lua_pushinteger(L, val);
     } else {
-      lua_pushstring(L, "UNKNOWN ERROR");
       lua_pushnil(L);
     }
     return 3;

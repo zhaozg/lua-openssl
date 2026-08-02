@@ -175,12 +175,15 @@ _code_ can pass to openssl.error() to get more error information.
 */
 static int openssl_error_string(lua_State *L)
 {
-  unsigned long val = ERR_get_error();
+  unsigned long  val = ERR_get_error();
+  const char    *reason;
   if (val == 0) return 0;
 
   val = (unsigned long)luaL_optinteger(L, 1, val);
 
-  lua_pushstring(L, ERR_reason_error_string(val));
+  /* ERR_reason_error_string() may return NULL; never push NULL as a string */
+  reason = ERR_reason_error_string(val);
+  lua_pushstring(L, reason ? reason : "UNKNOWN ERROR");
   lua_pushstring(L, ERR_lib_error_string(val));
   lua_pushinteger(L, val);
 
