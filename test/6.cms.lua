@@ -89,6 +89,30 @@ function TestCMS:testSign()
   assert(c1:get_signers()[1] == self.bob.cert)
 end
 
+-- add_signers: step-by-step signing on a partial CMS, see issue #412
+function TestCMS:testAddSigners()
+  -- create a partial CMS without a signer, then add one later
+  local c = assert(cms.sign(nil, nil, nil, {}, cms.flags.stream + cms.flags.partial))
+  -- add_signers returns the cms object itself for chaining
+  local ret = assert(c:add_signers(self.bob.cert, self.bob.key))
+  lu.assertEquals(ret, c)
+  assert(c:final(self.msg, cms.flags.binary))
+
+  local msg = assert(cms.verify(c, { self.bob.cert }, self.castore))
+  lu.assertEquals(msg, self.msg)
+  assert(c:get_signers()[1] == self.bob.cert)
+
+  -- second signer can be added as well
+  local c2 = assert(cms.sign(nil, nil, nil, {}, cms.flags.stream + cms.flags.partial))
+  assert(c2:add_signers(self.bob.cert, self.bob.key))
+  assert(c2:add_signers(self.alice.cert, self.alice.key))
+  assert(c2:final(self.msg, cms.flags.binary))
+  local signers = assert(c2:get_signers())
+  lu.assertEquals(#signers, 2)
+  msg = assert(cms.verify(c2, { self.bob.cert, self.alice.cert }, self.castore))
+  lu.assertEquals(msg, self.msg)
+end
+
 function TestCMS:testSignReceipt()
   local c1 = assert(cms.sign(self.bob.cert, self.bob.key, self.msg, { self.ca.cert }))
   assert(c1:add_receipt({ "alice" }, { "bob" }))

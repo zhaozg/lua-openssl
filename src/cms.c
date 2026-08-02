@@ -252,29 +252,45 @@ openssl_cms_uncompress(lua_State *L)
 }
 
 /***
-make signed cms object
+sign data with cert and key
 
 @function sign
-@tparam openssl.x509 signer cert
-@tparam openssl.evp_pkey pkey
-@tparam openssl.bio input_data
-@tparam[opt] stack_of_x509 certs include in the CMS
-@tparam[opt=0] number flags
-@treturn cms object
+
+@function sign
+@tparam[opt] openssl.x509 signcert signer certificate, omit to create a
+  partial CMS for adding signers later via add_signers
+@tparam[opt] openssl.evp_pkey pkey signer private key, omit to create a
+  partial CMS
+@tparam[opt] bio|string input data to sign, omit when flags contains
+  cms.flags.partial
+@tparam[opt] table certs additional certificates to include
+@tparam[opt=0] number flags signing flags, see cms.flags
+@treturn cms signed cms object
+@treturn[2] nil on failure
+@treturn[2] string error message
+@treturn[2] number error code
+@usage
+-- one-shot signing
+local c = cms.sign(cert, pkey, "hello world")
+
+-- step-by-step signing with add_signers (partial)
+local c = cms.sign(nil, nil, nil, {}, cms.flags.stream + cms.flags.partial)
+c:add_signers(cert, pkey)
+c:final("hello world")
 */
 static int
 openssl_cms_sign(lua_State *L)
 {
   /* look aat apps/cms.c operation & SMIME_SIGNERS */
-  X509     *signcert = CHECK_OBJECT(1, X509, "openssl.x509");
-  EVP_PKEY *pkey = CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
-  BIO      *data = load_bio_object(L, 3);
+  X509     *signcert = lua_isnoneornil(L, 1) ? NULL : CHECK_OBJECT(1, X509, "openssl.x509");
+  EVP_PKEY *pkey = lua_isnoneornil(L, 2) ? NULL : CHECK_OBJECT(2, EVP_PKEY, "openssl.evp_pkey");
+  BIO      *data = lua_isnoneornil(L, 3) ? NULL : load_bio_object(L, 3);
   STACK_OF(X509) *certs = openssl_sk_x509_fromtable(L, 4);
   unsigned int flags = luaL_optint(L, 5, 0);
   int          ret = 0;
 
   CMS_ContentInfo *cms = CMS_sign(signcert, pkey, certs, data, flags);
-  BIO_free(data);
+  if (data) BIO_free(data);
 
   sk_X509_pop_free(certs, X509_free);
   if (cms) {
@@ -704,11 +720,22 @@ openssl_cms_content(lua_State *L)
 
 /***
 add signers to CMS structure
+
 @function add_signers
-@tparam cms cms object to add signers to
-@tparam openssl.x509 signer certificate for signing
+@tparam cms cms object to add signers to, typically created by
+  cms.sign(nil, nil, nil, certs, cms.flags.stream + cms.flags.partial)
+@tparam openssl.x509 signer signer certificate for signing
 @tparam openssl.evp_pkey pkey private key for signing
-@treturn boolean result
+@tparam[opt='sha256'] string digest digest algorithm name
+@tparam[opt=0] number flags CMS signing flags, see cms.flags
+@treturn cms the cms object itself, for chaining
+@treturn[2] nil on failure
+@treturn[2] string error message
+@treturn[2] number error code
+@usage
+local c = cms.sign(nil, nil, nil, {}, cms.flags.stream + cms.flags.partial)
+c:add_signers(cert, pkey)
+c:final("hello world")
 */
 static int
 openssl_cms_add_signers(lua_State *L)
@@ -721,7 +748,7 @@ openssl_cms_add_signers(lua_State *L)
 
   CMS_SignerInfo *si = CMS_add1_signer(cms, signer, pkey, sign_md, flags);
   if (si == NULL) {
-    return 0;
+    return openssl_pushresult(L, 0);
   }
   lua_pushvalue(L, 1);
   return 1;
@@ -790,6 +817,14 @@ openssl_cms_final(lua_State *L)
   return openssl_pushresult(L, ret);
 }
 
+/* OPENSSL_free is a function-like macro and cannot be used directly as a
+ * callback, so wrap it for sk_OPENSSL_STRING_pop_free(). */
+static void
+openssl_string_free(char *s)
+{
+  OPENSSL_free(s);
+}
+
 static STACK_OF(GENERAL_NAMES) * make_names_stack(STACK_OF(OPENSSL_STRING) * ns)
 {
   int i;
@@ -824,28 +859,39 @@ make_receipt_request(STACK_OF(OPENSSL_STRING) * rr_to,
                      int rr_allorfirst,
                      STACK_OF(OPENSSL_STRING) * rr_from)
 {
-  STACK_OF(GENERAL_NAMES) * rct_to, *rct_from;
+  /* note: on success rct_to/rct_from are owned by the returned
+   * CMS_ReceiptRequest and freed by CMS_ReceiptRequest_free() */
+  STACK_OF(GENERAL_NAMES) * rct_to = NULL, *rct_from = NULL;
   CMS_ReceiptRequest *rr;
   rct_to = make_names_stack(rr_to);
   if (!rct_to) goto err;
   if (rr_from) {
     rct_from = make_names_stack(rr_from);
     if (!rct_from) goto err;
-  } else
-    rct_from = NULL;
+  }
   rr = CMS_ReceiptRequest_create0(NULL, -1, rr_allorfirst, rct_from, rct_to);
   return rr;
 err:
+  if (rct_to) sk_GENERAL_NAMES_pop_free(rct_to, GENERAL_NAMES_free);
+  if (rct_from) sk_GENERAL_NAMES_pop_free(rct_from, GENERAL_NAMES_free);
   return NULL;
 }
 
 /***
 add receipt request to CMS structure
+
 @function add_receipt
-@tparam[opt] table receipt_to array of recipient emails
-@tparam[opt] table receipt_from array of sender emails
+@tparam cms cms object to add receipt to, must contain at least one signer
+@tparam table receipt_to array of recipient emails
+@tparam table receipt_from array of sender emails
 @tparam[opt] boolean all_or_first request receipt from all or first recipient
-@treturn boolean result true for success
+@treturn cms the cms object itself, for chaining
+@treturn[2] nil on failure
+@treturn[2] string error message
+@treturn[2] number error code
+@usage
+local c = cms.sign(cert, pkey, "hello world")
+c:add_receipt({ "alice@example.com" }, { "bob@example.com" })
 */
 static int
 openssl_cms_add_receipt(lua_State *L)
@@ -868,12 +914,15 @@ openssl_cms_add_receipt(lua_State *L)
   rr_to = sk_OPENSSL_STRING_new_null();
   rr_from = sk_OPENSSL_STRING_new_null();
 
+  /* duplicate strings: lua_tostring pointers are only valid while the
+   * strings are referenced on the Lua stack, but they are consumed later
+   * inside make_receipt_request() */
   for (i = 1; i <= lua_rawlen(L, 2); i++) {
     const char *s = NULL;
     lua_rawgeti(L, 2, i);
     s = lua_tostring(L, -1);
     lua_pop(L, 1);
-    sk_OPENSSL_STRING_push(rr_to, (char *)s);
+    if (s) sk_OPENSSL_STRING_push(rr_to, OPENSSL_strdup(s));
   }
 
   for (i = 1; i <= lua_rawlen(L, 3); i++) {
@@ -881,22 +930,24 @@ openssl_cms_add_receipt(lua_State *L)
     lua_rawgeti(L, 3, i);
     s = lua_tostring(L, -1);
     lua_pop(L, 1);
-    sk_OPENSSL_STRING_push(rr_from, (char *)s);
+    if (s) sk_OPENSSL_STRING_push(rr_from, OPENSSL_strdup(s));
   }
   si = sk_CMS_SignerInfo_value(sis, 0);
 
   receipt = make_receipt_request(rr_to, rr_allorfirst, rr_from);
 
+  if (rr_to) sk_OPENSSL_STRING_pop_free(rr_to, openssl_string_free);
+  if (rr_from) sk_OPENSSL_STRING_pop_free(rr_from, openssl_string_free);
+
   if (!receipt) luaL_error(L, "error in make_receipt_request");
 
   ret = CMS_add1_ReceiptRequest(si, receipt);
-  if (rr_to) sk_OPENSSL_STRING_free(rr_to);
-  if (rr_from) sk_OPENSSL_STRING_free(rr_from);
   if (ret == 1) {
     CMS_ReceiptRequest_free(receipt);
     lua_pushvalue(L, 1);
     return 1;
   }
+  CMS_ReceiptRequest_free(receipt);
   return openssl_pushresult(L, ret);
 }
 
