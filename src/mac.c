@@ -96,6 +96,13 @@ openssl_mac_provider(lua_State *L)
 
 static int
 openssl_mac_get_params(lua_State *L)
+/***
+get MAC algorithm parameters
+@function get_params
+@tparam table params table of OSSL_PARAM definitions (name, type, value)
+@treturn table|nil resulting parameters or nil with error message on failure
+*/
+
 {
   EVP_MAC    *mac = CHECK_OBJECT(1, EVP_MAC, "openssl.mac");
   OSSL_PARAM *params = openssl_toparams(L, 2);
@@ -235,9 +242,8 @@ const OSSL_PARAM *EVP_MAC_settable_ctx_params(const EVP_MAC *mac);
 /***
 get mac_ctx object
 
-@function new
-@tparam string|integer|asn1_object alg name, nid or object identity
-@tparam string key secret key
+@function ctx
+@tparam string|integer|asn1_object alg name, nid or object identity of a digest or cipher algorithm
 @tparam[opt] openssl.engine engine nothing with default engine
 @treturn mac_ctx object mapping MAC_CTX in openssl
 */
@@ -296,7 +302,7 @@ openssl_mac_ctx_new(lua_State *L)
 
 /***
 free MAC context resources
-@function free
+@function close
 @treturn number always returns 0
 */
 static int
@@ -375,6 +381,9 @@ openssl_mac(lua_State *L)
 /***
 feed data to do digest
 
+note: update() is rejected once final() has been called; EVP_MAC_final()
+  consumes the underlying context (a second tag would be meaningless).
+
 @function update
 @tparam string msg data
 @treturn boolean result true for success
@@ -386,9 +395,7 @@ local ctx = mac.ctx("aes-128-cbc", key)
 assert(ctx:update("part1"))
 assert(ctx:update("part2"))
 local tag = assert(ctx:final())
-@note update() is rejected once final() has been called; EVP_MAC_final()
-  consumes the underlying context (a second tag would be meaningless).
-*/
+ */
 static int
 openssl_mac_ctx_update(lua_State *L)
 {
@@ -409,6 +416,10 @@ openssl_mac_ctx_update(lua_State *L)
 /***
 get result of mac
 
+note: final() consumes the context: the returned tag is the final MAC and
+  any further update()/final() call on the same context is rejected with
+  nil, err, code. Create a new mac.ctx to compute another tag.
+
 @function final
 @tparam[opt] string last last part of data
 @tparam[opt=false] boolean raw binary or hex encoded result, default false for hex result
@@ -421,10 +432,7 @@ local ctx = mac.ctx("aes-128-cbc", key)
 ctx:update("data")
 local tag_hex = ctx:final()          -- hex string
 local tag_raw = ctx:final(true)      -- binary string
-@note final() consumes the context: the returned tag is the final MAC and
-  any further update()/final() call on the same context is rejected with
-  nil, err, code. Create a new mac.ctx to compute another tag.
-*/
+ */
 static int
 openssl_mac_ctx_final(lua_State *L)
 {

@@ -83,9 +83,15 @@ openssl_hmac_ctx_new(lua_State *L)
 #endif
 }
 
+/***
+release hmac context resources
+@function close
+@treturn number 0
+*/
 static int
 openssl_mac_ctx_free(lua_State *L)
 {
+
 #ifdef USE_EVP_MAC_API
   EVP_MAC_CTX *c = CHECK_OBJECT(1, EVP_MAC_CTX, "openssl.hmac_ctx");
   if (!c) return 0;

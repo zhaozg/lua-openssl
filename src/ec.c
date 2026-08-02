@@ -191,6 +191,20 @@ ec_key_to_evp_pkey(EC_KEY *ec)
 
 static int
 openssl_ecdsa_do_sign(lua_State *L)
+/***
+sign pre-hashed data with EC key using low-level ECDSA
+
+@function do_sign
+@tparam openssl.ec_key ec the EC key to sign with
+@tparam string data pre-hashed data to sign
+@tparam[opt=true] boolean der true returns DER-encoded signature, false returns r and s components
+@treturn string DER-encoded signature when der is true
+@treturn[2] openssl.bn r r component when der is false
+@treturn[2] openssl.bn s s component when der is false
+@treturn[3] nil on error
+@treturn[3] string error message
+*/
+
 {
   EC_KEY              *ec = CHECK_OBJECT(1, EC_KEY, "openssl.ec_key");
   size_t               l;
@@ -290,6 +304,19 @@ openssl_ecdsa_do_sign(lua_State *L)
 
 static int
 openssl_ecdsa_do_verify(lua_State *L)
+/***
+verify a low-level ECDSA signature over pre-hashed data
+
+@function do_verify
+@tparam openssl.ec_key ec the EC key to verify with
+@tparam string digest pre-hashed data that was signed
+@tparam string|openssl.bn signature DER-encoded signature string, or r component
+@tparam[opt] openssl.bn s s component when signature is given as (r, s) pair
+@treturn boolean true if the signature is valid, false otherwise
+@treturn[2] nil on error
+@treturn[2] string error message
+*/
+
 {
   size_t               l, sigl;
   int                  ret;
@@ -468,7 +495,8 @@ do EC verify, input msg is digest result
 @tparam string signature
 @tparam evp_md|string|nid md digest alg identity
 @treturn boolean true for verified, false for invalid signature
-@return nil for error, and followed by error message
+@treturn[2] nil on error
+@treturn[2] string error message
 */
 static int openssl_ecdsa_verify(lua_State *L)
 {

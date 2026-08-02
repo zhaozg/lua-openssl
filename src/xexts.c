@@ -372,7 +372,8 @@ set asn1_object for x509_extension.
 @function object
 @tparam openssl.asn1_object obj
 @treturn boolean true for success
-@return nil when occure error, and followed by error message
+@treturn[2] nil on error
+@treturn[2] string error message
 */
 static int
 openssl_xext_object(lua_State *L)
@@ -403,7 +404,8 @@ set critical of x509_extension.
 @function critical
 @tparam boolean critical set to self
 @treturn boolean set critical success return true
-@return nil fail return nil, and followed by error message
+@treturn[2] nil on failure
+@treturn[2] string error message
 */
 static int
 openssl_xext_critical(lua_State *L)
@@ -431,7 +433,8 @@ set type of x509_extension
 @function data
 @tparam openssl.asn1_string data set to self
 @treturn boolean result true for success
-@return nil for error, and followed by error message
+@treturn[2] nil on error
+@treturn[2] string error message
 */
 static int
 openssl_xext_data(lua_State *L)

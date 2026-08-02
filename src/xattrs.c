@@ -228,7 +228,8 @@ set asn1_object for x509_attribute.
 @function object
 @tparam openssl.asn1_object obj
 @treturn boolean true for success
-@return nil when occure error, and followed by error message
+@treturn[2] nil on error
+@treturn[2] string error message
 */
 static int
 openssl_xattr_object(lua_State *L)

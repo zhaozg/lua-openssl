@@ -1075,7 +1075,7 @@ static int openssl_ts_resp_export(lua_State *L)
 get tst_info as table or tst_info filed value
 @function tst_info
 @tparam[opt] string field
-@return tst_info table or feild value
+@treturn table|string tst_info table or field value
 */
 static int openssl_ts_resp_tst_info(lua_State *L)
 {
@@ -1387,7 +1387,7 @@ static int openssl_ts_resp_ctx_md(lua_State *L)
 get tst_info as table
 @function tst_info
 @tparam[opt] string field
-@return tst_info table or feild value
+@treturn table|string tst_info table or field value
 */
 static int openssl_ts_resp_ctx_tst_info(lua_State *L)
 {

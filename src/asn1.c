@@ -516,7 +516,7 @@ openssl_asn1object_new(lua_State *L)
 
 /***
 convert der encoded asn1type string to object
-@function asn1type_d2i
+@function d2i_asn1type
 @tparam string der
 @treturn asn1type object for success, and nil for fail
 */

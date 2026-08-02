@@ -792,7 +792,7 @@ static int openssl_bio_shutdown(lua_State *L)
 
 /***
 get ssl object assosited with bio object
-@function get_ssl
+@function ssl
 @treturn ssl
 */
 static int openssl_bio_get_ssl(lua_State *L)

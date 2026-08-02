@@ -69,6 +69,147 @@ static int openssl_point_tostring(lua_State *L)
 
 /* Method table */
 static luaL_Reg point_methods[] = {
+
+/***
+Duplicate an EC point on this group.
+
+@function dup
+@tparam openssl.ec_group group the EC group
+@tparam openssl.ec_point point the EC point to duplicate
+@treturn openssl.ec_point duplicated EC point
+*/
+/***
+Compare two EC points for equality.
+
+@function equal
+@tparam openssl.ec_group group the EC group
+@tparam openssl.ec_point a first EC point
+@tparam openssl.ec_point b second EC point
+@treturn boolean true if equal, false otherwise
+*/
+/***
+Add two EC points on this group.
+
+@function add
+@tparam openssl.ec_group group the EC group
+@tparam openssl.ec_point a first point
+@tparam openssl.ec_point b second point
+@treturn openssl.ec_point result point (a + b)
+*/
+/***
+Double an EC point on this group.
+
+@function dbl
+@tparam openssl.ec_group group the EC group
+@tparam openssl.ec_point point the EC point to double
+@treturn openssl.ec_point result point (2 * point)
+*/
+/***
+Invert an EC point in place on this group.
+
+@function invert
+@tparam openssl.ec_group group the EC group
+@tparam openssl.ec_point point the EC point to invert
+@treturn openssl.ec_point self (inverted)
+*/
+/***
+Multiply an EC point by a scalar on this group.
+
+@function mul
+@tparam openssl.ec_group group the EC group
+@tparam openssl.ec_point point the EC point
+@tparam bn|number n scalar multiplier
+@tparam[opt] openssl.ec_point q optional point for double scalar multiplication
+@tparam[opt] openssl.bn m optional second scalar for double scalar multiplication
+@treturn openssl.ec_point result point (n * point) or (n * point + m * q)
+*/
+/***
+Check if an EC point is at infinity.
+
+@function is_at_infinity
+@tparam openssl.ec_group group the EC group
+@tparam openssl.ec_point point the EC point
+@treturn boolean true if at infinity, false otherwise
+*/
+/***
+Check if an EC point lies on the curve of this group.
+
+@function is_on_curve
+@tparam openssl.ec_group group the EC group
+@tparam openssl.ec_point point the EC point
+@treturn boolean true if on curve, false otherwise
+*/
+/***
+Set an EC point to infinity in place.
+
+@function set_to_infinity
+@tparam openssl.ec_group group the EC group
+@tparam openssl.ec_point point the EC point
+@treturn openssl.ec_point self
+*/
+/***
+Convert an EC point to an octet string.
+
+@function point2oct
+@tparam openssl.ec_group group the EC group
+@tparam openssl.ec_point point the EC point
+@tparam[opt] string form point conversion form ("compressed", "uncompressed", or "hybrid")
+@treturn string|nil octet string representation or nil on failure
+*/
+/***
+Convert an octet string to an EC point.
+
+@function oct2point
+@tparam openssl.ec_group group the EC group
+@tparam string oct octet string representation
+@treturn openssl.ec_point|nil the resulting EC point or nil on failure
+*/
+/***
+Convert an EC point to a BIGNUM.
+
+@function point2bn
+@tparam openssl.ec_group group the EC group
+@tparam openssl.ec_point point the EC point
+@tparam[opt] string form point conversion form ("compressed", "uncompressed", or "hybrid")
+@treturn openssl.bn|nil the resulting BIGNUM or nil on failure
+*/
+/***
+Convert a BIGNUM to an EC point.
+
+@function bn2point
+@tparam openssl.ec_group group the EC group
+@tparam openssl.bn bn the BIGNUM to convert
+@treturn openssl.ec_point|nil the resulting EC point or nil on failure
+*/
+/***
+Convert an EC point to a hexadecimal string.
+
+@function point2hex
+@tparam openssl.ec_group group the EC group
+@tparam openssl.ec_point point the EC point
+@tparam[opt] string form point conversion form ("compressed", "uncompressed", or "hybrid")
+@treturn string|nil hexadecimal string representation or nil on failure
+*/
+/***
+Convert a hexadecimal string to an EC point.
+
+@function hex2point
+@tparam openssl.ec_group group the EC group
+@tparam string hex hexadecimal string representation
+@treturn openssl.ec_point|nil the resulting EC point or nil on failure
+*/
+/***
+Get or set the affine coordinates of an EC point.
+
+@function affine_coordinates
+@tparam openssl.ec_group group the EC group
+@tparam openssl.ec_point point the EC point
+@tparam[opt] openssl.bn x x coordinate (for setting)
+@tparam[opt] openssl.bn y y coordinate (for setting)
+@treturn openssl.bn x coordinate (when getting)
+@treturn[2] openssl.bn y coordinate (when getting)
+*/
+
   /* Object methods */
   {"copy",                 openssl_point_copy},
 

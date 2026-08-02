@@ -109,7 +109,8 @@ write cms object to bio object
 @tparam[opt=0] number flags
 @tparam[opt='smime'] string format
 @treturn string
-@return nil, and followed by error message
+@treturn[2] nil on failure
+@treturn[2] string error message
 */
 static int
 openssl_cms_export(lua_State *L)
@@ -255,8 +256,6 @@ openssl_cms_uncompress(lua_State *L)
 sign data with cert and key
 
 @function sign
-
-@function sign
 @tparam[opt] openssl.x509 signcert signer certificate, omit to create a
   partial CMS for adding signers later via add_signers
 @tparam[opt] openssl.evp_pkey pkey signer private key, omit to create a
@@ -309,7 +308,8 @@ verfiy signed cms object
 @tparam[opt] openssl.bio message
 @tparam[opt=0] number flags
 @treturn string content
-@return nil, and followed by error message
+@treturn[2] nil on failure
+@treturn[2] string error message
 */
 static int
 openssl_cms_verify(lua_State *L)
@@ -342,7 +342,8 @@ create enryptdata cms
 @tparam[opt='des-ede3-cbc'] string|evp_cipher cipher_alg
 @tparam[opt=0] number flags
 @treturn cms object
-@return nil, followed by error message
+@treturn[2] nil on failure
+@treturn[2] string error message
 */
 static int
 openssl_cms_EncryptedData_encrypt(lua_State *L)
@@ -401,7 +402,8 @@ create digest cms
 @tparam[opt='sha256'] string|evp_md digest_alg
 @tparam[opt=0] number flags
 @treturn cms object
-@return nil, followed by error message
+@treturn[2] nil on failure
+@treturn[2] string error message
 */
 static int
 openssl_cms_digest_create(lua_State *L)
@@ -563,7 +565,8 @@ decrypt cms message
 @tparam[opt=nil] table options may have key, keyid, password field,
   and values must be string type
 @treturn string decrypted message
-@return nil, and followed by error message
+@treturn[2] nil on failure
+@treturn[2] string error message
 */
 static int
 openssl_cms_decrypt(lua_State *L)

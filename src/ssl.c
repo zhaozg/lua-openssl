@@ -359,7 +359,7 @@ openssl_ssl_ctx_gc(lua_State *L)
 /***
 get timeout
 @function timeout
-@return number
+@treturn number timeout value
 */
 /***
 set timeout
@@ -407,7 +407,7 @@ mode support
 @function mode
 @tparam boolean clear must be true
 @tparam string mode
-@param[opt] ...
+@tparam[opt] ... extra arguments
 @treturn string
 @treturn ...
 @usage
@@ -860,7 +860,7 @@ static const char *sVerifyMode_Options[] = { "none",
 get verify_mode, return number mode and all string modes list
 @function verify_mode
 @treturn number mode_code
-@return ...
+@treturn ... mode code and mode strings
   none: not verify client cert
   peer: verify client cert
   fail: if client not have cert, will failure
@@ -1243,7 +1243,7 @@ set temp callback
 @function set_tmp
 @tparam string keytype, 'dh','ecdh',or 'rsa'
 @tparam function tmp_cb
-@param[opt] vararg
+@tparam[opt] ... vararg
 @treturn userdata object created
 */
 /***
@@ -1566,9 +1566,10 @@ openssl_ssl_ctx_set_session_callback(lua_State *L)
 }
 
 /***
-flush sessions
-@function flush
-@treturn various return value
+flush all sessions established before the given time
+@function flush_sessions
+@tparam number time flush sessions older than this unix timestamp
+@treturn number always 0
 */
 static int
 openssl_ssl_ctx_flush_sessions(lua_State *L)
@@ -1907,6 +1908,11 @@ openssl_ssl_session_id(lua_State *L)
   }
 }
 
+/***
+get the compression algorithm id used by the SSL session
+@function compress_id
+@treturn integer compression algorithm id, 0 if compression is not used
+*/
 static int
 openssl_ssl_session_compress_id(lua_State *L)
 {
@@ -2264,7 +2270,7 @@ get value according to arg
  <br/>hostname
  <br/>state_string
  <br/>side
-@return according to arg
+@treturn ... value according to arg
 */
 static int
 openssl_ssl_get(lua_State *L)
@@ -2346,8 +2352,8 @@ set value according to arg
  <br/>trust:
  <br/>verify_result:
  <br/>hostname:
-@param value val type accroding to arg
-@return value
+@tparam ... value type according to arg
+@treturn ... value
 */
 static int
 openssl_ssl_set(lua_State *L)

@@ -207,13 +207,12 @@ openssl_xname_digest(lua_State *L)
 };
 
 /***
-print x509_name to bio object
+print x509_name formatted to string
 
-@function print
-@tparam openssl.bio out output bio object
-@tparam[opt] integer indent for output
-@tparam[opt] integer flags for output
-@treturn boolean result, follow by error message
+@function toprint
+@tparam[opt] integer indent indentation level for output, default 0
+@tparam[opt] integer flags output flags, default 0
+@treturn string|nil formatted name string, or nil with error message on failure
 */
 static int
 openssl_xname_toprint(lua_State *L)

@@ -970,9 +970,10 @@ static int openssl_cipher_ctx_ctrl(lua_State *L)
 
 /***
 release cipher context resources
-@function __gc
+@function close
 @treturn number 0
 */
+
 static int openssl_cipher_ctx_free(lua_State *L)
 {
   EVP_CIPHER_CTX *ctx = CHECK_OBJECT(1, EVP_CIPHER_CTX, "openssl.evp_cipher_ctx");

@@ -211,7 +211,7 @@ openssl_xstore_load(lua_State *L)
 
 /***
 add x509 certificate or crl to store
-@param ... support x509 object,x509_crl object or array contains x509,x509_crl object
+@tparam ... support x509 object,x509_crl object or array contains x509,x509_crl object
 @function add
 @treturn boolean result
 */

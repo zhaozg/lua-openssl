@@ -517,8 +517,14 @@ err:
   return ret;
 }
 
+/***
+release digest context resources
+@function close
+@treturn number 0
+*/
 static int openssl_digest_ctx_free(lua_State *L)
 {
+
   EVP_MD_CTX *ctx = CHECK_OBJECT(1, EVP_MD_CTX, "openssl.evp_digest_ctx");
   lua_pushnil(L);
   lua_rawsetp(L, LUA_REGISTRYINDEX, ctx);
