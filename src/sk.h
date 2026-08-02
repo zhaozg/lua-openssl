@@ -28,7 +28,7 @@ be automatic convert in lua\-openssl if need.
 #define TAB2SK(TYPE, type)                                        \
 STACK_OF(TYPE)* openssl_sk_##type##_fromtable(lua_State*L, int idx) {     \
   STACK_OF(TYPE) * sk;                                            \
-  luaL_argcheck(L, lua_istable(L, idx),  idx,                     \
+  luaL_argcheck(L, lua_isnoneornil(L, idx) || lua_istable(L, idx), idx, \
          "must be a table as array or nil");                      \
   sk = SKM_sk_new_null(TYPE);                                     \
   if (lua_istable(L,idx)) {                                       \
@@ -63,12 +63,12 @@ STACK_OF(TYPE)* openssl_sk_##type##_fromtable(lua_State*L, int idx) {     \
 #define TAB2SK(TYPE, type)                                        \
 STACK_OF(TYPE)* openssl_sk_##type##_fromtable(lua_State*L, int idx) {     \
   STACK_OF(TYPE) * sk;                                            \
-  luaL_argcheck(L, lua_istable(L, idx),  idx,                     \
+  luaL_argcheck(L, lua_isnoneornil(L, idx) || lua_istable(L, idx), idx, \
          "must be a table as array or nil");                      \
   sk = sk_##TYPE##_new_null();                                    \
   if (lua_istable(L,idx)) {                                       \
-    int n = lua_rawlen(L, idx);                                   \
     int i;                                                        \
+    int n = lua_rawlen(L, idx);                                   \
     for ( i=0; i<n; i++ ) {                                       \
       TYPE *x;                                                    \
       lua_rawgeti(L, idx, i+1);                                   \

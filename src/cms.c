@@ -667,20 +667,29 @@ openssl_cms_type(lua_State *L)
   return 1;
 }
 
+/* CMS_ContentInfo_new() creates an "empty" CMS whose contentType is not
+ * set. Several OpenSSL accessors (CMS_get0_content, CMS_is_detached,
+ * CMS_set_detached, CMS_final) do not handle that case and crash, so guard
+ * them: only run them on a CMS that already has a content type. */
+static int
+cms_has_content_type(CMS_ContentInfo *cms)
+{
+  const ASN1_OBJECT *type = CMS_get0_type(cms);
+  return type != NULL && OBJ_obj2nid(type) != NID_undef;
+}
+
 /***
 get detached state
+
 @function detached
-@treturn boolean true for detached
-@tparam openssl.bio cmsbio bio returned by datainit
-@treturn boolean true for success, others value will followed by error message
-@warning inner use
-*/
-/***
-set detached state
-@function detached
-@tparam boolean detach
-@treturn boolean for success, others value will followed by error message
-@warning inner use
+@treturn boolean true for detached, false otherwise
+@tparam[opt] boolean detach set detached state
+@treturn[2] nil on failure
+@treturn[2] string error message
+@treturn[2] number error code
+@usage
+local c = cms.sign(cert, pkey, "hello world")
+if c:detached() then print("detached") end
 */
 static int
 openssl_cms_detached(lua_State *L)
@@ -688,28 +697,45 @@ openssl_cms_detached(lua_State *L)
   CMS_ContentInfo *cms = CHECK_OBJECT(1, CMS_ContentInfo, "openssl.cms");
   int              ret = 0;
   if (lua_isnone(L, 2)) {
+    if (!cms_has_content_type(cms)) {
+      /* empty CMS is not detached */
+      lua_pushboolean(L, 0);
+      return 1;
+    }
     ret = CMS_is_detached(cms);
     lua_pushboolean(L, ret);
     return 1;
   } else {
     int detached = auxiliar_checkboolean(L, 2);
+    if (!cms_has_content_type(cms)) {
+      return openssl_pushresult(L, 0);
+    }
     ret = CMS_set_detached(cms, detached);
   }
-  return 1;
+  return openssl_pushresult(L, ret);
 }
 
 /***
 get content of cms object
+
 @function content
-@treturn string content, if have no content will return nil
-@warning inner use
+@treturn string content, nil if the CMS has no content (e.g. an empty
+  cms.new() object or a detached signature)
+@usage
+local data = c:content()
+if data then print(data) end
 */
 static int
 openssl_cms_content(lua_State *L)
 {
   CMS_ContentInfo    *cms = CHECK_OBJECT(1, CMS_ContentInfo, "openssl.cms");
-  ASN1_OCTET_STRING **content = CMS_get0_content(cms);
+  ASN1_OCTET_STRING **content;
   int                 ret = 0;
+  if (!cms_has_content_type(cms)) {
+    /* empty CMS has no content */
+    return 0;
+  }
+  content = CMS_get0_content(cms);
   if (content && *content) {
     ASN1_OCTET_STRING *s = *content;
     lua_pushlstring(L, (const char *)ASN1_STRING_get0_data(s), ASN1_STRING_length(s));
@@ -717,7 +743,6 @@ openssl_cms_content(lua_State *L)
   }
   return ret;
 }
-
 /***
 add signers to CMS structure
 
@@ -800,10 +825,18 @@ openssl_cms_data(lua_State *L)
 
 /***
 finalize CMS object processing with provided input
+
 @function final
 @tparam string|bio input data to finalize the CMS with
 @tparam[opt=CMS_STREAM] number flags optional flags for finalization
-@treturn boolean true on success, false on failure
+@treturn boolean true on success
+@treturn[2] nil on failure
+@treturn[2] string error message
+@treturn[2] number error code
+@usage
+local c = cms.sign(nil, nil, nil, {}, cms.flags.stream + cms.flags.partial)
+c:add_signers(cert, pkey)
+c:final("hello world")
 */
 static int
 openssl_cms_final(lua_State *L)
@@ -811,8 +844,16 @@ openssl_cms_final(lua_State *L)
   CMS_ContentInfo *cms = CHECK_OBJECT(1, CMS_ContentInfo, "openssl.cms");
   BIO             *in = load_bio_object(L, 2);
   int              flags = luaL_optint(L, 3, CMS_STREAM);
+  int              ret;
 
-  int ret = CMS_final(cms, in, NULL, flags);
+  if (!cms_has_content_type(cms)) {
+    /* final() needs a CMS with a content type, e.g. created by
+     * cms.sign(nil,nil,nil,{},cms.flags.partial); a bare cms.new()
+     * object cannot be finalized */
+    BIO_free(in);
+    return openssl_pushresult(L, 0);
+  }
+  ret = CMS_final(cms, in, NULL, flags);
   BIO_free(in);
   return openssl_pushresult(L, ret);
 }

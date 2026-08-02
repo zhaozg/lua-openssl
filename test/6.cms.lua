@@ -113,6 +113,35 @@ function TestCMS:testAddSigners()
   lu.assertEquals(msg, self.msg)
 end
 
+-- cms.sign accepts nil for the certs argument, see issue #411
+function TestCMS:testSignNoCerts()
+  local c1 = assert(cms.sign(self.bob.cert, self.bob.key, self.msg))
+  assert(cms.export(c1))
+  local msg = assert(cms.verify(c1, { self.bob.cert }, self.castore))
+  lu.assertEquals(msg, self.msg)
+
+  -- explicit nil as 4th argument must work too
+  local c2 = assert(cms.sign(self.bob.cert, self.bob.key, self.msg, nil))
+  msg = assert(cms.verify(c2, { self.bob.cert }, self.castore))
+  lu.assertEquals(msg, self.msg)
+end
+
+-- methods on an empty cms.new() object must not segfault, see issue #413
+function TestCMS:testEmptyObject()
+  local c = cms.new()
+  -- getters return a sane default instead of crashing
+  lu.assertFalse(c:detached())
+  lu.assertNil(c:content())
+  -- setters/ops return nil, err, code instead of crashing
+  local ok, err = c:detached(true)
+  lu.assertNil(ok)
+  lu.assertNotNil(err)
+  ok, err = c:final("hi")
+  lu.assertNil(ok)
+  lu.assertNotNil(err)
+end
+
+
 function TestCMS:testSignReceipt()
   local c1 = assert(cms.sign(self.bob.cert, self.bob.key, self.msg, { self.ca.cert }))
   assert(c1:add_receipt({ "alice" }, { "bob" }))
