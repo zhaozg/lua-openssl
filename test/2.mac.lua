@@ -8,9 +8,15 @@ end
 
 TestMAC = {}
 function TestMAC:setUp()
-  self.msg = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F"
+  -- NB: use string.char()/numeric literals, not \xNN escapes: PUC Lua 5.1
+  -- does not support \x hex escapes in string literals (added in 5.2), so
+  -- "\x0F" would silently become the 3-char text "x0F" and the CMAC key
+  -- would be 48 bytes instead of 16, failing with "invalid key length".
+  self.msg = string.char(0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+                         0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F)
   self.alg = "aes-128-cbc"
-  self.key = "\x0F\x0E\x0D\x0C\x0B\x0A\x00\x08\x07\x06\x05\x04\x03\x02\x01\x00"
+  self.key = string.char(0x0F, 0x0E, 0x0D, 0x0C, 0x0B, 0x0A, 0x00, 0x08,
+                         0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01, 0x00)
 end
 
 function TestMAC:tearDown() end
