@@ -70,8 +70,13 @@ static LuaL_Enumeration asn1_const[] = {
 #define CLS_IDX_OFFSET 0
 #define CLS_IDX_LENGTH 4
 
+#ifdef V_ASN1_APP_CHOOSE
 #define TAG_IDX_OFFSET 11
 #define TAG_IDX_LENGTH 31
+#else
+#define TAG_IDX_OFFSET 10
+#define TAG_IDX_LENGTH 30
+#endif
 
 /***
 create asn1_type object
