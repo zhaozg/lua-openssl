@@ -25,6 +25,12 @@ openssl_new_xname(lua_State *L, int idx, int utf8)
 
   for (i = 0, n = lua_rawlen(L, idx), ret = 1; i < n && ret == 1; i++) {
     lua_rawgeti(L, idx, i + 1);
+    if (!lua_istable(L, -1)) {
+      /* guard: non-table array element (e.g. {"CN=x"}) would make lua_next
+       * treat a string as a table and crash the process (nil deref). */
+      ret = 0;
+      break;
+    }
     lua_pushnil(L);
 
     while (lua_next(L, -2) != 0) {
