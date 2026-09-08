@@ -1637,6 +1637,27 @@ static luaL_Reg ts_resp_ctx_funs[] = {
 
 /***
 openssl.ts_verify_ctx object
+
+A verification context for TS_RESP (RFC 3161) responses. The behaviour of
+@{verify} is fully controlled by the bit flags exposed on the openssl.ts
+module as VFY_* constants (VFY_SIGNATURE, VFY_VERSION, VFY_POLICY,
+VFY_IMPRINT, VFY_DATA, VFY_NONCE, VFY_SIGNER, VFY_TSA_NAME, and the
+convenience masks VFY_ALL_IMPRINT / VFY_ALL_DATA).
+
+* Verify only the fields whose VFY_* bit is set in the context; any check
+  whose bit is not set is simply skipped (and no signature verification is
+  performed unless VFY_SIGNATURE, VFY_SIGNER or VFY_TSA_NAME is on).
+* @{flags} (re)sets or adds those bits, while @{store}, @{imprint} and
+  @{data} only provide the trusted inputs the enabled checks compare
+  against - they do NOT turn the corresponding check on by themselves.
+* VFY_IMPRINT and VFY_DATA are mutually exclusive ways of checking the
+  message: VFY_IMPRINT compares the digest supplied with @{imprint}
+  directly, VFY_DATA recomputes it from the original data supplied with
+  @{data}.
+* Request-derived contexts (verify_ctx_new(req) or req:to_verify_ctx())
+  come pre-configured with the digest, policy, nonce and relevant flags
+  taken from the request, so only the trusted store needs to be added.
+
 @type ts_verify_ctx
 */
 /***
@@ -1646,8 +1667,13 @@ get x509_store cacerts
 */
 /***
 set x509_store cacerts
+
+Provide the trusted certificate store (CA certificates). It is required to
+build and validate the signer certificate chain whenever signature
+verification is enabled (VFY_SIGNATURE, VFY_SIGNER or VFY_TSA_NAME - see
+@{flags}), and is ignored by the other checks.
+
 @tparam x509_store cacerts
-@treturn boolean result
 @function store
 */
 static int
@@ -1666,11 +1692,48 @@ openssl_ts_verify_ctx_store(lua_State *L)
 }
 
 /***
-set or add flags
+set or add verify flags
+
+Each bit selects the checks carried out by @{verify}:
+
+* `V.VFY_SIGNATURE` verify the signer certificate chain (against the store
+  set with @{store}) and the signature value
+* `V.VFY_VERSION`   response TST_INFO version must be 1
+* `V.VFY_POLICY`    response policy must match the one of the request
+* `V.VFY_IMPRINT`   digest embedded in the response must equal the imprint
+  set with @{imprint} (do not combine with VFY_DATA)
+* `V.VFY_DATA`      digest recomputed from the data set with @{data} must
+  equal the one embedded in the response (do not combine with VFY_IMPRINT)
+* `V.VFY_NONCE`     response nonce must equal the request nonce
+* `V.VFY_SIGNER`    TSA name in the token must match the signer certificate
+  (implies signature verification)
+* `V.VFY_TSA_NAME`  signer must be the expected TSA (implies signature
+  verification)
+* `V.VFY_ALL_IMPRINT` `V.VFY_ALL_DATA` convenience masks enabling every
+  check above while using respectively imprint or data based message
+  checking
+
+Checks whose bit is not set are skipped. With no flags set at all the token
+content is not verified, so normally at least one bit should be enabled.
+
 @function flags
-@tparam integer flags
-@tparam[opt=nil] boolean add or set flags, default to do set
+@tparam integer flags one or more OR-ed V.VFY_* values
+@tparam[opt=nil] boolean add when true OR the given bits into the current
+        value, otherwise replace it (default: replace)
 @treturn integer return current value
+@usage
+  local V = openssl.ts
+  local vry = assert(ts.verify_ctx_new(req))
+  vry:store(ca_store)
+  -- request-derived context: keep its flags, enable signature checking too
+  vry:flags(V.VFY_SIGNATURE, true)
+  assert(vry:verify(res))
+  -- data based verification on a fresh context
+  vry = assert(ts.verify_ctx_new())
+  vry:data(dat)
+  vry:store(ca_store)
+  vry:flags(V.VFY_ALL_DATA)
+  assert(vry:verify(res))
 */
 static int
 openssl_ts_verify_ctx_flags(lua_State *L)
@@ -1688,9 +1751,19 @@ openssl_ts_verify_ctx_flags(lua_State *L)
 
 /***
 set data
+
+Provide the original data the timestamp must certify. Merely supplying the
+data does NOT enable the data check: enable it by adding VFY_DATA (or using
+the VFY_ALL_DATA mask) through @{flags}. Digest comparison is then done
+against the message digest embedded in the response, so the digest
+algorithm must be the one used by the TSA (no @{imprint} needed).
+
 @function data
-@tparam openssl.bio data object
-@treturn boolean result
+@tparam string|openssl.bio data original data as a binary string or bio
+@usage
+  vry:data(bio.new(self.dat))
+  vry:flags(V.VFY_ALL_DATA)
+  assert(vry:verify(res))
 */
 static int
 openssl_ts_verify_ctx_data(lua_State *L)
@@ -1713,9 +1786,20 @@ get imprint
 */
 /***
 set imprint
+
+Provide the expected digest value (hash of the original data). Merely
+supplying it does NOT enable the digest check: enable it by adding
+VFY_IMPRINT (or using the VFY_ALL_IMPRINT mask) through @{flags}. The
+digest is compared directly against the one embedded in the response
+(the @{imprint} value must have been produced with the same algorithm as
+used by the TSA).
+
 @function imprint
-@tparam string imprint
-@treturn boolean result
+@tparam string imprint raw digest bytes
+@usage
+  vry:imprint(openssl.digest.digest("sha256", dat, true))
+  vry:flags(V.VFY_ALL_IMPRINT)
+  assert(vry:verify(res))
 */
 static int
 openssl_ts_verify_ctx_imprint(lua_State *L)
@@ -1750,9 +1834,36 @@ static int openssl_ts_verify_ctx_gc(lua_State *L)
 
 /***
 verify ts_resp object, pkcs7 token or ts_resp data
+
+Verifies the response (or its embedded PKCS7 token) against the checks
+selected by the VFY_* flags - see @{flags} for the meaning of every flag.
+Fields checked are only those whose bit is enabled; a response whose
+status is not granted/rejected-with-mods is always refused. When VFY_DATA
+or VFY_IMPRINT is among the enabled checks the context must be prepared
+with @{data} / @{imprint}, and when signature verification is required
+the trusted certificates must be supplied with @{store} (optionally
+additional candidate signer certificates through the request or the
+response itself).
+
 @function verify
-@tparam ts_resp|pkcs7|string data
-@treturn boolean result
+@tparam ts_resp|pkcs7|string data response object, token or DER data
+@treturn boolean result true when all enabled checks pass
+@treturn[2] nil result nil when verification fails
+@treturn[2] string errmsg human readable error description
+@treturn[3] integer errcode OpenSSL error code (nil if the error queue is empty)
+@usage
+  -- request-derived context: digest / policy / nonce checks come from the
+  -- request; add the trusted store and, if wanted, signature checking
+  local V = openssl.ts
+  local vry = assert(ts.verify_ctx_new(req))
+  vry:store(ca_store)
+  vry:flags(V.VFY_SIGNATURE, true)
+  assert(vry:verify(res))
+  -- a response carrying a wrong message digest must be rejected
+  vry = assert(ts.verify_ctx_new(req))
+  vry:store(ca_store)
+  local bad = wrong_digest_response -- ... see test/5.ts.lua ...
+  assert(not vry:verify(bad))
 */
 static int openssl_ts_verify_ctx_verify(lua_State *L)
 {
@@ -1793,6 +1904,14 @@ static luaL_Reg ts_verify_ctx_funs[] = {
 };
 #endif
 
+/*
+ * Constant table for the openssl.ts module (V = openssl.ts): the entries
+ * below are exposed by auxiliar_enumerate as fields of openssl.ts, e.g.
+ * openssl.ts.VFY_SIGNATURE. The VFY_* fields select the checks performed by
+ * ts_verify_ctx:verify and are consumed through ts_verify_ctx:flags - see
+ * the LDoc documentation of ts_verify_ctx, flags, verify, data, imprint and
+ * store above for their meaning and usage.
+ */
 static LuaL_Enumeration ots_const[] = {
   { "STATUS_GRANTED",                 TS_STATUS_GRANTED                 },
   { "STATUS_GRANTED_WITH_MODS",       TS_STATUS_GRANTED_WITH_MODS       },
