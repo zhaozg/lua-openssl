@@ -132,7 +132,7 @@ BN_get(lua_State *L, int i)
   BIGNUM *x = BN_new();
   switch (lua_type(L, i)) {
   case LUA_TNUMBER: {
-    lua_Integer num = lua_tointeger(L, 3);
+    lua_Integer num = lua_tointeger(L, i);
     if (num < 0) {
       BN_set_word(x, -num);
       BN_set_negative(x, 1);

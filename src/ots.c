@@ -18,38 +18,58 @@ is to provide long term proof of the existence of a certain datum before a parti
 /***
 create a new ts_msg_imprint object.
 @function ts_msg_imprint_new
-@tparam string data
+@tparam string data hashed message, its length must match the digest size
+        of the given algorithm
 @tparam string|integer|asn1_object alg alg name, nid or object identity
-@treturn ts_msg_imprint
+@treturn ts_msg_imprint new object
+@treturn[2] nil failed when the digest algorithm is unknown or the data
+        length does not match the digest size
+@treturn[2] string errmsg error description
+@usage
+  local hash = openssl.digest.digest("sha256", "data", true)
+  local msg = assert(openssl.ts.ts_msg_imprint_new(hash, "sha256"))
 */
 static int
 openssl_ts_msg_imprint_new(lua_State *L)
 {
-  size_t        sz = 0;
-  const char   *data = luaL_checklstring(L, 1, &sz);
-  const EVP_MD *md = get_digest(L, 2, NULL);
+  size_t             sz = 0;
+  const unsigned char *data = (const unsigned char *)luaL_checklstring(L, 1, &sz);
+  const EVP_MD       *md = get_digest(L, 2, NULL);
+  TS_MSG_IMPRINT     *msg = NULL;
+  int                 ret = 1;
 
-  TS_MSG_IMPRINT *msg = TS_MSG_IMPRINT_new();
+  if (md == NULL)
+    return luaL_error(L, "unknown or unsupported digest algorithm");
+  if ((int)sz != EVP_MD_size(md))
+    return luaL_error(L, "data size %d does not match digest size %d",
+                      (int)sz, EVP_MD_size(md));
 
-  int ret = TS_MSG_IMPRINT_set_msg(msg, (unsigned char *)data, sz);
-  if (sz != EVP_MD_size(md)) luaL_error(L, "data size not match with digest size");
+  msg = TS_MSG_IMPRINT_new();
+  if (msg == NULL)
+    return openssl_pushresult(L, 0);
 
+  if (ret == 1) ret = TS_MSG_IMPRINT_set_msg(msg, (unsigned char *)data, sz);
   if (ret == 1) {
     X509_ALGOR *alg = X509_ALGOR_new();
+    if (alg == NULL) {
+      ret = 0;
+    } else {
 #if defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER >= 0x30900000L
-    X509_ALGOR_set0(alg, OBJ_nid2obj(EVP_MD_type(md)), V_ASN1_NULL, NULL);
+      X509_ALGOR_set0(alg, OBJ_nid2obj(EVP_MD_type(md)), V_ASN1_NULL, NULL);
 #else
-    X509_ALGOR_set_md(alg, md);
+      X509_ALGOR_set_md(alg, md);
 #endif
-    if (ret == 1) ret = TS_MSG_IMPRINT_set_algo(msg, alg);
-
-    X509_ALGOR_free(alg);
+      if (ret == 1) ret = TS_MSG_IMPRINT_set_algo(msg, alg);
+      X509_ALGOR_free(alg);
+    }
+  }
+  if (ret == 1) {
     PUSH_OBJECT(msg, "openssl.ts_msg_imprint");
-  } else
-    ret = openssl_pushresult(L, ret);
-  return ret;
+    return 1;
+  }
+  TS_MSG_IMPRINT_free(msg);
+  return openssl_pushresult(L, ret);
 }
-
 /***
 read and parse ts_msg_imprint from DER encoded data
 @function ts_msg_imprint_read
@@ -182,33 +202,38 @@ static luaL_Reg ts_msg_imprint_funcs[] = {
 /***
 create new timestamp accuracy object
 @function ts_accuracy_new
-@tparam[opt] number seconds accuracy in seconds
-@tparam[opt] number millis accuracy in milliseconds
-@tparam[opt] number micros accuracy in microseconds
-@treturn ts_accuracy new timestamp accuracy object or nil on failure
+@tparam[opt=0] number seconds accuracy in seconds
+@tparam[opt=0] number millis accuracy in milliseconds
+@tparam[opt=0] number micros accuracy in microseconds
+@treturn ts_accuracy new timestamp accuracy object
+@treturn[2] nil failed to allocate or set the accuracy values
+@treturn[2] string errmsg error description
+@usage
+  local a = assert(ts.ts_accuracy_new(1, 0, 500)) -- 1s + 500us
+  local b = assert(ts.ts_accuracy_new())          -- all zero
 */
 static int
 openssl_ts_accuracy_new(lua_State *L)
 {
-  int    ret;
-  time_t seconds = 0;
-  int    millis = 0, micros = 0;
-
+  int           ret = 1;
+  long          seconds = 0, millis = 0, micros = 0;
   TS_ACCURACY  *accuracy = NULL;
   ASN1_INTEGER *sec = NULL;
   ASN1_INTEGER *mil = NULL;
   ASN1_INTEGER *mic = NULL;
 
-  seconds = luaL_checkinteger(L, 1);
-  millis = luaL_optinteger(L, 2, millis);
-  micros = luaL_optinteger(L, 3, micros);
+  seconds = (long)luaL_optinteger(L, 1, 0);
+  millis = (long)luaL_optinteger(L, 2, 0);
+  micros = (long)luaL_optinteger(L, 3, 0);
 
   accuracy = TS_ACCURACY_new();
   sec = ASN1_INTEGER_new();
   mil = ASN1_INTEGER_new();
   mic = ASN1_INTEGER_new();
+  if (accuracy == NULL || sec == NULL || mil == NULL || mic == NULL)
+    ret = 0;
 
-  ret = ASN1_INTEGER_set(sec, (long)seconds);
+  if (ret == 1) ret = ASN1_INTEGER_set(sec, seconds);
   if (ret == 1) ret = TS_ACCURACY_set_seconds(accuracy, sec);
 
   if (ret == 1) {
@@ -225,7 +250,7 @@ openssl_ts_accuracy_new(lua_State *L)
     PUSH_OBJECT(accuracy, "openssl.ts_accuracy");
   } else {
     TS_ACCURACY_free(accuracy);
-    ret = 0;
+    ret = openssl_pushresult(L, 0);
   }
 
   ASN1_INTEGER_free(sec);
@@ -233,7 +258,6 @@ openssl_ts_accuracy_new(lua_State *L)
   ASN1_INTEGER_free(mic);
   return ret;
 }
-
 /***
 get or set accuracy in seconds
 @function seconds
@@ -482,30 +506,40 @@ openssl_ts_info_time(lua_State *L)
   openssl_push_asn1(L, TS_TST_INFO_get_time(info), V_ASN1_GENERALIZEDTIME);
   return 1;
 }
-
 /***
-get accuracy of ts_tst_info object object
+get accuracy of ts_tst_info object
 @function accuracy
-@treturn table
+@treturn ts_accuracy duplicated accuracy object
+@treturn[2] nil nil when the TST_INFO carries no accuracy field
+*/
+/***
+set accuracy of ts_tst_info object
+@function accuracy
+@tparam ts_accuracy accuracy accuracy object to set
+@treturn boolean result
 */
 static int
 openssl_ts_info_accuracy(lua_State *L)
 {
-  int          ret = 0;
   TS_TST_INFO *info = CHECK_OBJECT(1, TS_TST_INFO, "openssl.ts_tst_info");
   if (lua_isnone(L, 2)) {
     TS_ACCURACY *accuracy = TS_TST_INFO_get_accuracy(info);
-    accuracy = TS_ACCURACY_dup(accuracy);
-    PUSH_OBJECT(accuracy, "openssl.ts_accuracy");
-    ret = 1;
+    if (accuracy) {
+      accuracy = TS_ACCURACY_dup(accuracy);
+      if (accuracy) {
+        PUSH_OBJECT(accuracy, "openssl.ts_accuracy");
+        return 1;
+      }
+      return openssl_pushresult(L, 0);
+    }
+    lua_pushnil(L);
+    return 1;
   } else {
     TS_ACCURACY *accuracy = CHECK_OBJECT(2, TS_ACCURACY, "openssl.ts_accuracy");
     int          ret = TS_TST_INFO_set_accuracy(info, accuracy);
-    ret = openssl_pushresult(L, ret);
+    return openssl_pushresult(L, ret);
   }
-  return ret;
 }
-
 /***
 get ordering of ts_tst_info object object
 @function ording
@@ -538,9 +572,10 @@ openssl_ts_info_nonce(lua_State *L)
 }
 
 /***
-get tsa nonce of ts_tst_info object object
+get tsa (GENERAL_NAME) of ts_tst_info object
 @function tsa
-@treturn x509.name
+@treturn table|nil table representation of the GENERAL_NAME, nil when the
+        TST_INFO carries no tsa field (see openssl_push_general_name)
 */
 static int
 openssl_ts_info_tsa(lua_State *L)
@@ -598,27 +633,32 @@ create a new ts_req object.
 @function req_new
 @tparam[opt=1] integer version
 @treturn openssl.ts_req timestamp sign request object
+@treturn[2] nil failed to create or initialise the request
 -- @see openssl/ts.h:TS_REQ_
 */
 static int openssl_ts_req_new(lua_State *L)
 {
   TS_REQ *ts_req = TS_REQ_new();
   long    version = luaL_optinteger(L, 1, 1);
+  int     ret;
 
-  int ret = TS_REQ_set_version(ts_req, version);
+  if (ts_req == NULL)
+    return openssl_pushresult(L, 0);
+  ret = TS_REQ_set_version(ts_req, version);
   if (ret == 1) {
     PUSH_OBJECT(ts_req, "openssl.ts_req");
     return 1;
   }
   TS_REQ_free(ts_req);
-  return 0;
+  return openssl_pushresult(L, 0);
 }
 
 /***
 read ts_req object from string or bio data
 @function req_read
-@tparam string|bio input
+@tparam string|bio input DER encoded timestamp request data
 @treturn openssl.ts_req timestamp sign request object
+@treturn[2] nil parse failed, invalid input data
 -- @see openssl/ts.h:TS_REQ_
 */
 static int openssl_ts_req_read(lua_State *L)
@@ -630,14 +670,16 @@ static int openssl_ts_req_read(lua_State *L)
     PUSH_OBJECT(ts_req, "openssl.ts_req");
     return 1;
   }
-  return 0;
+  lua_pushnil(L);
+  return 1;
 }
 
 /***
 read ts_resp object from string or bio input
 @function resp_read
-@tparam string|bio input
+@tparam string|bio input DER encoded timestamp response data
 @treturn openssl.ts_resp object
+@treturn[2] nil parse failed, invalid input data
 */
 static int openssl_ts_resp_read(lua_State *L)
 {
@@ -703,28 +745,38 @@ static int openssl_ts_resp_ctx_new(lua_State *L)
 
 /***
 create ts_verify_ctx object
+
+With no argument an empty verification context is returned. When a request
+(DER encoded string, bio or ts_req object) is given, a context derived
+from it is returned instead, pre-configured with the digest, policy, nonce
+and matching VFY_* flags of that request (see req:to_verify_ctx).
+
 @function verify_ctx_new
-@tparam[opt=nil] string|ts_req reqdata
+@tparam[opt=nil] string|ts_req|openssl.bio reqdata DER request data, request
+        object, bio, or nil for an empty context
 @treturn ts_verify_ctx object
+@treturn[2] nil invalid request data or allocation failure
+@treturn[2] string errmsg error description
 */
 static int openssl_ts_verify_ctx_new(lua_State *L)
 {
   TS_VERIFY_CTX *ctx = NULL;
   if (lua_isnone(L, 1)) {
     ctx = TS_VERIFY_CTX_new();
-  } else if (lua_isstring(L, 1)) {
+  } else if (auxiliar_getclassudata(L, "openssl.ts_req", 1)) {
+    TS_REQ *req = CHECK_OBJECT(1, TS_REQ, "openssl.ts_req");
+    ctx = TS_REQ_to_TS_VERIFY_CTX(req, NULL);
+  } else {
+    /* DER request data given as string or bio */
     BIO    *bio = load_bio_object(L, 1);
     TS_REQ *req = d2i_TS_REQ_bio(bio, NULL);
     BIO_free(bio);
     if (req) {
       ctx = TS_REQ_to_TS_VERIFY_CTX(req, NULL);
       TS_REQ_free(req);
-    } else {
-      luaL_argerror(L, 1, "must be ts_req data or object or nil");
     }
-  } else {
-    TS_REQ *req = CHECK_OBJECT(1, TS_REQ, "openssl.ts_req");
-    ctx = TS_REQ_to_TS_VERIFY_CTX(req, NULL);
+    if (ctx == NULL)
+      return luaL_argerror(L, 1, "must be ts_req data or object or nil");
   }
   if (ctx) {
     PUSH_OBJECT(ctx, "openssl.ts_verify_ctx");
@@ -750,12 +802,17 @@ static luaL_Reg R[] = {
 
 /***
 openssl.ts_req object
+
+A parsed RFC 3161 TimeStampReq. Build one with req_new() and set the
+message imprint (msg_imprint), optional policy (policy_id), nonce and the
+cert_req flag; serialise with export().
+
 @type ts_req
 */
 /***
 make a clone of ts_req object
 @function dup
-@treturn openssl.ts_req
+@treturn openssl.ts_req duplicated request
 */
 static int
 openssl_ts_req_dup(lua_State *L)
@@ -767,12 +824,13 @@ openssl_ts_req_dup(lua_State *L)
 }
 
 /***
-get cert_req
+get cert_req flag
 @function cert_req
-@treturn boolean true for set or not
+@treturn boolean true when the request asks the TSA to include the signer
+        certificate in the response (RFC 3161 certReq)
 */
 /***
-set cert_req
+set cert_req flag
 @function cert_req
 @tparam boolean cert_req
 @treturn boolean result
@@ -794,13 +852,7 @@ openssl_ts_req_cert_req(lua_State *L)
 /***
 get nonce
 @function nonce
-@treturn openssl.bn openssl.bn object
-*/
-/***
-set nonce
-@tparam string|bn nonce
-@treturn boolean result
-@function nonce
+@treturn openssl.bn nonce value, nil when the request has no nonce
 */
 static int
 openssl_ts_req_nonce(lua_State *L)
@@ -872,22 +924,34 @@ openssl_ts_req_version(lua_State *L)
     return openssl_pushresult(L, ret);
   }
 }
-
 /***
 get msg_imprint
+
+Retrieve the message imprint of the request as a ts_msg_imprint object; use
+ts_msg_imprint:msg() / ts_msg_imprint:algo() to inspect the raw digest and
+the hash algorithm.
+
 @function msg_imprint
-@treturn string octet octet string
-@treturn table with algorithm and paramater
+@treturn ts_msg_imprint duplicated imprint object
+@treturn[2] nil request carries no message imprint
 */
 /***
 set msg_imprint
+
+Replace the whole message imprint of the request. Build the value first
+with ts_msg_imprint_new() (which takes the raw digest and the hash
+algorithm); the imprint is copied into the request.
+
 @function msg_imprint
-@tparam string data digest value of message
-@tparam[opt='sha'] string|evp_md md_alg
+@tparam ts_msg_imprint imprint ts_msg_imprint object to set
 @treturn boolean result
+@usage
+  local hash = openssl.digest.digest("sha256", "data", true)
+  local imprint = assert(ts.ts_msg_imprint_new(hash, "sha256"))
+  assert(req:msg_imprint(imprint))
+  assert(req:msg_imprint():export() == imprint:export())
 */
-static int
-openssl_ts_req_msg_imprint(lua_State *L)
+static int openssl_ts_req_msg_imprint(lua_State *L)
 {
   TS_REQ *req = CHECK_OBJECT(1, TS_REQ, "openssl.ts_req");
   if (lua_isnone(L, 2)) {
@@ -904,17 +968,25 @@ openssl_ts_req_msg_imprint(lua_State *L)
 
     return openssl_pushresult(L, ret);
   }
-};
+}
 
 /***
 create ts_verify_ctx from ts_req object
+
+Derives a verification context from the request, pre-loading its digest
+algorithm, policy, nonce and the matching VFY_* flags (see the
+ts_verify_ctx type description). Same as verify_ctx_new(req).
+
 @function to_verify_ctx
 @treturn ts_verify_ctx object
+@treturn[2] nil context could not be allocated
 */
 static int openssl_ts_req_to_verify_ctx(lua_State *L)
 {
   TS_REQ        *req = CHECK_OBJECT(1, TS_REQ, "openssl.ts_req");
   TS_VERIFY_CTX *ctx = TS_REQ_to_TS_VERIFY_CTX(req, NULL);
+  if (ctx == NULL)
+    return openssl_pushresult(L, 0);
   PUSH_OBJECT(ctx, "openssl.ts_verify_ctx");
   return 1;
 }
@@ -956,9 +1028,24 @@ static int openssl_ts_req_add_ext(lua_State *L)
 }
 
 /***
-get info as table
+get request fields as a plain table
+
+Fields present depend on the request content:
+
+* `version` integer version
+* `cert_req` boolean whether the response must include the signer cert
+* `policy_id` openssl.asn1_object, only when a policy is requested
+* `nonce` openssl.bn or nil when the request has no nonce
+* `msg_imprint` sub-table with `hashed_msg` (string) and `hash_algo`
+  (openssl.x509_algor), present only when an imprint was set
+* `extensions` extension list table, present only when extensions exist
+
 @function info
 @treturn table
+@usage
+  local t = req:info()
+  assert(t.version == 1 and t.cert_req == false)
+  assert(t.msg_imprint.hashed_msg == hash)
 */
 static int openssl_ts_req_info(lua_State *L)
 {
@@ -979,18 +1066,20 @@ static int openssl_ts_req_info(lua_State *L)
   openssl_push_asn1integer_as_bn(L, TS_REQ_get_nonce(req));
   lua_setfield(L, -2, "nonce");
 
-  lua_newtable(L);
-  {
-    TS_MSG_IMPRINT    *msg_inprint = TS_REQ_get_msg_imprint(req);
-    ASN1_OCTET_STRING *os = TS_MSG_IMPRINT_get_msg(msg_inprint);
-    X509_ALGOR        *alg = TS_MSG_IMPRINT_get_algo(msg_inprint);
+  if (TS_REQ_get_msg_imprint(req)) {
+    lua_newtable(L);
+    {
+      TS_MSG_IMPRINT    *msg_inprint = TS_REQ_get_msg_imprint(req);
+      ASN1_OCTET_STRING *os = TS_MSG_IMPRINT_get_msg(msg_inprint);
+      X509_ALGOR        *alg = TS_MSG_IMPRINT_get_algo(msg_inprint);
 
-    AUXILIAR_SETLSTR(L, -1, "hashed_msg", (const char *)ASN1_STRING_get0_data(os), ASN1_STRING_length(os));
-    alg = X509_ALGOR_dup(alg);
-    PUSH_OBJECT(alg, "openssl.x509_algor");
-    lua_setfield(L, -2, "hash_algo");
+      AUXILIAR_SETLSTR(L, -1, "hashed_msg", (const char *)ASN1_STRING_get0_data(os), ASN1_STRING_length(os));
+      alg = X509_ALGOR_dup(alg);
+      PUSH_OBJECT(alg, "openssl.x509_algor");
+      lua_setfield(L, -2, "hash_algo");
+    }
+    lua_setfield(L, -2, "msg_imprint");
   }
-  lua_setfield(L, -2, "msg_imprint");
 
   if (TS_REQ_get_exts(req)) {
     lua_pushstring(L, "extensions");
@@ -1029,6 +1118,19 @@ static luaL_Reg ts_req_funs[] = {
 
 /***
 openssl.ts_resp object
+
+A parsed RFC 3161 TimeStampResp. Its status (PKIStatusInfo) decides
+whether a time stamp token is present: for a granted response (status 0 or
+1) the token embeds the signed TST_INFO, otherwise only failure
+information is carried. Access the pieces with @{status_info}, @{token}
+and @{tst_info}.
+
+Note about cert_req: the certReq flag belongs to the *request* and, as per
+RFC 3161, is never echoed back inside the response, so it cannot be
+parsed back out of a ts_resp. What can be observed is the consequence - a
+TSA honouring certReq=true includes its signer certificate in the PKCS7
+signed data of the token, i.e. res:token():parse().certs is non-empty.
+
 @type ts_resp
 */
 static int openssl_ts_resp_gc(lua_State *L)
@@ -1072,10 +1174,16 @@ static int openssl_ts_resp_export(lua_State *L)
 }
 
 /***
-get tst_info as table or tst_info filed value
+get the TST_INFO (timestamp token info) embedded in the response
+
+Returns a duplicated ts_tst_info object, on which the per-field accessors
+(version, policy_id, msg_imprint, serial, time, accuracy, ordering, nonce,
+tsa, extensions) can be used. For a granted response the token always
+carries a TST_INFO; rejected responses usually do not.
+
 @function tst_info
-@tparam[opt] string field
-@treturn table|string tst_info table or field value
+@treturn ts_tst_info duplicated TST_INFO object
+@treturn[2] nil response carries no time stamp token
 */
 static int openssl_ts_resp_tst_info(lua_State *L)
 {
@@ -1093,8 +1201,21 @@ static int openssl_ts_resp_tst_info(lua_State *L)
 
 /***
 get status_info as table
+
+Returns the PKIStatusInfo of the response as a plain table:
+
+* `status` openssl.bn wrapping the PKIStatus code (0 granted, 1 granted
+  with mods, 2 rejection, 3 waiting, 4 revocation warning, 5 revocation
+  notification - see the STATUS_* constants of this module)
+* `failure_info` openssl.asn1_string (bit string) with the failure bit
+  codes, present only for rejected responses
+* array part [1..n] human readable status texts returned by the TSA
+
 @function status_info
 @treturn table
+@usage
+  local si = assert(res:status_info())
+  assert(si.status:tonumber() == 0)
 */
 static int openssl_ts_resp_status_info(lua_State *L)
 {
@@ -1127,12 +1248,18 @@ static int openssl_ts_resp_status_info(lua_State *L)
 }
 
 /***
-get pkcs7 token of ts_tst_info
+get the PKCS7 time stamp token of the response
+
+Returns the TimeStampToken (an openssl.pkcs7 signed-data object) of the
+response. Its signed data usually embeds the TSA certificate chain (this is
+what a cert_req=true request asks for); use pkcs7:parse() to inspect the
+embedded `certs` and `signer_info`.
+
 @function token
-@treturn token
+@treturn openssl.pkcs7 duplicated time stamp token
+@treturn[2] nil rejected response carries no token
 */
-static int
-openssl_ts_resp_token(lua_State *L)
+static int openssl_ts_resp_token(lua_State *L)
 {
   TS_RESP *res = CHECK_OBJECT(1, TS_RESP, "openssl.ts_resp");
   PKCS7   *token = TS_RESP_get_token(res);
@@ -1163,43 +1290,70 @@ openssl.ts_resp_ctx object
 @type ts_resp_ctx
 */
 /***
-create response for ts_req
+create the timestamp response for a ts_req
+
+Processes the request, checking its policy and digest against the
+configured ones, building the TST_INFO (serial, time and extensions) and
+signing it with the signer key. On failure the returned ts_resp only
+contains the PKIStatusInfo (rejection reason); inspect resp:status_info()
+to find out why.
+
 @function create_response
-@tparam string|bio|ts_req data support string,bio ts_req content or ts_req object
-@treturn openssl.ts_resp result
+@tparam string|bio|ts_req data DER encoded request, bio or ts_req object
+@treturn openssl.ts_resp result timestamp response
+@usage
+  local res = assert(req_ctx:create_response(req))
+  assert(res:status_info().status:tonumber() == 0)
 */
 /***
 sign ts_req and get ts_resp, alias of create_response
 @function sign
-@tparam string|bio|ts_req data support string,bio ts_req content or ts_req object
-@treturn openssl.ts_resp result
+@tparam string|bio|ts_req data DER encoded request, bio or ts_req object
+@treturn openssl.ts_resp result timestamp response
 */
 static int openssl_ts_create_response(lua_State *L)
 {
   TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
-  BIO         *bio = load_bio_object(L, 2);
-  TS_RESP     *resp = TS_RESP_create_response(ctx, bio);
+  BIO         *bio = NULL;
+  TS_RESP     *resp;
+
+  if (auxiliar_getclassudata(L, "openssl.ts_req", 2)) {
+    TS_REQ         *req = CHECK_OBJECT(2, TS_REQ, "openssl.ts_req");
+    unsigned char  *der = NULL;
+    int             len = i2d_TS_REQ(req, &der);
+    if (len > 0) {
+      bio = BIO_new_mem_buf(der, len);
+      OPENSSL_free(der);
+    }
+    if (bio == NULL)
+      return openssl_pushresult(L, 0);
+  } else {
+    bio = load_bio_object(L, 2);
+  }
+  resp = TS_RESP_create_response(ctx, bio);
+  BIO_free(bio);
   if (resp) {
     PUSH_OBJECT(resp, "openssl.ts_resp");
-  } else
-    lua_pushnil(L);
-  BIO_free(bio);
-
+    return 1;
+  }
+  lua_pushnil(L);
   return 1;
 }
+/***
+set signer certificate and private key of the response context
 
-/***
-get signer cert and pkey
-@function signer
-@treturn openssl.x509 cert object or nil
-@treturn openssl.evp_pkey pkey object or nil
-*/
-/***
-set signer cert and pkey
+Both are mandatory before create_response / sign can build a signed
+timestamp token; the certificate and the key must belong together (the
+private key is checked against the certificate and an error is raised
+otherwise). Note that no getter is exposed because OpenSSL offers no
+cross-version accessor for these members.
+
 @function signer
 @tparam openssl.x509 cert signer cert
 @tparam openssl.evp_pkey pkey signer pkey
 @treturn boolean result
+@usage
+  assert(req_ctx:signer(tsa.cert, tsa.pkey))
 */
 static int openssl_ts_resp_ctx_signer(lua_State *L)
 {
@@ -1282,19 +1436,19 @@ static int openssl_ts_resp_ctx_policies(lua_State *L)
 }
 
 /***
-get accuracy
-@function accuracy
-@treturn integer seconds
-@treturn integer millis
-@treturn integer micros
-*/
-/***
-set accuracy
+set the accuracy to embed in the generated TST_INFO
+
+A value of 0 means the corresponding accuracy component is not specified
+in the response. There is no getter: OpenSSL exposes no cross-version
+accessor for these context members.
+
 @function accuracy
 @tparam integer seconds
 @tparam integer millis
 @tparam integer micros
 @treturn boolean result
+@usage
+  assert(req_ctx:accuracy(1, 0, 500))
 */
 static int openssl_ts_resp_ctx_accuracy(lua_State *L)
 {
@@ -1307,12 +1461,11 @@ static int openssl_ts_resp_ctx_accuracy(lua_State *L)
 }
 
 /***
-get clock_precision_digits
-@function clock_precision_digits
-@treturn integer clock_precision_digits
-*/
-/***
-set clock_precision_digits
+set the number of fraction-of-second digits used in the response time
+
+Value is clamped to the [0, TS_MAX_CLOCK_PRECISION_DIGITS] range. There is
+no getter: OpenSSL exposes no cross-version accessor for this member.
+
 @function clock_precision_digits
 @tparam integer clock_precision_digits
 @treturn boolean result
@@ -1330,10 +1483,17 @@ static int openssl_ts_resp_ctx_clock_precision_digits(lua_State *L)
 }
 
 /***
-add flags to TS response context
+add response context flags
+
+Adds the given flags to the response context. Flags understood by OpenSSL
+are TS_ESS_CERT_ID_CHAIN (include the whole certificate chain in the ESS
+signing-certificate attribute) and TS_ORDERING. Returns no value.
+
 @function add_flags
-@tparam number flags flags to add
-@treturn nil always returns nil
+@tparam integer flags flags to add
+@treturn nil no return value
+@usage
+  req_ctx:add_flags(0x04) -- TS_ESS_CERT_ID_CHAIN
 */
 static int openssl_ts_resp_ctx_add_flags(lua_State *L)
 {
@@ -1344,16 +1504,20 @@ static int openssl_ts_resp_ctx_add_flags(lua_State *L)
 }
 
 /***
-set support digest method
+set the digest algorithms accepted for incoming requests
+
+A request whose message imprint algorithm is not among the configured ones
+is rejected with badAlg. Pass either a single digest or an array table of
+digests; existing entries are kept, new ones are added. Unknown digests
+raise an error.
+
 @function md
-@tparam table mds support digest method
+@tparam string|evp_digest|table md_alg digest name, evp_digest object or
+        array table of them
 @treturn boolean result
-*/
-/***
-add digest
-@function md
-@tparam string|evp_digest md_alg
-@treturn boolean result
+@usage
+  assert(req_ctx:md({ "md5", "sha1" }))
+  assert(req_ctx:md("sha256"))
 */
 static int openssl_ts_resp_ctx_md(lua_State *L)
 {
@@ -1384,10 +1548,17 @@ static int openssl_ts_resp_ctx_md(lua_State *L)
 }
 
 /***
-get tst_info as table
+get the TST_INFO currently held by the response context
+
+Returns the ts_tst_info object being built for the request currently
+processed (available after a successful create_response / sign, or while a
+serial / time / extension callback runs). Use the ts_tst_info accessors to
+inspect it. Extra arguments are accepted for API symmetry with ts_resp:tst_info
+but ignored.
+
 @function tst_info
-@tparam[opt] string field
-@treturn table|string tst_info table or field value
+@treturn ts_tst_info duplicated TST_INFO object
+@treturn[2] nil no response has been generated yet
 */
 static int openssl_ts_resp_ctx_tst_info(lua_State *L)
 {
@@ -1404,18 +1575,30 @@ static int openssl_ts_resp_ctx_tst_info(lua_State *L)
 }
 
 /***
-get ts_req object
+get the ts_req currently being processed by the response context
+
+The request is owned by the response context and is only guaranteed to be
+valid while the context lives (typically while a serial / time / extension
+callback runs or right after create_response); the returned object is a
+duplicated copy that stays valid on its own.
+
 @function request
-@treturn rs_req
+@treturn ts_req duplicated request object
+@treturn[2] nil no request is being processed
 */
 static int openssl_ts_resp_ctx_request(lua_State *L)
 {
   TS_RESP_CTX *ctx = CHECK_OBJECT(1, TS_RESP_CTX, "openssl.ts_resp_ctx");
   TS_REQ      *req = TS_RESP_CTX_get_request(ctx);
   if (req) {
-    PUSH_OBJECT(req, "openssl.ts_req");
-  } else
-    lua_pushnil(L);
+    req = TS_REQ_dup(req);
+    if (req) {
+      PUSH_OBJECT(req, "openssl.ts_req");
+      return 1;
+    }
+    return openssl_pushresult(L, 0);
+  }
+  lua_pushnil(L);
   return 1;
 }
 
@@ -1471,18 +1654,24 @@ openssl_serial_cb(TS_RESP_CTX *ctx, void *data)
 };
 
 /***
-set serial generate callback function
+set a custom serial number generator callback
+
+When set, the callback is invoked while creating each response and must
+return the serial number of the TST_INFO. The callback receives the
+optional user argument passed as second parameter (nil when omitted); it
+may return an openssl.bn, a number or a decimal/hex string ('X' prefix for
+hex). If the callback is missing or returns an unusable value the response
+is rejected with addInfoNotAvailable.
+
 @function set_serial_cb
-@tparam function serial_cb serial_cb with proto funciont(ts_resp_ctx, arg) return openssl.bn end
-@tparam[opt] table arg optional argument passed to callback
-@treturn nil always returns nil
+@tparam function serial_cb serial callback function(arg)
+@tparam[opt] any arg user value forwarded to the callback
+@treturn nil no return value
 @usage
-  function serial_cb(tsa,arg)
-    local bn = ...
-    return bn
+  local function serial_cb(arg)
+    return openssl.bn.text(openssl.random(8)) -- < 160 bits
   end
-  local arg = {}
-  ts_resp_ctx:set_serial_cb(serial_cb, arg)
+  req_ctx:set_serial_cb(serial_cb, {})
 */
 static int openssl_ts_resp_ctx_set_serial_cb(lua_State *L)
 {
@@ -1543,19 +1732,23 @@ openssl_time_cb(TS_RESP_CTX *ctx, void *data, time_t *sec, long *usec)
 }
 
 /***
-set time callback function
+set a custom time source callback
+
+When set, the callback is invoked while creating each response and must
+return the signing time as seconds since the epoch plus optional
+microseconds (0 by default). The callback receives the optional user
+argument passed as second parameter (nil when omitted). If it returns no
+usable time the response is rejected with timeNotAvailable.
+
 @function set_time_cb
-@tparam function time_cb serial_cb with proto funciont(ts_resp_ctx, arg) return sec, usec end
-@tparam[opt] table arg optional argument passed to callback
-@treturn nil always returns nil
+@tparam function time_cb time callback function(arg) returning sec[, usec]
+@tparam[opt] any arg user value forwarded to the callback
+@treturn nil no return value
 @usage
-  function time_cb(tsa,arg)
-    local time = os.time()
-    local utime = nil
-    return time,utime
+  local function time_cb(arg)
+    return os.time()
   end
-  local arg = {}
-  ts_resp_ctx:set_time_cb(time_cb, arg)
+  req_ctx:set_time_cb(time_cb)
 */
 static int openssl_ts_resp_ctx_set_time_cb(lua_State *L)
 {
@@ -1674,6 +1867,7 @@ verification is enabled (VFY_SIGNATURE, VFY_SIGNER or VFY_TSA_NAME - see
 @{flags}), and is ignored by the other checks.
 
 @tparam x509_store cacerts
+@treturn nil no return value
 @function store
 */
 static int
@@ -1760,6 +1954,7 @@ algorithm must be the one used by the TSA (no @{imprint} needed).
 
 @function data
 @tparam string|openssl.bio data original data as a binary string or bio
+@treturn nil no return value
 @usage
   vry:data(bio.new(self.dat))
   vry:flags(V.VFY_ALL_DATA)
@@ -1796,6 +1991,7 @@ used by the TSA).
 
 @function imprint
 @tparam string imprint raw digest bytes
+@treturn nil no return value
 @usage
   vry:imprint(openssl.digest.digest("sha256", dat, true))
   vry:flags(V.VFY_ALL_IMPRINT)
