@@ -240,6 +240,21 @@ local function signReq(self, req_ctx, req, sn, now)
   vry:store(self.ca.store)
   assert(vry:verify(res))
 
+  -- Reverse check: a response whose embedded message digest has been changed
+  -- (yet validly signed by the same TSA) must NOT verify with the request
+  -- derived context used for the positive checks above.
+  local badmsg = openssl.random(32)
+  local badhash = assert(openssl.digest.digest(self.alg, badmsg, true))
+  local req_bad = assert(req:dup())
+  assert(req_bad:msg_imprint(openssl.ts.ts_msg_imprint_new(badhash, self.alg)))
+  local res_bad = assert(req_ctx:sign(req_bad:export()))
+  vry = assert(ts.verify_ctx_new(req))
+  vry:imprint(self.hash)
+  vry:data(self.dat)
+  vry:store(self.ca.store)
+  local ok_bad = vry:verify(res_bad)
+  lu.assertIsNil(ok_bad)
+
   return res
 end
 
@@ -394,4 +409,112 @@ function TestTS:testTimeCallback()
   tst:nonce()
   tst:tsa()
   tst:extensions()
+end
+
+function TestTS:testVerifyRejections()
+  -- Reverse (negative) tests: a TimeStampResp that has been tampered with
+  -- (wrong message digest, wrong signature value, issued for other data,
+  --  or with a nonce / policy different from the request) must be rejected
+  -- by TS_RESP_verify_response / TS_RESP_verify_token.
+  local V = openssl.ts
+
+  -- toggle the lowest bit of byte i (pure Lua, works on every interpreter)
+  local function flipbyte(s, i)
+    local b = s:byte(i)
+    local nb = (b % 2 == 0) and (b + 1) or (b - 1)
+    return s:sub(1, i - 1) .. string.char(nb) .. s:sub(i + 1)
+  end
+
+  -- request bound to this message, with policy + nonce and certReq = true so
+  -- that the response embeds the signer certificate (needed to verify the
+  -- signature value).
+  local req = assert(createQuery(self, self.policy_id, self.nonce, true))
+  local req_ctx = assert(createRespCtx(self))
+  -- accept alternate policies too, so a request asking for a *different*
+  -- policy is still signed and the verifier has to reject the mismatch.
+  assert(req_ctx:policies(policies))
+  local res = assert(req_ctx:sign(req:export()))
+  assert(res:status_info().status:tostring() == "0")
+
+  -- verify context configured like the positive checks in signReq: derived
+  -- from the request, with the expected digest (imprint) and original data.
+  local function ctxFromReq()
+    local vry = assert(ts.verify_ctx_new(req))
+    vry:imprint(self.hash)
+    vry:data(self.dat)
+    vry:store(self.ca.store)
+    return vry
+  end
+
+  -- sanity: the unmodified response must still verify
+  assert(ctxFromReq():verify(res))
+
+  -- (1) wrong digest value: validly signed response carrying the digest of a
+  --     different message
+  local badmsg = openssl.random(32)
+  local badhash = assert(openssl.digest.digest(self.alg, badmsg, true))
+  local req_imprint = assert(createQuery(self, self.policy_id, self.nonce, true))
+  assert(req_imprint:msg_imprint(openssl.ts.ts_msg_imprint_new(badhash, self.alg)))
+  local res_imprint = assert(req_ctx:sign(req_imprint:export()))
+  local ok = ctxFromReq():verify(res_imprint)
+  lu.assertIsNil(ok)
+
+  -- (2) wrong signature value: flip one byte of the DER signature (the very
+  --     last byte of the response, inside the RSA signature octets) and parse
+  --     the tampered response again
+  local vry_sig = ctxFromReq()
+  vry_sig:flags(V.VFY_SIGNATURE, true)
+  assert(vry_sig:verify(res))
+  local der = res:export()
+  local tampered = assert(ts.resp_read(flipbyte(der, #der)))
+  ok = vry_sig:verify(tampered)
+  lu.assertIsNil(ok)
+
+  -- (3) nonce mismatch: response issued for a request with a different nonce
+  local req_nonce =
+      assert(createQuery(self, self.policy_id, openssl.bn.text(openssl.random(16)), true))
+  local res_nonce = assert(req_ctx:sign(req_nonce:export()))
+  ok = ctxFromReq():verify(res_nonce)
+  lu.assertIsNil(ok)
+
+  -- (4) policy mismatch: response issued under a policy different from the
+  --     one requested by `req`
+  local req_policy = assert(createQuery(self, policies[1], self.nonce, true))
+  local res_policy = assert(req_ctx:sign(req_policy:export()))
+  assert(res_policy:status_info().status:tostring() == "0")
+  local vry_policy = assert(ts.verify_ctx_new(req_policy))
+  vry_policy:store(self.ca.store)
+  assert(vry_policy:verify(res_policy)) -- same request + policy verifies fine
+  ok = ctxFromReq():verify(res_policy)
+  lu.assertIsNil(ok)
+
+  -- (5) wrong data (VFY_DATA): verify the token against the original data
+  --     payload; the response must embed the digest of *that* payload
+  local dat_digest = assert(openssl.digest.digest(self.alg, self.dat, true))
+  local req_data = assert(ts.req_new())
+  assert(req_data:msg_imprint(openssl.ts.ts_msg_imprint_new(dat_digest, self.alg)))
+  local res_data = assert(req_ctx:sign(req_data:export()))
+  local vry_data = assert(ts.verify_ctx_new())
+  vry_data:data(self.dat)
+  vry_data:store(self.ca.store)
+  vry_data:flags(V.VFY_DATA, true)
+  assert(vry_data:verify(res_data))
+  -- response digesting a different payload must not verify against self.dat
+  local other = openssl.random(64)
+  local other_digest = assert(openssl.digest.digest(self.alg, other, true))
+  local req_other = assert(ts.req_new())
+  assert(req_other:msg_imprint(openssl.ts.ts_msg_imprint_new(other_digest, self.alg)))
+  local res_other = assert(req_ctx:sign(req_other:export()))
+  ok = vry_data:verify(res_other)
+  lu.assertIsNil(ok)
+
+  -- (6) VFY_IMPRINT on a fresh context (no request object): only the expected
+  --     digest is compared against the digest embedded in the response
+  local vry_imprint = assert(ts.verify_ctx_new())
+  vry_imprint:imprint(self.hash)
+  vry_imprint:store(self.ca.store)
+  vry_imprint:flags(V.VFY_IMPRINT, true)
+  assert(vry_imprint:verify(res))
+  ok = vry_imprint:verify(res_imprint)
+  lu.assertIsNil(ok)
 end
