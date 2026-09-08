@@ -518,3 +518,103 @@ function TestTS:testVerifyRejections()
   ok = vry_imprint:verify(res_imprint)
   lu.assertIsNil(ok)
 end
+
+function TestTS:testTokenVerifyWithoutCertReq()
+  -- RFC 3161 certReq flag: when the request sets certReq = false the TSA
+  -- keeps its signing certificate out of the time stamp token. The token is
+  -- then still a plain PKCS#7 SignedData, but TS_RESP_verify_* cannot run its
+  -- signature check any more: without an embedded signer certificate (and
+  -- with no way to inject an untrusted one into the TS verify ctx) it cannot
+  -- even locate the signer key. The signature can however be checked directly
+  -- through the openssl.pkcs7 API by handing the TSA public key over
+  -- explicitly, as done below.
+  local V = openssl.ts
+
+  -- toggle the lowest bit of byte i (pure Lua, works on every interpreter)
+  local function flipbyte(s, i)
+    local b = s:byte(i)
+    local nb = (b % 2 == 0) and (b + 1) or (b - 1)
+    return s:sub(1, i - 1) .. string.char(nb) .. s:sub(i + 1)
+  end
+
+  -- crypto check of a token (openssl.pkcs7) against the trusted TSA
+  -- certificate. PKCS7_verify defaults to the S/MIME sign purpose and would
+  -- reject the timeStamping EKU of the TSA certificate, so PKCS7_NOVERIFY is
+  -- used: it skips the purpose / chain step while still verifying the
+  -- signature value itself against the signer certificate given explicitly.
+  -- Returns the signed content (the DER TSTInfo, as attached eContent) on
+  -- success, nil on any failure.
+  local function p7CryptoVerify(p7)
+    return p7:verify({ self.tsa.cert }, nil, nil, openssl.pkcs7.NOVERIFY)
+  end
+
+  -- datum being timestamped, with certReq explicitly false
+  local data = openssl.random(96)
+  local digest = assert(openssl.digest.digest(self.alg, data, true))
+  local req = assert(ts.req_new())
+  assert(req:msg_imprint(ts.ts_msg_imprint_new(digest, self.alg)))
+  assert(req:cert_req(false))
+  local req_ctx = assert(createRespCtx(self))
+  local res = assert(req_ctx:sign(req:export()))
+  assert(res:status_info().status:tostring() == "0")
+
+  -- fact: the granted token carries NO embedded certificate ...
+  local token = res:token()
+  local p = assert(token:parse())
+  lu.assertEquals("pkcs7-signedData", p.type)
+  lu.assertNil(p.certs)
+  lu.assertEquals(1, #p.signer_info)
+
+  -- ... therefore the TS verify ctx cannot validate the signature even though
+  -- the trusted store is supplied
+  local vry = assert(ts.verify_ctx_new())
+  vry:imprint(digest)
+  vry:data(data)
+  vry:store(self.ca.store)
+  vry:flags(V.VFY_SIGNATURE, true)
+  lu.assertNil(vry:verify(res))
+
+  -- positive: the token itself verifies cryptographically once the TSA
+  -- certificate is provided, and the signed content is the DER TSTInfo
+  local content = assert(p7CryptoVerify(token))
+  lu.assertEquals(0x30, content:byte(1)) -- TSTInfo ::= SEQUENCE
+  -- and the imprint inside that TSTInfo is exactly the digest of `data`
+  local imprinted = assert(res:tst_info())
+  imprinted = assert(imprinted:msg_imprint())
+  lu.assertEquals(digest, imprinted:msg():data())
+
+  -- (1) reverse: signature bytes tampered (DER stays valid, only the RSA
+  --     signature octets change) -> crypto verification must fail
+  local der = assert(token:export("der"))
+  local tok_a = assert(openssl.pkcs7.read(flipbyte(der, #der - 20), "der"))
+  lu.assertNil(p7CryptoVerify(tok_a))
+
+  -- (2) reverse: the very same TSA issues a perfectly valid token over a
+  --     DIFFERENT datum. Its signature verifies fine, so the crypto layer
+  --     alone is not enough - the imprint must also match the expected
+  --     digest of the original data.
+  local other = openssl.random(96)
+  local req2 = assert(ts.req_new())
+  assert(req2:msg_imprint(
+      ts.ts_msg_imprint_new(assert(openssl.digest.digest(self.alg, other, true)), self.alg)))
+  assert(req2:cert_req(false))
+  local res2 = assert(req_ctx:sign(req2:export()))
+  assert(res2:status_info().status:tostring() == "0")
+  lu.assertIsString(assert(p7CryptoVerify(res2:token()))) -- signature is valid
+  local im2 = assert(res2:tst_info())
+  im2 = assert(im2:msg_imprint())
+  lu.assertEquals(openssl.digest.digest(self.alg, other, true), im2:msg():data())
+  lu.assertNotEquals(digest, im2:msg():data()) -- ... but not for `data`
+
+  -- (3) reverse: the hashedMessage OCTET STRING embedded in the signed
+  --     TSTInfo is modified (message digest data changed). The token DER is
+  --     still perfectly parseable, but the messageDigest signed attribute no
+  --     longer matches the signed content -> crypto verification must fail.
+  local cstart = der:find(content:sub(1, 8), 1, true)
+  local hpat = content:find("\4\20" .. digest, 1, true)
+  lu.assertIsTrue(cstart ~= nil and hpat ~= nil)
+  local badcontent = flipbyte(content, hpat + 2)
+  local badder = der:sub(1, cstart - 1) .. badcontent .. der:sub(cstart + #content)
+  local tok_c = assert(openssl.pkcs7.read(badder, "der"))
+  lu.assertNil(p7CryptoVerify(tok_c))
+end
