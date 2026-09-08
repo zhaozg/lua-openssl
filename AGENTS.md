@@ -2,7 +2,7 @@
 
 **Version**: 2.0.0
 **Last Updated**: 2026-02-11
-**Applicable AI Models**: GPT-4 / Claude-3 / Models with C/Lua cross-context understanding
+**Applicable AI Models**: LLM with C/Lua cross-context understanding
 **Maintainer Perspective**: [zhaozg](https://github.com/zhaozg), lua‑openssl author
 
 ---
