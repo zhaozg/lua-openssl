@@ -18,6 +18,7 @@ function TestPKEYMY:setUp()
   self.genalg = {
     { nil }, -- default to create rsa 1024 bits with 65537
     { "rsa", 2048, 3 }, -- create rsa with give bits length and e
+    { "rsa", 4096, 3 }, -- create rsa with give bits length and e
     { "ec", "prime256v1" },
     { "dh", 1024 },
   }
