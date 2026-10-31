@@ -720,9 +720,7 @@ Bisprime(lua_State *L) /** isprime(x,[checks]) */
   BIGNUM *a = Bget(L, 1);
   BN_CTX *ctx = BN_CTX_new();
 #if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
-  BN_GENCB *cb = BN_GENCB_new();
-  lua_pushboolean(L, BN_check_prime(a, ctx, cb));
-  BN_GENCB_free(cb);
+  lua_pushboolean(L, BN_check_prime(a, ctx, NULL));
 #else
   int checks = luaL_optint(L, 2, BN_prime_checks);
   lua_pushboolean(L, BN_is_prime_fasttest_ex(a, checks, ctx, 1, NULL));
