@@ -35,7 +35,7 @@ openssl_pkey_read(lua_State *L)
   int         priv = lua_isnone(L, 2) ? 0 : auxiliar_checkboolean(L, 2);
   int         fmt = luaL_checkoption(L, 3, "auto", format);
   const char *passphrase = luaL_optstring(L, 4, NULL);
-  int         type = passphrase != NULL ? evp_pkey_name2type(passphrase) : -1;
+  int         type = passphrase != NULL ? luaopenssl_pkey_name2type(passphrase) : -1;
 
   if (fmt == FORMAT_AUTO) {
     fmt = bio_is_der(in) ? FORMAT_DER : FORMAT_PEM;

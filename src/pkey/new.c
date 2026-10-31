@@ -235,7 +235,7 @@ openssl_pkey_new(lua_State *L)
       int nid = OBJ_txt2nid(alg);
       if (nid == NID_undef) {
         /* Try case-insensitive lookup via our type table */
-        nid = evp_pkey_name2type(alg);
+        nid = luaopenssl_pkey_name2type(alg);
       }
 
       if (nid > 0) {

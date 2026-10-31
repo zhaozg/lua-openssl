@@ -152,8 +152,8 @@ pqc_algorithm_available(const char *alg_name)
     /* Try OBJ_txt2nid first (works for registered OIDs) */
     nid = OBJ_txt2nid(alg_name);
     if (nid == NID_undef) {
-        /* Fall back to evp_pkey_name2type for case-insensitive lookup */
-        nid = evp_pkey_name2type(alg_name);
+        /* Fall back to luaopenssl_pkey_name2type for case-insensitive lookup */
+        nid = luaopenssl_pkey_name2type(alg_name);
     }
 
     if (nid == NID_undef)

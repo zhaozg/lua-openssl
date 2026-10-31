@@ -26,8 +26,8 @@ struct luaopenssl_ossl_item {
 /* Forward declarations for functions used across pkey sub-modules */
 
 /* Type mapping - used by read.c and core.c */
-int evp_pkey_name2type(const char *name);
-const char *evp_pkey_type2name(int type);
+int luaopenssl_pkey_name2type(const char *name);
+const char *luaopenssl_pkey_type2name(int type);
 
 /* PQC helper: check if a key is a PQC signature algorithm (ML-DSA, Falcon, SLH-DSA).
  * Returns 1 if the key is a PQC signature algorithm that uses internal hashing.

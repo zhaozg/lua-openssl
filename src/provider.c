@@ -426,8 +426,8 @@ static int openssl_provider_query_pqc(lua_State *L)
     const char *alg_name = pqc_algorithms[i];
     int nid = OBJ_txt2nid(alg_name);
     if (nid == NID_undef) {
-      /* Try case-insensitive lookup via evp_pkey_name2type */
-      nid = evp_pkey_name2type(alg_name);
+      /* Try case-insensitive lookup via luaopenssl_pkey_name2type */
+      nid = luaopenssl_pkey_name2type(alg_name);
     }
     if (nid == NID_undef)
       continue;
@@ -496,7 +496,7 @@ static int openssl_provider_load_pqc(lua_State *L)
       for (int j = 0; probe_algs[j] != NULL; j++) {
         int nid = OBJ_txt2nid(probe_algs[j]);
         if (nid == NID_undef)
-          nid = evp_pkey_name2type(probe_algs[j]);
+          nid = luaopenssl_pkey_name2type(probe_algs[j]);
         if (nid != NID_undef) {
           EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new_id(nid, NULL);
           if (ctx) {

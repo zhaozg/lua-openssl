@@ -187,7 +187,7 @@ static const OSSL_ITEM standard_name2type[] = {
 };
 
 int
-evp_pkey_name2type(const char *name)
+luaopenssl_pkey_name2type(const char *name)
 {
   size_t i;
 
@@ -199,7 +199,7 @@ evp_pkey_name2type(const char *name)
 }
 
 const char *
-evp_pkey_type2name(int type)
+luaopenssl_pkey_type2name(int type)
 {
   size_t      i;
   const char *ret = NULL;
@@ -599,7 +599,7 @@ openssl_pkey_parse(lua_State *L)
 
   /* Get type name: first try our lookup table, then fall back to OBJ_nid2sn */
   {
-    const char *tname = evp_pkey_type2name(typ);
+    const char *tname = luaopenssl_pkey_type2name(typ);
     if (tname == NULL) {
       /* For unknown types (e.g., PQC algorithms on OpenSSL 3.5+),
        * try to get the short name from the NID */
@@ -700,7 +700,7 @@ openssl_pkey_parse(lua_State *L)
 #else
     {
       /* On older OpenSSL, just record the type name if we can */
-      const char *tname = evp_pkey_type2name(typ);
+      const char *tname = luaopenssl_pkey_type2name(typ);
       if (tname) {
         AUXILIAR_SET(L, -1, "key_type_name", tname, string);
         /* Also update the "type" field */
