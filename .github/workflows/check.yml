@@ -37,8 +37,8 @@ jobs:
         export PATH=$HOME/.usr/bin:$PATH
         $HOME/.usr/bin/luarocks install luv
         ln -s $HOME/.usr/lib/lua/5.1/luv.so
-        export PKG_CONFIG_PATH=$HOME/.usr/lib/pkgconfig
-        export LD_LIBRARY_PATH=$HOME/.usr/lib
+        export PKG_CONFIG_PATH=$HOME/.usr/lib64/pkgconfig:$HOME/.usr/lib/pkgconfig
+        export LD_LIBRARY_PATH=$HOME/.usr/lib64:$HOME/.usr/lib
         make coveralls
         coveralls -b . -i src --gcov-options '\-lp'
   finish:
