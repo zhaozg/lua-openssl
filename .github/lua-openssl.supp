@@ -284,6 +284,34 @@
 
 # OpenSSL-3
 
+# OpenSSL 3.x RNG initialization and digest fetch leaks. OpenSSL keeps this
+# state for the lifetime of the process; newer builds added a CRYPTO_malloc
+# frame, so match with wildcards instead of listing every libcrypto frame.
+{
+   OpenSSL-3 RNG init
+   Memcheck:Leak
+   match-leak-kinds: definite,indirect
+   fun:malloc
+   fun:CRYPTO_malloc
+   fun:CRYPTO_zalloc
+   ...
+   fun:EVP_RAND_instantiate
+   ...
+}
+{
+   OpenSSL-3 digest fetch for X509_REQ_sign
+   Memcheck:Leak
+   match-leak-kinds: definite,indirect
+   fun:malloc
+   fun:CRYPTO_malloc
+   fun:CRYPTO_zalloc
+   ...
+   fun:EVP_MD_fetch
+   ...
+   fun:X509_REQ_sign
+   ...
+}
+
 # BN_GENCB_call
 {
    <BN_GENCB_call>
