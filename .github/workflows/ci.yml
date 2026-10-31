@@ -25,6 +25,8 @@ jobs:
       LUAROCKS: ${{ matrix.luarocks_version }}
       LUA: ${{ matrix.lua_version }}
       SSL: ${{ matrix.openssl_version }}
+      # setup_ssl.sh builds OpenSSL with no-shared for most versions
+      OPENSSL_STATIC: 1
 
     steps:
     - uses: actions/checkout@v4

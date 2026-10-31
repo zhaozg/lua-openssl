@@ -16,6 +16,8 @@ jobs:
       LUA: luajit2.1
       LUAROCKS: 3.13.0
       SSL: ${{ matrix.openssl_version }}
+      # setup_ssl.sh builds OpenSSL with no-shared for most versions
+      OPENSSL_STATIC: 1
       COVERALLS_PARALLEL: ON
       COVERALLS_SERVICE_NAME: github
       TRAVIS_JOB_ID: ${{ github.run_id }}
