@@ -791,7 +791,7 @@ static int openssl_bio_shutdown(lua_State *L)
 }
 
 /***
-get ssl object assosited with bio object
+get ssl object associated with bio object
 @function ssl
 @treturn ssl
 */
@@ -814,7 +814,7 @@ static int openssl_bio_get_ssl(lua_State *L)
 /***
 do TCP or SSL connect
 @function connect
-@treturn booolean result true for success and others for fail
+@treturn boolean result true for success and others for fail
 */
 static int openssl_bio_connect(lua_State *L)
 {

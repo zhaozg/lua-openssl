@@ -16,7 +16,7 @@
  * @tparam string|openssl.bio input string data or bio object
  * @tparam[opt=false] boolean priv prikey set true when input is private key
  * @tparam[opt='auto'] string format format or encoding of input, support 'auto','pem','der'
- * @tparam[opt] string passhprase when input is private key, or key types 'ec','rsa','dsa','dh'
+ * @tparam[opt] string passphrase when input is private key, or key types 'ec','rsa','dsa','dh'
  * @treturn openssl.evp_pkey public key
  * @treturn[2] nil
  * @treturn[2] string error message

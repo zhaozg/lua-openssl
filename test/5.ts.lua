@@ -4,6 +4,13 @@ local helper = require("helper")
 
 local asn1, ts, csr = openssl.asn1, openssl.ts, openssl.x509.req
 
+-- corrected names must keep the old truncated spellings as aliases
+assert(ts.STATUS_REVOCATION_WARNING == ts.STATUS_REVOCATION_WARNIN)
+assert(ts.INFO_BAD_DATA_FORMAT == ts.INFO_BAD_DATA_FORMA)
+assert(ts.INFO_TIME_NOT_AVAILABLE == ts.INFO_TIME_NOT_AVAILABL)
+assert(ts.INFO_ADD_INFO_NOT_AVAILABLE == ts.INFO_ADD_INFO_NOT_AVAILABL)
+assert(ts.INFO_SYSTEM_FAILURE == ts.INFO_SYSTEM_FAILUR)
+
 local policy_oid = "1.2.3.4.100"
 local policy_obj = assert(asn1.new_object(policy_oid))
 local policies = {
@@ -132,7 +139,7 @@ local function createTsa(self)
   lu.assertEquals(type(tsa.req:parse()), "table")
 
   tsa.cert = openssl.x509.new(1, tsa.req)
-  assert(tsa.cert:validat(os.time(), os.time() + 3600 * 24 * 365))
+  assert(tsa.cert:valid_at(os.time(), os.time() + 3600 * 24 * 365))
   assert(tsa.cert:extensions(extensions))
   assert(tsa.cert:sign(ca.pkey, ca.cert))
 

@@ -128,8 +128,8 @@ copy_extensions(X509 *x, X509_REQ *req, int override)
 
   for (i = 0; i < sk_X509_EXTENSION_num(exts); i++) {
     ext = sk_X509_EXTENSION_value(exts, i);
-    obj = X509_EXTENSION_get_object(ext);
-    idx = X509_get_ext_by_OBJ(x, obj, -1);
+    obj = X509_EXTENSION_get_object((X509_EXTENSION *)ext);
+    idx = X509_get_ext_by_OBJ(x, (ASN1_OBJECT *)obj, -1);
     /* Does extension exist? */
     if (idx != -1) {
       /* If normal copy don't override existing extension */
@@ -139,10 +139,10 @@ copy_extensions(X509 *x, X509_REQ *req, int override)
         tmpext = X509_get_ext(x, idx);
         X509_delete_ext(x, idx);
         X509_EXTENSION_free((X509_EXTENSION*)tmpext);
-        idx = X509_get_ext_by_OBJ(x, obj, -1);
+        idx = X509_get_ext_by_OBJ(x, (ASN1_OBJECT *)obj, -1);
       } while (idx != -1);
     }
-    if (!X509_add_ext(x, ext, -1)) goto end;
+    if (!X509_add_ext(x, (X509_EXTENSION *)ext, -1)) goto end;
   }
 
   ret = 1;
@@ -185,8 +185,8 @@ X509_REQ_to_X509_ex(X509_REQ *r, int days, EVP_PKEY *pkey, const EVP_MD *md, X50
   serial = NULL;
 
   xn = X509_REQ_get_subject_name(r);
-  if ((res = X509_set_subject_name(ret, xn)) != 1) goto err;
-  if ((res = X509_set_issuer_name(ret, xn)) != 1) goto err;
+  if ((res = X509_set_subject_name(ret, (X509_NAME *)xn)) != 1) goto err;
+  if ((res = X509_set_issuer_name(ret, (X509_NAME *)xn)) != 1) goto err;
 
   tm = time(NULL);
   notBefore = ASN1_TIME_adj(NULL, tm, 0, 0);
@@ -375,7 +375,7 @@ sign x509_req object
 @function sign
 @tparam openssl.evp_pkey pkey private key which to sign x509_req object
 @tparam number|string|evp_md md message digest alg used to sign
-@treturn boolean result true for suceess
+@treturn boolean result true for success
 */
 static int openssl_csr_sign(lua_State *L)
 {

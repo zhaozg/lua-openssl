@@ -50,7 +50,7 @@ static int openssl_x509_purpose(lua_State*L)
   luaL_argcheck(L,
                 ret==LUA_TNONE || ret==LUA_TNUMBER || ret==LUA_TSTRING,
                 1,
-                "only accpet NONE, string or number as nid or short name");
+                "only accept NONE, string or number as nid or short name");
 
   ret = 0;
   if (lua_isnone(L, 1))
@@ -281,7 +281,7 @@ static int openssl_x509_new(lua_State* L)
     if (ret == 1 && auxiliar_getclassudata(L, "openssl.x509_req", i))
     {
       X509_REQ* csr = CHECK_OBJECT(i, X509_REQ, "openssl.x509_req");
-      X509_NAME* xn = X509_REQ_get_subject_name(csr);
+      X509_NAME* xn = (X509_NAME *)X509_REQ_get_subject_name(csr);
       ret = X509_set_subject_name(x, xn);
 
       if (ret == 1)
@@ -446,7 +446,7 @@ int openssl_push_general_name(lua_State*L, const GENERAL_NAME* general_name)
     break;
   }
   default:
-    lua_pushstring(L, "unsupport");
+    lua_pushstring(L, "unsupported");
     lua_setfield(L, -2, "type");
   }
   return 1;
@@ -466,7 +466,7 @@ int openssl_push_x509_signature(lua_State *L, const X509_ALGOR *alg, const ASN1_
   if (sig != NULL)
   {
     lua_pushliteral(L, "sig");
-    lua_pushlstring(L, ASN1_STRING_get0_data(sig), ASN1_STRING_length(sig));
+    lua_pushlstring(L, (const char *)ASN1_STRING_get0_data(sig), ASN1_STRING_length(sig));
     lua_rawset(L, i==0 ? -3 : i);
   }
 
@@ -615,7 +615,7 @@ static int openssl_x509_parse(lua_State *L)
       lua_newtable(L);
       for (i = 0; i < n; i++)
       {
-        X509_EXTENSION *ext = X509_get_ext(cert, i);
+        X509_EXTENSION *ext = (X509_EXTENSION *)X509_get_ext(cert, i);
         ext = X509_EXTENSION_dup(ext);
         lua_pushinteger(L, i + 1);
         PUSH_OBJECT(ext, "openssl.x509_extension");
@@ -698,7 +698,7 @@ static int verify_cb(int ok, X509_STORE_CTX *ctx)
 #endif
 
 /***
-check x509 with ca certchian and option purpose
+check x509 with ca cert chain and option purpose
 purpose can be one of: ssl_client, ssl_server, ns_ssl_server, smime_sign, smime_encrypt, crl_sign, any, ocsp_helper, timestamp_sign
 @function check
 @tparam x509_store cacerts
@@ -892,7 +892,7 @@ static int openssl_x509_subject(lua_State* L)
   X509* cert = CHECK_OBJECT(1, X509, "openssl.x509");
   if (lua_isnone(L, 2))
   {
-    X509_NAME* xn = X509_get_subject_name(cert);
+    X509_NAME* xn = (X509_NAME *)X509_get_subject_name(cert);
     return openssl_push_xname_asobject(L, xn);
   }
   else
@@ -921,7 +921,7 @@ static int openssl_x509_issuer(lua_State* L)
   X509* cert = CHECK_OBJECT(1, X509, "openssl.x509");
   if (lua_isnone(L, 2))
   {
-    X509_NAME* xn = X509_get_issuer_name(cert);
+    X509_NAME* xn = (X509_NAME *)X509_get_issuer_name(cert);
     return openssl_push_xname_asobject(L, xn);
   }
   else
@@ -1049,7 +1049,7 @@ static int openssl_x509_notafter(lua_State *L)
 
 /***
 check x509 valid
-@function validat
+@function valid_at
 @tparam[opt] number time default will use now time
 @treturn boolean result true for valid, or for invalid
 @treturn string notbefore
@@ -1057,10 +1057,12 @@ check x509 valid
 */
 /***
 set valid time, notbefore and notafter
-@function validat
+@function valid_at
 @tparam number notbefore
 @tparam number notafter
 @treturn boolean result, true for success
+
+The old name `validat` is kept as a legacy alias.
 */
 static int openssl_x509_valid_at(lua_State* L)
 {
@@ -1072,8 +1074,8 @@ static int openssl_x509_valid_at(lua_State* L)
     time_t now = 0;
     time(&now);
 
-    lua_pushboolean(L, (X509_cmp_time(X509_get0_notAfter(cert), &now)     >= 0
-                        && X509_cmp_time(X509_get0_notBefore(cert), &now) <= 0));
+    lua_pushboolean(L, (OPENSSL_X509_cmp_time(X509_get0_notAfter(cert), &now)     >= 0
+                        && OPENSSL_X509_cmp_time(X509_get0_notBefore(cert), &now) <= 0));
     PUSH_ASN1_TIME(L, X509_get0_notBefore(cert));
     PUSH_ASN1_TIME(L, X509_get0_notAfter(cert));
     ret = 3;
@@ -1081,8 +1083,8 @@ static int openssl_x509_valid_at(lua_State* L)
   else if (lua_gettop(L) == 2)
   {
     time_t time = luaL_checkinteger(L, 2);
-    lua_pushboolean(L, (X509_cmp_time(X509_get0_notAfter(cert), &time)     >= 0
-                        && X509_cmp_time(X509_get0_notBefore(cert), &time) <= 0));
+    lua_pushboolean(L, (OPENSSL_X509_cmp_time(X509_get0_notAfter(cert), &time)     >= 0
+                        && OPENSSL_X509_cmp_time(X509_get0_notBefore(cert), &time) <= 0));
     PUSH_ASN1_TIME(L, X509_get0_notBefore(cert));
     PUSH_ASN1_TIME(L, X509_get0_notAfter(cert));
     ret = 3;
@@ -1313,7 +1315,7 @@ static int openssl_x509_sign(lua_State*L)
     else
     {
       X509* ca = CHECK_OBJECT(i, X509, "openssl.x509");
-      X509_NAME* xn = X509_get_subject_name(ca);
+      X509_NAME* xn = (X509_NAME *)X509_get_subject_name(ca);
       ret = X509_check_private_key(ca, pkey);
       if (ret == 1)
         ret = X509_set_issuer_name(x, xn);
@@ -1429,7 +1431,8 @@ static luaL_Reg x509_funcs[] =
   {"notafter",   openssl_x509_notafter},
   {"serial",     openssl_x509_serial},
   {"subject",    openssl_x509_subject},
-  {"validat",    openssl_x509_valid_at},
+  {"valid_at",   openssl_x509_valid_at},
+  {"validat",    openssl_x509_valid_at}, /* legacy alias */
 
   {"sign",       openssl_x509_sign},
   {"verify",     openssl_x509_verify},

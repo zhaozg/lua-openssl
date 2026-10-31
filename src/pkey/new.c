@@ -128,7 +128,7 @@ err:
 /***
  * create a new keypair by factors of keypair or get public key only
  * @function new
- * @tparam table factors create private/public key, key alg only accept accept 'rsa','dsa','dh','ec'
+ * @tparam table factors create private/public key, key alg only accept 'rsa','dsa','dh','ec'
  * and must exist<\/br>
  * when arg is rsa, table may with key n,e,d,p,q,dmp1,dmq1,iqmp, both are binary string or openssl.bn<br>
  * when arg is dsa, table may with key p,q,g,priv_key,pub_key, both are binary string or openssl.bn<br>
@@ -256,7 +256,7 @@ openssl_pkey_new(lua_State *L)
       }
     }
   } else if (lua_istable(L, 1)) {
-    /* contruct key from factors in Lua table */
+    /* construct key from factors in Lua table */
     lua_getfield(L, 1, "alg");
     alg = luaL_optstring(L, -1, alg);
     lua_pop(L, 1);
@@ -475,7 +475,7 @@ openssl_pkey_new(lua_State *L)
       EC_GET_FIELD(x);
       EC_GET_FIELD(y);
       EC_GET_FIELD(z);
-      if (z) luaL_error(L, "only accpet affine co-ordinates");
+      if (z) luaL_error(L, "only accept affine co-ordinates");
 
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
       pkey = openssl_new_pkey_ec_with(group, x, y, d);

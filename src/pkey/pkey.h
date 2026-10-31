@@ -54,7 +54,7 @@ int openssl_pkey_decrypt(lua_State *L);
 int openssl_pkey_get_public(lua_State *L);
 int openssl_pkey_ctx(lua_State *L);
 int openssl_pkey_bits(lua_State *L);
-int openssl_pkey_mssing_parameters(lua_State *L);
+int openssl_pkey_missing_parameters(lua_State *L);
 
 /* EVP_PKEY_CTX operations */
 int openssl_pkey_ctx_new(lua_State *L);

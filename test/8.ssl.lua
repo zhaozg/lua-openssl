@@ -53,7 +53,7 @@ if uv then
 
   function TestSSL:testUV_1SSL()
     local port = math.random(8000, 9000)
-    helper.spawn(LUA, { "8.ssl_s.lua", "127.0.0.1", port }, "accpeting...", function()
+    helper.spawn(LUA, { "8.ssl_s.lua", "127.0.0.1", port }, "accepting...", function()
       print("started")
       helper.spawn(LUA, { "8.ssl_c.lua", "127.0.0.1", port })
     end)
@@ -62,7 +62,7 @@ if uv then
 
   function TestSSL:testUV_2BIO()
     local port = math.random(8000, 9000)
-    helper.spawn(LUA, { "8.bio_s.lua", "127.0.0.1", port }, "accpeting...", function()
+    helper.spawn(LUA, { "8.bio_s.lua", "127.0.0.1", port }, "accepting...", function()
       print("started")
       helper.spawn(LUA, { "8.bio_c.lua", "127.0.0.1", port })
     end)
@@ -71,7 +71,7 @@ if uv then
 
   function TestSSL:testUV_3SSLCBIO()
     local port = math.random(8000, 9000)
-    helper.spawn(LUA, { "8.bio_s.lua", "127.0.0.1", port }, "accpeting...", function()
+    helper.spawn(LUA, { "8.bio_s.lua", "127.0.0.1", port }, "accepting...", function()
       print("started")
       helper.spawn(LUA, { "8.ssl_c.lua", "127.0.0.1", port })
     end)
@@ -80,7 +80,7 @@ if uv then
 
   function TestSSL:testUV_4BIOCSSL()
     local port = math.random(8000, 9000)
-    helper.spawn(LUA, { "8.ssl_s.lua", "127.0.0.1", port }, "accpeting...", function()
+    helper.spawn(LUA, { "8.ssl_s.lua", "127.0.0.1", port }, "accepting...", function()
       print("started")
       helper.spawn(LUA, { "8.bio_c.lua", "127.0.0.1", port })
     end)
@@ -89,7 +89,7 @@ if uv then
 
   function TestSSL:testUV_SSL4UV()
     local port = math.random(8000, 9000)
-    helper.spawn(LUA, { "8.ssl_uv_s.lua", "127.0.0.1", port }, "accpeting...", function()
+    helper.spawn(LUA, { "8.ssl_uv_s.lua", "127.0.0.1", port }, "accepting...", function()
       print("started")
       helper.spawn(LUA, { "8.bio_uv_c.lua", "127.0.0.1", port })
     end)
@@ -101,7 +101,7 @@ if uv then
       return
     end
     local port = math.random(8000, 9000)
-    helper.spawn(LUA, { "8.bio_dtls_s.lua", "127.0.0.1", port }, "accpeting...", function()
+    helper.spawn(LUA, { "8.bio_dtls_s.lua", "127.0.0.1", port }, "accepting...", function()
       print("started")
       helper.spawn(LUA, { "8.bio_dtls_c.lua", "127.0.0.1", port })
     end)

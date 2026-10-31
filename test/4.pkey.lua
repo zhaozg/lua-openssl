@@ -39,6 +39,8 @@ function TestPKEYMY:testBasic()
     if v[1] ~= "dh" and eng then
       k:set_engine(eng)
     end
+    assert(not k:missing_parameters())
+    -- legacy alias for the original (misspelled) name
     assert(not k:missing_paramaters())
     local k1 = assert(pkey.get_public(k), v[1])
     assert(not k1:is_private())

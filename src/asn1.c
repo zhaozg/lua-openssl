@@ -182,7 +182,7 @@ do der encode and return encoded string partly head or full
 @function put_object
 @tparam number tag
 @tparam number class
-@tparam[opt=nil] number|string val length or data to encode, defualt will make
+@tparam[opt=nil] number|string val length or data to encode, default will make
 indefinite length constructed
 @tparam[opt=nil] boolean constructed or not
 @treturn string der encoded string or head when not give data
@@ -278,11 +278,11 @@ create asn1_string object
 
 <br/><p> asn1_string object support types:   "integer", "enumerated", "bit",
 "octet", "utf8", "numeric", "printable", "t61", "teletex", "videotex", "ia5",
-"graphics", "iso64", "visible", "general", "unversal", "bmp", "utctime" </p>
+"graphics", "iso64", "visible", "general", "universal", "bmp", "utctime" </p>
 
 @function new_string
 @tparam string data create new asn1_string with data
-@tparam[opt] string type asn1 string type, defult with 'utf8'
+@tparam[opt] string type asn1 string type, default with 'utf8'
 @treturn asn1_string
 */
 static int
@@ -1035,7 +1035,7 @@ openssl_asn1group_set(lua_State *L)
     } else if (lua_isstring(L, 2)) {
       ret = ASN1_TIME_set_string(a, lua_tostring(L, 2));
     } else
-      luaL_error(L, "only accpet number or string");
+      luaL_error(L, "only accept number or string");
     return openssl_pushresult(L, ret);
   }
   case V_ASN1_GENERALIZEDTIME: {
@@ -1046,7 +1046,7 @@ openssl_asn1group_set(lua_State *L)
     } else if (lua_isstring(L, 2)) {
       ret = ASN1_GENERALIZEDTIME_set_string(a, lua_tostring(L, 2));
     } else
-      luaL_error(L, "only accpet number or string");
+      luaL_error(L, "only accept number or string");
     return openssl_pushresult(L, ret);
   }
   default:
@@ -1663,7 +1663,7 @@ openssl_push_asn1object(lua_State *L, const ASN1_OBJECT *obj)
 int
 openssl_push_asn1(lua_State *L, const ASN1_STRING *string, int type)
 {
-  int strType = ASN1_STRING_type(string);
+  int strType = ASN1_STRING_type((ASN1_STRING *)string);
   if ((strType & V_ASN1_GENERALIZEDTIME) == V_ASN1_GENERALIZEDTIME && type == V_ASN1_UTCTIME)
     type = V_ASN1_GENERALIZEDTIME;
   else if ((strType & V_ASN1_UTCTIME) == V_ASN1_UTCTIME && type == V_ASN1_GENERALIZEDTIME)

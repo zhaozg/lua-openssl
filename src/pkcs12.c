@@ -17,7 +17,7 @@ create and export pkcs12 data
 @tparam openssl.evp_pkey pkey
 @tparam string password
 @tparam[opt=nil] string friendlyname
-@tparam[opt] table|stak_of_x509 extracerts
+@tparam[opt] table|stack_of_x509 extracerts
 @tparam[opt] boolean keytype flag to private key used by MSIE, true for KEY_SIG, or KEY_EX
 @treturn string data
 */
@@ -46,7 +46,7 @@ static int openssl_pkcs12_export(lua_State *L)
 
     if (lua_istable(L, idx)) {
       ca = openssl_sk_x509_fromtable(L, idx);
-      if (ca == NULL) luaL_argerror(L, idx, "must be table contians x509 object as cacets");
+      if (ca == NULL) luaL_argerror(L, idx, "must be table contains x509 object as cacerts");
       idx++;
     }
 

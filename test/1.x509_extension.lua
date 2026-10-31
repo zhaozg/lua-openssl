@@ -104,7 +104,7 @@ function TestX509ext:testAll()
 
   lu.assertEquals(n1:data():tostring(), "CA:FALSE")
   lu.assertErrorMsgEquals(
-    "bad argument #2 to '?' (only accpet asn1 octet string if is a asn1 string)",
+    "bad argument #2 to '?' (only accept asn1 octet string if is a asn1 string)",
     n1.data,
     n1,
     self.timeStamping

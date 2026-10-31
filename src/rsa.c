@@ -565,7 +565,7 @@ openssl_padding_check(lua_State *L)
 
     /* true for private, false for public */
 #ifdef LIBRESSL_VERSION_NUMBER
-    /* NOTE: iibressl not compat with openssl */
+    /* NOTE: libressl not compat with openssl */
     if (pri) {
       ret = RSA_padding_check_PKCS1_type_1(to, sz, from + 1, l - 1, sz);
     } else {

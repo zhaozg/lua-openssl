@@ -439,16 +439,16 @@ openssl_pkey_bits(lua_State *L)
 }
 
 /* ========================================================================
- * openssl_pkey_mssing_parameters
+ * openssl_pkey_missing_parameters
  * ======================================================================== */
 
 /***
  * check if key parameters are missing
- * @function missing_paramaters
+ * @function missing_parameters
  * @treturn boolean true if key is missing parameters
  */
 int
-openssl_pkey_mssing_parameters(lua_State *L)
+openssl_pkey_missing_parameters(lua_State *L)
 {
   EVP_PKEY *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
   int       ret = EVP_PKEY_missing_parameters(pkey);
@@ -463,7 +463,7 @@ openssl_pkey_mssing_parameters(lua_State *L)
 /***
  * return key is private or not
  * @function is_private
- * @treturn boolean ture is private or public key
+ * @treturn boolean true is private or public key
  */
 int
 openssl_pkey_is_private1(lua_State *L)
@@ -1279,7 +1279,9 @@ luaL_Reg pkey_funcs[] = {
 #if defined(OPENSSL_SUPPORT_SM2) && OPENSSL_VERSION_NUMBER < 0x30000000
   { "as_sm2",             openssl_pkey_as_sm2            },
 #endif
-  { "missing_paramaters", openssl_pkey_mssing_parameters },
+  { "missing_parameters", openssl_pkey_missing_parameters },
+  /* retained for backward compatibility; new code should use missing_parameters */
+  { "missing_paramaters", openssl_pkey_missing_parameters },
 
   { "__gc",               openssl_pkey_free              },
   { "__tostring",         auxiliar_tostring              },

@@ -444,7 +444,7 @@ static int openssl_pkcs7_type(lua_State *L)
 export pkcs7 as a string
 
 @function parse
-@treturn table a table has pkcs7 infomation, include type,and other things relate to types
+@treturn table a table has pkcs7 information, include type,and other things relate to types
 */
 static int openssl_pkcs7_parse(lua_State *L)
 {

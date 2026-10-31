@@ -562,7 +562,7 @@ openssl.evp_cipher object
 @type evp_cipher
 */
 /***
-get infomation of evp_cipher object
+get information of evp_cipher object
 
 @function info
 @treturn table info keys include name,block_size,key_length,iv_length,flags,mode
@@ -838,7 +838,7 @@ static int openssl_evp_cipher_final(lua_State *L)
 }
 
 /***
-get infomation of evp_cipher_ctx object
+get information of evp_cipher_ctx object
 
 @function info
 @treturn table info keys include block_size,key_length,iv_length,flags,mode,nid,type, evp_cipher

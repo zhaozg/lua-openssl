@@ -820,12 +820,12 @@ openssl_ssl_ctx_new_bio(lua_State *L)
 }
 
 /***
-get verify depth when cert chain veirition
+get verify depth when cert chain verification
 @function verify_depth
 @treturn number depth
 */
 /***
-set verify depth when cert chain veirition
+set verify depth when cert chain verification
 @function verify_depth
 @tparam number depth
 @treturn number depth
@@ -1510,7 +1510,7 @@ openssl_get_session(SSL *ssl, CONSTIFY_OPENSSL unsigned char *id, int idlen, int
     *do_copy = 1;
   } else if (lua_type(L, -1) != LUA_TNIL) {
     fprintf(stderr,
-            "get session callback return unaccpet value: (type=%s)%s\n",
+            "get session callback return unaccepted value: (type=%s)%s\n",
             luaL_typename(L, -1),
             lua_tostring(L, -1));
   }
@@ -2007,7 +2007,7 @@ peek or write) return nil or false when fail or error.
 When nil returned, it followed by 'ssl' or 'syscall', means SSL layer or
 system layer error. When false returned, it followed by number 0,
 'want_read','want_write','want_x509_lookup','want_connect','want_accept'.
-Numnber 0 means SSL connection closed, others means you should do some
+Number 0 means SSL connection closed, others means you should do some
 SSL operation.
 @type ssl
 */
@@ -2420,7 +2420,7 @@ openssl_ssl_accept(lua_State *L)
 do ssl client connect
 @function connect
 @treturn boolean true for success
-@treturn string fail reasion
+@treturn string fail reason
 */
 static int
 openssl_ssl_connect(lua_State *L)
@@ -2511,7 +2511,7 @@ openssl_ssl_write(lua_State *L)
 do ssl handshake, support both server and client side
 @function handshake
 @treturn boolean true for success
-@treturn string fail reasion
+@treturn string fail reason
 */
 static int
 openssl_ssl_do_handshake(lua_State *L)
@@ -2525,7 +2525,7 @@ openssl_ssl_do_handshake(lua_State *L)
 do ssl renegotiate
 @function renegotiate
 @treturn boolean true for success
-@treturn string fail reasion
+@treturn string fail reason
 */
 static int
 openssl_ssl_renegotiate(lua_State *L)
@@ -2552,13 +2552,13 @@ openssl_ssl_renegotiate_abbreviated(lua_State *L)
 get ssl renegotiate_pending
 @function renegotiate_pending
 @treturn boolean true for success
-@treturn string fail reasion
+@treturn string fail reason
 */
 /***
 do ssl renegotiate_pending
 @function renegotiate_pending
 @treturn boolean true for success
-@treturn string fail reasion
+@treturn string fail reason
 */
 static int
 openssl_ssl_renegotiate_pending(lua_State *L)
@@ -2569,17 +2569,17 @@ openssl_ssl_renegotiate_pending(lua_State *L)
 }
 
 /***
-shutdown ssl connection with quite or noquite mode
+shutdown ssl connection with quiet or noquiet mode
 @function shutdown
 @tparam boolean mode
-@treturn boolean if mode is true, return true or false for quite
+@treturn boolean if mode is true, return true or false for quiet
 @treturn string if mode is false, return 'read' or 'write' for shutdown direction
 */
 
 /***
 shutdown SSL connection
 @function shutdown
-@tparam[opt] string mode optional mode: 'read', 'write', 'quite', 'noquite'
+@tparam[opt] string mode optional mode: 'read', 'write', 'quiet', 'noquiet'
 @treturn[1] boolean true for success when called without mode
 @treturn[2] number shutdown result when called with mode
 @treturn[3] nil when error occurs
@@ -2620,7 +2620,7 @@ openssl_ssl_shutdown(lua_State *L)
     }
     return 1;
   } else
-    luaL_argerror(L, 2, "should be boolean or string[read|write|quiet|noquite]");
+    luaL_argerror(L, 2, "should be boolean or string[read|write|quiet|noquiet]");
 
   return 0;
 };
@@ -2678,7 +2678,7 @@ openssl_ssl_dup(lua_State *L)
 }
 
 /***
-get ssl session resused
+get ssl session reused
 @function session_reused
 @treturn boolean success status
 */
@@ -2730,7 +2730,7 @@ get ssl_ctx associate with current ssl
 set ssl_ctx associate to current ssl
 @function ctx
 @tparam openssl.ssl_ctx ctx
-@treturn openssl.ssl_ctx orgine ssl_ctx object
+@treturn openssl.ssl_ctx original ssl_ctx object
 */
 static int
 openssl_ssl_ctx(lua_State *L)
@@ -2754,7 +2754,7 @@ get ssl session
 /***
 set ssl session
 @function session
-@tparam string|ssl_session sesion
+@tparam string|ssl_session session
  reuse session would speed up ssl handshake
 @treturn boolean result
 */
