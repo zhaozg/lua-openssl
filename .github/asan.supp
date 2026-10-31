@@ -9,6 +9,9 @@ leak:EVP_MD_fetch
 leak:EVP_CIPHER_fetch
 leak:OSSL_PROVIDER_load
 
+# OpenSSL v3.x default RNG initialization leak (triggered by RAND_status)
+leak:EVP_RAND_instantiate
+
 ## MacOS
 #leak:_objc_init
 #leak:localtime_r

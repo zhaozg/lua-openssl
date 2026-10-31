@@ -45,12 +45,10 @@ endif
 
 #OpenSSL auto detect
 OPENSSL_CFLAGS	?= $(shell $(PKG_CONFIG) openssl --cflags)
-ifdef OPENSSL_STATIC
-  # User requested static linking: use pkg-config --static
-  OPENSSL_LIBS	?= $(shell $(PKG_CONFIG) openssl --static --libs)
-else
-  # Default: dynamic linking via pkg-config
+ifeq (${OPENSSL_STATIC},)
   OPENSSL_LIBS	?= $(shell $(PKG_CONFIG) openssl --libs)
+else
+  OPENSSL_LIBS	?= $(shell $(PKG_CONFIG) openssl --static --libs)
 endif
 
 # Detect build target
