@@ -228,7 +228,7 @@ openssl_cms_compress(lua_State *L)
 uncompress cms object
 @function uncompress
 @tparam cms cms
-@tparam[opt=nil] openssl.bio dcent default nil for normal, in the rare case where the compressed content is
+@tparam[opt=nil] openssl.bio dcont default nil for normal, in the rare case where the compressed content is
 detached.
 @tparam[opt=0] number flags
 @treturn string
@@ -300,7 +300,7 @@ openssl_cms_sign(lua_State *L)
 }
 
 /***
-verfiy signed cms object
+verify signed cms object
 @function verify
 @tparam cms signed
 @tparam stack_of_x509 signers
@@ -335,10 +335,10 @@ openssl_cms_verify(lua_State *L)
 }
 
 /***
-create enryptdata cms
+create encryptdata cms
 @function EncryptedData_encrypt
 @tparam bio|string input
-@tparam strig key
+@tparam string key
 @tparam[opt='des-ede3-cbc'] string|evp_cipher cipher_alg
 @tparam[opt=0] number flags
 @treturn cms object
@@ -474,9 +474,9 @@ memdup(const char *src, size_t len)
 }
 
 /***
-encrypt with recipt certs
+encrypt with receipt certs
 @function encrypt
-@tparam stack_of_x509 recipt certs
+@tparam stack_of_x509 receipt certs
 @tparam bio|string input
 @tparam[opt='des-ede3-cbc'] string|evp_cipher cipher_alg
 @tparam[opt=0] number flags
@@ -559,8 +559,8 @@ decrypt cms message
 @function decrypt
 @tparam cms message
 @tparam openssl.evp_pkey pkey
-@tparam openssl.x509 recipt
-@tparam[opt] openssl.bio dcount output object
+@tparam openssl.x509 receipt
+@tparam[opt] openssl.bio dcont output object
 @tparam[opt=0] number flags
 @tparam[opt=nil] table options may have key, keyid, password field,
   and values must be string type

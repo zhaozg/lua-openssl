@@ -113,24 +113,24 @@ openssl_kdf_free(lua_State *L)
 #endif
 
 /***
-compute KDF delive, openssl version >= v3
+compute KDF derive, openssl version >= v3
 
-@function deilver
+@function derive
 @tparam evp_kdf|string kdf
-@tparam table array of paramaters
+@tparam table array of parameters
 @treturn string result binary string
 */
 
 /***
-compute KDF delive, openssl version < v3
+compute KDF derive, openssl version < v3
 
-@function deilver
+@function derive
 @tparam string pass
 @tparam string salt
 @tparam string|object|nid digest
 @tparam[opt=1000] number iterator
 @tparam[opt=32] number keylen
-@treturn string deilved result binary string
+@treturn string derived result binary string
 */
 static int
 openssl_kdf_derive(lua_State *L)
@@ -220,7 +220,7 @@ openssl_kdf_ctx_reset(lua_State *L)
 derive the key
 
 @function derive
-@tparam table paramaters settable paramaters can be get by `kdf:settable_ctx_params()`
+@tparam table parameters settable parameters can be get by `kdf:settable_ctx_params()`
 @treturn string|fail
 */
 static int
@@ -348,10 +348,10 @@ openssl.kdf object
 */
 
 /***
-compute KDF delive
+compute KDF derive
 
-@function deilver
-@tparam table array of paramaters
+@function derive
+@tparam table array of parameters
 @treturn string result binary string
 */
 

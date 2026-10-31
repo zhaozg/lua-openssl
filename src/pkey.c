@@ -245,7 +245,7 @@ read public/private key from data
 @tparam string|openssl.bio input string data or bio object
 @tparam[opt=false] boolean priv prikey set true when input is private key
 @tparam[opt='auto'] string format format or encoding of input, support 'auto','pem','der'
-@tparam[opt] string passhprase when input is private key, or key types 'ec','rsa','dsa','dh'
+@tparam[opt] string passphrase when input is private key, or key types 'ec','rsa','dsa','dh'
 @treturn openssl.evp_pkey public key
 @see evp_pkey
 */
@@ -583,7 +583,7 @@ static int openssl_pkey_new(lua_State *L)
       luaL_error(L, "not support %s!!!!", alg);
     }
   } else if (lua_istable(L, 1)) {
-    /* contruct key from factors in Lua table */
+    /* construct key from factors in Lua table */
     lua_getfield(L, 1, "alg");
     alg = luaL_optstring(L, -1, alg);
     lua_pop(L, 1);
@@ -802,7 +802,7 @@ static int openssl_pkey_new(lua_State *L)
       EC_GET_FIELD(x);
       EC_GET_FIELD(y);
       EC_GET_FIELD(z);
-      if (z) luaL_error(L, "only accpet affine co-ordinates");
+      if (z) luaL_error(L, "only accept affine co-ordinates");
 
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
       pkey = openssl_new_pkey_ec_with(group, x, y, d);
@@ -1272,7 +1272,7 @@ static int openssl_pkey_decrypt(lua_State *L)
 /***
 return key is private or not
 @function is_private
-@treturn boolean ture is private or public key
+@treturn boolean true is private or public key
 */
 int openssl_pkey_is_private1(lua_State *L)
 {
@@ -2043,7 +2043,7 @@ static int openssl_seal(lua_State *L)
 }
 
 /***
-open and ecrypted seal data with private key
+open and encrypted seal data with private key
 @function open
 @tparam string ekey encrypted secret key
 @tparam string string iv
@@ -2410,11 +2410,11 @@ openssl_pkey_as_sm2(lua_State *L)
 
 /***
 check if key parameters are missing
-@function missing_paramaters
+@function missing_parameters
 @treturn boolean true if key is missing parameters
 */
 static int
-openssl_pkey_mssing_parameters(lua_State *L)
+openssl_pkey_missing_parameters(lua_State *L)
 {
   EVP_PKEY *pkey = CHECK_OBJECT(1, EVP_PKEY, "openssl.evp_pkey");
   int       ret = EVP_PKEY_missing_parameters(pkey);
@@ -2447,7 +2447,9 @@ static luaL_Reg pkey_funcs[] = {
 #if defined(OPENSSL_SUPPORT_SM2) && OPENSSL_VERSION_NUMBER < 0x30000000
   { "as_sm2",             openssl_pkey_as_sm2            },
 #endif
-  { "missing_paramaters", openssl_pkey_mssing_parameters },
+  { "missing_parameters", openssl_pkey_missing_parameters },
+  /* retained for backward compatibility; new code should use missing_parameters */
+  { "missing_paramaters", openssl_pkey_missing_parameters },
 
   { "__gc",               openssl_pkey_free              },
   { "__tostring",         auxiliar_tostring              },

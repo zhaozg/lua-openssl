@@ -204,7 +204,7 @@ static int openssl_crl_new(lua_State *L)
   for (i = 1; ret == 1 && i <= n; i++) {
     if (i == 1) {
       luaL_argcheck(
-        L, lua_istable(L, 1), 1, "must be table contains rovked entry table{reason,time,sn}");
+        L, lua_istable(L, 1), 1, "must be table contains revoked entry table{reason,time,sn}");
       if (lua_rawlen(L, i) > 0) {
         int j, m;
         m = lua_rawlen(L, i);
@@ -868,10 +868,10 @@ static int openssl_crl_count(lua_State *L)
 }
 
 /***
-get revoekd entry
+get revoked entry
 @function get
 @tparam number index
-@treturn table revoekd
+@treturn table revoked
 */
 static int openssl_crl_get(lua_State *L)
 {
@@ -996,7 +996,7 @@ ASN1_GetTimeT(const ASN1_TIME *time)
 {
   struct tm   t;
   const unsigned char *str = ASN1_STRING_get0_data(time);
-  int type = ASN1_STRING_type(time);
+  int type = ASN1_STRING_type((ASN1_STRING *)time);
   size_t      i = 0;
 
   memset(&t, 0, sizeof(t));

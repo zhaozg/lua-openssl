@@ -541,11 +541,6 @@ openssl_ts_info_accuracy(lua_State *L)
   }
 }
 /***
-get ordering of ts_tst_info object object
-@function ording
-@treturn table
-*/
-/***
 get ordering flag from timestamp info
 @function ordering
 @treturn boolean true if ordering is required
@@ -2107,6 +2102,9 @@ static luaL_Reg ts_verify_ctx_funs[] = {
  * ts_verify_ctx:verify and are consumed through ts_verify_ctx:flags - see
  * the LDoc documentation of ts_verify_ctx, flags, verify, data, imprint and
  * store above for their meaning and usage.
+ *
+ * The truncated names (WARNIN, FORMA, AVAILABL, FAILUR) are kept as aliases
+ * for backward compatibility; new code should use the spelled-out names.
  */
 static LuaL_Enumeration ots_const[] = {
   { "STATUS_GRANTED",                 TS_STATUS_GRANTED                 },
@@ -2114,16 +2112,21 @@ static LuaL_Enumeration ots_const[] = {
   { "STATUS_REJECTION",               TS_STATUS_REJECTION               },
   { "STATUS_WAITING",                 TS_STATUS_WAITING                 },
   { "STATUS_REVOCATION_WARNIN",       TS_STATUS_REVOCATION_WARNING      },
+  { "STATUS_REVOCATION_WARNING",      TS_STATUS_REVOCATION_WARNING      },
   { "STATUS_REVOCATION_NOTIFICATION", TS_STATUS_REVOCATION_NOTIFICATION },
 
   { "INFO_BAD_ALG",                   TS_INFO_BAD_ALG                   },
   { "INFO_BAD_REQUEST",               TS_INFO_BAD_REQUEST               },
   { "INFO_BAD_DATA_FORMA",            TS_INFO_BAD_DATA_FORMAT           },
+  { "INFO_BAD_DATA_FORMAT",           TS_INFO_BAD_DATA_FORMAT           },
   { "INFO_TIME_NOT_AVAILABL",         TS_INFO_TIME_NOT_AVAILABLE        },
+  { "INFO_TIME_NOT_AVAILABLE",        TS_INFO_TIME_NOT_AVAILABLE        },
   { "INFO_UNACCEPTED_POLICY",         TS_INFO_UNACCEPTED_POLICY         },
   { "INFO_UNACCEPTED_EXTENSION",      TS_INFO_UNACCEPTED_EXTENSION      },
   { "INFO_ADD_INFO_NOT_AVAILABL",     TS_INFO_ADD_INFO_NOT_AVAILABLE    },
+  { "INFO_ADD_INFO_NOT_AVAILABLE",    TS_INFO_ADD_INFO_NOT_AVAILABLE    },
   { "INFO_SYSTEM_FAILUR",             TS_INFO_SYSTEM_FAILURE            },
+  { "INFO_SYSTEM_FAILURE",            TS_INFO_SYSTEM_FAILURE            },
 
   { "VFY_SIGNATURE",                  TS_VFY_SIGNATURE                  },
   { "VFY_VERSION",                    TS_VFY_VERSION                    },

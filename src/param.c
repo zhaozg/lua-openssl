@@ -198,7 +198,7 @@ openssl_toparams(lua_State *L, int idx)
   size_t i, len = lua_rawlen(L, idx);
 
   luaL_checktype(L, idx, LUA_TTABLE);
-  luaL_argcheck(L, len > 0, idx, "empty paramaters table");
+  luaL_argcheck(L, len > 0, idx, "empty parameters table");
 
   params = OPENSSL_malloc((sizeof(OSSL_PARAM) + sizeof(lua_Number)) * (len + 1));
   memset(params, 0, sizeof(OSSL_PARAM) + sizeof(lua_Number) * (len + 1));
@@ -211,10 +211,10 @@ openssl_toparams(lua_State *L, int idx)
     const char       *name;
     const char       *str;
 
-    /* get paramater node */
+    /* get parameter node */
     lua_rawgeti(L, idx, i + 1);
 
-    /* get paramater name */
+    /* get parameter name */
     lua_pushliteral(L, "name");
     lua_rawget(L, -2);
     name = luaL_checkstring(L, -1);
@@ -222,7 +222,7 @@ openssl_toparams(lua_State *L, int idx)
 
     type = get_param_type(name, &nt);
 
-    /* get paramater data */
+    /* get parameter data */
     lua_pushliteral(L, "data");
     lua_rawget(L, -2);
     if (!lua_isnil(L, -1)) {

@@ -47,7 +47,7 @@ openssl_version(lua_State *L)
 hex encode or decode string
 @function hex
 @tparam string str
-@tparam[opt=true] boolean encode true to encoed, false to decode
+@tparam[opt=true] boolean encode true to encode, false to decode
 @treturn string
 */
 static int openssl_hex(lua_State *L)
@@ -78,7 +78,7 @@ static int openssl_hex(lua_State *L)
 base64 encode or decode
 @function base64
 @tparam string|bio input
-@tparam[opt=true] boolean encode true to encoed, false to decode
+@tparam[opt=true] boolean encode true to encode, false to decode
 @tparam[opt=true] boolean NO_NL default true without newline, false with newline
 @treturn string
 */
@@ -159,7 +159,7 @@ static int openssl_list(lua_State *L)
 }
 
 /***
-get last or given error infomation
+get last or given error information
 
 Most lua-openssl function or methods return nil or false when error or
 failed, followed by string type error _reason_ and number type error _code_,
@@ -580,7 +580,7 @@ luaopen_openssl(lua_State *L)
   luaL_setfuncs(L, eay_functions, 0);
 
 #if !defined(LIBRESSL_VERSION_NUMBER) || LIBRESSL_VERSION_NUMBER < 0x30900000L
-  /* NOTE: refact lhash/conf module */
+  /* NOTE: refactor lhash/conf module */
   openssl_register_lhash(L);
 #endif
 

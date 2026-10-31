@@ -40,8 +40,8 @@ openssl_ocsp_certid_new(lua_State *L)
   luaL_argcheck(L, cert != NULL || sn != NULL, 1, "need openssl.x509 or openssl.bn object");
 
   if (sn) {
-    X509_NAME       *iname = X509_get_subject_name(issuer);
-    ASN1_BIT_STRING *ikey = X509_get0_pubkey_bitstr(issuer);
+    X509_NAME       *iname = (X509_NAME *)X509_get_subject_name(issuer);
+    ASN1_BIT_STRING *ikey = (ASN1_BIT_STRING *)X509_get0_pubkey_bitstr(issuer);
     ASN1_INTEGER    *ai = BN_to_ASN1_INTEGER(sn, NULL);
 
     certid = OCSP_cert_id_new(dgst, iname, ikey, ai);
@@ -200,7 +200,7 @@ A openssl.ocsp_certid class.
 /***
 table which openssl.ocsp_certid:info returned
 @table info
-@field hashAlgorith
+@field hashAlgorithm
 @field issuerNameHash
 @field issuerKeyHash
 @field serialNumber
@@ -438,7 +438,7 @@ openssl_ocsp_request_parse(lua_State *L)
   num = OCSP_REQUEST_get_ext_count(req);
   lua_newtable(L);
   for (i = 0; i < num; i++) {
-    X509_EXTENSION *e = OCSP_REQUEST_get_ext(req, i);
+    X509_EXTENSION *e = (X509_EXTENSION *)OCSP_REQUEST_get_ext(req, i);
     e = X509_EXTENSION_dup(e);
     PUSH_OBJECT(e, "openssl.x509_extension");
     lua_rawseti(L, -2, i + 1);
@@ -533,7 +533,7 @@ openssl_ocsp_singleresp_info(lua_State *L)
     lua_newtable(L);
 
     for (i = 0; i < n; i++) {
-      X509_EXTENSION *ext = OCSP_SINGLERESP_get_ext((OCSP_SINGLERESP *)single, i);
+      X509_EXTENSION *ext = (X509_EXTENSION *)OCSP_SINGLERESP_get_ext((OCSP_SINGLERESP *)single, i);
 
       ext = X509_EXTENSION_dup(ext);
       PUSH_OBJECT(ext, "openssl.x509_extension");
@@ -562,7 +562,7 @@ A openssl.ocsp_basicresp class.
 */
 
 /***
-add one status item to openssl.ocsp_bascresp, return opessl.ocsp_singleresp
+add one status item to openssl.ocsp_basicresp, return openssl.ocsp_singleresp
 @function add
 @tparam openssl.ocsp_certid certid
 @tparam integer status
@@ -614,7 +614,7 @@ openssl_ocsp_basicresp_add(lua_State *L)
 }
 
 /***
-add one openssl.x509_extension to openssl.ocsp_bascresp
+add one openssl.x509_extension to openssl.ocsp_basicresp
 @function add_ext
 @tparam openssl.x509_extension extension
 @tparam[opt] integer location
@@ -632,7 +632,7 @@ openssl_ocsp_basicresp_add_ext(lua_State *L)
 }
 
 /***
-sign then to openssl.ocsp_bascresp
+sign then to openssl.ocsp_basicresp
 @function sign
 @tparam openssl.x509 cert
 @tparam openssl.evp_pkey pkey
@@ -656,7 +656,7 @@ openssl_ocsp_basicresp_sign(lua_State *L)
 }
 
 /***
-get openssl.ocsp_bascresp info table
+get openssl.ocsp_basicresp info table
 @function info
 @treturn table
 */
@@ -717,7 +717,7 @@ openssl_ocsp_basicresp_info(lua_State *L)
     lua_pushliteral(L, "extensions");
     lua_newtable(L);
     for (i = 0; i < n; i++) {
-      X509_EXTENSION *ext = OCSP_BASICRESP_get_ext(br, i);
+      X509_EXTENSION *ext = (X509_EXTENSION *)OCSP_BASICRESP_get_ext(br, i);
       ext = X509_EXTENSION_dup(ext);
       PUSH_OBJECT(ext, "openssl.x509_extension");
       lua_rawseti(L, -2, i + 1);
@@ -755,7 +755,7 @@ openssl_ocsp_basicresp_info(lua_State *L)
 }
 
 /***
-copy nonce from openssl.ocsp_request to openssl.ocsp_bascresp
+copy nonce from openssl.ocsp_request to openssl.ocsp_basicresp
 @function copy_nonce
 @tparam openssl.ocsp_request request
 @treturn table
@@ -777,7 +777,7 @@ create openssl.ocsp_response object
 @treturn openssl.ocsp_response
 */
 static int
-openssl_ocsp_basicresp_resposne(lua_State *L)
+openssl_ocsp_basicresp_response(lua_State *L)
 {
   OCSP_BASICRESP *bs = CHECK_OBJECT(1, OCSP_BASICRESP, "openssl.ocsp_basicresp");
   int             status = luaL_optint(L, 2, OCSP_RESPONSE_STATUS_SUCCESSFUL);
@@ -914,7 +914,7 @@ static luaL_Reg ocsp_basicresp_cfuns[] = {
   { "add_ext",    openssl_ocsp_basicresp_add_ext    },
 
   { "sign",       openssl_ocsp_basicresp_sign       },
-  { "response",   openssl_ocsp_basicresp_resposne   },
+  { "response",   openssl_ocsp_basicresp_response   },
   { "copy_nonce", openssl_ocsp_basicresp_copy_nonce },
 
   { "__tostring", auxiliar_tostring                 },

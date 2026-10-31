@@ -152,7 +152,7 @@ openssl_xstore_flags(lua_State *L)
 }
 
 /***
-set prupose of x509 store
+set purpose of x509 store
 @function purpose
 @tparam integer purpose
 @treturn boolean result
@@ -182,7 +182,7 @@ openssl_xstore_trust(lua_State *L)
 }
 
 /***
-load certificate from file or dir,not given any paramater will load from defaults path
+load certificate from file or dir,not given any parameter will load from defaults path
 @function load
 @tparam[opt] string filepath
 @tparam[opt] string dirpath

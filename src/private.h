@@ -114,6 +114,17 @@ __pragma(warning(pop))
 #endif
 #define CONSTIFY_X509_get0 CONSTIFY_OPENSSL
 
+/*
+ * OpenSSL 4.0 deprecated X509_cmp_time() in favour of ASN1_TIME_cmp_time_t(),
+ * which does not exist before 1.1.0. Keep the version difference here so the
+ * rest of the code can call OPENSSL_X509_cmp_time() unconditionally.
+ */
+#if OPENSSL_VERSION_NUMBER >= 0x40000000L && !defined(LIBRESSL_VERSION_NUMBER)
+#define OPENSSL_X509_cmp_time(s, t) ASN1_TIME_cmp_time_t((s), *(t))
+#else
+#define OPENSSL_X509_cmp_time(s, t) X509_cmp_time((s), (t))
+#endif
+
 #define OPENSSLV_LESS(v) (OPENSSL_VERSION_NUMBER < v)
 
 #define LIBRESSLV_LESS(v) \

@@ -10,7 +10,7 @@ x509.attribute module to mapping X509_ATTRIBUTE to lua object.
 #include "sk.h"
 
 /***
-x509_attribute contrust param table.
+x509_attribute construct param table.
 
 @table x509_attribute_param_table
 @tfield string|integer|asn1_object object identify a asn1_object
@@ -69,7 +69,7 @@ static luaL_Reg R[] = {
 };
 
 /***
-x509_attribute infomation table
+x509_attribute information table
 
 @table x509_attribute_info_table
 @tfield asn1_object|object object of asn1_object
@@ -89,7 +89,7 @@ openssl_xattr_totable(lua_State *L, X509_ATTRIBUTE *attr)
   if (c > 0) {
     lua_newtable(L);
     for (i = 0; i < c; i++) {
-      ASN1_TYPE *t = X509_ATTRIBUTE_get0_type(attr, i);
+      ASN1_TYPE *t = (ASN1_TYPE *)X509_ATTRIBUTE_get0_type(attr, i);
       openssl_push_asn1type(L, t);
       lua_rawseti(L, -2, i + 1);
     }
@@ -112,10 +112,10 @@ openssl.x509_attribute object
 */
 
 /***
-get infomation table of x509_attribute.
+get information table of x509_attribute.
 
 @function info
-@treturn[1] table info x509_attribute infomation as table
+@treturn[1] table info x509_attribute information as table
 -- @see OpenSSL function: X509_ATTRIBUTE_get0_type
 */
 static int
@@ -208,7 +208,7 @@ openssl_xattr_type(lua_State *L)
 {
   X509_ATTRIBUTE *attr = CHECK_OBJECT(1, X509_ATTRIBUTE, "openssl.x509_attribute");
   int             loc = luaL_optint(L, 2, 0);
-  ASN1_TYPE      *type = X509_ATTRIBUTE_get0_type(attr, loc);
+  ASN1_TYPE      *type = (ASN1_TYPE *)X509_ATTRIBUTE_get0_type(attr, loc);
   if (type) {
     openssl_push_asn1type(L, type);
     return 1;
@@ -236,7 +236,7 @@ openssl_xattr_object(lua_State *L)
 {
   X509_ATTRIBUTE *attr = CHECK_OBJECT(1, X509_ATTRIBUTE, "openssl.x509_attribute");
   if (lua_isnone(L, 2)) {
-    ASN1_OBJECT *obj = X509_ATTRIBUTE_get0_object(attr);
+    ASN1_OBJECT *obj = (ASN1_OBJECT *)X509_ATTRIBUTE_get0_object(attr);
     openssl_push_asn1object(L, obj);
     return 1;
   } else {

@@ -12,7 +12,7 @@ x509.name module to mapping X509_NAME to lua object.
 int
 openssl_push_xname_asobject(lua_State *L, const X509_NAME *xname)
 {
-  const X509_NAME *dup = X509_NAME_dup(xname);
+  const X509_NAME *dup = X509_NAME_dup((X509_NAME *)xname);
   PUSH_OBJECT(dup, "openssl.x509_name");
   return 1;
 }
@@ -135,7 +135,7 @@ static luaL_Reg R[] = {
 };
 
 /***
-x509_name infomation table
+x509_name information table
 other field is number type, and value table is alter name.(I not understand clearly)
 @table x509_extension_info_table
 @tfield asn1_object|object object of x509_name
@@ -243,8 +243,8 @@ openssl_xname_toprint(lua_State *L)
 static int
 openssl_push_xname_entry(lua_State *L, X509_NAME_ENTRY *ne, int obj)
 {
-  ASN1_OBJECT *object = X509_NAME_ENTRY_get_object(ne);
-  ASN1_STRING *value = X509_NAME_ENTRY_get_data(ne);
+  ASN1_OBJECT *object = (ASN1_OBJECT *)X509_NAME_ENTRY_get_object(ne);
+  ASN1_STRING *value = (ASN1_STRING *)X509_NAME_ENTRY_get_data(ne);
   lua_newtable(L);
   if (obj) {
     openssl_push_asn1object(L, object);
@@ -273,7 +273,7 @@ openssl_xname_info(lua_State *L)
   int        i, n;
   lua_newtable(L);
   for (i = 0, n = X509_NAME_entry_count(name); i < n; i++) {
-    X509_NAME_ENTRY *entry = X509_NAME_get_entry(name, i);
+    X509_NAME_ENTRY *entry = (X509_NAME_ENTRY *)X509_NAME_get_entry(name, i);
     openssl_push_xname_entry(L, entry, obj);
     lua_rawseti(L, -2, i + 1);
   }
@@ -356,7 +356,7 @@ openssl_xname_entry_count(lua_State *L)
 get text by given asn1_object or nid
 
 @function get_text
-@tparam string|integer|asn1_object identid for asn1_object
+@tparam string|integer|asn1_object identifier for asn1_object
 @tparam[opt=-1] number lastpos retrieve the next index after lastpos
 @treturn string text and followed by lastpos
 */
@@ -373,8 +373,8 @@ openssl_xname_get_text(lua_State *L)
   lastpos = X509_NAME_get_index_by_OBJ(xn, obj, lastpos);
   ASN1_OBJECT_free(obj);
   if (lastpos != -1) {
-    e = X509_NAME_get_entry(xn, lastpos);
-    s = X509_NAME_ENTRY_get_data(e);
+    e = (X509_NAME_ENTRY *)X509_NAME_get_entry(xn, lastpos);
+    s = (ASN1_STRING *)X509_NAME_ENTRY_get_data(e);
     lua_pushlstring(L, (const char *)ASN1_STRING_get0_data(s), ASN1_STRING_length(s));
     lua_pushinteger(L, lastpos);
     ret = 2;
@@ -395,7 +395,7 @@ openssl_xname_get_entry(lua_State *L)
   X509_NAME       *xn = CHECK_OBJECT(1, X509_NAME, "openssl.x509_name");
   int              lastpos = luaL_checkint(L, 2);
   int              obj = lua_isnone(L, 3) ? 0 : lua_toboolean(L, 3);
-  X509_NAME_ENTRY *e = X509_NAME_get_entry(xn, lastpos);
+  X509_NAME_ENTRY *e = (X509_NAME_ENTRY *)X509_NAME_get_entry(xn, lastpos);
   int              ret = 0;
   if (e) {
     ret = openssl_push_xname_entry(L, e, obj);
@@ -407,7 +407,7 @@ openssl_xname_get_entry(lua_State *L)
 add name entry
 
 @function add_entry
-@tparam string|integer|asn1_object identid for asn1_object
+@tparam string|integer|asn1_object identifier for asn1_object
 @tparam string data to add
 @tparam[opt=true] boolean utf8 true use utf8 encode, or use ascii encode
 @treturn boolean result true for success or follow by error message

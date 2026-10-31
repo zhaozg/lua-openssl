@@ -6,7 +6,7 @@ enabling arbitrary precision arithmetic similar to BIGNUM.
 
 @author Luiz Henrique de Figueiredo <lhf@tecgraf.puc-rio.br>
 @license This code is hereby placed in the public domain.
-@warning verson 11 Nov 2010 22:56:45
+@warning version 11 Nov 2010 22:56:45
 
 @module bn
 @usage

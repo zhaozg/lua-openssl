@@ -360,7 +360,7 @@ static int openssl_digest_digest(lua_State *L)
 }
 
 /***
-get infomation of evp_digest object
+get information of evp_digest object
 
 @function info
 @treturn table info keys include nid,name size,block_size,pkey_type,flags
@@ -428,7 +428,7 @@ openssl.evp_digest_ctx object
 */
 
 /***
-get infomation of evp_digest_ctx object
+get information of evp_digest_ctx object
 
 @function info
 @treturn table info keys include size,block_size,digest
@@ -533,7 +533,7 @@ static int openssl_digest_ctx_free(lua_State *L)
 }
 
 /***
-reset evp_diget_ctx to reuse
+reset evp_digest_ctx to reuse
 
 @function reset
 @treturn boolean true on success, false on failure

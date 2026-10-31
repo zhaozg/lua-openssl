@@ -61,8 +61,10 @@ function TestX509:testNew()
   assert(cert:version(assert(cert:version())))
   assert(cert:serial(assert(cert:serial(false))))
   assert(string.len(cert:digest()) == 32)
-  local b, e = cert:validat()
+  local b, e = cert:valid_at()
   assert(b, e)
+  assert(cert:valid_at(os.time()))
+  -- legacy alias must keep working
   assert(cert:validat(os.time()))
 
   local extensions = {
