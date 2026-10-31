@@ -34,11 +34,11 @@ sign_verify_init_ctx(lua_State *L, EVP_PKEY *pkey,
   const char   *md_alg;
   const EVP_MD *md;
   EVP_MD_CTX   *ctx;
+  EVP_PKEY_CTX *pctx = NULL;
   int           ret;
 
 #if defined(OPENSSL_SUPPORT_SM2)
   int           is_SM2 = 0;
-  EVP_PKEY_CTX *pctx = NULL;
 #endif
 
   md_alg = "sha256";
@@ -67,32 +67,27 @@ sign_verify_init_ctx(lua_State *L, EVP_PKEY *pkey,
     return 0;
   }
 
-#if defined(OPENSSL_SUPPORT_SM2)
-  if (is_SM2) {
-    size_t idlen = 0;
-    const char *userId = luaL_optlstring(L, userid_idx, SM2_DEFAULT_USERID, &idlen);
-    pctx = EVP_PKEY_CTX_new(pkey, NULL);
-    if (pctx) {
-      EVP_PKEY_CTX_set1_id(pctx, userId, idlen);
-      EVP_MD_CTX_set_pkey_ctx(ctx, pctx);
-    }
-  }
-#endif
-
   if (is_sign) {
-    ret = EVP_DigestSignInit(ctx, NULL, md, NULL, pkey);
+    ret = EVP_DigestSignInit(ctx, &pctx, md, NULL, pkey);
   } else {
-    ret = EVP_DigestVerifyInit(ctx, NULL, md, NULL, pkey);
+    ret = EVP_DigestVerifyInit(ctx, &pctx, md, NULL, pkey);
   }
 
   if (ret != 1) {
     EVP_MD_CTX_free(ctx);
-#if defined(OPENSSL_SUPPORT_SM2)
-    if (pctx) EVP_PKEY_CTX_free(pctx);
-#endif
     openssl_pushresult(L, ret);
     return 0;
   }
+
+#if defined(OPENSSL_SUPPORT_SM2)
+  /* EVP_DigestSignInit/VerifyInit own pctx; setting the SM2 user id after
+   * initialization is the documented order. */
+  if (is_SM2 && pctx) {
+    size_t idlen = 0;
+    const char *userId = luaL_optlstring(L, userid_idx, SM2_DEFAULT_USERID, &idlen);
+    EVP_PKEY_CTX_set1_id(pctx, userId, idlen);
+  }
+#endif
 
   *out_ctx = ctx;
   *out_md = md;
