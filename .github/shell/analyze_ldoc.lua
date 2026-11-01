@@ -123,9 +123,9 @@ local alnum = alpha + digit
 local comment_start = P("/***")
 local comment_end = P("*/")
 
--- 优化后的 C API 函数定义模式
+-- Optimized C API function definition pattern
 
--- 优化后的 C API 函数定义模式（支持多行和更宽松参数匹配）
+-- Optimized C API function definition pattern (multi-line, looser parameter matching)
 local ws = lpeg.S(" \t")^0
 local wsp = lpeg.S(" \t")^1
 local static_kw = lpeg.P("static") * wsp
@@ -133,7 +133,7 @@ local int_kw = lpeg.P("int")
 local openssl_prefix = lpeg.P("openssl_")
 local identifier = (lpeg.R("az", "AZ") + lpeg.P("_")) * (lpeg.R("az", "AZ", "09") + lpeg.P("_"))^0
 local lparen = lpeg.P("(")
--- 参数部分允许有换行和空格，只需包含 lua_State *L
+-- Parameter list may span lines; it only needs to contain lua_State *L
 
 -- LPEG patterns for function detection
 local static_kw = P("static") * wsp
@@ -526,7 +526,7 @@ local function analyze_file(filepath)
         return api_functions
     end
 
-    -- 找到所有 API 函数定义并过滤为仅导出的函数
+    -- Find all API function definitions and keep only exported ones
     local all_api_functions = find_api_functions(content)
 
     -- Filter to only include functions that are actually exported in luaL_Reg

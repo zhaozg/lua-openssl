@@ -107,13 +107,11 @@ openssl_version(lua_State *L)
 
       lua_pushstring(L, ossl_rt_version_text());
       lua_setfield(L, -2, "text");
-      lua_pushstring(L,
 #if defined(LIBRESSL_VERSION_NUMBER)
-        "LibreSSL"
+      lua_pushliteral(L, "LibreSSL");
 #else
-        "OpenSSL"
+      lua_pushliteral(L, "OpenSSL");
 #endif
-      );
       lua_setfield(L, -2, "build_kind");
       lua_pushstring(L, ossl_rt_is_libressl() ? "LibreSSL" : "OpenSSL");
       lua_setfield(L, -2, "kind");
@@ -137,7 +135,7 @@ openssl_version(lua_State *L)
  * by openssl.version() can be passed in directly.
  * Returns 1 and writes *out on success, 0 on failure. */
 static int
-openssl_parse_version_string(const char *text, unsigned long *out)
+openssl_parse_version_string(const char *text, unsigned long long *out)
 {
   unsigned int major = 0, minor = 0, patch = 0;
   const char *p = text;
@@ -177,7 +175,7 @@ renumbers something, and says nothing at all about the library actually loaded).
 static int
 openssl_version_ge(lua_State *L)
 {
-  unsigned long want;
+  unsigned long long want;
 
   if (lua_type(L, 1) == LUA_TSTRING) {
     if (!openssl_parse_version_string(lua_tostring(L, 1), &want))
@@ -189,7 +187,7 @@ openssl_version_ge(lua_State *L)
     want = ossl_pack_version(major, minor, patch);
   }
 
-  lua_pushboolean(L, ossl_rt_version_num() >= want);
+  lua_pushboolean(L, (unsigned long long)ossl_rt_version_num() >= want);
   return 1;
 }
 

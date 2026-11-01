@@ -65,7 +65,7 @@ typedef enum
 
 /***
 create a new SSL context object
-@function new
+@function ctx_new
 @tparam[opt="TLS"] string method SSL/TLS protocol method ("TLS", "SSLv23", "TLSv1", "TLSv1_1", "TLSv1_2", etc.)
 @treturn openssl.ssl_ctx SSL context object
 */
@@ -1591,7 +1591,7 @@ openssl_ssl_ctx_flush_sessions(lua_State *L)
 
 /***
 set ssl session
-@function sessions
+@function session
 @treturn various return value
 */
 static int

@@ -58,7 +58,7 @@ int openssl_point_free(lua_State *L)
 /***
 Convert EC point to string (internal, called by __tostring).
 
-@function tostring
+@function __tostring
 @treturn string string representation
 */
 static int openssl_point_tostring(lua_State *L)

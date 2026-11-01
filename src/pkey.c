@@ -2412,6 +2412,8 @@ openssl_pkey_as_sm2(lua_State *L)
 check if key parameters are missing
 @function missing_parameters
 @treturn boolean true if key is missing parameters
+
+The old name `missing_paramaters` is kept as a legacy alias.
 */
 static int
 openssl_pkey_missing_parameters(lua_State *L)
