@@ -444,6 +444,8 @@ openssl_pkey_bits(lua_State *L)
  * check if key parameters are missing
  * @function missing_parameters
  * @treturn boolean true if key is missing parameters
+ *
+ * The old name `missing_paramaters` is kept as a legacy alias.
  */
 int
 openssl_pkey_missing_parameters(lua_State *L)

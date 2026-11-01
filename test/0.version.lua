@@ -104,8 +104,18 @@ function TestVersion:testBuildNumConsistent()
   local _, _, num = openssl.version(true)
   local _, _, _, info = openssl.version()
   lu.assertEquals(info.num, num, "version() and version(true) should report the same number")
-  lu.assertEquals(info.matches_build, info.num == info.build_num,
-    "matches_build should equal num == build_num")
+
+  -- matches_build() intentionally compares major.minor only for LibreSSL:
+  -- its header constant and the runtime version text do not have to share the
+  -- patch/status bytes, which would otherwise produce false mismatch alarms.
+  local same_build
+  if info.libressl then
+    same_build = math.floor(info.num / 2 ^ 20) == math.floor(info.build_num / 2 ^ 20)
+  else
+    same_build = info.num == info.build_num
+  end
+  lu.assertEquals(info.matches_build, same_build,
+    "matches_build should follow the documented build comparison")
 end
 
 function TestVersion:testGeSelf()

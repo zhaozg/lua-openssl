@@ -107,13 +107,14 @@ ossl_rt_is_libressl(void)
  * Only with the runtime layout does a plain unsigned long comparison mean the
  * same as a semantic one. Across majors the high byte dominates, so mixing the
  * two layouts still orders correctly. */
-unsigned long
+unsigned long long
 ossl_pack_version(unsigned int major, unsigned int minor, unsigned int patch)
 {
-  unsigned long base = ((unsigned long)(major & 0xff) << 28) | ((unsigned long)(minor & 0xff) << 20);
+  unsigned long long base =
+    ((unsigned long long)(major & 0xff) << 28) | ((unsigned long long)(minor & 0xff) << 20);
   if (major >= 3 && !ossl_rt_is_libressl())
-    return base | ((unsigned long)(patch & 0xff) << 4);
-  return base | ((unsigned long)(patch & 0xff) << 12);
+    return base | ((unsigned long long)(patch & 0xff) << 4);
+  return base | ((unsigned long long)(patch & 0xff) << 12);
 }
 
 int

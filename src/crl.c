@@ -139,12 +139,7 @@ create_revoked(const BIGNUM *bn, time_t t, int reason)
   return revoked;
 }
 
-/***
-convert X509_REVOKED to lua table
-@function revoked2table
-@tparam userdata revoked X509_REVOKED object
-@treturn table table with revocation information
-*/
+/* Convert X509_REVOKED to a Lua table. */
 static int
 openssl_revoked2table(lua_State *L, X509_REVOKED *revoked)
 {

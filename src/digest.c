@@ -381,7 +381,7 @@ static int openssl_digest_info(lua_State *L)
 
 /***
 initialize digest context with message digest
-@function init
+@function new
 @tparam openssl.evp_digest md message digest algorithm
 @tparam[opt] openssl.engine eng
 @treturn evp_digest_ctx ctx

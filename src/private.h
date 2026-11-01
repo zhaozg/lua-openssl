@@ -183,7 +183,7 @@ int ossl_rt_version_ge(unsigned long v);
 /* Pack major.minor.patch into the runtime library's own layout, for numeric
  * comparison. The layout differs across the 3.x boundary and for LibreSSL, see
  * the comments in compat.c. */
-unsigned long ossl_pack_version(unsigned int major, unsigned int minor, unsigned int patch);
+unsigned long long ossl_pack_version(unsigned int major, unsigned int minor, unsigned int patch);
 
 /* Whether build-time and runtime version numbers agree (at major.minor level).
  * A mismatch means this .so was built against another set of headers, so

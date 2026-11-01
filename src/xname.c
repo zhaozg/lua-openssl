@@ -160,6 +160,8 @@ get oneline of x509_name.
 
 @function oneline
 @treturn string line, name as oneline text
+
+The alias `tostring` maps to this function.
 */
 static int
 openssl_xname_oneline(lua_State *L)

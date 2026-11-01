@@ -161,7 +161,7 @@ openssl_cms_new(lua_State *L)
 
 /***
 create cms object from string or bio object
-@function data_create
+@function data
 @tparam openssl.bio input
 @tparam[opt=0] number flags
 @treturn cms
