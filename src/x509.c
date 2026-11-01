@@ -793,7 +793,8 @@ static int openssl_push_check_result(lua_State *L, int ret, const char* name)
 
 #if OPENSSL_VERSION_NUMBER > 0x10002000L
 /***
-check x509 for host (only for openssl 1.0.2 or greater)
+check x509 for host
+only present when built against OpenSSL 1.0.2 or newer
 @function check_host
 @tparam string host hostname to check for match match with x509 subject
 @treturn boolean result true if host is present and matches the certificate
@@ -813,7 +814,8 @@ static int openssl_x509_check_host(lua_State *L)
 }
 
 /***
-check x509 for email address (only for openssl 1.0.2 or greater)
+check x509 for email address
+only present when built against OpenSSL 1.0.2 or newer
 @tparam string email to check for match match with x509 subject
 @treturn boolean result true if host is present and matches the certificate
 @function check_email
@@ -829,7 +831,8 @@ static int openssl_x509_check_email(lua_State *L)
 }
 
 /***
-check x509 for ip address (ipv4 or ipv6, only for openssl 1.0.2 or greater)
+check x509 for ip address (ipv4 or ipv6)
+only present when built against OpenSSL 1.0.2 or newer
 @function check_ip_asc
 @tparam string ip to check for match match with x509 subject
 @treturn boolean result true if host is present and matches the certificate

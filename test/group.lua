@@ -231,7 +231,7 @@ function TestGroup:testPointMethods()
   lu.assertNotNil(p2)
   lu.assertTrue(g:point_equal(gen, p2))
 
-  -- 不同点比较
+  -- comparing different points
   local inf = g:point_new()
   lu.assertFalse(g:point_equal(gen, inf))
 end

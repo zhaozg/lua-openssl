@@ -19,9 +19,22 @@ Openssl binding for Lua, provide openssl full function in lua.
 
 /***
 get lua-openssl version
+reports the version of the OpenSSL/LibreSSL library that is **actually loaded at
+runtime**, not the one whose headers were used to build this module. Those two
+differ more often than one expects (distro upgraded libcrypto without rebuilding,
+cross compilation, the same .so dropped onto another box).
+The 4th return value carries the structured form, including the build-time
+version, so a script can tell whether the loaded library matches the headers.
 @function version
 @tparam[opt] boolean format result will be number when set true, or string
-@treturn lua-openssl version, lua version, openssl version
+@treturn string|number lua-openssl version
+@treturn string|number lua version
+@treturn string|number openssl version, as reported by the loaded library
+@treturn table|nil structured info (see table below), only when format is falsy
+@usage
+  local a, b, c, info = openssl.version()
+  -- a="0.11.1"  b="Lua 5.1"  c="OpenSSL 3.6.5 29 Sep 2026"
+  print(info.num >= 0x30000000 and "3.x" or "older")
 */
 static int
 openssl_version(lua_State *L)
@@ -30,17 +43,154 @@ openssl_version(lua_State *L)
   if (num) {
     lua_pushinteger(L, LOPENSSL_VERSION_NUM);
     lua_pushinteger(L, LUA_VERSION_NUM);
-#ifdef LIBRESSL_VERSION_NUMBER
-    lua_pushinteger(L, LIBRESSL_VERSION_NUMBER);
-#else
-    lua_pushinteger(L, OPENSSL_VERSION_NUMBER);
-#endif
+    lua_pushinteger(L, (lua_Integer)ossl_rt_version_num());
+    return 3;
   } else {
     lua_pushstring(L, LOPENSSL_VERSION);
     lua_pushstring(L, LUA_VERSION);
-    lua_pushstring(L, OPENSSL_VERSION_TEXT);
+    lua_pushstring(L, ossl_rt_version_text());
+
+    /* Structured form, a new 4th return value: old code takes the first three
+     * and is unaffected. */
+    lua_createtable(L, 0, 13);
+    {
+      unsigned long rt = ossl_rt_version_num();
+      unsigned long bt = (unsigned long)(
+#if defined(LIBRESSL_VERSION_NUMBER)
+        LIBRESSL_VERSION_NUMBER
+#else
+        OPENSSL_VERSION_NUMBER
+#endif
+      );
+
+      lua_pushinteger(L, (lua_Integer)rt);
+      lua_setfield(L, -2, "num");
+      lua_pushinteger(L, (lua_Integer)bt);
+      lua_setfield(L, -2, "build_num");
+
+      /* Two layouts exist, so fields must be decoded according to the layout
+       * the number was produced in (otherwise patch of 3.6.5 reads as 0), but
+       * this split does **not** affect comparisons:
+       *   3.0 and later 0xMNN00PP0 : 3rd field patch at bit4, no patchlevel/status
+       *   before 3.0    0xMNNFFPPS : 3rd field patch at bit12, plus patchlevel and status
+       * Both layouts order the same way (the high major.minor bytes dominate),
+       * so comparing num directly is safe.
+       * LibreSSL keeps the legacy layout even when its major is already 3. */
+      {
+        unsigned int major = (unsigned int)((rt >> 28) & 0xff);
+        int new_layout = major >= 3 && !ossl_rt_is_libressl();
+        lua_pushinteger(L, (lua_Integer)major);
+        lua_setfield(L, -2, "major");
+        lua_pushinteger(L, (lua_Integer)((rt >> 20) & 0xff));
+        lua_setfield(L, -2, "minor");
+        /* patch is always the third number as printed: 3.6.5 -> 5,
+         * 1.0.2u -> 2. It sits in the FF byte (bit12) in the legacy layout and
+         * at bit4 since 3.x, so its position differs.
+         * patchlevel / status only carry meaning in the legacy layout:
+         *   1.0.2u = 0x100020bf -> fix=02, patchlevel=0x0b (11th patch), status=0xf */
+        if (new_layout) {
+          lua_pushinteger(L, (lua_Integer)((rt >> 4) & 0xff));
+          lua_setfield(L, -2, "patch");
+          lua_pushinteger(L, 0);
+          lua_setfield(L, -2, "patchlevel");
+          lua_pushinteger(L, 0);
+          lua_setfield(L, -2, "status");
+        } else {
+          lua_pushinteger(L, (lua_Integer)((rt >> 12) & 0xff));
+          lua_setfield(L, -2, "patch");
+          lua_pushinteger(L, (lua_Integer)((rt >> 4) & 0xff));
+          lua_setfield(L, -2, "patchlevel");
+          lua_pushinteger(L, (lua_Integer)(rt & 0xf));
+          lua_setfield(L, -2, "status");
+        }
+      }
+
+      lua_pushstring(L, ossl_rt_version_text());
+      lua_setfield(L, -2, "text");
+      lua_pushstring(L,
+#if defined(LIBRESSL_VERSION_NUMBER)
+        "LibreSSL"
+#else
+        "OpenSSL"
+#endif
+      );
+      lua_setfield(L, -2, "build_kind");
+      lua_pushstring(L, ossl_rt_is_libressl() ? "LibreSSL" : "OpenSSL");
+      lua_setfield(L, -2, "kind");
+
+      lua_pushboolean(L, ossl_rt_is_libressl());
+      lua_setfield(L, -2, "libressl");
+      lua_pushboolean(L, ossl_rt_matches_build());
+      lua_setfield(L, -2, "matches_build");
+      /* 3.0 and later means the provider / generated-EVP world. LibreSSL may
+       * carry a major of 3 or 4 while keeping the legacy API surface, so it is
+       * never "3 plus" in the sense callers care about. */
+      lua_pushboolean(L, ossl_rt_version_ge(0x30000000UL) && !ossl_rt_is_libressl());
+      lua_setfield(L, -2, "is_3_plus");
+    }
+    return 4;
   }
-  return 3;
+}
+
+/* Turn text such as "3.6.5", "1.0.2" or "OpenSSL 3.6.5 29 Sep 2026" into a
+ * version number. A non-numeric prefix is allowed, so the whole string returned
+ * by openssl.version() can be passed in directly.
+ * Returns 1 and writes *out on success, 0 on failure. */
+static int
+openssl_parse_version_string(const char *text, unsigned long *out)
+{
+  unsigned int major = 0, minor = 0, patch = 0;
+  const char *p = text;
+
+  if (text == NULL) return 0;
+  while (*p && (*p < '0' || *p > '9')) p++;
+  if (*p == 0) return 0;
+  if (sscanf(p, "%u.%u.%u", &major, &minor, &patch) < 2) return 0;
+
+  /* major == 0 is allowed on purpose: ancient releases such as 0.9.8 must
+   * remain comparable. */
+  *out = ossl_pack_version(major, minor, patch);
+  return 1;
+}
+
+/***
+test whether the loaded OpenSSL/LibreSSL is at least a given version
+Compares against the **runtime** library, so it keeps working when the module
+was built against older headers than the library actually loaded.
+Accepts either `(major, minor[, patch])` or a single `"major.minor[.patch]"`.
+Comparing numerically is what callers should do instead of matching the version
+string (`openssl.version():match("1.0.2")` breaks the moment a new release
+renumbers something, and says nothing at all about the library actually loaded).
+@function version_ge
+@tparam integer|string major major version, or "M.N[.P]"
+@tparam[opt=0] integer minor
+@tparam[opt=0] integer patch
+@treturn boolean
+@usage
+  if openssl.version_ge(1, 1, 1) then
+    -- TLS 1.3 is available
+  end
+  if openssl.version_ge("3.0") then
+    -- providers, EVP_MAC, ...
+  end
+*/
+static int
+openssl_version_ge(lua_State *L)
+{
+  unsigned long want;
+
+  if (lua_type(L, 1) == LUA_TSTRING) {
+    if (!openssl_parse_version_string(lua_tostring(L, 1), &want))
+      return luaL_error(L, "bad version string: %s", lua_tostring(L, 1));
+  } else {
+    unsigned int major = (unsigned int)luaL_checkinteger(L, 1);
+    unsigned int minor = (unsigned int)luaL_optinteger(L, 2, 0);
+    unsigned int patch = (unsigned int)luaL_optinteger(L, 3, 0);
+    want = ossl_pack_version(major, minor, patch);
+  }
+
+  lua_pushboolean(L, ossl_rt_version_num() >= want);
+  return 1;
 }
 
 /***
@@ -397,6 +547,7 @@ get openssl engine object
 */
 static const luaL_Reg eay_functions[] = {
   { "version",     openssl_version       },
+  { "version_ge",  openssl_version_ge    },
   { "list",        openssl_list          },
   { "hex",         openssl_hex           },
   { "base64",      openssl_base64        },

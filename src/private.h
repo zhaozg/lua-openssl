@@ -132,6 +132,64 @@ __pragma(warning(pop))
 
 #define IS_LIBRESSL() (defined(LIBRESSL_VERSION_NUMBER))
 
+/* ---------------------------------------------------------------------------
+ * Build-time version vs runtime version
+ *
+ * OPENSSL_VERSION_NUMBER / OPENSSL_VERSION_TEXT / LIBRESSL_VERSION_NUMBER are
+ * constants baked into the **headers**: they tell which headers this source was
+ * compiled against, not which library is linked in at this very moment. The two
+ * disagree more often than one expects:
+ *
+ *   - a distro upgraded libcrypto in place without rebuilding the module;
+ *   - cross compilation: headers from the target sysroot, another runtime;
+ *   - the same .so copied over to a different machine;
+ *   - built against a vendor's headers but linked against the system library.
+ *
+ * So the division of labour has to stay clear:
+ *
+ *   #if OPENSSL_VERSION_NUMBER ...   -> picks the API signature / struct
+ *                                       layout, i.e. what must be settled at
+ *                                       compile time;
+ *   ossl_rt_version_num() and friends -> reports what the loaded library can do.
+ *
+ * Counter-example (the way older code in this file was written): using
+ * OPENSSL_VERSION_NUMBER to decide whether to call a function that only exists
+ * at runtime. If the headers are newer than the library, the code links/calls a
+ * symbol that is not there; if they are older, working features are skipped for
+ * nothing.
+ * ------------------------------------------------------------------------- */
+
+/* Version number of the runtime library, encoded like OPENSSL_VERSION_NUMBER
+ * (0xMNNFFPPS / 0xMNN00PP0).
+ * Returns SSLeay() when both build-time and runtime are 1.0.x;
+ * LibreSSL returns its LIBRESSL_VERSION_NUMBER instead (SSLeay() is the fixed
+ * value 0x20000000L there, which would rank every LibreSSL release as ancient,
+ * so it is unusable for comparisons). */
+unsigned long ossl_rt_version_num(void);
+
+/* Version text of the runtime library, e.g. "OpenSSL 3.6.5 29 Sep 2026" or
+ * "LibreSSL 3.8.2". Never returns NULL. */
+const char *ossl_rt_version_text(void);
+
+/* 1 when the loaded library is LibreSSL, 0 otherwise. Decided from the runtime
+ * text, so "built with OpenSSL headers, running on LibreSSL" is recognised as
+ * well. */
+int ossl_rt_is_libressl(void);
+
+/* 1 when the runtime version >= v. v uses the OPENSSL_VERSION_NUMBER
+ * encoding. */
+int ossl_rt_version_ge(unsigned long v);
+
+/* Pack major.minor.patch into the runtime library's own layout, for numeric
+ * comparison. The layout differs across the 3.x boundary and for LibreSSL, see
+ * the comments in compat.c. */
+unsigned long ossl_pack_version(unsigned int major, unsigned int minor, unsigned int patch);
+
+/* Whether build-time and runtime version numbers agree (at major.minor level).
+ * A mismatch means this .so was built against another set of headers, so
+ * capability checks must follow the runtime library. */
+int ossl_rt_matches_build(void);
+
 #if OPENSSL_VERSION_NUMBER >= 0x1010100FL && !defined(OPENSSL_NO_EC) \
   && !defined(LIBRESSL_VERSION_NUMBER)
 #define OPENSSL_SUPPORT_SM2

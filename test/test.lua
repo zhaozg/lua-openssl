@@ -20,6 +20,7 @@ if not (helper.openssl3 or helper.libressl) then
   assert(openssl.FIPS_mode() == false)
 end
 
+dofile("0.version.lua")
 dofile("0.bio.lua")
 dofile("0.bn.lua")
 dofile("0.engine.lua")

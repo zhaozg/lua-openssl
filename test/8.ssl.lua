@@ -14,13 +14,14 @@ end
 TestSSL = {}
 local LUA
 if arg then
+  -- arg[-1] is the interpreter itself. Take just that, no print: any extra
+  -- line in the TAP output is picked up as part of the test results.
   local i = 0
   repeat
     LUA = arg[i]
-    print(i, LUA)
     i = i - 1
   until not arg[i]
-  assert(LUA)
+  assert(LUA, "cannot determine the interpreter path, arg[-1] is empty")
 end
 
 if uv then
@@ -97,7 +98,11 @@ if uv then
   end
 
   function TestSSL:testUV_DTLS()
-    if helper.opensslv:match("1.0.2") then
+    -- 1.0.2 and earlier lack the DTLS_method / DTLSv1_2 naming, skip them.
+    -- This used to be `helper.opensslv:match("1.0.2")`: string matching hits
+    -- false positives ("OpenSSL 3.0.2" contains "1.0.2") and never tells which
+    -- version is actually being compared.
+    if helper.before_1_1_0 then
       return
     end
     local port = math.random(8000, 9000)

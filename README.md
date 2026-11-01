@@ -182,6 +182,36 @@ lua_openssl_version, lua_version, openssl_version = openssl.version()
 lua_openssl_version, lua_version, openssl_version = openssl.version(true)
 ```
 
+The version reported is the one of the library **loaded at runtime**, not the one
+whose headers were used to build the module. The 4th return value of the string
+form carries the structured information:
+
+```lua
+local _, _, text, info = openssl.version()
+-- info = {
+--   num = 0x30600050, build_num = 0x30600050,
+--   major = 3, minor = 6, patch = 5, patchlevel = 0, status = 0x0,
+--   text = "OpenSSL 3.6.5 29 Sep 2026",
+--   kind = "OpenSSL", build_kind = "OpenSSL",
+--   libressl = false, is_3_plus = true, matches_build = true,
+-- }
+```
+
+Test capabilities by number, never by matching the version string:
+
+```lua
+if openssl.version_ge(3, 0) then ... end      -- providers, EVP_MAC
+if openssl.version_ge("1.1.1") then ... end   -- TLS 1.3
+```
+
+`version_ge` accepts either `(major, minor[, patch])` or a single
+`"major.minor[.patch]"` string and always compares against the library loaded at
+runtime.
+
+`matches_build == false` means the module was built against different headers
+than the library that got loaded; trust the runtime values (`num`, `version_ge`)
+over anything the compiler decided, and ideally rebuild against the right headers.
+
 ### Style
 
 Source code of lua-openssl tidy with [ClangFormat](https://clang.llvm.org/docs/ClangFormat.html)
