@@ -111,7 +111,6 @@ openssl_encapsulate(lua_State *L)
   EVP_PKEY_CTX *ctx = NULL;
   int           ret = 0;
   size_t        ct_len = 0;
-  size_t        ss_len = 0;
   unsigned char *ct = NULL;
   unsigned char *ss = NULL;
 
