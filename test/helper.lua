@@ -95,6 +95,19 @@ function M.spawn(cmd, args, pattern, after_start, after_close, env)
   env[#env + 1] = "LUA_CPATH=" .. package.cpath
   env[#env + 1] = "LUA_PATH=" .. package.path
 
+  -- Passing env hands the child a fresh environment, which drops PATH entirely.
+  -- Callers usually pass a bare name ("luajit"), and without PATH it cannot be
+  -- spawned: uv.spawn reports ENOENT, which looks like an OpenSSL failure but
+  -- is really the launcher's. This entry used to be missing and kept seven
+  -- SSL/TCP cases red.
+  local has_path = false
+  for _, kv in ipairs(env) do
+    if kv:match("^PATH=") then has_path = true break end
+  end
+  if not has_path then
+    env[#env + 1] = "PATH=" .. (os.getenv("PATH") or "/usr/local/bin:/usr/bin:/bin")
+  end
+
   local function stderr_read(err, chunk)
     assert(not err, err)
     if chunk then

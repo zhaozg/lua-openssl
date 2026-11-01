@@ -183,8 +183,13 @@ info:
 	@echo "AR:" $(AR)
 	@echo "PREFIX:" $(PREFIX)
 
+# The trailing `;;` in LUA_CPATH is expanded by Lua into the "default path", so
+# it must stay: without it require('luv') fails under this minimal cpath and the
+# whole `if uv then ... end` block of 8.ssl.lua / 0.tcp.lua is skipped -- eight
+# cases (all the SSL/TCP integration) silently disappear while the summary line
+# still reports everything green.
 test:	all
-	cd test && LUA_CPATH=$(shell pwd)/?.so $(shell which $(LUA)) test.lua -v && cd ..
+	cd test && LUA_CPATH=$(shell pwd)/?.so\;\; $(shell which $(LUA)) test.lua -v
 
 debug: all
 
