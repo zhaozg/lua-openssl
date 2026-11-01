@@ -664,8 +664,12 @@ openssl_ssl_ctx_cert_store(lua_State *L)
     return 0;
   }
 #else
-  luaL_error(L, "NYI, openssl below 1.0.2 not fully support this feature");
-  return 0;
+  /* This branch is chosen at **compile time**: SSL_CTX_get_cert_store does not
+   * exist before 1.0.2. Do not hardcode a version number in the message; report
+   * both the build-time and the runtime version so it is obvious whether the
+   * library is too old or the module was built against the wrong library. */
+  return luaL_error(L, "cert_store requires OpenSSL >= 1.0.2 (built against %s, running %s)",
+                    OPENSSL_VERSION_TEXT, ossl_rt_version_text());
 #endif
 }
 
