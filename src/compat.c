@@ -16,6 +16,134 @@ versions by providing missing functions for older versions.
 #include <lua.h>
 #include <lualib.h>
 
+#include <stdio.h>
+#include <string.h>
+
+/* ---------------------------------------------------------------------------
+ * Runtime version probing
+ *
+ * Kept outside the #if blocks below, so it is compiled in for every OpenSSL /
+ * LibreSSL version. See "Build-time version vs runtime version" in private.h
+ * for how the two are meant to be used.
+ * ------------------------------------------------------------------------- */
+
+/* Pull the version number out of a string such as "LibreSSL 3.8.2" and encode
+ * it in the legacy 0xMNNFFPPS layout (status filled with 0x0f), so it matches
+ * LIBRESSL_VERSION_NUMBER.
+ * LibreSSL only: its SSLeay() is a fixed 0x20000000L and OpenSSL_version_num()
+ * behaves differently from release to release, so neither can be trusted.
+ * OpenSSL takes the number straight from the API, no text parsing involved.
+ * Returns 0 when the text cannot be parsed. */
+static unsigned long
+ossl_rt_parse_version_num(const char *text)
+{
+  unsigned int major = 0, minor = 0, patch = 0;
+  const char *p;
+
+  if (text == NULL)
+    return 0;
+
+  /* Skip an "OpenSSL" / "LibreSSL" style prefix and find the first digit. */
+  p = text;
+  while (*p && (*p < '0' || *p > '9'))
+    p++;
+  if (*p == 0)
+    return 0;
+
+  if (sscanf(p, "%u.%u.%u", &major, &minor, &patch) < 2)
+    return 0;
+
+  /* Use LibreSSL's own 0xMNNFFPPS layout with the status byte filled in as
+   * 0x0f, so the result is identical to LIBRESSL_VERSION_NUMBER and existing
+   * constant comparisons such as `_opensslv < 0x3050000f` keep working. */
+  return ((unsigned long)(major & 0xff) << 28) | ((unsigned long)(minor & 0xff) << 20) |
+         ((unsigned long)(patch & 0xff) << 12) | 0x0fUL;
+}
+
+unsigned long
+ossl_rt_version_num(void)
+{
+#if defined(LIBRESSL_VERSION_NUMBER)
+  /* LibreSSL: SSLeay() is a fixed 0x20000000L and OpenSSL_version_num() is
+   * inconsistent across releases, so neither can order versions. The runtime
+   * version can only be read from the text; fall back to the build-time
+   * constant when that fails. */
+  unsigned long v = ossl_rt_parse_version_num(ossl_rt_version_text());
+  return v ? v : (unsigned long)LIBRESSL_VERSION_NUMBER;
+#elif OPENSSLV_LESS(0x10100000L)
+  return (unsigned long)SSLeay();
+#else
+  return (unsigned long)OpenSSL_version_num();
+#endif
+}
+
+const char *
+ossl_rt_version_text(void)
+{
+#if defined(LIBRESSL_VERSION_NUMBER) || OPENSSLV_LESS(0x10100000L)
+  return SSLeay_version(SSLEAY_VERSION);
+#else
+  return OpenSSL_version(OPENSSL_VERSION);
+#endif
+}
+
+int
+ossl_rt_is_libressl(void)
+{
+  const char *text = ossl_rt_version_text();
+  return text != NULL && strncmp(text, "LibreSSL", 8) == 0;
+}
+
+/* Pack major.minor.patch into the layout of the library that is **actually
+ * loaded**.
+ *
+ * The layout has to follow the real library; looking at major alone is not
+ * enough:
+ *   OpenSSL 3.0+   0xMNN00PP0  -> patch at bit4
+ *   OpenSSL < 3.0  0xMNNFFPPS  -> fix at bit12, the low 4 bits are status
+ *   LibreSSL       0xMNNFFPPS  -> legacy layout even when major is already 3
+ *                                 (3.8.2 for instance)
+ *
+ * Only with the runtime layout does a plain unsigned long comparison mean the
+ * same as a semantic one. Across majors the high byte dominates, so mixing the
+ * two layouts still orders correctly. */
+unsigned long
+ossl_pack_version(unsigned int major, unsigned int minor, unsigned int patch)
+{
+  unsigned long base = ((unsigned long)(major & 0xff) << 28) | ((unsigned long)(minor & 0xff) << 20);
+  if (major >= 3 && !ossl_rt_is_libressl())
+    return base | ((unsigned long)(patch & 0xff) << 4);
+  return base | ((unsigned long)(patch & 0xff) << 12);
+}
+
+int
+ossl_rt_version_ge(unsigned long v)
+{
+  return ossl_rt_version_num() >= v;
+}
+
+int
+ossl_rt_matches_build(void)
+{
+  /* Compare major.minor.fix only: OpenSSL's status byte (0xbf and friends)
+   * changes when a distro repackages a release, which says nothing about
+   * capabilities, so comparing it only produces false alarms. */
+  unsigned long rt = ossl_rt_version_num() & 0xfffff000UL;
+  unsigned long bt = (unsigned long)OPENSSL_VERSION_NUMBER & 0xfffff000UL;
+
+#if defined(LIBRESSL_VERSION_NUMBER)
+  /* For LibreSSL the header constant and the parsed runtime text do not come
+   * from the same source, so compare major.minor only and avoid meaningless
+   * mismatch warnings. */
+  rt &= 0xfff00000UL;
+  bt = (unsigned long)LIBRESSL_VERSION_NUMBER & 0xfff00000UL;
+#endif
+  return rt == bt;
+}
+
+/* Below are the shims needed by pre-1.1.0 (1.0.2 included) only: in those
+ * releases the structs are public and references are bumped by hand with
+ * CRYPTO_add. Since 1.1.0 everything has *_up_ref, so nothing to provide. */
 #if OPENSSLV_LESS(0x10100000L)
 
 int
