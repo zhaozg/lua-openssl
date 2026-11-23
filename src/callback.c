@@ -31,9 +31,17 @@ verify_cb(int preverify_ok, X509_STORE_CTX *xctx, lua_State *L, SSL *ssl, SSL_CT
   X509 *current = X509_STORE_CTX_get_current_cert(xctx);
 
   if (L) {
+    /* The context may use the main state while a coroutine runs the handshake. */
+    if (!lua_checkstack(L, LUA_MINSTACK)) {
+      X509_STORE_CTX_set_error(xctx, X509_V_ERR_OUT_OF_MEM);
+      return 0;
+    }
+    openssl_newvalue(L, ssl);
+
     /* get verify_cert state */
     openssl_valueget(L, ssl, "verify_cert");
     if (lua_isnil(L, -1)) {
+      lua_pop(L, 1);
       lua_newtable(L);
       openssl_valueset(L, ssl, "verify_cert");
       openssl_valueget(L, ssl, "verify_cert");
@@ -68,6 +76,7 @@ verify_cb(int preverify_ok, X509_STORE_CTX *xctx, lua_State *L, SSL *ssl, SSL_CT
         luaL_error(L, lua_tostring(L, -1));
     } else {
       int always_continue, verify_depth;
+      lua_pop(L, 1); /* discard the missing or non-function callback */
       openssl_valueget(L, ctx, "verify_cb_flags");
       /*
       int verify_depth;
@@ -107,7 +116,6 @@ openssl_verify_cb(int preverify_ok, X509_STORE_CTX *xctx)
   SSL       *ssl = X509_STORE_CTX_get_ex_data(xctx, SSL_get_ex_data_X509_STORE_CTX_idx());
   SSL_CTX   *ctx = ssl ? SSL_get_SSL_CTX(ssl) : NULL;
   lua_State *L = ctx ? SSL_CTX_get_app_data(ctx) : NULL;
-  if (ssl) openssl_newvalue(L, ssl);
   return ctx ? verify_cb(preverify_ok, xctx, L, ssl, ctx) : 0;
 };
 
@@ -122,7 +130,6 @@ openssl_cert_verify_cb(X509_STORE_CTX *xctx, void *u)
   lua_State *L = (lua_State *)u;
   SSL       *ssl = X509_STORE_CTX_get_ex_data(xctx, SSL_get_ex_data_X509_STORE_CTX_idx());
   SSL_CTX   *ctx = ssl ? SSL_get_SSL_CTX(ssl) : NULL;
-  if (ssl) openssl_newvalue(L, ssl);
   preverify_ok = ctx ? verify_cb(-1, xctx, L, ssl, ctx) : 0;
   return preverify_ok == -1 ? 0 : preverify_ok;
 };
