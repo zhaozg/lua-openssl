@@ -269,6 +269,74 @@ function TestSSL:testCTX()
   assert(num > 0)
 end
 
+local function verify_peer(server_ctx, store, callback)
+  local client_ctx = ssl.ctx_new(ssl.default .. "_client")
+  if store then
+    client_ctx:cert_store(store)
+  end
+  if callback then
+    client_ctx:verify_mode(ssl.peer, callback)
+  else
+    client_ctx:verify_mode(ssl.peer)
+  end
+
+  local server_bio, client_bio = bio.pair()
+  local server = assert(server_ctx:ssl(server_bio))
+  local client = assert(client_ctx:ssl(client_bio))
+  server:set_accept_state()
+  client:set_connect_state()
+
+  for _ = 1, 16 do
+    local client_ok, client_error = client:handshake()
+    if client_ok == nil then
+      return false, client_error, client
+    end
+    local server_ok, server_error = server:handshake()
+    assert(server_ok ~= nil, server_error)
+    if client_ok and server_ok then
+      return true, nil, client
+    end
+  end
+  error("TLS handshake did not complete")
+end
+
+function TestSSL:testPeerVerificationReports()
+  local cert, key = helper.sign({ { CN = "server" } })
+  local server_ctx = ssl.ctx_new(ssl.default .. "_server")
+  assert(server_ctx:use(key, cert))
+  local store = helper.get_ca():get_store()
+
+  local success, err, client = verify_peer(server_ctx, store)
+  assert(success, err)
+  local verified, reports = client:getpeerverification()
+  lu.assertTrue(verified)
+  lu.assertTrue(#reports > 0, "verified certificates should have reports")
+  for _, report in ipairs(reports) do
+    lu.assertTrue(report.preverify_ok)
+    lu.assertEquals(report.error, 0)
+    assert(report.current_cert)
+  end
+
+  local callbacks = 0
+  success, err, client = verify_peer(server_ctx, store, function(report)
+    callbacks = callbacks + 1
+    return report.preverify_ok
+  end)
+  assert(success, err)
+  verified, reports = client:getpeerverification()
+  lu.assertTrue(verified)
+  lu.assertTrue(callbacks > 0)
+  lu.assertEquals(#reports, callbacks)
+
+  success, err, client = verify_peer(server_ctx)
+  lu.assertFalse(success)
+  lu.assertEquals(err, "ssl")
+  verified, reports = client:getpeerverification()
+  lu.assertFalse(verified)
+  lu.assertTrue(#reports > 0)
+  lu.assertFalse(reports[#reports].preverify_ok)
+end
+
 function TestSSL:testSNI()
   local ca = helper.get_ca()
   local store = ca:get_store()
